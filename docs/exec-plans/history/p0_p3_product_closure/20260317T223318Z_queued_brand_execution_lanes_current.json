@@ -1,0 +1,110 @@
+{
+  "generatedAt": "2026-03-17T22:32:27Z",
+  "objective": "Split the five highest-priority North America queued/high-frequency supplement brands into one external discovery lane and one official recovery wave lane that can be executed without reopening broad expansion.",
+  "selectionBasis": {
+    "sourceDiscoverySummaryPath": "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/queued_brand_north_america_discovery_summary.json",
+    "sourceMatchMatrixPath": "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/queued_brand_target_match_matrix.json",
+    "topFiveBrands": [
+      "Natrol",
+      "Codeage",
+      "Nutricost",
+      "Country Life",
+      "Sports Research"
+    ]
+  },
+  "lanes": [
+    {
+      "laneId": "external_discovery_lane",
+      "status": "ready_to_execute",
+      "goal": "Establish current, North America-valid product evidence and queue-presence for brands where current local recovery lanes are exhausted or canonical presence is missing.",
+      "brands": [
+        {
+          "brandName": "Natrol",
+          "reasonIncluded": "Largest missing-from-staging target in the top-five set, with current local recovery attempts exhausted and strong newly confirmed official North America coverage.",
+          "currentGapDisposition": "missing_from_staging",
+          "currentHighFrequencyEvidence": {
+            "total": 46,
+            "completeHit": 5,
+            "missingFromStaging": 41
+          },
+          "recommendedExecution": "Open a fresh official-site-led discovery lane using Natrol sitemap, category collections, product pages, label assets, and official-site Amazon cross-links.",
+          "stopCondition": "Stop if the brand still shows zero queue-presence or only low-confidence identity after official-site evidence normalization."
+        },
+        {
+          "brandName": "Codeage",
+          "reasonIncluded": "Absent from the current canonical high-frequency report but discovery found the cleanest official sitemap/product/label surface in the batch.",
+          "currentGapDisposition": "absent",
+          "currentHighFrequencyEvidence": {
+            "total": 0,
+            "completeHit": 0,
+            "missingFromStaging": 0
+          },
+          "recommendedExecution": "Do queue-presence verification first, then official-site-led ingestion only for validated current products from the Codeage NA storefront.",
+          "stopCondition": "Stop if queue-presence verification fails or if current products cannot be matched back to stable supplement identity without threshold loosening."
+        }
+      ],
+      "guardrails": [
+        "Do not treat old queue artifacts as current truth without fresh verification.",
+        "Do not inflate signal from Amazon-only pages without official corroboration.",
+        "Keep iHerb optional because Cloudflare challenge is a known environment blocker."
+      ],
+      "successSignal": "At least one brand in this lane produces validated current queue candidates or a blocker-grade proof that current recovery should remain paused."
+    },
+    {
+      "laneId": "official_recovery_wave_lane",
+      "status": "ready_to_execute",
+      "goal": "Push already-evidenced official-site recovery surfaces into concrete queue/high-frequency uplift without reopening broad discovery.",
+      "brands": [
+        {
+          "brandName": "Nutricost",
+          "reasonIncluded": "Strongest active-queue recovery surface in the batch with very large official product JSON and supplement-facts coverage.",
+          "currentGapDisposition": "active_queue",
+          "currentHighFrequencyEvidence": {
+            "total": 49,
+            "completeHit": 17,
+            "activeQueue": 32
+          },
+          "recommendedExecution": "Run an official Shopify JSON replay against the current active_queue using the P0 US strong-identity lane before weaker retailer-led paths.",
+          "stopCondition": "Stop if replay fails to produce net complete-hit uplift after one canonical merge and audit cycle."
+        },
+        {
+          "brandName": "Country Life",
+          "reasonIncluded": "Large missing-from-staging tail plus strong official barcode-rich product JSON and prior local brand-expansion evidence.",
+          "currentGapDisposition": "missing_from_staging",
+          "currentHighFrequencyEvidence": {
+            "total": 47,
+            "completeHit": 13,
+            "missingFromStaging": 34
+          },
+          "recommendedExecution": "Replay an official-site-led recovery wave using current missing rows, barcode-rich product JSON, and known strong multivitamin/hair category coverage.",
+          "stopCondition": "Stop if current missing rows cannot be re-materialized into a fresh strong-identity queue."
+        },
+        {
+          "brandName": "Sports Research",
+          "reasonIncluded": "Small residual missing-from-staging tail with strongest clean official discovery surface in the whole discovery batch.",
+          "currentGapDisposition": "missing_from_staging",
+          "currentHighFrequencyEvidence": {
+            "total": 47,
+            "completeHit": 41,
+            "missingFromStaging": 6
+          },
+          "recommendedExecution": "Run a tightly targeted official/iGen replay only on the residual missing rows and close the tail rather than opening a broad brand expansion.",
+          "stopCondition": "Stop after the residual six-row tail is resolved or blocker-classified."
+        }
+      ],
+      "guardrails": [
+        "Do not reopen exact-barcode lanes already proven no-signal for these brands.",
+        "Do not widen to retailer-first discovery when official-site evidence is already stronger.",
+        "Every wave must rerun merge plus canonical high-frequency validation before claiming uplift."
+      ],
+      "successSignal": "At least one brand in this lane produces canonical high-frequency uplift that survives merge and product-surface audit."
+    }
+  ],
+  "recommendedExecutionOrder": [
+    "external_discovery_lane: Natrol",
+    "external_discovery_lane: Codeage",
+    "official_recovery_wave_lane: Nutricost",
+    "official_recovery_wave_lane: Country Life",
+    "official_recovery_wave_lane: Sports Research"
+  ]
+}

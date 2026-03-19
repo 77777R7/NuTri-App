@@ -1,0 +1,49 @@
+{
+  "generatedAt": "2026-03-17T08:59:36.000Z",
+  "overallVerdict": "not_closed_product_level",
+  "startingBaseline": {
+    "week2EligibleRows": 50733,
+    "week2StrictMergeReady": 26494,
+    "week2Queued": 24124,
+    "week2Blocked": 255,
+    "highFrequencyUniqueCandidates": 1651,
+    "highFrequencyCompleteHitRatePct": 38.0,
+    "week3OfficialCloseout": "Week 3 not yet fully closed"
+  },
+  "endingBaseline": {
+    "recentScanSavePreservesImageAndDose": true,
+    "mySavedDetailConsumesWeek2Fields": true,
+    "tier1ControlledDuplicateQaPassed": true,
+    "realSavedEnvironmentHasEnoughCases": false,
+    "scienceWhitelistReadinessMatrixPresent": true
+  },
+  "phaseResults": {
+    "P0": {
+      "status": "blocker_isolation",
+      "closedAtProductLevel": false,
+      "summary": "Non-scan product surfaces are hardened, but the representative high-frequency product set still fails completeness."
+    },
+    "P1": {
+      "status": "blocker_isolation",
+      "closedAtProductLevel": false,
+      "summary": "Tier-1 duplicate reminder passes controlled QA, but the current real-saved environment still lacks enough cases."
+    },
+    "P2": {
+      "status": "blocker_isolation",
+      "closedAtProductLevel": false,
+      "summary": "Consumption wiring is present, but weak-data classes still dominate the currently audited Saved inventory."
+    },
+    "P3": {
+      "status": "execution_success",
+      "closedAtProductLevel": true,
+      "summary": "Week 4 whitelist readiness matrix is complete and usable for product decisions."
+    }
+  },
+  "executionResidue": [
+    {
+      "status": "blocker_isolation",
+      "blockerId": "runtime.node_validation_pending",
+      "detail": "The current shell is not Node-capable, so JS tests and maintainer harnesses still need reruns in a Node-capable environment."
+    }
+  ]
+}

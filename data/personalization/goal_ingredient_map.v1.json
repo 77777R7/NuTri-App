@@ -1,0 +1,300 @@
+{
+  "version": "v1",
+  "mappings": [
+    {
+      "goalKey": "sleep",
+      "ingredientMatches": [
+        {
+          "ingredientKey": "melatonin",
+          "tier": "strong_match",
+          "evidenceGrade": "A",
+          "minEffectiveDose": 0.3,
+          "unit": "mg",
+          "preferredForms": [],
+          "caps": [],
+          "rationale": "Melatonin is a direct sleep-support ingredient with clear dose floors."
+        },
+        {
+          "ingredientKey": "magnesium",
+          "tier": "related",
+          "evidenceGrade": "B",
+          "minEffectiveDose": 100,
+          "unit": "mg",
+          "preferredForms": ["glycinate", "bisglycinate", "taurate"],
+          "caps": [],
+          "rationale": "Magnesium can support sleep routines, especially in gentler forms."
+        },
+        {
+          "ingredientKey": "l_theanine",
+          "tier": "related",
+          "evidenceGrade": "B",
+          "minEffectiveDose": 100,
+          "unit": "mg",
+          "preferredForms": [],
+          "caps": [],
+          "rationale": "L-theanine is a supportive sleep-adjacent ingredient."
+        }
+      ]
+    },
+    {
+      "goalKey": "energy",
+      "ingredientMatches": [
+        {
+          "ingredientKey": "vitamin_b12",
+          "tier": "strong_match",
+          "evidenceGrade": "A",
+          "minEffectiveDose": 500,
+          "unit": "mcg",
+          "preferredForms": ["methylcobalamin", "adenosylcobalamin"],
+          "caps": [],
+          "rationale": "B12 is a direct energy-support ingredient when dose and form are disclosed."
+        },
+        {
+          "ingredientKey": "iron",
+          "tier": "related",
+          "evidenceGrade": "A",
+          "minEffectiveDose": 8,
+          "unit": "mg",
+          "preferredForms": ["bisglycinate", "ferrous bisglycinate"],
+          "caps": ["eligibility_requires_generic_safety_path"],
+          "rationale": "Iron can matter for energy, but it should stay on a conservative safety path."
+        },
+        {
+          "ingredientKey": "coenzyme_q10",
+          "tier": "related",
+          "evidenceGrade": "B",
+          "minEffectiveDose": 100,
+          "unit": "mg",
+          "preferredForms": ["ubiquinol", "coenzyme q10"],
+          "caps": [],
+          "rationale": "CoQ10 is a common supporting ingredient for energy-oriented products."
+        }
+      ]
+    },
+    {
+      "goalKey": "immunity",
+      "ingredientMatches": [
+        {
+          "ingredientKey": "vitamin_c",
+          "tier": "strong_match",
+          "evidenceGrade": "A",
+          "minEffectiveDose": 200,
+          "unit": "mg",
+          "preferredForms": [],
+          "caps": [],
+          "rationale": "Vitamin C is a core immunity-support review ingredient."
+        },
+        {
+          "ingredientKey": "zinc",
+          "tier": "strong_match",
+          "evidenceGrade": "A",
+          "minEffectiveDose": 10,
+          "unit": "mg",
+          "preferredForms": ["picolinate", "citrate", "gluconate"],
+          "caps": [],
+          "rationale": "Zinc is a high-signal ingredient for immunity review when dose is clear."
+        },
+        {
+          "ingredientKey": "vitamin_d",
+          "tier": "related",
+          "evidenceGrade": "A",
+          "minEffectiveDose": 25,
+          "unit": "mcg",
+          "preferredForms": ["d3", "cholecalciferol"],
+          "caps": [],
+          "rationale": "Vitamin D is supportive but not usually the sole driver of immunity relevance."
+        }
+      ]
+    },
+    {
+      "goalKey": "recovery",
+      "ingredientMatches": [
+        {
+          "ingredientKey": "protein",
+          "tier": "strong_match",
+          "evidenceGrade": "A",
+          "minEffectiveDose": 20,
+          "unit": "g",
+          "preferredForms": ["whey", "isolate", "plant blend"],
+          "caps": [],
+          "rationale": "Protein is a foundation ingredient for recovery-first products."
+        },
+        {
+          "ingredientKey": "creatine",
+          "tier": "strong_match",
+          "evidenceGrade": "A",
+          "minEffectiveDose": 3,
+          "unit": "g",
+          "preferredForms": ["monohydrate"],
+          "caps": [],
+          "rationale": "Creatine is a direct recovery/performance ingredient when form is disclosed."
+        },
+        {
+          "ingredientKey": "omega_3",
+          "tier": "related",
+          "evidenceGrade": "B",
+          "minEffectiveDose": 1000,
+          "unit": "mg",
+          "preferredForms": ["triglyceride", "reesterified triglyceride"],
+          "caps": [],
+          "rationale": "Omega-3s can support recovery but usually sit behind protein/creatine."
+        }
+      ]
+    },
+    {
+      "goalKey": "focus",
+      "ingredientMatches": [
+        {
+          "ingredientKey": "caffeine",
+          "tier": "strong_match",
+          "evidenceGrade": "A",
+          "minEffectiveDose": 50,
+          "unit": "mg",
+          "preferredForms": [],
+          "caps": [],
+          "rationale": "Caffeine is a high-signal focus ingredient when the dose is disclosed."
+        },
+        {
+          "ingredientKey": "l_theanine",
+          "tier": "related",
+          "evidenceGrade": "B",
+          "minEffectiveDose": 100,
+          "unit": "mg",
+          "preferredForms": [],
+          "caps": [],
+          "rationale": "L-theanine commonly supports focus-oriented stacks."
+        },
+        {
+          "ingredientKey": "bacopa",
+          "tier": "weak_match",
+          "evidenceGrade": "B",
+          "minEffectiveDose": 300,
+          "unit": "mg",
+          "preferredForms": ["bacopa monnieri"],
+          "caps": [],
+          "rationale": "Bacopa is a weaker, slower-burn focus ingredient in this conservative V1 map."
+        }
+      ]
+    },
+    {
+      "goalKey": "libido_enhancement",
+      "ingredientMatches": [
+        {
+          "ingredientKey": "maca",
+          "tier": "related",
+          "evidenceGrade": "B",
+          "minEffectiveDose": 1500,
+          "unit": "mg",
+          "preferredForms": [],
+          "caps": ["eligibility_requires_generic_safety_path"],
+          "rationale": "Maca may be relevant here, but we keep this lane conservative."
+        },
+        {
+          "ingredientKey": "zinc",
+          "tier": "related",
+          "evidenceGrade": "A",
+          "minEffectiveDose": 10,
+          "unit": "mg",
+          "preferredForms": ["picolinate", "citrate"],
+          "caps": ["eligibility_requires_generic_safety_path"],
+          "rationale": "Zinc can support this goal, but it stays on a generic safety path in V1."
+        }
+      ]
+    },
+    {
+      "goalKey": "stress_support",
+      "ingredientMatches": [
+        {
+          "ingredientKey": "ashwagandha",
+          "tier": "strong_match",
+          "evidenceGrade": "B",
+          "minEffectiveDose": 300,
+          "unit": "mg",
+          "preferredForms": ["ksm_66", "sensoril"],
+          "caps": [],
+          "rationale": "Ashwagandha is the clearest stress-support ingredient in this V1 map."
+        },
+        {
+          "ingredientKey": "magnesium",
+          "tier": "related",
+          "evidenceGrade": "B",
+          "minEffectiveDose": 100,
+          "unit": "mg",
+          "preferredForms": ["glycinate", "taurate"],
+          "caps": [],
+          "rationale": "Magnesium supports calmer routines in gentler forms."
+        },
+        {
+          "ingredientKey": "l_theanine",
+          "tier": "related",
+          "evidenceGrade": "B",
+          "minEffectiveDose": 100,
+          "unit": "mg",
+          "preferredForms": [],
+          "caps": [],
+          "rationale": "L-theanine is a supportive stress-management ingredient."
+        }
+      ]
+    },
+    {
+      "goalKey": "weight_management",
+      "ingredientMatches": [
+        {
+          "ingredientKey": "fiber",
+          "tier": "related",
+          "evidenceGrade": "A",
+          "minEffectiveDose": 3,
+          "unit": "g",
+          "preferredForms": ["psyllium"],
+          "caps": [],
+          "rationale": "Fiber is a conservative support ingredient for weight-management products."
+        },
+        {
+          "ingredientKey": "protein",
+          "tier": "related",
+          "evidenceGrade": "A",
+          "minEffectiveDose": 20,
+          "unit": "g",
+          "preferredForms": [],
+          "caps": [],
+          "rationale": "Protein can be relevant for satiety and weight-management review."
+        },
+        {
+          "ingredientKey": "green_tea_extract",
+          "tier": "weak_match",
+          "evidenceGrade": "B",
+          "minEffectiveDose": 250,
+          "unit": "mg",
+          "preferredForms": [],
+          "caps": ["eligibility_requires_generic_safety_path"],
+          "rationale": "Green tea extract stays conservative and routes through a generic safety path."
+        }
+      ]
+    }
+  ],
+  "goalIngredientMap": [
+    { "goalKey": "sleep", "ingredientKey": "melatonin", "tier": "strong", "evidenceGrade": "A", "minEffectiveDose": 0.3, "unit": "mg", "preferredForms": [], "caps": [], "rationale": "Melatonin is a direct sleep-support ingredient with clear dose floors." },
+    { "goalKey": "sleep", "ingredientKey": "magnesium", "tier": "supporting", "evidenceGrade": "B", "minEffectiveDose": 100, "unit": "mg", "preferredForms": ["glycinate", "bisglycinate", "taurate"], "caps": [], "rationale": "Magnesium can support sleep routines, especially in gentler forms." },
+    { "goalKey": "sleep", "ingredientKey": "l_theanine", "tier": "supporting", "evidenceGrade": "B", "minEffectiveDose": 100, "unit": "mg", "preferredForms": [], "caps": [], "rationale": "L-theanine is a supportive sleep-adjacent ingredient." },
+    { "goalKey": "energy", "ingredientKey": "vitamin_b12", "tier": "strong", "evidenceGrade": "A", "minEffectiveDose": 500, "unit": "mcg", "preferredForms": ["methylcobalamin", "adenosylcobalamin"], "caps": [], "rationale": "B12 is a direct energy-support ingredient when dose and form are disclosed." },
+    { "goalKey": "energy", "ingredientKey": "iron", "tier": "supporting", "evidenceGrade": "A", "minEffectiveDose": 8, "unit": "mg", "preferredForms": ["bisglycinate", "ferrous bisglycinate"], "caps": ["eligibility_requires_generic_safety_path"], "rationale": "Iron can matter for energy, but it should stay on a conservative safety path." },
+    { "goalKey": "energy", "ingredientKey": "coenzyme_q10", "tier": "supporting", "evidenceGrade": "B", "minEffectiveDose": 100, "unit": "mg", "preferredForms": ["ubiquinol", "coenzyme q10"], "caps": [], "rationale": "CoQ10 is a common supporting ingredient for energy-oriented products." },
+    { "goalKey": "immunity", "ingredientKey": "vitamin_c", "tier": "strong", "evidenceGrade": "A", "minEffectiveDose": 200, "unit": "mg", "preferredForms": [], "caps": [], "rationale": "Vitamin C is a core immunity-support review ingredient." },
+    { "goalKey": "immunity", "ingredientKey": "zinc", "tier": "strong", "evidenceGrade": "A", "minEffectiveDose": 10, "unit": "mg", "preferredForms": ["picolinate", "citrate", "gluconate"], "caps": [], "rationale": "Zinc is a high-signal ingredient for immunity review when dose is clear." },
+    { "goalKey": "immunity", "ingredientKey": "vitamin_d", "tier": "supporting", "evidenceGrade": "A", "minEffectiveDose": 25, "unit": "mcg", "preferredForms": ["d3", "cholecalciferol"], "caps": [], "rationale": "Vitamin D is supportive but not usually the sole driver of immunity relevance." },
+    { "goalKey": "recovery", "ingredientKey": "protein", "tier": "strong", "evidenceGrade": "A", "minEffectiveDose": 20, "unit": "g", "preferredForms": ["whey", "isolate", "plant blend"], "caps": [], "rationale": "Protein is a foundation ingredient for recovery-first products." },
+    { "goalKey": "recovery", "ingredientKey": "creatine", "tier": "strong", "evidenceGrade": "A", "minEffectiveDose": 3, "unit": "g", "preferredForms": ["monohydrate"], "caps": [], "rationale": "Creatine is a direct recovery/performance ingredient when form is disclosed." },
+    { "goalKey": "recovery", "ingredientKey": "omega_3", "tier": "supporting", "evidenceGrade": "B", "minEffectiveDose": 1000, "unit": "mg", "preferredForms": ["triglyceride", "reesterified triglyceride"], "caps": [], "rationale": "Omega-3s can support recovery but usually sit behind protein/creatine." },
+    { "goalKey": "focus", "ingredientKey": "caffeine", "tier": "strong", "evidenceGrade": "A", "minEffectiveDose": 50, "unit": "mg", "preferredForms": [], "caps": [], "rationale": "Caffeine is a high-signal focus ingredient when the dose is disclosed." },
+    { "goalKey": "focus", "ingredientKey": "l_theanine", "tier": "supporting", "evidenceGrade": "B", "minEffectiveDose": 100, "unit": "mg", "preferredForms": [], "caps": [], "rationale": "L-theanine commonly supports focus-oriented stacks." },
+    { "goalKey": "focus", "ingredientKey": "bacopa", "tier": "exploratory", "evidenceGrade": "B", "minEffectiveDose": 300, "unit": "mg", "preferredForms": ["bacopa monnieri"], "caps": [], "rationale": "Bacopa is a weaker, slower-burn focus ingredient in this conservative V1 map." },
+    { "goalKey": "libido_enhancement", "ingredientKey": "maca", "tier": "supporting", "evidenceGrade": "B", "minEffectiveDose": 1500, "unit": "mg", "preferredForms": [], "caps": ["eligibility_requires_generic_safety_path"], "rationale": "Maca may be relevant here, but we keep this lane conservative." },
+    { "goalKey": "libido_enhancement", "ingredientKey": "zinc", "tier": "supporting", "evidenceGrade": "A", "minEffectiveDose": 10, "unit": "mg", "preferredForms": ["picolinate", "citrate"], "caps": ["eligibility_requires_generic_safety_path"], "rationale": "Zinc can support this goal, but it stays on a generic safety path in V1." },
+    { "goalKey": "stress_support", "ingredientKey": "ashwagandha", "tier": "strong", "evidenceGrade": "B", "minEffectiveDose": 300, "unit": "mg", "preferredForms": ["ksm_66", "sensoril"], "caps": [], "rationale": "Ashwagandha is the clearest stress-support ingredient in this V1 map." },
+    { "goalKey": "stress_support", "ingredientKey": "magnesium", "tier": "supporting", "evidenceGrade": "B", "minEffectiveDose": 100, "unit": "mg", "preferredForms": ["glycinate", "taurate"], "caps": [], "rationale": "Magnesium supports calmer routines in gentler forms." },
+    { "goalKey": "stress_support", "ingredientKey": "l_theanine", "tier": "supporting", "evidenceGrade": "B", "minEffectiveDose": 100, "unit": "mg", "preferredForms": [], "caps": [], "rationale": "L-theanine is a supportive stress-management ingredient." },
+    { "goalKey": "weight_management", "ingredientKey": "fiber", "tier": "supporting", "evidenceGrade": "A", "minEffectiveDose": 3, "unit": "g", "preferredForms": ["psyllium"], "caps": [], "rationale": "Fiber is a conservative support ingredient for weight-management products." },
+    { "goalKey": "weight_management", "ingredientKey": "protein", "tier": "supporting", "evidenceGrade": "A", "minEffectiveDose": 20, "unit": "g", "preferredForms": [], "caps": [], "rationale": "Protein can be relevant for satiety and weight-management review." },
+    { "goalKey": "weight_management", "ingredientKey": "green_tea_extract", "tier": "exploratory", "evidenceGrade": "B", "minEffectiveDose": 250, "unit": "mg", "preferredForms": [], "caps": ["eligibility_requires_generic_safety_path"], "rationale": "Green tea extract stays conservative and routes through a generic safety path." }
+  ]
+}

@@ -1,7 +1,9 @@
 import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
 import {
+  ArrowLeft,
   ArrowRight,
+  CalendarDays,
   Check,
   Clock,
   Edit2,
@@ -37,6 +39,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Easing } from "react-native-reanimated";
 
 import { AutoFitText } from "@/components/common/AutoFitText";
+import { CalendarStrip } from "@/components/ui/calendar-strip";
 import { DuplicateIngredientGroupCard } from "@/components/screens/mySaved/DuplicateIngredientGroupCard";
 import { SavedStackSafetySummary } from "@/components/screens/mySaved/SavedStackSafetySummary";
 import type {
@@ -46,21 +49,37 @@ import type {
 } from "@/components/screens/mySaved/types";
 import { Config } from "@/constants/Config";
 import { useAuth } from "@/contexts/AuthContext";
-import { useOnboarding } from "@/contexts/OnboardingContext";
+import { usePersonalization } from "@/contexts/PersonalizationContext";
 import { useScanHistory } from "@/contexts/ScanHistoryContext";
 import { useSavedSupplements } from "@/contexts/SavedSupplementsContext";
 import { useScreenTokens } from "@/hooks/useScreenTokens";
+import {
+  trackEvaluatedLoopClick,
+  trackEvaluatedLoopConversion,
+  trackEvaluatedLoopExposure,
+  trackEvaluatedLoopSave,
+} from "@/lib/analytics/evaluated-loop";
 import { trackOnboardingEvent } from "@/lib/analytics/onboarding";
+import { emitAnalyticsEvent } from "@/lib/analytics/transport";
 import { withAuthHeaders } from "@/lib/auth-token";
-import { GOAL_OPTIONS, TYPE_OPTIONS, resolveVisibleGoalTags, resolveTypeTags } from "@/lib/onboarding-v2";
+import { getLocalDateKey } from "@/lib/check-ins";
+import {
+  buildScheduleDefaultsSummary,
+  getAllGoalDisplayLabels,
+  getAllSupplementTypeDisplayLabels,
+  getGoalDisplayLabel,
+  getReminderPriorityLabel,
+  getSupplementTypeDisplayLabel,
+  getTimingAnchorDisplayLabel,
+} from "@/lib/personalization/uiLabels";
 import { resolveRoutineTimeUserSet } from "@/lib/routineIntent";
 import {
   loadMealTimePrefs,
   updateMealTimePrefSlot,
   type MealTimePrefs,
 } from "@/lib/storage/meal-time-prefs";
-import { buildSuggestedRoutineV0 } from "@/lib/suggestedRoutine";
-import { buildWhatsInsideDisplay } from "@/lib/supplementFactsDisplay";
+import { buildSuggestedRoutineV0, type SuggestedRoutineSlot } from "@/lib/suggestedRoutine";
+import { buildWhatsInsideDisplay, collectDisplayableFactDoses } from "@/lib/supplementFactsDisplay";
 import { formatBrandForPill, formatDoseForPill } from "@/lib/supplementDisplay";
 import { supabase } from "@/lib/supabase";
 import { buildTimingSuggestion } from "@/lib/timingSuggestion";
@@ -76,7 +95,14 @@ import {
   shouldShowSuggestedPlanCard,
   shouldShowScheduleTimeCategoryPill,
 } from "@/lib/schedulePresentation";
-import type { RoutinePreferences, SavedSupplement } from "@/types/saved-supplements";
+import type { RoutineDayOfWeek, RoutinePreferences, SavedSupplement } from "@/types/saved-supplements";
+import type {
+  GoalKey,
+  OverrideEvent,
+  ScheduleDefaultsPersonalizationVM,
+  SmartFilterProductMembership,
+  SupplementTypeKey,
+} from "@/types/personalization";
 
 type Props = {
   data: SavedSupplement[];
@@ -104,6 +130,136 @@ type TagCategory = {
 };
 
 type FilterState = "closed" | "opening" | "open" | "closing";
+
+type BatchScheduleUpdate = {
+  startDate?: string;
+  daysOfWeek?: RoutineDayOfWeek[];
+  time?: string;
+  withFood?: boolean;
+};
+
+type SmartFilterEvaluatedDetailAnalyticsContext = {
+  productId: string;
+  activeTags: string[];
+  filteredCount: number;
+  searchQuery: string;
+  membership: SmartFilterProductMembership;
+};
+
+const ROUTINE_DAY_OPTIONS: Array<{ value: RoutineDayOfWeek; label: string; summaryLabel: string }> = [
+  { value: 0, label: "S", summaryLabel: "Sunday" },
+  { value: 1, label: "M", summaryLabel: "Monday" },
+  { value: 2, label: "T", summaryLabel: "Tuesday" },
+  { value: 3, label: "W", summaryLabel: "Wednesday" },
+  { value: 4, label: "T", summaryLabel: "Thursday" },
+  { value: 5, label: "F", summaryLabel: "Friday" },
+  { value: 6, label: "S", summaryLabel: "Saturday" },
+];
+
+const ALL_SUPPLEMENT_TYPE_KEYS: SupplementTypeKey[] = [
+  "vitamin",
+  "mineral",
+  "herb",
+  "probiotic",
+  "protein",
+];
+
+const getSuggestedSlotKey = (slot: Pick<SuggestedRoutineSlot, "label" | "time">) => `${slot.label}:${slot.time}`;
+
+const formatRoutineDaySummary = (labels: string[]) => {
+  if (labels.length === 0) return "Every day";
+  if (labels.length === 1) return labels[0];
+  if (labels.length === 2) return `${labels[0]} and ${labels[1]}`;
+  return `${labels.slice(0, -1).join(", ")}, and ${labels[labels.length - 1]}`;
+};
+
+const normalizeRoutineDays = (days: RoutineDayOfWeek[] | undefined) =>
+  Array.from(new Set(days ?? [])).sort((left, right) => left - right);
+
+const areRoutineDaysEqual = (
+  left: RoutineDayOfWeek[] | undefined,
+  right: RoutineDayOfWeek[] | undefined,
+) => {
+  const normalizedLeft = normalizeRoutineDays(left);
+  const normalizedRight = normalizeRoutineDays(right);
+  if (normalizedLeft.length !== normalizedRight.length) return false;
+  return normalizedLeft.every((value, index) => value === normalizedRight[index]);
+};
+
+const parseLocalDateKey = (value: string | undefined | null) => {
+  if (!value) return null;
+  const [yearText, monthText, dayText] = value.split("-");
+  const year = Number(yearText);
+  const month = Number(monthText);
+  const day = Number(dayText);
+  if (!Number.isFinite(year) || !Number.isFinite(month) || !Number.isFinite(day)) return null;
+  return new Date(year, month - 1, day, 12, 0, 0, 0);
+};
+
+const shiftLocalDateKey = (value: string, offsetDays: number) => {
+  const parsed = parseLocalDateKey(value);
+  if (!parsed) return value;
+  parsed.setDate(parsed.getDate() + offsetDays);
+  return getLocalDateKey(parsed);
+};
+
+const resolveRoutineStartDate = (routineStartDate: string | undefined, createdAt: string) =>
+  routineStartDate ?? getLocalDateKey(new Date(createdAt));
+
+const formatRoutineStartDateLabel = (value: string, todayKey: string) => {
+  if (value === todayKey) return "Today";
+  const tomorrowKey = shiftLocalDateKey(todayKey, 1);
+  if (value === tomorrowKey) return "Tomorrow";
+  const parsed = parseLocalDateKey(value);
+  if (!parsed) return value;
+  return parsed.toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+};
+
+const formatRoutineWeekRangeLabel = (value: string) => {
+  const parsed = parseLocalDateKey(value);
+  if (!parsed) return "";
+  const start = new Date(parsed);
+  start.setDate(parsed.getDate() - parsed.getDay());
+  const end = new Date(start);
+  end.setDate(start.getDate() + 6);
+
+  const sameMonth = start.getMonth() === end.getMonth() && start.getFullYear() === end.getFullYear();
+  if (sameMonth) {
+    return `${start.toLocaleDateString(undefined, { month: "short" })} ${start.getDate()}-${end.getDate()}, ${end.getFullYear()}`;
+  }
+
+  const sameYear = start.getFullYear() === end.getFullYear();
+  if (sameYear) {
+    return `${start.toLocaleDateString(undefined, { month: "short" })} ${start.getDate()} - ${end.toLocaleDateString(undefined, { month: "short" })} ${end.getDate()}, ${end.getFullYear()}`;
+  }
+
+  return `${start.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })} - ${end.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}`;
+};
+
+const SUGGESTED_PLAN_HIGHLIGHT_PATTERN =
+  /(\b\d+(?:-\d+)?\s+(?:veggie\s+|softgel\s+|gummy\s+|tablet\s+|capsule\s+)?(?:capsule|capsules|tablet|tablets|softgel|softgels|gummy|gummies|packet|packets|scoop|scoops|drop|drops)\b|\b\d+(?:-\d+)?\s+times daily\b|\bwith or without food\b|\bwith food\b|\bwithout food\b)/gi;
+
+const renderHighlightedSuggestedText = (text: string) => {
+  const parts = text.split(SUGGESTED_PLAN_HIGHLIGHT_PATTERN);
+  return parts.map((part, index) => {
+    if (!part) return null;
+    const shouldHighlight = SUGGESTED_PLAN_HIGHLIGHT_PATTERN.test(part);
+    SUGGESTED_PLAN_HIGHLIGHT_PATTERN.lastIndex = 0;
+
+    return (
+      <Text
+        key={`suggested-part-${index}`}
+        style={shouldHighlight ? styles.suggestedRoutineHighlightText : undefined}
+      >
+        {part}
+      </Text>
+    );
+  });
+};
 
 type AnalysisUsage = {
   summary?: string | null;
@@ -221,7 +377,7 @@ const SMART_TAG_BASE_CATEGORIES: TagCategory[] = [
       text: "#1d4ed8",
       border: "rgba(147,197,253,0.6)",
     },
-    tags: [...GOAL_OPTIONS],
+    tags: getAllGoalDisplayLabels(),
   },
   {
     title: "Type",
@@ -231,7 +387,7 @@ const SMART_TAG_BASE_CATEGORIES: TagCategory[] = [
       text: "#6b21a8",
       border: "rgba(216,180,254,0.6)",
     },
-    tags: [...TYPE_OPTIONS],
+    tags: getAllSupplementTypeDisplayLabels(),
   },
   {
     title: "Timing",
@@ -652,6 +808,88 @@ const getTimeCategory = (time?: string) => {
   };
 };
 
+const buildGoalTagToKeyMap = (visibleGoals: GoalKey[]) =>
+  new Map(visibleGoals.map((goalKey) => [getGoalDisplayLabel(goalKey), goalKey] as const));
+
+const buildTypeTagToKeyMap = () =>
+  new Map(
+    ALL_SUPPLEMENT_TYPE_KEYS.map((typeKey) => [getSupplementTypeDisplayLabel(typeKey), typeKey] as const),
+  );
+
+const getMembershipReasonCodes = (membership?: SmartFilterProductMembership) =>
+  Array.from(new Set((membership?.reasons ?? []).map((reason) => reason.code).filter(Boolean)));
+
+const getMembershipMatchTier = (membership: SmartFilterProductMembership, goalKey?: GoalKey) =>
+  goalKey ? membership.goalTiers[goalKey] ?? undefined : membership.highlightedGoal ? membership.goalTiers[membership.highlightedGoal] : undefined;
+
+const isEvaluatedCoverageReadyMembership = (membership?: SmartFilterProductMembership) =>
+  !!membership && membership.coverageStatus === "coverage_ready" && membership.bucket !== "no_match";
+
+const matchesEvaluatedSmartFilterTag = ({
+  tag,
+  membership,
+  goalTagToKey,
+  typeTagToKey,
+}: {
+  tag: string;
+  membership?: SmartFilterProductMembership;
+  goalTagToKey: Map<string, GoalKey>;
+  typeTagToKey: Map<string, SupplementTypeKey>;
+}) => {
+  if (!membership) return false;
+
+  const goalKey = goalTagToKey.get(tag);
+  if (goalKey) {
+    const tier = membership.goalTiers[goalKey];
+    return membership.coverageStatus === "coverage_ready" && membership.eligibility?.rankEligible !== false && !!tier;
+  }
+
+  const typeKey = typeTagToKey.get(tag);
+  if (typeKey) {
+    return false;
+  }
+
+  return false;
+};
+
+const filterSupplementsByActiveTags = ({
+  items,
+  activeTags,
+  membershipById,
+  goalTagToKey,
+  typeTagToKey,
+}: {
+  items: SavedSupplement[];
+  activeTags: Set<string>;
+  membershipById: Record<string, SmartFilterProductMembership | undefined>;
+  goalTagToKey: Map<string, GoalKey>;
+  typeTagToKey: Map<string, SupplementTypeKey>;
+}) =>
+  items.filter((item) => {
+    for (const tag of activeTags) {
+      if (tag === "Recently Viewed" && !!item.lastViewed) {
+        return true;
+      }
+
+      if (item.tags?.some((itemTag) => itemTag === tag)) {
+        return true;
+      }
+
+      if (
+        matchesEvaluatedSmartFilterTag({
+          tag,
+          membership: membershipById[item.id],
+          goalTagToKey,
+          typeTagToKey,
+        })
+      ) {
+        return true;
+      }
+    }
+
+    return false;
+  });
+
 const parseTimeToMinutes = (time: string | null | undefined): number | null => {
   const value = typeof time === "string" ? time.trim() : "";
   if (!/^\d{2}:\d{2}$/.test(value)) return null;
@@ -693,6 +931,94 @@ const nearestMealSlotForTime = (
     }
   }
   return best;
+};
+
+const resolveDefaultTimeForTimingAnchor = (
+  anchors: string[] | undefined,
+  mealTimePrefs?: MealTimePrefs | null,
+) => {
+  const anchor = anchors?.[0]?.trim().toLowerCase();
+  if (!anchor) return "08:00";
+
+  if (anchor === "breakfast" || anchor === "morning" || anchor === "pre_workout") {
+    return mealTimePrefs?.breakfast ?? "08:00";
+  }
+  if (anchor === "lunch" || anchor === "midday") {
+    return mealTimePrefs?.lunch ?? "12:30";
+  }
+  if (anchor === "dinner" || anchor === "evening" || anchor === "post_workout") {
+    return mealTimePrefs?.dinner ?? "18:30";
+  }
+  if (anchor === "bedtime") {
+    return mealTimePrefs?.bedtime ?? "22:00";
+  }
+
+  return "08:00";
+};
+
+const suggestedSlotMatchesTimingAnchors = (
+  slot: Pick<SuggestedRoutineSlot, "label">,
+  anchors: string[] | undefined,
+) => {
+  const slotKey = slot.label.trim().toLowerCase();
+  return (anchors ?? []).some((anchor) => {
+    const normalized = anchor.trim().toLowerCase();
+    if (normalized === slotKey) return true;
+    if (normalized === "morning" && slotKey === "breakfast") return true;
+    if (normalized === "midday" && slotKey === "lunch") return true;
+    if ((normalized === "evening" || normalized === "post_workout") && slotKey === "dinner") return true;
+    return false;
+  });
+};
+
+const buildScheduleOverrideEvents = ({
+  scheduleDefaults,
+  selectedStartDate,
+  todayKey,
+  selectedDaysOfWeek,
+  time,
+  mealTimePrefs,
+}: {
+  scheduleDefaults: ScheduleDefaultsPersonalizationVM;
+  selectedStartDate: string;
+  todayKey: string;
+  selectedDaysOfWeek: RoutineDayOfWeek[];
+  time: string;
+  mealTimePrefs?: MealTimePrefs | null;
+}): OverrideEvent[] => {
+  const timestamp = new Date().toISOString();
+  const events: OverrideEvent[] = [];
+  const nearestAnchor = nearestMealSlotForTime(time, mealTimePrefs);
+  const suggestedAnchor = nearestAnchor
+    ? nearestAnchor.toLowerCase()
+    : getTimeCategory(time)?.label.toLowerCase().replace(/\s+/g, "_") ?? "custom";
+
+  if (suggestedAnchor && scheduleDefaults.suggestedTimingAnchors[0] !== suggestedAnchor) {
+    events.push({
+      id: `schedule_anchor_${timestamp}`,
+      timestamp,
+      source: "user",
+      surface: "schedule_defaults",
+      action: "set",
+      field: "suggestedTimingAnchors",
+      value: [suggestedAnchor],
+    });
+  }
+
+  const preferScheduleSetup = selectedStartDate !== todayKey || selectedDaysOfWeek.length > 0;
+  if (scheduleDefaults.preferScheduleSetup !== preferScheduleSetup) {
+    events.push({
+      id: `schedule_setup_${timestamp}`,
+      timestamp,
+      source: "user",
+      surface: "schedule_defaults",
+      action: "set",
+      field: "preferScheduleSetup",
+      value: preferScheduleSetup,
+    });
+  }
+
+  return events;
 };
 
 const analysisCache = new Map<string, { factsDigestHash: string | null; data: AnalysisPayload }>();
@@ -742,7 +1068,9 @@ type MySupplementFactsV1 = {
     title: string | null;
     description: string | null;
     link: string | null;
+    imageUrl: string | null;
     suggestedUse: string | null;
+    warningsText: string | null;
     ingredients: Array<{
       name: string;
       dose: string | null;
@@ -1048,6 +1376,425 @@ function TimePicker({
   );
 }
 
+function StartDatePickerSheet({
+  visible,
+  selectedDate,
+  onSelectDate,
+  onClose,
+}: {
+  visible: boolean;
+  selectedDate: string;
+  onSelectDate: (dateKey: string) => void;
+  onClose: () => void;
+}) {
+  const todayKey = useMemo(() => getLocalDateKey(new Date()), []);
+  const tomorrowKey = useMemo(() => shiftLocalDateKey(todayKey, 1), [todayKey]);
+  const [visibleDate, setVisibleDate] = useState(selectedDate);
+
+  useEffect(() => {
+    if (!visible) return;
+    setVisibleDate(selectedDate);
+  }, [selectedDate, visible]);
+
+  if (!visible) return null;
+
+  const handleSelectDate = (dateKey: string) => {
+    onSelectDate(dateKey);
+    setVisibleDate(dateKey);
+    onClose();
+  };
+
+  return (
+    <Modal visible transparent animationType="none" onRequestClose={onClose}>
+      <View style={styles.startDateOverlay}>
+        <Pressable style={StyleSheet.absoluteFillObject} onPress={onClose} />
+        <MotiView
+          from={{ opacity: 0, translateY: 16 }}
+          animate={{ opacity: 1, translateY: 0 }}
+          exit={{ opacity: 0, translateY: 12 }}
+          transition={{ type: "timing", duration: 220, easing: Easing.out(Easing.cubic) }}
+          style={styles.startDateModal}
+        >
+          <View style={styles.startDateModalHeader}>
+            <View style={styles.startDateModalTitleRow}>
+              <CalendarDays size={18} color="#2563eb" />
+              <Text style={styles.startDateModalTitle}>Start date</Text>
+            </View>
+            <Pressable onPress={onClose} style={styles.startDateModalClose}>
+              <X size={16} color="#475569" />
+            </Pressable>
+          </View>
+
+          <Text style={styles.startDateModalSubtitle}>
+            Check-ins only start counting on or after this date.
+          </Text>
+
+          <View style={styles.startDateQuickActionRow}>
+            {[
+              { key: "today", label: "Today", value: todayKey },
+              { key: "tomorrow", label: "Tomorrow", value: tomorrowKey },
+            ].map((action) => {
+              const isActive = selectedDate === action.value;
+              return (
+                <Pressable
+                  key={action.key}
+                  onPress={() => handleSelectDate(action.value)}
+                  style={[
+                    styles.startDateQuickActionChip,
+                    isActive && styles.startDateQuickActionChipActive,
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.startDateQuickActionText,
+                      isActive && styles.startDateQuickActionTextActive,
+                    ]}
+                  >
+                    {action.label}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+
+          <View style={styles.startDateMonthRow}>
+            <Pressable
+              onPress={() => setVisibleDate((prev) => shiftLocalDateKey(prev, -7))}
+              style={styles.startDateMonthNav}
+            >
+              <ArrowLeft size={14} color="#475569" />
+            </Pressable>
+            <Text style={styles.startDateMonthLabel}>{formatRoutineWeekRangeLabel(visibleDate)}</Text>
+            <Pressable
+              onPress={() => setVisibleDate((prev) => shiftLocalDateKey(prev, 7))}
+              style={styles.startDateMonthNav}
+            >
+              <ArrowRight size={14} color="#475569" />
+            </Pressable>
+          </View>
+
+          <CalendarStrip
+            selectedDate={selectedDate}
+            visibleDate={visibleDate}
+            onSelectDate={handleSelectDate}
+          />
+        </MotiView>
+      </View>
+    </Modal>
+  );
+}
+
+function BatchScheduleSheet({
+  visible,
+  selectedCount,
+  scheduleDefaults,
+  mealTimePrefs,
+  onClose,
+  onApply,
+  onRecordOverrideEvents,
+}: {
+  visible: boolean;
+  selectedCount: number;
+  scheduleDefaults: ScheduleDefaultsPersonalizationVM;
+  mealTimePrefs?: MealTimePrefs | null;
+  onClose: () => void;
+  onApply: (update: BatchScheduleUpdate) => void | Promise<void>;
+  onRecordOverrideEvents?: (events: OverrideEvent[]) => Promise<void>;
+}) {
+  const todayKey = useMemo(() => getLocalDateKey(new Date()), []);
+  const tomorrowKey = useMemo(() => shiftLocalDateKey(todayKey, 1), [todayKey]);
+  const [startDateMode, setStartDateMode] = useState<"keep" | "today" | "tomorrow" | "custom">("keep");
+  const [customStartDate, setCustomStartDate] = useState(todayKey);
+  const [daysMode, setDaysMode] = useState<"keep" | "every" | "custom">("keep");
+  const [selectedDays, setSelectedDays] = useState<RoutineDayOfWeek[]>([]);
+  const [timeMode, setTimeMode] = useState<"keep" | "set">("keep");
+  const [time, setTime] = useState("08:00");
+  const [withFoodMode, setWithFoodMode] = useState<"keep" | "yes" | "no">("keep");
+  const [startDatePickerOpen, setStartDatePickerOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (!visible) return;
+    setStartDateMode("keep");
+    setCustomStartDate(todayKey);
+    setDaysMode("keep");
+    setSelectedDays([]);
+    setTimeMode("keep");
+    setTime(resolveDefaultTimeForTimingAnchor(scheduleDefaults.suggestedTimingAnchors, mealTimePrefs));
+    setWithFoodMode("keep");
+    setStartDatePickerOpen(false);
+    setSaving(false);
+  }, [mealTimePrefs, scheduleDefaults.suggestedTimingAnchors, todayKey, visible]);
+
+  if (!visible) return null;
+
+  const effectiveStartDate =
+    startDateMode === "today"
+      ? todayKey
+      : startDateMode === "tomorrow"
+      ? tomorrowKey
+      : customStartDate;
+  const effectiveStartDateLabel = formatRoutineStartDateLabel(effectiveStartDate, todayKey);
+  const anchorSummary = scheduleDefaults.suggestedTimingAnchors[0]
+    ? getTimingAnchorDisplayLabel(scheduleDefaults.suggestedTimingAnchors[0])
+    : null;
+  const batchScheduleSummary = buildScheduleDefaultsSummary(scheduleDefaults);
+  const hasChanges =
+    startDateMode !== "keep" ||
+    daysMode !== "keep" ||
+    timeMode !== "keep" ||
+    withFoodMode !== "keep";
+
+  const toggleBatchDay = (day: RoutineDayOfWeek) => {
+    setDaysMode("custom");
+    setSelectedDays((prev) => {
+      const current = normalizeRoutineDays(prev);
+      if (current.includes(day)) {
+        return current.filter((value) => value !== day);
+      }
+      return normalizeRoutineDays([...current, day]);
+    });
+  };
+
+  const handleApply = async () => {
+    if (!hasChanges || saving) return;
+    const update: BatchScheduleUpdate = {};
+    if (startDateMode !== "keep") update.startDate = effectiveStartDate;
+    if (daysMode === "every") update.daysOfWeek = [];
+    if (daysMode === "custom") update.daysOfWeek = selectedDays;
+    if (timeMode === "set") update.time = time;
+    if (withFoodMode === "yes") update.withFood = true;
+    if (withFoodMode === "no") update.withFood = false;
+
+    try {
+      setSaving(true);
+      await onApply(update);
+      const events = buildScheduleOverrideEvents({
+        scheduleDefaults,
+        selectedStartDate: effectiveStartDate,
+        todayKey,
+        selectedDaysOfWeek: daysMode === "custom" ? selectedDays : [],
+        time: timeMode === "set" ? time : resolveDefaultTimeForTimingAnchor(scheduleDefaults.suggestedTimingAnchors, mealTimePrefs),
+        mealTimePrefs,
+      });
+      if (events.length > 0) {
+        await onRecordOverrideEvents?.(events);
+      }
+      onClose();
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Modal visible transparent animationType="none" onRequestClose={onClose}>
+      <View style={styles.batchOverlay}>
+        <Pressable style={StyleSheet.absoluteFillObject} onPress={onClose} />
+        <MotiView
+          from={{ opacity: 0, translateY: 24 }}
+          animate={{ opacity: 1, translateY: 0 }}
+          exit={{ opacity: 0, translateY: 18 }}
+          transition={{ type: "timing", duration: 240, easing: Easing.out(Easing.cubic) }}
+          style={styles.batchSheet}
+        >
+          <View style={styles.batchHeaderRow}>
+            <View style={styles.batchHeaderTextWrap}>
+              <Text style={styles.batchTitle}>Edit schedule</Text>
+              <Text style={styles.batchSubtitle}>Apply to {selectedCount} supplements</Text>
+            </View>
+            <Pressable onPress={onClose} style={styles.batchCloseBtn}>
+              <X size={16} color="#475569" />
+            </Pressable>
+          </View>
+
+          <ScrollView
+            style={styles.batchScroll}
+            contentContainerStyle={styles.batchScrollContent}
+            showsVerticalScrollIndicator={false}
+          >
+            <View style={styles.batchSummaryCard}>
+              <Text style={styles.batchSummaryTitle}>
+                {scheduleDefaults.preferScheduleSetup ? "Recommended next step" : "Default reminder style"}
+              </Text>
+              <Text style={styles.batchSummaryBody}>{batchScheduleSummary}</Text>
+              {anchorSummary ? (
+                <Text style={styles.batchSummaryMeta}>
+                  Suggested anchor: {anchorSummary} • {getReminderPriorityLabel(scheduleDefaults.reminderPriority)}
+                </Text>
+              ) : (
+                <Text style={styles.batchSummaryMeta}>
+                  {getReminderPriorityLabel(scheduleDefaults.reminderPriority)}
+                </Text>
+              )}
+            </View>
+
+            <View style={styles.batchSection}>
+              <Text style={styles.batchSectionTitle}>Start date</Text>
+              <View style={styles.batchChipRow}>
+                {[
+                  { key: "keep" as const, label: "Keep current" as const },
+                  { key: "today" as const, label: "Today" as const },
+                  { key: "tomorrow" as const, label: "Tomorrow" as const },
+                ].map((option) => {
+                  const isActive = startDateMode === option.key;
+                  return (
+                    <Pressable
+                      key={option.key}
+                      onPress={() => setStartDateMode(option.key)}
+                      style={[styles.batchChoiceChip, isActive && styles.batchChoiceChipActive]}
+                    >
+                      <Text style={[styles.batchChoiceText, isActive && styles.batchChoiceTextActive]}>
+                        {option.label}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+                <Pressable
+                  onPress={() => {
+                    setStartDateMode("custom");
+                    setStartDatePickerOpen(true);
+                  }}
+                  style={[
+                    styles.batchChoiceChip,
+                    startDateMode === "custom" && styles.batchChoiceChipActive,
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.batchChoiceText,
+                      startDateMode === "custom" && styles.batchChoiceTextActive,
+                    ]}
+                  >
+                    {startDateMode === "custom" ? effectiveStartDateLabel : "Pick date"}
+                  </Text>
+                </Pressable>
+              </View>
+            </View>
+
+            <View style={styles.batchSection}>
+              <Text style={styles.batchSectionTitle}>Days of week</Text>
+              <View style={styles.batchChipRow}>
+                <Pressable
+                  onPress={() => setDaysMode("keep")}
+                  style={[styles.batchChoiceChip, daysMode === "keep" && styles.batchChoiceChipActive]}
+                >
+                  <Text style={[styles.batchChoiceText, daysMode === "keep" && styles.batchChoiceTextActive]}>
+                    Keep current
+                  </Text>
+                </Pressable>
+                <Pressable
+                  onPress={() => {
+                    setDaysMode("every");
+                    setSelectedDays([]);
+                  }}
+                  style={[styles.batchChoiceChip, daysMode === "every" && styles.batchChoiceChipActive]}
+                >
+                  <Text style={[styles.batchChoiceText, daysMode === "every" && styles.batchChoiceTextActive]}>
+                    Every day
+                  </Text>
+                </Pressable>
+              </View>
+              <View style={styles.weekdayChipRow}>
+                {ROUTINE_DAY_OPTIONS.map((option) => {
+                  const isSelected = daysMode === "custom" && selectedDays.includes(option.value);
+                  return (
+                    <Pressable
+                      key={`batch-day-${option.value}`}
+                      onPress={() => toggleBatchDay(option.value)}
+                      style={[styles.weekdayChip, isSelected && styles.weekdayChipActive]}
+                    >
+                      <Text style={[styles.weekdayChipText, isSelected && styles.weekdayChipTextActive]}>
+                        {option.label}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            </View>
+
+            <View style={styles.batchSection}>
+              <Text style={styles.batchSectionTitle}>Time</Text>
+              <View style={styles.batchChipRow}>
+                <Pressable
+                  onPress={() => setTimeMode("keep")}
+                  style={[styles.batchChoiceChip, timeMode === "keep" && styles.batchChoiceChipActive]}
+                >
+                  <Text style={[styles.batchChoiceText, timeMode === "keep" && styles.batchChoiceTextActive]}>
+                    Keep current
+                  </Text>
+                </Pressable>
+                <Pressable
+                  onPress={() => setTimeMode("set")}
+                  style={[styles.batchChoiceChip, timeMode === "set" && styles.batchChoiceChipActive]}
+                >
+                  <Text style={[styles.batchChoiceText, timeMode === "set" && styles.batchChoiceTextActive]}>
+                    Set time
+                  </Text>
+                </Pressable>
+              </View>
+              {timeMode === "set" ? <TimePicker value={time} onChange={setTime} /> : null}
+            </View>
+
+            <View style={styles.batchSection}>
+              <Text style={styles.batchSectionTitle}>Take with food</Text>
+              <View style={styles.batchChipRow}>
+                {[
+                  { key: "keep", label: "Keep current" },
+                  { key: "yes", label: "Yes" },
+                  { key: "no", label: "No" },
+                ].map((option) => {
+                  const isActive = withFoodMode === option.key;
+                  return (
+                    <Pressable
+                      key={option.key}
+                      onPress={() => setWithFoodMode(option.key as "keep" | "yes" | "no")}
+                      style={[styles.batchChoiceChip, isActive && styles.batchChoiceChipActive]}
+                    >
+                      <Text style={[styles.batchChoiceText, isActive && styles.batchChoiceTextActive]}>
+                        {option.label}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            </View>
+          </ScrollView>
+
+          <View style={styles.batchFooter}>
+            <Text style={styles.batchFooterHint}>Only the fields you change will be applied.</Text>
+            <Pressable
+              disabled={!hasChanges || saving}
+              onPress={() => {
+                void handleApply();
+              }}
+              style={[
+                styles.batchApplyBtn,
+                (!hasChanges || saving) && styles.batchApplyBtnDisabled,
+              ]}
+            >
+              <Text
+                style={[
+                  styles.batchApplyText,
+                  (!hasChanges || saving) && styles.batchApplyTextDisabled,
+                ]}
+              >
+                {saving ? "Applying..." : `Apply to ${selectedCount}`}
+              </Text>
+            </Pressable>
+          </View>
+        </MotiView>
+
+        <StartDatePickerSheet
+          visible={startDatePickerOpen}
+          selectedDate={effectiveStartDate}
+          onSelectDate={setCustomStartDate}
+          onClose={() => setStartDatePickerOpen(false)}
+        />
+      </View>
+    </Modal>
+  );
+}
+
 const CollectionCard = React.memo(
   function CollectionCard({
     item,
@@ -1159,10 +1906,10 @@ const CollectionCard = React.memo(
             <AnimatePresence>
               {selectionMode && selected ? (
                 <MotiView
-                  from={{ opacity: 0, scale: 0.86, translateY: -2 }}
+                  from={{ opacity: 0, scale: 0.92, translateY: 0 }}
                   animate={{ opacity: 1, scale: 1, translateY: 0 }}
-                  exit={{ opacity: 0, scale: 0.92, translateY: -2 }}
-                  transition={{ type: "spring", stiffness: 320, damping: 22 }}
+                  exit={{ opacity: 0, scale: 0.96, translateY: 0 }}
+                  transition={{ type: "timing", duration: 190, easing: Easing.out(Easing.cubic) }}
                   style={styles.selectCheckBubble}
                 >
                   <BlurView intensity={14} tint="light" style={StyleSheet.absoluteFillObject} />
@@ -1172,61 +1919,73 @@ const CollectionCard = React.memo(
                     end={{ x: 1, y: 1 }}
                     style={StyleSheet.absoluteFillObject}
                   />
-                  <Check size={18} color={theme.textColor === "#ffffff" ? "#ffffff" : "#0f172a"} />
+                  <MotiView
+                    from={{ opacity: 0, scale: 0.94 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.96 }}
+                    transition={{ type: "timing", duration: 170, delay: 30, easing: Easing.out(Easing.cubic) }}
+                  >
+                    <Check size={18} color={theme.textColor === "#ffffff" ? "#ffffff" : "#0f172a"} />
+                  </MotiView>
                 </MotiView>
               ) : null}
             </AnimatePresence>
 
-            <View style={styles.cardInner}>
-              <View style={styles.cardHeader}>
-                <Text style={[styles.cardTitle, { color: theme.textColor }]} numberOfLines={1} ellipsizeMode="tail">
-                  {getShortProductName(item.productName, item.brandName)}
-                </Text>
-
-                {selectionMode || !scheduleIcon ? (
-                  <View style={{ width: 24, height: 24 }} />
-                ) : scheduleIcon === "sun" ? (
-                  <Sun size={24} color={theme.textColor} />
-                ) : (
-                  <Moon size={24} color={theme.textColor} />
-                )}
-              </View>
-
-	              <View style={styles.cardMeta}>
-	                <View style={styles.tagRow}>
-	                  <View style={[styles.tagPill, styles.brandPillClamp, { borderColor: theme.tagBorderColor }]}>
-	                    <Text
-	                      style={[styles.tagText, styles.pillTextClamp, { color: theme.textColor }]}
-	                      numberOfLines={1}
-	                      ellipsizeMode="tail"
-	                    >
-	                      {formatBrandForPill(displayBrandName)}
+	            <View style={styles.cardInner}>
+	              <View style={styles.cardContentRow}>
+	                <View style={styles.cardTextColumn}>
+	                  <View style={styles.cardHeader}>
+	                    <Text style={[styles.cardTitle, { color: theme.textColor }]} numberOfLines={1} ellipsizeMode="tail">
+	                      {getShortProductName(item.productName, item.brandName)}
 	                    </Text>
+
+	                    <View style={styles.cardScheduleIconSlot}>
+	                      {selectionMode || !scheduleIcon ? null : scheduleIcon === "sun" ? (
+	                        <Sun size={24} color={theme.textColor} />
+	                      ) : (
+	                        <Moon size={24} color={theme.textColor} />
+	                      )}
+	                    </View>
 	                  </View>
-                    {overlapCount > 0 ? (
-                      <View style={[styles.tagPill, styles.overlapPill, { borderColor: theme.tagBorderColor }]}>
-                        <Text
-                          style={[styles.tagText, styles.pillTextClamp, { color: theme.textColor }]}
-                          numberOfLines={1}
-                          ellipsizeMode="tail"
-                        >
-                          Overlap {overlapCount}
-                        </Text>
-                      </View>
-                    ) : null}
+
+		                  <View style={styles.cardMeta}>
+		                    <View style={styles.tagRow}>
+		                      <View style={[styles.tagPill, styles.brandPillClamp, { borderColor: theme.tagBorderColor }]}>
+		                        <Text
+		                          style={[styles.tagText, styles.pillTextClamp, { color: theme.textColor }]}
+		                          numberOfLines={1}
+		                          ellipsizeMode="tail"
+		                        >
+		                          {formatBrandForPill(displayBrandName)}
+		                        </Text>
+		                      </View>
+	                        {overlapCount > 0 ? (
+	                          <View style={[styles.tagPill, styles.overlapPill, { borderColor: theme.tagBorderColor }]}>
+	                            <Text
+	                              style={[styles.tagText, styles.pillTextClamp, { color: theme.textColor }]}
+	                              numberOfLines={1}
+	                              ellipsizeMode="tail"
+	                            >
+	                              Overlap {overlapCount}
+	                            </Text>
+	                          </View>
+	                        ) : null}
+		                    </View>
+
+	                    {customTags.length > 0 ? (
+	                      <View style={styles.customTagRow}>
+	                        {customTags.map((tag) => (
+	                          <View key={tag} style={[styles.tagPill, { borderColor: theme.tagBorderColor }]}>
+	                            <Text style={[styles.tagText, { color: theme.textColor }]}>{tag}</Text>
+	                          </View>
+	                        ))}
+	                      </View>
+	                    ) : null}
+	                  </View>
 	                </View>
 
-                {customTags.length > 0 ? (
-                  <View style={styles.customTagRow}>
-                    {customTags.map((tag) => (
-                      <View key={tag} style={[styles.tagPill, { borderColor: theme.tagBorderColor }]}>
-                        <Text style={[styles.tagText, { color: theme.textColor }]}>{tag}</Text>
-                      </View>
-                    ))}
-                  </View>
-                ) : null}
-              </View>
-            </View>
+	              </View>
+	            </View>
           </Pressable>
 
           <View style={styles.arrowWrap} pointerEvents="box-none">
@@ -1278,6 +2037,7 @@ const CollectionCard = React.memo(
 function DetailSheet({
   item,
   theme,
+  scheduleDefaults,
   stackOverlaps,
   stackSafetySummary,
   duplicateGroups,
@@ -1286,9 +2046,13 @@ function DetailSheet({
   onLearnMealTimePref,
   onClose,
   onSaveRoutine,
+  onRecordOverrideEvents,
+  smartFilterAnalyticsContext,
+  onTrackSmartFilterEvent,
 }: {
   item: SavedSupplement;
   theme: Theme;
+  scheduleDefaults: ScheduleDefaultsPersonalizationVM;
   stackOverlaps?: StackOverlapItem[];
   stackSafetySummary?: StackLevelSafetySummary | null;
   duplicateGroups?: StackDuplicateGroup[];
@@ -1301,14 +2065,27 @@ function DetailSheet({
   ) => void | Promise<void>;
   onClose: () => void;
   onSaveRoutine?: (id: string, prefs: RoutinePreferences) => void | Promise<void>;
+  onRecordOverrideEvents?: (events: OverrideEvent[]) => Promise<void>;
+  smartFilterAnalyticsContext?: SmartFilterEvaluatedDetailAnalyticsContext | null;
+  onTrackSmartFilterEvent?: (event: string, payload: Record<string, unknown>) => void;
 }) {
   const insets = useSafeAreaInsets();
   const screenHeight = Dimensions.get("window").height;
   const screenWidth = Dimensions.get("window").width;
   const { updateSupplement } = useSavedSupplements();
+  const defaultScheduleTime = resolveDefaultTimeForTimingAnchor(
+    scheduleDefaults.suggestedTimingAnchors,
+    mealTimePrefs,
+  );
   const [note, setNote] = useState(item.routine?.note ?? "");
-  const [time, setTime] = useState(item.routine?.time ?? "08:00");
+  const [time, setTime] = useState(item.routine?.time ?? defaultScheduleTime);
   const [withFood, setWithFood] = useState(item.routine?.withFood ?? false);
+  const initialStartDate = resolveRoutineStartDate(item.routine?.startDate, item.createdAt);
+  const [selectedStartDate, setSelectedStartDate] = useState(initialStartDate);
+  const [selectedDaysOfWeek, setSelectedDaysOfWeek] = useState<RoutineDayOfWeek[]>(
+    normalizeRoutineDays(item.routine?.daysOfWeek),
+  );
+  const [startDatePickerOpen, setStartDatePickerOpen] = useState(false);
   const [timeTouched, setTimeTouched] = useState(false);
   const [facts, setFacts] = useState<MySupplementFactsV1 | null>(null);
   const [factsStatus, setFactsStatus] = useState<"full" | "partial" | "none">("none");
@@ -1328,8 +2105,14 @@ function DetailSheet({
   const lastFactsRefreshAtRef = useRef(0);
   const [unsaveArmed, setUnsaveArmed] = useState(false);
   const unsaveArmTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hasSavedRoutine =
+    Boolean(item.routine?.note) ||
+    Boolean(item.routine?.time) ||
+    item.routine?.withFood !== undefined ||
+    Boolean(item.routine?.startDate) ||
+    Boolean(item.routine?.daysOfWeek?.length);
   const [saveState, setSaveState] = useState<"idle" | "saved">(
-    item.routine?.note || item.routine?.time || item.routine?.withFood !== undefined ? "saved" : "idle",
+    hasSavedRoutine ? "saved" : "idle",
   );
   const savePillWidthRef = useRef(108);
   const [savePillWidth, setSavePillWidth] = useState(108);
@@ -1346,9 +2129,10 @@ function DetailSheet({
   const whatItDoesMetricKeyRef = useRef<string | null>(null);
   const savedSuggestedHiddenMetricKeyRef = useRef<string | null>(null);
   const factsRefreshSessionIdRef = useRef<string | null>(null);
+  const authoritativeDoseRepairRef = useRef<string | null>(null);
   const [overviewExpanded, setOverviewExpanded] = useState(false);
   const [whatsInsideExpanded, setWhatsInsideExpanded] = useState(false);
-  const [selectedAnchorLabel, setSelectedAnchorLabel] = useState<"Breakfast" | "Dinner" | null>(null);
+  const [selectedAnchorKey, setSelectedAnchorKey] = useState<string | null>(null);
   const autoAnchorSyncedRef = useRef<string | null>(null);
   const [anchorPrefilled, setAnchorPrefilled] = useState(false);
   const autosyncedThisSessionRef = useRef(false);
@@ -1360,6 +2144,8 @@ function DetailSheet({
     time: item.routine?.time ?? "",
     timeUserSet: item.routine?.timeUserSet ?? undefined,
     withFood: item.routine?.withFood ?? false,
+    startDate: initialStartDate,
+    daysOfWeek: normalizeRoutineDays(item.routine?.daysOfWeek),
   });
   const lastDetailItemIdRef = useRef<string | null>(null);
 
@@ -1369,25 +2155,38 @@ function DetailSheet({
       time: item.routine?.time ?? "",
       timeUserSet: item.routine?.timeUserSet ?? undefined,
       withFood: item.routine?.withFood ?? false,
+      startDate: resolveRoutineStartDate(item.routine?.startDate, item.createdAt),
+      daysOfWeek: normalizeRoutineDays(item.routine?.daysOfWeek),
     };
     lastSavedRef.current = next;
     setNote(next.note ?? "");
-    setTime(next.time || "08:00");
+    setTime(next.time || defaultScheduleTime);
     setWithFood(!!next.withFood);
+    setSelectedStartDate(next.startDate ?? resolveRoutineStartDate(item.routine?.startDate, item.createdAt));
+    setSelectedDaysOfWeek(next.daysOfWeek ?? []);
     setTimeTouched(false);
     setUnsaveArmed(false);
     if (unsaveArmTimerRef.current) clearTimeout(unsaveArmTimerRef.current);
     unsaveArmTimerRef.current = null;
     setOverviewExpanded(false);
     setWhatsInsideExpanded(false);
-    setSelectedAnchorLabel(null);
+    setSelectedAnchorKey(null);
     autoAnchorSyncedRef.current = null;
     autosyncedThisSessionRef.current = false;
     setAnchorPrefilled(false);
+    setStartDatePickerOpen(false);
     detailOpenedAtRef.current = Date.now();
     odsFirstPaintLoggedRef.current = false;
-    setSaveState(next.note || next.time || next.withFood !== undefined ? "saved" : "idle");
-  }, [item.id, item.routine?.note, item.routine?.time, item.routine?.timeUserSet, item.routine?.withFood]);
+    const hasExplicitRoutine =
+      Boolean(item.routine?.note) ||
+      Boolean(item.routine?.time) ||
+      item.routine?.withFood !== undefined ||
+      Boolean(item.routine?.startDate) ||
+      Boolean(item.routine?.daysOfWeek?.length);
+    setSaveState(
+      hasExplicitRoutine ? "saved" : "idle",
+    );
+  }, [defaultScheduleTime, item.createdAt, item.id, item.routine?.daysOfWeek, item.routine?.note, item.routine?.startDate, item.routine?.time, item.routine?.timeUserSet, item.routine?.withFood]);
 
   useEffect(() => {
     if (!unsaveArmed) {
@@ -1981,19 +2780,49 @@ function DetailSheet({
     const noteChanged = (last.note || "") !== (note || "");
     const timeChanged = (last.time || "") !== (time || "");
     const foodChanged = (last.withFood ?? false) !== (withFood ?? false);
-    if (noteChanged || timeChanged || foodChanged) setSaveState("idle");
-  }, [note, saveState, time, withFood]);
+    const startDateChanged = (last.startDate || initialStartDate) !== selectedStartDate;
+    const daysChanged = !areRoutineDaysEqual(last.daysOfWeek, selectedDaysOfWeek);
+    if (noteChanged || timeChanged || foodChanged || startDateChanged || daysChanged) setSaveState("idle");
+  }, [initialStartDate, note, saveState, selectedDaysOfWeek, selectedStartDate, time, withFood]);
 
   useEffect(() => {
     // Cancel "Unsave" confirmation if anything changes.
     if (!unsaveArmed) return;
     setUnsaveArmed(false);
-  }, [note, saveState, time, withFood]);
+  }, [note, saveState, selectedDaysOfWeek, selectedStartDate, time, withFood]);
 
   const routineTimeUserSet = resolveRoutineTimeUserSet(item.routine);
   const savedTime = routineTimeUserSet && item.routine?.time?.trim() ? item.routine.time : null;
   const timeCategory = getTimeCategory(savedTime ?? undefined);
   const showTimeCategoryPill = shouldShowScheduleTimeCategoryPill(savedTime, Boolean(timeCategory));
+  const selectedDayLabels = selectedDaysOfWeek
+    .map((value) => ROUTINE_DAY_OPTIONS.find((option) => option.value === value)?.summaryLabel ?? null)
+    .filter((value): value is string => Boolean(value));
+  const weekdaySelectionSummary =
+    formatRoutineDaySummary(selectedDayLabels);
+  const todayDateKey = useMemo(() => getLocalDateKey(new Date()), []);
+  const startDateDisplayLabel = useMemo(
+    () => formatRoutineStartDateLabel(selectedStartDate, todayDateKey),
+    [selectedStartDate, todayDateKey],
+  );
+  const startDateSummaryText = useMemo(() => {
+    const prefix = startDateDisplayLabel === "Today" ? "today" : `on ${startDateDisplayLabel}`;
+    if (selectedDaysOfWeek.length > 0) {
+      const dayVerb = selectedDaysOfWeek.length === 1 ? "is" : "are";
+      return `Check-ins start ${prefix}. Only ${weekdaySelectionSummary} ${dayVerb} scheduled for Daily Check-in, streaks, achievements, and reminders.`;
+    }
+    return `Check-ins start ${prefix} and stay eligible every day after that.`;
+  }, [selectedDaysOfWeek.length, startDateDisplayLabel, weekdaySelectionSummary]);
+
+  const toggleDaysOfWeek = (day: RoutineDayOfWeek) => {
+    setSelectedDaysOfWeek((prev) => {
+      const current = normalizeRoutineDays(prev);
+      if (current.includes(day)) {
+        return current.filter((value) => value !== day);
+      }
+      return normalizeRoutineDays([...current, day]);
+    });
+  };
 
   const handleSave = async () => {
     const nextTimeUserSet = Boolean(time?.trim()) && (timeTouched || routineTimeUserSet);
@@ -2002,6 +2831,8 @@ function DetailSheet({
       time,
       timeUserSet: nextTimeUserSet,
       withFood,
+      startDate: selectedStartDate,
+      ...(selectedDaysOfWeek.length ? { daysOfWeek: selectedDaysOfWeek } : {}),
       ...(item.routine?.whenToTake ? { whenToTake: item.routine.whenToTake } : {}),
       ...(item.routine?.howToTake ? { howToTake: item.routine.howToTake } : {}),
     };
@@ -2013,6 +2844,31 @@ function DetailSheet({
         if (manualSlot) {
           await onLearnMealTimePref?.(manualSlot, time, "manual");
         }
+      }
+      const overrideEvents = buildScheduleOverrideEvents({
+        scheduleDefaults,
+        selectedStartDate,
+        todayKey: todayDateKey,
+        selectedDaysOfWeek,
+        time,
+        mealTimePrefs,
+      });
+      if (overrideEvents.length > 0) {
+        await onRecordOverrideEvents?.(overrideEvents);
+      }
+      if (smartFilterAnalyticsContext) {
+        onTrackSmartFilterEvent?.("smart_filter_evaluated_schedule_saved", {
+          productId: smartFilterAnalyticsContext.productId,
+          activeTags: smartFilterAnalyticsContext.activeTags,
+          filteredCount: smartFilterAnalyticsContext.filteredCount,
+          searchQuery: smartFilterAnalyticsContext.searchQuery || null,
+          bucket: smartFilterAnalyticsContext.membership.bucket,
+          highlightedGoal: smartFilterAnalyticsContext.membership.highlightedGoal ?? null,
+          rankEligible: smartFilterAnalyticsContext.membership.eligibility?.rankEligible ?? null,
+          hasStartDate: Boolean(selectedStartDate),
+          daysOfWeekCount: selectedDaysOfWeek.length,
+          withFood,
+        });
       }
     } finally {
       setTimeTouched(false);
@@ -2030,6 +2886,8 @@ function DetailSheet({
       setNote("");
       setTime("08:00");
       setWithFood(false);
+      setSelectedStartDate(resolveRoutineStartDate(undefined, item.createdAt));
+      setSelectedDaysOfWeek([]);
       setTimeTouched(false);
       setAnchorPrefilled(false);
       setSaveState("idle");
@@ -2066,9 +2924,20 @@ function DetailSheet({
   const usage = (analysisRoot?.usagePayload?.usage ?? analysisRoot?.usage ?? null) as AnalysisUsage | null;
   const efficacy = (analysisRoot?.efficacy ?? null) as AnalysisEfficacy | null;
 
+  const localDose = formatSavedDoseForDisplay(item.dosageText);
+  const authoritativeFactDoses = useMemo(
+    () =>
+      collectDisplayableFactDoses({
+        actives: facts?.actives ?? [],
+        overlayIngredients: facts?.overlay?.ingredients ?? [],
+      }),
+    [facts?.actives, facts?.overlay?.ingredients],
+  );
+  const detailDose = authoritativeFactDoses[0] ?? localDose;
+
   const fallback = buildLocalOverviewFallback({
     productName: item.productName,
-    dosageText: formatSavedDoseForDisplay(item.dosageText),
+    dosageText: detailDose,
   });
 
   const coreBenefits = Array.isArray(efficacy?.coreBenefits)
@@ -2117,7 +2986,6 @@ function DetailSheet({
   });
 
   const displayBrandName = pickFirstText(facts?.overlay?.brandName, facts?.product?.brandDisplay, item.brandName);
-  const localDose = formatSavedDoseForDisplay(item.dosageText);
   const whatsInsideDisplay = buildWhatsInsideDisplay({
     actives: facts?.actives ?? [],
     dosageText: localDose,
@@ -2148,24 +3016,74 @@ function DetailSheet({
     existingTimeUserSet: routineTimeUserSet,
     mealTimePrefs: mealTimePrefs ?? null,
   });
-  const mealChoiceSlots = suggestedRoutine.displayMode === "choice_slots"
-    ? suggestedRoutine.slots.filter((slot) => slot.label === "Breakfast" || slot.label === "Dinner")
+  const selectableSuggestedSlots = !suggestedRoutine.requiresManualTime && suggestedRoutine.slots.length > 1
+    ? suggestedRoutine.slots
     : [];
-  const defaultChoiceLabel =
-    mealChoiceSlots.find((slot) => slot.label === suggestedRoutine.applyAnchor.label)?.label ?? mealChoiceSlots[0]?.label ?? null;
-  const selectedChoiceLabel = selectedAnchorLabel && mealChoiceSlots.some((slot) => slot.label === selectedAnchorLabel)
-    ? selectedAnchorLabel
-    : defaultChoiceLabel;
-  const selectedChoiceSlot = selectedChoiceLabel
-    ? mealChoiceSlots.find((slot) => slot.label === selectedChoiceLabel) ?? null
+
+  useEffect(() => {
+    const authoritativeDose = authoritativeFactDoses[0] ?? null;
+    if (!authoritativeDose) return;
+
+    const currentDose = formatSavedDoseForDisplay(item.dosageText);
+    if (currentDose === authoritativeDose) return;
+
+    if (currentDose) {
+      const factDoseKeys = new Set(authoritativeFactDoses.map((dose) => normalizeKey(dose)));
+      if (factDoseKeys.has(normalizeKey(currentDose))) return;
+    }
+
+    const repairKey = `${item.id}:${authoritativeDose}`;
+    if (authoritativeDoseRepairRef.current === repairKey) return;
+    authoritativeDoseRepairRef.current = repairKey;
+
+    updateSupplement(item.id, { dosageText: authoritativeDose }).catch(() => {
+      if (authoritativeDoseRepairRef.current === repairKey) {
+        authoritativeDoseRepairRef.current = null;
+      }
+    });
+  }, [authoritativeFactDoses, item.id, item.dosageText, updateSupplement]);
+  const defaultSelectedSuggestedSlot =
+    selectableSuggestedSlots.find((slot) =>
+      suggestedSlotMatchesTimingAnchors(slot, scheduleDefaults.suggestedTimingAnchors),
+    ) ??
+    selectableSuggestedSlots.find((slot) => isAnchorSlotActive(slot, suggestedRoutine.applyAnchor)) ??
+    selectableSuggestedSlots[0] ??
+    null;
+  const selectedSuggestedSlot =
+    selectedAnchorKey && selectableSuggestedSlots.some((slot) => getSuggestedSlotKey(slot) === selectedAnchorKey)
+      ? selectableSuggestedSlots.find((slot) => getSuggestedSlotKey(slot) === selectedAnchorKey) ?? null
+      : defaultSelectedSuggestedSlot;
+  const scheduleDefaultsSummary = buildScheduleDefaultsSummary(scheduleDefaults);
+  const defaultAnchorSummary = scheduleDefaults.suggestedTimingAnchors[0]
+    ? getTimingAnchorDisplayLabel(scheduleDefaults.suggestedTimingAnchors[0])
     : null;
+
+  useEffect(() => {
+    if (selectedAnchorKey || savedTime || selectableSuggestedSlots.length === 0) return;
+    const preferredAnchor = scheduleDefaults.suggestedTimingAnchors[0];
+    if (!preferredAnchor) return;
+
+    const match = selectableSuggestedSlots.find((slot) => {
+      const slotKey = normalizeKey(slot.label);
+      const anchorKey = normalizeKey(preferredAnchor);
+      if (slotKey === anchorKey) return true;
+      if (anchorKey === "morning" && slotKey === "breakfast") return true;
+      if (anchorKey === "evening" && (slotKey === "dinner" || slotKey === "bedtime")) return true;
+      return false;
+    });
+
+    if (match) {
+      setSelectedAnchorKey(getSuggestedSlotKey(match));
+    }
+  }, [savedTime, scheduleDefaults.suggestedTimingAnchors, selectableSuggestedSlots, selectedAnchorKey]);
+
   const effectiveApplyAnchor = suggestedRoutine.requiresManualTime
     ? {
         ...suggestedRoutine.applyAnchor,
         time,
         withFood,
       }
-    : selectedChoiceSlot ?? suggestedRoutine.applyAnchor;
+    : selectedSuggestedSlot ?? suggestedRoutine.applyAnchor;
   const applyCopy = buildApplyCopy({
     requiresManualTime: suggestedRoutine.requiresManualTime,
     timesPerDaySource: suggestedRoutine.timesPerDaySource,
@@ -2382,11 +3300,37 @@ function DetailSheet({
         afterAutosync: autosyncedThisSessionRef.current,
         displayMode: suggestedRoutine.displayMode,
       });
+      if (smartFilterAnalyticsContext) {
+        onTrackSmartFilterEvent?.("smart_filter_evaluated_schedule_saved", {
+          productId: smartFilterAnalyticsContext.productId,
+          activeTags: smartFilterAnalyticsContext.activeTags,
+          filteredCount: smartFilterAnalyticsContext.filteredCount,
+          searchQuery: smartFilterAnalyticsContext.searchQuery || null,
+          bucket: smartFilterAnalyticsContext.membership.bucket,
+          highlightedGoal: smartFilterAnalyticsContext.membership.highlightedGoal ?? null,
+          rankEligible: smartFilterAnalyticsContext.membership.eligibility?.rankEligible ?? null,
+          conversionType: "suggested_routine_apply",
+          timingKind: suggestedRoutine.timingKind,
+          source: suggestedRoutine.source,
+          withFood: anchor.withFood,
+        });
+      }
       if (
         suggestedRoutine.timingKind === "meal_based" &&
         (anchor.label === "Breakfast" || anchor.label === "Lunch" || anchor.label === "Dinner" || anchor.label === "Bedtime")
       ) {
         await onLearnMealTimePref?.(anchor.label, anchor.time, "seed");
+      }
+      const overrideEvents = buildScheduleOverrideEvents({
+        scheduleDefaults,
+        selectedStartDate,
+        todayKey: todayDateKey,
+        selectedDaysOfWeek,
+        time: anchor.time,
+        mealTimePrefs,
+      });
+      if (overrideEvents.length > 0) {
+        await onRecordOverrideEvents?.(overrideEvents);
       }
     } finally {
       setSaveState("saved");
@@ -2545,12 +3489,12 @@ function DetailSheet({
 	              keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
 	              keyboardShouldPersistTaps="handled"
 	              contentContainerStyle={{ paddingBottom: 40 + insets.bottom + Math.max(0, detailKeyboardHeight) }}
-	            >
-	            <View style={[styles.sheetHeader, { backgroundColor: theme.bgHex, paddingTop: insets.top + 18 }]}>
-	              <View style={{ gap: 12 }}>
-	                <View style={styles.sheetHeaderRow}>
-	                  {theme.icon === "sun" ? (
-	                    <Sun size={18} color={theme.textColor} />
+		            >
+		            <View style={[styles.sheetHeader, { backgroundColor: theme.bgHex, paddingTop: insets.top + 18 }]}>
+		              <View style={{ gap: 12 }}>
+		                <View style={styles.sheetHeaderRow}>
+		                  {theme.icon === "sun" ? (
+		                    <Sun size={18} color={theme.textColor} />
                   ) : (
                     <Moon size={18} color={theme.textColor} />
                   )}
@@ -2569,15 +3513,14 @@ function DetailSheet({
 	                    </Text>
 	                  </View>
 	                  {(() => {
-	                    const dose = formatSavedDoseForDisplay(item.dosageText);
-	                    if (!dose) return null;
+	                    if (!detailDose) return null;
 	                    return (
 	                      <View style={[styles.sheetTag, styles.dosePillClamp, { borderColor: theme.tagBorderColor }]}>
 	                        <Text
 	                          style={[styles.sheetTagText, styles.pillTextClamp, { color: theme.textColor }]}
 	                          numberOfLines={1}
 	                        >
-	                          {dose}
+	                          {detailDose}
 	                        </Text>
 	                      </View>
 	                    );
@@ -2860,48 +3803,64 @@ function DetailSheet({
 	                      <Text style={styles.scheduleHintText}>
 	                        {buildScheduleHintText({ savedTime, autosyncedPrefill: anchorPrefilled })}
 	                      </Text>
+                        <Text style={styles.schedulePersonalizationHint}>{scheduleDefaultsSummary}</Text>
                         {showSuggestedPlanCard ? (
                           <View style={styles.suggestedRoutineCard}>
 	                          <View style={styles.suggestedRoutineHeader}>
 	                            <Text style={styles.suggestedRoutineTitle}>Suggested plan</Text>
 	                          </View>
-	                          <Text style={styles.suggestedRoutineRationale}>{suggestedRoutine.rationale}</Text>
-                            {suggestedRoutine.displayMode === "choice_slots" ? (
-                              <View style={styles.anchorChoiceRow}>
-                                {mealChoiceSlots.map((slot) => {
-                                  const isSelected = selectedChoiceLabel === slot.label;
-                                  return (
-                                    <Pressable
-                                      key={`anchor-choice-${slot.label}`}
-                                      style={[styles.anchorChoiceChip, isSelected && styles.anchorChoiceChipActive]}
-                                      onPress={() => {
-                                        setSelectedAnchorLabel(slot.label === "Breakfast" ? "Breakfast" : "Dinner");
-                                      }}
-                                    >
-                                      <Text style={[styles.anchorChoiceText, isSelected && styles.anchorChoiceTextActive]}>
-                                        {slot.label}
-                                      </Text>
-                                    </Pressable>
-                                  );
-                                })}
-                              </View>
+	                          <Text style={styles.suggestedRoutineRationale}>
+                              {renderHighlightedSuggestedText(suggestedRoutine.rationale)}
+                            </Text>
+                            {selectableSuggestedSlots.length > 1 ? (
+                              <Text style={styles.suggestedRoutineChoiceHint}>
+                                Choose which reminder time to save. Daily Check-in still counts this supplement once per day.
+                              </Text>
+                            ) : null}
+                            {defaultAnchorSummary ? (
+                              <Text style={styles.suggestedRoutineChoiceHint}>
+                                Personalized default anchor: {defaultAnchorSummary}.
+                              </Text>
                             ) : null}
 	                          <View style={styles.suggestedRoutineSlots}>
 	                            {suggestedRoutine.requiresManualTime ? (
-	                              <Text style={styles.suggestedRoutineSlotText}>Flexible · choose time</Text>
+	                              <Text style={styles.suggestedRoutineSlotText}>
+                                  <Text style={styles.suggestedRoutineSlotLabelText}>Flexible</Text>
+                                  <Text style={styles.suggestedRoutineSlotDividerText}> · </Text>
+                                  <Text style={styles.suggestedRoutineSlotTimeText}>choose time</Text>
+                                </Text>
 	                            ) : (
 	                              suggestedRoutine.slots.map((slot, idx) => (
-	                                  <Text
+	                                  <Pressable
                                     key={`${slot.label}-${slot.time}-${idx}`}
+                                    disabled={selectableSuggestedSlots.length <= 1}
+                                    onPress={() => setSelectedAnchorKey(getSuggestedSlotKey(slot))}
                                     style={[
-                                      styles.suggestedRoutineSlotText,
+                                      styles.suggestedRoutineSlotRow,
+                                      isAnchorSlotActive(slot, effectiveApplyAnchor)
+                                        ? styles.suggestedRoutineSlotRowActive
+                                        : null,
+                                    ]}
+                                  >
+	                                  <Text
+                                      style={[
+                                        styles.suggestedRoutineSlotText,
 	                                      isAnchorSlotActive(slot, effectiveApplyAnchor)
 	                                        ? styles.suggestedRoutineSlotTextActive
 	                                        : null,
-                                    ]}
-                                  >
-	                                  {`${slot.label} · ${slot.time}${slot.withFood ? " · with food" : ""}`}
-	                                </Text>
+                                      ]}
+                                    >
+	                                    <Text style={styles.suggestedRoutineSlotLabelText}>{slot.label}</Text>
+                                        <Text style={styles.suggestedRoutineSlotDividerText}> · </Text>
+                                        <Text style={styles.suggestedRoutineSlotTimeText}>{slot.time}</Text>
+                                        {slot.withFood ? (
+                                          <>
+                                            <Text style={styles.suggestedRoutineSlotDividerText}> · </Text>
+                                            <Text style={styles.suggestedRoutineSlotFoodText}>with food</Text>
+                                          </>
+                                        ) : null}
+	                                  </Text>
+                                  </Pressable>
 	                              ))
 	                            )}
 	                          </View>
@@ -2917,7 +3876,80 @@ function DetailSheet({
 	                            <Text style={styles.suggestedRoutineNotice}>{effectiveApplyNotice}</Text>
 	                          ) : null}
 	                        </View>
-                        ) : null}
+	                        ) : null}
+	                        <View style={styles.startDateSection}>
+	                          <Pressable
+	                            accessibilityRole="button"
+	                            accessibilityLabel="Choose start date"
+	                            onPress={() => setStartDatePickerOpen(true)}
+	                            style={styles.startDateRow}
+	                          >
+	                            <View style={styles.startDateRowTextWrap}>
+	                              <Text style={styles.startDateTitle}>Start date</Text>
+	                              <Text style={styles.startDateCaption}>When this supplement begins counting</Text>
+	                            </View>
+	                            <View style={styles.startDateValueWrap}>
+	                              <CalendarDays size={16} color="#64748b" />
+	                              <Text style={styles.startDateValueText}>{startDateDisplayLabel}</Text>
+	                              <ArrowRight size={14} color="#94a3b8" />
+	                            </View>
+	                          </Pressable>
+	                        </View>
+	                        <View style={styles.weekdaySection}>
+	                          <View style={styles.weekdayHeaderRow}>
+	                            <Text style={styles.weekdayTitle}>Days of week</Text>
+                              <Text style={styles.weekdayCaption}>Use this only if you do not take it every day.</Text>
+                          </View>
+
+                          <View style={styles.weekdayChipRow}>
+                            {ROUTINE_DAY_OPTIONS.map((option) => {
+                              const isSelected = selectedDaysOfWeek.includes(option.value);
+                              return (
+                                <Pressable
+                                  key={`weekday-${option.value}`}
+                                  accessibilityRole="button"
+                                  accessibilityLabel={`Toggle ${option.label}`}
+                                  onPress={() => toggleDaysOfWeek(option.value)}
+                                  style={[
+                                    styles.weekdayChip,
+                                    isSelected && styles.weekdayChipActive,
+                                  ]}
+                                >
+                                  <Text
+                                    style={[
+                                      styles.weekdayChipText,
+                                      isSelected && styles.weekdayChipTextActive,
+                                    ]}
+                                  >
+                                    {option.label}
+                                  </Text>
+                                </Pressable>
+                              );
+                            })}
+                            <Pressable
+                              accessibilityRole="button"
+                              accessibilityLabel="Set supplement to every day"
+                              onPress={() => setSelectedDaysOfWeek([])}
+                              style={[
+                                styles.weekdayShortcutChip,
+                                selectedDaysOfWeek.length === 0 && styles.weekdayShortcutChipActive,
+                              ]}
+                            >
+                              <Text
+                                style={[
+                                  styles.weekdayShortcutText,
+                                  selectedDaysOfWeek.length === 0 && styles.weekdayShortcutTextActive,
+                                ]}
+                              >
+                                Every day
+                              </Text>
+                            </Pressable>
+	                          </View>
+
+	                          <Text style={styles.weekdayHelpText}>
+	                            {startDateSummaryText}
+	                          </Text>
+	                        </View>
                         <View
                           onLayout={(event) => {
                             timeSectionYRef.current = event.nativeEvent.layout.y;
@@ -3078,13 +4110,19 @@ function DetailSheet({
 	                  </View>
 	                </View>
 	              </View>
-	            </View>
-	          </ScrollView>
-	          </KeyboardAvoidingView>
-	        </MotiView>
-	      </View>
-	    </Modal>
-	  );
+		            </View>
+		          </ScrollView>
+		          </KeyboardAvoidingView>
+		        </MotiView>
+		      </View>
+		      <StartDatePickerSheet
+		        visible={startDatePickerOpen}
+		        selectedDate={selectedStartDate}
+		        onSelectDate={setSelectedStartDate}
+		        onClose={() => setStartDatePickerOpen(false)}
+		      />
+		    </Modal>
+		  );
 }
 
 function NoteQuickView({
@@ -3142,7 +4180,14 @@ function NoteQuickView({
 export function MySupplementView({ data, onDeleteSelected, onSaveRoutine }: Props) {
   const tokens = useScreenTokens(NAV_HEIGHT);
   const { user } = useAuth();
-  const { draft } = useOnboarding();
+  const {
+    snapshot,
+    smartFilter,
+    scheduleDefaults,
+    recordOverrideEvents,
+    smartFilterEvaluationLoading,
+    smartFilterMembershipById,
+  } = usePersonalization();
   const { scans } = useScanHistory();
   const { updateSupplement } = useSavedSupplements();
 
@@ -3153,6 +4198,7 @@ export function MySupplementView({ data, onDeleteSelected, onSaveRoutine }: Prop
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [batchScheduleOpen, setBatchScheduleOpen] = useState(false);
   const [detailId, setDetailId] = useState<string | null>(null);
   const [filterState, setFilterState] = useState<FilterState>("closed");
   // Backdrop is mounted immediately (blocks touches) but fades in later to match the web sequence.
@@ -3183,13 +4229,22 @@ export function MySupplementView({ data, onDeleteSelected, onSaveRoutine }: Prop
   const [mealTimePrefs, setMealTimePrefs] = useState<MealTimePrefs | null>(null);
 
   const visibleGoalTags = useMemo(
-    () => resolveVisibleGoalTags(draft?.smartFilterConfig?.visibleGoals ?? draft?.goals),
-    [draft?.goals, draft?.smartFilterConfig?.visibleGoals],
+    () => smartFilter.visibleGoals.map((goalKey) => getGoalDisplayLabel(goalKey)),
+    [smartFilter.visibleGoals],
   );
   const seededTypeTags = useMemo(
-    () => resolveTypeTags(draft?.smartFilterConfig?.preselectedTypes ?? draft?.preferredTypes),
-    [draft?.preferredTypes, draft?.smartFilterConfig?.preselectedTypes],
+    () => smartFilter.preselectedTypes.map((typeKey) => getSupplementTypeDisplayLabel(typeKey)),
+    [smartFilter.preselectedTypes],
   );
+  const highlightedGoalTag = useMemo(
+    () => (smartFilter.highlightedGoal ? getGoalDisplayLabel(smartFilter.highlightedGoal) : null),
+    [smartFilter.highlightedGoal],
+  );
+  const goalTagToKey = useMemo(
+    () => buildGoalTagToKeyMap(smartFilter.visibleGoals),
+    [smartFilter.visibleGoals],
+  );
+  const typeTagToKey = useMemo(() => buildTypeTagToKeyMap(), []);
   const smartTagCategories = useMemo<TagCategory[]>(() => {
     return SMART_TAG_BASE_CATEGORIES.map((category) =>
       category.title === "Goals" ? { ...category, tags: visibleGoalTags } : category,
@@ -3197,6 +4252,21 @@ export function MySupplementView({ data, onDeleteSelected, onSaveRoutine }: Prop
   }, [visibleGoalTags]);
   const hasSeededFiltersRef = useRef(false);
   const hasLoggedFirstFilterUseRef = useRef(false);
+  const smartFilterExposureKeyRef = useRef<string | null>(null);
+  const smartFilterResultsExposureKeyRef = useRef<string | null>(null);
+  const evaluatedInteractionByIdRef = useRef<
+    Map<
+      string,
+      {
+        goalKey?: GoalKey;
+        typeKey?: SupplementTypeKey;
+        matchTier?: ReturnType<typeof getMembershipMatchTier>;
+        coverageStatus?: SmartFilterProductMembership["coverageStatus"];
+        reasonCodes: string[];
+      }
+    >
+  >(new Map());
+  const evaluatedExposureKeyRef = useRef<string | null>(null);
 
   const pillWidthRef = useRef(84);
   const [pillWidth, setPillWidth] = useState(84);
@@ -3208,6 +4278,7 @@ export function MySupplementView({ data, onDeleteSelected, onSaveRoutine }: Prop
   const filterScrollRef = useRef<ScrollView>(null);
   const filterWrapRef = useRef<View>(null);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const [detailAnalyticsContext, setDetailAnalyticsContext] = useState<SmartFilterEvaluatedDetailAnalyticsContext | null>(null);
   const [filterAnchor, setFilterAnchor] = useState<{
     x: number;
     y: number;
@@ -3227,14 +4298,45 @@ export function MySupplementView({ data, onDeleteSelected, onSaveRoutine }: Prop
     [],
   );
 
+  const trackSmartFilterEvaluatedEvent = useCallback((event: string, payload: Record<string, unknown>) => {
+    const enrichedPayload = {
+      surface: "my_saved_smart_filter",
+      snapshotId: snapshot.snapshotId,
+      rulesVersion: snapshot.rulesVersion,
+      ...payload,
+    };
+    try {
+      emitAnalyticsEvent("evaluated-loop", event, enrichedPayload);
+      return;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unknown error";
+      console.warn("[smart-filter-evaluated-analytics] shared tracker failed", message);
+    }
+    console.info("[smart-filter-evaluated-analytics]", event, enrichedPayload);
+  }, [snapshot.rulesVersion, snapshot.snapshotId]);
+
   useEffect(() => () => clearFilterTimers(), [clearFilterTimers]);
 
   useEffect(() => {
     if (hasSeededFiltersRef.current) return;
-    if (seededTypeTags.length === 0) return;
+    if (smartFilterEvaluationLoading) return;
+    const seededSmartTags = Array.from(
+      new Set<string>([
+        ...seededTypeTags,
+        ...(highlightedGoalTag ? [highlightedGoalTag] : []),
+      ]),
+    );
+    if (seededSmartTags.length === 0) return;
     if (data.length === 0) return;
     const hasSeedMatch = data.some((item) =>
-      (item.tags ?? []).some((tag) => seededTypeTags.includes(tag)),
+      seededSmartTags.some((tag) =>
+        matchesEvaluatedSmartFilterTag({
+          tag,
+          membership: smartFilterMembershipById[item.id],
+          goalTagToKey,
+          typeTagToKey,
+        }),
+      ),
     );
     if (!hasSeedMatch) {
       hasSeededFiltersRef.current = true;
@@ -3243,10 +4345,18 @@ export function MySupplementView({ data, onDeleteSelected, onSaveRoutine }: Prop
 
     setActiveTags((prev) => {
       if (prev.size > 0) return prev;
-      return new Set(seededTypeTags);
+      return new Set(seededSmartTags);
     });
     hasSeededFiltersRef.current = true;
-  }, [data, seededTypeTags]);
+  }, [
+    data,
+    goalTagToKey,
+    highlightedGoalTag,
+    seededTypeTags,
+    smartFilterEvaluationLoading,
+    smartFilterMembershipById,
+    typeTagToKey,
+  ]);
 
   useEffect(() => {
     if (selectionMode) setExpandedId(null);
@@ -3283,6 +4393,12 @@ export function MySupplementView({ data, onDeleteSelected, onSaveRoutine }: Prop
 
   useEffect(() => {
     if (detailId) setExpandedId(null);
+  }, [detailId]);
+
+  useEffect(() => {
+    if (!detailId) {
+      setDetailAnalyticsContext(null);
+    }
   }, [detailId]);
 
   useEffect(() => {
@@ -3712,10 +4828,12 @@ export function MySupplementView({ data, onDeleteSelected, onSaveRoutine }: Prop
           ensured.facts.product.brandDisplay,
           item.brandName,
         );
-        if (!nextBrand) continue;
+        const nextImageUrl = pickFirstText(ensured.facts.overlay?.imageUrl, item.imageUrl);
+        if (!nextBrand && !nextImageUrl) continue;
 
-        const brandChanged = normalizeKey(nextBrand) !== normalizeKey(item.brandName);
-        if (brandChanged) {
+        const brandChanged = Boolean(nextBrand) && normalizeKey(nextBrand) !== normalizeKey(item.brandName);
+        const imageChanged = Boolean(nextImageUrl) && nextImageUrl !== item.imageUrl;
+        if (brandChanged && nextBrand) {
           setBrandOverrideById((prev) => {
             if (prev.get(item.id) === nextBrand) return prev;
             const next = new Map(prev);
@@ -3724,27 +4842,28 @@ export function MySupplementView({ data, onDeleteSelected, onSaveRoutine }: Prop
           });
         }
 
-        if (!brandChanged && ensured.supplementId === item.supplementId) {
+        if (!brandChanged && !imageChanged && ensured.supplementId === item.supplementId) {
           continue;
         }
 
         try {
           await updateSupplement(item.id, {
-            ...(brandChanged ? { brandName: nextBrand } : {}),
+            ...(brandChanged && nextBrand ? { brandName: nextBrand } : {}),
+            ...(imageChanged ? { imageUrl: nextImageUrl } : {}),
             ...(ensured.supplementId && ensured.supplementId !== item.supplementId
               ? { supplementId: ensured.supplementId }
               : {}),
           });
         } catch (error) {
           const message = error instanceof Error ? error.message : "Unknown error";
-          console.warn("[supplement-brand] Failed to backfill brand", message);
+          console.warn("[supplement-metadata] Failed to backfill Saved supplement metadata", message);
         }
       }
     };
 
     void run().catch((error) => {
       const message = error instanceof Error ? error.message : "Unknown error";
-      console.warn("[supplement-brand] Unhandled brand metadata backfill error", message);
+      console.warn("[supplement-metadata] Unhandled Saved supplement metadata backfill error", message);
     });
 
     return () => {
@@ -3772,15 +4891,176 @@ export function MySupplementView({ data, onDeleteSelected, onSaveRoutine }: Prop
     }
 
     if (activeTags.size > 0) {
-      result = result.filter((s) => {
-        const hasMatchingStaticTag = s.tags && s.tags.some((tag) => activeTags.has(tag));
-        const isRecentlyViewed = activeTags.has("Recently Viewed") && !!s.lastViewed;
-        return hasMatchingStaticTag || isRecentlyViewed;
+      result = filterSupplementsByActiveTags({
+        items: result,
+        activeTags,
+        membershipById: smartFilterMembershipById,
+        goalTagToKey,
+        typeTagToKey,
       });
     }
 
     return result;
-  }, [activeTags, resolvedData, search, sorted]);
+  }, [activeTags, goalTagToKey, resolvedData, search, smartFilterMembershipById, sorted, typeTagToKey]);
+
+  const activeGoalKeys = useMemo(
+    () =>
+      Array.from(activeTags)
+        .map((tag) => goalTagToKey.get(tag))
+        .filter((value): value is GoalKey => Boolean(value)),
+    [activeTags, goalTagToKey],
+  );
+
+  const activeTypeKeys = useMemo(
+    () =>
+      Array.from(activeTags)
+        .map((tag) => typeTagToKey.get(tag))
+        .filter((value): value is SupplementTypeKey => Boolean(value)),
+    [activeTags, typeTagToKey],
+  );
+
+  const smartFilterCoverageReadyCount = useMemo(
+    () =>
+      Object.values(smartFilterMembershipById).filter((membership) => membership?.coverageStatus === "coverage_ready")
+        .length,
+    [smartFilterMembershipById],
+  );
+
+  const smartFilterNotEnoughStructuredDataCount = useMemo(
+    () =>
+      Object.values(smartFilterMembershipById).filter(
+        (membership) => membership?.bucket === "not_enough_structured_data",
+      ).length,
+    [smartFilterMembershipById],
+  );
+
+  const filteredEvaluatedResults = useMemo(
+    () =>
+      filtered
+        .map((item, index) => ({
+          item,
+          index,
+          membership: smartFilterMembershipById[item.id],
+        }))
+        .filter(({ membership }) => isEvaluatedCoverageReadyMembership(membership)),
+    [filtered, smartFilterMembershipById],
+  );
+
+  useEffect(() => {
+    if (smartFilterEvaluationLoading) return;
+    const membershipCount = Object.keys(smartFilterMembershipById).length;
+    if (membershipCount === 0) return;
+    const nextKey = `${snapshot.snapshotId}:${membershipCount}:${smartFilterCoverageReadyCount}:${smartFilterNotEnoughStructuredDataCount}`;
+    if (smartFilterExposureKeyRef.current === nextKey) return;
+    smartFilterExposureKeyRef.current = nextKey;
+    trackEvaluatedLoopExposure({
+      surface: "smart_filter",
+      snapshotId: snapshot.snapshotId,
+      rulesVersion: snapshot.rulesVersion,
+      source: "auto",
+      selectedCount: activeTags.size,
+      resultCount: membershipCount,
+      coverageReadyCount: smartFilterCoverageReadyCount,
+      notEnoughStructuredDataCount: smartFilterNotEnoughStructuredDataCount,
+      goalKey: smartFilter.highlightedGoal,
+      reasonCodes: smartFilter.reasons.map((reason) => reason.code),
+    });
+  }, [
+    activeTags.size,
+    smartFilter,
+    smartFilterCoverageReadyCount,
+    smartFilterEvaluationLoading,
+    smartFilterMembershipById,
+    smartFilterNotEnoughStructuredDataCount,
+    snapshot.rulesVersion,
+    snapshot.snapshotId,
+  ]);
+
+  useEffect(() => {
+    if (activeTags.size === 0) return;
+    const coverageReadyResultCount = filteredEvaluatedResults.length;
+    if (coverageReadyResultCount === 0) return;
+    const nextKey = `${snapshot.snapshotId}:${Array.from(activeTags).sort().join("|")}:${coverageReadyResultCount}:${filtered.length}`;
+    if (smartFilterResultsExposureKeyRef.current === nextKey) return;
+    smartFilterResultsExposureKeyRef.current = nextKey;
+    trackEvaluatedLoopExposure({
+      surface: "smart_filter",
+      snapshotId: snapshot.snapshotId,
+      rulesVersion: snapshot.rulesVersion,
+      source: "user",
+      selectedCount: activeTags.size,
+      resultCount: filtered.length,
+      coverageReadyCount: coverageReadyResultCount,
+      notEnoughStructuredDataCount: filtered.filter(
+        (item) => smartFilterMembershipById[item.id]?.bucket === "not_enough_structured_data",
+      ).length,
+      goalKey: activeGoalKeys[0],
+      typeKey: activeTypeKeys[0],
+    });
+  }, [
+    activeGoalKeys,
+    activeTags,
+    activeTypeKeys,
+    filtered,
+    filteredEvaluatedResults.length,
+    smartFilterMembershipById,
+    snapshot.rulesVersion,
+    snapshot.snapshotId,
+  ]);
+
+  const activeSmartTags = useMemo(
+    () => Array.from(activeTags).filter((tag) => SMART_TAG_SET.has(tag)).sort((left, right) => left.localeCompare(right)),
+    [activeTags],
+  );
+
+  const evaluatedFilterSummary = useMemo(() => {
+    const summary = {
+      totalFilteredCount: filtered.length,
+      evaluatedResultCount: 0,
+      strongCount: 0,
+      relatedCount: 0,
+      weakCount: 0,
+      notEnoughStructuredDataCount: 0,
+      rankEligibleCount: 0,
+    };
+
+    filtered.forEach((item) => {
+      const membership = smartFilterMembershipById[item.id];
+      if (!membership) return;
+      summary.evaluatedResultCount += 1;
+      if (membership.bucket === "strong_match") summary.strongCount += 1;
+      if (membership.bucket === "related") summary.relatedCount += 1;
+      if (membership.bucket === "weak_match") summary.weakCount += 1;
+      if (membership.bucket === "not_enough_structured_data") summary.notEnoughStructuredDataCount += 1;
+      if (membership.eligibility?.rankEligible) summary.rankEligibleCount += 1;
+    });
+
+    return summary;
+  }, [filtered, smartFilterMembershipById]);
+
+  useEffect(() => {
+    if (smartFilterEvaluationLoading) return;
+    if (activeSmartTags.length === 0) return;
+    const exposureKey = JSON.stringify({
+      activeSmartTags,
+      search: search.trim().toLowerCase(),
+      ids: filtered.map((item) => item.id),
+    });
+    if (evaluatedExposureKeyRef.current === exposureKey) return;
+    evaluatedExposureKeyRef.current = exposureKey;
+    trackSmartFilterEvaluatedEvent("smart_filter_evaluated_results_exposed", {
+      activeTags: activeSmartTags,
+      searchQuery: search.trim() || null,
+      ...evaluatedFilterSummary,
+    });
+  }, [
+    activeSmartTags,
+    evaluatedFilterSummary,
+    filtered,
+    search,
+    smartFilterEvaluationLoading,
+    trackSmartFilterEvaluatedEvent,
+  ]);
 
   const cards = useMemo(
     () =>
@@ -3794,6 +5074,11 @@ export function MySupplementView({ data, onDeleteSelected, onSaveRoutine }: Prop
 
   const selectedCount = selectedIds.size;
 
+  const isAssigningMode = Boolean(assigningTag);
+  const isBatchSelectionMode = selectionMode && !isAssigningMode;
+  const schedulePillEnabled = selectedCount > 0;
+  const headerSplitDelay = isBatchSelectionMode ? 96 : 0;
+  const headerTitleText = "My Saved";
   let headerLabel = "Select";
   let headerIsDelete = false;
   let headerIsAssigning = false;
@@ -3805,10 +5090,10 @@ export function MySupplementView({ data, onDeleteSelected, onSaveRoutine }: Prop
   } else if (!selectionMode) {
     headerLabel = "Select";
   } else if (selectedCount > 0) {
-    headerLabel = `Delete (${selectedCount})`;
+    headerLabel = "Delete";
     headerIsDelete = true;
   } else {
-    headerLabel = "Done";
+    headerLabel = "Cancel";
   }
 
   const handleHeaderLabelLayout = useCallback(
@@ -3838,7 +5123,36 @@ export function MySupplementView({ data, onDeleteSelected, onSaveRoutine }: Prop
     setSelectedIds(new Set());
     setExpandedId(null);
     setAssigningTag(null);
+    setBatchScheduleOpen(false);
   }, []);
+
+  const handleDeleteSelectedAction = useCallback(async () => {
+    if (selectedIds.size === 0) return;
+    const ids = Array.from(selectedIds);
+    const overlapDeleteCount = ids.reduce((count, id) => {
+      const supplementId = data.find((entry) => entry.id === id)?.supplementId ?? null;
+      if (!supplementId) return count;
+      return count + (stackOverlapCountBySupplementId.get(supplementId) ?? 0);
+    }, 0);
+    if (overlapDeleteCount > 0) {
+      logStackOverlapEvent("stack_overlap_action_taken", {
+        action: "delete",
+        selectedCount: ids.length,
+        overlapMentions: overlapDeleteCount,
+      });
+    }
+    if (detailId && selectedIds.has(detailId)) setDetailId(null);
+    await onDeleteSelected?.(ids);
+    exitSelection();
+  }, [
+    data,
+    detailId,
+    exitSelection,
+    logStackOverlapEvent,
+    onDeleteSelected,
+    selectedIds,
+    stackOverlapCountBySupplementId,
+  ]);
 
   const handleHeaderAction = useCallback(async () => {
     if (assigningTag) {
@@ -3864,22 +5178,7 @@ export function MySupplementView({ data, onDeleteSelected, onSaveRoutine }: Prop
     }
 
     if (selectedIds.size > 0) {
-      const ids = Array.from(selectedIds);
-      const overlapDeleteCount = ids.reduce((count, id) => {
-        const supplementId = data.find((entry) => entry.id === id)?.supplementId ?? null;
-        if (!supplementId) return count;
-        return count + (stackOverlapCountBySupplementId.get(supplementId) ?? 0);
-      }, 0);
-      if (overlapDeleteCount > 0) {
-        logStackOverlapEvent("stack_overlap_action_taken", {
-          action: "delete",
-          selectedCount: ids.length,
-          overlapMentions: overlapDeleteCount,
-        });
-      }
-      if (detailId && selectedIds.has(detailId)) setDetailId(null);
-      await onDeleteSelected?.(ids);
-      exitSelection();
+      await handleDeleteSelectedAction();
       return;
     }
 
@@ -3887,21 +5186,163 @@ export function MySupplementView({ data, onDeleteSelected, onSaveRoutine }: Prop
   }, [
     assigningTag,
     data,
-    detailId,
     exitSelection,
-    logStackOverlapEvent,
-    onDeleteSelected,
-    selectedIds,
+    handleDeleteSelectedAction,
+    selectedIds.size,
     selectionMode,
-    stackOverlapCountBySupplementId,
     updateSupplement,
   ]);
 
   const handleSaveRoutine = useCallback(
     async (id: string, prefs: RoutinePreferences) => {
       await onSaveRoutine?.(id, prefs);
+      const membership = smartFilterMembershipById[id];
+      if (!isEvaluatedCoverageReadyMembership(membership)) return;
+      const attribution = evaluatedInteractionByIdRef.current.get(id);
+      const goalKey = attribution?.goalKey ?? activeGoalKeys[0] ?? membership.highlightedGoal;
+      const typeKey = attribution?.typeKey ?? activeTypeKeys[0];
+      const matchTier = attribution?.matchTier ?? getMembershipMatchTier(membership, goalKey);
+      const reasonCodes = attribution?.reasonCodes?.length ? attribution.reasonCodes : getMembershipReasonCodes(membership);
+      trackEvaluatedLoopSave({
+        surface: "smart_filter",
+        snapshotId: snapshot.snapshotId,
+        rulesVersion: snapshot.rulesVersion,
+        source: "user",
+        productId: id,
+        goalKey,
+        typeKey,
+        matchTier,
+        coverageStatus: membership.coverageStatus,
+        reasonCodes,
+      });
+      trackEvaluatedLoopConversion({
+        surface: "smart_filter",
+        snapshotId: snapshot.snapshotId,
+        rulesVersion: snapshot.rulesVersion,
+        source: "user",
+        productId: id,
+        goalKey,
+        typeKey,
+        matchTier,
+        coverageStatus: membership.coverageStatus,
+        conversionType: "schedule_applied",
+        reasonCodes,
+      });
     },
-    [onSaveRoutine],
+    [activeGoalKeys, activeTypeKeys, onSaveRoutine, smartFilterMembershipById, snapshot.rulesVersion, snapshot.snapshotId],
+  );
+
+  const handleApplyBatchSchedule = useCallback(
+    async (update: BatchScheduleUpdate) => {
+      const ids = Array.from(selectedIds);
+      if (ids.length === 0) return;
+
+      await Promise.all(
+        ids.map(async (id) => {
+          const item = data.find((entry) => entry.id === id);
+          if (!item) return;
+          const next: RoutinePreferences = {
+            ...(item.routine ?? {}),
+          };
+
+          if (Object.prototype.hasOwnProperty.call(update, "startDate")) {
+            next.startDate = update.startDate;
+          }
+          if (Object.prototype.hasOwnProperty.call(update, "daysOfWeek")) {
+            if (update.daysOfWeek && update.daysOfWeek.length > 0) {
+              next.daysOfWeek = update.daysOfWeek;
+            } else {
+              delete next.daysOfWeek;
+            }
+          }
+          if (Object.prototype.hasOwnProperty.call(update, "time") && update.time) {
+            next.time = update.time;
+            next.timeUserSet = true;
+          }
+          if (Object.prototype.hasOwnProperty.call(update, "withFood")) {
+            next.withFood = update.withFood;
+          }
+
+          if (onSaveRoutine) {
+            await onSaveRoutine(id, next);
+            return;
+          }
+          await updateSupplement(id, { routine: next });
+        }),
+      );
+
+      if (activeSmartTags.length > 0) {
+        const memberships = ids
+          .map((id) => smartFilterMembershipById[id])
+          .filter((membership): membership is SmartFilterProductMembership => Boolean(membership));
+        if (memberships.length > 0) {
+          trackSmartFilterEvaluatedEvent("smart_filter_evaluated_batch_schedule_applied", {
+            activeTags: activeSmartTags,
+            searchQuery: search.trim() || null,
+            selectedCount: ids.length,
+            evaluatedSelectedCount: memberships.length,
+            strongCount: memberships.filter((membership) => membership.bucket === "strong_match").length,
+            relatedCount: memberships.filter((membership) => membership.bucket === "related").length,
+            weakCount: memberships.filter((membership) => membership.bucket === "weak_match").length,
+            notEnoughStructuredDataCount: memberships.filter((membership) => membership.bucket === "not_enough_structured_data").length,
+          });
+          memberships
+            .filter((membership) => isEvaluatedCoverageReadyMembership(membership))
+            .forEach((membership) => {
+              const goalKey = activeGoalKeys[0] ?? membership.highlightedGoal;
+              const typeKey = activeTypeKeys[0];
+              const matchTier = getMembershipMatchTier(membership, goalKey);
+              const reasonCodes = getMembershipReasonCodes(membership);
+              trackEvaluatedLoopSave({
+                surface: "smart_filter",
+                snapshotId: snapshot.snapshotId,
+                rulesVersion: snapshot.rulesVersion,
+                source: "user",
+                actionKey: "batch_schedule",
+                productId: membership.productId,
+                goalKey,
+                typeKey,
+                matchTier,
+                coverageStatus: membership.coverageStatus,
+                selectedCount: ids.length,
+                reasonCodes,
+              });
+              trackEvaluatedLoopConversion({
+                surface: "smart_filter",
+                snapshotId: snapshot.snapshotId,
+                rulesVersion: snapshot.rulesVersion,
+                source: "user",
+                actionKey: "batch_schedule",
+                productId: membership.productId,
+                goalKey,
+                typeKey,
+                matchTier,
+                coverageStatus: membership.coverageStatus,
+                selectedCount: ids.length,
+                conversionType: "schedule_applied",
+                reasonCodes,
+              });
+            });
+        }
+      }
+
+      exitSelection();
+    },
+    [
+      activeGoalKeys,
+      activeSmartTags,
+      activeTypeKeys,
+      data,
+      exitSelection,
+      onSaveRoutine,
+      search,
+      selectedIds,
+      smartFilterMembershipById,
+      snapshot.rulesVersion,
+      snapshot.snapshotId,
+      trackSmartFilterEvaluatedEvent,
+      updateSupplement,
+    ],
   );
 
   const markAsViewed = useCallback(
@@ -3912,13 +5353,25 @@ export function MySupplementView({ data, onDeleteSelected, onSaveRoutine }: Prop
   );
 
   const toggleTag = useCallback((tag: string) => {
-    setActiveTags((prev) => {
-      const next = new Set(prev);
-      if (next.has(tag)) next.delete(tag);
-      else next.add(tag);
-      return next;
-    });
-  }, []);
+    const next = new Set(activeTags);
+    const action = next.has(tag) ? "remove" : "add";
+    if (action === "remove") next.delete(tag);
+    else next.add(tag);
+
+    if (SMART_TAG_SET.has(tag)) {
+      trackSmartFilterEvaluatedEvent("smart_filter_evaluated_tag_toggled", {
+        tag,
+        action,
+        activeTagsBefore: Array.from(activeTags).filter((value) => SMART_TAG_SET.has(value)).sort((left, right) => left.localeCompare(right)),
+        activeTagsAfter: Array.from(next).filter((value) => SMART_TAG_SET.has(value)).sort((left, right) => left.localeCompare(right)),
+        goalKey: goalTagToKey.get(tag) ?? null,
+        typeKey: typeTagToKey.get(tag) ?? null,
+        searchQuery: search.trim() || null,
+      });
+    }
+
+    setActiveTags(next);
+  }, [activeTags, goalTagToKey, search, trackSmartFilterEvaluatedEvent, typeTagToKey]);
 
   const closeFilter = useCallback(() => {
     if (filterState === "closed" || filterState === "closing") return;
@@ -3938,6 +5391,11 @@ export function MySupplementView({ data, onDeleteSelected, onSaveRoutine }: Prop
       }, FILTER_HEIGHT_DURATION),
     );
   }, [clearFilterTimers, filterState]);
+
+  useEffect(() => {
+    if (!selectionMode) return;
+    closeFilter();
+  }, [closeFilter, selectionMode]);
 
   const handleCreateTag = useCallback(() => {
     if (!newTagText.trim()) {
@@ -4126,7 +5584,9 @@ export function MySupplementView({ data, onDeleteSelected, onSaveRoutine }: Prop
                 >
                   <View>
                     <Text style={styles.filterTitle}>Smart Filter</Text>
-                    <Text style={styles.filterSubtitle}>Categorize your stack</Text>
+                    <Text style={styles.filterSubtitle}>
+                      {highlightedGoalTag ? `Suggested focus: ${highlightedGoalTag}` : "Categorize your stack"}
+                    </Text>
                   </View>
                   <Pressable onPress={closeFilter} style={styles.filterCloseBtn}>
                     <X size={20} color="#475569" />
@@ -4374,76 +5834,199 @@ export function MySupplementView({ data, onDeleteSelected, onSaveRoutine }: Prop
               </Text>
             </View>
 
-            <View style={[styles.headerRow, { marginBottom: tokens.sectionGap, zIndex: isFilterActive ? 1001 : 1 }]}>
-              <View style={styles.headerTitleWrap}>
-                <AutoFitText
-                  text="My Saved"
-                  baseFontSize={36}
-                  baseLineHeight={40}
-                  minFontSize={32}
-                  style={styles.h1}
-                />
-              </View>
+	            <View style={[styles.headerRow, { marginBottom: tokens.sectionGap, zIndex: isFilterActive ? 1001 : 1 }]}>
+	              <View style={styles.headerTitleWrap}>
+	                <AutoFitText
+	                  text={headerTitleText}
+	                  baseFontSize={36}
+	                  baseLineHeight={40}
+	                  minFontSize={32}
+	                  style={styles.h1}
+	                />
+	              </View>
 
-              <MotiView style={styles.headerPillMotion} animate={{ width: pillWidth }} transition={{ type: "timing", duration: 320 }}>
-                <Pressable
-                  onPress={handleHeaderAction}
-                  style={[
-                    styles.headerPill,
-                    {
-                      borderColor: headerIsDelete
-                        ? "rgba(239,68,68,0.55)"
-                        : headerIsAssigning
-                        ? "rgba(59,130,246,0.55)"
-                        : "rgba(255,255,255,0.70)",
-                    },
-                  ]}
-                >
-                  <BlurView intensity={18} tint="light" style={StyleSheet.absoluteFillObject} />
-                  <LinearGradient
-                    colors={
-                      headerIsDelete
-                        ? ["rgba(255,255,255,0.65)", "rgba(239,68,68,0.10)", "rgba(255,255,255,0)"]
-                        : headerIsAssigning
-                        ? ["rgba(255,255,255,0.80)", "rgba(59,130,246,0.12)", "rgba(255,255,255,0)"]
-                        : ["rgba(255,255,255,0.70)", "rgba(255,255,255,0.22)", "rgba(255,255,255,0)"]
-                    }
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                    style={[StyleSheet.absoluteFillObject, { opacity: 0.92 }]}
-                  />
+	              <View style={styles.headerPillSplitRow}>
+	                <AnimatePresence>
+	                  {isBatchSelectionMode ? (
+	                    <MotiView
+	                      from={{ opacity: 0, translateX: 24, width: 18, scaleY: 0.9 }}
+	                      animate={{ opacity: 1, translateX: 0, width: 44, scaleY: 1 }}
+	                      exit={{ opacity: 0, translateX: 14, width: 18, scaleY: 0.92 }}
+	                      transition={{
+	                        opacity: { type: "timing", duration: 260, easing: FILTER_EASING },
+	                        translateX: { type: "timing", duration: 320, easing: FILTER_EASING },
+	                        width: { type: "timing", duration: 320, easing: FILTER_EASING },
+	                        scaleY: { type: "timing", duration: 280, easing: FILTER_EASING },
+	                      }}
+	                      style={styles.headerIconPillMotion}
+	                    >
+	                      <Pressable
+	                        disabled={!schedulePillEnabled}
+	                        onPress={() => setBatchScheduleOpen(true)}
+	                        style={[styles.headerIconPill, styles.headerPillNeutral]}
+	                      >
+	                        <BlurView intensity={18} tint="light" style={StyleSheet.absoluteFillObject} />
+	                        <LinearGradient
+	                          colors={["rgba(255,255,255,0.74)", "rgba(226,232,240,0.24)", "rgba(255,255,255,0)"]}
+	                          start={{ x: 0, y: 0 }}
+	                          end={{ x: 1, y: 1 }}
+	                          style={[StyleSheet.absoluteFillObject, { opacity: 0.96 }]}
+	                        />
+	                        <MotiView
+	                          animate={{ opacity: schedulePillEnabled ? 1 : 0 }}
+	                          transition={{ type: "timing", duration: 220, easing: FILTER_EASING }}
+	                          style={StyleSheet.absoluteFillObject}
+	                        >
+	                          <LinearGradient
+	                            colors={["rgba(255,255,255,0.92)", "rgba(37,99,235,0.14)", "rgba(255,255,255,0)"]}
+	                            start={{ x: 0, y: 0 }}
+	                            end={{ x: 1, y: 1 }}
+	                            style={[StyleSheet.absoluteFillObject, { opacity: 0.96 }]}
+	                          />
+	                        </MotiView>
+	                        <MotiView
+	                          animate={{ opacity: schedulePillEnabled ? 1 : 0 }}
+	                          transition={{ type: "timing", duration: 220, easing: FILTER_EASING }}
+	                          style={[
+	                            StyleSheet.absoluteFillObject,
+	                            styles.headerPillBorderOverlay,
+	                            styles.headerPillPrimaryOverlay,
+	                          ]}
+	                        />
+	                        <View style={styles.headerPillInner}>
+	                          <MotiView
+	                            from={{ opacity: 0, scale: 0.9, translateX: 4 }}
+	                            animate={{ opacity: 1, scale: 1, translateX: 0 }}
+	                            exit={{ opacity: 0, scale: 0.94, translateX: 3 }}
+	                            transition={{ type: "timing", duration: 200, delay: 80, easing: FILTER_EASING }}
+	                            style={styles.headerIconGlyphStack}
+	                          >
+	                            <MotiView
+	                              animate={{
+	                                opacity: schedulePillEnabled ? 0 : 1,
+	                                scale: schedulePillEnabled ? 0.96 : 1,
+	                              }}
+	                              transition={{ type: "timing", duration: 180, easing: FILTER_EASING }}
+	                              style={styles.headerIconGlyphLayer}
+	                            >
+	                              <CalendarDays size={18} color="#94a3b8" />
+	                            </MotiView>
+	                            <MotiView
+	                              animate={{
+	                                opacity: schedulePillEnabled ? 1 : 0,
+	                                scale: schedulePillEnabled ? 1 : 0.96,
+	                              }}
+	                              transition={{ type: "timing", duration: 200, delay: schedulePillEnabled ? 40 : 0, easing: FILTER_EASING }}
+	                              style={styles.headerIconGlyphLayer}
+	                            >
+	                              <CalendarDays size={18} color="#1d4ed8" />
+	                            </MotiView>
+	                          </MotiView>
+	                        </View>
+	                        </Pressable>
+	                      </MotiView>
+	                  ) : null}
+	                </AnimatePresence>
 
-                  <View style={styles.headerPillInner}>
-                    <AnimatePresence exitBeforeEnter>
-                      <MotiView
-                        key={headerLabel}
-                        from={{ translateY: 10, opacity: 0, scale: 0.98 }}
-                        animate={{ translateY: 0, opacity: 1, scale: 1 }}
-                        exit={{ translateY: -10, opacity: 0, scale: 0.98 }}
-                        transition={{ type: "timing", duration: 220 }}
-                      >
-                        <Text
-                          style={[
-                            styles.headerPillText,
-                            headerIsDelete && { color: "#ef4444" },
-                            headerIsAssigning && { color: "#2563eb" },
-                          ]}
-                          numberOfLines={1}
-                          adjustsFontSizeToFit
-                          minimumFontScale={0.8}
-                        >
-                          {headerLabel}
-                        </Text>
-                      </MotiView>
-                    </AnimatePresence>
-                  </View>
-                </Pressable>
-              </MotiView>
-            </View>
+	                <MotiView
+	                  style={styles.headerPillMotion}
+	                  animate={{
+	                    width: pillWidth,
+	                    translateX: isBatchSelectionMode ? 6 : 0,
+	                    scaleX: isBatchSelectionMode ? 0.985 : 1,
+	                  }}
+	                  transition={{
+	                    width: { type: "spring", damping: 20, stiffness: 220, mass: 0.95 },
+	                    translateX: { type: "timing", duration: 280, delay: headerSplitDelay, easing: FILTER_EASING },
+	                    scaleX: { type: "timing", duration: 260, delay: headerSplitDelay, easing: FILTER_EASING },
+	                  }}
+	                >
+	                  <Pressable
+	                    onPress={handleHeaderAction}
+	                    style={[styles.headerPill, styles.headerPillNeutral]}
+	                  >
+	                    <BlurView intensity={18} tint="light" style={StyleSheet.absoluteFillObject} />
+	                    <LinearGradient
+	                      colors={["rgba(255,255,255,0.70)", "rgba(255,255,255,0.22)", "rgba(255,255,255,0)"]}
+	                      start={{ x: 0, y: 0 }}
+	                      end={{ x: 1, y: 1 }}
+	                      style={[StyleSheet.absoluteFillObject, { opacity: 0.92 }]}
+	                    />
+	                    <MotiView
+	                      animate={{ opacity: headerIsAssigning ? 1 : 0 }}
+	                      transition={{ type: "timing", duration: 220, easing: FILTER_EASING }}
+	                      style={StyleSheet.absoluteFillObject}
+	                    >
+	                      <LinearGradient
+	                        colors={["rgba(255,255,255,0.80)", "rgba(59,130,246,0.12)", "rgba(255,255,255,0)"]}
+	                        start={{ x: 0, y: 0 }}
+	                        end={{ x: 1, y: 1 }}
+	                        style={[StyleSheet.absoluteFillObject, { opacity: 0.92 }]}
+	                      />
+	                    </MotiView>
+	                    <MotiView
+	                      animate={{ opacity: headerIsDelete ? 1 : 0 }}
+	                      transition={{ type: "timing", duration: 220, easing: FILTER_EASING }}
+	                      style={StyleSheet.absoluteFillObject}
+	                    >
+	                      <LinearGradient
+	                        colors={["rgba(255,255,255,0.65)", "rgba(239,68,68,0.10)", "rgba(255,255,255,0)"]}
+	                        start={{ x: 0, y: 0 }}
+	                        end={{ x: 1, y: 1 }}
+	                        style={[StyleSheet.absoluteFillObject, { opacity: 0.92 }]}
+	                      />
+	                    </MotiView>
+	                    <MotiView
+	                      animate={{ opacity: headerIsAssigning ? 1 : 0 }}
+	                      transition={{ type: "timing", duration: 220, easing: FILTER_EASING }}
+	                      style={[
+	                        StyleSheet.absoluteFillObject,
+	                        styles.headerPillBorderOverlay,
+	                        styles.headerPillPrimaryOverlay,
+	                      ]}
+	                    />
+	                    <MotiView
+	                      animate={{ opacity: headerIsDelete ? 1 : 0 }}
+	                      transition={{ type: "timing", duration: 220, easing: FILTER_EASING }}
+	                      style={[
+	                        StyleSheet.absoluteFillObject,
+	                        styles.headerPillBorderOverlay,
+	                        styles.headerPillDangerOverlay,
+	                      ]}
+	                    />
 
-            <View style={[styles.searchWrap, { marginBottom: tokens.sectionGap, zIndex: isFilterActive ? 1001 : 2 }]}>
-              <View style={styles.searchRow}>
-                <MotiView
+	                    <View style={styles.headerPillInner}>
+	                      <AnimatePresence exitBeforeEnter>
+	                        <MotiView
+	                          key={headerLabel}
+	                          from={{ translateY: 8, opacity: 0, scale: 0.98 }}
+	                          animate={{ translateY: 0, opacity: 1, scale: 1 }}
+	                          exit={{ translateY: -8, opacity: 0, scale: 0.98 }}
+	                          transition={{ type: "timing", duration: 180 }}
+	                        >
+	                          <Text
+	                            style={[
+	                              styles.headerPillText,
+	                              headerIsDelete && { color: "#ef4444" },
+	                              headerIsAssigning && { color: "#2563eb" },
+	                            ]}
+	                            numberOfLines={1}
+	                            adjustsFontSizeToFit
+	                            minimumFontScale={0.8}
+	                          >
+	                            {headerLabel}
+	                          </Text>
+	                        </MotiView>
+	                      </AnimatePresence>
+	                    </View>
+	                  </Pressable>
+	                </MotiView>
+	              </View>
+	            </View>
+
+	            <View style={[styles.searchWrap, { marginBottom: tokens.sectionGap, zIndex: isFilterActive ? 1001 : 2 }]}>
+	              <View style={styles.searchRow}>
+	                <MotiView
                   style={[styles.searchPill, { width: searchWidth }]}
                   animate={{
                     opacity: filterCollapsed ? 1 : 0,
@@ -4463,9 +6046,9 @@ export function MySupplementView({ data, onDeleteSelected, onSaveRoutine }: Prop
                     returnKeyType="search"
                   />
                 </MotiView>
-                {renderFilterWrap("inline")}
-              </View>
-            </View>
+	                {renderFilterWrap("inline")}
+	              </View>
+	            </View>
 
             <View style={styles.listWrap}>
               {cards.map(({ item, theme }, i) => (
@@ -4492,11 +6075,60 @@ export function MySupplementView({ data, onDeleteSelected, onSaveRoutine }: Prop
                     const overlapCount = item.supplementId
                       ? stackOverlapCountBySupplementId.get(item.supplementId) ?? 0
                       : 0;
+                    const membership = smartFilterMembershipById[item.id];
+                    if (activeSmartTags.length > 0 && membership) {
+                      setDetailAnalyticsContext({
+                        productId: item.id,
+                        activeTags: activeSmartTags,
+                        filteredCount: evaluatedFilterSummary.totalFilteredCount,
+                        searchQuery: search.trim(),
+                        membership,
+                      });
+                      trackSmartFilterEvaluatedEvent("smart_filter_evaluated_result_opened", {
+                        productId: item.id,
+                        productName: item.productName,
+                        activeTags: activeSmartTags,
+                        filteredCount: evaluatedFilterSummary.totalFilteredCount,
+                        searchQuery: search.trim() || null,
+                        bucket: membership.bucket,
+                        highlightedGoal: membership.highlightedGoal ?? null,
+                        rankEligible: membership.eligibility?.rankEligible ?? null,
+                      });
+                    } else {
+                      setDetailAnalyticsContext(null);
+                    }
                     if (overlapCount > 0) {
                       logStackOverlapEvent("stack_overlap_clicked", {
                         supplementId: item.supplementId ?? null,
                         productName: item.productName,
                         overlapCount,
+                      });
+                    }
+                    if (isEvaluatedCoverageReadyMembership(membership)) {
+                      const goalKey = activeGoalKeys[0] ?? membership.highlightedGoal;
+                      const typeKey = activeTypeKeys[0];
+                      const matchTier = getMembershipMatchTier(membership, goalKey);
+                      const reasonCodes = getMembershipReasonCodes(membership);
+                      evaluatedInteractionByIdRef.current.set(item.id, {
+                        goalKey,
+                        typeKey,
+                        matchTier,
+                        coverageStatus: membership.coverageStatus,
+                        reasonCodes,
+                      });
+                      trackEvaluatedLoopClick({
+                        surface: "smart_filter",
+                        snapshotId: snapshot.snapshotId,
+                        rulesVersion: snapshot.rulesVersion,
+                        source: "user",
+                        productId: item.id,
+                        goalKey,
+                        typeKey,
+                        matchTier,
+                        coverageStatus: membership.coverageStatus,
+                        position: filtered.findIndex((entry) => entry.id === item.id),
+                        selectedCount: activeTags.size,
+                        reasonCodes,
                       });
                     }
                     markAsViewed(item.id);
@@ -4505,6 +6137,7 @@ export function MySupplementView({ data, onDeleteSelected, onSaveRoutine }: Prop
                   }}
                   onViewNote={() => {
                     if (selectionMode) return;
+                    setDetailAnalyticsContext(null);
                     setViewingNoteId(item.id);
                   }}
                 />
@@ -4557,18 +6190,35 @@ export function MySupplementView({ data, onDeleteSelected, onSaveRoutine }: Prop
         </View>
       ) : null}
 
+      <BatchScheduleSheet
+        visible={batchScheduleOpen}
+        selectedCount={selectedCount}
+        scheduleDefaults={scheduleDefaults}
+        mealTimePrefs={mealTimePrefs}
+        onClose={() => setBatchScheduleOpen(false)}
+        onApply={handleApplyBatchSchedule}
+        onRecordOverrideEvents={recordOverrideEvents}
+      />
+
       {detailItem && detailTheme ? (
         <DetailSheet
           item={detailItem}
           theme={detailTheme}
+          scheduleDefaults={scheduleDefaults}
           stackOverlaps={detailItem.supplementId ? stackOverlapBySupplementId.get(detailItem.supplementId) ?? [] : []}
           stackSafetySummary={detailItem.supplementId ? stackSafetySummaryBySupplementId.get(detailItem.supplementId) ?? null : null}
           duplicateGroups={detailItem.supplementId ? duplicateGroupsBySupplementId.get(detailItem.supplementId) ?? [] : []}
           stackSafetyMeta={detailItem.supplementId ? stackSafetyMetaBySupplementId.get(detailItem.supplementId) ?? null : null}
           mealTimePrefs={mealTimePrefs}
           onLearnMealTimePref={handleLearnMealTimePref}
-          onClose={() => setDetailId(null)}
+          onClose={() => {
+            setDetailAnalyticsContext(null);
+            setDetailId(null);
+          }}
           onSaveRoutine={handleSaveRoutine}
+          onRecordOverrideEvents={recordOverrideEvents}
+          smartFilterAnalyticsContext={detailAnalyticsContext}
+          onTrackSmartFilterEvent={trackSmartFilterEvaluatedEvent}
         />
       ) : null}
 
@@ -4580,6 +6230,7 @@ export function MySupplementView({ data, onDeleteSelected, onSaveRoutine }: Prop
             if (!viewingNoteItem) return;
             markAsViewed(viewingNoteItem.id);
             setViewingNoteId(null);
+            setDetailAnalyticsContext(null);
             setDetailId(viewingNoteItem.id);
             setExpandedId(null);
           }}
@@ -4625,6 +6276,35 @@ const styles = StyleSheet.create({
     elevation: 3,
     flexShrink: 0,
   },
+  headerPillSplitRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    flexShrink: 0,
+  },
+  headerPillSplitMotion: {
+    height: 44,
+    borderRadius: 999,
+    borderCurve: "continuous",
+    shadowColor: "#0f172a",
+    shadowOpacity: 0.12,
+    shadowRadius: 15,
+    shadowOffset: { width: 0, height: 10 },
+    elevation: 3,
+    minWidth: 116,
+  },
+  headerIconPillMotion: {
+    width: 44,
+    height: 44,
+    borderRadius: 999,
+    borderCurve: "continuous",
+    overflow: "hidden",
+    shadowColor: "#0f172a",
+    shadowOpacity: 0.11,
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 3,
+  },
   headerPill: {
     height: 44,
     paddingHorizontal: 18,
@@ -4633,7 +6313,53 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     borderWidth: 1,
   },
+  headerPillPrimary: {
+    borderColor: "rgba(37,99,235,0.28)",
+  },
+  headerPillNeutral: {
+    borderColor: "rgba(255,255,255,0.7)",
+  },
+  headerPillMuted: {
+    borderColor: "rgba(226,232,240,0.88)",
+  },
+  headerPillDanger: {
+    borderColor: "rgba(239,68,68,0.28)",
+  },
+  headerIconPill: {
+    width: "100%",
+    height: "100%",
+    borderRadius: 999,
+    borderCurve: "continuous",
+    overflow: "hidden",
+    borderWidth: 1,
+  },
+  headerPillBorderOverlay: {
+    borderRadius: 999,
+    borderCurve: "continuous",
+    borderWidth: 1,
+  },
+  headerPillPrimaryOverlay: {
+    borderColor: "rgba(59,130,246,0.55)",
+  },
+  headerPillDangerOverlay: {
+    borderColor: "rgba(239,68,68,0.55)",
+  },
   headerPillInner: { flex: 1, alignItems: "center", justifyContent: "center" },
+  headerIconGlyphStack: {
+    width: 18,
+    height: 18,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  headerIconGlyphLayer: {
+    position: "absolute",
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   headerPillText: {
     fontSize: 14,
     lineHeight: 18,
@@ -4641,6 +6367,12 @@ const styles = StyleSheet.create({
     color: "#334155",
     textAlign: "center",
     includeFontPadding: false,
+  },
+  headerPillTextPrimary: {
+    color: "#1d4ed8",
+  },
+  headerPillTextMuted: {
+    color: "#94a3b8",
   },
   headerMeasureWrap: {
     position: "absolute",
@@ -4997,7 +6729,26 @@ const styles = StyleSheet.create({
     borderColor: "rgba(255,255,255,0.55)",
   },
   cardInner: { gap: 16 },
-  cardHeader: { flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between", gap: 12 },
+  cardContentRow: { flexDirection: "row", alignItems: "center", gap: 14 },
+  cardTextColumn: { flex: 1, minWidth: 0 },
+  cardHeader: {
+    position: "relative",
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    gap: 12,
+    paddingRight: 38,
+  },
+  cardScheduleIconSlot: {
+    position: "absolute",
+    right: 0,
+    top: -4,
+    width: 28,
+    minWidth: 28,
+    height: 28,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   cardTitle: {
     flex: 1,
     fontSize: 30,
@@ -5007,6 +6758,17 @@ const styles = StyleSheet.create({
     includeFontPadding: false,
   },
   cardMeta: { marginTop: 12, gap: 10 },
+  cardThumbFrame: {
+    width: 72,
+    height: 72,
+    borderRadius: 22,
+    borderCurve: "continuous",
+    overflow: "hidden",
+    backgroundColor: "rgba(255,255,255,0.18)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.32)",
+  },
+  cardThumbImage: { width: "100%", height: "100%" },
   tagRow: { flexDirection: "row", gap: 8, flexWrap: "wrap" },
   customTagRow: { flexDirection: "row", gap: 8, flexWrap: "wrap" },
   tagPill: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999, borderCurve: "continuous", borderWidth: 1 },
@@ -5019,7 +6781,7 @@ const styles = StyleSheet.create({
   arrowWrap: {
     position: "absolute",
     right: 24,
-    bottom: 32,
+    bottom: 18,
     width: 56,
     height: 56,
     alignItems: "center",
@@ -5027,8 +6789,8 @@ const styles = StyleSheet.create({
   },
   arrowHalo: {
     position: "absolute",
-    width: 76,
-    height: 76,
+    width: 68,
+    height: 68,
     borderRadius: 999,
     borderCurve: "continuous",
     backgroundColor: "rgba(255,255,255,0.26)",
@@ -5127,6 +6889,17 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 10 },
   },
   sheetHeader: { paddingHorizontal: 32, paddingBottom: 112 },
+  sheetImageFrame: {
+    width: 92,
+    height: 92,
+    borderRadius: 28,
+    borderCurve: "continuous",
+    overflow: "hidden",
+    backgroundColor: "rgba(255,255,255,0.18)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.28)",
+  },
+  sheetImage: { width: "100%", height: "100%" },
   sheetHeaderRow: { flexDirection: "row", alignItems: "center", gap: 8, opacity: 0.85 },
   sheetHeaderLabel: { fontSize: 12, lineHeight: 16, fontWeight: "700", letterSpacing: 1.2, textTransform: "uppercase", includeFontPadding: false },
   sheetTitle: { fontSize: 36, lineHeight: 40, fontWeight: "800", letterSpacing: -0.2, includeFontPadding: false },
@@ -5255,6 +7028,7 @@ const styles = StyleSheet.create({
   scheduleTitleRow: { flexDirection: "row", alignItems: "center", gap: 6 },
   scheduleTitle: { fontSize: 12, fontWeight: "800", color: "#475569", textTransform: "uppercase", letterSpacing: 1.0, includeFontPadding: false },
   scheduleHintText: { fontSize: 12, lineHeight: 16, fontWeight: "600", color: "#94a3b8", includeFontPadding: false },
+  schedulePersonalizationHint: { marginTop: -10, fontSize: 11, lineHeight: 16, fontWeight: "700", color: "#64748b", includeFontPadding: false },
   suggestedRoutineCard: {
     borderRadius: 18,
     borderCurve: "continuous",
@@ -5267,8 +7041,11 @@ const styles = StyleSheet.create({
   },
   suggestedRoutineHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8 },
   suggestedRoutineTitle: { fontSize: 13, lineHeight: 18, fontWeight: "800", color: "#334155", includeFontPadding: false },
-  suggestedRoutineRationale: { fontSize: 12, lineHeight: 16, fontWeight: "600", color: "#475569", includeFontPadding: false },
-  anchorChoiceRow: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 2 },
+  suggestedRoutineRationale: { fontSize: 12, lineHeight: 18, fontWeight: "600", color: "#475569", includeFontPadding: false },
+  suggestedRoutineHighlightText: { fontWeight: "800", color: "#1f2937" },
+  suggestedRoutineChoiceGroup: { gap: 8, marginTop: 2 },
+  suggestedRoutineChoiceHint: { fontSize: 11, lineHeight: 15, fontWeight: "700", color: "#64748b", includeFontPadding: false },
+  anchorChoiceRow: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 2, flexWrap: "wrap" },
   anchorChoiceChip: {
     paddingHorizontal: 10,
     paddingVertical: 5,
@@ -5285,8 +7062,25 @@ const styles = StyleSheet.create({
   anchorChoiceText: { fontSize: 11, lineHeight: 14, fontWeight: "700", color: "#64748b", includeFontPadding: false },
   anchorChoiceTextActive: { color: "#1e3a8a" },
   suggestedRoutineSlots: { gap: 6, marginTop: 2 },
-  suggestedRoutineSlotText: { fontSize: 12, lineHeight: 16, fontWeight: "700", color: "#334155", includeFontPadding: false },
+  suggestedRoutineSlotRow: {
+    borderRadius: 14,
+    borderCurve: "continuous",
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderWidth: 1,
+    borderColor: "rgba(148,163,184,0.12)",
+    backgroundColor: "rgba(255,255,255,0.24)",
+  },
+  suggestedRoutineSlotRowActive: {
+    borderColor: "rgba(30,64,175,0.18)",
+    backgroundColor: "rgba(219,234,254,0.36)",
+  },
+  suggestedRoutineSlotText: { fontSize: 12, lineHeight: 18, fontWeight: "700", color: "#334155", includeFontPadding: false },
   suggestedRoutineSlotTextActive: { color: "#1e3a8a" },
+  suggestedRoutineSlotLabelText: { fontWeight: "900", color: "#1f2937" },
+  suggestedRoutineSlotDividerText: { fontWeight: "700", color: "#94a3b8" },
+  suggestedRoutineSlotTimeText: { fontWeight: "900", color: "#1e3a8a" },
+  suggestedRoutineSlotFoodText: { fontWeight: "800", color: "#0f766e" },
   applySuggestionBtn: {
     marginTop: 6,
     alignSelf: "flex-start",
@@ -5318,8 +7112,69 @@ const styles = StyleSheet.create({
     includeFontPadding: false,
   },
   suggestedRoutineNotice: { fontSize: 11, lineHeight: 15, fontWeight: "700", color: "#64748b", includeFontPadding: false },
+  startDateSection: { gap: 8 },
+  startDateRow: {
+    minHeight: 52,
+    borderRadius: 18,
+    borderCurve: "continuous",
+    borderWidth: 1,
+    borderColor: "rgba(148,163,184,0.28)",
+    backgroundColor: "rgba(255,255,255,0.54)",
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
+  },
+  startDateRowTextWrap: { flex: 1, gap: 2 },
+  startDateTitle: { fontSize: 12, lineHeight: 16, fontWeight: "800", color: "#334155", includeFontPadding: false },
+  startDateCaption: { fontSize: 11, lineHeight: 14, fontWeight: "700", color: "#94a3b8", includeFontPadding: false },
+  startDateValueWrap: { flexDirection: "row", alignItems: "center", gap: 8 },
+  startDateValueText: { fontSize: 12, lineHeight: 16, fontWeight: "800", color: "#1e3a8a", includeFontPadding: false },
   timeCategoryPill: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 10, borderWidth: 1 },
   timeCategoryText: { fontSize: 11, fontWeight: "700", includeFontPadding: false },
+  weekdaySection: { gap: 10 },
+  weekdayHeaderRow: { flexDirection: "row", alignItems: "center", gap: 12, flexWrap: "wrap" },
+  weekdayTitle: { fontSize: 12, lineHeight: 16, fontWeight: "800", color: "#475569", includeFontPadding: false },
+  weekdayCaption: { fontSize: 11, lineHeight: 15, fontWeight: "700", color: "#94a3b8", includeFontPadding: false },
+  weekdayShortcutChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 999,
+    borderCurve: "continuous",
+    borderWidth: 1,
+    borderColor: "rgba(148,163,184,0.35)",
+    backgroundColor: "rgba(255,255,255,0.46)",
+    minHeight: 34,
+    justifyContent: "center",
+  },
+  weekdayShortcutChipActive: {
+    borderColor: "rgba(30,64,175,0.35)",
+    backgroundColor: "rgba(219,234,254,0.55)",
+  },
+  weekdayShortcutText: { fontSize: 11, lineHeight: 14, fontWeight: "700", color: "#64748b", includeFontPadding: false },
+  weekdayShortcutTextActive: { color: "#1e3a8a" },
+  weekdayChipRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  weekdayChip: {
+    minWidth: 36,
+    paddingHorizontal: 8,
+    paddingVertical: 8,
+    borderRadius: 999,
+    borderCurve: "continuous",
+    borderWidth: 1,
+    borderColor: "rgba(148,163,184,0.35)",
+    backgroundColor: "rgba(255,255,255,0.46)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  weekdayChipActive: {
+    borderColor: "rgba(30,64,175,0.35)",
+    backgroundColor: "rgba(219,234,254,0.62)",
+  },
+  weekdayChipText: { fontSize: 12, lineHeight: 16, fontWeight: "800", color: "#64748b", includeFontPadding: false },
+  weekdayChipTextActive: { color: "#1e3a8a" },
+  weekdayHelpText: { fontSize: 11, lineHeight: 15, fontWeight: "700", color: "#64748b", includeFontPadding: false },
 
   timePickerWrap: {
     height: 140,
@@ -5420,6 +7275,252 @@ const styles = StyleSheet.create({
 
   note: { marginTop: 24, fontSize: 16, lineHeight: 22, color: "rgba(100,116,139,0.85)", includeFontPadding: false },
 
+  batchOverlay: {
+    flex: 1,
+    justifyContent: "flex-end",
+    backgroundColor: "rgba(15,23,42,0.28)",
+  },
+  batchSheet: {
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    borderCurve: "continuous",
+    backgroundColor: "#ffffff",
+    overflow: "hidden",
+    shadowColor: "#0f172a",
+    shadowOpacity: 0.16,
+    shadowRadius: 22,
+    shadowOffset: { width: 0, height: -8 },
+    maxHeight: "82%",
+  },
+  batchHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 16,
+    paddingHorizontal: 20,
+    paddingTop: 18,
+    paddingBottom: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: "#eef2f7",
+  },
+  batchHeaderTextWrap: {
+    flex: 1,
+    gap: 4,
+  },
+  batchTitle: {
+    fontSize: 20,
+    lineHeight: 24,
+    fontWeight: "800",
+    color: "#0f172a",
+    includeFontPadding: false,
+  },
+  batchSubtitle: {
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: "700",
+    color: "#64748b",
+    includeFontPadding: false,
+  },
+  batchCloseBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 999,
+    borderCurve: "continuous",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#f8fafc",
+  },
+  batchScroll: {
+    flexGrow: 0,
+  },
+  batchScrollContent: {
+    paddingHorizontal: 20,
+    paddingTop: 18,
+    paddingBottom: 16,
+    gap: 20,
+  },
+  batchSection: {
+    gap: 12,
+  },
+  batchSectionTitle: {
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: "900",
+    color: "#475569",
+    textTransform: "uppercase",
+    letterSpacing: 0.9,
+    includeFontPadding: false,
+  },
+  batchChipRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  batchChoiceChip: {
+    minHeight: 36,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 999,
+    borderCurve: "continuous",
+    borderWidth: 1,
+    borderColor: "rgba(148,163,184,0.32)",
+    backgroundColor: "rgba(248,250,252,0.96)",
+    justifyContent: "center",
+  },
+  batchChoiceChipActive: {
+    borderColor: "rgba(30,64,175,0.3)",
+    backgroundColor: "rgba(219,234,254,0.64)",
+  },
+  batchChoiceText: {
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: "700",
+    color: "#64748b",
+    includeFontPadding: false,
+  },
+  batchChoiceTextActive: {
+    color: "#1e3a8a",
+  },
+  batchSummaryCard: {
+    gap: 4,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "#DBEAFE",
+    backgroundColor: "#EFF6FF",
+  },
+  batchSummaryTitle: {
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: "800",
+    color: "#1D4ED8",
+    includeFontPadding: false,
+    textTransform: "uppercase",
+    letterSpacing: 0.4,
+  },
+  batchSummaryBody: {
+    fontSize: 13,
+    lineHeight: 19,
+    fontWeight: "700",
+    color: "#1F2937",
+    includeFontPadding: false,
+  },
+  batchSummaryMeta: {
+    fontSize: 12,
+    lineHeight: 17,
+    fontWeight: "600",
+    color: "#475569",
+    includeFontPadding: false,
+  },
+  batchFooter: {
+    gap: 12,
+    paddingHorizontal: 20,
+    paddingTop: 14,
+    paddingBottom: 18,
+    borderTopWidth: 1,
+    borderTopColor: "#eef2f7",
+    backgroundColor: "#ffffff",
+  },
+  batchFooterHint: {
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: "700",
+    color: "#64748b",
+    includeFontPadding: false,
+  },
+  batchApplyBtn: {
+    minHeight: 48,
+    borderRadius: 16,
+    borderCurve: "continuous",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#0f172a",
+    paddingHorizontal: 16,
+  },
+  batchApplyBtnDisabled: {
+    backgroundColor: "#e2e8f0",
+  },
+  batchApplyText: {
+    fontSize: 15,
+    lineHeight: 20,
+    fontWeight: "800",
+    color: "#ffffff",
+    includeFontPadding: false,
+  },
+  batchApplyTextDisabled: {
+    color: "#94a3b8",
+  },
+
+  startDateOverlay: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: "rgba(15,23,42,0.4)" },
+  startDateModal: {
+    width: "88%",
+    maxWidth: 360,
+    borderRadius: 28,
+    borderCurve: "continuous",
+    backgroundColor: "#ffffff",
+    overflow: "hidden",
+    shadowColor: "#0f172a",
+    shadowOpacity: 0.18,
+    shadowRadius: 20,
+    shadowOffset: { width: 0, height: 12 },
+    paddingHorizontal: 18,
+    paddingTop: 16,
+    paddingBottom: 18,
+    gap: 14,
+  },
+  startDateModalHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  startDateModalTitleRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+  startDateModalTitle: { fontSize: 16, fontWeight: "700", color: "#0f172a", includeFontPadding: false },
+  startDateModalClose: {
+    width: 32,
+    height: 32,
+    borderRadius: 999,
+    borderCurve: "continuous",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#f1f5f9",
+  },
+  startDateModalSubtitle: { fontSize: 12, lineHeight: 17, fontWeight: "600", color: "#64748b", includeFontPadding: false },
+  startDateQuickActionRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+  startDateQuickActionChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 999,
+    borderCurve: "continuous",
+    borderWidth: 1,
+    borderColor: "rgba(148,163,184,0.35)",
+    backgroundColor: "rgba(248,250,252,0.95)",
+  },
+  startDateQuickActionChipActive: {
+    borderColor: "rgba(37,99,235,0.35)",
+    backgroundColor: "rgba(219,234,254,0.7)",
+  },
+  startDateQuickActionText: { fontSize: 12, lineHeight: 16, fontWeight: "700", color: "#64748b", includeFontPadding: false },
+  startDateQuickActionTextActive: { color: "#1d4ed8" },
+  startDateMonthRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  startDateMonthNav: {
+    width: 32,
+    height: 32,
+    borderRadius: 999,
+    borderCurve: "continuous",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#f8fafc",
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
+  },
+  startDateMonthLabel: {
+    flex: 1,
+    textAlign: "center",
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: "800",
+    color: "#334155",
+    includeFontPadding: false,
+    paddingHorizontal: 8,
+  },
+
   noteOverlay: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: "rgba(15,23,42,0.4)" },
   noteModal: {
     width: "88%",
@@ -5479,3 +7580,13 @@ const styles = StyleSheet.create({
   noteModalEditText: { fontSize: 12, fontWeight: "700", color: "#64748b", includeFontPadding: false },
 
 });
+
+export const mySupplementSmartFilterInternals = {
+  buildGoalTagToKeyMap,
+  buildTypeTagToKeyMap,
+  filterSupplementsByActiveTags,
+  matchesEvaluatedSmartFilterTag,
+  getMembershipReasonCodes,
+  getMembershipMatchTier,
+  isEvaluatedCoverageReadyMembership,
+};

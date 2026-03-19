@@ -1,0 +1,22 @@
+{
+  "version": "v1",
+  "laneCatalog": [
+    { "laneKey": "diet_general_review", "label": "General diet review" },
+    { "laneKey": "diet_vegan_support", "label": "Vegan review lanes" },
+    { "laneKey": "diet_vegetarian_support", "label": "Vegetarian review lanes" },
+    { "laneKey": "diet_low_dairy_review", "label": "Low-dairy review lanes" },
+    { "laneKey": "diet_low_sugar_review", "label": "Low-sugar review lanes" },
+    { "laneKey": "diet_gluten_free_review", "label": "Gluten-free review lanes" },
+    { "laneKey": "diet_kosher_review", "label": "Kosher review lanes" },
+    { "laneKey": "diet_halal_review", "label": "Halal review lanes" }
+  ],
+  "dietMappings": [
+    { "dietKey": "vegan", "laneKeys": ["diet_vegan_support"] },
+    { "dietKey": "vegetarian", "laneKeys": ["diet_vegetarian_support"] },
+    { "dietKey": "low_dairy", "laneKeys": ["diet_low_dairy_review"] },
+    { "dietKey": "low_sugar", "laneKeys": ["diet_low_sugar_review"] },
+    { "dietKey": "gluten_free", "laneKeys": ["diet_gluten_free_review"] },
+    { "dietKey": "kosher", "laneKeys": ["diet_kosher_review"] },
+    { "dietKey": "halal", "laneKeys": ["diet_halal_review"] }
+  ]
+}

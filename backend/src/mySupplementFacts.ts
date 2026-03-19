@@ -49,7 +49,9 @@ export type MySupplementFactsV1 = {
     title: string | null;
     description: string | null;
     link: string | null;
+    imageUrl: string | null;
     suggestedUse: string | null;
+    warningsText: string | null;
     ingredients: Array<{
       name: string;
       dose: string | null;
@@ -75,6 +77,12 @@ const safeTrim = (value?: string | null): string | null => {
 const clamp01 = (value: number): number => Math.max(0, Math.min(1, value));
 
 const normalizeDirectionsWhitespace = (value: string): string => value.replace(/\s+/g, " ").trim();
+
+const normalizeWarningLine = (value: string | null): string | null => {
+  const trimmed = safeTrim(value);
+  if (!trimmed) return null;
+  return trimmed.replace(/\s+/g, " ").trim();
+};
 
 export function parseLabelDirectionsV1(rawText: string | null): {
   parsed: MySupplementFactsV1["directions"]["parsed"];
@@ -121,16 +129,40 @@ export function parseLabelDirectionsV1(rawText: string | null): {
   }
 
   // Frequency per day (e.g. "2 times daily", "twice daily", "once daily").
-  const timesMatch = lower.match(/\b(\d+)\s*(?:times|x)\s*(?:per\s*)?(?:day|daily)\b/);
-  if (timesMatch?.[1]) {
+  const timesMatch = lower.match(/\b(\d+)\s*(?:times|x)\s*(?:per\s*)?(?:day|daily|a day)\b/);
+  const rangeTimesMatch = lower.match(/\b(\d+(?:\.\d+)?)\s*[-–]\s*(\d+(?:\.\d+)?)\s*(?:times|x)\s*(?:per\s*)?(?:day|daily|a day)\b/);
+  if (rangeTimesMatch?.[1] && rangeTimesMatch?.[2]) {
+    const min = Number(rangeTimesMatch[1]);
+    const max = Number(rangeTimesMatch[2]);
+    if (Number.isFinite(min) && Number.isFinite(max) && min > 0 && max > 0) {
+      parsed.timesPerDay = min;
+    }
+  } else if (timesMatch?.[1]) {
     const n = Number(timesMatch[1]);
     if (Number.isFinite(n) && n > 0) parsed.timesPerDay = n;
   } else if (/\bonce\s+daily\b/.test(lower)) {
     parsed.timesPerDay = 1;
+  } else if (/\bonce\s+(?:a\s+day|per\s+day)\b/.test(lower)) {
+    parsed.timesPerDay = 1;
   } else if (/\btwice\s+daily\b/.test(lower)) {
+    parsed.timesPerDay = 2;
+  } else if (/\btwice\s+(?:a\s+day|per\s+day)\b/.test(lower)) {
     parsed.timesPerDay = 2;
   } else if (/\bthree\s+times\s+daily\b/.test(lower) || /\b3\s+times\s+daily\b/.test(lower)) {
     parsed.timesPerDay = 3;
+  } else if (/\bthree\s+times\s+(?:a\s+day|per\s+day)\b/.test(lower) || /\b3\s+times\s+(?:a\s+day|per\s+day)\b/.test(lower)) {
+    parsed.timesPerDay = 3;
+  } else if (
+    /\b(?:daily|per day|a day|every day|each day)\b/.test(lower) &&
+    (parsed.perDoseCount !== null || /\b(?:take|takes?)\s+\d+\s*(tablet|capsule|softgel|gummy|scoop|drop|packet|serving)s?\b/i.test(cleaned))
+  ) {
+    parsed.timesPerDay = 1;
+  } else if (
+    /\bmorning\b/.test(lower) &&
+    /\b(evening|bedtime|night)\b/.test(lower) &&
+    (parsed.perDoseCount !== null || /\b(tablet|capsule|softgel|gummy|scoop|drop|packet|serving)s?\b/i.test(cleaned))
+  ) {
+    parsed.timesPerDay = 2;
   }
 
   // Simple confidence heuristic: reward the fields we can extract deterministically.
@@ -155,10 +187,24 @@ export function buildMySupplementFactsV1(params: {
   const overlayTitle = safeTrim(params.overlayClaims?.title);
   const overlayDescription = safeTrim(params.overlayClaims?.description);
   const overlayLink = safeTrim(params.overlayClaims?.link);
+  const overlayImageUrl = safeTrim(params.overlayClaims?.imageUrl);
   const overlaySuggestedUse = safeTrim(params.overlayClaims?.suggestedUse);
+  const overlayWarningsText = normalizeWarningLine(params.overlayClaims?.warnings ?? null);
   const overlayIngredients = normalizeIherbSupplementFactsRows(params.overlayClaims?.nutritionalFacts);
   const labelDirectionsRawText = overlaySuggestedUse ?? safeTrim(params.labelDirectionsRawText);
   const parsedDirections = parseLabelDirectionsV1(labelDirectionsRawText);
+  const warningBullets = Array.from(
+    new Set(
+      [
+        ...(params.digest.warnings.warnings ?? []),
+        ...(params.digest.warnings.consultDoctorIf ?? []),
+        ...(params.digest.warnings.redFlags ?? []),
+        overlayWarningsText,
+      ]
+        .map((line) => normalizeWarningLine(line ?? null))
+        .filter((line): line is string => Boolean(line)),
+    ),
+  );
 
   return {
     version: "facts_v1",
@@ -185,24 +231,29 @@ export function buildMySupplementFactsV1(params: {
       parseConfidence: parsedDirections.parseConfidence,
     },
     overlay:
-      overlayBrandName || overlayTitle || overlayDescription || overlayLink || overlaySuggestedUse || overlayIngredients.length > 0
+      overlayBrandName ||
+      overlayTitle ||
+      overlayDescription ||
+      overlayLink ||
+      overlayImageUrl ||
+      overlaySuggestedUse ||
+      overlayWarningsText ||
+      overlayIngredients.length > 0
         ? {
             provider: "iherb",
             brandName: overlayBrandName,
             title: overlayTitle,
             description: overlayDescription,
             link: overlayLink,
+            imageUrl: overlayImageUrl,
             suggestedUse: overlaySuggestedUse,
+            warningsText: overlayWarningsText,
             ingredients: overlayIngredients,
           }
         : null,
     warnings: {
-      bullets: [
-        ...(params.digest.warnings.warnings ?? []),
-        ...(params.digest.warnings.consultDoctorIf ?? []),
-        ...(params.digest.warnings.redFlags ?? []),
-      ].filter(Boolean),
-      missing: Boolean(params.digest.warnings.missingFlag),
+      bullets: warningBullets,
+      missing: warningBullets.length === 0 && Boolean(params.digest.warnings.missingFlag),
     },
     claims: {
       labelPurposes: params.digest.claims.labelPurposes ?? [],

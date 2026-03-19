@@ -1,0 +1,124 @@
+{
+  "generatedAt": "2026-03-17T20:20:30.000Z",
+  "phase": "P0-B-recovery-wave",
+  "phaseOutcomeStatus": "execution_success",
+  "baseline": {
+    "stagingPath": "output/p0_p3_combined_schiff_healthy_bootstrap_20260317/staging_products.combined_recovered.json",
+    "mergeReportPath": "output/p0_p3_merge_schiff_healthy_bootstrap_20260317/overlay_merge_coverage_report.json",
+    "highFrequencyValidationPath": "output/p0_p3_highfreq_schiff_healthy_bootstrap_20260317/high_frequency_hit_validation.json",
+    "highFrequencyCompleteHitCount": 688,
+    "highFrequencyCompleteHitRatePct": 41.7,
+    "highFrequencyActiveQueueCount": 278,
+    "highFrequencyMissingFromStagingCount": 684
+  },
+  "brandRecoveryWave": [
+    {
+      "brandName": "Nature's Bounty",
+      "reportPath": "output/p0_p3_official_bootstrap_natures_bounty_rerun_20260317/official_fallback_report.json",
+      "result": "incremental_signal",
+      "queued": 33,
+      "processed": 33,
+      "improvedRows": 3,
+      "becameFullOverlayReady": 2,
+      "filledSuggestedUse": 2,
+      "filledWarnings": 3,
+      "filledProductImage": 3
+    },
+    {
+      "brandName": "Nature Made",
+      "reportPath": "output/p0_p3_official_bootstrap_nature_made_rerun_20260317/official_fallback_report.json",
+      "result": "incremental_signal",
+      "queued": 29,
+      "processed": 29,
+      "improvedRows": 10,
+      "becameFullOverlayReady": 10,
+      "filledSuggestedUse": 10,
+      "filledWarnings": 10,
+      "filledProductImage": 10
+    },
+    {
+      "brandName": "Solgar",
+      "reportPath": "output/p0_p3_official_bootstrap_solgar_rerun_20260317",
+      "result": "runtime_aborted",
+      "queued": 29,
+      "processed": null,
+      "note": "Wave was explicitly stopped after prolonged runtime without a completed report so no silent background jobs remained."
+    },
+    {
+      "brandName": "Nature's Way",
+      "reportPath": "output/p0_p3_official_bootstrap_natures_way_rerun_20260317",
+      "result": "runtime_aborted",
+      "queued": 23,
+      "processed": null,
+      "note": "Wave was explicitly stopped after prolonged runtime without a completed report so no silent background jobs remained."
+    }
+  ],
+  "liveQueueCanaries": [
+    {
+      "brandName": "Nature's Way",
+      "reportPath": "output/p0_p3_official_bootstrap_natures_way_subset5_livequeue_20260317/official_fallback_report.json",
+      "queuePath": "output/p0_p3_active_queue_natures_way_subset5_20260317.json",
+      "sampleSize": 5,
+      "result": "blocker_isolation",
+      "classification": "rate_limited_no_uplift_sample",
+      "queued": 5,
+      "processed": 5,
+      "improvedRows": 0,
+      "becameFullOverlayReady": 0,
+      "filledSuggestedUse": 0,
+      "filledWarnings": 0,
+      "filledProductImage": 0,
+      "http429": 18,
+      "fetchSuccess": 3,
+      "note": "A live-queue sample built from the current high-frequency active_queue executed cleanly but produced only 429-limited search attempts plus staged-section fallback with no field fills."
+    },
+    {
+      "brandName": "Solgar",
+      "reportPath": "output/p0_p3_official_bootstrap_solgar_subset5_livequeue_20260317/official_fallback_report.json",
+      "queuePath": "output/p0_p3_active_queue_solgar_subset5_20260317.json",
+      "sampleSize": 5,
+      "result": "no_signal",
+      "classification": "executed_no_signal_sample",
+      "queued": 5,
+      "processed": 5,
+      "improvedRows": 0,
+      "becameFullOverlayReady": 0,
+      "filledSuggestedUse": 0,
+      "filledWarnings": 0,
+      "filledProductImage": 0,
+      "http429": 0,
+      "fetchSuccess": 6,
+      "note": "A live-queue sample built from the current high-frequency active_queue reached the official site successfully but returned no catalog/page/image signal and no field fills."
+    }
+  ],
+  "laneDiagnostics": {
+    "legacyQueueMismatch": {
+      "reportPath": "output/p0_p3_official_bootstrap_natures_way_subset5_20260317/official_fallback_report.json",
+      "classification": "stale_queue_source",
+      "note": "The legacy Week 2 global queue path no longer contains the current P0 active_queue rows, so direct reruns against that queue can misleadingly process zero rows."
+    }
+  },
+  "combinedWaveEffect": {
+    "combinedReportPath": "output/p0_p3_combined_schiff_healthy_natures_bounty_nature_made_20260317/combined_recovery_report.json",
+    "combinedStagingPath": "output/p0_p3_combined_schiff_healthy_natures_bounty_nature_made_20260317/staging_products.combined_recovered.json",
+    "changedExistingRows": 13,
+    "addedRows": 0,
+    "netNewIncrementalUpliftVsBaseline": true,
+    "classification": "positive_incremental_signal"
+  },
+  "finalCall": {
+    "scaleThisWave": true,
+    "reason": "The official-fallback active-queue lane still shows proven uplift from the Nature's Bounty and Nature Made waves, which raised the representative high-frequency set from 688 to 700 complete hits while reducing active_queue from 278 to 266.",
+    "currentBaseline": {
+      "completeHitCount": 700,
+      "completeHitRatePct": 42.4,
+      "activeQueueCount": 266,
+      "missingFromStagingCount": 684
+    },
+    "incrementalProofSince700": {
+      "proved": false,
+      "reason": "Follow-up live-queue canaries on Nature's Way and Solgar executed without producing any new complete hits, so no incremental uplift beyond 700/266 is proven in this run."
+    },
+    "nextBestFocus": "Avoid more broad reruns on Nature's Way and Solgar until the queue source and brand-level signal conditions change; prioritize remaining active brands with better odds of official signal."
+  }
+}

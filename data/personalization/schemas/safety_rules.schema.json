@@ -1,0 +1,104 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nutri.app/schemas/personalization/safety_rules.schema.json",
+  "type": "object",
+  "required": ["version", "capsCatalog", "experienceModes", "eligibilityRules", "rules"],
+  "properties": {
+    "version": { "type": "string", "const": "v1" },
+    "capsCatalog": {
+      "type": "array",
+      "minItems": 5,
+      "items": {
+        "type": "object",
+        "required": ["capKey", "label"],
+        "properties": {
+          "capKey": { "type": "string", "enum": ["duplicate_overlap_high", "low_disclosure", "proprietary_blend", "diet_constraint_conflict", "generic_safety_path"] },
+          "label": { "type": "string", "minLength": 1 }
+        },
+        "additionalProperties": false
+      }
+    },
+    "experienceModes": {
+      "type": "array",
+      "minItems": 4,
+      "items": {
+        "type": "object",
+        "required": ["key", "reasonCode"],
+        "properties": {
+          "key": { "type": "string", "enum": ["brand_new", "tried_a_few", "regular_user", "structured_stack"] },
+          "reasonCode": { "type": "string", "minLength": 1 }
+        },
+        "additionalProperties": false
+      }
+    },
+    "eligibilityRules": {
+      "type": "array",
+      "minItems": 3,
+      "items": {
+        "type": "object",
+        "required": ["ruleId", "appliesWhen", "outcome", "reasonCode"],
+        "properties": {
+          "ruleId": { "type": "string" },
+          "appliesWhen": {
+            "type": "object",
+            "properties": {
+              "duplicateRiskLevels": {
+                "type": "array",
+                "uniqueItems": true,
+                "items": { "type": "string", "enum": ["none", "medium", "high"] }
+              },
+              "experienceLevels": {
+                "type": "array",
+                "uniqueItems": true,
+                "items": { "type": "string", "enum": ["brand_new", "tried_a_few", "regular_user", "structured_stack"] }
+              },
+              "ageRanges": { "type": "array", "uniqueItems": true, "items": { "type": "string" } },
+              "blockers": {
+                "type": "array",
+                "uniqueItems": true,
+                "items": { "type": "string", "enum": ["busy_day_forgetfulness", "routine_changes_day_to_day", "goal_fit_uncertainty", "label_and_dosage_confusion", "weak_tracking_habit", "already_consistent"] }
+              }
+            },
+            "additionalProperties": false
+          },
+          "outcome": {
+            "type": "object",
+            "required": ["eligible", "rankEligible", "caps"],
+            "properties": {
+              "eligible": { "type": "boolean" },
+              "rankEligible": { "type": "boolean" },
+              "caps": { "type": "array", "items": { "type": "string", "enum": ["duplicate_overlap_high", "low_disclosure", "proprietary_blend", "diet_constraint_conflict", "generic_safety_path"] }, "uniqueItems": true }
+            },
+            "additionalProperties": false
+          },
+          "reasonCode": { "type": "string", "minLength": 1 }
+        },
+        "additionalProperties": false
+      }
+    },
+    "rules": {
+      "type": "array",
+      "minItems": 5,
+      "items": {
+        "type": "object",
+        "required": ["ruleId", "condition", "effect"],
+        "properties": {
+          "ruleId": { "type": "string", "enum": ["duplicate_overlap_downgrade", "low_disclosure_caps_strong_match", "proprietary_blend_caps_goal_match", "diet_constraint_exclusion", "sensitive_goal_generic_safety_path"] },
+          "condition": { "type": "string", "enum": ["duplicate_risk_level_high", "disclosure_quality_low", "proprietary_blend_without_clear_actives", "violates_declared_diet_constraint", "ingredient_requires_generic_safety_path"] },
+          "effect": {
+            "type": "object",
+            "properties": {
+              "eligible": { "type": "boolean" },
+              "rankEligible": { "type": "boolean" },
+              "maxTier": { "type": "string", "enum": ["strong_match", "related", "weak_match", "no_match"] },
+              "caps": { "type": "array", "uniqueItems": true, "items": { "type": "string", "enum": ["duplicate_overlap_high", "low_disclosure", "proprietary_blend", "diet_constraint_conflict", "generic_safety_path"] } }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

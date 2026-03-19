@@ -1,0 +1,219 @@
+{
+  "phase": "p0_p3_product_closure",
+  "generatedAt": "2026-03-18T00:55:04.867Z",
+  "priorityOrder": [
+    "P0",
+    "P1",
+    "P2",
+    "P3"
+  ],
+  "reports": [
+    "program_manifest_current",
+    "program_result_current",
+    "blocker_registry",
+    "import_quality_validation_report",
+    "high_frequency_product_hit_validation",
+    "product_surface_completeness_report",
+    "saved_stack_duplicate_validation",
+    "daily_dose_basis_validation",
+    "consumption_readiness_report",
+    "science_whitelist_readiness_matrix",
+    "queued_brand_target_match_matrix",
+    "queued_brand_north_america_discovery_summary",
+    "queued_brand_execution_lanes_current",
+    "queued_brand_lane_execution_result_current",
+    "v1_strict_only_merge_cohort_summary",
+    "v1_strict_only_merge_runbook_20260318",
+    "v1_strict_only_post_merge_smoke_check_20260317"
+  ],
+  "steps": [
+    {
+      "order": 1,
+      "id": "p0_import_quality_validation"
+    },
+    {
+      "order": 2,
+      "id": "p0_high_frequency_hit_validation"
+    },
+    {
+      "order": 3,
+      "id": "p0_product_surface_completeness_audit"
+    },
+    {
+      "order": 4,
+      "id": "p1_duplicate_ingredient_real_sample_closure"
+    },
+    {
+      "order": 5,
+      "id": "p1_daily_dose_basis_stabilization"
+    },
+    {
+      "order": 6,
+      "id": "p2_saved_item_consumption_readiness"
+    },
+    {
+      "order": 7,
+      "id": "p3_science_whitelist_readiness"
+    }
+  ],
+  "latestFollowupExecution": {
+    "executedAt": "2026-03-17T23:36:41Z",
+    "executionMode": "single_product_codeage_official_recovery_clean_pass",
+    "brandName": "Codeage",
+    "productId": "126291",
+    "result": "execution_success",
+    "summary": "Codeage Urolithin A was recovered cleanly to full overlay ready by closing suggested use and warnings without OCR noise; the remaining six ingestible Codeage tail rows were explicitly kept gated."
+  },
+  "latestNorthAmericaBrandDiscoveryBatch": {
+    "executedAt": "2026-03-17T21:24:00Z",
+    "executionMode": "parallel_subagents_brand_discovery_and_matching",
+    "spawnedAgents": [
+      "na-brand-discovery-a",
+      "na-brand-discovery-b",
+      "na-brand-discovery-c",
+      "queued-highfreq-matcher"
+    ],
+    "summary": "A 10-brand North America discovery batch completed. The strongest external-discovery-first targets are Natrol and Codeage; the strongest official-site recovery surfaces are Nutricost, Country Life, and Sports Research.",
+    "artifacts": [
+      "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/queued_brand_target_match_matrix.json",
+      "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/queued_brand_north_america_discovery_summary.json"
+    ]
+  },
+  "latestNorthAmericaLaneSplit": {
+    "executedAt": "2026-03-17T22:32:27Z",
+    "executionMode": "control_plane_lane_split",
+    "summary": "The five highest-priority queued/high-frequency brands were split into two executable lanes: external discovery for Natrol and Codeage, and official recovery wave for Nutricost, Country Life, and Sports Research.",
+    "artifacts": [
+      "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/queued_brand_execution_lanes_current.json",
+      "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/subagents/external_discovery_lane.md",
+      "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/subagents/official_recovery_wave_lane.md"
+    ]
+  },
+  "latestNorthAmericaLaneExecution": {
+    "executedAt": "2026-03-17T22:47:25Z",
+    "executionMode": "parallel_brand_lane_subagents",
+    "spawnedAgents": [
+      "Natrol external discovery",
+      "Codeage external discovery",
+      "Nutricost official recovery",
+      "Country Life official recovery",
+      "Sports Research official recovery"
+    ],
+    "summary": "Natrol yielded 2 strict current candidates, Codeage yielded a fresh 12-product supplement-only candidate set, Nutricost produced 3 gated-review full-overlay-ready rows, Country Life improved 14 rows but remained partial, and Sports Research's residual six-row tail was blocker-classified.",
+    "artifacts": [
+      "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/queued_brand_lane_execution_result_current.json",
+      "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/subagents/runs/natrol_external_discovery_execution_result.md",
+      "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/subagents/runs/codeage_external_discovery_execution_result.md",
+      "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/subagents/runs/nutricost_official_recovery_execution_result.md",
+      "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/subagents/runs/country_life_official_recovery_execution_result.md",
+      "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/subagents/runs/sports_research_official_recovery_execution_result.md"
+    ]
+  },
+  "latestCodeageQueueRebuildExecution": {
+    "executedAt": "2026-03-17T23:00:00Z",
+    "summary": "Confirmed Codeage in raw iHerb zip and rebuilt a fresh supplement-only queue with 12 candidates: 6 stable iHerb crossmatches, 5 ambiguous, 1 official-only.",
+    "artifacts": [
+      "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/codeage_queue_rebuild_execution_result.md",
+      "/Users/howard07/NuTriApp/nutri-app/output/p0_p3_codeage_queue_rebuild_20260317/codeage_supplement_only_queue.json",
+      "/Users/howard07/NuTriApp/nutri-app/output/p0_p3_codeage_queue_rebuild_20260317/codeage_iherb_zip_presence_summary.json"
+    ]
+  },
+  "latestCodeageImmediateExecution": {
+    "executedAt": "2026-03-18T00:01:37Z",
+    "summary": "Recovered Codeage Urolithin A cleanly and then closed the remaining six ingestible tail products via subagent-assisted official discovery plus one shared-config unified recovery wave.",
+    "artifacts": [
+      "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/codeage_urolithin_and_gated_tail_20260317.md",
+      "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/codeage_remaining_six_closure_20260317.md",
+      "/Users/howard07/NuTriApp/nutri-app/output/p0_p3_codeage_remaining_six_closure_20260317/unified_wave/staging_products.official_refreshed.sanitized.json",
+      "/Users/howard07/NuTriApp/nutri-app/output/p0_p3_codeage_remaining_six_closure_20260317/final_product_verdicts.json"
+    ]
+  },
+  "latestCodeageTailClosureExecution": {
+    "executedAt": "2026-03-18T00:01:37Z",
+    "executionMode": "parallel_subagents_plus_shared_config_unified_wave",
+    "spawnedAgents": [
+      {
+        "agentId": "019cfe2d-8811-78b2-bc79-2c8f2549e192",
+        "nickname": "Popper"
+      },
+      {
+        "agentId": "019cfe2d-88ff-7240-af07-39f89e0c79bf",
+        "nickname": "Sagan"
+      },
+      {
+        "agentId": "019cfe2d-8a07-75d0-ad25-66685cb6e5ba",
+        "nickname": "Banach"
+      }
+    ],
+    "brandName": "Codeage",
+    "productIds": [
+      "121637",
+      "157265",
+      "143300",
+      "157271",
+      "146937",
+      "152821"
+    ],
+    "result": "execution_success",
+    "summary": "All six remaining ingestible Codeage tail products were closed into one shared-config unified wave and final sanitized artifact.",
+    "artifacts": [
+      "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/codeage_remaining_six_closure_20260317.md",
+      "/Users/howard07/NuTriApp/nutri-app/output/p0_p3_codeage_remaining_six_closure_20260317/unified_wave/official_fallback_report.json",
+      "/Users/howard07/NuTriApp/nutri-app/output/p0_p3_codeage_remaining_six_closure_20260317/unified_wave/staging_products.official_refreshed.sanitized.json",
+      "/Users/howard07/NuTriApp/nutri-app/output/p0_p3_codeage_remaining_six_closure_20260317/final_product_verdicts.json"
+    ]
+  },
+  "latestV1StrictOnlyMergeCohortExecution": {
+    "executedAt": "2026-03-18T00:22:06.987Z",
+    "executionMode": "strict_only_cohort_build",
+    "summary": "Built a conservative V1 strict-only supplement merge cohort from the current strict-ready pool, with Codeage closure overrides patched in and deterministic canary/batch staging files emitted.",
+    "counts": {
+      "mergedBaseRows": 51010,
+      "strictReadyRows": 26552,
+      "v1StrictOnlyRows": 22273,
+      "excludedFromStrictReady": 4279,
+      "canaryRows": 2000,
+      "batch2Rows": 10000,
+      "remainderRows": 10273
+    },
+    "artifacts": [
+      "/Users/howard07/NuTriApp/nutri-app/output/p0_p3_v1_strict_only_merge_cohort_20260318/v1_strict_only_merge_cohort_summary.json",
+      "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/v1_strict_only_merge_runbook_20260318.md",
+      "/Users/howard07/NuTriApp/nutri-app/output/p0_p3_v1_strict_only_merge_cohort_20260318/v1_strict_only_full_staging.json",
+      "/Users/howard07/NuTriApp/nutri-app/output/p0_p3_v1_strict_only_merge_cohort_20260318/v1_strict_only_canary_2000_staging.json",
+      "/Users/howard07/NuTriApp/nutri-app/output/p0_p3_v1_strict_only_merge_cohort_20260318/v1_strict_only_batch2_10000_staging.json",
+      "/Users/howard07/NuTriApp/nutri-app/output/p0_p3_v1_strict_only_merge_cohort_20260318/v1_strict_only_remainder_10273_staging.json"
+    ]
+  },
+  "latestV1StrictOnlyMergeApplyExecution": {
+    "executedAt": "2026-03-18T00:29:00Z",
+    "executionMode": "strict_only_cohort_apply",
+    "summary": "Applied the full V1 strict-only supplement cohort to Supabase in canary, batch2, and remainder waves with zero blocked or queued rows.",
+    "counts": {
+      "merged": 22273,
+      "blocked": 0,
+      "queued": 0,
+      "mergedAuthoritativeDsld": 11855,
+      "mergedHighConfidenceProductPage": 10418
+    },
+    "artifacts": [
+      "/Users/howard07/NuTriApp/nutri-app/output/p0_p3_v1_strict_only_merge_cohort_20260318/apply_canary_2000/overlay_merge_coverage_report.json",
+      "/Users/howard07/NuTriApp/nutri-app/output/p0_p3_v1_strict_only_merge_cohort_20260318/apply_batch2_10000/overlay_merge_coverage_report.json",
+      "/Users/howard07/NuTriApp/nutri-app/output/p0_p3_v1_strict_only_merge_cohort_20260318/apply_remainder_10273/overlay_merge_coverage_report.json"
+    ]
+  },
+  "latestV1StrictOnlyPostMergeSmokeCheck": {
+    "executedAt": "2026-03-18T00:55:04.867Z",
+    "executionMode": "offline_readiness_plus_runtime_probe",
+    "summary": "Post-merge smoke check passed for Score V2, module completeness, representative runtime probes, and Week 3 safety non-regression. Deep category still has a real unknown long-tail residue, but representative probes are healthy.",
+    "artifacts": [
+      "/Users/howard07/NuTriApp/nutri-app/output/p0_p3_v1_strict_only_post_merge_smoke_20260317/combined_overlay_merge_coverage_report.json",
+      "/Users/howard07/NuTriApp/nutri-app/output/p0_p3_v1_strict_only_post_merge_smoke_20260317/score_v2_readiness/score_v2_readiness_report.json",
+      "/Users/howard07/NuTriApp/nutri-app/output/p0_p3_v1_strict_only_post_merge_smoke_20260317/category_experience/category_experience_validation_pack.json",
+      "/Users/howard07/NuTriApp/nutri-app/output/p0_p3_v1_strict_only_post_merge_smoke_20260317/harness_sample/quality_summary.json",
+      "/Users/howard07/NuTriApp/nutri-app/output/p0_p3_v1_strict_only_post_merge_smoke_20260317/runtime_decision_support_probe_summary.json",
+      "/Users/howard07/NuTriApp/nutri-app/output/p0_p3_v1_strict_only_post_merge_smoke_20260317/runtime_unknown_tail_probe_summary.json",
+      "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/v1_strict_only_post_merge_smoke_check_20260317.md"
+    ]
+  }
+}

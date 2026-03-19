@@ -1,0 +1,171 @@
+{
+  "generatedAt": "2026-03-17T22:47:25Z",
+  "programPhase": "p0_p3_product_closure",
+  "objective": "Close the remaining Week 2 / P0 product-grade gap by pushing representative high-frequency complete-hit coverage to at least 70% while keeping Week 3 closed and scan UI frozen.",
+  "globalGuardrails": [
+    "Do not modify protected scan/barcode UI surfaces.",
+    "Do not redefine the goal as broad iHerb expansion.",
+    "Do not reopen no-signal or paused identity-recovery lanes.",
+    "Do not loosen identity thresholds to inflate complete-hit rate.",
+    "Do not regress P1 real-saved duplicate-warning behavior."
+  ],
+  "codexProjectConfigPath": "/Users/howard07/NuTriApp/nutri-app/.codex/config.toml",
+  "baseline": {
+    "baselineDate": "2026-03-17",
+    "highFrequencyReportPath": "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/high_frequency_product_hit_validation.json",
+    "uniqueCandidates": 1651,
+    "completeHitCount": 725,
+    "completeHitRatePct": 43.9,
+    "activeQueueCount": 241,
+    "missingFromStagingCount": 684
+  },
+  "closureGate": {
+    "minimumCompleteHitCount": 1156,
+    "minimumCompleteHitRatePct": 70,
+    "mustAlsoPass": [
+      "import_quality_validation_direct_instrumentation",
+      "representative_product_surface_completeness",
+      "week3_real_saved_regression_guard"
+    ]
+  },
+  "latestParallelExecution": {
+    "executedAt": "2026-03-17T20:22:16Z",
+    "spawnedAgents": [
+      "p0-active-queue-rescuer",
+      "p0-import-quality-auditor",
+      "p0-product-surface-auditor",
+      "week3-regression-guard"
+    ],
+    "status": "completed_with_blockers",
+    "note": "The official project-scoped subagent batch refreshed canonical audit reports. A follow-up Pure Encapsulations active-queue wave then moved the current baseline from 700 / 266 to 725 / 241."
+  },
+  "latestBrandDiscoveryExecution": {
+    "executedAt": "2026-03-17T21:24:00Z",
+    "spawnedAgents": [
+      "na-brand-discovery-a",
+      "na-brand-discovery-b",
+      "na-brand-discovery-c",
+      "queued-highfreq-matcher"
+    ],
+    "status": "completed",
+    "objective": "Discover North America product coverage for the top queued/high-frequency supplement brands and match them back to canonical queued/high-frequency gaps.",
+    "primaryOutputs": [
+      "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/queued_brand_target_match_matrix.json",
+      "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/queued_brand_north_america_discovery_summary.json",
+      "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/subagents/runs/na_brand_discovery_a_result.md",
+      "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/subagents/runs/na_brand_discovery_b_result.md",
+      "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/subagents/runs/na_brand_discovery_c_result.md",
+      "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/subagents/runs/queued_highfreq_matcher_result.md"
+    ]
+  },
+  "latestLaneSplitExecution": {
+    "executedAt": "2026-03-17T22:32:27Z",
+    "status": "completed",
+    "objective": "Convert the top five North America queued/high-frequency brand targets into two executable lanes with explicit guardrails and stop conditions.",
+    "primaryOutputs": [
+      "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/queued_brand_execution_lanes_current.json",
+      "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/subagents/external_discovery_lane.md",
+      "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/subagents/official_recovery_wave_lane.md"
+    ]
+  },
+  "latestBrandLaneExecution": {
+    "executedAt": "2026-03-17T22:47:25Z",
+    "status": "completed",
+    "objective": "Execute the Natrol/Codeage external discovery lane and the Nutricost/Country Life/Sports Research official recovery wave lane in parallel using real subagents.",
+    "primaryOutputs": [
+      "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/queued_brand_lane_execution_result_current.json",
+      "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/subagents/runs/natrol_external_discovery_execution_result.md",
+      "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/subagents/runs/codeage_external_discovery_execution_result.md",
+      "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/subagents/runs/nutricost_official_recovery_execution_result.md",
+      "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/subagents/runs/country_life_official_recovery_execution_result.md",
+      "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/subagents/runs/sports_research_official_recovery_execution_result.md"
+    ]
+  },
+  "subagents": [
+    {
+      "id": "p0_active_queue_rescuer",
+      "priority": 1,
+      "status": "active",
+      "mission": "Convert the existing active_queue high-frequency set into product-surface complete hits using safe identity, merge, and official-fallback lanes.",
+      "codexAgentPath": "/Users/howard07/NuTriApp/nutri-app/.codex/agents/p0-active-queue-rescuer.toml",
+      "model": "gpt-5.4",
+      "promptPath": "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/subagents/p0_active_queue_rescuer.md",
+      "primaryOutputs": [
+        "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/high_frequency_product_hit_validation.json",
+        "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/high_frequency_recovery_wave_status.json",
+        "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/blocker_registry.json"
+      ]
+    },
+    {
+      "id": "p0_missing_from_staging_rescuer",
+      "priority": 2,
+      "status": "active",
+      "mission": "Recover enough missing_from_staging high-frequency products through DSLD bootstrap and official fallback to supply the remaining complete-hit uplift needed for 70%.",
+      "codexAgentPath": "/Users/howard07/NuTriApp/nutri-app/.codex/agents/p0-missing-from-staging-rescuer.toml",
+      "model": "gpt-5.4",
+      "promptPath": "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/subagents/p0_missing_from_staging_rescuer.md",
+      "primaryOutputs": [
+        "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/high_frequency_product_hit_validation.json",
+        "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/high_frequency_recovery_wave_status.json",
+        "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/blocker_registry.json"
+      ]
+    },
+    {
+      "id": "p0_import_quality_auditor",
+      "priority": 3,
+      "status": "completed",
+      "mission": "Close the remaining import-quality evidence gap by instrumenting parse failures and mapping mismatches directly in the Week 2 control plane.",
+      "codexAgentPath": "/Users/howard07/NuTriApp/nutri-app/.codex/agents/p0-import-quality-auditor.toml",
+      "model": "gpt-5.4-mini",
+      "promptPath": "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/subagents/p0_import_quality_auditor.md",
+      "primaryOutputs": [
+        "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/import_quality_validation_report.json",
+        "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/blocker_registry.json"
+      ]
+    },
+    {
+      "id": "p0_product_surface_auditor",
+      "priority": 4,
+      "status": "completed",
+      "mission": "Re-audit user-facing non-scan product surfaces after every recovery wave and refuse closure unless representative products are truly complete on product surfaces.",
+      "codexAgentPath": "/Users/howard07/NuTriApp/nutri-app/.codex/agents/p0-product-surface-auditor.toml",
+      "model": "gpt-5.4-mini",
+      "promptPath": "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/subagents/p0_product_surface_auditor.md",
+      "primaryOutputs": [
+        "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/product_surface_completeness_report.json",
+        "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/program_result_current.json"
+      ]
+    },
+    {
+      "id": "week3_regression_guard",
+      "priority": 5,
+      "status": "completed",
+      "mission": "Keep Week 3 closed while P0 rescue waves land by rerunning real-saved duplicate-warning checks and conservative daily-dose behavior.",
+      "codexAgentPath": "/Users/howard07/NuTriApp/nutri-app/.codex/agents/week3-regression-guard.toml",
+      "model": "gpt-5.4",
+      "promptPath": "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/subagents/week3_regression_guard.md",
+      "primaryOutputs": [
+        "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/saved_stack_duplicate_validation.json",
+        "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/daily_dose_basis_validation.json",
+        "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/blocker_registry.json"
+      ]
+    }
+  ],
+  "latestCodeageQueueRebuildExecution": {
+    "status": "completed",
+    "brand": "Codeage",
+    "rebuiltQueueCount": 12,
+    "stableIherbCrossmatchCount": 6,
+    "ambiguousIherbCrossmatchCount": 5,
+    "officialOnlyCandidateCount": 1,
+    "evidencePath": "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/codeage_queue_rebuild_execution_result.md"
+  },
+  "latestCodeageImmediateExecution": {
+    "status": "completed",
+    "brand": "Codeage",
+    "productId": "126291",
+    "result": "full_overlay_ready_clean_recovery",
+    "gatedIngestibleTailCount": 6,
+    "evidencePath": "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/codeage_urolithin_and_gated_tail_20260317.md"
+  }
+}

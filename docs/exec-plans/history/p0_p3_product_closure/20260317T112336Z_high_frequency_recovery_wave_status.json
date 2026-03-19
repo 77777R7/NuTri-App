@@ -1,0 +1,85 @@
+{
+  "generatedAt": "2026-03-17T11:23:36.883Z",
+  "phase": "P0-B-recovery-wave",
+  "phaseOutcomeStatus": "blocker_isolation",
+  "afterCarlsonBase": {
+    "stagingPath": "output/week2_p0_rescue_executor/week2-p0-rescue-20260317-warnings_only-carlson-2026-03-17-035746/staging_products.official_refreshed.json",
+    "stagingSha1": "6f374076c03f268e86b554d4077b2505ccfe5b0c",
+    "mergeReportPath": "output/p0_p3_merge_after_carlson_20260317/overlay_merge_coverage_report.json",
+    "highFrequencyValidationPath": "output/p0_p3_highfreq_after_carlson_20260317/high_frequency_hit_validation.json",
+    "highFrequencyCompleteHitCount": 665,
+    "highFrequencyCompleteHitRatePct": 40.3,
+    "highFrequencyMissingOrQueuedCount": 986
+  },
+  "brandRecoveryWave": [
+    {
+      "brandName": "Healthy Origins",
+      "reportPath": "output/p0_p3_missing_recovery_healthy_origins_20260317/iherb_search_recovery_report.json",
+      "result": "minimal_signal_non_incremental",
+      "queued": 50,
+      "processed": 50,
+      "recoveredComplete": 1,
+      "recoveredPartial": 0,
+      "identityUnresolved": 0,
+      "noPathFound": 49
+    },
+    {
+      "brandName": "Schiff",
+      "reportPath": "output/p0_p3_missing_recovery_schiff_20260317/iherb_search_recovery_report.json",
+      "result": "no_signal",
+      "queued": 46,
+      "processed": 46,
+      "recoveredComplete": 0,
+      "recoveredPartial": 0,
+      "identityUnresolved": 0,
+      "noPathFound": 46
+    },
+    {
+      "brandName": "Nature's Bounty",
+      "reportPath": "output/p0_p3_missing_recovery_natures_bounty_20260317/iherb_search_recovery_report.json",
+      "result": "no_signal",
+      "queued": 33,
+      "processed": 33,
+      "recoveredComplete": 0,
+      "recoveredPartial": 0,
+      "identityUnresolved": 0,
+      "noPathFound": 33
+    },
+    {
+      "brandName": "Pure Encapsulations",
+      "reportPath": "output/p0_p3_missing_recovery_pure_encapsulations_20260317/iherb_search_recovery_report.json",
+      "result": "no_signal",
+      "queued": 38,
+      "processed": 38,
+      "recoveredComplete": 0,
+      "recoveredPartial": 0,
+      "identityUnresolved": 0,
+      "noPathFound": 38
+    },
+    {
+      "brandName": "Natrol",
+      "reportPath": "output/p0_p3_missing_recovery_natrol_20260317/iherb_search_recovery_report.json",
+      "result": "no_signal",
+      "queued": 41,
+      "processed": 41,
+      "recoveredComplete": 0,
+      "recoveredPartial": 0,
+      "identityUnresolved": 0,
+      "noPathFound": 41,
+      "note": "This aligns with the earlier rapidapi_identity_only / no-signal risk classification for Natrol."
+    }
+  ],
+  "combinedWaveEffect": {
+    "combinedReportPath": "output/p0_p3_combined_recovery_all_v2_20260317/combined_recovery_report.json",
+    "combinedStagingPath": "output/p0_p3_combined_recovery_all_v2_20260317/staging_products.combined_recovered.json",
+    "combinedStagingSha1": "6f374076c03f268e86b554d4077b2505ccfe5b0c",
+    "changedExistingRows": 0,
+    "addedRows": 0,
+    "netNewIncrementalUpliftVsAfterCarlsonBase": false,
+    "classification": "no_signal_after_carlson_base"
+  },
+  "finalCall": {
+    "scaleThisWave": false,
+    "reason": "Across the full top-gap recovery wave, the combined recovered staging is byte-identical to the after-Carlson base, so this wave produced no net new product-level uplift beyond the Carlson rescue."
+  }
+}

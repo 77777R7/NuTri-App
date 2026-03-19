@@ -61,6 +61,7 @@ const buildOverlayClaims = (
   brandName: null,
   title: null,
   link: null,
+  imageUrl: null,
   categories,
   description: null,
   suggestedUse: null,

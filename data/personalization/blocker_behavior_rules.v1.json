@@ -1,0 +1,77 @@
+{
+  "version": "v1",
+  "blockerStrategies": [
+    {
+      "key": "busy_day_forgetfulness",
+      "onboardingLabel": "I forget when my day gets busy",
+      "blockerMode": "reminder_first",
+      "reminderPriority": "high",
+      "scheduleComplexity": "simple",
+      "notificationBudget": "heavy",
+      "emphasizeHomeCheckIn": true,
+      "emphasizeScheduleSetup": true,
+      "emphasizeExplanation": false,
+      "preferredTimingAnchors": ["breakfast", "dinner"]
+    },
+    {
+      "key": "routine_changes_day_to_day",
+      "onboardingLabel": "My routine changes day to day",
+      "blockerMode": "schedule_first",
+      "reminderPriority": "medium",
+      "scheduleComplexity": "guided",
+      "notificationBudget": "standard",
+      "emphasizeHomeCheckIn": true,
+      "emphasizeScheduleSetup": true,
+      "emphasizeExplanation": false,
+      "preferredTimingAnchors": ["first_meal", "last_meal"]
+    },
+    {
+      "key": "goal_fit_uncertainty",
+      "onboardingLabel": "I am not sure which supplements fit my goals",
+      "blockerMode": "education_first",
+      "reminderPriority": "medium",
+      "scheduleComplexity": "simple",
+      "notificationBudget": "standard",
+      "emphasizeHomeCheckIn": true,
+      "emphasizeScheduleSetup": true,
+      "emphasizeExplanation": true,
+      "preferredTimingAnchors": ["breakfast"]
+    },
+    {
+      "key": "label_and_dosage_confusion",
+      "onboardingLabel": "Labels and dosage are confusing",
+      "blockerMode": "clarity_first",
+      "reminderPriority": "low",
+      "scheduleComplexity": "simple",
+      "notificationBudget": "light",
+      "emphasizeHomeCheckIn": false,
+      "emphasizeScheduleSetup": false,
+      "emphasizeExplanation": true,
+      "preferredTimingAnchors": ["breakfast"]
+    },
+    {
+      "key": "weak_tracking_habit",
+      "onboardingLabel": "I do not have a good daily tracking habit",
+      "blockerMode": "habit_first",
+      "reminderPriority": "high",
+      "scheduleComplexity": "guided",
+      "notificationBudget": "heavy",
+      "emphasizeHomeCheckIn": true,
+      "emphasizeScheduleSetup": true,
+      "emphasizeExplanation": false,
+      "preferredTimingAnchors": ["daily_check_in", "breakfast"]
+    },
+    {
+      "key": "already_consistent",
+      "onboardingLabel": "I am already consistent",
+      "blockerMode": "optimization_first",
+      "reminderPriority": "low",
+      "scheduleComplexity": "advanced",
+      "notificationBudget": "light",
+      "emphasizeHomeCheckIn": false,
+      "emphasizeScheduleSetup": false,
+      "emphasizeExplanation": false,
+      "preferredTimingAnchors": ["existing_routine"]
+    }
+  ]
+}

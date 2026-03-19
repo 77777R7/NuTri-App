@@ -1,22 +1,41 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
 import { useAuth } from '@/contexts/AuthContext';
+import { validateCheckInDateForItem } from '@/lib/check-in-eligibility';
 import { buildSupplementCheckInKey } from '@/lib/check-ins';
 import { supabase } from '@/lib/supabase';
+import type { RoutinePreferences } from '@/types/saved-supplements';
 import {
   loadDailyCheckIns,
   saveDailyCheckIns,
   type DailyCheckInsByDate,
 } from '@/lib/storage/daily-check-ins';
 
+type CheckInEntryMeta = {
+  createdAt?: string | null;
+  syncedToCheckIn?: boolean;
+  routine?: RoutinePreferences | null;
+};
+
 type DailyCheckInState = {
   loading: boolean;
   checkInsByDate: DailyCheckInsByDate;
   isChecked: (dateKey: string, checkInKey: string) => boolean;
-  toggleCheckIn: (dateKey: string, checkInKey: string, supplementId?: string | null) => Promise<void>;
+  toggleCheckIn: (
+    dateKey: string,
+    checkInKey: string,
+    supplementId?: string | null,
+    meta?: CheckInEntryMeta,
+  ) => Promise<void>;
   addCheckIns: (
     dateKey: string,
-    entries: { key: string; supplementId?: string | null }[],
+    entries: {
+      key: string;
+      supplementId?: string | null;
+      createdAt?: string | null;
+      syncedToCheckIn?: boolean;
+      routine?: RoutinePreferences | null;
+    }[],
   ) => Promise<void>;
   refreshFromRemote: () => Promise<void>;
 };
@@ -111,8 +130,31 @@ export const DailyCheckInProvider = ({ children }: { children: React.ReactNode }
     refreshFromRemote().catch(() => undefined);
   }, [loading, refreshFromRemote, user?.id]);
 
+  const isEntryEligible = useCallback((dateKey: string, meta?: CheckInEntryMeta) => {
+    if (!meta) {
+      return validateCheckInDateForItem({ createdAt: new Date().toISOString(), syncedToCheckIn: true }, dateKey).isValid;
+    }
+
+    const hasEligibilitySignals =
+      typeof meta.syncedToCheckIn === 'boolean' || typeof meta.createdAt === 'string';
+
+    if (!hasEligibilitySignals) {
+      return validateCheckInDateForItem({ createdAt: new Date().toISOString(), syncedToCheckIn: true }, dateKey).isValid;
+    }
+
+    return validateCheckInDateForItem(
+      {
+        createdAt: meta.createdAt ?? null,
+        syncedToCheckIn: meta.syncedToCheckIn ?? true,
+        routine: meta.routine ?? undefined,
+      },
+      dateKey,
+    ).isValid;
+  }, []);
+
   const toggleCheckIn = useCallback(
-    async (dateKey: string, checkInKey: string, supplementId?: string | null) => {
+    async (dateKey: string, checkInKey: string, supplementId?: string | null, meta?: CheckInEntryMeta) => {
+      if (!isEntryEligible(dateKey, meta)) return;
       const existing = new Set(checkInsByDate[dateKey] ?? []);
       const isChecked = existing.has(checkInKey);
 
@@ -157,14 +199,23 @@ export const DailyCheckInProvider = ({ children }: { children: React.ReactNode }
         console.warn('[daily-check-ins] Remote sync failed', error);
       }
     },
-    [checkInsByDate, persist, user?.id],
+    [checkInsByDate, isEntryEligible, persist, user?.id],
   );
 
   const addCheckIns = useCallback(
-    async (dateKey: string, entries: { key: string; supplementId?: string | null }[]) => {
+    async (
+      dateKey: string,
+      entries: {
+        key: string;
+        supplementId?: string | null;
+        createdAt?: string | null;
+        syncedToCheckIn?: boolean;
+        routine?: RoutinePreferences | null;
+      }[],
+    ) => {
       if (!entries.length) return;
       const existing = new Set(checkInsByDate[dateKey] ?? []);
-      const nextEntries = entries.filter(entry => !existing.has(entry.key));
+      const nextEntries = entries.filter(entry => !existing.has(entry.key) && isEntryEligible(dateKey, entry));
       if (!nextEntries.length) return;
 
       nextEntries.forEach(entry => existing.add(entry.key));
@@ -196,7 +247,7 @@ export const DailyCheckInProvider = ({ children }: { children: React.ReactNode }
         console.warn('[daily-check-ins] Remote batch sync failed', error);
       }
     },
-    [checkInsByDate, persist, user?.id],
+    [checkInsByDate, isEntryEligible, persist, user?.id],
   );
 
   const isChecked = useCallback(

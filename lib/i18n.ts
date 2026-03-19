@@ -146,7 +146,7 @@ const en = {
     userNotificationsHint: 'Set gentle nudges to stay consistent once reminders are available.',
     userDataControlTitle: 'Data control',
     userDataControlHint: 'Control what data NuTri keeps and request exports in one place.',
-    analysisHeaderEyebrow: 'AI ANALYSIS',
+    analysisHeaderEyebrow: 'Supplement Analysis',
     analysisDeepCategoriesTitle: 'Deep Categories',
     analysisDeepCategoriesSubtitle: 'Tap to view detailed analysis',
     analysisView: 'View',
@@ -241,6 +241,44 @@ const en = {
     analysisScoreRetryCta: 'Tap to retry score',
     analysisScoreScoring: 'Scoring...',
     analysisScoreScoringReason: 'Scoring is in progress from the available product facts.',
+    analysisLearnMoreCta: 'Learn More',
+    analysisLearnMoreModalSubtitle: 'How it works',
+    analysisLearnMoreWhatIsTitle: 'What is NuTri Score?',
+    analysisLearnMoreWhatIsBody:
+      'NuTri Score is a simple way to compare how clear, verifiable, and trustworthy a supplement looks based on the product evidence we can confirm.',
+    analysisLearnMoreHowWorksTitle: 'How NuTri Score works',
+    analysisLearnMoreHowWorksBody:
+      'NuTri Score combines 6 sections. For most products, Ingredient Safety is 20%, Formula Transparency 25%, Label Clarity 15%, Manufacturing Standards 10%, Testing & Verification 20%, and Product Quality Signals 10%.\n\nEach section starts from checklist coverage, then stays capped by evidence strength and any critical missing detail. Some categories, like fish oil, shift a little more weight toward Formula Transparency.',
+    analysisLearnMoreWeightsTitle: 'Default section weights',
+    analysisLearnMoreWeightsFootnote: 'Fish oil products put slightly more weight on Formula Transparency.',
+    analysisLearnMoreBadgesTitle: 'What each badge means',
+    analysisLearnMoreBadgesBody: 'Each badge shows how strong the evidence is for that specific line item.',
+    analysisLearnMoreBadgeVerified:
+      'We found direct evidence from an official record, a verified product label, a strong label transcription, or an independently verified certification source.',
+    analysisLearnMoreBadgeDetected:
+      'We found a product-page or claim-level signal, but not enough direct evidence to treat it as fully verified.',
+    analysisLearnMoreBadgeNotVerified:
+      'We do not have enough direct product-specific evidence to confirm that item yet.',
+    analysisLearnMoreBadgeNotShown:
+      'This is a detail that would normally be expected for the product, but it was not shown in the available record.',
+    analysisLearnMoreConfidenceTitle: 'How confidence affects the final rating',
+    analysisLearnMoreConfidenceBody:
+      'Confidence reflects how direct and complete the supporting evidence is. Official records and verified labels count more than product-page claims alone.\n\nThe final score and the final rating are related, but not identical. A product can earn a solid numeric score and still be held to a lower final rating if confidence is not high enough or if a critical gap remains.',
+    analysisLearnMoreConfidenceGuideTitle: 'Final rating guide',
+    analysisLearnMoreConfidenceGuideExcellent:
+      'Excellent usually needs a 90+ score, 90+ confidence, strong testing support, and no critical gap.',
+    analysisLearnMoreConfidenceGuideStrong:
+      'Strong usually needs an 80+ score and 75+ confidence.',
+    analysisLearnMoreConfidenceGuideGood:
+      'Good usually needs a 70+ score and 60+ confidence.',
+    analysisLearnMoreConfidenceGuideConservative:
+      'If confidence or critical evidence stays limited, the final rating stays more conservative.',
+    analysisLearnMoreConservativeTitle: 'Why some scores stay conservative',
+    analysisLearnMoreConservativeBody:
+      'When directions, warnings, active breakdowns, chemical form, or testing support are missing, the score may be limited even when some positive signals are present. NuTri stays conservative instead of assuming the best.',
+    analysisLearnMoreDoesNotMeanTitle: 'What this score does not mean',
+    analysisLearnMoreDoesNotMeanBody:
+      'NuTri Score does not guarantee that a product will work for everyone. It does not replace medical advice, and it does not guarantee the quality of every batch or lot. It is meant to help you compare products more clearly using the evidence available today.',
 };
 
 const translations = {

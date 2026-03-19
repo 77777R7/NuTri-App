@@ -1,0 +1,92 @@
+{
+  "generatedAt": "2026-03-17T08:59:36.000Z",
+  "phase": "P0-A",
+  "phaseOutcomeStatus": "diagnostic_success",
+  "inputs": {
+    "mergeReportPath": "output/iherb_overlay_bulk_merge_week2_final_unified_20260313/overlay_merge_coverage_report.json",
+    "mergeReportGeneratedAt": "2026-03-13T22:59:43.155Z"
+  },
+  "baseline": {
+    "totalRows": 50873,
+    "eligibleRows": 50733,
+    "strictMergeReady": 26494,
+    "queued": 24124,
+    "blocked": 255
+  },
+  "fieldMetrics": [
+    {
+      "field": "ingredient",
+      "label": "ingredient",
+      "resolvedCount": 32540,
+      "missingCount": 18333,
+      "completenessRatePct": 64.0,
+      "nullOrEmptyRatePct": 36.0,
+      "parseFailureCountObserved": null,
+      "mappingMismatchCountObserved": null,
+      "measurementStatus": "not_directly_instrumented"
+    },
+    {
+      "field": "dosage",
+      "label": "dosage",
+      "resolvedCount": 32535,
+      "missingCount": 18338,
+      "completenessRatePct": 64.0,
+      "nullOrEmptyRatePct": 36.0,
+      "parseFailureCountObserved": null,
+      "mappingMismatchCountObserved": null,
+      "measurementStatus": "not_directly_instrumented"
+    },
+    {
+      "field": "suggested_use",
+      "label": "suggested use",
+      "resolvedCount": 43761,
+      "missingCount": 7112,
+      "completenessRatePct": 86.0,
+      "nullOrEmptyRatePct": 14.0,
+      "parseFailureCountObserved": null,
+      "mappingMismatchCountObserved": null,
+      "measurementStatus": "not_directly_instrumented"
+    },
+    {
+      "field": "warnings",
+      "label": "warnings",
+      "resolvedCount": 40117,
+      "missingCount": 10756,
+      "completenessRatePct": 78.9,
+      "nullOrEmptyRatePct": 21.1,
+      "parseFailureCountObserved": null,
+      "mappingMismatchCountObserved": null,
+      "measurementStatus": "not_directly_instrumented"
+    },
+    {
+      "field": "product_image",
+      "label": "product image",
+      "resolvedCount": 50623,
+      "missingCount": 250,
+      "completenessRatePct": 99.5,
+      "nullOrEmptyRatePct": 0.5,
+      "parseFailureCountObserved": null,
+      "mappingMismatchCountObserved": null,
+      "measurementStatus": "not_directly_instrumented"
+    }
+  ],
+  "provenance": {
+    "authoritativeDsldBacked": 13128,
+    "highConfidenceProductPageBacked": 13366,
+    "overlayOnlyOrUnclassified": 24379
+  },
+  "mismatchHeuristics": {
+    "ingredientRejectTitleLeakage": true,
+    "dosageRejectDirectionsText": true,
+    "suggestedUseRejectMarketingCopy": true,
+    "warningsRejectDescriptionDuplication": true,
+    "productImageRejectPlaceholderUrls": true
+  },
+  "blockers": [
+    {
+      "blockerId": "p0.import_quality.direct_mapping_instrumentation_gap",
+      "blockerClass": "measurement_gap",
+      "detail": "The current merge output does not emit direct per-field parse-failure or mapping-mismatch counters, so those metrics remain blocker-classified instead of silently guessed."
+    }
+  ]
+}

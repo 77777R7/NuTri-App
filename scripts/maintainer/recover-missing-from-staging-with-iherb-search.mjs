@@ -43,10 +43,14 @@ const BRANDS = (getArg("brands", "") ?? "")
   .filter(Boolean);
 const ENABLE_AGENT_BROWSER_FALLBACK = getArg("agent-browser-fallback", "false") !== "false";
 const ENABLE_SEARCH_FALLBACK = getArg("search-fallback", "true") !== "false";
+const ENABLE_SITEMAP_EXACT_BARCODE_FIRST = getArg("sitemap-exact-barcode-first", "false") !== "false";
+const WRITE_STAGING_OUT = getArg("write-staging-out", "true") !== "false";
 const AGENT_BROWSER_SHELL_CMD = getArg("agent-browser-shell-cmd", "npx agent-browser");
 const REQUEST_TIMEOUT_MS = Number(getArg("request-timeout-ms", 15000)) || 15000;
 const READER_PREFIX = getArg("reader-prefix", "https://r.jina.ai/http://");
 const SITEMAP_INDEX_URL = getArg("sitemap-index-url", "https://www.iherb.com/sitemap_index.xml");
+const BRAND_PAGE_CONCURRENCY = Math.max(1, Number(getArg("brand-page-concurrency", 6)) || 6);
+const BRAND_PAGE_LIMIT = Math.max(0, Number(getArg("brand-page-limit", 0)) || 0);
 
 const writeJson = async (filePath, payload) => {
   await fs.mkdir(path.dirname(filePath), { recursive: true });
@@ -60,6 +64,54 @@ const slugify = (value) =>
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
 const escapeRegExp = (value) => String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+const GENERIC_SITEMAP_TOKENS = new Set([
+  "acid",
+  "adult",
+  "advanced",
+  "blend",
+  "caps",
+  "capsule",
+  "capsules",
+  "chewable",
+  "chewables",
+  "children",
+  "complex",
+  "daily",
+  "diet",
+  "dietary",
+  "essential",
+  "extract",
+  "extra",
+  "formula",
+  "free",
+  "gummies",
+  "gummy",
+  "health",
+  "herbal",
+  "kids",
+  "liquid",
+  "max",
+  "maximum",
+  "mineral",
+  "natural",
+  "organic",
+  "plus",
+  "powder",
+  "premium",
+  "probiotic",
+  "softgel",
+  "softgels",
+  "strength",
+  "support",
+  "tablet",
+  "tablets",
+  "ultra",
+  "veggie",
+  "veggies",
+  "vegetable",
+  "vitamin",
+  "with",
+]);
 const decodeHtml = (value) =>
   normalizeText(value)
     .replace(/&amp;/g, "&")
@@ -71,6 +123,19 @@ const decodeHtml = (value) =>
 const readJson = async (filePath) => JSON.parse(await fs.readFile(filePath, "utf8"));
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+const runWithConcurrencyLimit = async (items, concurrency, worker) => {
+  const results = new Array(items.length);
+  let cursor = 0;
+  const runner = async () => {
+    while (cursor < items.length) {
+      const current = cursor;
+      cursor += 1;
+      results[current] = await worker(items[current], current);
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(concurrency, items.length || 1) }, () => runner()));
+  return results;
+};
 
 const fetchText = async (targetUrl, label, timeoutMs = REQUEST_TIMEOUT_MS) => {
   const controller = new AbortController();
@@ -174,6 +239,8 @@ const fetchAllProductSitemapEntries = async () => {
     }, {}),
   );
 };
+
+const brandExactMatchCache = new Map();
 
 const stripBrandPrefix = (title, brandName) =>
   normalizeLower(title)
@@ -459,36 +526,119 @@ const buildBrandSlugCandidates = (brandName) => {
   return [...variants].filter(Boolean);
 };
 
+const isMeaningfulSitemapToken = (token) => {
+  const normalized = normalizeLower(token).replace(/[^a-z0-9]+/g, "");
+  if (!normalized) return false;
+  if (GENERIC_SITEMAP_TOKENS.has(normalized)) return false;
+  if (normalized.length >= 3) return true;
+  return normalized.length >= 2 && /[0-9]/.test(normalized);
+};
+
 const buildTitleSlugTokens = (row) =>
   canonicalCoreTitle(row.productName, row.brandName)
     .split(" ")
     .map((token) => token.trim())
-    .filter((token) => token.length >= 3)
+    .filter(isMeaningfulSitemapToken)
     .map((token) => token.replace(/[^a-z0-9]+/g, "-"))
     .filter(Boolean)
     .slice(0, 8);
+
+const buildStrengthSlugTokens = (title) =>
+  [...normalizeLower(title).matchAll(/(\d+(?:\.\d+)?)\s*(mg|mcg|μg|g|iu|cfu|billion|million)/g)]
+    .flatMap((match) => {
+      const number = normalizeText(match[1]).replace(/\.0+$/, "");
+      const unit = normalizeLower(match[2]).replace("μg", "mcg");
+      if (!number || !unit) return [];
+      return [`${number}-${unit}`, `${number}${unit}`];
+    })
+    .filter(Boolean);
+
+const buildUrlMatchSignals = (url, row) => {
+  const text = normalizeLower(url);
+  const titleCoreTokens = buildTitleSlugTokens(row);
+  const matchedTitleTokens = titleCoreTokens.filter((token) => text.includes(token));
+  const strengthTokens = buildStrengthSlugTokens(row.productName);
+  const strengthHit = strengthTokens.some((token) => text.includes(token));
+  const form = inferFormFromTitle(row.productName);
+  const count = inferCountFromTitle(row.productName);
+  const formHit = form ? text.includes(form.replace(/[^a-z0-9]+/g, "-")) : false;
+  const countHit = count ? text.includes(`-${count}-`) || text.endsWith(`-${count}`) : false;
+  const longDistinctiveTokenHit = matchedTitleTokens.some((token) => token.length >= 4);
+  return {
+    matchedTitleTokens,
+    strengthHit,
+    formHit,
+    countHit,
+    longDistinctiveTokenHit,
+  };
+};
 
 const findSitemapCandidateUrls = async (row) => {
   const entries = await fetchAllProductSitemapEntries();
   if (!Array.isArray(entries) || entries.length === 0) return [];
 
   const brandSlugs = buildBrandSlugCandidates(row.brandName);
-  const titleTokens = buildTitleSlugTokens(row);
-  const firstToken = titleTokens[0] ?? null;
 
   const brandMatched = entries.filter((entry) => brandSlugs.some((brandSlug) => entry.slug.includes(`/pr/${brandSlug}-`)));
   const scored = brandMatched
     .map((entry) => {
-      const tokenHits = titleTokens.filter((token) => entry.slug.includes(token)).length;
+      const signals = buildUrlMatchSignals(entry.url, row);
+      const tokenHits = signals.matchedTitleTokens.length;
       let score = scoreUrlHeuristic(entry.url, row);
       score += tokenHits * 18;
-      if (firstToken && entry.slug.includes(`-${firstToken}`)) score += 12;
-      return { url: entry.url, score, tokenHits };
+      if (signals.strengthHit) score += 28;
+      if (signals.formHit) score += 8;
+      if (signals.countHit) score += 6;
+      return { url: entry.url, score, tokenHits, signals };
     })
-    .filter((entry) => entry.tokenHits > 0 && entry.score >= 28)
+    .filter((entry) => {
+      if (entry.signals.strengthHit) return entry.tokenHits >= 1 || entry.signals.countHit || entry.signals.formHit;
+      if (entry.tokenHits >= 2) return true;
+      return entry.tokenHits >= 1 && entry.signals.longDistinctiveTokenHit;
+    })
+    .filter((entry) => entry.score >= 36)
     .sort((left, right) => right.score - left.score || left.url.localeCompare(right.url));
 
   return scored.slice(0, 20).map((entry) => entry.url);
+};
+
+const buildBrandExactBarcodeIndex = async (brandName, targetRows) => {
+  const cacheKey = normalizeLower(brandName);
+  if (brandExactMatchCache.has(cacheKey)) return brandExactMatchCache.get(cacheKey);
+
+  const entries = await fetchAllProductSitemapEntries();
+  const brandSlugs = buildBrandSlugCandidates(brandName);
+  const targetBarcodes = new Set(
+    targetRows
+      .map((row) => normalizeBarcode(row?.barcode_gtin14))
+      .filter(Boolean),
+  );
+  let brandUrls = entries
+    .filter((entry) => brandSlugs.some((brandSlug) => entry.slug.includes(`/pr/${brandSlug}-`)))
+    .map((entry) => entry.url);
+  if (BRAND_PAGE_LIMIT > 0) brandUrls = brandUrls.slice(0, BRAND_PAGE_LIMIT);
+
+  const pageByBarcode = new Map();
+  await runWithConcurrencyLimit(brandUrls, BRAND_PAGE_CONCURRENCY, async (url) => {
+    if (pageByBarcode.size >= targetBarcodes.size) return null;
+    const readerUrl = `${READER_PREFIX}${url.replace(/^https?:\/\//i, "")}`;
+    const fetched = await fetchWithFallback(readerUrl, `iherb-brand-page:${brandName}:${url}`);
+    if (!fetched.ok || !fetched.text) return null;
+    const parsedPage = parseIherbProductPage(fetched.text, url, brandName);
+    const barcode = normalizeBarcode(parsedPage.upcCode);
+    if (!barcode || !targetBarcodes.has(barcode) || pageByBarcode.has(barcode)) return null;
+    pageByBarcode.set(barcode, { url, parsedPage });
+    return null;
+  });
+
+  const resolved = {
+    brandName,
+    brandUrlsScanned: brandUrls.length,
+    matchedBarcodeCount: pageByBarcode.size,
+    pageByBarcode,
+  };
+  brandExactMatchCache.set(cacheKey, resolved);
+  return resolved;
 };
 
 const scoreUrlHeuristic = (url, row) => {
@@ -497,11 +647,7 @@ const scoreUrlHeuristic = (url, row) => {
     .split(" ")
     .map((token) => token.trim())
     .filter((token) => token.length >= 3);
-  const titleCoreTokens = canonicalCoreTitle(row.productName, row.brandName)
-    .split(" ")
-    .map((token) => token.trim())
-    .filter((token) => token.length >= 3)
-    .slice(0, 6);
+  const titleCoreTokens = buildTitleSlugTokens(row).slice(0, 6);
 
   let score = 0;
   for (const token of brandTokens) {
@@ -510,11 +656,8 @@ const scoreUrlHeuristic = (url, row) => {
   for (const token of titleCoreTokens) {
     if (text.includes(token)) score += 12;
   }
-  const strengthKey = buildStrengthKey(row.productName);
-  if (strengthKey) {
-    for (const token of strengthKey.split("|")) {
-      if (text.includes(token.replace(/[^a-z0-9]+/g, ""))) score += 8;
-    }
+  for (const token of buildStrengthSlugTokens(row.productName)) {
+    if (text.includes(token)) score += 12;
   }
   return score;
 };
@@ -628,6 +771,25 @@ const main = async () => {
     return BRANDS.some((brand) => normalizeLower(brand) === normalizeLower(row?.brandName));
   });
   const selectedRows = LIMIT ? filteredQueue.slice(0, LIMIT) : filteredQueue;
+  const selectedRowsByBrand = new Map();
+  for (const row of selectedRows) {
+    const key = normalizeLower(row?.brandName);
+    if (!selectedRowsByBrand.has(key)) selectedRowsByBrand.set(key, []);
+    selectedRowsByBrand.get(key).push(row);
+  }
+
+  const exactMatchIndexByBrand = new Map();
+  if (ENABLE_SITEMAP_EXACT_BARCODE_FIRST) {
+    for (const rows of selectedRowsByBrand.values()) {
+      const brandName = normalizeText(rows[0]?.brandName);
+      console.error(`[iherb-search-recovery] building_exact_barcode_index=${brandName}`);
+      const index = await buildBrandExactBarcodeIndex(brandName, rows);
+      exactMatchIndexByBrand.set(normalizeLower(brandName), index);
+      console.error(
+        `[iherb-search-recovery] exact_barcode_index brand=${brandName} urls=${index.brandUrlsScanned} matched=${index.matchedBarcodeCount}`,
+      );
+    }
+  }
 
   const refreshedRows = [...stagingRows];
   const stagingByBarcode = new Map();
@@ -669,6 +831,56 @@ const main = async () => {
 
     const candidateUrls = new Set();
     const candidateProfile = buildCandidateProfile(row);
+    const exactMatchIndex = exactMatchIndexByBrand.get(normalizeLower(row.brandName)) ?? null;
+    const exactMatchedPage =
+      normalizeBarcode(row.barcode_gtin14) && exactMatchIndex
+        ? exactMatchIndex.pageByBarcode.get(normalizeBarcode(row.barcode_gtin14)) ?? null
+        : null;
+
+    if (exactMatchedPage) {
+      const seedRow = toSeedRow(row, exactMatchedPage.parsedPage, exactMatchedPage.url);
+      const incomingRecord = extractOverlayRecordFromSeedRow(seedRow, {
+        seedName: "iherb_missing_from_staging_search_wave",
+      });
+      const barcode = normalizeBarcode(seedRow.barcode_gtin14);
+      const existingIdx =
+        (barcode ? stagingByBarcode.get(barcode) : null) ??
+        (seedRow.productId ? stagingByProductId.get(normalizeText(seedRow.productId)) : null) ??
+        null;
+      const currentRow = existingIdx != null ? refreshedRows[existingIdx] : {};
+      const mergedRecord = mergeOverlayRecords(currentRow, incomingRecord);
+      const hydratedRow = hydrateMergedRow(currentRow, mergedRecord);
+
+      if (existingIdx != null) {
+        refreshedRows[existingIdx] = hydratedRow;
+      } else {
+        refreshedRows.push(hydratedRow);
+        const newIdx = refreshedRows.length - 1;
+        if (barcode) stagingByBarcode.set(barcode, newIdx);
+        if (seedRow.productId) stagingByProductId.set(normalizeText(seedRow.productId), newIdx);
+      }
+
+      const isComplete = Array.isArray(hydratedRow?.completeness?.coreMissingFields)
+        ? hydratedRow.completeness.coreMissingFields.length === 0
+        : false;
+      if (isComplete) rollup.recoveredComplete += 1;
+      else rollup.recoveredPartial += 1;
+
+      recoveredSeeds.push(seedRow);
+      auditRows.push({
+        brandName: row.brandName,
+        productName: row.productName,
+        result: isComplete ? "recovered_complete" : "recovered_partial",
+        selectedUrl: exactMatchedPage.url,
+        bestScore: 1000,
+        productId: seedRow.productId,
+        barcode_gtin14: seedRow.barcode_gtin14,
+        stillMissingFields: hydratedRow?.completeness?.coreMissingFields ?? [],
+        recoveryMode: "sitemap_exact_barcode",
+      });
+      continue;
+    }
+
     const sitemapLinks = await findSitemapCandidateUrls(row);
     sitemapLinks.forEach((url) => candidateUrls.add(url));
     console.error(`[iherb-search-recovery] sitemap_candidates=${sitemapLinks.length}`);
@@ -843,7 +1055,9 @@ const main = async () => {
   const reportJsonOut = path.join(OUT_DIR, "iherb_search_recovery_report.json");
   const reportMdOut = path.join(OUT_DIR, "iherb_search_recovery_report.md");
 
-  await writeJson(stagingOut, { products: refreshedRows });
+  if (WRITE_STAGING_OUT) {
+    await writeJson(stagingOut, { products: refreshedRows });
+  }
   await writeJson(seedOut, { products: recoveredSeeds });
   await writeJson(unresolvedOut, unresolvedRows);
   await writeJson(reportJsonOut, report);
@@ -854,7 +1068,7 @@ const main = async () => {
       {
         ok: true,
         outputs: {
-          stagingJson: stagingOut,
+          stagingJson: WRITE_STAGING_OUT ? stagingOut : null,
           seedJson: seedOut,
           unresolvedJson: unresolvedOut,
           reportJson: reportJsonOut,

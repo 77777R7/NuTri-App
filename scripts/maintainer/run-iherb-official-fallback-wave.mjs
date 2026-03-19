@@ -12,6 +12,6 @@ if (!args.includes("--config-json")) {
 }
 
 const scriptPath = path.join(ROOT, "scripts", "maintainer", "refresh-iherb-overlay-p0-by-official-fallback.mjs");
-execFileSync("node", [scriptPath, ...args], {
+execFileSync(process.execPath, [scriptPath, ...args], {
   stdio: "inherit",
 });

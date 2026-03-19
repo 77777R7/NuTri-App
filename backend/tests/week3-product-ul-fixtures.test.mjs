@@ -61,6 +61,35 @@ test("Week3 safety: product UL guidance uses parsed daily label directions when 
   assert.match(summary.ulGuidanceEntries[0]?.displayLine ?? "", /estimated daily amount 400 mg/i);
 });
 
+test("Week3 safety: simple daily wording upgrades from one-serving fallback to a daily estimate", () => {
+  const summary = buildProductSafetySummary({
+    digest: {
+      actives: [
+        {
+          name: "Magnesium glycinate",
+          amount: 200,
+          unit: "mg",
+          amountText: "200 mg",
+          chemicalForm: null,
+          chemicalFormEvidence: null,
+        },
+      ],
+      labelDosing: [
+        {
+          population: "Adults",
+          age: null,
+          dose: "Take 1 capsule",
+          frequency: "daily",
+          rawText: "Adults: Take 1 capsule daily.",
+        },
+      ],
+    },
+  });
+
+  assert.equal(summary.ulGuidanceEntries[0]?.comparisonStatus, "below");
+  assert.match(summary.ulGuidanceEntries[0]?.displayLine ?? "", /estimated daily amount 200 mg/i);
+});
+
 test("Week3 safety: vitamin c, zinc, and iron compare against adult UL", () => {
   const vitaminC = evaluateUl({ name: "Vitamin C", amount: 1000, unit: "mg" });
   const zinc = evaluateUl({ name: "Zinc picolinate", amount: 50, unit: "mg" });

@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nutri.app/schemas/personalization/feature_flags.schema.json",
+  "type": "object",
+  "required": ["version", "flags"],
+  "properties": {
+    "version": { "type": "string", "const": "v1" },
+    "flags": {
+      "type": "object",
+      "required": ["enablePersonalizationV1", "enableGoalMatchScoring", "enableEligibilityPolicy", "enablePlanPreviewPersonalization", "enableSmartFilterPersonalization"],
+      "properties": {
+        "enablePersonalizationV1": { "type": "boolean" },
+        "enableGoalMatchScoring": { "type": "boolean" },
+        "enableEligibilityPolicy": { "type": "boolean" },
+        "enablePlanPreviewPersonalization": { "type": "boolean" },
+        "enableSmartFilterPersonalization": { "type": "boolean" }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,85 @@
+{
+  "generatedAt": "2026-03-17T11:23:36.883Z",
+  "phase": "P0-A",
+  "phaseOutcomeStatus": "diagnostic_success",
+  "inputs": {
+    "mergeReportPath": "output/p0_p3_merge_after_carlson_20260317/overlay_merge_coverage_report.json",
+    "mergeReportGeneratedAt": "2026-03-17T11:04:13.681Z"
+  },
+  "baseline": {
+    "totalRows": 50873,
+    "eligibleRows": 50733,
+    "strictMergeReady": 26551,
+    "queued": 24067,
+    "blocked": 255
+  },
+  "fieldMetrics": [
+    {
+      "field": "ingredient",
+      "label": "ingredient",
+      "resolvedCount": 32540,
+      "missingCount": 18333,
+      "completenessRatePct": 64,
+      "nullOrEmptyRatePct": 36,
+      "parseFailureCountObserved": null,
+      "mappingMismatchCountObserved": null,
+      "measurementStatus": "not_directly_instrumented"
+    },
+    {
+      "field": "dosage",
+      "label": "dosage",
+      "resolvedCount": 32535,
+      "missingCount": 18338,
+      "completenessRatePct": 64,
+      "nullOrEmptyRatePct": 36,
+      "parseFailureCountObserved": null,
+      "mappingMismatchCountObserved": null,
+      "measurementStatus": "not_directly_instrumented"
+    },
+    {
+      "field": "suggested_use",
+      "label": "suggested use",
+      "resolvedCount": 43761,
+      "missingCount": 7112,
+      "completenessRatePct": 86,
+      "nullOrEmptyRatePct": 14,
+      "parseFailureCountObserved": null,
+      "mappingMismatchCountObserved": null,
+      "measurementStatus": "not_directly_instrumented"
+    },
+    {
+      "field": "warnings",
+      "label": "warnings",
+      "resolvedCount": 40174,
+      "missingCount": 10699,
+      "completenessRatePct": 79,
+      "nullOrEmptyRatePct": 21,
+      "parseFailureCountObserved": null,
+      "mappingMismatchCountObserved": null,
+      "measurementStatus": "not_directly_instrumented"
+    },
+    {
+      "field": "product_image",
+      "label": "product image",
+      "resolvedCount": 50623,
+      "missingCount": 250,
+      "completenessRatePct": 99.5,
+      "nullOrEmptyRatePct": 0.5,
+      "parseFailureCountObserved": null,
+      "mappingMismatchCountObserved": null,
+      "measurementStatus": "not_directly_instrumented"
+    }
+  ],
+  "provenance": {
+    "authoritativeDsldBacked": 13178,
+    "highConfidenceProductPageBacked": 13373,
+    "overlayOnlyOrUnclassified": 24322
+  },
+  "blockers": [
+    {
+      "blockerId": "p0.import_quality.direct_mapping_instrumentation_gap",
+      "blockerClass": "measurement_gap",
+      "detail": "Current merge outputs expose resolved/missing fields and provenance, but they do not emit direct row-level parse-failure or mapping-mismatch counters yet."
+    }
+  ]
+}

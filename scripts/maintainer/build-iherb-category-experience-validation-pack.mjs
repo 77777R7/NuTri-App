@@ -42,6 +42,38 @@ const OUT_DIR = getArg(
 
 const TARGET_SPECS = [
   {
+    categoryId: "probiotics",
+    type: "established",
+    whyNow: "We need to verify whether probiotic products read like a mature strain-and-CFU lane rather than generic supplement copy.",
+    cueRegex: /\b(probiotic|probiotics|cfu|lactobacillus|bifidobacterium|saccharomyces|gut|digestive flora)\b/i,
+    usageCueRegex: /\b(daily|capsule|before meals?|with meals?|empty stomach|refrigerat)\b/i,
+    safetyCueRegex: /\b(immunocompromised|refrigerat|pregnant|medication|consult)\b/i,
+  },
+  {
+    categoryId: "magnesium",
+    type: "established",
+    whyNow: "We need to verify whether magnesium products read like a mature form-sensitive mineral lane rather than generic mineral copy.",
+    cueRegex: /\bmagnesium|glycinate|citrate|oxide|malate|threonate|taurate|chloride\b/i,
+    usageCueRegex: /\b(daily|at bedtime|with meals?|with food|serving)\b/i,
+    safetyCueRegex: /\b(diarrhea|laxative|kidney|pregnant|medication|consult)\b/i,
+  },
+  {
+    categoryId: "sleep_stress_mood_support",
+    type: "established",
+    whyNow: "We need to verify whether sleep and mood products read like a real timing-and-calming lane rather than generic wellness copy.",
+    cueRegex: /\b(sleep|stress|mood|calm|relax|melatonin|gaba|theanine|5-htp|ashwagandha)\b/i,
+    usageCueRegex: /\b(at bedtime|before sleep|before bedtime|night|stress|calm|relax)\b/i,
+    safetyCueRegex: /\b(drows|sedat|driv|pregnant|medication|consult)\b/i,
+  },
+  {
+    categoryId: "botanical_herbal_support",
+    type: "established",
+    whyNow: "We need to verify whether botanical products read like an herb-specific lane or still fall back to generic supplement language.",
+    cueRegex: /\b(herbal|extract|turmeric|ashwagandha|milk thistle|cinnamon|oregano|ginseng|elderberry|olive leaf)\b/i,
+    usageCueRegex: /\b(daily|herbal|extract|tea|capsule|serving)\b/i,
+    safetyCueRegex: /\b(herb|pregnant|medication|consult|allerg)\b/i,
+  },
+  {
     categoryId: "metabolic_glucose_support",
     type: "new",
     whyNow: "We need to know whether berberine / glucose-support products now read like a coherent metabolic lane, not just a resolved taxonomy label.",
@@ -127,6 +159,17 @@ const sortRows = (rows) =>
     || a.brandName.localeCompare(b.brandName)
     || a.title.localeCompare(b.title));
 
+const computeMaturityTier = (category) => {
+  const overviewStrong = category.overviewSpecificityRate >= 80 && category.overviewGenericRate <= 20;
+  const scienceStrong = category.scienceSpecificityRate >= 80 && category.scienceGenericRate <= 20;
+  const safetyStrong = category.safetySpecificityRate >= 80 && category.safetyGenericRate <= 20;
+
+  if (overviewStrong && scienceStrong && safetyStrong) return "mature";
+  if (overviewStrong && scienceStrong) return "specialized_core";
+  if (overviewStrong || scienceStrong || safetyStrong) return "partial_specialization";
+  return "generic_heavy";
+};
+
 const toExamples = (rows) =>
   rows.slice(0, 3).map((row) => ({
     productId: row.productId,
@@ -170,6 +213,7 @@ const toMarkdown = (report) => {
     lines.push(`- scienceGenericRate: ${category.scienceGenericRate}%`);
     lines.push(`- safetyGenericRate: ${category.safetyGenericRate}%`);
     lines.push(`- allSectionsSpecificRate: ${category.allSectionsSpecificRate}%`);
+    lines.push(`- maturityTier: ${category.maturityTier}`);
     lines.push(`- whyNow: ${category.whyNow}`);
     lines.push("");
     for (const sample of category.examples) {
@@ -248,9 +292,13 @@ const main = async () => {
       ),
       examples: toExamples(rows),
     };
-  });
+  }).map((category) => ({
+    ...category,
+    maturityTier: computeMaturityTier(category),
+  }));
 
   const newCategories = categories.filter((item) => item.type === "new");
+  const establishedCategories = categories.filter((item) => item.type === "established");
   const weakExperienceCategories = newCategories
     .filter((item) => item.overviewSpecificityRate < 50 || item.scienceSpecificityRate < 50)
     .map((item) => item.categoryId);
@@ -272,6 +320,12 @@ const main = async () => {
       fullCorpusUnknownCategoryRate: Number(fullAudit?.summary?.unknownCategoryRate ?? 0),
       fullCorpusDeepContentReadyRate: Number(fullAudit?.summary?.deepContentReadyRate ?? 0),
       validatedCategories: TARGET_SPECS.map((item) => item.categoryId),
+      maturityBuckets: {
+        mature: categories.filter((item) => item.maturityTier === "mature").map((item) => item.categoryId),
+        specialized_core: categories.filter((item) => item.maturityTier === "specialized_core").map((item) => item.categoryId),
+        partial_specialization: categories.filter((item) => item.maturityTier === "partial_specialization").map((item) => item.categoryId),
+        generic_heavy: categories.filter((item) => item.maturityTier === "generic_heavy").map((item) => item.categoryId),
+      },
       recommendation,
     },
     categories,
@@ -286,6 +340,17 @@ const main = async () => {
         ? `New live categories still resolve taxonomy better than before, but ${weakExperienceCategories.join(", ")} remain too generic in overview/science copy. Product experience is the higher-ROI next fix than corpus-wide long-tail cleanup.`
         : "New live categories are both resolved and consumer-specific enough, so remaining unknown rows are mostly long-tail cleanup work.",
       weakExperienceCategories,
+      establishedCategoryMaturity: establishedCategories.map((item) => ({
+        categoryId: item.categoryId,
+        maturityTier: item.maturityTier,
+        overviewSpecificityRate: item.overviewSpecificityRate,
+        scienceSpecificityRate: item.scienceSpecificityRate,
+        usageSpecificityRate: item.usageSpecificityRate,
+        safetySpecificityRate: item.safetySpecificityRate,
+        overviewGenericRate: item.overviewGenericRate,
+        scienceGenericRate: item.scienceGenericRate,
+        safetyGenericRate: item.safetyGenericRate,
+      })),
       highFrequencyUnknownCount: Number(fullAudit?.summary?.highFrequencyUnknownCount ?? 0),
     },
   };

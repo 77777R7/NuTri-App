@@ -1261,6 +1261,46 @@ const buildMarkdownReport = (report) => {
   return `${lines.join("\n")}\n`;
 };
 
+const parsePackageAmountForGenericFacts = (text) => {
+  const value = normalizeText(text);
+  if (!value) return null;
+  const allMatches = [...value.matchAll(/(\d+(?:\.\d+)?)\s*(fl\s*oz|oz|ml|mL|g|mg|mcg|lb|lbs|tablets?|capsules?|softgels?|pellets?)(?:\s*\(([^)]+)\))?/gi)];
+  const match = allMatches[allMatches.length - 1];
+  if (!match) return null;
+  const amount = `${match[1]} ${match[2]}`.replace(/\s+/g, " ").trim();
+  const paren = normalizeText(match[3] ?? "");
+  return normalizeText([amount, paren ? `(${paren})` : null].filter(Boolean).join(" ")) || null;
+};
+
+const buildGenericIngredientFactsHelper = ({
+  stagedRow,
+  combinedPageText,
+  otherIngredients,
+  existingSupplementFacts,
+}) => {
+  if (existingSupplementFacts?.nutritionalFacts?.length) return existingSupplementFacts;
+  if (stagedRow?.supplementFacts?.nutritionalFacts?.length) {
+    return stagedRow.supplementFacts;
+  }
+  const ingredientText = normalizeText(otherIngredients) || null;
+  const dosageText =
+    parsePackageAmountForGenericFacts(stagedRow?.title) ??
+    parsePackageAmountForGenericFacts(stagedRow?.count) ??
+    parsePackageAmountForGenericFacts(combinedPageText);
+  if (!ingredientText || !dosageText) return existingSupplementFacts;
+  return {
+    servingSize: null,
+    servingsPerContainer: null,
+    nutritionalFacts: [
+      {
+        substancy: ingredientText.replace(/\.\s*$/, ""),
+        amountPerServing: dosageText,
+        dailyValuePercent: null,
+      },
+    ],
+  };
+};
+
 const main = async () => {
   await fs.mkdir(OUT_DIR, { recursive: true });
 
@@ -1419,11 +1459,11 @@ const main = async () => {
     }
 
     if (!selectedCandidate) {
-      const stagedOnlySupplementFacts = buildGenericIngredientFacts({
+      const stagedOnlySupplementFacts = buildGenericIngredientFactsHelper({
         stagedRow: stagedEntry.row,
         combinedPageText: stagedSectionFallback.combinedText,
         otherIngredients: stagedSectionFallback.otherIngredients,
-        existingSupplementFacts: null,
+        existingSupplementFacts: stagedEntry.row?.supplementFacts ?? null,
       });
       if (stagedOnlySupplementFacts?.nutritionalFacts?.length) {
         const seedSections = {};
@@ -1790,7 +1830,7 @@ const buildGenericIngredientFacts = ({ stagedRow, combinedPageText, otherIngredi
       inferAllergenWarning(otherIngredients) ??
       inferAllergenWarning(stagedEntry.row?.descriptionSections?.Description ?? null) ??
       null;
-    supplementFacts = buildGenericIngredientFacts({
+    supplementFacts = buildGenericIngredientFactsHelper({
       stagedRow: stagedEntry.row,
       combinedPageText: combinedExtractionText,
       otherIngredients,

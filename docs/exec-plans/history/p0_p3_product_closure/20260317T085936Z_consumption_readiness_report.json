@@ -1,0 +1,84 @@
+{
+  "generatedAt": "2026-03-17T08:59:36.000Z",
+  "phase": "P2",
+  "phaseOutcomeStatus": "blocker_isolation",
+  "targetSetReadiness": {
+    "realSavedInventory": {
+      "totalSavedItems": 4,
+      "usableCandidateItems": 1,
+      "totalCandidateRows": 1,
+      "environmentHadEnoughRealSavedProducts": false
+    },
+    "stableImportToConsumerLinks": {
+      "saveFromHistoryPreservesDoseAndImage": true,
+      "mySavedDetailCanUseFactsOverlay": true,
+      "savedStackSafetyFlowPresent": true
+    }
+  },
+  "prerequisiteCoverage": {
+    "supplementIdPresence": {
+      "count": 2,
+      "of": 4
+    },
+    "barcodePresence": {
+      "count": 2,
+      "of": 4
+    },
+    "ingredientRowsUsability": {
+      "count": 1,
+      "of": 4
+    },
+    "doseBasisUsability": {
+      "count": 1,
+      "of": 4,
+      "quality": "fallback_only"
+    },
+    "productImageAvailability": {
+      "status": "wired_on_consumer_path_but_not_reliable_for_current_real_saved_inventory"
+    },
+    "stableImportToSavedToSafetyLinkage": {
+      "status": "present_for_supplement_linked_items_only"
+    }
+  },
+  "weakDataClasses": [
+    {
+      "class": "label_only",
+      "count": 2,
+      "handlingMode": "skip"
+    },
+    {
+      "class": "snapshot_only",
+      "count": 0,
+      "handlingMode": "backfill_candidate"
+    },
+    {
+      "class": "no_usable_actives",
+      "count": 1,
+      "handlingMode": "hold_blocker"
+    },
+    {
+      "class": "no_dose_basis",
+      "count": 1,
+      "handlingMode": "degrade"
+    },
+    {
+      "class": "no_stable_identity",
+      "count": 2,
+      "handlingMode": "hold_blocker"
+    },
+    {
+      "class": "image_only_non_consumable",
+      "count": 0,
+      "handlingMode": "backfill_candidate"
+    },
+    {
+      "class": "other",
+      "count": 0,
+      "handlingMode": "hold_blocker"
+    }
+  ],
+  "finalCall": {
+    "closed": false,
+    "reason": "Saved/detail/safety consumers are wired, but the current real Saved inventory still contains too many weak items to treat consumption readiness as product-level closed."
+  }
+}

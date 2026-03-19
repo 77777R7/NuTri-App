@@ -1,0 +1,78 @@
+{
+  "generatedAt": "2026-03-17T20:19:47.126Z",
+  "inputs": {
+    "mergeReportGeneratedAt": "2026-03-13T22:59:43.155Z",
+    "totalRows": 50873
+  },
+  "mergeSummary": {
+    "total": 50873,
+    "eligible": 50733,
+    "strictMergeReady": 26494,
+    "matched": 26494,
+    "queued": 24124,
+    "blocked": 255
+  },
+  "fieldStats": [
+    {
+      "field": "ingredient",
+      "label": "ingredient",
+      "resolvedCount": 32540,
+      "missingCount": 18333,
+      "resolvedRatePct": 64,
+      "missingRatePct": 36,
+      "fullyReadyCount": 26499,
+      "partialResolvedCount": 6040
+    },
+    {
+      "field": "dosage",
+      "label": "dosage",
+      "resolvedCount": 32535,
+      "missingCount": 18338,
+      "resolvedRatePct": 64,
+      "missingRatePct": 36,
+      "fullyReadyCount": 26499,
+      "partialResolvedCount": 6035
+    },
+    {
+      "field": "suggested_use",
+      "label": "suggested use",
+      "resolvedCount": 43761,
+      "missingCount": 7112,
+      "resolvedRatePct": 86,
+      "missingRatePct": 14,
+      "fullyReadyCount": 26499,
+      "partialResolvedCount": 17262
+    },
+    {
+      "field": "warnings",
+      "label": "warnings",
+      "resolvedCount": 40117,
+      "missingCount": 10756,
+      "resolvedRatePct": 78.9,
+      "missingRatePct": 21.1,
+      "fullyReadyCount": 26499,
+      "partialResolvedCount": 13618
+    },
+    {
+      "field": "product_image",
+      "label": "product image",
+      "resolvedCount": 50623,
+      "missingCount": 250,
+      "resolvedRatePct": 99.5,
+      "missingRatePct": 0.5,
+      "fullyReadyCount": 26499,
+      "partialResolvedCount": 24124
+    }
+  ],
+  "statusCounts": {
+    "partial_overlay": 24234,
+    "full_overlay_ready": 26499,
+    "catalog_only": 122,
+    "conflicted_or_non_us": 18
+  },
+  "sourceConfidence": {
+    "authoritativeDsldBacked": 13128,
+    "productPageBacked": 16772,
+    "overlayOnlyOrUnclassified": 20973
+  }
+}

@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nutri.app/schemas/personalization/goal_ingredient_map.schema.json",
+  "type": "object",
+  "required": ["version", "mappings", "goalIngredientMap"],
+  "properties": {
+    "version": { "type": "string", "const": "v1" },
+    "mappings": {
+      "type": "array",
+      "minItems": 8,
+      "items": {
+        "type": "object",
+        "required": ["goalKey", "ingredientMatches"],
+        "properties": {
+          "goalKey": {
+            "type": "string",
+            "enum": ["sleep", "energy", "immunity", "recovery", "focus", "libido_enhancement", "stress_support", "weight_management"]
+          },
+          "ingredientMatches": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "required": ["ingredientKey", "tier", "evidenceGrade", "minEffectiveDose", "unit", "preferredForms", "caps", "rationale"],
+              "properties": {
+                "ingredientKey": { "type": "string" },
+                "tier": { "type": "string", "enum": ["strong_match", "related", "weak_match"] },
+                "evidenceGrade": { "type": "string", "enum": ["A", "B", "C"] },
+                "minEffectiveDose": { "type": "number" },
+                "unit": { "type": "string", "enum": ["mcg", "mg", "g"] },
+                "preferredForms": { "type": "array", "uniqueItems": true, "items": { "type": "string" } },
+                "caps": { "type": "array", "uniqueItems": true, "items": { "type": "string", "enum": ["eligibility_requires_generic_safety_path"] } },
+                "rationale": { "type": "string", "minLength": 1 }
+              },
+              "additionalProperties": false
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "goalIngredientMap": {
+      "type": "array",
+      "minItems": 8,
+      "items": {
+        "type": "object",
+        "required": ["goalKey", "ingredientKey", "tier", "evidenceGrade", "minEffectiveDose", "unit", "preferredForms", "caps", "rationale"],
+        "properties": {
+          "goalKey": {
+            "type": "string",
+            "enum": ["sleep", "energy", "immunity", "recovery", "focus", "libido_enhancement", "stress_support", "weight_management"]
+          },
+          "ingredientKey": { "type": "string" },
+          "tier": { "type": "string", "enum": ["strong", "supporting", "exploratory"] },
+          "evidenceGrade": { "type": "string", "enum": ["A", "B", "C"] },
+          "minEffectiveDose": { "type": "number" },
+          "unit": { "type": "string", "enum": ["mcg", "mg", "g"] },
+          "preferredForms": { "type": "array", "uniqueItems": true, "items": { "type": "string" } },
+          "caps": { "type": "array", "uniqueItems": true, "items": { "type": "string", "enum": ["eligibility_requires_generic_safety_path"] } },
+          "rationale": { "type": "string", "minLength": 1 }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

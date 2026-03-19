@@ -1,3 +1,5 @@
+export type RoutineDayOfWeek = 0 | 1 | 2 | 3 | 4 | 5 | 6;
+
 export type RoutinePreferences = {
   note?: string;
   time?: string;
@@ -5,12 +7,15 @@ export type RoutinePreferences = {
   withFood?: boolean;
   whenToTake?: string;
   howToTake?: string;
+  startDate?: string;
+  daysOfWeek?: RoutineDayOfWeek[];
 };
 
 export type SavedSupplement = {
   id: string;
   supplementId?: string;
   barcode?: string | null;
+  imageUrl?: string | null;
   productName: string;
   brandName: string;
   dosageText: string;

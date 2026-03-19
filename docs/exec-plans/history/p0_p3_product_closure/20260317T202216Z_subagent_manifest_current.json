@@ -1,0 +1,112 @@
+{
+  "generatedAt": "2026-03-17T20:22:16Z",
+  "programPhase": "p0_p3_product_closure",
+  "objective": "Close the remaining Week 2 / P0 product-grade gap by pushing representative high-frequency complete-hit coverage to at least 70% while keeping Week 3 closed and scan UI frozen.",
+  "globalGuardrails": [
+    "Do not modify protected scan/barcode UI surfaces.",
+    "Do not redefine the goal as broad iHerb expansion.",
+    "Do not reopen no-signal or paused identity-recovery lanes.",
+    "Do not loosen identity thresholds to inflate complete-hit rate.",
+    "Do not regress P1 real-saved duplicate-warning behavior."
+  ],
+  "codexProjectConfigPath": "/Users/howard07/NuTriApp/nutri-app/.codex/config.toml",
+  "baseline": {
+    "baselineDate": "2026-03-17",
+    "highFrequencyReportPath": "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/high_frequency_product_hit_validation.json",
+    "uniqueCandidates": 1651,
+    "completeHitCount": 700,
+    "completeHitRatePct": 42.4,
+    "activeQueueCount": 266,
+    "missingFromStagingCount": 684
+  },
+  "closureGate": {
+    "minimumCompleteHitCount": 1156,
+    "minimumCompleteHitRatePct": 70,
+    "mustAlsoPass": [
+      "import_quality_validation_direct_instrumentation",
+      "representative_product_surface_completeness",
+      "week3_real_saved_regression_guard"
+    ]
+  },
+  "latestParallelExecution": {
+    "executedAt": "2026-03-17T20:22:16Z",
+    "spawnedAgents": [
+      "p0-active-queue-rescuer",
+      "p0-import-quality-auditor",
+      "p0-product-surface-auditor",
+      "week3-regression-guard"
+    ],
+    "status": "completed_with_blockers",
+    "note": "The official project-scoped subagent batch refreshed canonical audit reports and confirmed no further proven uplift beyond the current 700 complete hits / 266 active-queue baseline."
+  },
+  "subagents": [
+    {
+      "id": "p0_active_queue_rescuer",
+      "priority": 1,
+      "status": "blocker_isolation",
+      "mission": "Convert the existing active_queue high-frequency set into product-surface complete hits using safe identity, merge, and official-fallback lanes.",
+      "codexAgentPath": "/Users/howard07/NuTriApp/nutri-app/.codex/agents/p0-active-queue-rescuer.toml",
+      "model": "gpt-5.4",
+      "promptPath": "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/subagents/p0_active_queue_rescuer.md",
+      "primaryOutputs": [
+        "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/high_frequency_product_hit_validation.json",
+        "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/high_frequency_recovery_wave_status.json",
+        "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/blocker_registry.json"
+      ]
+    },
+    {
+      "id": "p0_missing_from_staging_rescuer",
+      "priority": 2,
+      "status": "active",
+      "mission": "Recover enough missing_from_staging high-frequency products through DSLD bootstrap and official fallback to supply the remaining complete-hit uplift needed for 70%.",
+      "codexAgentPath": "/Users/howard07/NuTriApp/nutri-app/.codex/agents/p0-missing-from-staging-rescuer.toml",
+      "model": "gpt-5.4",
+      "promptPath": "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/subagents/p0_missing_from_staging_rescuer.md",
+      "primaryOutputs": [
+        "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/high_frequency_product_hit_validation.json",
+        "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/high_frequency_recovery_wave_status.json",
+        "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/blocker_registry.json"
+      ]
+    },
+    {
+      "id": "p0_import_quality_auditor",
+      "priority": 3,
+      "status": "completed",
+      "mission": "Close the remaining import-quality evidence gap by instrumenting parse failures and mapping mismatches directly in the Week 2 control plane.",
+      "codexAgentPath": "/Users/howard07/NuTriApp/nutri-app/.codex/agents/p0-import-quality-auditor.toml",
+      "model": "gpt-5.4-mini",
+      "promptPath": "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/subagents/p0_import_quality_auditor.md",
+      "primaryOutputs": [
+        "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/import_quality_validation_report.json",
+        "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/blocker_registry.json"
+      ]
+    },
+    {
+      "id": "p0_product_surface_auditor",
+      "priority": 4,
+      "status": "completed",
+      "mission": "Re-audit user-facing non-scan product surfaces after every recovery wave and refuse closure unless representative products are truly complete on product surfaces.",
+      "codexAgentPath": "/Users/howard07/NuTriApp/nutri-app/.codex/agents/p0-product-surface-auditor.toml",
+      "model": "gpt-5.4-mini",
+      "promptPath": "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/subagents/p0_product_surface_auditor.md",
+      "primaryOutputs": [
+        "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/product_surface_completeness_report.json",
+        "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/program_result_current.json"
+      ]
+    },
+    {
+      "id": "week3_regression_guard",
+      "priority": 5,
+      "status": "completed",
+      "mission": "Keep Week 3 closed while P0 rescue waves land by rerunning real-saved duplicate-warning checks and conservative daily-dose behavior.",
+      "codexAgentPath": "/Users/howard07/NuTriApp/nutri-app/.codex/agents/week3-regression-guard.toml",
+      "model": "gpt-5.4",
+      "promptPath": "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/subagents/week3_regression_guard.md",
+      "primaryOutputs": [
+        "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/saved_stack_duplicate_validation.json",
+        "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/daily_dose_basis_validation.json",
+        "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/blocker_registry.json"
+      ]
+    }
+  ]
+}

@@ -13,7 +13,6 @@ import { OrganicSpinner } from '@/components/ui/OrganicSpinner';
 import { ShinyText } from '@/components/ui/ShinyText';
 import { useScanHistory } from '@/contexts/ScanHistoryContext';
 import { useResponsiveTokens } from '@/hooks/useResponsiveTokens';
-import { useScoreBundleV4 } from '@/hooks/useScoreBundleV4';
 import { useStreamAnalysis } from '@/hooks/useStreamAnalysis';
 import { useSavedSupplements } from '@/contexts/SavedSupplementsContext';
 import { consumeScanSessionWithStatusAsync, ensureSessionId, type ScanSession } from '@/lib/scan/session';
@@ -24,7 +23,6 @@ import { buildLabelInsights } from '@/lib/scan/labelInsights';
 import { formatDoseForPill } from '@/lib/supplementDisplay';
 import type { LabelDraft } from '@/backend/src/labelAnalysis';
 import { AnalysisDashboard } from '@/components/scan/AnalysisDashboard';
-import type { ScoreSource } from '@/types/scoreBundle';
 
 type LabelAnalysisStatus = 'complete' | 'partial' | 'skipped' | 'pending' | 'unavailable' | 'failed' | null;
 type LabelInsightsSnapshot = ReturnType<typeof buildLabelInsights> | null;
@@ -139,48 +137,6 @@ const normalizeBarcode = (value?: string | null) => {
   if (digits.length >= 14) return digits.slice(-14);
   if (digits.length >= 8) return digits.padStart(14, '0');
   return digits;
-};
-
-const resolveScoreQueryFromBundleMeta = (meta: any): { source: ScoreSource; sourceId: string } | null => {
-  if (!meta) return null;
-  const revisionReady = typeof meta.revision !== 'number' || meta.revision >= 1;
-  if (!revisionReady) return null;
-
-  const authoritative = meta.authoritativeIdentity;
-  const authoritativeType = typeof authoritative?.type === 'string' ? authoritative.type : null;
-  const authoritativeValue =
-    typeof authoritative?.value === 'string' && authoritative.value.trim().length > 0
-      ? authoritative.value.trim()
-      : null;
-
-  // Prefer regulatory identity directly when it exists.
-  // This avoids false negatives when `sourceType` is temporarily marked as `web`
-  // during degraded terminal paths but authoritative identity has already resolved.
-  if (authoritativeType === 'npn' && authoritativeValue) {
-    return { source: 'lnhpd', sourceId: authoritativeValue };
-  }
-  if (authoritativeType === 'dsldLabelId' && authoritativeValue) {
-    return { source: 'dsld', sourceId: authoritativeValue };
-  }
-
-  const sourceTypeFinal = meta.sourceTypeFinal !== false;
-  if (!sourceTypeFinal) return null;
-  const fallbackReason = typeof meta.fallbackReason === 'string' ? meta.fallbackReason.toLowerCase() : '';
-  if (
-    fallbackReason.includes('needs_js') ||
-    fallbackReason.includes('ownership_unverified') ||
-    fallbackReason.includes('web_text_unusable')
-  ) {
-    return null;
-  }
-  const sourceType = meta.sourceType;
-  if (sourceType === 'lnhpd' && authoritative?.type === 'npn' && typeof authoritative.value === 'string' && authoritative.value.trim()) {
-    return { source: 'lnhpd', sourceId: authoritative.value.trim() };
-  }
-  if (sourceType === 'dsld' && authoritative?.type === 'dsldLabelId' && typeof authoritative.value === 'string' && authoritative.value.trim()) {
-    return { source: 'dsld', sourceId: authoritative.value.trim() };
-  }
-  return null;
 };
 
 type DashboardErrorBoundaryProps = {
@@ -512,7 +468,6 @@ export default function ScanResultScreen() {
   const [dashboardRuntimeError, setDashboardRuntimeError] = useState<string | null>(null);
   const dashboardRenderMode: 'full' = resolveDashboardRenderMode(isExpoGo);
   const [evidenceExpanded, setEvidenceExpanded] = useState(false);
-  const [scoreRequestNonce, setScoreRequestNonce] = useState(0);
   const analysisHeaderScrollY = useSharedValue(0);
   const [headerMiniScore, setHeaderMiniScore] = useState<HeaderMiniScoreState | null>(null);
   const [dashboardCoreReady, setDashboardCoreReady] = useState(false);
@@ -570,13 +525,6 @@ export default function ScanResultScreen() {
     }),
     [error, errorKind, sessionState, status],
   );
-  const scoreQueryFromBundleMeta = useMemo(
-    () => resolveScoreQueryFromBundleMeta(analysisBundle?.meta ?? null),
-    [analysisBundle?.meta],
-  );
-  const retryScore = useCallback(() => {
-    setScoreRequestNonce((prev) => prev + 1);
-  }, []);
   const handleHeaderMiniScoreChange = useCallback((next: HeaderMiniScoreState) => {
     setHeaderMiniScore((prev) => {
       if (
@@ -615,12 +563,6 @@ export default function ScanResultScreen() {
       routeDecision={barcodeQuality.page}
     />
   ) : null;
-  const barcodeScoreState = useScoreBundleV4({
-    source: scoreQueryFromBundleMeta?.source ?? null,
-    sourceId: scoreQueryFromBundleMeta?.sourceId ?? null,
-    enabled: Boolean(scoreQueryFromBundleMeta) && !isLabel && !FREEZE_SHADOW_ONLY,
-    requestNonce: scoreRequestNonce,
-  });
   const recentScanProductInfo = useMemo<RecentScanProductInfo | null>(() => {
     const bundleIdentity = analysisBundle?.meta?.productIdentity ?? null;
     const snapshotProduct = snapshot?.product ?? null;
@@ -635,31 +577,6 @@ export default function ScanResultScreen() {
       (typeof candidate.brand === 'string' && candidate.brand.trim().length > 0);
     return hasIdentity ? candidate : null;
   }, [analysisBundle?.meta?.productIdentity, productInfo, snapshot?.product]);
-  useEffect(() => {
-    if (!__DEV__) return;
-    console.log('[ScoreV4] query', {
-      enabled: Boolean(scoreQueryFromBundleMeta) && !isLabel && !FREEZE_SHADOW_ONLY,
-      freezeShadowOnly: FREEZE_SHADOW_ONLY,
-      source: scoreQueryFromBundleMeta?.source ?? null,
-      sourceId: scoreQueryFromBundleMeta?.sourceId ?? null,
-      bundleSourceType: analysisBundle?.meta?.sourceType ?? null,
-      bundleSourceTypeFinal: analysisBundle?.meta?.sourceTypeFinal ?? null,
-      authoritativeIdentity: analysisBundle?.meta?.authoritativeIdentity ?? null,
-    });
-  }, [analysisBundle?.meta, isLabel, scoreQueryFromBundleMeta]);
-
-  useEffect(() => {
-    if (!__DEV__) return;
-    console.log('[ScoreV4] state', {
-      status: barcodeScoreState.status,
-      responseStatus: barcodeScoreState.response?.status ?? null,
-      reasonCode:
-        barcodeScoreState.response && 'reasonCode' in barcodeScoreState.response
-          ? barcodeScoreState.response.reasonCode ?? null
-          : null,
-      error: barcodeScoreState.error ?? null,
-    });
-  }, [barcodeScoreState.error, barcodeScoreState.response, barcodeScoreState.status]);
   const bundleRevision =
     typeof analysisBundle?.meta?.revision === 'number' ? analysisBundle.meta.revision : null;
   // Removed legacy full-screen "Analyzing supplement..." interstitial.
@@ -1201,7 +1118,7 @@ export default function ScanResultScreen() {
 
         {!analysisComplete ? (
           <View style={styles.labelCard}>
-            <Text style={styles.labelCardTitle}>AI Analysis</Text>
+            <Text style={styles.labelCardTitle}>Analysis</Text>
             <Text style={styles.labelMeta}>
               {labelAnalysisStatus === 'pending'
                 ? 'Analyzing label...'
@@ -1457,8 +1374,6 @@ export default function ScanResultScreen() {
           sourceType="barcode"
           scanSessionId={typeof params.sessionId === 'string' ? params.sessionId : null}
           analysisBundle={analysisBundle}
-          scoreBundleV4State={barcodeScoreState}
-          onRetryScore={retryScore}
           externalScrollY={analysisHeaderScrollY}
           miniHeaderMode="header"
           onMiniScoreMetaChange={handleHeaderMiniScoreChange}

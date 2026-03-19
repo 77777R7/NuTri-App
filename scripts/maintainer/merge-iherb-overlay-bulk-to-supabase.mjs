@@ -182,8 +182,15 @@ const main = async () => {
       qualifiesHighConfidenceUsProductPage(row, completeness);
     const hasUsIherbPage = Boolean(row?.sourceSummary?.hasUsIherbPage);
     const npnIgnored = Boolean(row?.sourceSummary?.npnIgnored);
+    const sourceTypes = new Set(Array.isArray(row?.sourceSummary?.sourceTypes) ? row.sourceSummary.sourceTypes : []);
+    const fullOfficialProductPageReady =
+      !npnIgnored &&
+      Boolean(gtin14) &&
+      stillMissingFields.length === 0 &&
+      sourceTypes.has("official_product_page");
     const strictMergeReady = status === "full_overlay_ready" && hasUsIherbPage && !npnIgnored;
-    const apiFillReady = status === "partial_overlay" && hasUsIherbPage && !npnIgnored;
+    const apiFillReady = status === "partial_overlay" && hasUsIherbPage && !npnIgnored && !fullOfficialProductPageReady;
+    const mergeReady = strictMergeReady || fullOfficialProductPageReady;
 
     let mergeDecision = "queued";
     let blockReasonCode = null;
@@ -200,14 +207,19 @@ const main = async () => {
     } else if (apiFillReady) {
       mergeDecision = "queued";
       reasonCode = "partial_overlay_requires_api_fill";
-    } else if (!strictMergeReady) {
+    } else if (!mergeReady) {
       mergeDecision = "blocked";
-      blockReasonCode = status === "full_overlay_ready" ? "not_us_iherb_overlay_ready" : "unsupported_overlay_status";
+      blockReasonCode =
+        status === "full_overlay_ready"
+          ? "not_us_iherb_overlay_ready"
+          : sourceTypes.has("official_product_page")
+            ? "official_product_page_not_ready"
+            : "unsupported_overlay_status";
     } else if (!gtin14) {
       mergeDecision = "blocked";
       blockReasonCode = "missing_gtin14";
     } else if (matchIds.length === 0) {
-      if (highConfidenceUsProductPageReady) {
+      if (fullOfficialProductPageReady || highConfidenceUsProductPageReady) {
         mergeDecision = APPLY ? "merged" : "matched";
         authoritativeSourceType = "product_page";
         authoritativeIdentityKey = buildHighConfidenceIdentityKey(row);

@@ -2,7 +2,12 @@ import { execFile as execFileCallback } from "node:child_process";
 import { promisify } from "node:util";
 
 import { evaluateOfficialRegistryTextMatch } from "./matchers.js";
-import type { QualityMarkFetchResult, QualityMarkLookupInput, QualityMarkProviderSource } from "./types.js";
+import type {
+  QualityMarkFetchResult,
+  QualityMarkLookupInput,
+  QualityMarkProgramId,
+  QualityMarkProviderSource,
+} from "./types.js";
 
 const execFile = promisify(execFileCallback);
 
@@ -26,6 +31,15 @@ const QUALITY_MARK_USER_AGENT =
   "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36";
 const CURL_WRITE_OUT_SENTINEL = "__QUALITY_MARK_META__";
 const NUTRASOURCE_DETAIL_ORIGIN = "https://certifications.nutrasource.ca";
+const SUPPORTED_NUTRASOURCE_PROGRAM_IDS = new Set<QualityMarkProgramId>(["ifos", "igen"]);
+
+const normalizeNutrasourceProgramId = (value: unknown): QualityMarkProgramId => {
+  const normalized = normalizeText(value).toLowerCase();
+  if (SUPPORTED_NUTRASOURCE_PROGRAM_IDS.has(normalized as QualityMarkProgramId)) {
+    return normalized as QualityMarkProgramId;
+  }
+  return "ifos";
+};
 
 type NutrasourceProductCandidate = {
   productNum: string;
@@ -108,18 +122,21 @@ export const buildNutrasourceBrandDetailSource = (params: {
   productName?: string | null;
   queryText?: string | null;
   programId?: QualityMarkProviderSource["programId"] | null;
-}): QualityMarkProviderSource => ({
+}): QualityMarkProviderSource => {
+  const programId = normalizeNutrasourceProgramId(params.programId);
+  return {
   url: `${NUTRASOURCE_DETAIL_ORIGIN}/certified-products/brand?id=${encodeQuery(params.brandId)}`,
   sourceType: "official_registry",
-  title: `Nutrasource ${normalizeText(params.programId ?? "ifos").toUpperCase()} brand detail`,
-  programId: normalizeText(params.programId ?? "ifos") || "ifos",
+  title: `Nutrasource ${programId.toUpperCase()} brand detail`,
+  programId,
   adapterKind: "nutrasource_brand_detail",
   responseFormat: "html",
   brandName: normalizeText(params.brandName),
   productName: normalizeText(params.productName),
   queryText: normalizeText(params.queryText),
   brandId: normalizeText(params.brandId),
-});
+  };
+};
 
 export const buildNutrasourceProductDetailSource = (params: {
   productNum: string;
@@ -127,18 +144,21 @@ export const buildNutrasourceProductDetailSource = (params: {
   productName?: string | null;
   queryText?: string | null;
   programId?: QualityMarkProviderSource["programId"] | null;
-}): QualityMarkProviderSource => ({
+}): QualityMarkProviderSource => {
+  const programId = normalizeNutrasourceProgramId(params.programId);
+  return {
   url: `${NUTRASOURCE_DETAIL_ORIGIN}/certified-products/product?id=${encodeQuery(params.productNum)}`,
   sourceType: "official_registry",
-  title: `Nutrasource ${normalizeText(params.programId ?? "ifos").toUpperCase()} product detail`,
-  programId: normalizeText(params.programId ?? "ifos") || "ifos",
+  title: `Nutrasource ${programId.toUpperCase()} product detail`,
+  programId,
   adapterKind: "nutrasource_product_detail",
   responseFormat: "html",
   brandName: normalizeText(params.brandName),
   productName: normalizeText(params.productName),
   queryText: normalizeText(params.queryText),
   productNum: normalizeText(params.productNum),
-});
+  };
+};
 
 export const resolveNutrasourceProductDetailSource = (params: {
   source: QualityMarkProviderSource;

@@ -323,9 +323,9 @@ export function formatDoseForPill(raw?: string | null): string | null {
   // Strength units (mass/IU/volume).
   {
     // \u00b5 = micro sign (µ), \u03bc = Greek mu (μ)
-    const m = trimmed.match(/(\d+(?:\.\d+)?)\s*(mcg|ug|\u00b5g|\u03bcg|mg|g|iu|ui|ml|mL|oz)\b/i);
+    const m = trimmed.match(/(\d[\d,]*(?:\.\d+)?)\s*(mcg|ug|\u00b5g|\u03bcg|mg|g|iu|ui|ml|mL|oz)\b/i);
     if (m) {
-      const value = Number.parseFloat(m[1]);
+      const value = Number.parseFloat(m[1].replace(/,/g, ''));
       const unit = normalizeSimpleUnit(m[2]);
       const valueText = formatNumberForPill(value, 2);
       if (valueText) return `${valueText} ${unit}`;

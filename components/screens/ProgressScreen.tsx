@@ -29,7 +29,16 @@ import { useDailyCheckIns } from '@/contexts/DailyCheckInContext';
 import { useProgressRange, type ProgressRange } from '@/contexts/ProgressRangeContext';
 import { useSavedSupplements } from '@/contexts/SavedSupplementsContext';
 import { useScreenTokens } from '@/hooks/useScreenTokens';
-import { buildCheckInKey } from '@/lib/check-ins';
+import {
+  buildCheckInSeries,
+  buildStreakAchievementBadges,
+  getCurrentPerfectStreakDays,
+  getNextStreakMilestone,
+  hasAnyCompletedCheckInDay,
+  summarizeCheckInDay,
+} from '@/lib/check-in-adherence';
+import { validateCheckInDateForItem } from '@/lib/check-in-eligibility';
+import { buildCheckInKey, getLocalDateKey } from '@/lib/check-ins';
 import {
   Activity,
   Check,
@@ -106,13 +115,6 @@ type TrendSeriesEntry = {
 const calcPercent = (taken: number, total: number) => {
   if (total <= 0) return 0;
   return Math.round((taken / total) * 100);
-};
-
-const getLocalDateKey = (date: Date) => {
-  const year = date.getFullYear();
-  const month = `${date.getMonth() + 1}`.padStart(2, '0');
-  const day = `${date.getDate()}`.padStart(2, '0');
-  return `${year}-${month}-${day}`;
 };
 
 const parseTimeMinutes = (time?: string | null) => {
@@ -528,21 +530,35 @@ export default function ProgressScreen() {
   const { savedSupplements } = useSavedSupplements();
   const { checkInsByDate, toggleCheckIn, addCheckIns } = useDailyCheckIns();
   const todayKey = useMemo(() => getLocalDateKey(new Date()), []);
-
-  const expectedKeys = useMemo(
-    () =>
-      savedSupplements
-        .filter(item => item.syncedToCheckIn)
-        .map(item => buildCheckInKey({ supplementId: item.supplementId, localId: item.id })),
+  const trackedItems = useMemo(
+    () => savedSupplements.filter(item => item.syncedToCheckIn),
     [savedSupplements],
   );
-  const expectedKeySet = useMemo(() => new Set(expectedKeys), [expectedKeys]);
-  const expectedCount = expectedKeys.length;
+  const hasAnyTrackedItems = trackedItems.length > 0;
+  const resolveExpectedForDate = useCallback(
+    (dateKey: string) => {
+      const eligibleItems = trackedItems.filter(item => validateCheckInDateForItem(item, dateKey, todayKey).isValid);
+      const expectedKeys = eligibleItems.map(item =>
+        buildCheckInKey({ supplementId: item.supplementId, localId: item.id }),
+      );
+      return {
+        expectedCount: expectedKeys.length,
+        expectedKeySet: new Set(expectedKeys),
+      };
+    },
+    [todayKey, trackedItems],
+  );
+  const todayExpected = useMemo(() => resolveExpectedForDate(todayKey), [resolveExpectedForDate, todayKey]);
+  const expectedCount = todayExpected.expectedCount;
+  const todaySummary = useMemo(
+    () => summarizeCheckInDay(trackedItems, checkInsByDate, todayKey, todayKey),
+    [checkInsByDate, todayKey, trackedItems],
+  );
 
   const todayItems = useMemo(() => {
     const checked = new Set(checkInsByDate[todayKey] ?? []);
-    return savedSupplements
-      .filter(item => item.syncedToCheckIn)
+    return trackedItems
+      .filter(item => validateCheckInDateForItem(item, todayKey, todayKey).isValid)
       .sort((a, b) => {
         const timeA = parseTimeMinutes(a.routine?.time);
         const timeB = parseTimeMinutes(b.routine?.time);
@@ -564,12 +580,12 @@ export default function ProgressScreen() {
           supplementId: item.supplementId ?? null,
         };
       });
-  }, [checkInsByDate, savedSupplements, todayKey]);
+  }, [checkInsByDate, todayKey, trackedItems]);
 
   const planItems = useMemo<PlanItem[]>(() => {
     const checked = new Set(checkInsByDate[todayKey] ?? []);
-    return savedSupplements
-      .filter(item => item.syncedToCheckIn)
+    return trackedItems
+      .filter(item => validateCheckInDateForItem(item, todayKey, todayKey).isValid)
       .sort((a, b) => {
         const timeA = parseTimeMinutes(a.routine?.time);
         const timeB = parseTimeMinutes(b.routine?.time);
@@ -596,7 +612,7 @@ export default function ProgressScreen() {
           supplementId: item.supplementId ?? null,
         };
       });
-  }, [checkInsByDate, savedSupplements, todayKey]);
+  }, [checkInsByDate, todayKey, trackedItems]);
 
   const planNextId = useMemo(() => planItems.find(item => !item.done)?.id ?? null, [planItems]);
   const pendingPlanItems = useMemo(() => planItems.filter(item => !item.done), [planItems]);
@@ -610,18 +626,20 @@ export default function ProgressScreen() {
   );
 
   const planSummaryLabel = useMemo(() => {
-    if (!planTotalCount) return 'Set schedule';
+    if (!planTotalCount) return hasAnyTrackedItems ? 'No reminders today' : 'Set schedule';
     if (!pendingPlanCount) return 'All done';
     return pendingPlanCount === 1 ? '1 remaining' : `${pendingPlanCount} remaining`;
-  }, [pendingPlanCount, planTotalCount]);
+  }, [hasAnyTrackedItems, pendingPlanCount, planTotalCount]);
 
   const planSubLabel = useMemo(() => {
-    if (!planTotalCount) return 'Tap to set reminders.';
+    if (!planTotalCount) {
+      return hasAnyTrackedItems ? 'Your next plan resumes on a scheduled day.' : 'Tap to set reminders.';
+    }
     if (!pendingPlanCount) return "You're set for today.";
     if (!planNextItem) return 'Next: Anytime';
     const time = planNextItem.timeLabel ?? 'Anytime';
     return time === 'Anytime' ? 'Next: Anytime' : `Next at ${time}`;
-  }, [pendingPlanCount, planNextItem, planTotalCount]);
+  }, [hasAnyTrackedItems, pendingPlanCount, planNextItem, planTotalCount]);
 
   const planCardItems = useMemo(() => {
     if (!pendingPlanItems.length) return [];
@@ -681,6 +699,7 @@ export default function ProgressScreen() {
 
   const countCompletedForDate = useCallback(
     (dateKey: string) => {
+      const { expectedCount, expectedKeySet } = resolveExpectedForDate(dateKey);
       if (expectedCount === 0) return 0;
       const completedSet = new Set(checkInsByDate[dateKey] ?? []);
       let completedCount = 0;
@@ -689,44 +708,77 @@ export default function ProgressScreen() {
       });
       return completedCount;
     },
-    [checkInsByDate, expectedCount, expectedKeySet],
+    [checkInsByDate, resolveExpectedForDate],
   );
 
   const toggleDone = useCallback(
     (item: TodayItem) => {
-      void toggleCheckIn(todayKey, item.checkInKey, item.supplementId);
+      const savedItem = savedSupplements.find(saved => saved.id === item.id);
+      void toggleCheckIn(todayKey, item.checkInKey, item.supplementId, {
+        createdAt: savedItem?.createdAt ?? null,
+        syncedToCheckIn: savedItem?.syncedToCheckIn ?? true,
+        routine: savedItem?.routine ?? undefined,
+      });
     },
-    [todayKey, toggleCheckIn],
+    [savedSupplements, todayKey, toggleCheckIn],
   );
 
   const togglePlanDone = useCallback(
     (item: PlanItem) => {
-      void toggleCheckIn(todayKey, item.checkInKey, item.supplementId);
+      const savedItem = savedSupplements.find(saved => saved.id === item.id);
+      void toggleCheckIn(todayKey, item.checkInKey, item.supplementId, {
+        createdAt: savedItem?.createdAt ?? null,
+        syncedToCheckIn: savedItem?.syncedToCheckIn ?? true,
+        routine: savedItem?.routine ?? undefined,
+      });
     },
-    [todayKey, toggleCheckIn],
+    [savedSupplements, todayKey, toggleCheckIn],
   );
 
   const markAllRemaining = useCallback(() => {
     if (!remaining.length) return;
     void addCheckIns(
       todayKey,
-      remaining.map(item => ({ key: item.checkInKey, supplementId: item.supplementId })),
+      remaining.map(item => ({
+        key: item.checkInKey,
+        supplementId: item.supplementId,
+        createdAt: savedSupplements.find(saved => saved.id === item.id)?.createdAt ?? null,
+        syncedToCheckIn: savedSupplements.find(saved => saved.id === item.id)?.syncedToCheckIn ?? true,
+        routine: savedSupplements.find(saved => saved.id === item.id)?.routine ?? undefined,
+      })),
     );
-  }, [addCheckIns, remaining, todayKey]);
+  }, [addCheckIns, remaining, savedSupplements, todayKey]);
 
-  const badgeUnlocked = 2;
-  const nextBadgeDaysLeft = 1;
-  const streakGoalDays = 7;
-  const currentStreakDays = Math.max(0, streakGoalDays - nextBadgeDaysLeft);
-  const streakSecuredToday = totalCount > 0 && takenCount === totalCount;
+  const recent30DaySeries = useMemo(
+    () => buildCheckInSeries(trackedItems, checkInsByDate, todayKey, 30),
+    [checkInsByDate, todayKey, trackedItems],
+  );
+  const currentStreakDays = useMemo(
+    () => getCurrentPerfectStreakDays(trackedItems, checkInsByDate, todayKey),
+    [checkInsByDate, todayKey, trackedItems],
+  );
+  const achievementBadges = useMemo(
+    () => buildStreakAchievementBadges(currentStreakDays, hasAnyCompletedCheckInDay(checkInsByDate)),
+    [checkInsByDate, currentStreakDays],
+  );
+  const badgeUnlocked = achievementBadges.filter(badge => badge.unlocked).length;
+  const nextStreakMilestone = useMemo(
+    () => getNextStreakMilestone(currentStreakDays),
+    [currentStreakDays],
+  );
+  const nextBadgeDaysLeft = nextStreakMilestone.daysRemaining;
+  const streakGoalDays = nextStreakMilestone.goalDays;
+  const streakSecuredToday = todaySummary.expectedCount === 0 ? true : todaySummary.isPerfectDay;
   const streakStatus =
-    totalCount === 0
-      ? 'RESTART TODAY'
+    !hasAnyTrackedItems
+      ? 'SET YOUR PLAN TO START'
+      : totalCount === 0
+        ? 'NO CHECK-IN DUE TODAY'
       : streakSecuredToday
         ? 'STREAK SECURED FOR TODAY'
         : takenCount > 0
           ? 'FINISH TODAY TO KEEP YOUR STREAK'
-          : 'RESTART TODAY';
+          : 'CHECK IN TODAY TO KEEP YOUR STREAK';
 
   const weekActiveDays = useMemo(() => {
     const startDate = getWeekStartMonday(new Date());
@@ -740,17 +792,11 @@ export default function ProgressScreen() {
   }, [countCompletedForDate]);
 
   const activeDays30 = useMemo(() => {
-    const startDate = new Date();
-    startDate.setHours(0, 0, 0, 0);
-    startDate.setDate(startDate.getDate() - 29);
-    let activeDays = 0;
-    for (let index = 0; index < 30; index += 1) {
-      const date = new Date(startDate);
-      date.setDate(startDate.getDate() + index);
-      if (countCompletedForDate(getLocalDateKey(date)) > 0) activeDays += 1;
-    }
-    return activeDays;
-  }, [countCompletedForDate]);
+    return recent30DaySeries.reduce(
+      (count, day) => count + (day.completedCount > 0 ? 1 : 0),
+      0,
+    );
+  }, [recent30DaySeries]);
 
   const adherence = useMemo(() => {
     if (range === 'today') {
@@ -787,8 +833,8 @@ export default function ProgressScreen() {
       const date = new Date(startDate);
       date.setDate(startDate.getDate() + index);
       const dateKey = getLocalDateKey(date);
+      const { expectedCount: total } = resolveExpectedForDate(dateKey);
       const completed = countCompletedForDate(dateKey);
-      const total = expectedCount;
       const value = total > 0 ? calcPercent(completed, total) : null;
       return {
         k: TREND_DAY_LABELS[date.getDay()],
@@ -798,7 +844,7 @@ export default function ProgressScreen() {
         dateKey,
       };
     });
-  }, [countCompletedForDate, expectedCount]);
+  }, [countCompletedForDate, resolveExpectedForDate]);
 
   const trendSeries30d = useMemo<TrendSeriesEntry[]>(() => {
     const endDate = new Date();
@@ -807,8 +853,8 @@ export default function ProgressScreen() {
       const date = new Date(endDate);
       date.setDate(endDate.getDate() - (27 - index));
       const dateKey = getLocalDateKey(date);
+      const { expectedCount: total } = resolveExpectedForDate(dateKey);
       const completed = countCompletedForDate(dateKey);
-      const total = expectedCount;
       const value = total > 0 ? calcPercent(completed, total) : null;
       return { k: TREND_DAY_LABELS[date.getDay()], v: value, completed, total, dateKey };
     });
@@ -826,7 +872,7 @@ export default function ProgressScreen() {
         dateKey: slice[0]?.dateKey ?? `w${weekIndex + 1}`,
       };
     });
-  }, [countCompletedForDate, expectedCount]);
+  }, [countCompletedForDate, resolveExpectedForDate]);
 
   const todayTimelineSeries = useMemo<TrendSeriesEntry[]>(() => {
     if (!planItems.length) return [];
@@ -956,8 +1002,16 @@ export default function ProgressScreen() {
             <MiniMetricCard
               icon={<Trophy size={22} color="#334155" />}
               label="Next badge"
-              value={`${nextBadgeDaysLeft} day`}
-              sub="to 7-day streak"
+              value={
+                nextBadgeDaysLeft === 0
+                  ? 'Done'
+                  : `${nextBadgeDaysLeft} day${nextBadgeDaysLeft === 1 ? '' : 's'}`
+              }
+              sub={
+                nextBadgeDaysLeft === 0
+                  ? `${streakGoalDays}-day streak reached`
+                  : `to ${streakGoalDays}-day streak`
+              }
               onPress={() => setSheet('achievements')}
               density={twoUpDensity}
             />
@@ -1137,8 +1191,12 @@ export default function ProgressScreen() {
 
                 {!planTotalCount ? (
                   <View style={styles.planEmptyState}>
-                    <Text style={styles.planEmptyTitle}>No reminders yet</Text>
-                    <Text style={styles.planEmptySub}>Tap to schedule your plan.</Text>
+                    <Text style={styles.planEmptyTitle}>
+                      {hasAnyTrackedItems ? 'Nothing scheduled today' : 'No reminders yet'}
+                    </Text>
+                    <Text style={styles.planEmptySub}>
+                      {hasAnyTrackedItems ? 'Your plan resumes on the next eligible day.' : 'Tap to schedule your plan.'}
+                    </Text>
                   </View>
                 ) : !pendingPlanCount ? (
                   <View style={styles.planAllDoneState}>
@@ -1472,13 +1530,13 @@ export default function ProgressScreen() {
               </View>
 
               <View style={styles.achievementsRow}>
-                {[
-                  { label: 'FIRST', icon: CheckCircle2, unlocked: true, tint: '#CFF6E3' },
-                  { label: '3 DAY', icon: Flame, unlocked: true, tint: '#FFE9C7' },
-                  { label: '7 DAY', icon: Flame, unlocked: false, tint: 'rgba(15,23,42,0.04)' },
-                  { label: 'CHAMP', icon: Trophy, unlocked: false, tint: 'rgba(15,23,42,0.04)' },
-                ].map(badge => {
-                  const Icon = badge.icon;
+                {achievementBadges.map(badge => {
+                  const Icon =
+                    badge.label === 'FIRST'
+                      ? CheckCircle2
+                      : badge.label === 'CHAMP'
+                        ? Trophy
+                        : Flame;
                   return (
                     <View key={badge.label} style={[styles.achievementItem, !badge.unlocked && styles.achievementLocked]}>
                       <View style={[styles.achievementIcon, { backgroundColor: badge.tint }]}>

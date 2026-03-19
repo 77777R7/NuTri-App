@@ -194,6 +194,7 @@ import {
   buildStackOverlapResult,
   type StackOverlapSupplementInput,
 } from "./stackOverlap.js";
+import { createPersonalizationExplanationRouteHandlers } from "./personalization/routes.js";
 import { supabase } from "./supabase.js";
 import type {
   AiSupplementAnalysis,
@@ -9291,6 +9292,8 @@ const kbFormInsightsBatchBodySchema = z
 // ENDPOINTS
 // ============================================================================
 
+const personalizationExplanationHandlers = createPersonalizationExplanationRouteHandlers();
+
 /**
  * NuTri daily tips dataset
  */
@@ -9303,6 +9306,18 @@ app.get("/api/nutri-tips", async (_req: Request, res: Response) => {
     captureException(error, { route: "/api/nutri-tips" });
     console.error("/api/nutri-tips unexpected error", error);
     return res.status(500).json({ success: false, message: "Failed to load tips." });
+  }
+});
+
+app.post("/api/personalization/explain", verifySupabaseToken, async (req: Request, res: Response) => {
+  try {
+    await personalizationExplanationHandlers.explain(req, res);
+  } catch (error) {
+    captureException(error, { route: "/api/personalization/explain" });
+    console.error("/api/personalization/explain unexpected error", error);
+    return res.status(500).json({
+      error: "personalization_explanation_failed",
+    } satisfies ErrorResponse);
   }
 });
 
@@ -9728,6 +9743,41 @@ const readOverlaySectionText = (
   return null;
 };
 
+const readOverlayImageUrl = (row: Record<string, unknown>): string | null => {
+  const directCandidates = [
+    row.productCatalogImage,
+    row.product_catalog_image,
+    row.imageUrl,
+    row.image_url,
+  ];
+  for (const candidate of directCandidates) {
+    if (typeof candidate !== "string") continue;
+    const trimmed = candidate.trim();
+    if (trimmed) return trimmed;
+  }
+
+  const imageCollections = [row.productImages, row.product_images];
+  for (const collection of imageCollections) {
+    if (!Array.isArray(collection)) continue;
+    for (const item of collection) {
+      if (typeof item === "string" && item.trim()) {
+        return item.trim();
+      }
+      if (item && typeof item === "object") {
+        const record = item as Record<string, unknown>;
+        const nestedCandidates = [record.url, record.src, record.imageUrl, record.image_url];
+        for (const nested of nestedCandidates) {
+          if (typeof nested !== "string") continue;
+          const trimmed = nested.trim();
+          if (trimmed) return trimmed;
+        }
+      }
+    }
+  }
+
+  return null;
+};
+
 const toDecisionSupportOverlayClaims = (row: Record<string, unknown>): DecisionSupportOverlayClaims => {
   const descriptionSections = toOverlayObjectRecord(
     row.allDescriptionSections ?? row.descriptionSections ?? row.description_sections,
@@ -9758,6 +9808,7 @@ const toDecisionSupportOverlayClaims = (row: Record<string, unknown>): DecisionS
           : null,
     title: typeof row.title === "string" ? row.title : null,
     link: typeof row.link === "string" ? row.link : null,
+    imageUrl: readOverlayImageUrl(row),
     categories: Array.isArray(row.categories)
       ? row.categories.map((item) => String(item ?? "").trim()).filter(Boolean)
       : Array.isArray(row.category)
@@ -9786,7 +9837,9 @@ const fetchIherbOverlayClaimsByBarcode = async (
   try {
     const { data, error } = await supabase
       .from("iherb_overlay_products")
-      .select("product_id,brand_name,title,link,categories,supplement_facts,description_sections,updated_at")
+      .select(
+        "product_id,brand_name,title,link,product_catalog_image,product_images,categories,supplement_facts,description_sections,updated_at",
+      )
       .eq("barcode_gtin14", barcodeGtin14)
       .order("updated_at", { ascending: false })
       .limit(1)

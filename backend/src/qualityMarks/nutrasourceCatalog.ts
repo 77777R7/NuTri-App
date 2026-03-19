@@ -206,6 +206,11 @@ export const parseNutrasourceBrandSearchResults = (
       const resolvedBrandName = normalizeText(row.Name);
       const brandId = normalizeText(row.BrandId);
       const match = scoreBrandNameMatch(sourceBrandName, resolvedBrandName);
+      const matchType: NutrasourceBrandResult["matchType"] = match.exact
+        ? "exact"
+        : match.highConfidence
+          ? "high_confidence"
+          : "ambiguous";
       return {
         sourceBrandName,
         resolvedBrandName,
@@ -215,7 +220,7 @@ export const parseNutrasourceBrandSearchResults = (
           : "",
         brandProgramsRaw: extractProgramsFromNutrasourceFlags(row),
         found: Boolean(brandId && resolvedBrandName),
-        matchType: match.exact ? "exact" : match.highConfidence ? "high_confidence" : "ambiguous",
+        matchType,
         matchScore: match.score,
       };
     })

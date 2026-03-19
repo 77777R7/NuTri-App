@@ -1,0 +1,64 @@
+{
+  "phase": "p0_p3_product_closure",
+  "generatedAt": "2026-03-17T20:22:16Z",
+  "priorityOrder": [
+    "P0",
+    "P1",
+    "P2",
+    "P3"
+  ],
+  "reports": [
+    "program_manifest_current",
+    "program_result_current",
+    "blocker_registry",
+    "import_quality_validation_report",
+    "high_frequency_product_hit_validation",
+    "product_surface_completeness_report",
+    "saved_stack_duplicate_validation",
+    "daily_dose_basis_validation",
+    "consumption_readiness_report",
+    "science_whitelist_readiness_matrix"
+  ],
+  "steps": [
+    {
+      "order": 1,
+      "id": "p0_import_quality_validation"
+    },
+    {
+      "order": 2,
+      "id": "p0_high_frequency_hit_validation"
+    },
+    {
+      "order": 3,
+      "id": "p0_product_surface_completeness_audit"
+    },
+    {
+      "order": 4,
+      "id": "p1_duplicate_ingredient_real_sample_closure"
+    },
+    {
+      "order": 5,
+      "id": "p1_daily_dose_basis_stabilization"
+    },
+    {
+      "order": 6,
+      "id": "p2_saved_item_consumption_readiness"
+    },
+    {
+      "order": 7,
+      "id": "p3_science_whitelist_readiness"
+    }
+  ],
+  "latestParallelSubagentExecution": {
+    "executedAt": "2026-03-17T20:22:16Z",
+    "executionMode": "official_project_scoped_subagents",
+    "spawnedAgents": [
+      "p0-active-queue-rescuer",
+      "p0-import-quality-auditor",
+      "p0-product-surface-auditor",
+      "week3-regression-guard"
+    ],
+    "combinedOutcome": "completed_with_blockers",
+    "summary": "Canonical P0/P1 reports refreshed during the subagent batch. Import-quality direct instrumentation remains closed, non-scan product-surface gates pass, Week 3 remains non-regressed, and P0 is still blocked by 700/1651 complete hits with 266 active-queue rows and 684 missing-from-staging rows remaining."
+  }
+}

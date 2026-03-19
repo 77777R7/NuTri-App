@@ -9,6 +9,7 @@ import React, {
 } from 'react';
 
 import { loadSavedSupplements, saveSavedSupplements } from '@/lib/storage/saved-supplements';
+import { normalizeRoutinePreferences } from '@/lib/routineSchedule';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import type { RoutinePreferences, SavedSupplement, SavedSupplementInput } from '@/types/saved-supplements';
@@ -53,6 +54,14 @@ const getAllDedupeKeys = (item: Pick<SavedSupplement, 'supplementId' | 'barcode'
 
 const createLocalId = () => `local_${Date.now()}_${Math.floor(Math.random() * 1_000_000)}`;
 
+const sanitizeRoutine = (routine: RoutinePreferences | null | undefined) =>
+  normalizeRoutinePreferences(routine);
+
+const sanitizeSavedSupplement = (item: SavedSupplement): SavedSupplement => ({
+  ...item,
+  routine: sanitizeRoutine(item.routine),
+});
+
 const parseNotes = (notes: string | null) => {
   if (!notes) return null;
   try {
@@ -92,7 +101,7 @@ export const SavedSupplementsProvider = ({ children }: { children: React.ReactNo
       const notes = JSON.stringify({
         dosageText: item.dosageText,
         ...(cleanedBrandName ? { brandName: cleanedBrandName } : {}),
-        routine: item.routine,
+        routine: sanitizeRoutine(item.routine),
         tags: item.tags,
         lastViewed: item.lastViewed,
         syncedToCheckIn: item.syncedToCheckIn,
@@ -170,6 +179,7 @@ export const SavedSupplementsProvider = ({ children }: { children: React.ReactNo
         id: record.id,
         supplementId: record.supplement_id,
         barcode: supplement?.barcode ?? null,
+        imageUrl: supplement?.image_url ?? null,
         productName: supplement?.name ?? 'Unknown supplement',
         brandName: supplementBrand ?? noteBrand ?? UNKNOWN_BRAND,
         dosageText,
@@ -179,7 +189,7 @@ export const SavedSupplementsProvider = ({ children }: { children: React.ReactNo
         lastViewed: notes?.lastViewed ?? undefined,
         tags: notes?.tags ?? undefined,
         reminderEnabled: notes?.reminderEnabled ?? record.reminder_enabled ?? false,
-        routine: notes?.routine ?? undefined,
+        routine: sanitizeRoutine(notes?.routine),
       };
     });
 
@@ -200,6 +210,7 @@ export const SavedSupplementsProvider = ({ children }: { children: React.ReactNo
 
       if (!local.supplementId && remote.supplementId) updates.supplementId = remote.supplementId;
       if (!local.barcode && remote.barcode) updates.barcode = remote.barcode;
+      if (!local.imageUrl && remote.imageUrl) updates.imageUrl = remote.imageUrl;
 
       const localName = local.productName?.trim() ?? '';
       const remoteName = remote.productName?.trim() ?? '';
@@ -254,7 +265,7 @@ export const SavedSupplementsProvider = ({ children }: { children: React.ReactNo
       try {
         const stored = await loadSavedSupplements();
         if (!isMounted) return;
-        setSavedSupplements(stored);
+        setSavedSupplements(stored.map(sanitizeSavedSupplement));
       } catch (error) {
         console.warn('[saved-supplements] Failed to hydrate', error);
       } finally {
@@ -284,6 +295,7 @@ export const SavedSupplementsProvider = ({ children }: { children: React.ReactNo
         id: createLocalId(),
         supplementId: input.supplementId,
         barcode: input.barcode ?? null,
+        imageUrl: input.imageUrl ?? null,
         productName: input.productName,
         brandName: sanitizeBrandName(input.brandName) ?? UNKNOWN_BRAND,
         dosageText: input.dosageText,
@@ -293,7 +305,7 @@ export const SavedSupplementsProvider = ({ children }: { children: React.ReactNo
         lastViewed: input.lastViewed,
         tags: input.tags,
         reminderEnabled: input.reminderEnabled ?? false,
-        routine: input.routine,
+        routine: sanitizeRoutine(input.routine),
       };
 
       const nextKeys = getAllDedupeKeys(next);
@@ -343,7 +355,7 @@ export const SavedSupplementsProvider = ({ children }: { children: React.ReactNo
 
   const updateRoutine = useCallback(
     async (id: string, routine: RoutinePreferences) => {
-      await updateSupplement(id, { routine });
+      await updateSupplement(id, { routine: sanitizeRoutine(routine) });
     },
     [updateSupplement],
   );

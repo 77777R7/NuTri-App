@@ -1,0 +1,63 @@
+{
+  "version": "v1",
+  "capsCatalog": [
+    { "capKey": "duplicate_overlap_high", "label": "Duplicate overlap review required" },
+    { "capKey": "low_disclosure", "label": "Low disclosure" },
+    { "capKey": "proprietary_blend", "label": "Proprietary blend" },
+    { "capKey": "diet_constraint_conflict", "label": "Diet constraint conflict" },
+    { "capKey": "generic_safety_path", "label": "Generic safety path" }
+  ],
+  "experienceModes": [
+    { "key": "brand_new", "reasonCode": "experience.brand_new" },
+    { "key": "tried_a_few", "reasonCode": "experience.tried_a_few" },
+    { "key": "regular_user", "reasonCode": "experience.regular_user" },
+    { "key": "structured_stack", "reasonCode": "experience.structured_stack" }
+  ],
+  "eligibilityRules": [
+    {
+      "ruleId": "duplicate_overlap_downgrade",
+      "appliesWhen": { "duplicateRiskLevels": ["high"] },
+      "outcome": { "eligible": true, "rankEligible": false, "caps": ["duplicate_overlap_high"] },
+      "reasonCode": "duplicate_overlap_downgrade"
+    },
+    {
+      "ruleId": "diet_constraint_exclusion",
+      "appliesWhen": {},
+      "outcome": { "eligible": false, "rankEligible": false, "caps": ["diet_constraint_conflict"] },
+      "reasonCode": "diet_constraint_exclusion"
+    },
+    {
+      "ruleId": "sensitive_goal_generic_safety_path",
+      "appliesWhen": {},
+      "outcome": { "eligible": true, "rankEligible": true, "caps": ["generic_safety_path"] },
+      "reasonCode": "ingredient_requires_generic_safety_path"
+    }
+  ],
+  "rules": [
+    {
+      "ruleId": "duplicate_overlap_downgrade",
+      "condition": "duplicate_risk_level_high",
+      "effect": { "eligible": true, "rankEligible": false, "caps": ["duplicate_overlap_high"] }
+    },
+    {
+      "ruleId": "low_disclosure_caps_strong_match",
+      "condition": "disclosure_quality_low",
+      "effect": { "maxTier": "related", "caps": ["low_disclosure"] }
+    },
+    {
+      "ruleId": "proprietary_blend_caps_goal_match",
+      "condition": "proprietary_blend_without_clear_actives",
+      "effect": { "maxTier": "weak_match", "caps": ["proprietary_blend"] }
+    },
+    {
+      "ruleId": "diet_constraint_exclusion",
+      "condition": "violates_declared_diet_constraint",
+      "effect": { "eligible": false, "rankEligible": false, "caps": ["diet_constraint_conflict"] }
+    },
+    {
+      "ruleId": "sensitive_goal_generic_safety_path",
+      "condition": "ingredient_requires_generic_safety_path",
+      "effect": { "eligible": true, "rankEligible": true, "caps": ["generic_safety_path"] }
+    }
+  ]
+}

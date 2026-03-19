@@ -1,0 +1,26 @@
+{
+  "p0:import_quality/direct_mapping_instrumentation_gap": {
+    "blockerClass": "measurement_gap",
+    "lane": "P0",
+    "evidencePath": "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/import_quality_validation_report.json",
+    "unpauseCondition": "Emit direct parse-failure and mapping-mismatch counters from the merge control plane.",
+    "status": "hold",
+    "canonicalPath": "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/blocker_registry.json"
+  },
+  "p3:science/omega3_fallback_only": {
+    "blockerClass": "science_whitelist_not_product_ready",
+    "lane": "P3",
+    "evidencePath": "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/science_whitelist_readiness_matrix.json",
+    "unpauseCondition": "Add verified form/bioavailability evidence for EPA/DHA/omega-3 differentiation before promoting beyond fallback-only.",
+    "status": "hold",
+    "canonicalPath": "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/blocker_registry.json"
+  },
+  "p0:high_frequency/product_surface_incomplete": {
+    "blockerClass": "representative_product_set_not_complete",
+    "lane": "P0",
+    "evidencePath": "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/high_frequency_product_hit_validation.json",
+    "unpauseCondition": "Reduce upstream-missing + active-queue high-frequency products enough for the representative set to pass product-surface completeness.",
+    "status": "active",
+    "canonicalPath": "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/blocker_registry.json"
+  }
+}

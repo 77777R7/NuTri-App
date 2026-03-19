@@ -1,5 +1,6 @@
 import { normalizeHumanTextForMatch } from "@/lib/text/normalizeHumanText";
 import { isNutritionLabelLikeIngredient } from "@/lib/scan/isNutritionLabelLikeIngredient";
+import { formatDoseForPill } from "@/lib/supplementDisplay";
 
 export type FactsActiveDisplay = {
   name?: string | null;
@@ -16,6 +17,13 @@ export type WhatsInsideDisplay = {
   badgeLabel: string | null;
   metaText: string | null;
 };
+
+const normalizeDoseKey = (value: string): string =>
+  value
+    .toLowerCase()
+    .replace(/,/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
 
 const ACTIVE_INFERENCE_RULES: Array<{ pattern: RegExp; label: string }> = [
   { pattern: /\bastaxanthin\b/i, label: "Astaxanthin" },
@@ -175,6 +183,43 @@ export const inferActiveFromProductName = (productName: string): string | null =
   }
   return null;
 };
+
+export const collectDisplayableFactDoses = (params: {
+  actives?: FactsActiveDisplay[];
+  overlayIngredients?: Array<{ name: string; dose: string | null }>;
+}): string[] => {
+  const doses: string[] = [];
+  const seen = new Set<string>();
+
+  for (const ingredient of params.overlayIngredients ?? []) {
+    const name = typeof ingredient?.name === "string" ? ingredient.name.trim() : "";
+    if (!name || isNutritionLabelLikeIngredient(name)) continue;
+    const formatted = formatDoseForPill(ingredient?.dose ?? null);
+    if (!formatted) continue;
+    const key = normalizeDoseKey(formatted);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    doses.push(formatted);
+  }
+
+  for (const active of params.actives ?? []) {
+    const name = typeof active?.name === "string" ? active.name.trim() : "";
+    if (!name || isNutritionLabelLikeIngredient(name)) continue;
+    const formatted = formatDoseForPill(toAmountText(active));
+    if (!formatted) continue;
+    const key = normalizeDoseKey(formatted);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    doses.push(formatted);
+  }
+
+  return doses;
+};
+
+export const derivePrimaryDoseFromFacts = (params: {
+  actives?: FactsActiveDisplay[];
+  overlayIngredients?: Array<{ name: string; dose: string | null }>;
+}): string | null => collectDisplayableFactDoses(params)[0] ?? null;
 
 export const buildWhatsInsideDisplay = (params: {
   actives: FactsActiveDisplay[];

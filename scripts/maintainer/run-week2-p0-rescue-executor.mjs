@@ -80,14 +80,15 @@ const OUT_ROOT = getArg(
   path.join(ROOT, "output", "week2_p0_rescue_executor"),
 );
 const STATE_PATH = getArg("state-json", path.join(OUT_ROOT, "state.json"));
-const LOCK_PATH = getArg("lock-json", path.join(OUT_ROOT, "current_wave.lock.json"));
+const LOCK_PATH_OVERRIDE = getArg("lock-json", null);
+const LEGACY_LOCK_PATH = path.join(OUT_ROOT, "current_wave.lock.json");
 const RUN_LOCK_PATH = getArg("run-lock-json", path.join(OUT_ROOT, "current_executor_run.lock.json"));
 const LATEST_JSON = getArg("latest-json", path.join(OUT_ROOT, "latest.json"));
 const LATEST_MD = getArg("latest-md", path.join(OUT_ROOT, "latest.md"));
 const FORCE = getArg("force", "false") === "true";
 const DRY_RUN = getArg("dry-run", "false") === "true";
-const MAX_LOCK_AGE_HOURS = Math.max(1, Number(getArg("max-lock-age-hours", 10)) || 10);
-const MAX_RUN_LOCK_AGE_HOURS = Math.max(1, Number(getArg("max-run-lock-age-hours", 8)) || 8);
+const MAX_LOCK_AGE_HOURS = Math.max(0.25, Number(getArg("max-lock-age-hours", 1)) || 1);
+const MAX_RUN_LOCK_AGE_HOURS = Math.max(0.25, Number(getArg("max-run-lock-age-hours", 0.5)) || 0.5);
 const RUN_OWNER = normalizeText(getArg("run-owner", process.env.AUTOMATION_ID || "manual")) || "manual";
 const BRAND_OVERRIDE = getArg("brand", null);
 const LANE_OVERRIDE = getArg("lane", null);
@@ -97,7 +98,7 @@ const LANES = [
     id: "warnings_only",
     label: "warnings-only",
     fields: ["warnings"],
-    batchSize: 32,
+    batchSize: 64,
     concurrency: 6,
     shards: 6,
     delayMs: 125,
@@ -106,7 +107,7 @@ const LANES = [
     id: "suggested_use_only",
     label: "suggested_use-only",
     fields: ["suggested_use"],
-    batchSize: 32,
+    batchSize: 64,
     concurrency: 6,
     shards: 6,
     delayMs: 125,
@@ -115,7 +116,7 @@ const LANES = [
     id: "ingredient_and_dosage",
     label: "ingredient+dosage",
     fields: ["ingredient", "dosage"],
-    batchSize: 24,
+    batchSize: 48,
     concurrency: 4,
     shards: 4,
     delayMs: 200,
@@ -124,7 +125,7 @@ const LANES = [
     id: "suggested_use_and_warnings",
     label: "suggested_use+warnings",
     fields: ["suggested_use", "warnings"],
-    batchSize: 24,
+    batchSize: 48,
     concurrency: 4,
     shards: 4,
     delayMs: 200,
@@ -361,9 +362,15 @@ const resolveBrandCandidate = (snapshot) => {
   return snapshot.configuredCandidates[0] ?? null;
 };
 
-const createLock = async (payload) => {
-  await ensureDir(path.dirname(LOCK_PATH));
-  const handle = await fs.open(LOCK_PATH, "wx");
+const getLaneLockPath = (laneId) => {
+  if (LOCK_PATH_OVERRIDE) return LOCK_PATH_OVERRIDE;
+  const safeLaneId = slugify(laneId || "unknown_lane");
+  return path.join(OUT_ROOT, `current_wave.${safeLaneId}.lock.json`);
+};
+
+const createLock = async (lockPath, payload) => {
+  await ensureDir(path.dirname(lockPath));
+  const handle = await fs.open(lockPath, "wx");
   try {
     await handle.writeFile(`${JSON.stringify(payload, null, 2)}\n`, "utf8");
   } finally {
@@ -371,12 +378,12 @@ const createLock = async (payload) => {
   }
 };
 
-const readLock = async () => readJson(LOCK_PATH, null);
+const readLock = async (lockPath) => readJson(lockPath, null);
 
-const removeLockIfOwned = async (runId) => {
-  const existing = await readLock();
+const removeLockIfOwned = async (lockPath, runId) => {
+  const existing = await readLock(lockPath);
   if (!existing || existing.runId !== runId) return;
-  await fs.rm(LOCK_PATH, { force: true });
+  await fs.rm(lockPath, { force: true });
 };
 
 const readRunLock = async () => readJson(RUN_LOCK_PATH, null);
@@ -470,7 +477,7 @@ const runExecutor = async ({ lane, candidate, selectedRows, outDir }) => {
     String(lane.delayMs),
   ];
 
-  const { stdout, stderr } = await execFileAsync("node", argsForExecutor, {
+  const { stdout, stderr } = await execFileAsync(process.execPath, argsForExecutor, {
     cwd: ROOT,
     maxBuffer: 1024 * 1024 * 12,
   });
@@ -548,29 +555,13 @@ const main = async () => {
   }
 
   try {
-    const existingLock = await readLock();
-    if (existingLock && !FORCE) {
-      const lockAgeMs = Date.now() - new Date(existingLock.createdAt ?? 0).getTime();
-      const stale = Number.isFinite(lockAgeMs) && lockAgeMs > MAX_LOCK_AGE_HOURS * 60 * 60 * 1000;
-      if (!stale) {
-        const report = buildRunReport({
-          generatedAt: new Date().toISOString(),
-          runId: `week2-p0-rescue-skip-${formatLocalStamp(new Date())}`,
-          status: "skipped_lock_active",
-          dryRun: DRY_RUN,
-          note: `Existing wave lock is still active for ${existingLock.brandName ?? "unknown brand"} / ${existingLock.laneId ?? "unknown lane"}.`,
-          selection: null,
-          queueSnapshot: null,
-          unconfiguredBrands: [],
-          execution: null,
-          nextAction: "Wait for the active rescue wave to finish before starting another apply run.",
-        });
-        await writeJson(LATEST_JSON, report);
-        await writeMarkdown(LATEST_MD, report);
-        console.log(JSON.stringify(report, null, 2));
-        return;
+    if (!LOCK_PATH_OVERRIDE) {
+      const legacyLock = await readLock(LEGACY_LOCK_PATH);
+      if (legacyLock) {
+        const lockAgeMs = Date.now() - new Date(legacyLock.createdAt ?? 0).getTime();
+        const stale = Number.isFinite(lockAgeMs) && lockAgeMs > MAX_LOCK_AGE_HOURS * 60 * 60 * 1000;
+        if (stale) await fs.rm(LEGACY_LOCK_PATH, { force: true });
       }
-      await fs.rm(LOCK_PATH, { force: true });
     }
 
     const [queueRows, configRegistry, state] = await Promise.all([
@@ -632,6 +623,35 @@ const main = async () => {
   }
 
   const selectedRows = selectedCandidate.rows.slice(0, selectedLane.batchSize);
+  const selectedLockPath = getLaneLockPath(selectedLane.id);
+  const existingLock = await readLock(selectedLockPath);
+  if (existingLock && !FORCE) {
+    const lockAgeMs = Date.now() - new Date(existingLock.createdAt ?? 0).getTime();
+    const stale = Number.isFinite(lockAgeMs) && lockAgeMs > MAX_LOCK_AGE_HOURS * 60 * 60 * 1000;
+    if (!stale) {
+      const report = buildRunReport({
+        generatedAt: new Date().toISOString(),
+        runId: `week2-p0-rescue-skip-${formatLocalStamp(new Date())}`,
+        status: "skipped_lock_active",
+        dryRun: DRY_RUN,
+        note: `Existing lane lock is still active for ${existingLock.brandName ?? "unknown brand"} / ${existingLock.laneId ?? selectedLane.id}.`,
+        selection: {
+          laneId: selectedLane.id,
+          laneLabel: selectedLane.label,
+        },
+        queueSnapshot,
+        unconfiguredBrands: [],
+        execution: null,
+        nextAction: "Wait for the active lane lock to clear, or run another lane.",
+      });
+      await writeJson(LATEST_JSON, report);
+      await writeMarkdown(LATEST_MD, report);
+      console.log(JSON.stringify(report, null, 2));
+      return;
+    }
+    await fs.rm(selectedLockPath, { force: true });
+  }
+
   const runId = `week2-p0-rescue-${TODAY}-${selectedLane.id}-${slugify(selectedCandidate.brandName)}-${formatLocalStamp(new Date())}`;
   const outDir = path.join(OUT_ROOT, runId);
   await ensureDir(outDir);
@@ -644,8 +664,9 @@ const main = async () => {
     laneLabel: selectedLane.label,
     brandName: selectedCandidate.brandName,
     outDir,
+    lockPath: selectedLockPath,
   };
-  await createLock(lockPayload);
+  await createLock(selectedLockPath, lockPayload);
 
   let report;
   try {
@@ -736,7 +757,7 @@ const main = async () => {
       });
     }
   } finally {
-    await removeLockIfOwned(runId);
+    await removeLockIfOwned(selectedLockPath, runId);
   }
 
     await writeJson(path.join(outDir, "rescue_executor_run.json"), report);

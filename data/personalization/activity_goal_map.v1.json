@@ -1,0 +1,40 @@
+{
+  "version": "v1",
+  "activityMappings": [
+    {
+      "activityKey": "strength_training",
+      "planKey": "activity_strength_support",
+      "suggestedGoals": ["recovery", "energy"],
+      "suggestedTypes": ["protein", "mineral"],
+      "suggestedTimingAnchors": ["post_workout", "morning"]
+    },
+    {
+      "activityKey": "endurance_training",
+      "planKey": "activity_endurance_support",
+      "suggestedGoals": ["energy", "recovery"],
+      "suggestedTypes": ["protein", "mineral"],
+      "suggestedTimingAnchors": ["morning", "post_workout"]
+    },
+    {
+      "activityKey": "mobility",
+      "planKey": "activity_mobility_support",
+      "suggestedGoals": ["focus", "energy"],
+      "suggestedTypes": ["herb", "probiotic"],
+      "suggestedTimingAnchors": ["evening"]
+    },
+    {
+      "activityKey": "performance_training",
+      "planKey": "activity_performance_support",
+      "suggestedGoals": ["focus", "recovery"],
+      "suggestedTypes": ["protein", "vitamin"],
+      "suggestedTimingAnchors": ["pre_workout", "post_workout"]
+    },
+    {
+      "activityKey": "general_fitness",
+      "planKey": "activity_general_support",
+      "suggestedGoals": ["energy", "recovery"],
+      "suggestedTypes": ["vitamin", "mineral"],
+      "suggestedTimingAnchors": ["breakfast", "dinner"]
+    }
+  ]
+}

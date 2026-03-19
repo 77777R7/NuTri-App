@@ -225,7 +225,7 @@ const runWorker = async ({ shardIndex, queuePath, outDir }) => {
   if (PRIORITY_LANE) workerArgs.push("--priority-lane", PRIORITY_LANE);
   workerArgs.push(...PASS_THROUGH_ARGS);
 
-  const { stdout, stderr } = await execFileAsync("node", workerArgs, {
+  const { stdout, stderr } = await execFileAsync(process.execPath, workerArgs, {
     cwd: ROOT,
     maxBuffer: 1024 * 1024 * 8,
   });

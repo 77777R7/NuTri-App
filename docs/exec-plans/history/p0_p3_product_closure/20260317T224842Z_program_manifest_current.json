@@ -1,0 +1,108 @@
+{
+  "phase": "p0_p3_product_closure",
+  "generatedAt": "2026-03-17T22:47:25Z",
+  "priorityOrder": [
+    "P0",
+    "P1",
+    "P2",
+    "P3"
+  ],
+  "reports": [
+    "program_manifest_current",
+    "program_result_current",
+    "blocker_registry",
+    "import_quality_validation_report",
+    "high_frequency_product_hit_validation",
+    "product_surface_completeness_report",
+    "saved_stack_duplicate_validation",
+    "daily_dose_basis_validation",
+    "consumption_readiness_report",
+    "science_whitelist_readiness_matrix",
+    "queued_brand_target_match_matrix",
+    "queued_brand_north_america_discovery_summary",
+    "queued_brand_execution_lanes_current",
+    "queued_brand_lane_execution_result_current"
+  ],
+  "steps": [
+    {
+      "order": 1,
+      "id": "p0_import_quality_validation"
+    },
+    {
+      "order": 2,
+      "id": "p0_high_frequency_hit_validation"
+    },
+    {
+      "order": 3,
+      "id": "p0_product_surface_completeness_audit"
+    },
+    {
+      "order": 4,
+      "id": "p1_duplicate_ingredient_real_sample_closure"
+    },
+    {
+      "order": 5,
+      "id": "p1_daily_dose_basis_stabilization"
+    },
+    {
+      "order": 6,
+      "id": "p2_saved_item_consumption_readiness"
+    },
+    {
+      "order": 7,
+      "id": "p3_science_whitelist_readiness"
+    }
+  ],
+  "latestFollowupExecution": {
+    "executedAt": "2026-03-17T20:35:01Z",
+    "executionMode": "single_brand_active_queue_rescue_wave",
+    "brandName": "Pure Encapsulations",
+    "result": "execution_success",
+    "summary": "The current active_queue rescue wave processed 38 Pure Encapsulations rows, improved 26 rows, converted 25 to full overlay ready, lifted complete hits from 700 to 725, and reduced active_queue from 266 to 241."
+  },
+  "latestNorthAmericaBrandDiscoveryBatch": {
+    "executedAt": "2026-03-17T21:24:00Z",
+    "executionMode": "parallel_subagents_brand_discovery_and_matching",
+    "spawnedAgents": [
+      "na-brand-discovery-a",
+      "na-brand-discovery-b",
+      "na-brand-discovery-c",
+      "queued-highfreq-matcher"
+    ],
+    "summary": "A 10-brand North America discovery batch completed. The strongest external-discovery-first targets are Natrol and Codeage; the strongest official-site recovery surfaces are Nutricost, Country Life, and Sports Research.",
+    "artifacts": [
+      "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/queued_brand_target_match_matrix.json",
+      "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/queued_brand_north_america_discovery_summary.json"
+    ]
+  },
+  "latestNorthAmericaLaneSplit": {
+    "executedAt": "2026-03-17T22:32:27Z",
+    "executionMode": "control_plane_lane_split",
+    "summary": "The five highest-priority queued/high-frequency brands were split into two executable lanes: external discovery for Natrol and Codeage, and official recovery wave for Nutricost, Country Life, and Sports Research.",
+    "artifacts": [
+      "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/queued_brand_execution_lanes_current.json",
+      "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/subagents/external_discovery_lane.md",
+      "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/subagents/official_recovery_wave_lane.md"
+    ]
+  },
+  "latestNorthAmericaLaneExecution": {
+    "executedAt": "2026-03-17T22:47:25Z",
+    "executionMode": "parallel_brand_lane_subagents",
+    "spawnedAgents": [
+      "Natrol external discovery",
+      "Codeage external discovery",
+      "Nutricost official recovery",
+      "Country Life official recovery",
+      "Sports Research official recovery"
+    ],
+    "summary": "Natrol yielded 2 strict current candidates, Codeage yielded a fresh 12-product supplement-only candidate set, Nutricost produced 3 gated-review full-overlay-ready rows, Country Life improved 14 rows but remained partial, and Sports Research's residual six-row tail was blocker-classified.",
+    "artifacts": [
+      "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/queued_brand_lane_execution_result_current.json",
+      "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/subagents/runs/natrol_external_discovery_execution_result.md",
+      "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/subagents/runs/codeage_external_discovery_execution_result.md",
+      "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/subagents/runs/nutricost_official_recovery_execution_result.md",
+      "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/subagents/runs/country_life_official_recovery_execution_result.md",
+      "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/subagents/runs/sports_research_official_recovery_execution_result.md"
+    ]
+  }
+}

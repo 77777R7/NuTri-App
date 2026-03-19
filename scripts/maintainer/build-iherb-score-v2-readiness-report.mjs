@@ -218,12 +218,12 @@ const main = async () => {
   const stagingPayload = await readJson(STAGING_PATH);
   const mergePayload = await readJson(MERGE_REPORT_PATH);
   const products = Array.isArray(stagingPayload?.products) ? stagingPayload.products : [];
-  const matchedIds = new Set(
+  const importedIds = new Set(
     (Array.isArray(mergePayload?.rows) ? mergePayload.rows : [])
-      .filter((row) => row?.mergeDecision === "matched")
+      .filter((row) => row?.mergeDecision === "matched" || row?.mergeDecision === "merged")
       .map((row) => String(row?.productId ?? "")),
   );
-  const imported = products.filter((row) => matchedIds.has(String(row?.productId ?? "")));
+  const imported = products.filter((row) => importedIds.has(String(row?.productId ?? "")));
 
   const categoryDistribution = {};
   const sourceTypeDistribution = {};

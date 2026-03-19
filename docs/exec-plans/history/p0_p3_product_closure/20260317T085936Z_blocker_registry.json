@@ -1,0 +1,50 @@
+{
+  "p0:import_quality/direct_mapping_instrumentation_gap": {
+    "blockerClass": "measurement_gap",
+    "lane": "P0",
+    "evidencePath": "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/import_quality_validation_report.json",
+    "unpauseCondition": "Emit direct parse-failure and mapping-mismatch counters from the merge control plane.",
+    "status": "hold",
+    "canonicalPath": "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/blocker_registry.json"
+  },
+  "p0:high_frequency/product_surface_incomplete": {
+    "blockerClass": "representative_product_set_not_complete",
+    "lane": "P0",
+    "evidencePath": "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/high_frequency_product_hit_validation.json",
+    "unpauseCondition": "Bring the representative high-frequency set to product-surface completeness by shrinking the upstream-missing and active-queue cohorts.",
+    "status": "active",
+    "canonicalPath": "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/blocker_registry.json"
+  },
+  "p1:real_saved_stack/coverage_insufficient": {
+    "blockerClass": "real_saved_environment_underpowered",
+    "lane": "P1",
+    "evidencePath": "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/saved_stack_duplicate_validation.json",
+    "unpauseCondition": "Collect enough real supplement-linked Saved products to reproduce simple duplicate, multi-product stack, and weak-input cases without relying on controlled QA.",
+    "status": "active",
+    "canonicalPath": "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/blocker_registry.json"
+  },
+  "p2:consumption_readiness/weak_saved_inventory": {
+    "blockerClass": "weak_saved_inventory_dominant",
+    "lane": "P2",
+    "evidencePath": "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/consumption_readiness_report.json",
+    "unpauseCondition": "Increase supplement-linked, barcode-backed, ingredient-usable Saved products and reduce label-only or no-usable-actives rows in the active inventory.",
+    "status": "active",
+    "canonicalPath": "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/blocker_registry.json"
+  },
+  "p3:science/omega3_fallback_only": {
+    "blockerClass": "science_whitelist_not_product_ready",
+    "lane": "P3",
+    "evidencePath": "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/science_whitelist_readiness_matrix.json",
+    "unpauseCondition": "Add verified form and bioavailability evidence for EPA, DHA, and total omega-3 differentiation before moving beyond fallback-only.",
+    "status": "hold",
+    "canonicalPath": "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/blocker_registry.json"
+  },
+  "runtime:node/tests_not_rerun": {
+    "blockerClass": "environment_validation_gap",
+    "lane": "runtime",
+    "evidencePath": "/Users/howard07/NuTriApp/nutri-app/output/p0_p3_product_closure_summary.md",
+    "unpauseCondition": "Run the new orchestrator and the relevant JS tests in a Node-capable environment.",
+    "status": "active",
+    "canonicalPath": "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/blocker_registry.json"
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "p3:science/omega3_fallback_only": {
+    "blockerClass": "science_whitelist_not_product_ready",
+    "lane": "P3",
+    "evidencePath": "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/science_whitelist_readiness_matrix.json",
+    "unpauseCondition": "Add verified form/bioavailability evidence for EPA/DHA/omega-3 differentiation before promoting beyond fallback-only.",
+    "status": "hold",
+    "canonicalPath": "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/blocker_registry.json"
+  },
+  "p0:high_frequency/product_surface_incomplete": {
+    "blockerClass": "representative_product_set_not_complete",
+    "lane": "P0",
+    "evidencePath": "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/high_frequency_product_hit_validation.json",
+    "unpauseCondition": "Reduce upstream-missing + active-queue high-frequency products enough for the representative set to pass product-surface completeness.",
+    "status": "active",
+    "canonicalPath": "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/blocker_registry.json"
+  },
+  "p0:active_queue/natures_way_rate_limited_live_canary": {
+    "blockerClass": "brand_wave_rate_limited",
+    "lane": "P0",
+    "evidencePath": "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/high_frequency_recovery_wave_status.json",
+    "unpauseCondition": "Retry Nature's Way active-queue rescue only after the official-site search lane stops returning dominant HTTP 429 rate-limit responses or a new safe signal source is available.",
+    "status": "hold",
+    "canonicalPath": "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/blocker_registry.json"
+  },
+  "p0:active_queue/solgar_live_canary_no_signal": {
+    "blockerClass": "brand_wave_no_signal",
+    "lane": "P0",
+    "evidencePath": "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/high_frequency_recovery_wave_status.json",
+    "unpauseCondition": "Retry Solgar active-queue rescue only if queue composition changes materially or a new official/DSLD signal source is proven; current live canary executed cleanly with no field fills.",
+    "status": "hold",
+    "canonicalPath": "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/blocker_registry.json"
+  }
+}

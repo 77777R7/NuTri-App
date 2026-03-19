@@ -24,6 +24,8 @@ test('formatDoseForPill: instruction-only strings are rejected', () => {
 
 test('formatDoseForPill: basic mass units', () => {
   assert.equal(formatDoseForPill('25 g'), '25 g');
+  assert.equal(formatDoseForPill('1,250 mg'), '1250 mg');
+  assert.equal(formatDoseForPill('1,040 mg'), '1040 mg');
 });
 
 test('formatBrandForPill: extracts consumer brand from corporate chains', () => {

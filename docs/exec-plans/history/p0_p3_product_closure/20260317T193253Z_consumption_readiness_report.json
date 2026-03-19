@@ -1,0 +1,59 @@
+{
+  "generatedAt": "2026-03-17T19:32:53.109Z",
+  "phase": "P2",
+  "phaseOutcomeStatus": "execution_success",
+  "targetSetReadiness": {
+    "realSavedInventory": {
+      "totalSavedItems": 14,
+      "usableCandidateItems": 10,
+      "totalCandidateRows": 10,
+      "environmentHadEnoughRealSavedProducts": true
+    },
+    "stableImportToConsumerLinks": {
+      "saveFromHistoryPreservesDoseAndImage": true,
+      "mySavedDetailCanUseFactsOverlay": true,
+      "savedStackSafetyFlowPresent": true
+    }
+  },
+  "weakDataClasses": [
+    {
+      "class": "label_only",
+      "count": 2,
+      "handlingMode": "skip"
+    },
+    {
+      "class": "snapshot_only",
+      "count": 0,
+      "handlingMode": "backfill_candidate"
+    },
+    {
+      "class": "no_usable_actives",
+      "count": 2,
+      "handlingMode": "hold_blocker"
+    },
+    {
+      "class": "no_dose_basis",
+      "count": 10,
+      "handlingMode": "degrade"
+    },
+    {
+      "class": "no_stable_identity",
+      "count": 2,
+      "handlingMode": "hold_blocker"
+    },
+    {
+      "class": "image_only_non_consumable",
+      "count": 0,
+      "handlingMode": "backfill_candidate"
+    },
+    {
+      "class": "other",
+      "count": 0,
+      "handlingMode": "hold_blocker"
+    }
+  ],
+  "finalCall": {
+    "closed": true,
+    "reason": "Saved/detail/safety consumers can stably use the target set, while weak-data rows stay explicitly classified and safely handled."
+  }
+}

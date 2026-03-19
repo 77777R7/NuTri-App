@@ -48,6 +48,7 @@ const importDist = async (relativePath) =>
   import(pathToFileURL(path.join(repoRoot, "backend/dist", relativePath)).href);
 
 const normalizeText = (value) => String(value ?? "").replace(/\s+/g, " ").trim();
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const toTimestamp = (value) => {
   const ms = Date.parse(String(value ?? ""));
   return Number.isFinite(ms) ? ms : 0;
@@ -468,7 +469,7 @@ const buildUserPools = async ({
 };
 
 const fetchSupplementsByIds = async (supabase, ids) => {
-  const cleanIds = [...new Set(ids.map((value) => normalizeText(value)).filter(Boolean))];
+  const cleanIds = [...new Set(ids.map((value) => normalizeText(value)).filter((value) => UUID_RE.test(value)))];
   if (cleanIds.length === 0) return [];
   const { data, error } = await supabase
     .from("supplements")

@@ -1,0 +1,76 @@
+{
+  "schemaVersion": "iherb_official_fallback_config.v1",
+  "brandName": "CodeAge",
+  "priorityLane": "P0_api_fill_us_strong_identity",
+  "siteOrigin": "https://www.codeage.com",
+  "readerPrefix": "https://r.jina.ai/http://",
+  "searchPathTemplate": "/search?q={query}",
+  "enableAgentBrowserFallback": true,
+  "enableImageOcrFallback": true,
+  "enableStagedImageOcr": true,
+  "ocrMaxImages": 6,
+  "catalogApi": {
+    "mode": "shopify_products_json",
+    "pathTemplate": "/en-ca/products.json?limit=250&page={page}",
+    "pageSize": 250,
+    "maxPages": 4
+  },
+  "productPageUrlOverrides": {
+    "121637": "https://www.codeage.com/products/beauty-tonic-formula",
+    "126291": "https://www.codeage.com/en-ca/products/urolithin-a-ca",
+    "143300": "https://www.codeage.com/products/akkermansia-muciniphila-500-ultra-probiotics-supplement",
+    "146937": "https://www.codeage.com/products/creatine-gummies-supplement-sport-performance-muscles-astragin-panax",
+    "152821": "https://www.codeage.com/products/miracle-sugar-allulose-powder-sweetener-alternative-zero-calories",
+    "157265": "https://www.codeage.com/products/liposomal-glutathione-vitaminc-coq10",
+    "157271": "https://www.codeage.com/products/skin-vitamins-ceramosides-dermaval"
+  },
+  "manualSectionOverrides": {
+    "121637": {
+      "Suggested use": "Take 3 capsules daily with 8 ounces of water or your favorite beverage. May be taken with or without food.",
+      "Warnings": "CAUTION: Do not exceed recommended dose. It's important to know that one can't lose weight by use of the product alone, or without following a calorie controlled diet and exercise program. Weight loss results might not be effective for everyone and results might not be permanent. Pregnant, nursing mothers, children under 18 and individuals with a known medical condition should consult a physician before using this or any dietary supplement. Please use caution if you have allergies or sensitivities to any of the listed ingredients. Keep out of reach of children and pets. Do not use if safety seal is damaged or missing. Store in a cool dry place. Biotin can be received in adequate or extra amounts from food and regular diet only. Use this product as a food supplement only. Do not use for weight reduction."
+    },
+    "126291": {
+      "Suggested use": "Adults: (19 years and over): 1 capsule(s), 2 times per day.",
+      "Warnings": "Ask a health care practitioner/health care provider/health care professional/doctor/physician before use if you are taking blood pressure medication. Ask a health care practitioner/health care provider/health care professional/doctor/physician before use if you are taking medications or any other health products, as resveratrol may alter their effectiveness. Ask a health care practitioner/health care provider prior to use if you have a peptic ulcer or excess stomach acid. Ask a health care practitioner/health care provider prior to use if you have high cholesterol. Contra-indications: Do not use if you are pregnant or breastfeeding."
+    },
+    "146937": {
+      "Suggested use": "Adults take 4 gummies daily, or as recommended by your healthcare or performance professional. May be taken with or without food. Do not exceed the recommended dose.",
+      "Warnings": "Do not exceed recommended dose. Pregnant or nursing mothers and individuals with a known medical condition should consult a physician before using this or any dietary supplement. Please use caution if you have any allergies or sensitivities to any of the listed ingredients. Not intended for those under the age of 18."
+    },
+    "152821": {
+      "Suggested use": "Sprinkle Codeage Miracle Sugar Allulose powder into your favorite beverages or recipes for a guilt-free sweetness. Enjoy a delicious taste without the calories."
+    },
+    "157265": {
+      "Suggested use": "Adults take 2 capsules daily, or as recommended by your healthcare practitioner, with 8 ounces of water or your favorite beverage. May be taken with or without food.",
+      "Warnings": "CAUTION: Do not exceed suggested use. Pregnant, nursing mothers, individuals with a known medical condition, and individuals using prescription drugs or over-the-counter medications should consult a healthcare professional before using this or any dietary supplement. Discontinue use two weeks prior to surgery. Please use caution if you have allergies or sensitivities to any of the listed ingredients. Not intended for those under the age of 18."
+    },
+    "157271": {
+      "Suggested use": "Adults take 1 capsule daily, or as recommended by your healthcare practitioner, with 8 ounces of water or your favorite beverage.",
+      "Warnings": "CAUTION: Do not exceed suggested use. Pregnant, nursing mothers, individuals with a known medical condition, and individuals using prescription drugs or over-the-counter medications should consult a healthcare professional before using this or any dietary supplement. Discontinue use two weeks prior to surgery. Please use caution if you have allergies or sensitivities to any of the listed ingredients. Not intended for those under the age of 18."
+    }
+  },
+  "searchQueryOverrides": {},
+  "brochureFilenameOverrides": {},
+  "manualSupplementFactsOverrides": {
+    "143300": {
+      "servingSize": "1 Capsule",
+      "nutritionalFacts": [
+        {
+          "substancy": "",
+          "amountPerServing": "One Capsule Contains",
+          "dailyValuePercent": "% DV"
+        },
+        {
+          "substancy": "Akkermansia (Akkermansia muciniphila) AH39",
+          "amountPerServing": "150 mg (500 million AFU‡)",
+          "dailyValuePercent": "**"
+        },
+        {
+          "substancy": "Chicory Inulin",
+          "amountPerServing": "276 mg",
+          "dailyValuePercent": "**"
+        }
+      ]
+    }
+  }
+}

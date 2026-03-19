@@ -61,6 +61,12 @@ const toOverlayClaims = (productRow: Record<string, unknown>): DecisionSupportOv
           : null,
     title: typeof productRow.title === 'string' ? productRow.title : null,
     link: typeof productRow.link === 'string' ? productRow.link : null,
+    imageUrl:
+      typeof productRow.product_catalog_image === 'string'
+        ? productRow.product_catalog_image
+        : Array.isArray((productRow as any).product_images) && typeof (productRow as any).product_images[0] === 'string'
+          ? (productRow as any).product_images[0]
+          : null,
     categories: categoriesRaw.map((item) => String(item ?? '').trim()).filter(Boolean),
     description: typeof (sections as any).Description === 'string' ? (sections as any).Description : null,
     suggestedUse:
@@ -257,6 +263,7 @@ test('decision support falls back to official science rows when iHerb coverage f
       brandName: null,
       title: null,
       link: null,
+      imageUrl: null,
       categories: [],
       description: null,
       suggestedUse: null,

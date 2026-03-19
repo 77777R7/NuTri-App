@@ -13,6 +13,9 @@ const {
 const {
   normalizeIherbSupplementFactsRows,
 } = await import("../../../backend/src/iherbOverlayIngredients.ts");
+const {
+  isNutritionLabelLikeIngredientName,
+} = await import("../../../backend/src/scoring/nutritionLabelLikeLexicon.ts");
 
 export const safeText = (value) => String(value ?? "").trim();
 export const hasText = (value) => safeText(value).length > 0;
@@ -88,7 +91,72 @@ const TITLE_INGREDIENT_FALLBACKS = [
   { regex: /\bberberine\b/i, label: "Berberine" },
   { regex: /\btudca\b|\btauroursodeoxycholic\b/i, label: "TUDCA" },
   { regex: /\box bile\b/i, label: "Ox Bile" },
+  { regex: /\bliver formula\b/i, label: "Liver Support Blend" },
+  { regex: /\bpanax ginseng\b|\bginseng\b/i, label: "Panax Ginseng" },
+  { regex: /\bboswellia\b/i, label: "Boswellia" },
+  { regex: /\bsoy isoflavones?\b/i, label: "Soy Isoflavones" },
   { regex: /\bomega-?3\b|\bfish oil\b|\btheromega\b/i, label: "Omega-3 Fish Oil" },
+  { regex: /\bcoq-?10\b|\bco q-?10\b/i, label: "Coenzyme Q10" },
+  { regex: /\bbeet root\b|\bbeetroot\b/i, label: "Beet Root" },
+  { regex: /\bblack raspberry\b/i, label: "Black Raspberry" },
+  { regex: /\bchaga\b/i, label: "Chaga Mushroom" },
+  { regex: /\bnad\+\b|\bnad daily\b/i, label: "NAD+" },
+  { regex: /\bnmn\b/i, label: "NMN" },
+  { regex: /\bcolostrum\b/i, label: "Colostrum" },
+  { regex: /\bcranberry powder\b/i, label: "Cranberry Powder" },
+  { regex: /\belderberry\b/i, label: "Elderberry" },
+  { regex: /\bmyo-inositol\b/i, label: "Myo-Inositol" },
+  { regex: /\bsea moss\b/i, label: "Sea Moss" },
+  { regex: /\bwhey protein\b/i, label: "Whey Protein" },
+  { regex: /\bcreatine\b/i, label: "Creatine" },
+  { regex: /\bcollagen\b/i, label: "Collagen" },
+  { regex: /\bl-glutamine\b|\bglutamine\b/i, label: "L-Glutamine" },
+  { regex: /\bl-arginine\b|\barginine\b/i, label: "L-Arginine" },
+  { regex: /\bmagnesium\b/i, label: "Magnesium" },
+  { regex: /\bcalcium citrate\b/i, label: "Calcium Citrate" },
+  { regex: /\bvitamin b-complex\b.*\bvitamin c\b/i, label: "Vitamin B-Complex + Vitamin C" },
+  { regex: /\bvitamin b12-folate\b|\bb12-folate\b/i, label: "Vitamin B12 + Folate" },
+  { regex: /\biron\b/i, label: "Iron" },
+  { regex: /\bbiotin\b/i, label: "Biotin" },
+  { regex: /\bdhea\b/i, label: "DHEA" },
+  { regex: /\bdim\b/i, label: "DIM" },
+  { regex: /\bcla\b|\bconjugated linoleic acid\b/i, label: "Conjugated Linoleic Acid" },
+  { regex: /\bglycine\b/i, label: "Glycine" },
+  { regex: /\bmelatonin\b/i, label: "Melatonin" },
+  { regex: /\bl-theanine\b.*\bgaba\b|\bgaba\b.*\bl-theanine\b/i, label: "L-Theanine + GABA" },
+  { regex: /\bcholine\b/i, label: "Choline" },
+  { regex: /\bl-lysine\b|\blysine\b/i, label: "L-Lysine" },
+  { regex: /\bvitamin b-?6\b/i, label: "Vitamin B-6" },
+  { regex: /\bmethyl folate\b|\bmethylfolate\b|\b5-mthf\b/i, label: "Methylfolate" },
+  { regex: /\bturmeric\b|\bcurcumin\b/i, label: "Turmeric Curcumin" },
+  { regex: /\bquercetin\b/i, label: "Quercetin" },
+  { regex: /\bblack seed oil\b/i, label: "Black Seed Oil" },
+  { regex: /\bhappy tummy\b/i, label: "Digestive Herbal Blend" },
+  { regex: /\bhemp seed oil\b/i, label: "Hemp Seed Oil" },
+  { regex: /\bmilk thistle\b/i, label: "Milk Thistle" },
+  { regex: /\bmaca\b/i, label: "Maca Root" },
+  { regex: /\bgreens blend\b/i, label: "Greens Blend" },
+  { regex: /\belectrolyte powder mix\b/i, label: "Electrolyte Blend" },
+  { regex: /\b4-in-1 fiber\b/i, label: "Fiber Blend" },
+  { regex: /\bdaily herbal throat spray\b/i, label: "Herbal Throat Spray" },
+  { regex: /\bolive leaf\b/i, label: "Olive Leaf" },
+  { regex: /\boregano\b/i, label: "Oregano Oil" },
+  { regex: /\bhawthorn\b/i, label: "Hawthorn" },
+  { regex: /st\.?\s*john'?s wort/i, label: "St. John's Wort" },
+  { regex: /\bnattokinase\b/i, label: "Nattokinase" },
+  { regex: /\bkonjac root\b/i, label: "Konjac Root" },
+  { regex: /\bbeef liver\b/i, label: "Beef Liver" },
+  { regex: /\bbeef organs\b/i, label: "Beef Organs" },
+  { regex: /\bslippery elm\b/i, label: "Slippery Elm" },
+  { regex: /\bmodified citrus pectin\b|\bcitrus pectin\b|\bpectasol\b/i, label: "Modified Citrus Pectin" },
+  { regex: /\btongkat ali\b|\blongjack\b/i, label: "Tongkat Ali" },
+  { regex: /\bfadogia agrestis\b/i, label: "Fadogia Agrestis" },
+  { regex: /\barachidonic acid\b/i, label: "Arachidonic Acid" },
+  { regex: /\bpancreatic enzymes?\b|\bdigest basic\b|\bdigest spectrum\b|\bspectrazyme\b/i, label: "Digestive Enzyme Blend" },
+  { regex: /\bmushroom complex\b|\breishi mushroom\b|\blion'?s mane mushroom\b/i, label: "Mushroom Blend" },
+  { regex: /\bpotassium citrate\b/i, label: "Potassium Citrate" },
+  { regex: /\bmct oil\b/i, label: "MCT Oil" },
+  { regex: /\bprobiotics?\b|\bcfu\b/i, label: "Probiotic Blend" },
   { regex: /citrulline\s*malate/i, label: "Citrulline Malate" },
   { regex: /beta[- ]*alanine/i, label: "Beta-Alanine" },
   { regex: /\bmagnesium glycinate\b/i, label: "Magnesium Glycinate" },
@@ -120,9 +188,14 @@ const inferFallbackIngredientLines = (overlayClaims) => {
 export const toIngredientsText = (overlayClaims) =>
   {
     const normalizedRows = normalizeIherbSupplementFactsRows(overlayClaims?.nutritionalFacts)
-    .map((row) => [safeText(row?.name), safeText(row?.dose)].filter(Boolean).join(" "))
-    .filter(Boolean);
-    const fallbackRows = normalizedRows.length > 0 ? [] : inferFallbackIngredientLines(overlayClaims);
+      .map((row) => [safeText(row?.name), safeText(row?.dose)].filter(Boolean).join(" "))
+      .filter(Boolean);
+    const normalizedRowsAreNutritionOnly =
+      normalizedRows.length > 0
+      && normalizedRows.every((row) => isNutritionLabelLikeIngredientName(safeText(row)));
+    const fallbackRows = normalizedRows.length > 0 && !normalizedRowsAreNutritionOnly
+      ? []
+      : inferFallbackIngredientLines(overlayClaims);
     return [...normalizedRows, ...fallbackRows].join("\n");
   };
 
@@ -171,11 +244,12 @@ const normalizeActiveNames = (digest) =>
 
 const PROBIOTIC_CATEGORY_REGEX = /(probiotic|cfu|lactobacillus|bifidobacterium|saccharomyces|florassist|microbiome|gut)/;
 const OUT_OF_SCOPE_NON_SUPPLEMENT_CATEGORY_REGEX =
-  /(\bstroopwafels?\b|\bbetter stevia\b|\bconfectioners\b.*\bsweetener\b|\bxylimelts?\b|\bturbinado sugar cubes?\b|\bhawaiian hula rub\b|\bmanuka honey\b)/;
+  /(\bstroopwafels?\b|\bbetter stevia\b|\bconfectioners\b.*\bsweetener\b|\bxylimelts?\b|\bturbinado sugar cubes?\b|\bhawaiian hula rub\b|\bmanuka honey\b|\bhand soap\b|\blotion\b|\bfoam bath\b|\bmoisture cream\b)/;
 const TAXONOMY_BACKLOG_HOLD_CATEGORY_REGEX =
   /(\bflat tummy\b.*\bshakes?\b|\bcuraphen\b|\borganic spearmint\b.*\btea\b|\bchitosan\b)/;
 const VITAMIN_D_CATEGORY_REGEX = /(vitamin\s*d\b|\bd3\b|\bd2\b|cholecalciferol|ergocalciferol|calcifediol|calcitriol)/;
-const MAGNESIUM_CATEGORY_REGEX = /(\bmagnesium\b|glycinate|citrate|oxide|malate)/;
+const MAGNESIUM_CATEGORY_REGEX =
+  /(\bmagnesium\b|\bmagnesium glycinate\b|\bmagnesium citrate\b|\bmagnesium oxide\b|\bmagnesium malate\b|\bmagnesium threonate\b|\bmagnesium chloride\b|\bmagnesium taurate\b)/;
 const METABOLIC_GLUCOSE_SUPPORT_CATEGORY_REGEX =
   /(\bberberine\b|\bwellbetx\b|\bglucose support\b|\bblood sugar\b|\bglycemic\b|\binsulin support\b)/;
 const SPORTS_ANABOLIC_SUPPORT_CATEGORY_REGEX =
@@ -183,7 +257,7 @@ const SPORTS_ANABOLIC_SUPPORT_CATEGORY_REGEX =
 const CHOLESTEROL_LIPID_SUPPORT_CATEGORY_REGEX =
   /(\bred yeast rice\b|\bcholesterol support\b|\blipid support\b)/;
 const LIVER_BILE_SUPPORT_CATEGORY_REGEX =
-  /(\btudca\b|\btauroursodeoxycholic\b|\box bile\b|\bbile support\b|\bbile flow\b)/;
+  /(\btudca\b|\btauroursodeoxycholic\b|\box bile\b|\bbile support\b|\bbile flow\b|\bliver formula\b)/;
 const CELLULAR_NUCLEOTIDE_SUPPORT_CATEGORY_REGEX =
   /(\bnucleotide\b|\brna\s*\/\s*dna\b|\bdna\s*\/\s*rna\b)/;
 const COLLAGEN_CATEGORY_REGEX =
@@ -195,29 +269,30 @@ const SLEEP_STRESS_MOOD_CATEGORY_REGEX =
 const SPORTS_AMINO_CATEGORY_REGEX =
   /(\bamino\b|\bbcaa\b|\beaa\b|\bcreatine\b|\bglutamine\b|\barginine\b|\bcitrulline\b|\bbeta alanine\b|\bcarnitine\b|\bpre[- ]?workout\b|\bpost[- ]?workout\b|\bhydration\b|\belectrolyte\b|\bwhey\b|\bprotein powder\b|\bpump\b)/;
 const DIGESTIVE_FIBER_ENZYME_CATEGORY_REGEX =
-  /(\bpsyllium\b|\bfiber\b|\bdigestive\b|\benzyme\b|\bcolon\b|\bcleanse\b|\bwhole husk\b)/;
+  /(\bpsyllium\b|\bfiber\b|\bdigestive\b|\bdigest basic\b|\bdigest spectrum\b|\benzyme\b|\bpancreatic enzymes?\b|\bspectrazyme\b|\bcolon\b|\bcleanse\b|\bwhole husk\b)/;
 const SUPERFOODS_MUSHROOMS_GREENS_CATEGORY_REGEX =
   /(\bmushroom\b|\bmushrooms\b|\bmycobotanical\b|\bcordyceps\b|\bcordychi\b|\bgreens?\b|\bsuperfood\b|\bspirulina\b|\bchlorella\b|\bwheatgrass\b|\bbarley grass\b|\bbeet root\b|\bmatcha\b)/;
 const ANTIOXIDANT_CELLULAR_ENERGY_CATEGORY_REGEX =
   /(\bcoq-?10\b|\bcoenzyme q10\b|\bubiquinol\b|\bubiquinone\b|\balpha lipoic acid\b|\bastaxanthin\b|\blutein\b|\bzeaxanthin\b|\bquercetin\b|\bresveratrol\b|\bfisetin\b|\bpqq\b|\bglutathione\b|\blycopene\b|\bpolicosanol\b|\bcranberry\b|\bpomegranate\b|\bblueberry extract\b)/;
 const NOOTROPIC_MEMORY_COGNITION_CATEGORY_REGEX =
-  /(\bciticoline\b|\bcdp choline\b|\bcognium\b|\bmemory\b|\bcognitive\b|\bbrain\b|\bfocus\b|\bnootropic\b|\bsharpmind\b|\bsame\b|\bginkgo biloba\b|\bgotu kola\b|\bphosphatidylserine\b|\bnicotinamide riboside\b|\bniagen\b|\bnad\+\b|\bnad plus\b|\bcell regenerator\b)/;
+  /(\bciticoline\b|\bcdp choline\b|\bcholine\b|\bcognium\b|\bmemory\b|\bcognitive\b|\bbrain\b|\bfocus\b|\bnootropic\b|\bsharpmind\b|\bsame\b|\bginkgo biloba\b|\bgotu kola\b|\bphosphatidylserine\b|\bnicotinamide riboside\b|\bniagen\b|\bnad\+\b|\bnad plus\b|\bnad daily\b|\bcell regenerator\b)/;
 const SPECIALTY_VITAMINS_OTHER_CATEGORY_REGEX =
   /(\bvitamin b-?12\b|\bcobalamin\b|\bvitamin b-?3\b|\bniacin\b|\bniacinamide\b|\bvitamin a\b|\bbenfotiamine\b|\bvitamin e\b)/;
+const SPECIALTY_FOLATE_CATEGORY_REGEX = /(\bmethyl folate\b|\bmethylfolate\b|\b5-mthf\b|\bfolate\b)/;
 const SPECIALTY_SINGLE_AMINO_AND_NEURO_CATEGORY_REGEX =
   /(\bl-lysine\b|\blysine\b|\btaurine\b|\bl-tyrosine\b|\btyrosine\b|\bn-acetyl l-tyrosine\b|\bn-acetyl cysteine\b|\bnac\b)/;
 const FATTY_ACIDS_SPECIALTY_LIPIDS_CATEGORY_REGEX =
-  /(\bmct oil\b|\bmedium chain triglycerides?\b|\bcoconut oil\b|\bevening primrose\b|\blecithin\b|\bphospholipid complex\b|\bliposomal phospholipid\b)/;
+  /(\bmct oil\b|\bmedium chain triglycerides?\b|\bcoconut oil\b|\bhemp seed oil\b|\bevening primrose\b|\blecithin\b|\bphospholipid complex\b|\bliposomal phospholipid\b)/;
 const WOMENS_HORMONAL_AND_LACTATION_CATEGORY_REGEX =
-  /(\bmeta-balance\b|\bblack cohosh\b|\bmenopause\b|\bperimenopaus\w*\b|\bpms\b|\bchaste tree\b|\bwild yam\b|\blactation\b|\bbreastfeeding\b|\bmore milk\b)/;
+  /(\bmeta-balance\b|\bblack cohosh\b|\bmenopause\b|\bperimenopaus\w*\b|\bpms\b|\bchaste tree\b|\bwild yam\b|\bsoy isoflavones?\b|\bovulation support\b|\blactation\b|\bbreastfeeding\b|\bmore milk\b)/;
 const MENS_PROSTATE_AND_HORMONAL_CATEGORY_REGEX =
-  /(\bsaw palmetto\b|\bdhea\b|\bdehydroepiandrosterone\b)/;
+  /(\bsaw palmetto\b|\bdhea\b|\bdehydroepiandrosterone\b|\bmen'?s fertility support\b|\bmen'?s motility support\b|\btestosterone support\b|\bmale performance\b|\bmale enhancement\b)/;
 const DIGESTIVE_AND_GASTRO_FUNCTIONAL_CATEGORY_REGEX =
-  /(\bpapaya\b|\bpapain\b|\bconstipation\b|\bbowel movement\b|\bkeep it movin\b|\bmove things along\b)/;
+  /(\bpapaya\b|\bpapain\b|\bconstipation\b|\bbowel movement\b|\bkeep it movin\b|\bmove things along\b|\bslimming tea\b|\bherbal laxative\b)/;
 const BOTANICAL_HERBAL_CATEGORY_REGEX =
-  /(\bturmeric\b|\bcurcumin\b|\bashwagandha\b|\bvalerian\b|\byellow dock\b|\bblack seed\b|\bmilk thistle\b|\bechinacea\b|\belderberry\b|\bginseng\b|\brhodiola\b|\bmaca\b|\bgarlic\b|\bboswellia\b|\bdevil'?s claw\b|\bgrape seed\b|\bastragalus\b|\bwormwood\b|\bfenugreek\b|\bolive leaf\b|\bshilajit\b|\bbutterbur\b|\bsaffron\b|\bcoleus forskoh?lii\b|\bgrapefruit seed extract\b|\bchanca piedra\b|\bginger\b|\blicorice\b|\bcinnamon\b|\bherb\b|\bbotanical\b)/;
+  /(\bturmeric\b|\bcurcumin\b|\bashwagandha\b|\bvalerian\b|\byellow dock\b|\bblack seed\b|\bmilk thistle\b|\bechinacea\b|\belderberry\b|\bginseng\b|\brhodiola\b|\bmaca\b|\bgarlic\b|\bboswellia\b|\bdevil'?s claw\b|\bgrape seed\b|\bhorse chestnut\b|\bcatuaba\b|\bmucuna pruriens\b|\bastragalus\b|\bwormwood\b|\bfenugreek\b|\bolive leaf\b|\boregano\b|\bhawthorn\b|st\.?\s*john'?s wort\b|\bslippery elm\b|\bshilajit\b|\bbutterbur\b|\bsaffron\b|\bcoleus forskoh?lii\b|\bgrapefruit seed extract\b|\bchanca piedra\b|\bginger\b|\blicorice\b|\bcinnamon\b|\bherb\b|\bbotanical\b)/;
 const VITAMIN_MINERAL_OTHER_CATEGORY_REGEX =
-  /(\bvitamin c\b|\bcomplex c\b|\bpaba\b|\bbiotin\b|\bselenium\b|\bchromium\b|\bboron\b|\bpotassium\b|\bcalcium\b|\biron\b|\bzinc\b|\bcopper\b|\bmanganese\b|\bmolybdenum\b|\biodine\b)/;
+  /(\bvitamin c\b|\bcomplex c\b|\bpaba\b|\bbiotin\b|\bselenium\b|\bchromium\b|\bboron\b|\bpotassium\b|\bcalcium\b|\biron\b|\bzinc\b|\bcopper\b|\bmanganese\b|\bmolybdenum\b|\biodine\b|\bprenatal\b)/;
 
 export const detectHarnessCategoryId = (digest) => {
   const productText = `${safeText(digest?.product?.name).toLowerCase()} ${safeText(digest?.product?.brandDisplay).toLowerCase()}`;
@@ -250,6 +325,7 @@ export const detectHarnessCategoryId = (digest) => {
   if (ANTIOXIDANT_CELLULAR_ENERGY_CATEGORY_REGEX.test(combined)) return "antioxidant_cellular_energy";
   if (NOOTROPIC_MEMORY_COGNITION_CATEGORY_REGEX.test(combined)) return "nootropic_memory_cognition";
   if (SPECIALTY_VITAMINS_OTHER_CATEGORY_REGEX.test(combined)) return "specialty_vitamins_other";
+  if (SPECIALTY_FOLATE_CATEGORY_REGEX.test(combined)) return "specialty_vitamins_other";
   if (SPECIALTY_SINGLE_AMINO_AND_NEURO_CATEGORY_REGEX.test(combined)) return "specialty_single_amino_and_neuro";
   if (FATTY_ACIDS_SPECIALTY_LIPIDS_CATEGORY_REGEX.test(combined)) return "fatty_acids_specialty_lipids";
   if (WOMENS_HORMONAL_AND_LACTATION_CATEGORY_REGEX.test(combined)) return "womens_hormonal_and_lactation";
