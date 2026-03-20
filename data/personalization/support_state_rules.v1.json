@@ -1,0 +1,13 @@
+{
+  "version": "v1",
+  "thresholds": {
+    "installSavedStackCount": 1,
+    "stabilizeSavedStackCount": 2,
+    "optimizeSavedStackCount": 4,
+    "stabilizeStreakDays": 5
+  },
+  "chooseBlockers": [
+    "goal_fit_uncertainty",
+    "label_and_dosage_confusion"
+  ]
+}

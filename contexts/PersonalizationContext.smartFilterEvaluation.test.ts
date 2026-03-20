@@ -14,4 +14,6 @@ test('personalization context wires saved-product evaluation into snapshot compi
   assert.match(source, /savedProducts:\s*productEvaluations\.savedProducts/);
   assert.match(source, /smartFilterMembershipById:\s*snapshot\.surfaces\.smartFilter\.productMembershipById \?\? \{\}/);
   assert.match(source, /buildSavedProductEvaluation/);
+  assert.match(source, /deriveTypeKeysFromFacts/);
+  assert.match(source, /typeKeys = ensuredFacts \? deriveTypeKeysFromFacts\(ensuredFacts\) : \[\]/);
 });

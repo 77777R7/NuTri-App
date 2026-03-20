@@ -8,7 +8,9 @@ import type {
   FirstStackPlanItem,
   GoalKey,
   PlanPreviewPersonalizationVM,
+  PreferenceVector,
   ScheduleDefaultsPersonalizationVM,
+  SupportState,
   SupplementTypeKey,
 } from "@/types/personalization";
 
@@ -113,6 +115,26 @@ export const getTimingAnchorDisplayLabel = (anchor: string) =>
   DEFAULT_TIMING_LABELS[anchor] ??
   (activityAnchorSet.has(anchor) ? titleCaseFallback(anchor) : titleCaseFallback(anchor));
 
+export const getReviewBundleDisplayLabel = (bundleKey?: string | null) =>
+  bundleKey ? titleCaseFallback(bundleKey) : null;
+
+export const getDecisionModifierDisplayLabel = (decisionModifier?: string | null) => {
+  switch (decisionModifier) {
+    case "easy_start_strength":
+      return "Easy-start strength support";
+    case "timing_anchor_endurance":
+      return "Timing-friendly endurance support";
+    case "consistency_friendly":
+      return "Consistency-friendly recovery support";
+    case "performance_anchor":
+      return "Performance anchor support";
+    case "easy_start_general":
+      return "Easy-start general support";
+    default:
+      return decisionModifier ? titleCaseFallback(decisionModifier) : null;
+  }
+};
+
 export const getScheduleTemplateDisplayLabel = (templateKey: string) =>
   SCHEDULE_TEMPLATE_LABELS[templateKey] ?? "Personalized plan";
 
@@ -145,27 +167,29 @@ export const getReminderPriorityLabel = (
 };
 
 export const buildBlockerStrategySummary = (strategy: BlockerStrategy) => {
-  if (strategy.emphasizeScheduleSetup) {
-    if (strategy.scheduleComplexity === "guided") {
-      return "We will guide you into a more flexible routine instead of assuming every day.";
-    }
+  switch (strategy.primarySupportFocus) {
+    case "schedule":
+      if (strategy.scheduleComplexity === "guided") {
+        return "We will guide you into a more flexible routine instead of assuming every day.";
+      }
 
-    if (strategy.scheduleComplexity === "advanced") {
-      return "We will keep more control points visible so you can tune a structured routine.";
-    }
+      if (strategy.scheduleComplexity === "advanced") {
+        return "We will keep more control points visible so you can tune a structured routine.";
+      }
 
-    return "We will keep setup simple and help you lock in a reminder early.";
+      return "We will keep setup simple and help you lock in the right routine early.";
+    case "education":
+    case "explanation":
+      return "We will first clarify which supplements fit your goals before asking you to set up reminders or a routine.";
+    case "checkin":
+    case "check_in":
+      return "We will put Daily Check-in and consistency cues first so the habit feels easier to keep.";
+    case "optimization":
+      return "We will keep personalization light and focus on fine-tuning what already works for you.";
+    case "reminder":
+    default:
+      return "We will help you anchor reminders early so busy days do not knock your plan off course.";
   }
-
-  if (strategy.emphasizeExplanation) {
-    return "We will lead with clearer product explanations before asking for more setup.";
-  }
-
-  if (strategy.emphasizeHomeCheckIn) {
-    return "We will put Daily Check-in and consistency cues first on Home.";
-  }
-
-  return "We will keep personalization light and let your current routine lead.";
 };
 
 export const buildScheduleDefaultsSummary = (scheduleDefaults: ScheduleDefaultsPersonalizationVM) => {
@@ -194,9 +218,62 @@ export const buildPlanPreviewSummary = (surface: PlanPreviewPersonalizationVM) =
     ? getTimingAnchorDisplayLabel(surface.activityAnchors[0])
     : null;
 
+  if (
+    surface.blockerStrategy.primarySupportFocus === "education" ||
+    surface.blockerStrategy.primarySupportFocus === "explanation"
+  ) {
+    return `We will start by showing which supplements best fit ${goalLabel} before we ask you to set up a routine.`;
+  }
+
   if (anchorLabel) {
     return `We will start with ${goalLabel} and use ${anchorLabel.toLowerCase()} as your first timing anchor.`;
   }
 
   return `We will start by focusing your first experience around ${goalLabel}.`;
+};
+
+export const getSupportStateDisplayLabel = (supportState: SupportState) => {
+  switch (supportState) {
+    case "choose":
+      return "Choose";
+    case "install":
+      return "Install";
+    case "stabilize":
+      return "Stabilize";
+    case "optimize":
+      return "Optimize";
+    case "explore":
+    default:
+      return "Explore";
+  }
+};
+
+export const getDecisionModeDisplayLabel = (decisionMode: PreferenceVector["decisionMode"]) => {
+  switch (decisionMode) {
+    case "simpler":
+      return "More simple";
+    case "strong_only":
+      return "Strong only";
+    case "better_disclosure":
+      return "Better disclosure";
+    case "low_overlap":
+      return "Low overlap";
+    case "best_fit":
+    default:
+      return "Best fit";
+  }
+};
+
+export const getNotificationToleranceDisplayLabel = (
+  notificationTolerance: PreferenceVector["notificationTolerance"],
+) => {
+  switch (notificationTolerance) {
+    case "low":
+      return "Low reminders";
+    case "high":
+      return "High reminders";
+    case "medium":
+    default:
+      return "Balanced reminders";
+  }
 };

@@ -181,6 +181,13 @@ const buildPlanPreviewDerivedFacts = (snapshot: PersonalizationSnapshot): Explan
     facts.push({ factId: "plan_preview_routine_changes", code: "routine_changes_schedule_guided" });
   }
 
+  if (blocker === "goal_fit_uncertainty") {
+    facts.push({
+      factId: "plan_preview_goal_fit_uncertainty",
+      code: "goal_fit_uncertainty_explanation_first",
+    });
+  }
+
   if (diets.includes("vegan") && snapshot.strategies.dietLanes.some((lane) => lane.laneKey === "diet_vegan_support")) {
     facts.push({ factId: "plan_preview_vegan_lane", code: "vegan_lane_b12_review" });
   }
@@ -229,6 +236,80 @@ const buildFirstStackDerivedFacts = (plan: FirstStackPlan): ExplanationFact[] =>
   return facts;
 };
 
+const buildGoalFitDerivedFacts = (
+  snapshot: PersonalizationSnapshot,
+  surface: Extract<ExplanationSurface, "goal_fit_detail" | "product_compare">,
+): ExplanationFact[] => {
+  const cards = Object.values(snapshot.evaluations.goalFitCards ?? {}).slice(
+    0,
+    surface === "product_compare" ? 2 : 1,
+  );
+
+  if (cards.length === 0) {
+    return [];
+  }
+
+  const facts: ExplanationFact[] = [
+    {
+      factId: `${surface}_overview`,
+      code: surface === "product_compare" ? "product_compare_ready" : "goal_fit_detail_primary",
+      params:
+        surface === "product_compare"
+          ? {
+              candidateCount: cards.length,
+            }
+          : {
+              goalLabel: humanizeGoal(
+                cards[0]?.goalKey ?? snapshot.surfaces.planPreview.goals[0] ?? "sleep",
+              ),
+              fitTier: titleCase(cards[0]?.tier?.replace(/_/g, " ") ?? "related"),
+              evidenceLevel: titleCase(cards[0]?.confidence.evidence ?? "medium"),
+            },
+    },
+  ];
+
+  cards.forEach((card, index) => {
+    [...card.whyFit, ...card.whyNotStronger, ...card.holdbacks, ...(card.stackContext ?? [])].forEach(
+      (reason, reasonIndex) => {
+        facts.push(
+          reasonToFact(
+            reason,
+            `${surface}_card_${index + 1}_reason_${reasonIndex + 1}`,
+          ),
+        );
+      },
+    );
+  });
+
+  return facts;
+};
+
+const buildWeeklyInsightDerivedFacts = (snapshot: PersonalizationSnapshot): ExplanationFact[] => {
+  const stackAudit = snapshot.premiumInsights?.stackAudit;
+
+  return dedupeFacts([
+    {
+      factId: "weekly_insight_support_state",
+      code: "weekly_insight_support_state",
+      params: {
+        supportState: titleCase(snapshot.strategies.supportState),
+        decisionMode: titleCase(snapshot.strategies.preferenceVector.decisionMode.replace(/_/g, " ")),
+      },
+    },
+    ...(stackAudit?.heldBack.length
+      ? [
+          {
+            factId: "weekly_insight_held_back",
+            code: "weekly_insight_held_back",
+            params: {
+              heldBackCount: stackAudit.heldBack.length,
+            },
+          } satisfies ExplanationFact,
+        ]
+      : []),
+  ]);
+};
+
 const getRoleLabel = (role: FirstStackPlan["items"][number]["role"]): string => {
   switch (role) {
     case "foundation":
@@ -261,6 +342,31 @@ export const buildExplanationPayload = (
       selectedGoals,
       selectedTypes,
       facts,
+    };
+  }
+
+  if (surface === "goal_fit_detail" || surface === "product_compare") {
+    return {
+      snapshotId: snapshot.snapshotId,
+      rulesVersion: snapshot.rulesVersion,
+      surface,
+      selectedGoals,
+      selectedTypes,
+      facts: dedupeFacts(buildGoalFitDerivedFacts(snapshot, surface)),
+    };
+  }
+
+  if (surface === "weekly_insight") {
+    return {
+      snapshotId: snapshot.snapshotId,
+      rulesVersion: snapshot.rulesVersion,
+      surface,
+      selectedGoals,
+      selectedTypes,
+      facts: dedupeFacts([
+        ...buildSurfaceFactsFromReasons(snapshot.premiumInsights?.stackAudit?.reasons ?? [], surface),
+        ...buildWeeklyInsightDerivedFacts(snapshot),
+      ]),
     };
   }
 
@@ -307,6 +413,36 @@ const renderTemplate = (fact: ExplanationFact): string | null => {
     return `${productLabel} is included as ${roleLabel}.`;
   }
 
+  if (fact.code === "goal_fit_uncertainty_explanation_first") {
+    return "We will start by explaining why a supplement fits your goals before we push reminder setup or routine complexity.";
+  }
+
+  if (fact.code === "goal_fit_detail_primary") {
+    const goalLabel = typeof fact.params?.goalLabel === "string" ? fact.params.goalLabel : "your goal";
+    const fitTier = typeof fact.params?.fitTier === "string" ? fact.params.fitTier : "Related";
+    const evidenceLevel =
+      typeof fact.params?.evidenceLevel === "string" ? fact.params.evidenceLevel : "Medium";
+    return `For ${goalLabel}, the current lead fit sits at ${fitTier} with ${evidenceLevel} evidence confidence.`;
+  }
+
+  if (fact.code === "product_compare_ready") {
+    const candidateCount = Number(fact.params?.candidateCount ?? 0);
+    return `We can compare ${candidateCount} coverage-ready products on fit, evidence, disclosure, overlap, and routine ease.`;
+  }
+
+  if (fact.code === "weekly_insight_support_state") {
+    const supportState =
+      typeof fact.params?.supportState === "string" ? fact.params.supportState : "Explore";
+    const decisionMode =
+      typeof fact.params?.decisionMode === "string" ? fact.params.decisionMode : "Best Fit";
+    return `You're currently in ${supportState} mode, with personalization steering toward ${decisionMode}.`;
+  }
+
+  if (fact.code === "weekly_insight_held_back") {
+    const heldBackCount = Number(fact.params?.heldBackCount ?? 0);
+    return `${heldBackCount} saved product${heldBackCount === 1 ? "" : "s"} stayed behind the main stack because the confidence or safety signal is still conservative.`;
+  }
+
   const template = TEMPLATES_BY_CODE.get(fact.code);
   if (!template) return null;
 
@@ -351,6 +487,15 @@ const buildFirstStackSummary = (payload: ExplanationPayload): string => {
   return `We'll start with ${itemCount} stack item${itemCount === 1 ? "" : "s"} and a ${scheduleStyle} schedule so the plan stays realistic.`;
 };
 
+const buildGoalFitSummary = (payload: ExplanationPayload): string =>
+  `We explain goal fit using deterministic match reasons, confidence signals, and stack context from structured product facts.`;
+
+const buildProductCompareSummary = (payload: ExplanationPayload): string =>
+  `We compare products with deterministic fit, evidence, disclosure, overlap, and routine signals instead of AI ranking.`;
+
+const buildWeeklyInsightSummary = (payload: ExplanationPayload): string =>
+  `This week's insight focuses on what stayed forward in your stack and what the system is still treating conservatively.`;
+
 const buildPlanPreviewBullets = (payload: ExplanationPayload): string[] => {
   const bullets = payload.facts
     .map(renderTemplate)
@@ -389,17 +534,37 @@ const buildFirstStackBullets = (payload: ExplanationPayload): string[] => {
   return bullets.slice(0, 4);
 };
 
+const buildGenericBullets = (payload: ExplanationPayload, fallback: string): string[] => {
+  const bullets = payload.facts
+    .map(renderTemplate)
+    .filter((value): value is string => Boolean(value))
+    .slice(0, 4);
+
+  return bullets.length > 0 ? bullets : [fallback];
+};
+
 export const renderDeterministicExplanation = (
   payload: ExplanationPayload,
 ): ExplanationResult => {
   const summary =
     payload.surface === "plan_preview"
       ? buildPlanPreviewSummary(payload)
-      : buildFirstStackSummary(payload);
+      : payload.surface === "first_stack"
+        ? buildFirstStackSummary(payload)
+        : payload.surface === "goal_fit_detail"
+          ? buildGoalFitSummary(payload)
+          : payload.surface === "product_compare"
+            ? buildProductCompareSummary(payload)
+            : buildWeeklyInsightSummary(payload);
   const bullets =
     payload.surface === "plan_preview"
       ? buildPlanPreviewBullets(payload)
-      : buildFirstStackBullets(payload);
+      : payload.surface === "first_stack"
+        ? buildFirstStackBullets(payload)
+        : buildGenericBullets(
+            payload,
+            "We'll keep this explanation tied to structured facts until stronger product-level context is available.",
+          );
 
   return {
     source: "deterministic",

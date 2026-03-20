@@ -20,6 +20,7 @@ test('composeFirstStackPlan builds a coverage-oriented stack instead of pure sco
   const plan = composeFirstStackPlan({
     prioritizedGoals: ['recovery', 'energy', 'focus'],
     blockerStrategy: {
+      primarySupportFocus: 'schedule',
       reminderPriority: 'medium',
       scheduleComplexity: 'guided',
       notificationBudget: 'standard',
@@ -78,6 +79,7 @@ test('composeFirstStackPlan excludes rank-ineligible products and records the fi
   const plan = composeFirstStackPlan({
     prioritizedGoals: ['immunity'],
     blockerStrategy: {
+      primarySupportFocus: 'optimization',
       reminderPriority: 'low',
       scheduleComplexity: 'simple',
       notificationBudget: 'light',
@@ -125,6 +127,7 @@ test('composeFirstStackPlan trims stack size when duplicate risk is high', () =>
   const plan = composeFirstStackPlan({
     prioritizedGoals: ['immunity', 'energy', 'focus'],
     blockerStrategy: {
+      primarySupportFocus: 'schedule',
       reminderPriority: 'medium',
       scheduleComplexity: 'advanced',
       notificationBudget: 'standard',
@@ -167,6 +170,7 @@ test('composeFirstStackPlan prefers evaluated candidate bundles over stale legac
   const plan = composeFirstStackPlan({
     prioritizedGoals: ['immunity'],
     blockerStrategy: {
+      primarySupportFocus: 'schedule',
       reminderPriority: 'medium',
       scheduleComplexity: 'guided',
       notificationBudget: 'standard',
@@ -209,6 +213,7 @@ test('composeFirstStackPlan prefers evaluated candidate bundles over stale legac
           factsStatus: 'full',
           coverageStatus: 'coverage_ready',
           bucket: 'strong_match',
+          typeKeys: ['vitamin'],
           goalTiers: { immunity: 'strong_match' },
           reasons: [],
         },
@@ -234,6 +239,7 @@ test('composeFirstStackPlan prefers evaluated candidate bundles over stale legac
           factsStatus: 'partial',
           coverageStatus: 'not_enough_structured_data',
           bucket: 'not_enough_structured_data',
+          typeKeys: ['protein'],
           goalTiers: {},
           reasons: [],
         },

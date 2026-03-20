@@ -195,6 +195,7 @@ import {
   type StackOverlapSupplementInput,
 } from "./stackOverlap.js";
 import { createPersonalizationExplanationRouteHandlers } from "./personalization/routes.js";
+import { createGoalNavigatorRouteHandlers } from "./personalization/goalNavigatorRoutes.js";
 import { supabase } from "./supabase.js";
 import type {
   AiSupplementAnalysis,
@@ -9293,6 +9294,7 @@ const kbFormInsightsBatchBodySchema = z
 // ============================================================================
 
 const personalizationExplanationHandlers = createPersonalizationExplanationRouteHandlers();
+const goalNavigatorHandlers = createGoalNavigatorRouteHandlers();
 
 /**
  * NuTri daily tips dataset
@@ -9317,6 +9319,18 @@ app.post("/api/personalization/explain", verifySupabaseToken, async (req: Reques
     console.error("/api/personalization/explain unexpected error", error);
     return res.status(500).json({
       error: "personalization_explanation_failed",
+    } satisfies ErrorResponse);
+  }
+});
+
+app.post("/api/personalization/goal-navigator", verifySupabaseToken, async (req: Request, res: Response) => {
+  try {
+    await goalNavigatorHandlers.goalNavigator(req, res);
+  } catch (error) {
+    captureException(error, { route: "/api/personalization/goal-navigator" });
+    console.error("/api/personalization/goal-navigator unexpected error", error);
+    return res.status(500).json({
+      error: "goal_navigator_failed",
     } satisfies ErrorResponse);
   }
 });

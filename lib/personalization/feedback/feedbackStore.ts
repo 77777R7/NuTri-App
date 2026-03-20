@@ -191,6 +191,44 @@ const applyFirstStackEvent = (state: FeedbackState, event: OverrideEvent) => {
   return state;
 };
 
+const applyControlsEvent = (state: FeedbackState, event: OverrideEvent) => {
+  const current = state.overrides.controls ?? {};
+
+  if (event.action === 'remove') {
+    const next = { ...current };
+    delete next[event.field as keyof typeof next];
+    return {
+      ...state,
+      overrides: {
+        ...state.overrides,
+        controls: Object.keys(next).length > 0 ? next : undefined,
+      },
+    };
+  }
+
+  if (event.action !== 'set') return state;
+
+  const next = { ...current } as NonNullable<FeedbackState['overrides']['controls']>;
+
+  if (event.field === 'decisionMode' && typeof event.value === 'string') {
+    next.decisionMode = event.value as NonNullable<typeof next.decisionMode>;
+  }
+  if (event.field === 'explanationStyle' && typeof event.value === 'string') {
+    next.explanationStyle = event.value as NonNullable<typeof next.explanationStyle>;
+  }
+  if (event.field === 'notificationTolerance' && typeof event.value === 'string') {
+    next.notificationTolerance = event.value as NonNullable<typeof next.notificationTolerance>;
+  }
+
+  return {
+    ...state,
+    overrides: {
+      ...state.overrides,
+      controls: next,
+    },
+  };
+};
+
 export const reduceFeedbackState = (
   current: FeedbackState,
   events: OverrideEvent[],
@@ -210,6 +248,8 @@ export const reduceFeedbackState = (
         return applySmartFilterEvent(withEvent, event);
       case 'first_stack':
         return applyFirstStackEvent(withEvent, event);
+      case 'personalization_controls':
+        return applyControlsEvent(withEvent, event);
       case 'plan_preview':
       default:
         return withEvent;

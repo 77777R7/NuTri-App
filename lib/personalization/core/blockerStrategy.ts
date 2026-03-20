@@ -22,6 +22,7 @@ export type CompiledBlockerStrategy = {
 const BLOCKER_RULES = blockerRulesData as BlockerRuleFile;
 
 const DEFAULT_BLOCKER_STRATEGY: BlockerStrategy = {
+  primarySupportFocus: 'reminder',
   reminderPriority: 'medium',
   scheduleComplexity: 'simple',
   notificationBudget: 'standard',
@@ -57,6 +58,7 @@ export const compileBlockerStrategy = (
 
   let strategy: BlockerStrategy = baseRule
     ? {
+        primarySupportFocus: baseRule.primarySupportFocus,
         reminderPriority: baseRule.reminderPriority,
         scheduleComplexity: baseRule.scheduleComplexity,
         notificationBudget: baseRule.notificationBudget,
@@ -97,7 +99,8 @@ export const compileBlockerStrategy = (
     strategy = {
       ...strategy,
       scheduleComplexity: atLeastScheduleComplexity(strategy.scheduleComplexity, 'guided'),
-      emphasizeScheduleSetup: true,
+      emphasizeScheduleSetup:
+        strategy.primarySupportFocus === 'explanation' ? strategy.emphasizeScheduleSetup : true,
     };
     reasons.push(
       buildReason(REASON_CODES.blockerObservedStack, RULE_IDS.blockerObservedStack, 'observed', {

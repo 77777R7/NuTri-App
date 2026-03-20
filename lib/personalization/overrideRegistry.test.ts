@@ -59,6 +59,7 @@ const feedbackState: FeedbackState = {
 test('overrideRegistry applies persisted surface overrides before snapshot consumption', () => {
   const snapshot = applyFeedbackStateToSnapshot(buildSnapshot(), feedbackState);
 
+  assert.equal(snapshot.strategies.blocker.primarySupportFocus, 'reminder');
   assert.equal(snapshot.surfaces.scheduleDefaults.reminderPriority, 'low');
   assert.deepEqual(snapshot.surfaces.scheduleDefaults.suggestedTimingAnchors, ['dinner']);
   assert.equal(snapshot.surfaces.scheduleDefaults.preferScheduleSetup, false);

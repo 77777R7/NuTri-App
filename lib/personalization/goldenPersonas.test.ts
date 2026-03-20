@@ -22,6 +22,7 @@ test('golden persona: brand-new forgetful user gets habit-first defaults', () =>
   });
 
   assert.deepEqual(snapshot.strategies.blocker, {
+    primarySupportFocus: 'reminder',
     reminderPriority: 'high',
     scheduleComplexity: 'simple',
     notificationBudget: 'heavy',
@@ -94,6 +95,7 @@ test('golden persona: uncertain planner highlights education and safe placeholde
   });
 
   assert.equal(snapshot.strategies.blocker.emphasizeExplanation, true);
+  assert.equal(snapshot.strategies.blocker.primarySupportFocus, 'explanation');
   assert.deepEqual(snapshot.surfaces.planPreview.dietLanes, ['diet_low_sugar_review']);
   assert.deepEqual(snapshot.evaluations.productGoalMatches, {});
   assert.deepEqual(snapshot.evaluations.eligibility, {});
@@ -111,6 +113,7 @@ test('golden persona: sparse inputs stay neutral instead of inventing setup pres
   });
 
   assert.equal(snapshot.profile.derived.blockerMode, undefined);
+  assert.equal(snapshot.strategies.blocker.primarySupportFocus, 'reminder');
   assert.deepEqual(snapshot.surfaces.scheduleDefaults.suggestedTimingAnchors, []);
   assert.equal(snapshot.strategies.blocker.emphasizeScheduleSetup, false);
   assert.equal(snapshot.strategies.experience.uiDensity, 'standard');

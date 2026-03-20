@@ -23,6 +23,19 @@ test("renderDeterministicExplanation returns a stable plan-preview fallback from
   assert.ok(result.bullets.some((bullet) => /busy days/i.test(bullet)));
 });
 
+test("renderDeterministicExplanation keeps goal-fit uncertainty explanation-first", () => {
+  const result = renderDeterministicExplanation({
+    ...PLAN_PREVIEW_PAYLOAD,
+    snapshotId: "psn_goal_fit",
+    selectedGoals: ["immunity"],
+    selectedTypes: ["vitamin"],
+    facts: [{ factId: "goal-fit", code: "goal_fit_uncertainty_explanation_first" }],
+  });
+
+  assert.match(result.summary, /immunity/i);
+  assert.ok(result.bullets.some((bullet) => /fits your goals/i.test(bullet)));
+});
+
 test("DeepSeek personalization explainer falls back deterministically when no API key is available", async () => {
   const explainer = createDeepSeekPersonalizationExplainer({ apiKey: null });
   const result = await explainer.explain(PLAN_PREVIEW_PAYLOAD);

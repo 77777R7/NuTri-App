@@ -87,7 +87,13 @@ const buildMessages = (payload: ExplanationPayload): DeepSeekChatMessage[] => [
       {
         task: "Explain NuTri personalization for one surface using only these structured facts.",
         contract: {
-          allowedSurfaces: ["plan_preview", "first_stack"],
+          allowedSurfaces: [
+            "plan_preview",
+            "first_stack",
+            "goal_fit_detail",
+            "product_compare",
+            "weekly_insight",
+          ],
           mustNotAdd: [
             "new recommendations",
             "dosing guidance",

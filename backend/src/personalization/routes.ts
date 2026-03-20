@@ -17,7 +17,13 @@ type RouteResponse = {
   json(payload: unknown): void;
 };
 
-const ALLOWED_SURFACES = new Set<ExplanationSurface>(["plan_preview", "first_stack"]);
+const ALLOWED_SURFACES = new Set<ExplanationSurface>([
+  "plan_preview",
+  "first_stack",
+  "goal_fit_detail",
+  "product_compare",
+  "weekly_insight",
+]);
 
 export const createPersonalizationExplanationRouteHandlers = () => {
   const service = createSnapshotExplanationService();

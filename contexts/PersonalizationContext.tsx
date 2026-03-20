@@ -237,11 +237,13 @@ const buildSavedProductEvaluation = (params: {
   const ensuredFacts = params.ensured?.facts ?? null;
   const factsStatus = params.ensured?.factsStatus ?? 'none';
   const coverageReady = hasCoverageReadyFacts(ensuredFacts, factsStatus);
+  const typeKeys = ensuredFacts ? deriveTypeKeysFromFacts(ensuredFacts) : [];
   if (!coverageReady || !ensuredFacts || params.visibleGoals.length === 0) {
     return {
       savedProduct: {
         productId: params.item.id,
         factsStatus,
+        ...(typeKeys.length > 0 ? { typeKeys } : {}),
         display: {
           ...(pickFirstText(
             ensuredFacts?.product.name,
@@ -311,6 +313,7 @@ const buildSavedProductEvaluation = (params: {
     savedProduct: {
       productId: params.item.id,
       factsStatus,
+      ...(typeKeys.length > 0 ? { typeKeys } : {}),
       productGoalMatches,
       eligibility,
       display: {

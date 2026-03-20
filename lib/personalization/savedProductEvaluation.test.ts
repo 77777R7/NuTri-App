@@ -10,6 +10,7 @@ test('evaluateSavedProducts keeps partial and none facts products out of coverag
       ready: {
         productId: 'ready',
         factsStatus: 'full',
+        typeKeys: ['vitamin'],
         productGoalMatches: [
           { goalKey: 'immunity', score: 91, tier: 'strong_match', reasons: [], caps: [] },
         ],
@@ -23,6 +24,7 @@ test('evaluateSavedProducts keeps partial and none facts products out of coverag
       partial: {
         productId: 'partial',
         factsStatus: 'partial',
+        typeKeys: ['protein'],
         productGoalMatches: [
           { goalKey: 'immunity', score: 93, tier: 'strong_match', reasons: [], caps: [] },
         ],
@@ -30,6 +32,7 @@ test('evaluateSavedProducts keeps partial and none facts products out of coverag
       none: {
         productId: 'none',
         factsStatus: 'none',
+        typeKeys: ['herb'],
       },
     },
   });
@@ -47,6 +50,9 @@ test('evaluateSavedProducts keeps partial and none facts products out of coverag
   );
   assert.equal(result.savedProductEvaluations.partial.firstStackEligible, false);
   assert.equal(result.savedProductEvaluations.none.firstStackEligible, false);
+  assert.deepEqual(result.savedProductEvaluations.ready.smartFilterMembership.typeKeys, ['vitamin']);
+  assert.deepEqual(result.savedProductEvaluations.partial.smartFilterMembership.typeKeys, ['protein']);
+  assert.deepEqual(result.savedProductEvaluations.none.smartFilterMembership.typeKeys, ['herb']);
 });
 
 test('evaluateSavedProducts preserves relevance/eligibility separation for coverage-ready saved products', () => {
@@ -72,4 +78,25 @@ test('evaluateSavedProducts preserves relevance/eligibility separation for cover
   assert.equal(result.savedProductEvaluations.guarded.smartFilterMembership.bucket, 'related');
   assert.equal(result.savedProductEvaluations.guarded.smartFilterMembership.eligibility?.rankEligible, false);
   assert.equal(result.savedProductEvaluations.guarded.firstStackEligible, false);
+});
+
+test('evaluateSavedProducts preserves deterministic type membership for coverage-ready products', () => {
+  const result = evaluateSavedProducts({
+    prioritizedGoals: ['energy'],
+    savedProducts: {
+      typed: {
+        productId: 'typed',
+        factsStatus: 'full',
+        typeKeys: ['vitamin', 'mineral', 'vitamin'],
+        productGoalMatches: [
+          { goalKey: 'energy', score: 76, tier: 'related', reasons: [], caps: [] },
+        ],
+      },
+    },
+  });
+
+  assert.deepEqual(result.savedProductEvaluations.typed.smartFilterMembership.typeKeys, [
+    'vitamin',
+    'mineral',
+  ]);
 });

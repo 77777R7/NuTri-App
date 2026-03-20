@@ -42,6 +42,7 @@ test("buildExplanationPayload shapes a plan preview payload from snapshot-only f
     },
     strategies: {
       blocker: {
+        primarySupportFocus: "reminder",
         reminderPriority: "high",
         scheduleComplexity: "simple",
         notificationBudget: "heavy",
@@ -67,6 +68,12 @@ test("buildExplanationPayload shapes a plan preview payload from snapshot-only f
         suggestedTypes: ["vitamin", "mineral"],
         suggestedTimingAnchors: ["breakfast", "dinner"],
         reasons: [],
+      },
+      supportState: "explore",
+      preferenceVector: {
+        decisionMode: "best_fit",
+        explanationStyle: "brief",
+        notificationTolerance: "medium",
       },
     },
     evaluations: {
@@ -95,6 +102,7 @@ test("buildExplanationPayload shapes a plan preview payload from snapshot-only f
         goals: ["sleep", "immunity"],
         types: ["vitamin", "mineral"],
         blockerStrategy: {
+          primarySupportFocus: "reminder",
           reminderPriority: "high",
           scheduleComplexity: "simple",
           notificationBudget: "heavy",
@@ -128,6 +136,119 @@ test("buildExplanationPayload shapes a plan preview payload from snapshot-only f
   assert.ok(payload.facts.some((fact) => fact.code === "busy_day_blocker_mealtime_anchor"));
   assert.ok(payload.facts.some((fact) => fact.code === "vegan_lane_b12_review"));
   assert.ok(payload.facts.some((fact) => fact.code === "activity_recovery_direction"));
+});
+
+test("buildExplanationPayload adds explanation-first facts for goal-fit uncertainty", () => {
+  const snapshot: PersonalizationSnapshot = {
+    snapshotId: "psn_goal_fit_plan_preview",
+    rulesVersion: "personalization-rules/v1-phase7",
+    computedAt: "2026-03-19T10:00:00.000Z",
+    profile: {
+      declared: {
+        goals: [{ key: "immunity", priority: 100 }],
+        preferredTypes: ["vitamin"],
+        adherenceBlocker: "goal_fit_uncertainty",
+        supplementExperience: "tried_a_few",
+      },
+      observed: {
+        consistencyLevel: "medium",
+        savedStackCount: 1,
+        duplicateRisk: {
+          level: "none",
+          ingredientKeys: [],
+        },
+      },
+      derived: {
+        dietReviewLanes: [],
+        activityPlanKeys: [],
+        blockerMode: "education_first",
+      },
+      meta: {
+        profileVersion: "personalization-profile/v1-phase1",
+        computedAt: "2026-03-19T10:00:00.000Z",
+      },
+    },
+    strategies: {
+      blocker: {
+        primarySupportFocus: "explanation",
+        reminderPriority: "medium",
+        scheduleComplexity: "simple",
+        notificationBudget: "standard",
+        emphasizeHomeCheckIn: false,
+        emphasizeScheduleSetup: false,
+        emphasizeExplanation: true,
+      },
+      experience: {
+        explanationDepth: "guided",
+        uiDensity: "standard",
+        showAdvancedSafety: false,
+        showDetailedForms: false,
+      },
+      dietLanes: [],
+      activityPlan: {
+        suggestedGoals: [],
+        suggestedTypes: [],
+        suggestedTimingAnchors: ["breakfast"],
+        reasons: [],
+      },
+      supportState: "choose",
+      preferenceVector: {
+        decisionMode: "better_disclosure",
+        explanationStyle: "compare",
+        notificationTolerance: "medium",
+      },
+    },
+    evaluations: {
+      productGoalMatches: {},
+      eligibility: {},
+      firstStackPlan: {
+        items: [],
+        scheduleTemplateKey: "phase3_simple_template",
+        explanationFacts: [],
+      },
+    },
+    surfaces: {
+      home: {
+        emphasizedModules: ["plan_preview"],
+        prioritizedGoals: ["immunity"],
+        tipLaneKeys: [],
+        reasons: [],
+      },
+      smartFilter: {
+        visibleGoals: ["immunity"],
+        preselectedTypes: ["vitamin"],
+        highlightedGoal: "immunity",
+        reasons: [],
+      },
+      planPreview: {
+        goals: ["immunity"],
+        types: ["vitamin"],
+        blockerStrategy: {
+          primarySupportFocus: "explanation",
+          reminderPriority: "medium",
+          scheduleComplexity: "simple",
+          notificationBudget: "standard",
+          emphasizeHomeCheckIn: false,
+          emphasizeScheduleSetup: false,
+          emphasizeExplanation: true,
+        },
+        dietLanes: [],
+        activityAnchors: ["breakfast"],
+        reasons: [],
+      },
+      scheduleDefaults: {
+        reminderPriority: "medium",
+        suggestedTimingAnchors: ["breakfast"],
+        preferScheduleSetup: false,
+        reasons: [],
+      },
+    },
+    trace: [],
+  };
+
+  const payload = buildExplanationPayload(snapshot, "plan_preview");
+
+  assert.ok(payload.facts.some((fact) => fact.code === "goal_fit_uncertainty_explanation_first"));
 });
 
 test("buildExplanationPayload shapes first-stack payload without leaking raw match tables", () => {
@@ -164,6 +285,7 @@ test("buildExplanationPayload shapes first-stack payload without leaking raw mat
     },
     strategies: {
       blocker: {
+        primarySupportFocus: "optimization",
         reminderPriority: "low",
         scheduleComplexity: "advanced",
         notificationBudget: "light",
@@ -183,6 +305,12 @@ test("buildExplanationPayload shapes first-stack payload without leaking raw mat
         suggestedTypes: [],
         suggestedTimingAnchors: [],
         reasons: [],
+      },
+      supportState: "optimize",
+      preferenceVector: {
+        decisionMode: "low_overlap",
+        explanationStyle: "deep",
+        notificationTolerance: "low",
       },
     },
     evaluations: {
@@ -243,6 +371,7 @@ test("buildExplanationPayload shapes first-stack payload without leaking raw mat
         goals: ["recovery", "energy"],
         types: ["protein", "mineral"],
         blockerStrategy: {
+          primarySupportFocus: "optimization",
           reminderPriority: "low",
           scheduleComplexity: "advanced",
           notificationBudget: "light",

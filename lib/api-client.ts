@@ -4,6 +4,8 @@ import { AUTH_DISABLED } from './auth-mode';
 import type {
   ExplanationResult,
   ExplanationSurface,
+  GoalNavigatorRequest,
+  GoalNavigatorResponse,
   PersonalizationSnapshot,
 } from '@/types/personalization';
 
@@ -378,6 +380,13 @@ export const apiClient = {
     options?: AuthenticatedRequestOptions,
   ) =>
     request<PersonalizationExplainResponse>('/api/personalization/explain', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+      ...options,
+    }),
+
+  fetchGoalNavigator: (payload: GoalNavigatorRequest, options?: AuthenticatedRequestOptions) =>
+    request<GoalNavigatorResponse>('/api/personalization/goal-navigator', {
       method: 'POST',
       body: JSON.stringify(payload),
       ...options,
