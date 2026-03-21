@@ -109,8 +109,35 @@ jobs:
           echo "Resolved expected_sha=$EXPECTED_SHA"
           echo "Resolved deploy_mode=$DEPLOY_MODE"
 
+      - name: Check Regression Prerequisites
+        id: gate
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          DEPLOY_MODE: ${{ steps.target.outputs.deploy_mode }}
+          BASE_URL: ${{ steps.target.outputs.base_url }}
+        run: |
+          set -euo pipefail
+
+          if [[ -z "${BASE_URL}" ]]; then
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "reason=missing_base_url" >> "$GITHUB_OUTPUT"
+            echo "Skipping Render regression because no base URL was resolved."
+            exit 0
+          fi
+
+          if [[ "${EVENT_NAME}" == "pull_request" && "${DEPLOY_MODE}" != "preview" ]]; then
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "reason=missing_preview_deploy" >> "$GITHUB_OUTPUT"
+            echo "Skipping Render regression for pull requests because no preview deployment is configured."
+            exit 0
+          fi
+
+          echo "enabled=true" >> "$GITHUB_OUTPUT"
+          echo "reason=ready" >> "$GITHUB_OUTPUT"
+
       - name: Trigger Render Deploy Hook
-        if: steps.target.outputs.deploy_hook_url != '' && (github.event_name != 'workflow_dispatch' || github.event.inputs.skip_deploy_hook != 'true') && (github.event_name != 'pull_request' || steps.target.outputs.deploy_mode == 'preview')
+        if: steps.gate.outputs.enabled == 'true' && steps.target.outputs.deploy_hook_url != '' && (github.event_name != 'workflow_dispatch' || github.event.inputs.skip_deploy_hook != 'true') && (github.event_name != 'pull_request' || steps.target.outputs.deploy_mode == 'preview')
         env:
           RENDER_DEPLOY_HOOK_URL: ${{ steps.target.outputs.deploy_hook_url }}
         run: |
@@ -118,7 +145,7 @@ jobs:
           echo "Triggered Render deploy hook"
 
       - name: Wait for Render Deploy Commit
-        if: github.event_name != 'pull_request' || steps.target.outputs.deploy_mode == 'preview'
+        if: steps.gate.outputs.enabled == 'true' && (github.event_name != 'pull_request' || steps.target.outputs.deploy_mode == 'preview')
         env:
           RENDER_BASE_URL: ${{ steps.target.outputs.base_url }}
           EXPECTED_COMMIT_SHA: ${{ steps.target.outputs.expected_sha }}
@@ -132,6 +159,7 @@ jobs:
         run: node scripts/ci/wait-render-commit.mjs
 
       - name: Prepare Artifact Directory
+        if: steps.gate.outputs.enabled == 'true'
         id: artifact
         shell: bash
         run: |
@@ -141,10 +169,12 @@ jobs:
           echo "artifact_dir=$ARTIFACT_DIR" >> "$GITHUB_OUTPUT"
 
       - name: Run Render Regression Suite
+        if: steps.gate.outputs.enabled == 'true'
         env:
           RENDER_BASE_URL: ${{ steps.target.outputs.base_url }}
           RENDER_AUTH_DISABLED_HEADER: ${{ secrets.RENDER_AUTH_DISABLED_HEADER }}
           RENDER_REGRESSION_TOKEN: ${{ secrets.RENDER_REGRESSION_TOKEN }}
+          RENDER_OBSERVE_ONLY: ${{ github.event_name == 'pull_request' && steps.target.outputs.deploy_mode == 'primary' && '1' || '0' }}
           RENDER_ARTIFACT_DIR: ${{ steps.artifact.outputs.artifact_dir }}
           RENDER_LNHPD_BARCODE: "00029537001069"
           RENDER_DSLD_BARCODE: "026664275110"
@@ -168,15 +198,19 @@ jobs:
         run: node scripts/ci/render-regression.mjs
 
       - name: Upload Regression Artifact
-        if: always() && steps.artifact.outputs.artifact_dir != ''
+        if: always() && steps.gate.outputs.enabled == 'true' && steps.artifact.outputs.artifact_dir != ''
         uses: actions/upload-artifact@v4
         with:
           name: render-regression-${{ github.run_id }}-${{ github.run_attempt }}
           path: ${{ steps.artifact.outputs.artifact_dir }}
           if-no-files-found: warn
 
+      - name: Report Skip Reason
+        if: steps.gate.outputs.enabled != 'true'
+        run: echo "Render regression skipped: ${{ steps.gate.outputs.reason }}"
+
       - name: Create Issue On Failure
-        if: failure() && github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.RENDER_OPEN_ISSUE_ON_FAIL == '1'
+        if: failure() && steps.gate.outputs.enabled == 'true' && github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.RENDER_OPEN_ISSUE_ON_FAIL == '1'
         uses: actions/github-script@v7
         env:
           SUMMARY_PATH: ${{ steps.artifact.outputs.artifact_dir }}/summary.json

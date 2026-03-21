@@ -216,6 +216,7 @@ const DETAIL_TIMEOUT_MS = Number(process.env.RENDER_DETAIL_TIMEOUT_MS || 45_000)
 const ARTIFACT_DIR = process.env.RENDER_ARTIFACT_DIR || "artifacts/render-regression";
 const DETAIL_LIMIT = Number(process.env.RENDER_DETAIL_LIMIT || 6);
 const DETAIL_MAX_PAGES = Number(process.env.RENDER_DETAIL_MAX_PAGES || 4);
+const FORCE_OBSERVE_ONLY = (process.env.RENDER_OBSERVE_ONLY || "0") === "1";
 
 if (!BASE_URL) {
   console.error("RENDER_BASE_URL is required");
@@ -1854,8 +1855,13 @@ async function main() {
     await new Promise((r) => setTimeout(r, 5000));
   }
 
+  const activeCases = FORCE_OBSERVE_ONLY ? CASES.map((testCase) => ({ ...testCase, observeOnly: true })) : CASES;
+  if (FORCE_OBSERVE_ONLY) {
+    console.warn("[render-regression] forcing observe-only mode for this run");
+  }
+
   const runResults = [];
-  for (const testCase of CASES) {
+  for (const testCase of activeCases) {
     const primaryBarcode = testCase.barcodes?.[0] ?? "";
     const fallbackBarcode = testCase.barcodes?.[1] ?? null;
     const label = fallbackBarcode
