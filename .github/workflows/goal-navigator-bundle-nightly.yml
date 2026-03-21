@@ -90,8 +90,8 @@ jobs:
         with:
           add-paths: backend/data/personalization/goal_navigator_candidate_bundle.v1.json
           branch: automation/goal-navigator-bundle
-          commit-message: chore(personalization): refresh Goal Navigator bundle
-          title: chore(personalization): refresh Goal Navigator bundle
+          commit-message: "chore(personalization): refresh Goal Navigator bundle"
+          title: "chore(personalization): refresh Goal Navigator bundle"
           body: |
             Automated refresh for the Goal Navigator candidate bundle.
 
