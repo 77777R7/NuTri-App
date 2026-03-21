@@ -6,12 +6,98 @@ import { X } from "lucide-react-native";
 
 import { ConfidenceBadge } from "@/components/screens/personalization/ConfidenceBadge";
 import {
+  formatGoalFitEvidenceValue,
   formatGoalFitConfidenceValue,
   GOAL_FIT_TIER_LABELS,
   summarizeGoalFitReasons,
 } from "@/lib/personalization/goalFitCopy";
 import { getGoalDisplayLabel } from "@/lib/personalization/uiLabels";
 import type { GoalCompareEntry } from "@/types/personalization";
+
+const FIT_PRIORITY: Record<GoalCompareEntry["tier"], number> = {
+  strong_match: 4,
+  related: 3,
+  weak_match: 2,
+  no_match: 1,
+  not_enough_structured_data: 0,
+};
+
+const EVIDENCE_PRIORITY: Record<GoalCompareEntry["confidence"]["evidence"], number> = {
+  high: 3,
+  medium: 2,
+  low: 1,
+};
+
+const LABEL_PRIORITY: Record<GoalCompareEntry["confidence"]["labelCompleteness"], number> = {
+  full: 3,
+  partial: 2,
+  weak: 1,
+};
+
+const OVERLAP_PRIORITY: Record<GoalCompareEntry["confidence"]["overlapRisk"], number> = {
+  none: 3,
+  watch: 2,
+  high: 1,
+};
+
+const ROUTINE_PRIORITY: Record<GoalCompareEntry["confidence"]["routineFit"], number> = {
+  easy: 3,
+  moderate: 2,
+  complex: 1,
+};
+
+const buildKeyDifferences = (
+  entry: GoalCompareEntry,
+  currentEntry: GoalCompareEntry | undefined,
+  goalLabel: string,
+) => {
+  if (!currentEntry || entry.productId === currentEntry.productId) {
+    return [`Your current reference point for ${goalLabel}.`];
+  }
+
+  const highlights: string[] = [];
+  const fitDelta = FIT_PRIORITY[entry.tier] - FIT_PRIORITY[currentEntry.tier];
+  if (fitDelta > 0) {
+    highlights.push(`Stronger match for ${goalLabel} than your current pick.`);
+  } else if (fitDelta < 0) {
+    highlights.push(`Lower priority for ${goalLabel} than your current pick.`);
+  }
+
+  const evidenceDelta =
+    EVIDENCE_PRIORITY[entry.confidence.evidence] - EVIDENCE_PRIORITY[currentEntry.confidence.evidence];
+  if (evidenceDelta > 0) {
+    highlights.push("Stronger goal-specific evidence signal.");
+  } else if (evidenceDelta < 0) {
+    highlights.push("Goal-specific evidence is lighter than your current pick.");
+  }
+
+  const labelDelta =
+    LABEL_PRIORITY[entry.confidence.labelCompleteness] -
+    LABEL_PRIORITY[currentEntry.confidence.labelCompleteness];
+  if (labelDelta > 0) {
+    highlights.push("Cleaner label disclosure.");
+  } else if (labelDelta < 0) {
+    highlights.push("More label gaps than your current pick.");
+  }
+
+  const overlapDelta =
+    OVERLAP_PRIORITY[entry.confidence.overlapRisk] - OVERLAP_PRIORITY[currentEntry.confidence.overlapRisk];
+  if (overlapDelta > 0) {
+    highlights.push("Lower overlap risk in your current stack.");
+  } else if (overlapDelta < 0) {
+    highlights.push("Higher overlap risk in your current stack.");
+  }
+
+  const routineDelta =
+    ROUTINE_PRIORITY[entry.confidence.routineFit] - ROUTINE_PRIORITY[currentEntry.confidence.routineFit];
+  if (routineDelta > 0) {
+    highlights.push("Easier to keep as a daily routine.");
+  } else if (routineDelta < 0) {
+    highlights.push("A little harder to keep daily.");
+  }
+
+  return highlights.slice(0, 3);
+};
 
 export function CompareSheet({
   visible,
@@ -27,6 +113,7 @@ export function CompareSheet({
   tintColor?: string;
 }) {
   const goalLabel = goalKey ? getGoalDisplayLabel(goalKey) : "your current goal";
+  const currentEntry = entries[0];
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
@@ -37,8 +124,8 @@ export function CompareSheet({
         <View style={styles.sheet}>
           <View style={styles.headerRow}>
             <View style={styles.headerTextWrap}>
-              <Text style={styles.eyebrow}>Compare Sheet</Text>
-              <Text style={styles.title}>Best fits for {goalLabel}</Text>
+              <Text style={styles.eyebrow}>Compare similar picks</Text>
+              <Text style={styles.title}>Where these options differ for {goalLabel}</Text>
             </View>
             <Pressable onPress={onClose} style={styles.closeButton}>
               <X size={18} color="#0f172a" />
@@ -75,6 +162,14 @@ export function CompareSheet({
                 </View>
 
                 <View style={styles.entryContent}>
+                  <View style={styles.metricGrid}>
+                    {buildKeyDifferences(entry, currentEntry, goalLabel).map((highlight, highlightIndex) => (
+                      <View key={`${entry.productId}-highlight-${highlightIndex}`} style={styles.highlightPill}>
+                        <Text style={styles.highlightPillText}>{highlight}</Text>
+                      </View>
+                    ))}
+                  </View>
+
                   <View style={styles.entryHeader}>
                     <View style={{ flex: 1, gap: 4 }}>
                       <Text style={styles.entryTitle}>{entry.title ?? "Saved supplement"}</Text>
@@ -92,8 +187,8 @@ export function CompareSheet({
                   <View style={styles.metricGrid}>
                     <ConfidenceBadge label="Fit" value={GOAL_FIT_TIER_LABELS[entry.tier]} />
                     <ConfidenceBadge
-                      label="Evidence"
-                      value={formatGoalFitConfidenceValue(entry.confidence.evidence)}
+                      label="Goal evidence"
+                      value={formatGoalFitEvidenceValue(entry.confidence.evidence)}
                     />
                     <ConfidenceBadge
                       label="Label"
@@ -117,9 +212,19 @@ export function CompareSheet({
                   </View>
 
                   <View style={styles.summaryBlock}>
+                    <Text style={styles.summaryLabel}>Why it is not stronger</Text>
+                    <Text style={styles.summaryText}>
+                      {summarizeGoalFitReasons(
+                        entry.whyNotStronger,
+                        "We are not seeing a standout signal that moves this above our stronger picks yet.",
+                      )}
+                    </Text>
+                  </View>
+
+                  <View style={styles.summaryBlock}>
                     <Text style={styles.summaryLabel}>Holdbacks</Text>
                     <Text style={styles.summaryText}>
-                      {summarizeGoalFitReasons(entry.holdbacks, "No major holdbacks surfaced.")}
+                      {summarizeGoalFitReasons(entry.holdbacks, "No major holdback stands out on the current label.")}
                     </Text>
                   </View>
                 </View>
@@ -257,6 +362,22 @@ const styles = StyleSheet.create({
     includeFontPadding: false,
   },
   metricGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  highlightPill: {
+    borderRadius: 999,
+    borderCurve: "continuous",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    backgroundColor: "rgba(255,255,255,0.78)",
+    borderWidth: 1,
+    borderColor: "rgba(191,219,254,0.92)",
+  },
+  highlightPillText: {
+    fontSize: 11,
+    lineHeight: 15,
+    fontWeight: "800",
+    color: "#1d4ed8",
+    includeFontPadding: false,
+  },
   summaryBlock: { gap: 4 },
   summaryLabel: {
     fontSize: 12,

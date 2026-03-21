@@ -31,8 +31,10 @@ import {
 import { compilePersonalizationSnapshot } from '@/lib/personalization/core/personalizationCompiler';
 import {
   loadFeedbackState,
-  recordFeedbackEvents,
+  persistFeedbackState,
+  reduceFeedbackState,
 } from '@/lib/personalization/feedback/feedbackStore';
+import { derivePersonalizationEventsFromOverrideEvents } from '@/lib/personalization/feedback/personalizationEvents';
 import {
   selectFirstStackPlan,
   selectHomePersonalization,
@@ -47,6 +49,7 @@ import type {
   FeedbackState,
   GoalKey,
   OverrideEvent,
+  PersonalizationEventName,
   PersonalizationSnapshot,
   ProductGoalMatch,
   SavedProductEvaluationInput,
@@ -54,6 +57,11 @@ import type {
   SupplementTypeKey,
 } from '@/types/personalization';
 import type { SavedSupplement } from '@/types/saved-supplements';
+import {
+  createSupabaseBackedFeedbackAdapter,
+  recordPersonalizationEvents,
+  syncUserPersonalizationState,
+} from '@/lib/supabase/personalization';
 
 type PersonalizationContextValue = {
   loading: boolean;
@@ -67,6 +75,11 @@ type PersonalizationContextValue = {
   planPreview: ReturnType<typeof selectPlanPreviewPersonalization>;
   scheduleDefaults: ReturnType<typeof selectScheduleDefaultsPersonalization>;
   recordOverrideEvents: (events: OverrideEvent[]) => Promise<void>;
+  trackPersonalizationEvent: (input: {
+    eventName: PersonalizationEventName;
+    surface: string;
+    payload?: Record<string, unknown>;
+  }) => Promise<void>;
   explainSurface: (surface: ExplanationSurface) => Promise<ExplanationResult>;
 };
 
@@ -433,11 +446,18 @@ export const PersonalizationProvider = ({ children }: { children: React.ReactNod
   const [productEvaluations, setProductEvaluations] =
     useState<ProductEvaluationState>(EMPTY_PRODUCT_EVALUATIONS);
   const ensureOverviewCacheRef = useRef(new Map<string, Promise<EnsureOverviewResponse | null>>());
+  const feedbackStateRef = useRef(feedbackState);
+  const feedbackAdapterRef = useRef(createSupabaseBackedFeedbackAdapter());
+  const lastSyncedStateKeyRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    feedbackStateRef.current = feedbackState;
+  }, [feedbackState]);
 
   useEffect(() => {
     let active = true;
     setFeedbackLoading(true);
-    void loadFeedbackState(user?.id)
+    void loadFeedbackState(user?.id, feedbackAdapterRef.current)
       .then((state) => {
         if (!active) return;
         setFeedbackState(state);
@@ -602,12 +622,101 @@ export const PersonalizationProvider = ({ children }: { children: React.ReactNod
     [baseSnapshot.profile, feedbackState, productEvaluations.savedProducts],
   );
 
+  useEffect(() => {
+    if (feedbackLoading) return;
+
+    const syncKey = JSON.stringify({
+      userId: user?.id ?? null,
+      updatedAt: feedbackState.updatedAt,
+      snapshotId: snapshot.snapshotId,
+      supportState: snapshot.strategies.supportState,
+      preferenceVector: snapshot.strategies.preferenceVector,
+    });
+
+    if (lastSyncedStateKeyRef.current === syncKey) return;
+    lastSyncedStateKeyRef.current = syncKey;
+
+    void syncUserPersonalizationState({
+      userId: user?.id,
+      feedbackState,
+      snapshotId: snapshot.snapshotId,
+      supportState: snapshot.strategies.supportState,
+      preferenceVector: snapshot.strategies.preferenceVector,
+    });
+  }, [
+    feedbackLoading,
+    feedbackState,
+    snapshot.snapshotId,
+    snapshot.strategies.preferenceVector,
+    snapshot.strategies.supportState,
+    user?.id,
+  ]);
+
+  const trackPersonalizationEvent = useCallback(
+    async (input: {
+      eventName: PersonalizationEventName;
+      surface: string;
+      payload?: Record<string, unknown>;
+    }) => {
+      await recordPersonalizationEvents([
+        {
+          userId: user?.id,
+          eventName: input.eventName,
+          surface: input.surface,
+          snapshotId: snapshot.snapshotId,
+          rulesVersion: snapshot.rulesVersion,
+          supportState: snapshot.strategies.supportState,
+          payload: {
+            ...input.payload,
+            decisionMode: snapshot.strategies.preferenceVector.decisionMode,
+            explanationStyle: snapshot.strategies.preferenceVector.explanationStyle,
+            notificationTolerance: snapshot.strategies.preferenceVector.notificationTolerance,
+          },
+        },
+      ]);
+    },
+    [
+      snapshot.rulesVersion,
+      snapshot.snapshotId,
+      snapshot.strategies.preferenceVector.decisionMode,
+      snapshot.strategies.preferenceVector.explanationStyle,
+      snapshot.strategies.preferenceVector.notificationTolerance,
+      snapshot.strategies.supportState,
+      user?.id,
+    ],
+  );
+
   const recordOverrideEvents = useCallback(
     async (events: OverrideEvent[]) => {
-      const next = await recordFeedbackEvents(user?.id, events);
+      const next = reduceFeedbackState(feedbackStateRef.current, events);
+      await persistFeedbackState(user?.id, next, feedbackAdapterRef.current);
       setFeedbackState(next);
+
+      const derivedEvents = derivePersonalizationEventsFromOverrideEvents(events);
+      if (derivedEvents.length > 0) {
+        await recordPersonalizationEvents(
+          derivedEvents.map((event) => ({
+            userId: user?.id,
+            eventName: event.eventName,
+            surface: event.surface,
+            snapshotId: snapshot.snapshotId,
+            rulesVersion: snapshot.rulesVersion,
+            supportState: snapshot.strategies.supportState,
+            payload: {
+              ...event.payload,
+              decisionMode: snapshot.strategies.preferenceVector.decisionMode,
+            },
+          })),
+        );
+      }
     },
-    [user?.id],
+    [
+      snapshot.rulesVersion,
+      snapshot.snapshotId,
+      snapshot.strategies.preferenceVector.decisionMode,
+      snapshot.strategies.supportState,
+      user?.id,
+    ],
   );
 
   const explainSurface = useCallback(
@@ -641,6 +750,7 @@ export const PersonalizationProvider = ({ children }: { children: React.ReactNod
       planPreview,
       scheduleDefaults,
       recordOverrideEvents,
+      trackPersonalizationEvent,
       explainSurface,
     }),
     [
@@ -658,6 +768,7 @@ export const PersonalizationProvider = ({ children }: { children: React.ReactNod
       scheduleDefaults,
       smartFilter,
       snapshot,
+      trackPersonalizationEvent,
     ],
   );
 

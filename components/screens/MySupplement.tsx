@@ -1,5 +1,4 @@
 import { BlurView } from "expo-blur";
-import { router } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import {
   ArrowLeft,
@@ -44,8 +43,6 @@ import { SavedStackSafetySummary } from "@/components/screens/mySaved/SavedStack
 import { CompareSheet } from "@/components/screens/my-supplement/CompareSheet";
 import { GoalFitScorecard } from "@/components/screens/my-supplement/GoalFitScorecard";
 import { MySavedSmartFilterPanel } from "@/components/screens/my-supplement/MySavedSmartFilterPanel";
-import { CritiqueChipBar } from "@/components/screens/personalization/CritiqueChipBar";
-import { StackAuditCard } from "@/components/screens/personalization/StackAuditCard";
 import type {
   StackDuplicateGroup,
   StackLevelSafetySummary,
@@ -86,9 +83,7 @@ import {
   matchesEvaluatedSmartFilterTag,
 } from "@/lib/personalization/smartFilterMatching";
 import { buildGoalCompareEntries } from "@/lib/personalization/core/compareModel";
-import { buildPersonalizationControlEvents } from "@/lib/personalization/core/critiqueEngine";
 import { buildGoalFitCard } from "@/lib/personalization/core/goalFitCardBuilder";
-import { getGoalNavigatorEnabledGoals } from "@/lib/personalization/core/goalConfidenceProfiles";
 import { resolveRoutineTimeUserSet } from "@/lib/routineIntent";
 import {
   loadMealTimePrefs,
@@ -117,7 +112,6 @@ import type {
   GoalKey,
   GoalCompareEntry,
   OverrideEvent,
-  PersonalizationControlKey,
   ScheduleDefaultsPersonalizationVM,
   SavedProductEvaluation,
   SmartFilterProductMembership,
@@ -1980,6 +1974,7 @@ function DetailSheet({
   onClose,
   onSaveRoutine,
   onRecordOverrideEvents,
+  onTrackPersonalizationEvent,
   smartFilterAnalyticsContext,
   onTrackSmartFilterEvent,
 }: {
@@ -2002,6 +1997,11 @@ function DetailSheet({
   onClose: () => void;
   onSaveRoutine?: (id: string, prefs: RoutinePreferences) => void | Promise<void>;
   onRecordOverrideEvents?: (events: OverrideEvent[]) => Promise<void>;
+  onTrackPersonalizationEvent?: (input: {
+    eventName: "goal_fit_detail_opened" | "compare_opened";
+    surface: string;
+    payload?: Record<string, unknown>;
+  }) => Promise<void>;
   smartFilterAnalyticsContext?: SmartFilterEvaluatedDetailAnalyticsContext | null;
   onTrackSmartFilterEvent?: (event: string, payload: Record<string, unknown>) => void;
 }) {
@@ -3417,12 +3417,40 @@ function DetailSheet({
       tier: goalFitCard.tier,
       confidence: goalFitCard.confidence,
       whyFit: goalFitCard.whyFit,
+      whyNotStronger: goalFitCard.whyNotStronger,
       holdbacks: goalFitCard.holdbacks,
     };
 
     const peers = (compareEntries ?? []).filter((entry) => entry.productId !== item.id);
     return [currentEntry, ...peers].slice(0, 3);
   }, [compareEntries, detailDose, displayBrandName, goalFitCard, item.id, item.productName]);
+
+  useEffect(() => {
+    if (!goalFitCard) return;
+    void onTrackPersonalizationEvent?.({
+      eventName: "goal_fit_detail_opened",
+      surface: "my_saved_detail",
+      payload: {
+        goalKey: goalFitCard.goalKey ?? null,
+        productId: item.id,
+        tier: goalFitCard.tier,
+        compareEnabled: compareEntryList.length > 1,
+      },
+    });
+  }, [compareEntryList.length, goalFitCard, item.id, onTrackPersonalizationEvent]);
+
+  const handleOpenCompare = useCallback(() => {
+    setCompareOpen(true);
+    void onTrackPersonalizationEvent?.({
+      eventName: "compare_opened",
+      surface: "my_saved_detail",
+      payload: {
+        goalKey: goalFitCard?.goalKey ?? selectedGoalKey ?? null,
+        currentProductId: item.id,
+        comparedProductCount: compareEntryList.length,
+      },
+    });
+  }, [compareEntryList.length, goalFitCard?.goalKey, item.id, onTrackPersonalizationEvent, selectedGoalKey]);
 
   return (
     <Modal visible transparent animationType="none" onRequestClose={onClose}>
@@ -3728,7 +3756,7 @@ function DetailSheet({
                   card={goalFitCard}
                   tintColor={theme.glassTint}
                   compareEnabled={compareEntryList.length > 1}
-                  onOpenCompare={compareEntryList.length > 1 ? () => setCompareOpen(true) : undefined}
+                  onOpenCompare={compareEntryList.length > 1 ? handleOpenCompare : undefined}
                 />
               ) : null}
 
@@ -4165,6 +4193,7 @@ export function MySupplementView({ data, onDeleteSelected, onSaveRoutine }: Prop
     smartFilter,
     scheduleDefaults,
     recordOverrideEvents,
+    trackPersonalizationEvent,
     smartFilterEvaluationLoading,
     smartFilterMembershipById,
   } = usePersonalization();
@@ -4220,11 +4249,6 @@ export function MySupplementView({ data, onDeleteSelected, onSaveRoutine }: Prop
     () => (smartFilter.highlightedGoal ? getGoalDisplayLabel(smartFilter.highlightedGoal) : null),
     [smartFilter.highlightedGoal],
   );
-  const goalNavigatorAvailableGoals = useMemo(
-    () => getGoalNavigatorEnabledGoals(smartFilter.visibleGoals),
-    [smartFilter.visibleGoals],
-  );
-  const stackAudit = snapshot.premiumInsights?.stackAudit;
   const goalTagToKey = useMemo(
     () => buildGoalTagToKeyMap(smartFilter.visibleGoals),
     [smartFilter.visibleGoals],
@@ -4917,41 +4941,6 @@ export function MySupplementView({ data, onDeleteSelected, onSaveRoutine }: Prop
         (membership) => membership?.bucket === "not_enough_structured_data",
       ).length,
     [smartFilterMembershipById],
-  );
-
-  const goalNavigatorSeedGoal = useMemo(
-    () =>
-      activeGoalKeys.find((goalKey) => goalNavigatorAvailableGoals.includes(goalKey)) ??
-      (smartFilter.highlightedGoal && goalNavigatorAvailableGoals.includes(smartFilter.highlightedGoal)
-        ? smartFilter.highlightedGoal
-        : null) ??
-      goalNavigatorAvailableGoals[0] ??
-      null,
-    [activeGoalKeys, goalNavigatorAvailableGoals, smartFilter.highlightedGoal],
-  );
-  const goalNavigatorTitleLabel = useMemo(
-    () => (goalNavigatorSeedGoal ? getGoalDisplayLabel(goalNavigatorSeedGoal) : highlightedGoalTag ?? "your goals"),
-    [goalNavigatorSeedGoal, highlightedGoalTag],
-  );
-
-  const openGoalNavigator = useCallback(() => {
-    const params = goalNavigatorSeedGoal ? { goal: goalNavigatorSeedGoal } : undefined;
-    router.push({
-      pathname: "/main/goal-navigator",
-      ...(params ? { params } : {}),
-    });
-  }, [goalNavigatorSeedGoal]);
-
-  const handleToggleControl = useCallback(
-    async ({ key, active }: { key: PersonalizationControlKey; active: boolean }) => {
-      await recordOverrideEvents(
-        buildPersonalizationControlEvents({
-          key,
-          active,
-        }),
-      );
-    },
-    [recordOverrideEvents],
   );
 
   const filteredEvaluatedResults = useMemo(
@@ -5870,49 +5859,6 @@ export function MySupplementView({ data, onDeleteSelected, onSaveRoutine }: Prop
 	              </View>
 	            </View>
 
-            <CritiqueChipBar
-              preferenceVector={snapshot.strategies.preferenceVector}
-              onToggleChip={handleToggleControl}
-            />
-
-            {goalNavigatorAvailableGoals.length > 0 ? (
-              <Pressable onPress={openGoalNavigator} style={[styles.goalNavigatorButton, { marginBottom: tokens.sectionGap }]}>
-                <BlurView intensity={20} tint="light" style={StyleSheet.absoluteFillObject} />
-                <LinearGradient
-                  colors={["rgba(255,255,255,0.78)", "rgba(219,234,254,0.42)", "rgba(255,255,255,0.12)"]}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={StyleSheet.absoluteFillObject}
-                />
-                <View style={styles.goalNavigatorButtonBorder} pointerEvents="none" />
-                <View style={styles.goalNavigatorButtonContent}>
-                  <View style={styles.goalNavigatorButtonTextWrap}>
-                    <Text style={styles.goalNavigatorButtonEyebrow}>Goal Navigator</Text>
-                    <Text style={styles.goalNavigatorButtonTitle}>
-                      Explore best fits for {goalNavigatorTitleLabel}
-                    </Text>
-                    <Text style={styles.goalNavigatorButtonSubtitle}>
-                      Coverage-ready picks with the same fit logic as Smart Filter.
-                    </Text>
-                  </View>
-                  <View style={styles.goalNavigatorArrow}>
-                    <ArrowRight size={18} color="#0f172a" />
-                  </View>
-                </View>
-              </Pressable>
-            ) : null}
-
-            {stackAudit ? (
-              <View style={{ marginBottom: tokens.sectionGap }}>
-                <StackAuditCard
-                  audit={stackAudit}
-                  preferenceVector={snapshot.strategies.preferenceVector}
-                  dietLanes={snapshot.strategies.dietLanes}
-                  activityPlan={snapshot.strategies.activityPlan}
-                />
-              </View>
-            ) : null}
-
             <View style={styles.listWrap}>
               {cards.map(({ item, theme }, i) => (
                 <CollectionCard
@@ -6083,6 +6029,7 @@ export function MySupplementView({ data, onDeleteSelected, onSaveRoutine }: Prop
           }}
           onSaveRoutine={handleSaveRoutine}
           onRecordOverrideEvents={recordOverrideEvents}
+          onTrackPersonalizationEvent={trackPersonalizationEvent}
           smartFilterAnalyticsContext={detailAnalyticsContext}
           onTrackSmartFilterEvent={trackSmartFilterEvaluatedEvent}
         />
@@ -6258,72 +6205,6 @@ const styles = StyleSheet.create({
     width: "100%",
     height: FILTER_COLLAPSED_SIZE,
     position: "relative",
-  },
-  goalNavigatorButton: {
-    minHeight: 86,
-    borderRadius: 28,
-    borderCurve: "continuous",
-    overflow: "hidden",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.72)",
-    shadowColor: "#0f172a",
-    shadowOpacity: 0.08,
-    shadowRadius: 14,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 2,
-  },
-  goalNavigatorButtonBorder: {
-    ...StyleSheet.absoluteFillObject,
-    borderRadius: 28,
-    borderCurve: "continuous",
-    borderWidth: 1,
-    borderColor: "rgba(191,219,254,0.9)",
-  },
-  goalNavigatorButtonContent: {
-    minHeight: 86,
-    paddingHorizontal: 18,
-    paddingVertical: 16,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 14,
-  },
-  goalNavigatorButtonTextWrap: {
-    flex: 1,
-    gap: 4,
-  },
-  goalNavigatorButtonEyebrow: {
-    fontSize: 11,
-    lineHeight: 14,
-    fontWeight: "900",
-    letterSpacing: 0.8,
-    textTransform: "uppercase",
-    color: "#2563eb",
-    includeFontPadding: false,
-  },
-  goalNavigatorButtonTitle: {
-    fontSize: 18,
-    lineHeight: 24,
-    fontWeight: "800",
-    color: "#0f172a",
-    includeFontPadding: false,
-  },
-  goalNavigatorButtonSubtitle: {
-    fontSize: 13,
-    lineHeight: 18,
-    fontWeight: "600",
-    color: "#475569",
-    includeFontPadding: false,
-  },
-  goalNavigatorArrow: {
-    width: 40,
-    height: 40,
-    borderRadius: 999,
-    borderCurve: "continuous",
-    backgroundColor: "rgba(255,255,255,0.88)",
-    borderWidth: 1,
-    borderColor: "rgba(226,232,240,0.92)",
-    alignItems: "center",
-    justifyContent: "center",
   },
   searchPill: {
     position: "absolute",

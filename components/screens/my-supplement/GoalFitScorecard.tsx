@@ -5,6 +5,7 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { ConfidenceBadge } from "@/components/screens/personalization/ConfidenceBadge";
 import {
+  formatGoalFitEvidenceValue,
   formatGoalFitConfidenceValue,
   formatGoalFitReason,
   GOAL_FIT_TIER_LABELS,
@@ -76,8 +77,8 @@ export function GoalFitScorecard({
         <View style={styles.confidenceGrid}>
           <ConfidenceBadge label="Fit" value={GOAL_FIT_TIER_LABELS[card.tier]} />
           <ConfidenceBadge
-            label="Evidence"
-            value={formatGoalFitConfidenceValue(card.confidence.evidence)}
+            label="Goal evidence"
+            value={formatGoalFitEvidenceValue(card.confidence.evidence)}
           />
           <ConfidenceBadge
             label="Label"

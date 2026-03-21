@@ -11,6 +11,7 @@ import React, {
 import { loadSavedSupplements, saveSavedSupplements } from '@/lib/storage/saved-supplements';
 import { normalizeRoutinePreferences } from '@/lib/routineSchedule';
 import { supabase } from '@/lib/supabase';
+import { recordPersonalizationEvents } from '@/lib/supabase/personalization';
 import { useAuth } from '@/contexts/AuthContext';
 import type { RoutinePreferences, SavedSupplement, SavedSupplementInput } from '@/types/saved-supplements';
 
@@ -78,6 +79,13 @@ const parseNotes = (notes: string | null) => {
     console.warn('[saved-supplements] Unable to parse notes payload', error);
     return null;
   }
+};
+
+const msSince = (value?: string | null) => {
+  if (!value) return null;
+  const timestamp = Date.parse(value);
+  if (!Number.isFinite(timestamp)) return null;
+  return Math.max(0, Date.now() - timestamp);
 };
 
 export const SavedSupplementsProvider = ({ children }: { children: React.ReactNode }) => {
@@ -373,9 +381,21 @@ export const SavedSupplementsProvider = ({ children }: { children: React.ReactNo
       if (!item) return;
       const next = savedSupplements.filter(entry => entry.id !== id);
       persist(next);
+      void recordPersonalizationEvents([
+        {
+          userId: user?.id,
+          eventName: 'save_then_unsave',
+          surface: 'my_saved',
+          payload: {
+            productId: item.id,
+            supplementId: item.supplementId ?? null,
+            savedForMs: msSince(item.createdAt),
+          },
+        },
+      ]);
       await removeFromRemote(item);
     },
-    [persist, removeFromRemote, savedSupplements],
+    [persist, removeFromRemote, savedSupplements, user?.id],
   );
 
   const removeSupplements = useCallback(
@@ -393,9 +413,22 @@ export const SavedSupplementsProvider = ({ children }: { children: React.ReactNo
         return next;
       });
 
+      void recordPersonalizationEvents(
+        removedItems.map((item) => ({
+          userId: user?.id,
+          eventName: 'save_then_unsave' as const,
+          surface: 'my_saved',
+          payload: {
+            productId: item.id,
+            supplementId: item.supplementId ?? null,
+            savedForMs: msSince(item.createdAt),
+          },
+        })),
+      );
+
       await Promise.all(removedItems.map(item => removeFromRemote(item)));
     },
-    [removeFromRemote, saveSavedSupplements],
+    [removeFromRemote, user?.id],
   );
 
   const value = useMemo<SavedSupplementsState>(

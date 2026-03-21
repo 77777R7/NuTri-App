@@ -141,7 +141,7 @@ export default function FirstStackScreen() {
   const router = useRouter();
   const { draft, saveDraft } = useOnboarding();
   const { savedSupplements } = useSavedSupplements();
-  const { loading, snapshot, firstStackPlan, explainSurface, recordOverrideEvents } = usePersonalization();
+  const { loading, snapshot, firstStackPlan, explainSurface, recordOverrideEvents, trackPersonalizationEvent } = usePersonalization();
   const [selected, setSelected] = useState<'scan' | 'manual' | 'later'>(draft?.firstActionPreference ?? 'scan');
   const [explanation, setExplanation] = useState<{ summary: string; bullets: string[] } | null>(null);
   const stackItems = useMemo(() => firstStackPlan?.items ?? [], [firstStackPlan]);
@@ -275,8 +275,17 @@ export default function FirstStackScreen() {
       actionKey: selected,
       conversionType: 'first_stack_accepted',
     });
+    await trackPersonalizationEvent({
+      eventName: 'first_stack_accepted',
+      surface: 'first_stack',
+      payload: {
+        selectedAction: selected,
+        itemCount: firstStackPlan?.items.length ?? 0,
+        hasExplanation: Boolean(explanation),
+      },
+    });
     router.replace('/onboarding/done');
-  }, [explanation, firstStackPlan, recordOverrideEvents, router, saveDraft, selected, snapshot.rulesVersion, snapshot.snapshotId]);
+  }, [explanation, firstStackPlan, recordOverrideEvents, router, saveDraft, selected, snapshot.rulesVersion, snapshot.snapshotId, trackPersonalizationEvent]);
 
   return (
     <OnboardingContainer

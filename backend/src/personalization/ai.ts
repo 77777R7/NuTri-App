@@ -1,4 +1,4 @@
-import explanationTemplatesData from "../../../data/personalization/explanation_templates.v1.json";
+import explanationTemplatesData from "../../../data/personalization/explanation_templates.v1.json" with { type: "json" };
 import type {
   BlockerKey,
   DecisionReason,
@@ -7,10 +7,11 @@ import type {
   ExplanationResult,
   ExplanationSurface,
   FirstStackPlan,
+  GoalFitCard,
   GoalKey,
   PersonalizationSnapshot,
   SupplementTypeKey,
-} from "../../../types/personalization";
+} from "../../../types/personalization.js";
 
 type ExplanationTemplateFile = {
   version: string;
@@ -240,7 +241,8 @@ const buildGoalFitDerivedFacts = (
   snapshot: PersonalizationSnapshot,
   surface: Extract<ExplanationSurface, "goal_fit_detail" | "product_compare">,
 ): ExplanationFact[] => {
-  const cards = Object.values(snapshot.evaluations.goalFitCards ?? {}).slice(
+  const goalFitCards: Record<string, GoalFitCard> = snapshot.evaluations.goalFitCards ?? {};
+  const cards = Object.values(goalFitCards).slice(
     0,
     surface === "product_compare" ? 2 : 1,
   );
@@ -477,8 +479,8 @@ const buildFirstStackSummary = (payload: ExplanationPayload): string => {
 
   const leadProducts = payload.firstStackPlan?.items
     .slice(0, 2)
-    .map((item) => humanizeProductId(item.productId))
-    .filter((label) => label !== "Recommended product") ?? [];
+    .map((item: FirstStackPlan["items"][number]) => humanizeProductId(item.productId))
+    .filter((label: string) => label !== "Recommended product") ?? [];
 
   if (leadProducts.length > 0) {
     return `We'll start with ${leadProducts.join(" and ")} in a ${scheduleStyle} schedule so the plan stays realistic.`;
@@ -499,7 +501,7 @@ const buildWeeklyInsightSummary = (payload: ExplanationPayload): string =>
 const buildPlanPreviewBullets = (payload: ExplanationPayload): string[] => {
   const bullets = payload.facts
     .map(renderTemplate)
-    .filter((value): value is string => Boolean(value))
+    .filter((value: string | null): value is string => Boolean(value))
     .slice(0, 3);
 
   if (payload.selectedGoals.length > 0) {
@@ -518,7 +520,7 @@ const buildPlanPreviewBullets = (payload: ExplanationPayload): string[] => {
 const buildFirstStackBullets = (payload: ExplanationPayload): string[] => {
   const bullets = payload.facts
     .map(renderTemplate)
-    .filter((value): value is string => Boolean(value))
+    .filter((value: string | null): value is string => Boolean(value))
     .slice(0, 4);
 
   if (payload.firstStackPlan && bullets.length < 4) {
@@ -537,7 +539,7 @@ const buildFirstStackBullets = (payload: ExplanationPayload): string[] => {
 const buildGenericBullets = (payload: ExplanationPayload, fallback: string): string[] => {
   const bullets = payload.facts
     .map(renderTemplate)
-    .filter((value): value is string => Boolean(value))
+    .filter((value: string | null): value is string => Boolean(value))
     .slice(0, 4);
 
   return bullets.length > 0 ? bullets : [fallback];

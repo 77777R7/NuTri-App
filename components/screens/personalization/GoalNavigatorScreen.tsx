@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Linking,
@@ -69,7 +69,7 @@ const isGoalKey = (value: string): value is GoalKey =>
 
 export function GoalNavigatorScreen({ initialGoal }: { initialGoal?: string }) {
   const insets = useSafeAreaInsets();
-  const { snapshot, smartFilter, recordOverrideEvents } = usePersonalization();
+  const { snapshot, smartFilter, recordOverrideEvents, trackPersonalizationEvent } = usePersonalization();
   const { savedSupplements, addSupplement } = useSavedSupplements();
   const visibleGoals = smartFilter.visibleGoals;
   const supportedGoals = useMemo(
@@ -95,6 +95,7 @@ export function GoalNavigatorScreen({ initialGoal }: { initialGoal?: string }) {
   const [error, setError] = useState<string | null>(null);
   const [selectedCandidateId, setSelectedCandidateId] = useState<string | null>(null);
   const [compareVisible, setCompareVisible] = useState(false);
+  const openedEventTrackedRef = useRef(false);
 
   useEffect(() => {
     if (!resolvedInitialGoal) {
@@ -155,6 +156,27 @@ export function GoalNavigatorScreen({ initialGoal }: { initialGoal?: string }) {
     snapshot.profile,
     snapshot.snapshotId,
     snapshot.strategies.preferenceVector,
+  ]);
+
+  useEffect(() => {
+    if (openedEventTrackedRef.current || !selectedGoal) return;
+    openedEventTrackedRef.current = true;
+    void trackPersonalizationEvent({
+      eventName: "goal_navigator_opened",
+      surface: "goal_navigator",
+      payload: {
+        goalKey: selectedGoal,
+        preferredTypeCount: smartFilter.preselectedTypes.length,
+        visibleGoalCount: supportedGoals.length,
+        conservativeGoalCount: conservativeGoals.length,
+      },
+    });
+  }, [
+    conservativeGoals.length,
+    selectedGoal,
+    smartFilter.preselectedTypes.length,
+    supportedGoals.length,
+    trackPersonalizationEvent,
   ]);
 
   const savedKeySet = useMemo(() => {
@@ -230,6 +252,36 @@ export function GoalNavigatorScreen({ initialGoal }: { initialGoal?: string }) {
     },
     [recordOverrideEvents],
   );
+
+  const handleOpenCandidate = useCallback(
+    (candidate: GoalNavigatorCandidate) => {
+      setSelectedCandidateId(candidate.productId);
+      void trackPersonalizationEvent({
+        eventName: "goal_fit_detail_opened",
+        surface: "goal_navigator",
+        payload: {
+          goalKey: candidate.goalKey,
+          productId: candidate.productId,
+          tier: candidate.tier,
+        },
+      });
+    },
+    [trackPersonalizationEvent],
+  );
+
+  const handleOpenCompare = useCallback(() => {
+    if (!selectedCandidate) return;
+    setCompareVisible(true);
+    void trackPersonalizationEvent({
+      eventName: "compare_opened",
+      surface: "goal_navigator",
+      payload: {
+        goalKey: selectedGoal ?? null,
+        currentProductId: selectedCandidate.productId,
+        comparedProductCount: compareEntries.length,
+      },
+    });
+  }, [compareEntries.length, selectedCandidate, selectedGoal, trackPersonalizationEvent]);
 
   const summaryLine = useMemo(() => {
     if (supportedGoals.length === 0 && conservativeGoals.length > 0) {
@@ -314,7 +366,7 @@ export function GoalNavigatorScreen({ initialGoal }: { initialGoal?: string }) {
                 candidate={candidate}
                 tintColor={goalTint}
                 saved={isSaved(candidate)}
-                onOpen={() => setSelectedCandidateId(candidate.productId)}
+                onOpen={() => handleOpenCandidate(candidate)}
                 onSave={() => handleSaveCandidate(candidate)}
               />
             ))}
@@ -367,7 +419,7 @@ export function GoalNavigatorScreen({ initialGoal }: { initialGoal?: string }) {
                   card={selectedCandidate.goalFitCard}
                   tintColor={goalTint}
                   compareEnabled={compareEntries.length > 1}
-                  onOpenCompare={() => setCompareVisible(true)}
+                  onOpenCompare={compareEntries.length > 1 ? handleOpenCompare : undefined}
                 />
 
                 <View style={styles.detailActionRow}>

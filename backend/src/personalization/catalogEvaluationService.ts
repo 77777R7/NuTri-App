@@ -3,19 +3,31 @@ import type {
   GoalNavigatorRequest,
   GoalNavigatorResponse,
   SupplementTypeKey,
-} from "../../../types/personalization";
-import {
-  evaluatePreparedCatalogProduct,
-  prepareCatalogProduct,
-} from "../../../lib/personalization/core/catalogProductEvaluation";
-import { buildGoalNavigatorResponse } from "../../../lib/personalization/core/goalNavigator";
-import { PERSONALIZATION_RULES_VERSION } from "../../../lib/personalization/core/reasonCodes";
+} from "../../../types/personalization.js";
+import catalogProductEvaluationModule from "../../../lib/personalization/core/catalogProductEvaluation.ts";
+import goalNavigatorModule from "../../../lib/personalization/core/goalNavigator.ts";
+import reasonCodesModule from "../../../lib/personalization/core/reasonCodes.ts";
 import {
   readGoalNavigatorCandidateBundleArtifact,
   type GoalNavigatorCatalogBundleEntry,
 } from "./goalNavigatorBundleArtifact.js";
+import { downloadGoalNavigatorCandidateBundleArtifact } from "./goalNavigatorArtifactStorage.js";
+import {
+  getGoalNavigatorBundleObservabilitySnapshot,
+  goalNavigatorBundleObservabilityInternals,
+  recordGoalNavigatorBundleLoad,
+  recordGoalNavigatorLiveBuild,
+  recordGoalNavigatorPrecomputedMiss,
+  updateGoalNavigatorBundleDiagnostics,
+  type GoalNavigatorBundleSource,
+} from "./goalNavigatorBundleObservability.js";
+import { readActiveGoalNavigatorBundleRun } from "./goalNavigatorBundleRepository.js";
 import { supabase } from "../supabase.js";
 import { normalizeIherbSupplementFactsRows } from "../iherbOverlayIngredients.js";
+
+const { evaluatePreparedCatalogProduct, prepareCatalogProduct } = catalogProductEvaluationModule;
+const { buildGoalNavigatorResponse } = goalNavigatorModule;
+const { PERSONALIZATION_RULES_VERSION } = reasonCodesModule;
 
 type GoalNavigatorOverlayRow = {
   product_id?: string | null;
@@ -51,6 +63,11 @@ export type GoalNavigatorCatalogBundle = {
   preparedAt: string;
   preparedCandidates: GoalNavigatorCatalogBundleEntry[];
   notEnoughStructuredDataCount: number;
+  source: GoalNavigatorBundleSource;
+  activeRunId?: string | null;
+  artifactPath?: string | null;
+  storageBucket?: string | null;
+  storagePath?: string | null;
 };
 
 type GoalNavigatorCatalogEvaluationServiceOptions = {
@@ -213,17 +230,55 @@ const buildCatalogCandidateBundle = async (
     notEnoughStructuredDataCount: preparedCandidates.filter(
       (candidate) => candidate.preparedProduct.factsStatus !== "full",
     ).length,
+    source: "live",
   };
 };
 
-const loadPrecomputedCatalogBundle = (): GoalNavigatorCatalogBundle | null => {
-  const { artifact } = readGoalNavigatorCandidateBundleArtifact();
-  if (!artifact) return null;
+const loadPrecomputedCatalogBundle = async (): Promise<GoalNavigatorCatalogBundle | null> => {
+  let storageError: string | null = null;
+  let diskError: string | null = null;
+
+  const activeRun = await readActiveGoalNavigatorBundleRun();
+  if (activeRun?.storageBucket && activeRun.storagePath) {
+    const storedArtifact = await downloadGoalNavigatorCandidateBundleArtifact({
+      bucket: activeRun.storageBucket,
+      path: activeRun.storagePath,
+    });
+    storageError = storedArtifact.error;
+    if (storedArtifact.artifact) {
+      updateGoalNavigatorBundleDiagnostics({
+        storageError: null,
+        diskError: null,
+      });
+      return {
+        preparedAt: storedArtifact.artifact.generatedAt,
+        preparedCandidates: storedArtifact.artifact.preparedCandidates,
+        notEnoughStructuredDataCount: storedArtifact.artifact.notEnoughStructuredDataCount,
+        source: "storage",
+        activeRunId: activeRun.id,
+        storageBucket: activeRun.storageBucket,
+        storagePath: activeRun.storagePath,
+        artifactPath: activeRun.artifactPath,
+      };
+    }
+  } else if (activeRun && (!activeRun.storageBucket || !activeRun.storagePath)) {
+    storageError = "active_goal_navigator_bundle_missing_storage_location";
+  }
+
+  const diskArtifact = readGoalNavigatorCandidateBundleArtifact();
+  diskError = diskArtifact.error;
+  updateGoalNavigatorBundleDiagnostics({
+    storageError,
+    diskError,
+  });
+  if (!diskArtifact.artifact) return null;
 
   return {
-    preparedAt: artifact.generatedAt,
-    preparedCandidates: artifact.preparedCandidates,
-    notEnoughStructuredDataCount: artifact.notEnoughStructuredDataCount,
+    preparedAt: diskArtifact.artifact.generatedAt,
+    preparedCandidates: diskArtifact.artifact.preparedCandidates,
+    notEnoughStructuredDataCount: diskArtifact.artifact.notEnoughStructuredDataCount,
+    source: "disk",
+    artifactPath: diskArtifact.path,
   };
 };
 
@@ -247,6 +302,13 @@ export const createGoalNavigatorCatalogEvaluationService =
         }
       | null = null;
     let inflightBundle: Promise<GoalNavigatorCatalogBundle> | null = null;
+    let cachedPrecomputedBundle:
+      | {
+          expiresAt: number;
+          value: GoalNavigatorCatalogBundle | null;
+        }
+      | null = null;
+    let inflightPrecomputedBundle: Promise<GoalNavigatorCatalogBundle | null> | null = null;
 
     const getCatalogCandidateBundle = async (): Promise<GoalNavigatorCatalogBundle> => {
       const currentTime = now();
@@ -260,6 +322,9 @@ export const createGoalNavigatorCatalogEvaluationService =
 
       inflightBundle = buildCatalogCandidateBundle(fetchRows)
         .then((bundle) => {
+          recordGoalNavigatorLiveBuild({
+            generatedAt: bundle.preparedAt,
+          });
           cachedBundle = {
             value: bundle,
             expiresAt: Math.max(currentTime, now()) + bundleTtlMs,
@@ -273,9 +338,56 @@ export const createGoalNavigatorCatalogEvaluationService =
       return inflightBundle;
     };
 
+    const getPrecomputedCatalogBundle = async (): Promise<GoalNavigatorCatalogBundle | null> => {
+      const currentTime = now();
+      if (cachedPrecomputedBundle && cachedPrecomputedBundle.expiresAt > currentTime) {
+        return cachedPrecomputedBundle.value;
+      }
+
+      if (inflightPrecomputedBundle) {
+        return inflightPrecomputedBundle;
+      }
+
+      inflightPrecomputedBundle = Promise.resolve(loadPrecomputedBundle?.() ?? null)
+        .then((bundle) => {
+          cachedPrecomputedBundle = {
+            value: bundle,
+            expiresAt: Math.max(currentTime, now()) + bundleTtlMs,
+          };
+          return bundle;
+        })
+        .finally(() => {
+          inflightPrecomputedBundle = null;
+        });
+
+      return inflightPrecomputedBundle;
+    };
+
     return {
       async evaluateGoal(request) {
-        const catalogBundle = (await loadPrecomputedBundle?.()) ?? (await getCatalogCandidateBundle());
+        const precomputedBundle = await getPrecomputedCatalogBundle();
+        const catalogBundle = precomputedBundle ?? (await getCatalogCandidateBundle());
+
+        if (precomputedBundle) {
+          recordGoalNavigatorBundleLoad({
+            source: precomputedBundle.source,
+            generatedAt: precomputedBundle.preparedAt,
+            activeRunId: precomputedBundle.activeRunId,
+            storageBucket: precomputedBundle.storageBucket,
+            storagePath: precomputedBundle.storagePath,
+            artifactPath: precomputedBundle.artifactPath,
+          });
+        } else {
+          recordGoalNavigatorPrecomputedMiss();
+          recordGoalNavigatorBundleLoad({
+            source: catalogBundle.source,
+            generatedAt: catalogBundle.preparedAt,
+            activeRunId: catalogBundle.activeRunId,
+            storageBucket: catalogBundle.storageBucket,
+            storagePath: catalogBundle.storagePath,
+            artifactPath: catalogBundle.artifactPath,
+          });
+        }
 
         const preferredTypes = [...(request.preferredTypes ?? [])].filter(
           (value): value is SupplementTypeKey =>
@@ -319,6 +431,8 @@ export const goalNavigatorCatalogEvaluationServiceInternals = {
   DEFAULT_CATALOG_BUNDLE_TTL_MS,
   extractOverlayIngredients,
   fetchOverlayCatalogRows,
+  getGoalNavigatorBundleObservabilitySnapshot,
+  goalNavigatorBundleObservabilityInternals,
   loadPrecomputedCatalogBundle,
   readOverlayImageUrl,
   readSectionText,

@@ -3,7 +3,7 @@ import type {
   ExplanationResult,
   ExplanationSurface,
   PersonalizationSnapshot,
-} from "../../../types/personalization";
+} from "../../../types/personalization.js";
 import {
   buildExplanationPayload,
   createPersonalizationExplanationService,

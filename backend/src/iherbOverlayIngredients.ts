@@ -42,6 +42,8 @@ const BLEND_TAIL_SIGNAL_PATTERN =
   /^(\[|\(|[A-Z]\.|[A-Z0-9]{1,6}\b|lactobacillus|bifidobacterium|saccharomyces|streptococcus|bacillus|myoviridae|siphoviridae|podoviridae|b\.|l\.)/i;
 
 const BLEND_LABEL_PATTERN = /\b(blend|complex|matrix|formula)\b/i;
+const BLEND_PREFIX_PATTERN =
+  /^(?:proprietary\s+)?(?:herbal\s+)?(?:blend|complex|matrix|formula)\s*:\s*/i;
 const ALIAS_SEGMENT_EXCLUSION_PATTERN =
   /^(as|from|providing|std\.?\s*to|standardized?|daily value|cfu\b|colony forming units?)\b/i;
 const ALIAS_KEY_REJECTION_LIST = new Set([
@@ -132,6 +134,47 @@ const cleanOverlayIngredientName = (value: string | null | undefined): string | 
 
   if (!cleaned || isHeaderLike(cleaned) || isNutritionLabelLike(cleaned)) return null;
   return cleaned;
+};
+
+const stripTrailingOverlayMarkers = (value: string): string =>
+  normalizeWhitespace(
+    value
+      .replace(/\s*[ⓞ®™†‡*]+$/g, "")
+      .replace(/\s+\(([ow])\)$/i, "")
+      .replace(/\s+([ow])$/i, ""),
+  );
+
+const expandBlendMemberRows = (
+  name: string | null | undefined,
+  dose: string | null,
+): Array<{ name: string; dose: string | null }> | null => {
+  const normalized = normalizePunctuationSpacing(String(name ?? ""));
+  if (!BLEND_PREFIX_PATTERN.test(normalized)) return null;
+
+  const tail = normalizeWhitespace(normalized.replace(BLEND_PREFIX_PATTERN, ""));
+  if (!tail) return null;
+
+  const members = Array.from(
+    new Set(
+      tail
+        .split(/\s*,\s*/)
+        .map((segment) => stripTrailingOverlayMarkers(segment))
+        .map((segment) => cleanOverlayIngredientName(segment))
+        .filter((segment): segment is string => Boolean(segment)),
+    ),
+  );
+
+  if (members.length === 0) return null;
+
+  if (members.length === 1) {
+    return [{ name: members[0], dose }];
+  }
+
+  return members.map((member) => ({
+    name: member,
+    // The blend total does not belong to each member, so keep identity and intentionally withhold dose.
+    dose: null,
+  }));
 };
 
 const normalizeMatchKey = (value: string): string =>
@@ -252,20 +295,25 @@ const normalizeIherbSupplementFactsRowsInternal = (
   const deduped = new Map<string, NormalizedScienceIngredientRow>();
 
   for (const row of rows ?? []) {
-    const name = cleanOverlayIngredientName(row?.substancy);
-    if (!name) continue;
-    const next = buildNormalizedScienceIngredientRow({
-      name,
-      dose: normalizeDose(row?.amountPerServing),
-    });
-    if (!next) continue;
-    const existing = deduped.get(next.primaryMatchKey);
-    if (!existing) {
-      order.push(next.primaryMatchKey);
-      deduped.set(next.primaryMatchKey, next);
-      continue;
+    const normalizedDose = normalizeDose(row?.amountPerServing);
+    const expandedRows =
+      expandBlendMemberRows(row?.substancy, normalizedDose) ??
+      (() => {
+        const cleaned = cleanOverlayIngredientName(row?.substancy);
+        return cleaned ? [{ name: cleaned, dose: normalizedDose }] : [];
+      })();
+
+    for (const expandedRow of expandedRows) {
+      const next = buildNormalizedScienceIngredientRow(expandedRow);
+      if (!next) continue;
+      const existing = deduped.get(next.primaryMatchKey);
+      if (!existing) {
+        order.push(next.primaryMatchKey);
+        deduped.set(next.primaryMatchKey, next);
+        continue;
+      }
+      deduped.set(next.primaryMatchKey, pickPreferredRow(existing, next));
     }
-    deduped.set(next.primaryMatchKey, pickPreferredRow(existing, next));
   }
 
   return order
@@ -416,4 +464,10 @@ export const selectScienceIngredientRows = (params: {
       dose: row.dose,
     })),
   };
+};
+
+export const iherbOverlayIngredientInternals = {
+  cleanOverlayIngredientName,
+  expandBlendMemberRows,
+  stripTrailingOverlayMarkers,
 };

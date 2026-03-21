@@ -8,4 +8,4 @@
 - Build command: `npm run personalization:build-goal-bundle`
 - Scheduled refresh: `.github/workflows/goal-navigator-bundle-nightly.yml`
 
-The nightly workflow rebuilds the bundle, uploads the generated JSON as a GitHub Actions artifact, and commits the refreshed file back to the default branch only when the bundle content changes.
+The nightly workflow rebuilds the bundle, uploads the generated JSON as a GitHub Actions artifact, and opens or updates an automation PR only when the bundle content changes.

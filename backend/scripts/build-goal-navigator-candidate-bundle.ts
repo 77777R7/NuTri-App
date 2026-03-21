@@ -6,6 +6,9 @@ import {
   DEFAULT_GOAL_NAVIGATOR_CANDIDATE_BUNDLE_PATH,
   GOAL_NAVIGATOR_CANDIDATE_BUNDLE_SCHEMA_VERSION,
 } from "../src/personalization/goalNavigatorBundleArtifact.js";
+import { uploadGoalNavigatorCandidateBundleArtifact } from "../src/personalization/goalNavigatorArtifactStorage.js";
+import { buildGoalNavigatorCandidateGapRecord } from "../src/personalization/goalNavigatorCandidateGaps.js";
+import { persistGoalNavigatorBundleRun } from "../src/personalization/goalNavigatorBundleRepository.js";
 import { PERSONALIZATION_RULES_VERSION } from "../../lib/personalization/core/reasonCodes";
 
 const args = process.argv.slice(2);
@@ -20,6 +23,8 @@ const hasFlag = (flag: string) => args.includes(`--${flag}`);
 
 const outPath = getArg("out") ?? DEFAULT_GOAL_NAVIGATOR_CANDIDATE_BUNDLE_PATH;
 const dryRun = hasFlag("dry-run");
+const skipPersist = hasFlag("skip-persist");
+const skipStorageUpload = hasFlag("skip-storage-upload");
 
 const ensureDir = async (dirPath: string) => {
   await fs.promises.mkdir(dirPath, { recursive: true });
@@ -34,6 +39,9 @@ const run = async () => {
   const bundle = await goalNavigatorCatalogEvaluationServiceInternals.buildCatalogCandidateBundle(
     goalNavigatorCatalogEvaluationServiceInternals.fetchOverlayCatalogRows,
   );
+  const candidateGaps = bundle.preparedCandidates
+    .map((candidate) => buildGoalNavigatorCandidateGapRecord(candidate.preparedProduct))
+    .filter((candidate): candidate is NonNullable<typeof candidate> => Boolean(candidate));
 
   const artifact = {
     schemaVersion: GOAL_NAVIGATOR_CANDIDATE_BUNDLE_SCHEMA_VERSION,
@@ -49,15 +57,60 @@ const run = async () => {
     await writeJson(outPath, artifact);
   }
 
+  let bundleRunId: string | null = null;
+  let storageBucket: string | null = null;
+  let storagePath: string | null = null;
+  let artifactByteSize: number | null = null;
+  let artifactChecksum: string | null = null;
+  if (!dryRun && !skipStorageUpload) {
+    const uploadedArtifact = await uploadGoalNavigatorCandidateBundleArtifact(artifact);
+    storageBucket = uploadedArtifact.bucket;
+    storagePath = uploadedArtifact.path;
+    artifactByteSize = uploadedArtifact.byteSize;
+    artifactChecksum = uploadedArtifact.checksum;
+  }
+
+  if (!dryRun && !skipPersist) {
+    const persisted = await persistGoalNavigatorBundleRun({
+      schemaVersion: artifact.schemaVersion,
+      rulesVersion: artifact.rulesVersion,
+      generatedAt: artifact.generatedAt,
+      sourceTable: artifact.sourceTable,
+      sourceRowCount: artifact.sourceRowCount,
+      preparedCandidateCount: artifact.preparedCandidates.length,
+      notEnoughStructuredDataCount: artifact.notEnoughStructuredDataCount,
+      artifactPath: outPath,
+      storageBucket,
+      storagePath,
+      artifactByteSize,
+      artifactChecksum,
+      activate: !skipStorageUpload && Boolean(storageBucket && storagePath),
+      buildMeta: {
+        persistedFrom: "build-goal-navigator-candidate-bundle",
+        storageUploadSkipped: skipStorageUpload,
+      },
+      candidateGaps,
+    });
+    bundleRunId = persisted.runId;
+  }
+
   console.log(
     JSON.stringify(
       {
         status: "ok",
         dryRun,
+        skipPersist,
+        skipStorageUpload,
         outPath,
+        storageBucket,
+        storagePath,
+        artifactByteSize,
+        artifactChecksum,
         generatedAt: artifact.generatedAt,
         preparedCandidateCount: artifact.preparedCandidates.length,
         notEnoughStructuredDataCount: artifact.notEnoughStructuredDataCount,
+        candidateGapCount: candidateGaps.length,
+        bundleRunId,
       },
       null,
       2,

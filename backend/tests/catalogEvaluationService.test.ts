@@ -2,15 +2,20 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { prepareCatalogProduct } from "../../lib/personalization/core/catalogProductEvaluation";
-import { createGoalNavigatorCatalogEvaluationService } from "../src/personalization/catalogEvaluationService";
+import {
+  createGoalNavigatorCatalogEvaluationService,
+  goalNavigatorCatalogEvaluationServiceInternals,
+} from "../src/personalization/catalogEvaluationService";
 
 test("catalog evaluation service reuses a prepared candidate bundle within the TTL window", async () => {
+  goalNavigatorCatalogEvaluationServiceInternals.goalNavigatorBundleObservabilityInternals.reset();
   let currentTime = 0;
   let fetchCount = 0;
 
   const service = createGoalNavigatorCatalogEvaluationService({
     now: () => currentTime,
     bundleTtlMs: 1_000,
+    loadPrecomputedBundle: () => null,
     fetchOverlayCatalogRows: async () => {
       fetchCount += 1;
       return [
@@ -65,9 +70,17 @@ test("catalog evaluation service reuses a prepared candidate bundle within the T
   assert.equal(first.fallback.notEnoughStructuredDataCount, 1);
   assert.equal(second.fallback.notEnoughStructuredDataCount, 1);
   assert.equal(third.fallback.notEnoughStructuredDataCount, 1);
+
+  const runtime =
+    goalNavigatorCatalogEvaluationServiceInternals.getGoalNavigatorBundleObservabilitySnapshot();
+  assert.equal(runtime.currentBundle.source, "live");
+  assert.equal(runtime.counters.liveHits, 3);
+  assert.equal(runtime.counters.liveBuildCount, 2);
+  assert.equal(runtime.counters.precomputedMissCount, 3);
 });
 
 test("catalog evaluation service prefers a precomputed bundle artifact when one is available", async () => {
+  goalNavigatorCatalogEvaluationServiceInternals.goalNavigatorBundleObservabilityInternals.reset();
   let fetchCount = 0;
 
   const service = createGoalNavigatorCatalogEvaluationService({
@@ -78,6 +91,10 @@ test("catalog evaluation service prefers a precomputed bundle artifact when one 
     loadPrecomputedBundle: () => ({
       preparedAt: "2026-03-19T00:00:00.000Z",
       notEnoughStructuredDataCount: 1,
+      source: "storage",
+      activeRunId: "run_123",
+      storageBucket: "personalization-artifacts",
+      storagePath: "goal-navigator/test.json",
       preparedCandidates: [
         {
           preparedProduct: prepareCatalogProduct({
@@ -101,4 +118,12 @@ test("catalog evaluation service prefers a precomputed bundle artifact when one 
   assert.equal(fetchCount, 0);
   assert.equal(response.candidates[0]?.productId, "immune_c_prebuilt");
   assert.equal(response.fallback.notEnoughStructuredDataCount, 1);
+
+  const runtime =
+    goalNavigatorCatalogEvaluationServiceInternals.getGoalNavigatorBundleObservabilitySnapshot();
+  assert.equal(runtime.currentBundle.source, "storage");
+  assert.equal(runtime.currentBundle.activeRunId, "run_123");
+  assert.equal(runtime.currentBundle.storagePath, "goal-navigator/test.json");
+  assert.equal(runtime.counters.storageHits, 1);
+  assert.equal(runtime.counters.precomputedMissCount, 0);
 });

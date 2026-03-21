@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View, type TextStyle, type ViewStyle } from 'react-native';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -18,16 +18,24 @@ import {
 } from 'lucide-react-native';
 
 import { ContentFrame } from '@/components/common/ContentFrame';
+import { CritiqueChipBar } from '@/components/screens/personalization/CritiqueChipBar';
+import { GoalNavigatorEntryCard } from '@/components/screens/personalization/GoalNavigatorEntryCard';
+import { StackAuditCard } from '@/components/screens/personalization/StackAuditCard';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOnboarding } from '@/contexts/OnboardingContext';
+import { usePersonalization } from '@/contexts/PersonalizationContext';
 import { useScreenTokens } from '@/hooks/useScreenTokens';
 import { useTranslation } from '@/lib/i18n';
+import { buildPersonalizationControlEvents } from '@/lib/personalization/core/critiqueEngine';
+import { getGoalNavigatorEnabledGoals } from '@/lib/personalization/core/goalConfidenceProfiles';
+import { getGoalDisplayLabel } from '@/lib/personalization/uiLabels';
 import {
   buildProfileScreenModel,
   type ProfileSnapshotId,
   type ProfileStatusId,
   type ProfileStatusState,
 } from '@/lib/profile/viewModel';
+import type { PersonalizationControlKey } from '@/types/personalization';
 
 const SCREEN_BG = '#F2F3F7';
 const STACK_GAP = 16;
@@ -128,6 +136,7 @@ export default function ProfileScreen({ navHeight }: ProfileScreenProps) {
   const { user, isBiometricEnabled } = useAuth();
   const router = useRouter();
   const { draft, resetLocalOnboarding } = useOnboarding();
+  const { snapshot, smartFilter, recordOverrideEvents } = usePersonalization();
   const { t } = useTranslation();
   const tokens = useScreenTokens(navHeight);
   const model = buildProfileScreenModel({ user, draft, isBiometricEnabled });
@@ -138,6 +147,22 @@ export default function ProfileScreen({ navHeight }: ProfileScreenProps) {
   const snapshotColumns = (tokens.contentWidth - SNAPSHOT_GAP) / 2 >= MIN_TWO_UP_CARD_WIDTH ? 2 : 1;
   const snapshotCardWidth =
     snapshotColumns === 2 ? (tokens.contentWidth - SNAPSHOT_GAP) / 2 : tokens.contentWidth;
+  const goalNavigatorAvailableGoals = useMemo(
+    () => getGoalNavigatorEnabledGoals(smartFilter.visibleGoals),
+    [smartFilter.visibleGoals],
+  );
+  const goalNavigatorSeedGoal = useMemo(
+    () =>
+      smartFilter.highlightedGoal && goalNavigatorAvailableGoals.includes(smartFilter.highlightedGoal)
+        ? smartFilter.highlightedGoal
+        : goalNavigatorAvailableGoals[0] ?? null,
+    [goalNavigatorAvailableGoals, smartFilter.highlightedGoal],
+  );
+  const goalNavigatorTitleLabel = useMemo(
+    () => (goalNavigatorSeedGoal ? getGoalDisplayLabel(goalNavigatorSeedGoal) : 'your goals'),
+    [goalNavigatorSeedGoal],
+  );
+  const stackAudit = snapshot.premiumInsights?.stackAudit;
 
   const handleStartQaTest = useCallback(async () => {
     if (qaBusy) return;
@@ -149,6 +174,30 @@ export default function ProfileScreen({ navHeight }: ProfileScreenProps) {
       setQaBusy(false);
     }
   }, [qaBusy, resetLocalOnboarding, router]);
+
+  const handleToggleControl = useCallback(
+    ({ key, active }: { key: PersonalizationControlKey; active: boolean }) => {
+      void recordOverrideEvents(
+        buildPersonalizationControlEvents({
+          key,
+          active,
+        }),
+      );
+    },
+    [recordOverrideEvents],
+  );
+
+  const openGoalNavigator = useCallback(() => {
+    if (goalNavigatorSeedGoal) {
+      router.push({
+        pathname: '/main/goal-navigator',
+        params: { goal: goalNavigatorSeedGoal },
+      });
+      return;
+    }
+
+    router.push('/main/goal-navigator');
+  }, [goalNavigatorSeedGoal, router]);
 
   const snapshotMeta: Record<ProfileSnapshotId, SnapshotMeta> = {
     goals: {
@@ -381,6 +430,27 @@ export default function ProfileScreen({ navHeight }: ProfileScreenProps) {
                     ) : null}
                   </View>
                 ))}
+              </View>
+              <View style={styles.personalizationStack}>
+                <CritiqueChipBar
+                  preferenceVector={snapshot.strategies.preferenceVector}
+                  onToggleChip={handleToggleControl}
+                />
+                {goalNavigatorAvailableGoals.length > 0 ? (
+                  <GoalNavigatorEntryCard
+                    title={`Explore best fits for ${goalNavigatorTitleLabel}`}
+                    subtitle="Coverage-ready picks with the same fit logic as Smart Filter."
+                    onPress={openGoalNavigator}
+                  />
+                ) : null}
+                {stackAudit ? (
+                  <StackAuditCard
+                    audit={stackAudit}
+                    preferenceVector={snapshot.strategies.preferenceVector}
+                    dietLanes={snapshot.strategies.dietLanes}
+                    activityPlan={snapshot.strategies.activityPlan}
+                  />
+                ) : null}
               </View>
             </View>
           </View>
@@ -712,6 +782,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 10,
+  },
+  personalizationStack: {
+    marginTop: 18,
+    gap: 14,
   },
   chip: {
     flexDirection: 'row',

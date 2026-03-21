@@ -66,6 +66,7 @@ export type CatalogPreparedProduct = {
   description?: string | null;
   suggestedUse?: string | null;
   factsStatus: SavedProductFactsStatus;
+  overlayIngredients: CatalogOverlayIngredientRow[];
   typeKeys: SupplementTypeKey[];
   ingredientInputs: ProductIngredientLikeInput[];
   savedProductSeed: SavedProductEvaluationInput;
@@ -88,21 +89,47 @@ export type CatalogProductEvaluationResult = {
   candidate?: GoalNavigatorCandidate;
 };
 
+const PROPRIETARY_BLEND_PATTERN = /\b(blend|complex|matrix|formula)\b/i;
+
+const normalizeParsedUnit = (value: string): string | null => {
+  const normalized = value.trim().toLowerCase();
+  if (!normalized) return null;
+  if (normalized === "μg" || normalized === "µg" || normalized === "ug") return "mcg";
+  if (normalized === "iu" || normalized === "ui") return "iu";
+  if (normalized === "cfu") return "cfu";
+  if (normalized === "spu") return "spu";
+  if (normalized === "ml" || normalized === "milliliter" || normalized === "milliliters") return "ml";
+  if (normalized === "mg" || normalized === "g" || normalized === "mcg") return normalized;
+  return null;
+};
+
 const parseAmountText = (value?: string | null): { amount: number | null; unit: string | null } => {
   const trimmed = value?.trim();
   if (!trimmed) return { amount: null, unit: null };
-  const match = trimmed.match(/(-?\d[\d,]*(?:\.\d+)?)\s*(mcg|mg|g)\b/i);
+
+  const cfuScaledMatch = trimmed.match(/(-?\d[\d,]*(?:\.\d+)?)\s*(billion|million)\s*cfu\b/i);
+  if (cfuScaledMatch) {
+    const amount = Number.parseFloat(cfuScaledMatch[1].replace(/,/g, ""));
+    if (!Number.isFinite(amount)) {
+      return { amount: null, unit: null };
+    }
+    const scale = cfuScaledMatch[2]?.toLowerCase();
+    return {
+      amount: scale === "billion" ? amount * 1e9 : amount * 1e6,
+      unit: "cfu",
+    };
+  }
+
+  const match = trimmed.match(/(-?\d[\d,]*(?:\.\d+)?)\s*(mcg|μg|µg|ug|mg|g|iu|ui|cfu|spu|ml)\b/i);
   if (!match) return { amount: null, unit: null };
 
   const amount = Number.parseFloat(match[1].replace(/,/g, ""));
-  if (!Number.isFinite(amount)) {
+  const unit = normalizeParsedUnit(match[2]);
+  if (!Number.isFinite(amount) || !unit) {
     return { amount: null, unit: null };
   }
 
-  return {
-    amount,
-    unit: match[2].toLowerCase(),
-  };
+  return { amount, unit };
 };
 
 const pickFirstText = (...values: Array<string | null | undefined>) => {
@@ -187,6 +214,7 @@ const buildIngredientInputs = (
       amount: parsedDose.amount,
       unit: parsedDose.unit,
       disclosureQuality: parsedDose.amount != null ? "medium" : "low",
+      proprietaryBlend: PROPRIETARY_BLEND_PATTERN.test(name),
     });
   }
 
@@ -200,7 +228,8 @@ const deriveFactsStatus = (ingredients: ProductIngredientLikeInput[]): SavedProd
       typeof ingredient.amount === "number" &&
       ingredient.amount > 0 &&
       typeof ingredient.unit === "string" &&
-      ingredient.unit.length > 0,
+      ingredient.unit.length > 0 &&
+      ingredient.proprietaryBlend !== true,
   );
   return hasStructuredDose ? "full" : "partial";
 };
@@ -238,6 +267,7 @@ export const prepareCatalogProduct = (input: CatalogPreparedProductInput): Catal
     description: input.description ?? null,
     suggestedUse: input.suggestedUse ?? null,
     factsStatus,
+    overlayIngredients,
     typeKeys,
     ingredientInputs,
     savedProductSeed: {
@@ -409,6 +439,7 @@ export const catalogProductEvaluationInternals = {
   deriveFactsStatus,
   deriveTypeKeysFromContent,
   evaluatePreparedCatalogProduct,
+  normalizeParsedUnit,
   parseAmountText,
   prepareCatalogProduct,
   toTierPriority,

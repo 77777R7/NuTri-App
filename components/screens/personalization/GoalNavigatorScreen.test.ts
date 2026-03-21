@@ -19,12 +19,21 @@ test("goal navigator screen reuses deterministic fit surfaces and catalog route"
   assert.match(source, /addSupplement/);
 });
 
-test("my saved surface exposes a goal navigator entry point", () => {
-  const filePath = path.resolve(process.cwd(), "components/screens/MySupplement.tsx");
-  const source = fs.readFileSync(filePath, "utf8");
+test("profile personalization surface exposes steering, stack audit, and goal navigator entry", () => {
+  const profilePath = path.resolve(process.cwd(), "components/screens/ProfileScreen.tsx");
+  const profileSource = fs.readFileSync(profilePath, "utf8");
+  const mySupplementPath = path.resolve(process.cwd(), "components/screens/MySupplement.tsx");
+  const mySupplementSource = fs.readFileSync(mySupplementPath, "utf8");
 
-  assert.match(source, /Explore best fits for/);
-  assert.match(source, /router\.push\(\{\s*pathname:\s*"\/main\/goal-navigator"/);
+  assert.match(profileSource, /CritiqueChipBar/);
+  assert.match(profileSource, /GoalNavigatorEntryCard/);
+  assert.match(profileSource, /StackAuditCard/);
+  assert.match(profileSource, /buildPersonalizationControlEvents/);
+  assert.match(profileSource, /pathname:\s*'\/main\/goal-navigator'/);
+
+  assert.doesNotMatch(mySupplementSource, /CritiqueChipBar/);
+  assert.doesNotMatch(mySupplementSource, /Explore best fits for/);
+  assert.doesNotMatch(mySupplementSource, /StackAuditCard/);
 });
 
 test("goal navigator and stack audit expose bundle metadata surfaces", () => {
@@ -33,8 +42,8 @@ test("goal navigator and stack audit expose bundle metadata surfaces", () => {
     "components/screens/personalization/GoalNavigatorContextCard.tsx",
   );
   const contextCardSource = fs.readFileSync(contextCardPath, "utf8");
-  const mySupplementPath = path.resolve(process.cwd(), "components/screens/MySupplement.tsx");
-  const mySupplementSource = fs.readFileSync(mySupplementPath, "utf8");
+  const profilePath = path.resolve(process.cwd(), "components/screens/ProfileScreen.tsx");
+  const profileSource = fs.readFileSync(profilePath, "utf8");
   const stackAuditPath = path.resolve(
     process.cwd(),
     "components/screens/personalization/StackAuditCard.tsx",
@@ -45,6 +54,6 @@ test("goal navigator and stack audit expose bundle metadata surfaces", () => {
   assert.match(contextCardSource, /Diet review bundle/);
   assert.match(contextCardSource, /Activity modifier/);
   assert.match(stackAuditSource, /Bundle steering/);
-  assert.match(mySupplementSource, /dietLanes=\{snapshot\.strategies\.dietLanes\}/);
-  assert.match(mySupplementSource, /activityPlan=\{snapshot\.strategies\.activityPlan\}/);
+  assert.match(profileSource, /dietLanes=\{snapshot\.strategies\.dietLanes\}/);
+  assert.match(profileSource, /activityPlan=\{snapshot\.strategies\.activityPlan\}/);
 });

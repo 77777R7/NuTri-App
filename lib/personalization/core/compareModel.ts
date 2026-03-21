@@ -68,6 +68,7 @@ export const buildGoalCompareEntries = (input: {
         tier: goalFitCard.tier,
         confidence: goalFitCard.confidence,
         whyFit: goalFitCard.whyFit,
+        whyNotStronger: goalFitCard.whyNotStronger,
         holdbacks: goalFitCard.holdbacks,
       });
 

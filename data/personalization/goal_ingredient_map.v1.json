@@ -33,6 +33,36 @@
           "preferredForms": [],
           "caps": [],
           "rationale": "L-theanine is a supportive sleep-adjacent ingredient."
+        },
+        {
+          "ingredientKey": "glycine",
+          "tier": "related",
+          "evidenceGrade": "B",
+          "minEffectiveDose": 3000,
+          "unit": "mg",
+          "preferredForms": [],
+          "caps": [],
+          "rationale": "Glycine is a calm, conservative sleep-support ingredient when the dose is clearly disclosed."
+        },
+        {
+          "ingredientKey": "valerian_root_extract",
+          "tier": "related",
+          "evidenceGrade": "B",
+          "minEffectiveDose": 400,
+          "unit": "mg",
+          "preferredForms": ["extract"],
+          "caps": [],
+          "rationale": "Valerian root extract can support sleep-oriented products when the extract is explicit."
+        },
+        {
+          "ingredientKey": "lemon_balm_extract",
+          "tier": "related",
+          "evidenceGrade": "B",
+          "minEffectiveDose": 300,
+          "unit": "mg",
+          "preferredForms": ["extract"],
+          "caps": [],
+          "rationale": "Lemon balm extract is a gentle sleep-adjacent ingredient for calmer routines."
         }
       ]
     },
@@ -68,6 +98,46 @@
           "preferredForms": ["ubiquinol", "coenzyme q10"],
           "caps": [],
           "rationale": "CoQ10 is a common supporting ingredient for energy-oriented products."
+        },
+        {
+          "ingredientKey": "caffeine",
+          "tier": "strong_match",
+          "evidenceGrade": "A",
+          "minEffectiveDose": 50,
+          "unit": "mg",
+          "preferredForms": [],
+          "caps": [],
+          "rationale": "Caffeine is a direct energy-support ingredient when the dose is disclosed."
+        },
+        {
+          "ingredientKey": "l_tyrosine",
+          "tier": "related",
+          "evidenceGrade": "B",
+          "minEffectiveDose": 500,
+          "unit": "mg",
+          "preferredForms": [],
+          "caps": [],
+          "rationale": "L-tyrosine can support energy-oriented formulas, especially when the dose is explicit."
+        },
+        {
+          "ingredientKey": "rhodiola_rosea",
+          "tier": "related",
+          "evidenceGrade": "B",
+          "minEffectiveDose": 200,
+          "unit": "mg",
+          "preferredForms": ["extract"],
+          "caps": [],
+          "rationale": "Rhodiola rosea is a common energy-adjacent adaptogen when extract status is clear."
+        },
+        {
+          "ingredientKey": "acetyl_l_carnitine",
+          "tier": "related",
+          "evidenceGrade": "B",
+          "minEffectiveDose": 500,
+          "unit": "mg",
+          "preferredForms": [],
+          "caps": [],
+          "rationale": "Acetyl-L-carnitine is a conservative supporting ingredient for energy-focused reviews."
         }
       ]
     },
@@ -103,6 +173,36 @@
           "preferredForms": ["d3", "cholecalciferol"],
           "caps": [],
           "rationale": "Vitamin D is supportive but not usually the sole driver of immunity relevance."
+        },
+        {
+          "ingredientKey": "elderberry",
+          "tier": "related",
+          "evidenceGrade": "B",
+          "minEffectiveDose": 300,
+          "unit": "mg",
+          "preferredForms": ["extract"],
+          "caps": [],
+          "rationale": "Elderberry is a common immunity-support ingredient when the extract is clear."
+        },
+        {
+          "ingredientKey": "quercetin",
+          "tier": "related",
+          "evidenceGrade": "B",
+          "minEffectiveDose": 250,
+          "unit": "mg",
+          "preferredForms": [],
+          "caps": [],
+          "rationale": "Quercetin is a conservative immunity-adjacent ingredient for review."
+        },
+        {
+          "ingredientKey": "beta_glucan",
+          "tier": "related",
+          "evidenceGrade": "B",
+          "minEffectiveDose": 250,
+          "unit": "mg",
+          "preferredForms": ["yeast"],
+          "caps": [],
+          "rationale": "Beta-glucan is a structured immunity-support ingredient when the source is explicit."
         }
       ]
     },
@@ -138,6 +238,36 @@
           "preferredForms": ["triglyceride", "reesterified triglyceride"],
           "caps": [],
           "rationale": "Omega-3s can support recovery but usually sit behind protein/creatine."
+        },
+        {
+          "ingredientKey": "tart_cherry",
+          "tier": "related",
+          "evidenceGrade": "B",
+          "minEffectiveDose": 480,
+          "unit": "mg",
+          "preferredForms": ["extract", "concentrate"],
+          "caps": [],
+          "rationale": "Tart cherry is a conservative recovery-adjacent ingredient for routine support."
+        },
+        {
+          "ingredientKey": "collagen_peptides",
+          "tier": "related",
+          "evidenceGrade": "B",
+          "minEffectiveDose": 10000,
+          "unit": "mg",
+          "preferredForms": ["peptides"],
+          "caps": [],
+          "rationale": "Collagen peptides are common in recovery-oriented products when protein-style disclosure is clear."
+        },
+        {
+          "ingredientKey": "leucine",
+          "tier": "related",
+          "evidenceGrade": "B",
+          "minEffectiveDose": 2500,
+          "unit": "mg",
+          "preferredForms": [],
+          "caps": [],
+          "rationale": "Leucine is a conservative recovery ingredient when the dose is clearly disclosed."
         }
       ]
     },
@@ -173,6 +303,36 @@
           "preferredForms": ["bacopa monnieri"],
           "caps": [],
           "rationale": "Bacopa is a weaker, slower-burn focus ingredient in this conservative V1 map."
+        },
+        {
+          "ingredientKey": "citicoline",
+          "tier": "related",
+          "evidenceGrade": "A",
+          "minEffectiveDose": 250,
+          "unit": "mg",
+          "preferredForms": ["cdp_choline", "citicoline"],
+          "caps": [],
+          "rationale": "Citicoline is a structured focus ingredient with a clear dose floor."
+        },
+        {
+          "ingredientKey": "l_tyrosine",
+          "tier": "related",
+          "evidenceGrade": "B",
+          "minEffectiveDose": 500,
+          "unit": "mg",
+          "preferredForms": [],
+          "caps": [],
+          "rationale": "L-tyrosine is a conservative focus-support ingredient when disclosure is clear."
+        },
+        {
+          "ingredientKey": "rhodiola_rosea",
+          "tier": "related",
+          "evidenceGrade": "B",
+          "minEffectiveDose": 200,
+          "unit": "mg",
+          "preferredForms": ["extract"],
+          "caps": [],
+          "rationale": "Rhodiola rosea can support focus-adjacent formulas when the extract is explicit."
         }
       ]
     },
@@ -276,18 +436,34 @@
     { "goalKey": "sleep", "ingredientKey": "melatonin", "tier": "strong", "evidenceGrade": "A", "minEffectiveDose": 0.3, "unit": "mg", "preferredForms": [], "caps": [], "rationale": "Melatonin is a direct sleep-support ingredient with clear dose floors." },
     { "goalKey": "sleep", "ingredientKey": "magnesium", "tier": "supporting", "evidenceGrade": "B", "minEffectiveDose": 100, "unit": "mg", "preferredForms": ["glycinate", "bisglycinate", "taurate"], "caps": [], "rationale": "Magnesium can support sleep routines, especially in gentler forms." },
     { "goalKey": "sleep", "ingredientKey": "l_theanine", "tier": "supporting", "evidenceGrade": "B", "minEffectiveDose": 100, "unit": "mg", "preferredForms": [], "caps": [], "rationale": "L-theanine is a supportive sleep-adjacent ingredient." },
+    { "goalKey": "sleep", "ingredientKey": "glycine", "tier": "supporting", "evidenceGrade": "B", "minEffectiveDose": 3000, "unit": "mg", "preferredForms": [], "caps": [], "rationale": "Glycine is a calm, conservative sleep-support ingredient when the dose is clearly disclosed." },
+    { "goalKey": "sleep", "ingredientKey": "valerian_root_extract", "tier": "supporting", "evidenceGrade": "B", "minEffectiveDose": 400, "unit": "mg", "preferredForms": ["extract"], "caps": [], "rationale": "Valerian root extract can support sleep-oriented products when the extract is explicit." },
+    { "goalKey": "sleep", "ingredientKey": "lemon_balm_extract", "tier": "supporting", "evidenceGrade": "B", "minEffectiveDose": 300, "unit": "mg", "preferredForms": ["extract"], "caps": [], "rationale": "Lemon balm extract is a gentle sleep-adjacent ingredient for calmer routines." },
     { "goalKey": "energy", "ingredientKey": "vitamin_b12", "tier": "strong", "evidenceGrade": "A", "minEffectiveDose": 500, "unit": "mcg", "preferredForms": ["methylcobalamin", "adenosylcobalamin"], "caps": [], "rationale": "B12 is a direct energy-support ingredient when dose and form are disclosed." },
     { "goalKey": "energy", "ingredientKey": "iron", "tier": "supporting", "evidenceGrade": "A", "minEffectiveDose": 8, "unit": "mg", "preferredForms": ["bisglycinate", "ferrous bisglycinate"], "caps": ["eligibility_requires_generic_safety_path"], "rationale": "Iron can matter for energy, but it should stay on a conservative safety path." },
     { "goalKey": "energy", "ingredientKey": "coenzyme_q10", "tier": "supporting", "evidenceGrade": "B", "minEffectiveDose": 100, "unit": "mg", "preferredForms": ["ubiquinol", "coenzyme q10"], "caps": [], "rationale": "CoQ10 is a common supporting ingredient for energy-oriented products." },
+    { "goalKey": "energy", "ingredientKey": "caffeine", "tier": "strong", "evidenceGrade": "A", "minEffectiveDose": 50, "unit": "mg", "preferredForms": [], "caps": [], "rationale": "Caffeine is a direct energy-support ingredient when the dose is disclosed." },
+    { "goalKey": "energy", "ingredientKey": "l_tyrosine", "tier": "supporting", "evidenceGrade": "B", "minEffectiveDose": 500, "unit": "mg", "preferredForms": [], "caps": [], "rationale": "L-tyrosine can support energy-oriented formulas, especially when the dose is explicit." },
+    { "goalKey": "energy", "ingredientKey": "rhodiola_rosea", "tier": "supporting", "evidenceGrade": "B", "minEffectiveDose": 200, "unit": "mg", "preferredForms": ["extract"], "caps": [], "rationale": "Rhodiola rosea is a common energy-adjacent adaptogen when extract status is clear." },
+    { "goalKey": "energy", "ingredientKey": "acetyl_l_carnitine", "tier": "supporting", "evidenceGrade": "B", "minEffectiveDose": 500, "unit": "mg", "preferredForms": [], "caps": [], "rationale": "Acetyl-L-carnitine is a conservative supporting ingredient for energy-focused reviews." },
     { "goalKey": "immunity", "ingredientKey": "vitamin_c", "tier": "strong", "evidenceGrade": "A", "minEffectiveDose": 200, "unit": "mg", "preferredForms": [], "caps": [], "rationale": "Vitamin C is a core immunity-support review ingredient." },
     { "goalKey": "immunity", "ingredientKey": "zinc", "tier": "strong", "evidenceGrade": "A", "minEffectiveDose": 10, "unit": "mg", "preferredForms": ["picolinate", "citrate", "gluconate"], "caps": [], "rationale": "Zinc is a high-signal ingredient for immunity review when dose is clear." },
     { "goalKey": "immunity", "ingredientKey": "vitamin_d", "tier": "supporting", "evidenceGrade": "A", "minEffectiveDose": 25, "unit": "mcg", "preferredForms": ["d3", "cholecalciferol"], "caps": [], "rationale": "Vitamin D is supportive but not usually the sole driver of immunity relevance." },
+    { "goalKey": "immunity", "ingredientKey": "elderberry", "tier": "supporting", "evidenceGrade": "B", "minEffectiveDose": 300, "unit": "mg", "preferredForms": ["extract"], "caps": [], "rationale": "Elderberry is a common immunity-support ingredient when the extract is clear." },
+    { "goalKey": "immunity", "ingredientKey": "quercetin", "tier": "supporting", "evidenceGrade": "B", "minEffectiveDose": 250, "unit": "mg", "preferredForms": [], "caps": [], "rationale": "Quercetin is a conservative immunity-adjacent ingredient for review." },
+    { "goalKey": "immunity", "ingredientKey": "beta_glucan", "tier": "supporting", "evidenceGrade": "B", "minEffectiveDose": 250, "unit": "mg", "preferredForms": ["yeast"], "caps": [], "rationale": "Beta-glucan is a structured immunity-support ingredient when the source is explicit." },
     { "goalKey": "recovery", "ingredientKey": "protein", "tier": "strong", "evidenceGrade": "A", "minEffectiveDose": 20, "unit": "g", "preferredForms": ["whey", "isolate", "plant blend"], "caps": [], "rationale": "Protein is a foundation ingredient for recovery-first products." },
     { "goalKey": "recovery", "ingredientKey": "creatine", "tier": "strong", "evidenceGrade": "A", "minEffectiveDose": 3, "unit": "g", "preferredForms": ["monohydrate"], "caps": [], "rationale": "Creatine is a direct recovery/performance ingredient when form is disclosed." },
     { "goalKey": "recovery", "ingredientKey": "omega_3", "tier": "supporting", "evidenceGrade": "B", "minEffectiveDose": 1000, "unit": "mg", "preferredForms": ["triglyceride", "reesterified triglyceride"], "caps": [], "rationale": "Omega-3s can support recovery but usually sit behind protein/creatine." },
+    { "goalKey": "recovery", "ingredientKey": "tart_cherry", "tier": "supporting", "evidenceGrade": "B", "minEffectiveDose": 480, "unit": "mg", "preferredForms": ["extract", "concentrate"], "caps": [], "rationale": "Tart cherry is a conservative recovery-adjacent ingredient for routine support." },
+    { "goalKey": "recovery", "ingredientKey": "collagen_peptides", "tier": "supporting", "evidenceGrade": "B", "minEffectiveDose": 10000, "unit": "mg", "preferredForms": ["peptides"], "caps": [], "rationale": "Collagen peptides are common in recovery-oriented products when protein-style disclosure is clear." },
+    { "goalKey": "recovery", "ingredientKey": "leucine", "tier": "supporting", "evidenceGrade": "B", "minEffectiveDose": 2500, "unit": "mg", "preferredForms": [], "caps": [], "rationale": "Leucine is a conservative recovery ingredient when the dose is clearly disclosed." },
     { "goalKey": "focus", "ingredientKey": "caffeine", "tier": "strong", "evidenceGrade": "A", "minEffectiveDose": 50, "unit": "mg", "preferredForms": [], "caps": [], "rationale": "Caffeine is a high-signal focus ingredient when the dose is disclosed." },
     { "goalKey": "focus", "ingredientKey": "l_theanine", "tier": "supporting", "evidenceGrade": "B", "minEffectiveDose": 100, "unit": "mg", "preferredForms": [], "caps": [], "rationale": "L-theanine commonly supports focus-oriented stacks." },
     { "goalKey": "focus", "ingredientKey": "bacopa", "tier": "exploratory", "evidenceGrade": "B", "minEffectiveDose": 300, "unit": "mg", "preferredForms": ["bacopa monnieri"], "caps": [], "rationale": "Bacopa is a weaker, slower-burn focus ingredient in this conservative V1 map." },
+    { "goalKey": "focus", "ingredientKey": "citicoline", "tier": "supporting", "evidenceGrade": "A", "minEffectiveDose": 250, "unit": "mg", "preferredForms": ["cdp_choline", "citicoline"], "caps": [], "rationale": "Citicoline is a structured focus ingredient with a clear dose floor." },
+    { "goalKey": "focus", "ingredientKey": "l_tyrosine", "tier": "supporting", "evidenceGrade": "B", "minEffectiveDose": 500, "unit": "mg", "preferredForms": [], "caps": [], "rationale": "L-tyrosine is a conservative focus-support ingredient when disclosure is clear." },
+    { "goalKey": "focus", "ingredientKey": "rhodiola_rosea", "tier": "supporting", "evidenceGrade": "B", "minEffectiveDose": 200, "unit": "mg", "preferredForms": ["extract"], "caps": [], "rationale": "Rhodiola rosea can support focus-adjacent formulas when the extract is explicit." },
     { "goalKey": "libido_enhancement", "ingredientKey": "maca", "tier": "supporting", "evidenceGrade": "B", "minEffectiveDose": 1500, "unit": "mg", "preferredForms": [], "caps": ["eligibility_requires_generic_safety_path"], "rationale": "Maca may be relevant here, but we keep this lane conservative." },
     { "goalKey": "libido_enhancement", "ingredientKey": "zinc", "tier": "supporting", "evidenceGrade": "A", "minEffectiveDose": 10, "unit": "mg", "preferredForms": ["picolinate", "citrate"], "caps": ["eligibility_requires_generic_safety_path"], "rationale": "Zinc can support this goal, but it stays on a generic safety path in V1." },
     { "goalKey": "stress_support", "ingredientKey": "ashwagandha", "tier": "strong", "evidenceGrade": "B", "minEffectiveDose": 300, "unit": "mg", "preferredForms": ["ksm_66", "sensoril"], "caps": [], "rationale": "Ashwagandha is the clearest stress-support ingredient in this V1 map." },

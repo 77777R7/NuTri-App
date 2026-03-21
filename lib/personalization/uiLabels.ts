@@ -182,7 +182,6 @@ export const buildBlockerStrategySummary = (strategy: BlockerStrategy) => {
     case "explanation":
       return "We will first clarify which supplements fit your goals before asking you to set up reminders or a routine.";
     case "checkin":
-    case "check_in":
       return "We will put Daily Check-in and consistency cues first so the habit feels easier to keep.";
     case "optimization":
       return "We will keep personalization light and focus on fine-tuning what already works for you.";

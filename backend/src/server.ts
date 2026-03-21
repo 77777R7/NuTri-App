@@ -196,6 +196,7 @@ import {
 } from "./stackOverlap.js";
 import { createPersonalizationExplanationRouteHandlers } from "./personalization/routes.js";
 import { createGoalNavigatorRouteHandlers } from "./personalization/goalNavigatorRoutes.js";
+import { createGoalNavigatorDebugRouteHandlers } from "./personalization/goalNavigatorDebugRoutes.js";
 import { supabase } from "./supabase.js";
 import type {
   AiSupplementAnalysis,
@@ -9295,6 +9296,7 @@ const kbFormInsightsBatchBodySchema = z
 
 const personalizationExplanationHandlers = createPersonalizationExplanationRouteHandlers();
 const goalNavigatorHandlers = createGoalNavigatorRouteHandlers();
+const goalNavigatorDebugHandlers = createGoalNavigatorDebugRouteHandlers();
 
 /**
  * NuTri daily tips dataset
@@ -9334,6 +9336,22 @@ app.post("/api/personalization/goal-navigator", verifySupabaseToken, async (req:
     } satisfies ErrorResponse);
   }
 });
+
+app.get(
+  "/api/personalization/debug/goal-navigator-bundle",
+  verifySupabaseToken,
+  async (req: Request, res: Response) => {
+    try {
+      await goalNavigatorDebugHandlers.bundleDebug(req, res);
+    } catch (error) {
+      captureException(error, { route: "/api/personalization/debug/goal-navigator-bundle" });
+      console.error("/api/personalization/debug/goal-navigator-bundle unexpected error", error);
+      return res.status(500).json({
+        error: "goal_navigator_bundle_debug_failed",
+      } satisfies ErrorResponse);
+    }
+  },
+);
 
 /**
  * Legacy endpoint for barcode search only (no AI analysis)

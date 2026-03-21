@@ -1,8 +1,10 @@
 import fs from "node:fs";
 import { fileURLToPath } from "node:url";
 
-import type { CatalogPreparedProduct } from "../../../lib/personalization/core/catalogProductEvaluation";
-import { PERSONALIZATION_RULES_VERSION } from "../../../lib/personalization/core/reasonCodes";
+import type { CatalogPreparedProduct } from "../../../lib/personalization/core/catalogProductEvaluation.ts";
+import reasonCodesModule from "../../../lib/personalization/core/reasonCodes.ts";
+
+const { PERSONALIZATION_RULES_VERSION } = reasonCodesModule;
 
 export const GOAL_NAVIGATOR_CANDIDATE_BUNDLE_SCHEMA_VERSION =
   "goal_navigator_candidate_bundle.v1";
@@ -61,7 +63,9 @@ const isCatalogPreparedProduct = (value: unknown): value is CatalogPreparedProdu
 const isBundleEntry = (value: unknown): value is GoalNavigatorCatalogBundleEntry =>
   isRecord(value) && isCatalogPreparedProduct(value.preparedProduct);
 
-const parseArtifact = (value: unknown): GoalNavigatorCatalogBundleArtifact | null => {
+export const parseGoalNavigatorCandidateBundleArtifact = (
+  value: unknown,
+): GoalNavigatorCatalogBundleArtifact | null => {
   if (!isRecord(value)) return null;
   if (value.schemaVersion !== GOAL_NAVIGATOR_CANDIDATE_BUNDLE_SCHEMA_VERSION) return null;
   if (typeof value.generatedAt !== "string" || typeof value.sourceTable !== "string") return null;
@@ -85,7 +89,7 @@ const parseArtifact = (value: unknown): GoalNavigatorCatalogBundleArtifact | nul
     sourceRowCount: value.sourceRowCount,
     notEnoughStructuredDataCount: value.notEnoughStructuredDataCount,
     preparedCandidates: value.preparedCandidates,
-  };
+    };
 };
 
 export const resolveGoalNavigatorCandidateBundlePath = () =>
@@ -114,7 +118,7 @@ export const readGoalNavigatorCandidateBundleArtifact = (
     }
 
     const body = fs.readFileSync(filePath, "utf8");
-    const parsed = parseArtifact(JSON.parse(body));
+    const parsed = parseGoalNavigatorCandidateBundleArtifact(JSON.parse(body));
     CACHE = {
       path: filePath,
       mtimeMs,
@@ -146,5 +150,5 @@ export const readGoalNavigatorCandidateBundleArtifact = (
 };
 
 export const goalNavigatorBundleArtifactInternals = {
-  parseArtifact,
+  parseArtifact: parseGoalNavigatorCandidateBundleArtifact,
 };

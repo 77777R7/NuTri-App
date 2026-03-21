@@ -137,6 +137,87 @@ test('scoreProductGoalMatches carries a generic safety cap for starter ingredien
   assert.ok(matches[0]?.reasons.some((reason) => reason.code === 'ingredient_requires_generic_safety_path'));
 });
 
+test('scoreProductGoalMatches recognizes the expanded core-goal evidence map with conservative tiers', () => {
+  const scenarios = [
+    {
+      goalKey: 'sleep',
+      ingredient: {
+        ingredientKey: 'glycine',
+        amount: 3000,
+        unit: 'mg',
+      },
+      expectedTier: 'related',
+      expectedMinScore: 70,
+    },
+    {
+      goalKey: 'energy',
+      ingredient: {
+        ingredientKey: 'caffeine',
+        amount: 50,
+        unit: 'mg',
+        evidence: [
+          {
+            goalKey: 'energy',
+            evidenceGrade: 'A',
+            minEffectiveDose: 50,
+            unit: 'mg',
+            audit_status: 'verified',
+          },
+        ],
+      },
+      expectedTier: 'strong_match',
+      expectedMinScore: 90,
+    },
+    {
+      goalKey: 'immunity',
+      ingredient: {
+        ingredientKey: 'elderberry',
+        amount: 300,
+        unit: 'mg',
+        formLabel: 'Extract',
+      },
+      expectedTier: 'related',
+      expectedMinScore: 70,
+    },
+    {
+      goalKey: 'recovery',
+      ingredient: {
+        ingredientKey: 'tart_cherry',
+        amount: 480,
+        unit: 'mg',
+        formKey: 'extract',
+      },
+      expectedTier: 'related',
+      expectedMinScore: 70,
+    },
+    {
+      goalKey: 'focus',
+      ingredient: {
+        ingredientKey: 'citicoline',
+        amount: 250,
+        unit: 'mg',
+        formLabel: 'CDP Choline',
+      },
+      expectedTier: 'related',
+      expectedMinScore: 70,
+    },
+  ];
+
+  for (const scenario of scenarios) {
+    const matches = scoreProductGoalMatches({
+      goals: [scenario.goalKey],
+      ingredients: [scenario.ingredient],
+    });
+
+    assert.equal(matches.length, 1);
+    assert.equal(matches[0]?.goalKey, scenario.goalKey);
+    assert.equal(matches[0]?.tier, scenario.expectedTier);
+    assert.ok((matches[0]?.score ?? 0) >= scenario.expectedMinScore);
+    assert.ok(matches[0]?.reasons.some((reason) => reason.code === 'goal_supported_by_ingredient'));
+    assert.ok(matches[0]?.reasons.some((reason) => reason.code === 'dose_meets_effective_floor'));
+  }
+});
+
 test('goalMatchScoring internals normalize ingredient keys and units consistently', () => {
   assert.equal(
     goalMatchScoringInternals.normalizeIngredientKey({ ingredientLabel: 'Vitamin B12' }),

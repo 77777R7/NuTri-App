@@ -68,7 +68,6 @@ jobs:
           if-no-files-found: warn
 
   maintainer-e2e-gates:
-    if: ${{ (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && secrets.SUPABASE_URL != '' && secrets.SUPABASE_SERVICE_ROLE_KEY != '' }}
     runs-on: ubuntu-latest
     timeout-minutes: 35
     env:
@@ -91,27 +90,54 @@ jobs:
       BULK_E2E_ENFORCE_GATES: "1"
       BULK_E2E_UPSERT_MAP: "0"
     steps:
+      - name: Check Maintainer Gate Prerequisites
+        id: gate
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [[ "${GITHUB_EVENT_NAME}" != "schedule" && "${GITHUB_EVENT_NAME}" != "workflow_dispatch" ]]; then
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "Maintainer E2E gates only run on schedule or workflow_dispatch."
+            exit 0
+          fi
+
+          if [[ -z "${SUPABASE_URL}" || -z "${SUPABASE_SERVICE_ROLE_KEY}" ]]; then
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "Skipping maintainer E2E gates because required Supabase secrets are missing."
+            exit 0
+          fi
+
+          echo "enabled=true" >> "$GITHUB_OUTPUT"
+
       - name: Checkout
+        if: steps.gate.outputs.enabled == 'true'
         uses: actions/checkout@v4
 
       - name: Setup Node
+        if: steps.gate.outputs.enabled == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: "22"
 
       - name: Install Root Dependencies
+        if: steps.gate.outputs.enabled == 'true'
         run: npm ci --ignore-scripts
 
       - name: Install Backend Dependencies
+        if: steps.gate.outputs.enabled == 'true'
         run: npm --prefix backend ci
 
       - name: Verify DB Contract
+        if: steps.gate.outputs.enabled == 'true'
         run: node scripts/maintainer/verify-db-contract.mjs
 
       - name: Build Backend
+        if: steps.gate.outputs.enabled == 'true'
         run: npm --prefix backend run build
 
       - name: Start Backend
+        if: steps.gate.outputs.enabled == 'true'
         run: |
           PORT=3001 node backend/dist/server.js > /tmp/backend-e2e.log 2>&1 &
           echo $! > /tmp/backend-e2e.pid
@@ -124,12 +150,13 @@ jobs:
           done
 
       - name: Run Stable Backend Gates
+        if: steps.gate.outputs.enabled == 'true'
         run: node scripts/maintainer/run-backend-gates-stable.mjs --out-dir artifacts/maintainer-e2e
         env:
           RUN_BACKEND_GATES_MANAGE_BACKEND: "0"
 
       - name: Generate Reviewed Diff Artifact (Optional)
-        if: ${{ always() && github.event_name == 'workflow_dispatch' && github.event.inputs.reviewed_before_report != '' && github.event.inputs.reviewed_after_report != '' }}
+        if: ${{ always() && steps.gate.outputs.enabled == 'true' && github.event_name == 'workflow_dispatch' && github.event.inputs.reviewed_before_report != '' && github.event.inputs.reviewed_after_report != '' }}
         run: |
           node scripts/maintainer/diagnose-reviewed-diff.mjs \
             --before-report "${{ github.event.inputs.reviewed_before_report }}" \
@@ -137,7 +164,7 @@ jobs:
             --out-dir artifacts/reviewed_diff
 
       - name: Stop Backend
-        if: always()
+        if: ${{ always() && steps.gate.outputs.enabled == 'true' }}
         run: |
           if [ -f /tmp/backend-e2e.pid ]; then
             kill "$(cat /tmp/backend-e2e.pid)" || true
@@ -145,7 +172,7 @@ jobs:
           sleep 1
 
       - name: Upload Maintainer E2E Artifacts
-        if: always()
+        if: ${{ always() && steps.gate.outputs.enabled == 'true' }}
         uses: actions/upload-artifact@v4
         with:
           name: maintainer-e2e-${{ github.run_id }}-${{ github.run_attempt }}
@@ -155,7 +182,7 @@ jobs:
           if-no-files-found: warn
 
       - name: Upload Maintainer E2E Backend Log
-        if: always()
+        if: ${{ always() && steps.gate.outputs.enabled == 'true' }}
         uses: actions/upload-artifact@v4
         with:
           name: maintainer-e2e-backend-log-${{ github.run_id }}-${{ github.run_attempt }}

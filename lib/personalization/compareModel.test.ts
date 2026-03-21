@@ -65,4 +65,6 @@ test("buildGoalCompareEntries keeps the current product first and ranks peers by
   assert.equal(entries[0]?.productId, "current");
   assert.equal(entries[1]?.productId, "peer-strong");
   assert.equal(entries[2]?.productId, "peer-weak");
+  assert.ok(entries[0]?.whyNotStronger.length);
+  assert.ok(entries[1]?.whyNotStronger.length);
 });

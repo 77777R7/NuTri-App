@@ -150,6 +150,7 @@ export type GoalCompareEntry = {
   tier: GoalFitCardTier;
   confidence: ConfidenceBreakdown;
   whyFit: DecisionReason[];
+  whyNotStronger: DecisionReason[];
   holdbacks: DecisionReason[];
 };
 
@@ -175,7 +176,6 @@ export type BlockerStrategy = {
     | 'schedule'
     | 'explanation'
     | 'education'
-    | 'check_in'
     | 'checkin'
     | 'optimization';
   reminderPriority: 'high' | 'medium' | 'low';
@@ -395,6 +395,16 @@ export type OverrideEvent = {
   field: string;
   value?: string | string[] | boolean | number;
 };
+
+export type PersonalizationEventName =
+  | 'goal_navigator_opened'
+  | 'goal_fit_detail_opened'
+  | 'compare_opened'
+  | 'control_selected'
+  | 'schedule_edited'
+  | 'reminder_disabled'
+  | 'save_then_unsave'
+  | 'first_stack_accepted';
 
 export type FeedbackState = {
   version: string;
