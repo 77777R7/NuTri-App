@@ -3,12 +3,14 @@ import type {
   GoalNavigatorRequest,
   PreferenceVector,
   SupplementTypeKey,
-} from "../../../types/personalization";
+} from "../../../types/personalization.js";
 import {
   createGoalNavigatorCatalogEvaluationService,
   type GoalNavigatorCatalogEvaluationService,
 } from "./catalogEvaluationService.js";
-import { getGoalNavigatorEnabledGoals } from "../../../lib/personalization/core/goalConfidenceProfiles";
+import goalConfidenceProfilesModule from "../../../lib/personalization/core/goalConfidenceProfiles.ts";
+
+const { getGoalNavigatorEnabledGoals } = goalConfidenceProfilesModule;
 
 type RouteRequest = {
   body?: GoalNavigatorRequest;

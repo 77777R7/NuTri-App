@@ -1,8 +1,10 @@
 import fs from "node:fs";
 import { fileURLToPath } from "node:url";
 
-import type { CatalogPreparedProduct } from "../../../lib/personalization/core/catalogProductEvaluation";
-import { PERSONALIZATION_RULES_VERSION } from "../../../lib/personalization/core/reasonCodes";
+import type { CatalogPreparedProduct } from "../../../lib/personalization/core/catalogProductEvaluation.ts";
+import reasonCodesModule from "../../../lib/personalization/core/reasonCodes.ts";
+
+const { PERSONALIZATION_RULES_VERSION } = reasonCodesModule;
 
 export const GOAL_NAVIGATOR_CANDIDATE_BUNDLE_SCHEMA_VERSION =
   "goal_navigator_candidate_bundle.v1";

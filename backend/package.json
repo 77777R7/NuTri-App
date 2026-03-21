@@ -4,14 +4,14 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "tsx watch src/server.ts",
-    "dev:once": "tsx src/server.ts",
+    "dev": "tsx watch --tsconfig tsconfig.runtime.json src/server.ts",
+    "dev:once": "tsx --tsconfig tsconfig.runtime.json src/server.ts",
     "dev:stable": "npm run build && node dist/server.js",
     "start": "node dist/server.js",
-    "build": "tsc -p tsconfig.json",
-    "build:goal-navigator-bundle": "tsx scripts/build-goal-navigator-candidate-bundle.ts",
+    "build": "node scripts/build-render-runtime-wrapper.mjs",
+    "build:goal-navigator-bundle": "tsx --tsconfig tsconfig.runtime.json scripts/build-goal-navigator-candidate-bundle.ts",
     "test": "node --test tests/*.test.mjs",
-    "cleanup:supabase": "tsx scripts/cleanup-supabase-caches.ts"
+    "cleanup:supabase": "tsx --tsconfig tsconfig.runtime.json scripts/cleanup-supabase-caches.ts"
   },
   "dependencies": {
     "@google-cloud/vision": "^5.3.4",

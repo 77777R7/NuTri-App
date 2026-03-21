@@ -1,7 +1,7 @@
 import type {
   ExplanationPayload,
   ExplanationResult,
-} from "../../../../types/personalization";
+} from "../../../../types/personalization.js";
 import {
   renderDeterministicExplanation,
   type PersonalizationExplainer,

@@ -2,7 +2,7 @@ import type {
   ExplanationResult,
   ExplanationSurface,
   PersonalizationSnapshot,
-} from "../../../types/personalization";
+} from "../../../types/personalization.js";
 import { createSnapshotExplanationService } from "./snapshotService.js";
 
 type RouteRequest = {

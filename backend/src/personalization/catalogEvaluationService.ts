@@ -3,19 +3,20 @@ import type {
   GoalNavigatorRequest,
   GoalNavigatorResponse,
   SupplementTypeKey,
-} from "../../../types/personalization";
-import {
-  evaluatePreparedCatalogProduct,
-  prepareCatalogProduct,
-} from "../../../lib/personalization/core/catalogProductEvaluation";
-import { buildGoalNavigatorResponse } from "../../../lib/personalization/core/goalNavigator";
-import { PERSONALIZATION_RULES_VERSION } from "../../../lib/personalization/core/reasonCodes";
+} from "../../../types/personalization.js";
+import catalogProductEvaluationModule from "../../../lib/personalization/core/catalogProductEvaluation.ts";
+import goalNavigatorModule from "../../../lib/personalization/core/goalNavigator.ts";
+import reasonCodesModule from "../../../lib/personalization/core/reasonCodes.ts";
 import {
   readGoalNavigatorCandidateBundleArtifact,
   type GoalNavigatorCatalogBundleEntry,
 } from "./goalNavigatorBundleArtifact.js";
 import { supabase } from "../supabase.js";
 import { normalizeIherbSupplementFactsRows } from "../iherbOverlayIngredients.js";
+
+const { evaluatePreparedCatalogProduct, prepareCatalogProduct } = catalogProductEvaluationModule;
+const { buildGoalNavigatorResponse } = goalNavigatorModule;
+const { PERSONALIZATION_RULES_VERSION } = reasonCodesModule;
 
 type GoalNavigatorOverlayRow = {
   product_id?: string | null;
