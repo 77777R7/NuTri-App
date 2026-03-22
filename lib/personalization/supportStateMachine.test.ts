@@ -146,3 +146,124 @@ test("compileSupportState uses recent install events to recover install state cr
 
   assert.equal(result.supportState, "install");
 });
+
+test("compileSupportState keeps save-then-unsave users in choose even after first save", () => {
+  const result = compileSupportState({
+    profile: {
+      declared: {
+        goals: [{ key: "energy", priority: 100 }],
+        preferredTypes: ["vitamin"],
+      },
+      observed: {
+        consistencyLevel: "low",
+        savedStackCount: 1,
+        duplicateRisk: {
+          level: "none",
+          ingredientKeys: [],
+        },
+      },
+      derived: {
+        dietReviewLanes: [],
+        activityPlanKeys: [],
+      },
+      meta: {
+        profileVersion: "personalization-profile/v1-phase1",
+        computedAt: "2026-03-22T01:00:00.000Z",
+      },
+    },
+    eventSummary: {
+      totalCount: 1,
+      lastEventAt: "2026-03-22T01:00:00.000Z",
+      countsByEventName: {
+        save_then_unsave: 1,
+      },
+      countsBySurface: {
+        my_saved: 1,
+      },
+      recentEvents: [],
+    },
+  });
+
+  assert.equal(result.supportState, "choose");
+});
+
+test("compileSupportState uses repeated reminder pushback to avoid premature install", () => {
+  const result = compileSupportState({
+    profile: {
+      declared: {
+        goals: [{ key: "sleep", priority: 100 }],
+        preferredTypes: ["vitamin"],
+      },
+      observed: {
+        consistencyLevel: "low",
+        savedStackCount: 1,
+        duplicateRisk: {
+          level: "none",
+          ingredientKeys: [],
+        },
+      },
+      derived: {
+        dietReviewLanes: [],
+        activityPlanKeys: [],
+      },
+      meta: {
+        profileVersion: "personalization-profile/v1-phase1",
+        computedAt: "2026-03-22T01:00:00.000Z",
+      },
+    },
+    eventSummary: {
+      totalCount: 2,
+      lastEventAt: "2026-03-22T01:00:00.000Z",
+      countsByEventName: {
+        reminder_disabled: 2,
+      },
+      countsBySurface: {
+        schedule_defaults: 2,
+      },
+      recentEvents: [],
+    },
+  });
+
+  assert.equal(result.supportState, "choose");
+});
+
+test("compileSupportState keeps install when reminder pushback happens after real setup progress", () => {
+  const result = compileSupportState({
+    profile: {
+      declared: {
+        goals: [{ key: "sleep", priority: 100 }],
+        preferredTypes: ["vitamin"],
+      },
+      observed: {
+        consistencyLevel: "medium",
+        savedStackCount: 1,
+        duplicateRisk: {
+          level: "none",
+          ingredientKeys: [],
+        },
+      },
+      derived: {
+        dietReviewLanes: [],
+        activityPlanKeys: [],
+      },
+      meta: {
+        profileVersion: "personalization-profile/v1-phase1",
+        computedAt: "2026-03-22T01:00:00.000Z",
+      },
+    },
+    eventSummary: {
+      totalCount: 3,
+      lastEventAt: "2026-03-22T01:00:00.000Z",
+      countsByEventName: {
+        schedule_edited: 1,
+        reminder_disabled: 2,
+      },
+      countsBySurface: {
+        schedule_defaults: 3,
+      },
+      recentEvents: [],
+    },
+  });
+
+  assert.equal(result.supportState, "install");
+});

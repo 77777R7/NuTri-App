@@ -92,6 +92,30 @@ const hasRecentReminderPushback = (eventSummary?: PersonalizationEventSummary) =
 const hasRecentSaveInstability = (eventSummary?: PersonalizationEventSummary) =>
   getEventCount(eventSummary, "save_then_unsave") > 0;
 
+const shouldHoldInstallForFriction = (input: {
+  eventSummary?: PersonalizationEventSummary;
+  savedStackCount: number;
+  firstStackAccepted: boolean;
+  scheduleCustomized: boolean;
+  installSavedStackCount: number;
+}) => {
+  const reminderDisabledCount = getEventCount(input.eventSummary, "reminder_disabled");
+  const saveThenUnsaveCount = getEventCount(input.eventSummary, "save_then_unsave");
+
+  if (input.firstStackAccepted || input.scheduleCustomized) {
+    return false;
+  }
+
+  if (saveThenUnsaveCount > 0) {
+    return true;
+  }
+
+  return (
+    reminderDisabledCount >= 2 &&
+    input.savedStackCount <= input.installSavedStackCount
+  );
+};
+
 export const compileSupportState = (input: CompileSupportStateInput): CompiledSupportState => {
   const { profile, feedbackState, eventSummary } = input;
   const thresholds = SUPPORT_STATE_RULES.thresholds;
@@ -105,6 +129,14 @@ export const compileSupportState = (input: CompileSupportStateInput): CompiledSu
     hasFirstStackAcceptance(feedbackState) || getEventCount(eventSummary, "first_stack_accepted") > 0;
   const decisionResearching = hasRecentDecisionResearch(eventSummary);
   const saveInstability = hasRecentSaveInstability(eventSummary);
+  const reminderPushbackCount = getEventCount(eventSummary, "reminder_disabled");
+  const holdInstallForFriction = shouldHoldInstallForFriction({
+    eventSummary,
+    savedStackCount,
+    firstStackAccepted,
+    scheduleCustomized,
+    installSavedStackCount: thresholds.installSavedStackCount,
+  });
 
   if (
     consistencyLevel === "high" &&
@@ -137,10 +169,13 @@ export const compileSupportState = (input: CompileSupportStateInput): CompiledSu
   }
 
   if (
-    firstStackAccepted ||
-    scheduleCustomized ||
-    hasRecentInstallProgress(eventSummary) ||
-    savedStackCount >= thresholds.installSavedStackCount
+    !holdInstallForFriction &&
+    (
+      firstStackAccepted ||
+      scheduleCustomized ||
+      hasRecentInstallProgress(eventSummary) ||
+      savedStackCount >= thresholds.installSavedStackCount
+    )
   ) {
     return {
       supportState: "install",
@@ -149,7 +184,8 @@ export const compileSupportState = (input: CompileSupportStateInput): CompiledSu
           savedStackCount,
           scheduleCustomized,
           firstStackAccepted,
-          reminderPushback: hasRecentReminderPushback(eventSummary),
+          reminderPushback: reminderPushbackCount > 0,
+          reminderDisabledCount: reminderPushbackCount,
         }),
       ],
     };
@@ -159,7 +195,8 @@ export const compileSupportState = (input: CompileSupportStateInput): CompiledSu
     (blocker && SUPPORT_STATE_RULES.chooseBlockers.includes(blocker)) ||
     hasGoalFitSteering(feedbackState) ||
     decisionResearching ||
-    saveInstability
+    saveInstability ||
+    holdInstallForFriction
   ) {
     return {
       supportState: "choose",
@@ -170,6 +207,8 @@ export const compileSupportState = (input: CompileSupportStateInput): CompiledSu
           compareOpenCount: getEventCount(eventSummary, "compare_opened"),
           detailOpenCount: getEventCount(eventSummary, "goal_fit_detail_opened"),
           saveInstability,
+          reminderDisabledCount: reminderPushbackCount,
+          holdInstallForFriction,
         }),
       ],
     };
@@ -194,5 +233,6 @@ export const supportStateMachineInternals = {
   hasRecentSaveInstability,
   hasScheduleCustomization,
   getEventCount,
+  shouldHoldInstallForFriction,
   SUPPORT_STATE_RULES,
 };
