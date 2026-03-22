@@ -2,6 +2,7 @@ import supportStateRulesData from "@/data/personalization/support_state_rules.v1
 import type {
   DecisionReason,
   FeedbackState,
+  PersonalizationEventSummary,
   PersonalizationProfile,
   SupportState,
 } from "@/types/personalization";
@@ -20,6 +21,7 @@ type SupportStateRulesFile = {
 type CompileSupportStateInput = {
   profile: PersonalizationProfile;
   feedbackState?: FeedbackState;
+  eventSummary?: PersonalizationEventSummary;
 };
 
 export type CompiledSupportState = {
@@ -61,13 +63,48 @@ const hasGoalFitSteering = (feedbackState?: FeedbackState) => {
   );
 };
 
+const getEventCount = (
+  eventSummary: PersonalizationEventSummary | undefined,
+  eventName:
+    | "goal_navigator_opened"
+    | "goal_fit_detail_opened"
+    | "compare_opened"
+    | "control_selected"
+    | "schedule_edited"
+    | "reminder_disabled"
+    | "save_then_unsave"
+    | "first_stack_accepted",
+) => eventSummary?.countsByEventName[eventName] ?? 0;
+
+const hasRecentDecisionResearch = (eventSummary?: PersonalizationEventSummary) =>
+  getEventCount(eventSummary, "goal_navigator_opened") +
+    getEventCount(eventSummary, "goal_fit_detail_opened") +
+    getEventCount(eventSummary, "compare_opened") >=
+  2;
+
+const hasRecentInstallProgress = (eventSummary?: PersonalizationEventSummary) =>
+  getEventCount(eventSummary, "first_stack_accepted") > 0 ||
+  getEventCount(eventSummary, "schedule_edited") > 0;
+
+const hasRecentReminderPushback = (eventSummary?: PersonalizationEventSummary) =>
+  getEventCount(eventSummary, "reminder_disabled") > 0;
+
+const hasRecentSaveInstability = (eventSummary?: PersonalizationEventSummary) =>
+  getEventCount(eventSummary, "save_then_unsave") > 0;
+
 export const compileSupportState = (input: CompileSupportStateInput): CompiledSupportState => {
-  const { profile, feedbackState } = input;
+  const { profile, feedbackState, eventSummary } = input;
   const thresholds = SUPPORT_STATE_RULES.thresholds;
   const savedStackCount = profile.observed.savedStackCount ?? 0;
   const currentStreak = profile.observed.currentStreak ?? 0;
   const blocker = profile.declared.adherenceBlocker;
   const consistencyLevel = profile.observed.consistencyLevel;
+  const scheduleCustomized =
+    hasScheduleCustomization(feedbackState) || getEventCount(eventSummary, "schedule_edited") > 0;
+  const firstStackAccepted =
+    hasFirstStackAcceptance(feedbackState) || getEventCount(eventSummary, "first_stack_accepted") > 0;
+  const decisionResearching = hasRecentDecisionResearch(eventSummary);
+  const saveInstability = hasRecentSaveInstability(eventSummary);
 
   if (
     consistencyLevel === "high" &&
@@ -100,8 +137,9 @@ export const compileSupportState = (input: CompileSupportStateInput): CompiledSu
   }
 
   if (
-    hasFirstStackAcceptance(feedbackState) ||
-    hasScheduleCustomization(feedbackState) ||
+    firstStackAccepted ||
+    scheduleCustomized ||
+    hasRecentInstallProgress(eventSummary) ||
     savedStackCount >= thresholds.installSavedStackCount
   ) {
     return {
@@ -109,7 +147,9 @@ export const compileSupportState = (input: CompileSupportStateInput): CompiledSu
       reasons: [
         buildReason("support_state_install", {
           savedStackCount,
-          scheduleCustomized: hasScheduleCustomization(feedbackState),
+          scheduleCustomized,
+          firstStackAccepted,
+          reminderPushback: hasRecentReminderPushback(eventSummary),
         }),
       ],
     };
@@ -117,7 +157,9 @@ export const compileSupportState = (input: CompileSupportStateInput): CompiledSu
 
   if (
     (blocker && SUPPORT_STATE_RULES.chooseBlockers.includes(blocker)) ||
-    hasGoalFitSteering(feedbackState)
+    hasGoalFitSteering(feedbackState) ||
+    decisionResearching ||
+    saveInstability
   ) {
     return {
       supportState: "choose",
@@ -125,6 +167,9 @@ export const compileSupportState = (input: CompileSupportStateInput): CompiledSu
         buildReason("support_state_choose", {
           blocker: blocker ?? "none",
           goalFitSteering: hasGoalFitSteering(feedbackState),
+          compareOpenCount: getEventCount(eventSummary, "compare_opened"),
+          detailOpenCount: getEventCount(eventSummary, "goal_fit_detail_opened"),
+          saveInstability,
         }),
       ],
     };
@@ -143,6 +188,11 @@ export const compileSupportState = (input: CompileSupportStateInput): CompiledSu
 export const supportStateMachineInternals = {
   hasFirstStackAcceptance,
   hasGoalFitSteering,
+  hasRecentDecisionResearch,
+  hasRecentInstallProgress,
+  hasRecentReminderPushback,
+  hasRecentSaveInstability,
   hasScheduleCustomization,
+  getEventCount,
   SUPPORT_STATE_RULES,
 };

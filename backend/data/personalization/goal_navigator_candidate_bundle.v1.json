@@ -1,7 +1,7 @@
 {
   "schemaVersion": "goal_navigator_candidate_bundle.v1",
   "rulesVersion": "personalization-rules/v1-phase7",
-  "generatedAt": "2026-03-21T23:27:28.131Z",
+  "generatedAt": "2026-03-22T00:00:07.604Z",
   "sourceTable": "iherb_overlay_products",
   "sourceRowCount": 180,
   "notEnoughStructuredDataCount": 9,
@@ -9245,10 +9245,6 @@
             "dose": "100 mg"
           },
           {
-            "name": "HMRlignan (7-Hydroxymatairesinol Potassium Acetate Complex) (from Picea abies Wood Extract)",
-            "dose": "25 mg"
-          },
-          {
             "name": "Saw Palmetto Fruit Extract",
             "dose": "10 mg"
           },
@@ -9305,14 +9301,6 @@
             "unit": "mg",
             "disclosureQuality": "medium",
             "proprietaryBlend": false
-          },
-          {
-            "ingredientLabel": "HMRlignan (7-Hydroxymatairesinol Potassium Acetate Complex) (from Picea abies Wood Extract)",
-            "name": "HMRlignan (7-Hydroxymatairesinol Potassium Acetate Complex) (from Picea abies Wood Extract)",
-            "amount": 25,
-            "unit": "mg",
-            "disclosureQuality": "medium",
-            "proprietaryBlend": true
           },
           {
             "ingredientLabel": "Saw Palmetto Fruit Extract",
@@ -9520,15 +9508,50 @@
         "externalUrl": "https://www.iherb.com/pr/zahler-paraguard-30-capsules/142875",
         "title": "Zahler, ParaGuard™, 30 Capsules",
         "brandName": "Zahler",
-        "dosageText": "77 mg",
         "imageUrl": "https://cloudinary.images-iherb.com/image/upload/f_auto,q_auto:eco/images/zah/zah08305/u/20.jpg",
         "description": "Advanced Nutrition by Zahler®Super Strength FormulaEasy to TakeOnly One Capsule Required DailyAdvanced Intestinal Flora SupportSupports A Healthy Digestive SystemDigestive HealthHerbal Dietary SupplementGluten FreeDairy FreeSoy FreeNon-GMOVegetarian FriendlyMade in GMP FacilityKosher PareveFeel Better Everyday™Zahler's® ParaGuard™ contains a unique and intensive blend of 10 powerful herbs that have traditionally been used to support and restore vitality to digestion and microbial balance.A Unique & Intensive Blend that Includes:Walnut HullWormwood HerbClove FlowerPumpkin Seed Fennel Seed​Garlic Bulb",
         "suggestedUse": "(For Adults): Mild Support: Take 1 capsule daily for 10 days. Intensive Support: Take 1 capsule daily for 30 days. ParaGuard™ is best taken on an empty stomach and with a full glass of water, preferably earlier in the day.",
         "factsStatus": "partial",
         "overlayIngredients": [
           {
-            "name": "Proprietary Extract Blend",
-            "dose": "77 mg"
+            "name": "Marshmallow (Althaea officinalis) Root Extract",
+            "dose": null
+          },
+          {
+            "name": "Fennel (Foeniculum vulgare) Seed Extract",
+            "dose": null
+          },
+          {
+            "name": "Black Walnut (Juglans nigra) Hull Extract",
+            "dose": null
+          },
+          {
+            "name": "Slippery Elm (Ulmus rubra) Bark Extract",
+            "dose": null
+          },
+          {
+            "name": "Pumpkin (Cucurbita pepo) Seed Extract",
+            "dose": null
+          },
+          {
+            "name": "Wormwood (Artemisia absinthium) Herb Extract",
+            "dose": null
+          },
+          {
+            "name": "Clove (Syzygium aromaticum) Flower Extract",
+            "dose": null
+          },
+          {
+            "name": "Garlic (Allium sativum) Bulb Extract",
+            "dose": null
+          },
+          {
+            "name": "Peppermint (Mentha x piperita) Leaf Extract",
+            "dose": null
+          },
+          {
+            "name": "Oregano (Origanum vulgare) Leaf Extract",
+            "dose": null
           }
         ],
         "typeKeys": [
@@ -9536,12 +9559,84 @@
         ],
         "ingredientInputs": [
           {
-            "ingredientLabel": "Proprietary Extract Blend",
-            "name": "Proprietary Extract Blend",
-            "amount": 77,
-            "unit": "mg",
-            "disclosureQuality": "medium",
-            "proprietaryBlend": true
+            "ingredientLabel": "Marshmallow (Althaea officinalis) Root Extract",
+            "name": "Marshmallow (Althaea officinalis) Root Extract",
+            "amount": null,
+            "unit": null,
+            "disclosureQuality": "low",
+            "proprietaryBlend": false
+          },
+          {
+            "ingredientLabel": "Fennel (Foeniculum vulgare) Seed Extract",
+            "name": "Fennel (Foeniculum vulgare) Seed Extract",
+            "amount": null,
+            "unit": null,
+            "disclosureQuality": "low",
+            "proprietaryBlend": false
+          },
+          {
+            "ingredientLabel": "Black Walnut (Juglans nigra) Hull Extract",
+            "name": "Black Walnut (Juglans nigra) Hull Extract",
+            "amount": null,
+            "unit": null,
+            "disclosureQuality": "low",
+            "proprietaryBlend": false
+          },
+          {
+            "ingredientLabel": "Slippery Elm (Ulmus rubra) Bark Extract",
+            "name": "Slippery Elm (Ulmus rubra) Bark Extract",
+            "amount": null,
+            "unit": null,
+            "disclosureQuality": "low",
+            "proprietaryBlend": false
+          },
+          {
+            "ingredientLabel": "Pumpkin (Cucurbita pepo) Seed Extract",
+            "name": "Pumpkin (Cucurbita pepo) Seed Extract",
+            "amount": null,
+            "unit": null,
+            "disclosureQuality": "low",
+            "proprietaryBlend": false
+          },
+          {
+            "ingredientLabel": "Wormwood (Artemisia absinthium) Herb Extract",
+            "name": "Wormwood (Artemisia absinthium) Herb Extract",
+            "amount": null,
+            "unit": null,
+            "disclosureQuality": "low",
+            "proprietaryBlend": false
+          },
+          {
+            "ingredientLabel": "Clove (Syzygium aromaticum) Flower Extract",
+            "name": "Clove (Syzygium aromaticum) Flower Extract",
+            "amount": null,
+            "unit": null,
+            "disclosureQuality": "low",
+            "proprietaryBlend": false
+          },
+          {
+            "ingredientLabel": "Garlic (Allium sativum) Bulb Extract",
+            "name": "Garlic (Allium sativum) Bulb Extract",
+            "amount": null,
+            "unit": null,
+            "disclosureQuality": "low",
+            "proprietaryBlend": false
+          },
+          {
+            "ingredientLabel": "Peppermint (Mentha x piperita) Leaf Extract",
+            "name": "Peppermint (Mentha x piperita) Leaf Extract",
+            "amount": null,
+            "unit": null,
+            "disclosureQuality": "low",
+            "proprietaryBlend": false
+          },
+          {
+            "ingredientLabel": "Oregano (Origanum vulgare) Leaf Extract",
+            "name": "Oregano (Origanum vulgare) Leaf Extract",
+            "amount": null,
+            "unit": null,
+            "disclosureQuality": "low",
+            "proprietaryBlend": false
           }
         ],
         "savedProductSeed": {
@@ -9553,7 +9648,6 @@
           "display": {
             "title": "Zahler, ParaGuard™, 30 Capsules",
             "brandName": "Zahler",
-            "dosageText": "77 mg",
             "imageUrl": "https://cloudinary.images-iherb.com/image/upload/f_auto,q_auto:eco/images/zah/zah08305/u/20.jpg"
           }
         }
@@ -9662,35 +9756,134 @@
         "externalUrl": "https://www.iherb.com/pr/zahler-paraguard-4-fl-oz-118-ml/76641",
         "title": "Zahler, ParaGuard™, 4 fl oz (118 ml)",
         "brandName": "Zahler",
-        "dosageText": "77 mg",
         "imageUrl": "https://cloudinary.images-iherb.com/image/upload/f_auto,q_auto:eco/images/zah/zah08102/u/62.jpg",
         "description": "Advanced Nutrition Gold Standard 10 in One Intensive Support FormulaAdvanced HealthHerbal Dietary SupplementAdvanced Intestinal Flora SupportKosher PareveManufactured in a GMP Certified FacilityGluten FreeSoy FreeDairy FreeSupports Healthy Digestive SystemZahler's® ParaGuard™ contains a unique, intensive blend of 10 herbs and essential oils that have traditionally been used to support and restore vitality to digestion and microbial balance.What's Included:Walnut HullWormwood HerbClove BudPumpkin SeedFennel SeedGarlic Bulb",
         "suggestedUse": "Ages 3-6 Years:Mild Support: 15 drops 2x daily for 10 days.Intensive Support: 30 drops 2x daily for 30 days.Ages 7-12 Years:Mild Support: 20 drops 3x daily for 10 days.Intensive Support: 30 drops 3x daily for 30 days.Adults:Mild Support: 30 drops 3x daily for 10 days.Intensive Support: 30 drops 4x daily for 30 days.",
         "factsStatus": "partial",
         "overlayIngredients": [
           {
-            "name": "Proprietary Blend",
-            "dose": "77 mg"
+            "name": "Extracts of Fennel Seed",
+            "dose": null
+          },
+          {
+            "name": "Marshmallow Root",
+            "dose": null
+          },
+          {
+            "name": "Black Walnut Hull",
+            "dose": null
+          },
+          {
+            "name": "Pumpkin Seed",
+            "dose": null
+          },
+          {
+            "name": "Slippery Elm Bark",
+            "dose": null
+          },
+          {
+            "name": "Wormwood Herb",
+            "dose": null
+          },
+          {
+            "name": "Clove Bud",
+            "dose": null
+          },
+          {
+            "name": "Garlic Bulb",
+            "dose": null
+          },
+          {
+            "name": "Oregano Leaf Oil and Peppermint Leaf Oil.Made from 400 mg of dried herb",
+            "dose": null
           }
         ],
-        "typeKeys": [],
+        "typeKeys": [
+          "herb"
+        ],
         "ingredientInputs": [
           {
-            "ingredientLabel": "Proprietary Blend",
-            "name": "Proprietary Blend",
-            "amount": 77,
-            "unit": "mg",
-            "disclosureQuality": "medium",
-            "proprietaryBlend": true
+            "ingredientLabel": "Extracts of Fennel Seed",
+            "name": "Extracts of Fennel Seed",
+            "amount": null,
+            "unit": null,
+            "disclosureQuality": "low",
+            "proprietaryBlend": false
+          },
+          {
+            "ingredientLabel": "Marshmallow Root",
+            "name": "Marshmallow Root",
+            "amount": null,
+            "unit": null,
+            "disclosureQuality": "low",
+            "proprietaryBlend": false
+          },
+          {
+            "ingredientLabel": "Black Walnut Hull",
+            "name": "Black Walnut Hull",
+            "amount": null,
+            "unit": null,
+            "disclosureQuality": "low",
+            "proprietaryBlend": false
+          },
+          {
+            "ingredientLabel": "Pumpkin Seed",
+            "name": "Pumpkin Seed",
+            "amount": null,
+            "unit": null,
+            "disclosureQuality": "low",
+            "proprietaryBlend": false
+          },
+          {
+            "ingredientLabel": "Slippery Elm Bark",
+            "name": "Slippery Elm Bark",
+            "amount": null,
+            "unit": null,
+            "disclosureQuality": "low",
+            "proprietaryBlend": false
+          },
+          {
+            "ingredientLabel": "Wormwood Herb",
+            "name": "Wormwood Herb",
+            "amount": null,
+            "unit": null,
+            "disclosureQuality": "low",
+            "proprietaryBlend": false
+          },
+          {
+            "ingredientLabel": "Clove Bud",
+            "name": "Clove Bud",
+            "amount": null,
+            "unit": null,
+            "disclosureQuality": "low",
+            "proprietaryBlend": false
+          },
+          {
+            "ingredientLabel": "Garlic Bulb",
+            "name": "Garlic Bulb",
+            "amount": null,
+            "unit": null,
+            "disclosureQuality": "low",
+            "proprietaryBlend": false
+          },
+          {
+            "ingredientLabel": "Oregano Leaf Oil and Peppermint Leaf Oil.Made from 400 mg of dried herb",
+            "name": "Oregano Leaf Oil and Peppermint Leaf Oil.Made from 400 mg of dried herb",
+            "amount": null,
+            "unit": null,
+            "disclosureQuality": "low",
+            "proprietaryBlend": false
           }
         ],
         "savedProductSeed": {
           "productId": "76641",
           "factsStatus": "partial",
+          "typeKeys": [
+            "herb"
+          ],
           "display": {
             "title": "Zahler, ParaGuard™, 4 fl oz (118 ml)",
             "brandName": "Zahler",
-            "dosageText": "77 mg",
             "imageUrl": "https://cloudinary.images-iherb.com/image/upload/f_auto,q_auto:eco/images/zah/zah08102/u/62.jpg"
           }
         }
@@ -9735,8 +9928,16 @@
             "dose": "80 mg"
           },
           {
-            "name": "Proprietary Blend",
-            "dose": "50 mg"
+            "name": "Cabbage Palm Fruit Extract",
+            "dose": null
+          },
+          {
+            "name": "Pomegranate Fruit Powder",
+            "dose": null
+          },
+          {
+            "name": "Lycium Fruit Extract",
+            "dose": null
           },
           {
             "name": "Camu-camu Fruit Extract",
@@ -9805,12 +10006,28 @@
             "proprietaryBlend": false
           },
           {
-            "ingredientLabel": "Proprietary Blend",
-            "name": "Proprietary Blend",
-            "amount": 50,
-            "unit": "mg",
-            "disclosureQuality": "medium",
-            "proprietaryBlend": true
+            "ingredientLabel": "Cabbage Palm Fruit Extract",
+            "name": "Cabbage Palm Fruit Extract",
+            "amount": null,
+            "unit": null,
+            "disclosureQuality": "low",
+            "proprietaryBlend": false
+          },
+          {
+            "ingredientLabel": "Pomegranate Fruit Powder",
+            "name": "Pomegranate Fruit Powder",
+            "amount": null,
+            "unit": null,
+            "disclosureQuality": "low",
+            "proprietaryBlend": false
+          },
+          {
+            "ingredientLabel": "Lycium Fruit Extract",
+            "name": "Lycium Fruit Extract",
+            "amount": null,
+            "unit": null,
+            "disclosureQuality": "low",
+            "proprietaryBlend": false
           },
           {
             "ingredientLabel": "Camu-camu Fruit Extract",
@@ -13833,35 +14050,170 @@
         "externalUrl": "https://www.iherb.com/pr/zahler-paraguard-advanced-intestinal-flora-support-90-softgels/81460",
         "title": "Zahler, ParaGuard™, Advanced Intestinal Flora Support, 90 Softgels",
         "brandName": "Zahler",
-        "dosageText": "200 mg",
         "imageUrl": "https://cloudinary.images-iherb.com/image/upload/f_auto,q_auto:eco/images/zah/zah08187/u/64.jpg",
         "description": "Advanced Nutrition by Zahler® Easy to Swallow SoftgelSupports a Healthy Digestive SystemDigestive HealthHerbal Dietary SupplementFeel Better Everyday™Gluten FreeDairy FreeNon-GMOMade in a GMP FacilityKosher PareveKosher DairyA Unique & Intensive Blend that Includes:Walnut hullWormwood herbClove budPumpkin seedFennel seedPeppermint leafParaGuard™ Advanced Intestinal Flora SupportZahler's® ParaGuard™ contains a unique and intensive blend of 10 powerful herbs that have traditionally been used to support and restore vitality to digestion and microbial balance.",
         "suggestedUse": "Ages 3-6 years: Mild Support: 1 softgel daily for 10 days.Intensive Support: 1 softgel 2x daily for 30 days.Ages 7-12 Years:Mild Support: 1 softgel 2x daily for 10 days.Intensive Support: 1 softgel 3x daily for 30 days.Adults:Mild Support: 1 softgel 3x daily for 10 days.Intensive Support: 1 softgel 4x daily for 30 days.",
         "factsStatus": "partial",
         "overlayIngredients": [
           {
-            "name": "ParaGuard Proprietary Blend",
-            "dose": "200 mg"
+            "name": "Sunflower Lecithin",
+            "dose": null
+          },
+          {
+            "name": "Medium Chain Triglycerides",
+            "dose": null
+          },
+          {
+            "name": "Black Walnut (Juglans nigra) Hull",
+            "dose": null
+          },
+          {
+            "name": "Clove (Syzygium aromaticum) bud",
+            "dose": null
+          },
+          {
+            "name": "Garlic (Allium sativum L.) Bulb",
+            "dose": null
+          },
+          {
+            "name": "Peppermint (Mentha piperita) Leaf",
+            "dose": null
+          },
+          {
+            "name": "Oregano (Origanum vulgare L.) Oil",
+            "dose": null
+          },
+          {
+            "name": "Fennel (Foeniculum vulgare) Seed",
+            "dose": null
+          },
+          {
+            "name": "Quassia (Quassia amara) Wood",
+            "dose": null
+          },
+          {
+            "name": "Pumpkin (Cucurbita pepo) Seed",
+            "dose": null
+          },
+          {
+            "name": "Wormwood (Artemisia annua) Herb",
+            "dose": null
+          },
+          {
+            "name": "Bayberry (Myrica rubra) Bark",
+            "dose": null
           }
         ],
-        "typeKeys": [],
+        "typeKeys": [
+          "herb"
+        ],
         "ingredientInputs": [
           {
-            "ingredientLabel": "ParaGuard Proprietary Blend",
-            "name": "ParaGuard Proprietary Blend",
-            "amount": 200,
-            "unit": "mg",
-            "disclosureQuality": "medium",
-            "proprietaryBlend": true
+            "ingredientLabel": "Sunflower Lecithin",
+            "name": "Sunflower Lecithin",
+            "amount": null,
+            "unit": null,
+            "disclosureQuality": "low",
+            "proprietaryBlend": false
+          },
+          {
+            "ingredientLabel": "Medium Chain Triglycerides",
+            "name": "Medium Chain Triglycerides",
+            "amount": null,
+            "unit": null,
+            "disclosureQuality": "low",
+            "proprietaryBlend": false
+          },
+          {
+            "ingredientLabel": "Black Walnut (Juglans nigra) Hull",
+            "name": "Black Walnut (Juglans nigra) Hull",
+            "amount": null,
+            "unit": null,
+            "disclosureQuality": "low",
+            "proprietaryBlend": false
+          },
+          {
+            "ingredientLabel": "Clove (Syzygium aromaticum) bud",
+            "name": "Clove (Syzygium aromaticum) bud",
+            "amount": null,
+            "unit": null,
+            "disclosureQuality": "low",
+            "proprietaryBlend": false
+          },
+          {
+            "ingredientLabel": "Garlic (Allium sativum L.) Bulb",
+            "name": "Garlic (Allium sativum L.) Bulb",
+            "amount": null,
+            "unit": null,
+            "disclosureQuality": "low",
+            "proprietaryBlend": false
+          },
+          {
+            "ingredientLabel": "Peppermint (Mentha piperita) Leaf",
+            "name": "Peppermint (Mentha piperita) Leaf",
+            "amount": null,
+            "unit": null,
+            "disclosureQuality": "low",
+            "proprietaryBlend": false
+          },
+          {
+            "ingredientLabel": "Oregano (Origanum vulgare L.) Oil",
+            "name": "Oregano (Origanum vulgare L.) Oil",
+            "amount": null,
+            "unit": null,
+            "disclosureQuality": "low",
+            "proprietaryBlend": false
+          },
+          {
+            "ingredientLabel": "Fennel (Foeniculum vulgare) Seed",
+            "name": "Fennel (Foeniculum vulgare) Seed",
+            "amount": null,
+            "unit": null,
+            "disclosureQuality": "low",
+            "proprietaryBlend": false
+          },
+          {
+            "ingredientLabel": "Quassia (Quassia amara) Wood",
+            "name": "Quassia (Quassia amara) Wood",
+            "amount": null,
+            "unit": null,
+            "disclosureQuality": "low",
+            "proprietaryBlend": false
+          },
+          {
+            "ingredientLabel": "Pumpkin (Cucurbita pepo) Seed",
+            "name": "Pumpkin (Cucurbita pepo) Seed",
+            "amount": null,
+            "unit": null,
+            "disclosureQuality": "low",
+            "proprietaryBlend": false
+          },
+          {
+            "ingredientLabel": "Wormwood (Artemisia annua) Herb",
+            "name": "Wormwood (Artemisia annua) Herb",
+            "amount": null,
+            "unit": null,
+            "disclosureQuality": "low",
+            "proprietaryBlend": false
+          },
+          {
+            "ingredientLabel": "Bayberry (Myrica rubra) Bark",
+            "name": "Bayberry (Myrica rubra) Bark",
+            "amount": null,
+            "unit": null,
+            "disclosureQuality": "low",
+            "proprietaryBlend": false
           }
         ],
         "savedProductSeed": {
           "productId": "81460",
           "factsStatus": "partial",
+          "typeKeys": [
+            "herb"
+          ],
           "display": {
             "title": "Zahler, ParaGuard™, Advanced Intestinal Flora Support, 90 Softgels",
             "brandName": "Zahler",
-            "dosageText": "200 mg",
             "imageUrl": "https://cloudinary.images-iherb.com/image/upload/f_auto,q_auto:eco/images/zah/zah08187/u/64.jpg"
           }
         }
@@ -14189,8 +14541,12 @@
             "dose": "1.09 g"
           },
           {
-            "name": "Mantra Focus Blend",
-            "dose": "110 mg"
+            "name": "NeuroFactor Coffee Whole Fruit Extract",
+            "dose": null
+          },
+          {
+            "name": "NutriPQQ Pyrroloquinoline Quinone Disodium Salt",
+            "dose": null
           },
           {
             "name": "Spectra Blend",
@@ -14311,12 +14667,20 @@
             "proprietaryBlend": true
           },
           {
-            "ingredientLabel": "Mantra Focus Blend",
-            "name": "Mantra Focus Blend",
-            "amount": 110,
-            "unit": "mg",
-            "disclosureQuality": "medium",
-            "proprietaryBlend": true
+            "ingredientLabel": "NeuroFactor Coffee Whole Fruit Extract",
+            "name": "NeuroFactor Coffee Whole Fruit Extract",
+            "amount": null,
+            "unit": null,
+            "disclosureQuality": "low",
+            "proprietaryBlend": false
+          },
+          {
+            "ingredientLabel": "NutriPQQ Pyrroloquinoline Quinone Disodium Salt",
+            "name": "NutriPQQ Pyrroloquinoline Quinone Disodium Salt",
+            "amount": null,
+            "unit": null,
+            "disclosureQuality": "low",
+            "proprietaryBlend": false
           },
           {
             "ingredientLabel": "Spectra Blend",

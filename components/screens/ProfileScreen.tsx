@@ -19,6 +19,7 @@ import {
 
 import { ContentFrame } from '@/components/common/ContentFrame';
 import { CritiqueChipBar } from '@/components/screens/personalization/CritiqueChipBar';
+import { PersonalizationDebugCard } from '@/components/screens/personalization/PersonalizationDebugCard';
 import { GoalNavigatorEntryCard } from '@/components/screens/personalization/GoalNavigatorEntryCard';
 import { StackAuditCard } from '@/components/screens/personalization/StackAuditCard';
 import { useAuth } from '@/contexts/AuthContext';
@@ -136,7 +137,7 @@ export default function ProfileScreen({ navHeight }: ProfileScreenProps) {
   const { user, isBiometricEnabled } = useAuth();
   const router = useRouter();
   const { draft, resetLocalOnboarding } = useOnboarding();
-  const { snapshot, smartFilter, recordOverrideEvents } = usePersonalization();
+  const { snapshot, smartFilter, recordOverrideEvents, eventSummary } = usePersonalization();
   const { t } = useTranslation();
   const tokens = useScreenTokens(navHeight);
   const model = buildProfileScreenModel({ user, draft, isBiometricEnabled });
@@ -449,6 +450,12 @@ export default function ProfileScreen({ navHeight }: ProfileScreenProps) {
                     preferenceVector={snapshot.strategies.preferenceVector}
                     dietLanes={snapshot.strategies.dietLanes}
                     activityPlan={snapshot.strategies.activityPlan}
+                  />
+                ) : null}
+                {__DEV__ ? (
+                  <PersonalizationDebugCard
+                    supportState={snapshot.strategies.supportState}
+                    eventSummary={eventSummary}
                   />
                 ) : null}
               </View>

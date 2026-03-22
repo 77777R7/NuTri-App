@@ -2,6 +2,7 @@ import type {
   ActivityPlan,
   FeedbackState,
   GoalKey,
+  PersonalizationEventSummary,
   PersonalizationProfile,
   PersonalizationSnapshot,
   ProductGoalMatch,
@@ -57,6 +58,7 @@ export type PersonalizationCompilerInput = {
   evaluations?: SnapshotEvaluationsInput;
   feedbackState?: FeedbackState;
   overrideEvents?: FeedbackState['events'];
+  eventSummary?: PersonalizationEventSummary;
 };
 
 const hashString = (value: string) => {
@@ -253,6 +255,7 @@ export const compilePersonalizationSnapshot = (
   const supportStateResult = compileSupportState({
     profile,
     feedbackState: effectiveFeedbackState,
+    eventSummary: input.eventSummary,
   });
   const preferenceVectorResult = compilePreferenceVector({
     profile,

@@ -115,7 +115,7 @@ const truncateBlendLikeTail = (value: string): string => {
   const head = normalizeWhitespace(value.slice(0, match.index + match[0].length));
   const tail = normalizeWhitespace(value.slice(match.index + match[0].length));
   if (!tail) return head;
-  if (BLEND_TAIL_SIGNAL_PATTERN.test(tail) || /[;,]/.test(tail)) return head;
+  if (BLEND_TAIL_SIGNAL_PATTERN.test(tail)) return head;
   return value;
 };
 
@@ -144,37 +144,55 @@ const stripTrailingOverlayMarkers = (value: string): string =>
       .replace(/\s+([ow])$/i, ""),
   );
 
+const splitBlendTailIntoMembers = (value: string): string[] => {
+  const normalized = normalizeWhitespace(value);
+  if (!normalized) return [];
+
+  return normalized
+    .split(/\s*[;,]\s*/)
+    .map((segment) => stripTrailingOverlayMarkers(segment))
+    .map((segment) => cleanOverlayIngredientName(segment))
+    .filter((segment): segment is string => Boolean(segment));
+};
+
 const expandBlendMemberRows = (
   name: string | null | undefined,
   dose: string | null,
 ): Array<{ name: string; dose: string | null }> | null => {
   const normalized = normalizePunctuationSpacing(String(name ?? ""));
-  if (!BLEND_PREFIX_PATTERN.test(normalized)) return null;
+  const blendMatch = normalized.match(BLEND_LABEL_PATTERN);
+  if (!blendMatch || blendMatch.index == null) return null;
 
-  const tail = normalizeWhitespace(normalized.replace(BLEND_PREFIX_PATTERN, ""));
-  if (!tail) return null;
+  const buildMemberRows = (tail: string): Array<{ name: string; dose: string | null }> | null => {
+    const members = Array.from(new Set(splitBlendTailIntoMembers(tail)));
+    if (members.length === 0) return null;
 
-  const members = Array.from(
-    new Set(
-      tail
-        .split(/\s*,\s*/)
-        .map((segment) => stripTrailingOverlayMarkers(segment))
-        .map((segment) => cleanOverlayIngredientName(segment))
-        .filter((segment): segment is string => Boolean(segment)),
-    ),
-  );
+    if (members.length === 1) {
+      return [{ name: members[0], dose }];
+    }
 
-  if (members.length === 0) return null;
+    return members.map((member) => ({
+      name: member,
+      // The blend total does not belong to each member, so keep identity and intentionally withhold dose.
+      dose: null,
+    }));
+  };
 
-  if (members.length === 1) {
-    return [{ name: members[0], dose }];
+  if (BLEND_PREFIX_PATTERN.test(normalized)) {
+    const tail = normalizeWhitespace(normalized.replace(BLEND_PREFIX_PATTERN, ""));
+    if (!tail) return null;
+    return buildMemberRows(tail);
   }
 
-  return members.map((member) => ({
-    name: member,
-    // The blend total does not belong to each member, so keep identity and intentionally withhold dose.
-    dose: null,
-  }));
+  const tail = normalizeWhitespace(normalized.slice(blendMatch.index + blendMatch[0].length));
+  if (!tail) return null;
+
+  if (BLEND_TAIL_SIGNAL_PATTERN.test(tail)) return null;
+
+  const memberRows = buildMemberRows(tail);
+  if (memberRows) return memberRows;
+
+  return null;
 };
 
 const normalizeMatchKey = (value: string): string =>

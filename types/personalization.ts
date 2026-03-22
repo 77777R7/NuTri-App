@@ -406,6 +406,23 @@ export type PersonalizationEventName =
   | 'save_then_unsave'
   | 'first_stack_accepted';
 
+export type PersonalizationEventRecord = {
+  eventName: PersonalizationEventName;
+  surface: string;
+  createdAt: string;
+  snapshotId?: string | null;
+  rulesVersion?: string | null;
+  supportState?: SupportState | null;
+};
+
+export type PersonalizationEventSummary = {
+  totalCount: number;
+  lastEventAt: string | null;
+  countsByEventName: Partial<Record<PersonalizationEventName, number>>;
+  countsBySurface: Record<string, number>;
+  recentEvents: PersonalizationEventRecord[];
+};
+
 export type FeedbackState = {
   version: string;
   updatedAt: string;

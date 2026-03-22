@@ -1,9 +1,16 @@
 import { createEmptyFeedbackState, loadPersonalizationFeedback, savePersonalizationFeedback } from '@/lib/storage/personalization-feedback';
+import {
+  appendPersonalizationEventsToSummary,
+  createEmptyPersonalizationEventSummary,
+  summarizePersonalizationEvents,
+  toPersonalizationEventRecord,
+} from '@/lib/personalization/feedback/personalizationEventSummary';
 import { supabase } from '@/lib/supabase';
 import type { FeedbackPersistenceAdapter } from '@/lib/personalization/feedback/feedbackStore';
 import type {
   FeedbackState,
   PersonalizationEventName,
+  PersonalizationEventSummary,
   PreferenceVector,
   SupportState,
 } from '@/types/personalization';
@@ -110,6 +117,40 @@ export const loadRemotePersonalizationFeedback = async (
   return data?.feedback_state ? normalizeFeedbackState(data.feedback_state) : null;
 };
 
+export const loadRemotePersonalizationEventSummary = async (
+  userId?: string | null,
+  options: {
+    days?: number;
+    limit?: number;
+  } = {},
+): Promise<PersonalizationEventSummary> => {
+  if (!userId) return createEmptyPersonalizationEventSummary();
+
+  const days = Math.max(1, Math.min(30, Math.round(options.days ?? 14)));
+  const limit = Math.max(1, Math.min(50, Math.round(options.limit ?? 20)));
+  const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+
+  const { data, error, count } = await supabase
+    .from('user_personalization_events')
+    .select(
+      'event_name, surface, created_at, snapshot_id, rules_version, support_state',
+      {
+        count: 'exact',
+      },
+    )
+    .eq('user_id', userId)
+    .gte('created_at', since)
+    .order('created_at', { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    console.warn('[personalization] Failed to load personalization event summary', error);
+    return createEmptyPersonalizationEventSummary();
+  }
+
+  return summarizePersonalizationEvents(data ?? [], count);
+};
+
 export const syncUserPersonalizationState = async (input: {
   userId?: string | null;
   feedbackState: FeedbackState;
@@ -192,9 +233,13 @@ export const createSupabaseBackedFeedbackAdapter = (): FeedbackPersistenceAdapte
 });
 
 export const personalizationSupabaseInternals = {
+  appendPersonalizationEventsToSummary,
+  createEmptyPersonalizationEventSummary,
   hasMeaningfulFeedback,
   normalizeFeedbackState,
   sanitizePayload,
+  summarizePersonalizationEvents,
+  toEventRecord: toPersonalizationEventRecord,
   toJsonValue,
   toTimestamp,
 };
