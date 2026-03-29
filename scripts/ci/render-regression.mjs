@@ -230,7 +230,8 @@ const buildHeaders = (acceptSse = false, includeRegressionDebug = true) => {
   if (process.env.RENDER_REGRESSION_TOKEN) {
     headers["x-regression-token"] = process.env.RENDER_REGRESSION_TOKEN;
     if (includeRegressionDebug) headers["x-regression-debug"] = "1";
-  } else if (process.env.RENDER_AUTH_DISABLED_HEADER) {
+  }
+  if (process.env.RENDER_AUTH_DISABLED_HEADER) {
     headers["x-auth-disabled"] = process.env.RENDER_AUTH_DISABLED_HEADER;
   }
   return headers;
