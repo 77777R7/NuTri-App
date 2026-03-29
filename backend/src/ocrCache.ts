@@ -284,6 +284,10 @@ export async function setAnalysisCachedResult(
     },
 ): Promise<void> {
     const analysisCacheKey = buildAnalysisCacheKey(parseCacheKey);
+    const llmMs =
+        typeof payload.llmMs === 'number' && Number.isFinite(payload.llmMs)
+            ? Math.max(0, Math.round(payload.llmMs))
+            : null;
     const { error } = await supabase
         .from('label_analysis_cache')
         .upsert({
@@ -292,7 +296,8 @@ export async function setAnalysisCachedResult(
             analysis: payload.analysis,
             analysis_status: payload.analysisStatus ?? null,
             analysis_issues: payload.analysisIssues ?? [],
-            llm_ms: payload.llmMs ?? null,
+            // Store integer milliseconds to match DB column type and avoid float cast errors.
+            llm_ms: llmMs,
             analysis_version: LABEL_ANALYSIS_VERSION,
         }, { onConflict: 'analysis_cache_key' });
 
