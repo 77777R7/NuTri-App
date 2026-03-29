@@ -1254,3 +1254,29 @@ test("title-derived ingredient fallback rescues explicit header-only ingredient 
     /\bHerbal Throat Spray\b/,
   );
 });
+
+test("decision support exposes personalized result lane v1 shell with safety-first ordering", () => {
+  const payload = compilePayload({
+    brand: "Nature Made",
+    name: "Melatonin, 3 mg",
+    actives: ["Melatonin"],
+  });
+
+  assert.deepEqual(payload.personalizedResultLane.recommendedSectionOrder, [
+    "safety",
+    "goal_fit",
+    "personal_insight",
+    "allergy_insight",
+    "dosage_context",
+    "product_standing",
+  ]);
+  assert.equal(payload.personalizedResultLane.goalFit.status, "pending");
+  assert.ok(
+    payload.personalizedResultLane.goalFit.candidateGoalKeys.includes("sleep"),
+    "expected melatonin preview to surface sleep support",
+  );
+  assert.equal(payload.personalizedResultLane.personalInsight.status, "pending");
+  assert.equal(payload.personalizedResultLane.allergyInsight.status, "pending");
+  assert.ok(["pending", "unavailable"].includes(payload.personalizedResultLane.dosageContext.status));
+  assert.equal(payload.personalizedResultLane.productStanding.status, "pending");
+});

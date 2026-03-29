@@ -24,6 +24,16 @@ import { getQualityMarkProgramDefinition } from "./qualityMarks/programs.js";
 import type { QualityMarkProgramMatch, QualityMarkVerificationSummary } from "./qualityMarks/types.js";
 import { buildProductSafetySummary } from "./safety/productSafetySummary.js";
 import type { UlGuidanceEntry } from "./safety/types.js";
+import goalMatchScoringModule, {
+  type ProductIngredientLikeInput,
+} from "../../lib/personalization/core/goalMatchScoring.ts";
+import type {
+  GoalKey,
+  ProductGoalMatch,
+  ProductGoalMatchTier,
+} from "../../types/personalization.js";
+
+const { scoreProductGoalMatches } = goalMatchScoringModule;
 
 export type DecisionSupportViewMode = "details";
 
@@ -292,6 +302,130 @@ export type DecisionSupportQualityMark = {
   verificationSummary?: QualityMarkVerificationSummary | null;
 };
 
+export type DecisionSupportPersonalizedResultLaneSectionStatus = "ready" | "pending" | "unavailable";
+
+export type DecisionSupportPersonalizedResultLaneSectionKey =
+  | "safety"
+  | "goal_fit"
+  | "personal_insight"
+  | "allergy_insight"
+  | "dosage_context"
+  | "product_standing";
+
+export type DecisionSupportPersonalizedGoalFitDecision =
+  | "fits"
+  | "mixed"
+  | "does_not_fit"
+  | "unknown";
+
+export type DecisionSupportPersonalizedDoseAssessment =
+  | "aligned"
+  | "low"
+  | "high"
+  | "unclear"
+  | "unknown";
+
+export type DecisionSupportPersonalizedProductStanding =
+  | "strong"
+  | "average"
+  | "weak"
+  | "unknown";
+
+export type DecisionSupportPersonalizedGoalFit = {
+  status: DecisionSupportPersonalizedResultLaneSectionStatus;
+  reasonCode: "USER_GOAL_CONTEXT_NOT_ATTACHED" | "NO_GOAL_SUPPORT_SIGNALS_DETECTED" | null;
+  summary: string;
+  selectedGoalKey: GoalKey | null;
+  fitDecision: DecisionSupportPersonalizedGoalFitDecision;
+  fitTier: ProductGoalMatchTier | "unknown";
+  previewTopGoalKey: GoalKey | null;
+  previewTopTier: ProductGoalMatchTier | "unknown";
+  candidateGoalKeys: GoalKey[];
+};
+
+export type DecisionSupportPersonalizedSupportSignal = {
+  goalKey: GoalKey;
+  label: string;
+  source: "goal_match_scoring_preview";
+};
+
+export type DecisionSupportPersonalizedConflictSignal = {
+  ingredient: string;
+  ingredientRole: "active" | "inactive" | "unknown";
+  source: "saved_stack" | "restriction" | "allergy";
+  summary: string;
+};
+
+export type DecisionSupportPersonalizedInsight = {
+  status: DecisionSupportPersonalizedResultLaneSectionStatus;
+  reasonCode: "SAVED_SUPPLEMENTS_NOT_ATTACHED" | null;
+  summary: string;
+  supportSummary: string;
+  conflictSummary: string;
+  supports: DecisionSupportPersonalizedSupportSignal[];
+  conflicts: DecisionSupportPersonalizedConflictSignal[];
+  expandableDetailsReady: boolean;
+};
+
+export type DecisionSupportPersonalizedAllergyDetail = {
+  flag: string;
+  source: "active_ingredient" | "inactive_ingredient" | "label_disclosure" | "warning";
+  matchedText?: string | null;
+  confidence: "high" | "medium" | "low";
+};
+
+export type DecisionSupportPersonalizedAllergyInsight = {
+  status: DecisionSupportPersonalizedResultLaneSectionStatus;
+  reasonCode:
+    | "ALLERGY_PROFILE_NOT_ATTACHED"
+    | "NORMALIZED_PRODUCT_ALLERGY_FLAGS_NOT_ATTACHED"
+    | null;
+  summary: string;
+  matchedAllergyFlags: string[];
+  matchedRestrictions: string[];
+  details: DecisionSupportPersonalizedAllergyDetail[];
+};
+
+export type DecisionSupportPersonalizedDosageContext = {
+  status: DecisionSupportPersonalizedResultLaneSectionStatus;
+  reasonCode: "RECOMMENDED_DOSE_COMPARISON_NOT_ATTACHED" | "NO_PRODUCT_DOSE_VISIBLE" | null;
+  summary: string;
+  assessment: DecisionSupportPersonalizedDoseAssessment;
+  comparisonMode: "selected_goal" | "best_detected_goal_preview" | "not_attached";
+  previewGoalKey: GoalKey | null;
+  productDoseText: string | null;
+  productDirectionsText: string | null;
+};
+
+export type DecisionSupportPersonalizedStandingAlternative = {
+  productId: string | null;
+  title: string;
+  reason: string | null;
+};
+
+export type DecisionSupportPersonalizedProductStandingBlock = {
+  status: DecisionSupportPersonalizedResultLaneSectionStatus;
+  reasonCode: "PRODUCT_BENCHMARK_NOT_ATTACHED" | null;
+  summary: string;
+  standing: DecisionSupportPersonalizedProductStanding;
+  standingLabel: string | null;
+  benchmarkLabel: string | null;
+  percentile: number | null;
+  peerCount: number | null;
+  betterAlternatives: DecisionSupportPersonalizedStandingAlternative[];
+};
+
+export type DecisionSupportPersonalizedResultLane = {
+  schemaVersion: 1;
+  contract: "personalized_result_lane/v1";
+  recommendedSectionOrder: DecisionSupportPersonalizedResultLaneSectionKey[];
+  goalFit: DecisionSupportPersonalizedGoalFit;
+  personalInsight: DecisionSupportPersonalizedInsight;
+  allergyInsight: DecisionSupportPersonalizedAllergyInsight;
+  dosageContext: DecisionSupportPersonalizedDosageContext;
+  productStanding: DecisionSupportPersonalizedProductStandingBlock;
+};
+
 export type DecisionSupportCategoryId =
   | "fish_oil_omega3"
   | "out_of_scope_non_supplement"
@@ -347,6 +481,7 @@ export type DecisionSupportPayload = {
   scienceBlock: DecisionSupportScienceBlock;
   usageBlock: DecisionSupportUsageBlock;
   safetyBlock: DecisionSupportSafetyBlock;
+  personalizedResultLane: DecisionSupportPersonalizedResultLane;
   qualityMark: DecisionSupportQualityMark;
   safeScienceSignalSource?: "subset" | "fallback" | "none";
   safeScienceFallbackType?: "best_for" | "comparison" | null;
@@ -399,6 +534,7 @@ export type DecisionSupportInline = {
   scienceBlock: DecisionSupportScienceBlock;
   usageBlock: DecisionSupportUsageBlock;
   safetyBlock: DecisionSupportSafetyBlock;
+  personalizedResultLane: DecisionSupportPersonalizedResultLane;
   qualityMark: DecisionSupportQualityMark;
 };
 
@@ -533,6 +669,231 @@ const normalizeActiveNames = (digest: FactsDigest): string[] =>
   (Array.isArray(digest?.actives) ? digest.actives : [])
     .map((active) => normalizeText(active?.name))
     .filter(Boolean);
+
+const GOAL_DISPLAY_LABELS: Record<GoalKey, string> = {
+  sleep: "Sleep",
+  energy: "Energy",
+  immunity: "Immunity",
+  recovery: "Recovery",
+  focus: "Focus",
+  libido_enhancement: "Libido Enhancement",
+  stress_support: "Stress Support",
+  weight_management: "Weight Management",
+};
+
+const PRODUCT_GOAL_TIER_PRIORITY: Record<ProductGoalMatchTier, number> = {
+  strong_match: 4,
+  related: 3,
+  weak_match: 2,
+  no_match: 1,
+};
+
+const PERSONALIZED_RESULT_LANE_SECTION_ORDER: DecisionSupportPersonalizedResultLaneSectionKey[] = [
+  "safety",
+  "goal_fit",
+  "personal_insight",
+  "allergy_insight",
+  "dosage_context",
+  "product_standing",
+];
+
+const humanizeGoalKey = (goalKey: GoalKey): string => GOAL_DISPLAY_LABELS[goalKey] ?? goalKey;
+
+const joinDisplayLabels = (labels: string[]): string => {
+  if (labels.length === 0) return "";
+  if (labels.length === 1) return labels[0] ?? "";
+  if (labels.length === 2) return `${labels[0]} and ${labels[1]}`;
+  return `${labels.slice(0, -1).join(", ")}, and ${labels[labels.length - 1]}`;
+};
+
+const buildGoalPreviewInputs = (digest: FactsDigest): ProductIngredientLikeInput[] =>
+  (Array.isArray(digest?.actives) ? digest.actives : [])
+    .map((active): ProductIngredientLikeInput | null => {
+      const ingredientName = normalizeDisplayText(active?.name);
+      if (!ingredientName) return null;
+
+      const hasComparableDose =
+        typeof active?.amount === "number"
+        && Number.isFinite(active.amount)
+        && active.amount > 0
+        && normalizeDisplayText(active?.unit).length > 0;
+      const hasAnyDoseSignal =
+        hasComparableDose || normalizeDisplayText(active?.amountText).length > 0;
+      const hasAnyFormSignal = normalizeDisplayText(active?.chemicalForm).length > 0;
+
+      return {
+        ingredientLabel: ingredientName,
+        name: ingredientName,
+        amount: hasComparableDose ? active.amount : null,
+        unit: hasComparableDose ? normalizeDisplayText(active.unit) : null,
+        form: hasAnyFormSignal ? normalizeDisplayText(active.chemicalForm) : null,
+        formLabel: hasAnyFormSignal ? normalizeDisplayText(active.chemicalForm) : null,
+        disclosureQuality: hasComparableDose ? "high" : hasAnyDoseSignal || hasAnyFormSignal ? "medium" : "low",
+        proprietaryBlend: false,
+      };
+    })
+    .filter((item): item is ProductIngredientLikeInput => Boolean(item));
+
+const compareGoalPreviewMatches = (left: ProductGoalMatch, right: ProductGoalMatch): number => {
+  const tierDelta = PRODUCT_GOAL_TIER_PRIORITY[right.tier] - PRODUCT_GOAL_TIER_PRIORITY[left.tier];
+  if (tierDelta !== 0) return tierDelta;
+  return right.score - left.score;
+};
+
+const buildGoalPreviewMatches = (digest: FactsDigest): ProductGoalMatch[] => {
+  const ingredients = buildGoalPreviewInputs(digest);
+  if (ingredients.length === 0) return [];
+
+  const hasDose = ingredients.some(
+    (ingredient) =>
+      typeof ingredient.amount === "number"
+      && ingredient.amount > 0
+      && typeof ingredient.unit === "string"
+      && ingredient.unit.length > 0,
+  );
+
+  return scoreProductGoalMatches({
+    ingredients,
+    disclosureQuality: hasDose ? "high" : "medium",
+    proprietaryBlendWithoutClearActives: false,
+  })
+    .filter((match) => match.tier !== "no_match" && match.score > 0)
+    .sort(compareGoalPreviewMatches);
+};
+
+const buildProductDosePreviewText = (digest: FactsDigest): string | null => {
+  for (const active of digest.actives ?? []) {
+    const ingredientName = normalizeDisplayText(active?.name);
+    if (!ingredientName) continue;
+
+    const amountText = normalizeDisplayText(active?.amountText);
+    if (amountText) return `${ingredientName}: ${amountText} per serving`;
+
+    if (
+      typeof active?.amount === "number"
+      && Number.isFinite(active.amount)
+      && active.amount > 0
+      && normalizeDisplayText(active?.unit).length > 0
+    ) {
+      return `${ingredientName}: ${formatDoseText(active.amount, normalizeDisplayText(active.unit))} per serving`;
+    }
+  }
+
+  return null;
+};
+
+const buildDirectionsPreviewText = (usageBlock: DecisionSupportUsageBlock): string | null => {
+  const firstLine = usageBlock.directions.lines.find((line) => normalizeDisplayText(line).length > 0);
+  if (firstLine) return normalizeDisplayText(firstLine);
+
+  const text = normalizeDisplayText(usageBlock.directions.text);
+  return text || null;
+};
+
+const resolvePreviewDoseAssessment = (
+  match: ProductGoalMatch | null,
+): DecisionSupportPersonalizedDoseAssessment => {
+  switch (match?.confidence?.dose) {
+    case "meets":
+      return "aligned";
+    case "below":
+      return "low";
+    case "unknown":
+      return "unclear";
+    case "not_applicable":
+    default:
+      return "unknown";
+  }
+};
+
+const buildPersonalizedResultLane = (params: {
+  digest: FactsDigest;
+  usageBlock: DecisionSupportUsageBlock;
+}): DecisionSupportPersonalizedResultLane => {
+  const goalPreviewMatches = buildGoalPreviewMatches(params.digest);
+  const previewTopGoal = goalPreviewMatches[0] ?? null;
+  const candidateGoalKeys = goalPreviewMatches.slice(0, 3).map((match) => match.goalKey);
+  const supportSignals: DecisionSupportPersonalizedSupportSignal[] = candidateGoalKeys.map((goalKey) => ({
+    goalKey,
+    label: humanizeGoalKey(goalKey),
+    source: "goal_match_scoring_preview",
+  }));
+  const supportLabels = supportSignals.map((signal) => signal.label);
+  const productDoseText = buildProductDosePreviewText(params.digest);
+  const productDirectionsText = buildDirectionsPreviewText(params.usageBlock);
+  const hasVisibleProductDose = Boolean(productDoseText || productDirectionsText);
+  const dosageAssessment = previewTopGoal && hasVisibleProductDose
+    ? resolvePreviewDoseAssessment(previewTopGoal)
+    : hasVisibleProductDose
+      ? "unclear"
+      : "unknown";
+
+  return {
+    schemaVersion: 1,
+    contract: "personalized_result_lane/v1",
+    recommendedSectionOrder: [...PERSONALIZED_RESULT_LANE_SECTION_ORDER],
+    goalFit: {
+      status: "pending",
+      reasonCode: previewTopGoal ? "USER_GOAL_CONTEXT_NOT_ATTACHED" : "NO_GOAL_SUPPORT_SIGNALS_DETECTED",
+      summary: previewTopGoal
+        ? `Detected strongest goal-fit preview for ${humanizeGoalKey(previewTopGoal.goalKey)}, but user goal selection is not attached to this decision support payload yet.`
+        : "Goal-fit contract is reserved here, but user goal selection is not attached and the current label does not yield a strong preview signal yet.",
+      selectedGoalKey: null,
+      fitDecision: "unknown",
+      fitTier: "unknown",
+      previewTopGoalKey: previewTopGoal?.goalKey ?? null,
+      previewTopTier: previewTopGoal?.tier ?? "unknown",
+      candidateGoalKeys,
+    },
+    personalInsight: {
+      status: "pending",
+      reasonCode: "SAVED_SUPPLEMENTS_NOT_ATTACHED",
+      summary: supportLabels.length > 0
+        ? `Detected product-level support signals for ${joinDisplayLabels(supportLabels)}, but saved supplement conflict matching is not attached yet.`
+        : "Personal insight contract is reserved here, but saved supplement conflict matching is not attached yet.",
+      supportSummary: supportLabels.length > 0
+        ? `Detected product-level support signals for ${joinDisplayLabels(supportLabels)}.`
+        : "No clear product-level support signal was strong enough to surface from the current label.",
+      conflictSummary: "Saved supplement conflict matching is not attached to this decision support payload yet.",
+      supports: supportSignals,
+      conflicts: [],
+      expandableDetailsReady: false,
+    },
+    allergyInsight: {
+      status: "pending",
+      reasonCode: "ALLERGY_PROFILE_NOT_ATTACHED",
+      summary: "Allergy-aware reasoning is reserved here, but user allergy settings and normalized product allergen flags are not attached yet.",
+      matchedAllergyFlags: [],
+      matchedRestrictions: [],
+      details: [],
+    },
+    dosageContext: {
+      status: hasVisibleProductDose ? "pending" : "unavailable",
+      reasonCode: hasVisibleProductDose ? "RECOMMENDED_DOSE_COMPARISON_NOT_ATTACHED" : "NO_PRODUCT_DOSE_VISIBLE",
+      summary: !hasVisibleProductDose
+        ? "Recommended-dose comparison is reserved here, and this label does not expose enough dose or directions detail yet."
+        : previewTopGoal
+          ? `Product dose is visible. The best detected goal preview points to ${humanizeGoalKey(previewTopGoal.goalKey)}, but selected-goal dosage comparison is not attached yet.`
+          : "Product dose is visible, but recommended-dose comparison is not attached yet.",
+      assessment: dosageAssessment,
+      comparisonMode: previewTopGoal && hasVisibleProductDose ? "best_detected_goal_preview" : "not_attached",
+      previewGoalKey: previewTopGoal?.goalKey ?? null,
+      productDoseText,
+      productDirectionsText,
+    },
+    productStanding: {
+      status: "pending",
+      reasonCode: "PRODUCT_BENCHMARK_NOT_ATTACHED",
+      summary: "Product standing and better alternatives are reserved here, but benchmark logic is not attached to decision support yet.",
+      standing: "unknown",
+      standingLabel: null,
+      benchmarkLabel: "similar products",
+      percentile: null,
+      peerCount: null,
+      betterAlternatives: [],
+    },
+  };
+};
 
 const sanitizeDecisionLine = (value: string | null | undefined): string | null => {
   const raw = String(value ?? "").replace(/\s+/g, " ").trim();
@@ -3433,6 +3794,10 @@ export const compileDecisionSupport = (
     qualityMark,
     overlayClaims: params.overlayClaims ?? null,
   });
+  const personalizedResultLane = buildPersonalizedResultLane({
+    digest: params.digest,
+    usageBlock,
+  });
 
   return {
     digest,
@@ -3461,6 +3826,7 @@ export const compileDecisionSupport = (
     scienceBlock,
     usageBlock,
     safetyBlock,
+    personalizedResultLane,
     qualityMark,
     safeScienceSignalSource: safeScienceSignals?.signalSource ?? "none",
     safeScienceFallbackType: safeScienceSignals?.fallbackType ?? null,
@@ -3500,5 +3866,6 @@ export const toDecisionSupportInline = (payload: DecisionSupportPayload): Decisi
   scienceBlock: payload.scienceBlock,
   usageBlock: payload.usageBlock,
   safetyBlock: payload.safetyBlock,
+  personalizedResultLane: payload.personalizedResultLane,
   qualityMark: payload.qualityMark,
 });

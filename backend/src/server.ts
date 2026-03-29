@@ -10225,6 +10225,7 @@ app.get("/api/decision-support/v1", verifySupabaseToken, async (req: Request, re
       scienceBlock: decisionSupport.scienceBlock,
       usageBlock: decisionSupport.usageBlock,
       safetyBlock: decisionSupport.safetyBlock,
+      personalizedResultLane: decisionSupport.personalizedResultLane,
       qualityMark: decisionSupport.qualityMark,
       ...(typeof fetchCount === "number" ? { decisionSupportFetchCount: fetchCount } : {}),
       ...(allowDecisionDebug && decisionSupport.decisionDebug
