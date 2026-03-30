@@ -67,6 +67,8 @@ export default function LabelScanScreen() {
   const [cropZoom, setCropZoom] = useState(1);
   const [cropOffset, setCropOffset] = useState({ x: 0, y: 0 });
   const cropStartRef = useRef({ x: 0, y: 0 });
+  const submitAbortRef = useRef<AbortController | null>(null);
+  const submitAttemptRef = useRef(0);
 
   useEffect(() => {
     if (mode === 'upload') {
@@ -147,19 +149,29 @@ export default function LabelScanScreen() {
       return;
     }
 
+    if (!previewBase64) {
+      setErrorMessage('Image data was not available. Please try again.');
+      setStatus('error');
+      return;
+    }
+
+    const attempt = submitAttemptRef.current + 1;
+    submitAttemptRef.current = attempt;
+    submitAbortRef.current?.abort();
+    const controller = new AbortController();
+    submitAbortRef.current = controller;
+
     try {
-      if (!previewBase64) {
-        setErrorMessage('Image data was not available. Please try again.');
-        setStatus('error');
-        return;
-      }
       setStatus('processing');
       const sessionId = ensureSessionId();
       const scanResult = await submitLabelScan({
         imageUri: previewUri,
         imageBase64: previewBase64,
-        includeAnalysis: true,
+        includeAnalysis: false,
+        timeoutMs: 25_000,
+        signal: controller.signal,
       });
+      if (submitAttemptRef.current !== attempt) return;
       setScanSession({
         id: sessionId,
         mode: 'label',
@@ -171,11 +183,39 @@ export default function LabelScanScreen() {
       });
       router.replace({ pathname: '/scan/result', params: { sessionId } });
     } catch (error) {
+      if (submitAttemptRef.current !== attempt) return;
+      if (error instanceof Error && error.name === 'AbortError') {
+        setStatus('preview');
+        setErrorMessage(null);
+        return;
+      }
+      if (error instanceof Error && error.name === 'TimeoutError') {
+        setErrorMessage('This is taking longer than expected. Check your connection and try again.');
+        setStatus('error');
+        return;
+      }
+      if (error instanceof Error && error.message.toLowerCase().includes('network request failed')) {
+        setErrorMessage('Network error. Check your connection and try again.');
+        setStatus('error');
+        return;
+      }
       console.warn('[scan] label processing failed', error);
       setErrorMessage('We could not read the label. Try retaking the photo.');
       setStatus('error');
+    } finally {
+      if (submitAttemptRef.current === attempt) {
+        submitAbortRef.current = null;
+      }
     }
   }, [mode, previewBase64, previewUri, status]);
+
+  const handleCancelProcessing = useCallback(() => {
+    submitAttemptRef.current += 1;
+    submitAbortRef.current?.abort();
+    submitAbortRef.current = null;
+    setStatus('preview');
+    setErrorMessage(null);
+  }, []);
 
   const handleRetry = useCallback(() => {
     setPreviewUri(null);
@@ -284,7 +324,7 @@ export default function LabelScanScreen() {
 
   const isCameraPermissionLoading = !cameraPermission;
   const isProcessing = status === 'processing';
-  const processingLabel = previewUri ? 'Analyzing label...' : 'Capturing label...';
+  const processingLabel = previewUri ? 'Reading label...' : 'Capturing label...';
 
   if (isCameraPermissionLoading) {
     return (
@@ -471,6 +511,13 @@ export default function LabelScanScreen() {
         <View style={styles.processingOverlay}>
           <ActivityIndicator color={tokens.colors.surface} />
           <Text style={styles.processingText}>{processingLabel}</Text>
+          <TouchableOpacity
+            style={styles.processingCancelButton}
+            onPress={handleCancelProcessing}
+            activeOpacity={0.85}
+          >
+            <Text style={styles.processingCancelText}>Cancel</Text>
+          </TouchableOpacity>
         </View>
       ) : null}
     </View>
@@ -702,6 +749,21 @@ const createStyles = (tokens: DesignTokens, topInset: number, bottomInset: numbe
       gap: tokens.spacing.sm,
     },
     processingText: {
+      color: tokens.colors.surface,
+      ...tokens.typography.body,
+    },
+    processingCancelButton: {
+      marginTop: tokens.spacing.md,
+      paddingHorizontal: 18,
+      height: 40,
+      borderRadius: tokens.radius.full,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: 'rgba(255,255,255,0.35)',
+      backgroundColor: 'rgba(255,255,255,0.12)',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    processingCancelText: {
       color: tokens.colors.surface,
       ...tokens.typography.body,
     },
