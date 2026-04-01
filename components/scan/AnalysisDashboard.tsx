@@ -3,8 +3,9 @@ import Constants from 'expo-constants';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import {
-    Activity,
+    AlertTriangle,
     BarChart3,
+    Bookmark,
     CheckCircle2,
     ChevronRight,
     Clock,
@@ -53,8 +54,10 @@ import { Config } from '@/constants/Config';
 import { withAuthHeaders } from '@/lib/auth-token';
 import { useTranslation } from '@/lib/i18n';
 import { lookupFoundationForIngredient, summarizeFoundationHits } from '@/lib/knowledge/foundationLookup';
+import { getGoalDisplayLabel } from '@/lib/personalization/uiLabels';
 import { resolveDataCeilingSignal } from '@/lib/scan/dataCeiling';
 import { buildGapActionSentences } from '@/lib/scan/gapActionSentenceLibrary';
+import { buildAnalysisTopSectionPresentation, type TopSectionInsightTopic } from '@/lib/scan/analysisTopSectionPresentation';
 import { isNutritionLabelLikeIngredient } from '@/lib/scan/isNutritionLabelLikeIngredient';
 import { enforceNeverBlank, isPlaceholderText, sanitizeCoverBullets, sanitizeCoverLine } from '@/lib/scan/neverBlank';
 import { buildRecordFactsViewModel } from '@/lib/scan/recordFactsViewModel';
@@ -71,6 +74,7 @@ import type {
     ScientificBackgroundResponse,
 } from '@/shared/types/ingredientScience';
 import type { FactsDTO } from '@/shared/types/scan-insights';
+import type { GoalKey, ProductGoalMatchTier } from '@/types/personalization';
 import type {
     AnalysisBundle,
     AnalysisBundleV4,
@@ -84,7 +88,7 @@ import type {
 } from '@/types/analysisBundle';
 type Analysis = any;
 type ScoreState = 'active' | 'muted' | 'loading';
-type SourceType = 'barcode' | 'label_scan';
+type SourceType = string;
 
 type TileType = 'overview' | 'science' | 'usage' | 'safety';
 
@@ -175,6 +179,99 @@ type DecisionScoreCardV2Module = {
     band?: 'High' | 'Moderate' | 'Limited' | 'Low';
     checklist: DecisionScoreCardV2ChecklistItem[];
 };
+type DecisionSupportPersonalizedResultLaneSectionStatus = 'ready' | 'pending' | 'unavailable';
+type DecisionSupportPersonalizedResultLaneSectionKey =
+    | 'safety'
+    | 'goal_fit'
+    | 'personal_insight'
+    | 'allergy_insight'
+    | 'dosage_context'
+    | 'product_standing';
+type DecisionSupportPersonalizedGoalFitDecision = 'fits' | 'mixed' | 'does_not_fit' | 'unknown';
+type DecisionSupportPersonalizedDoseAssessment = 'aligned' | 'low' | 'high' | 'unclear' | 'unknown';
+type DecisionSupportPersonalizedProductStanding = 'strong' | 'average' | 'weak' | 'unknown';
+type DecisionSupportPersonalizedGoalFit = {
+    status: DecisionSupportPersonalizedResultLaneSectionStatus;
+    reasonCode?: 'USER_GOAL_CONTEXT_NOT_ATTACHED' | 'NO_GOAL_SUPPORT_SIGNALS_DETECTED' | null;
+    summary: string;
+    selectedGoalKey: GoalKey | null;
+    fitDecision: DecisionSupportPersonalizedGoalFitDecision;
+    fitTier: ProductGoalMatchTier | 'unknown';
+    previewTopGoalKey: GoalKey | null;
+    previewTopTier: ProductGoalMatchTier | 'unknown';
+    candidateGoalKeys: GoalKey[];
+};
+type DecisionSupportPersonalizedSupportSignal = {
+    goalKey: GoalKey;
+    label: string;
+    source: 'goal_match_scoring_preview';
+};
+type DecisionSupportPersonalizedConflictSignal = {
+    ingredient: string;
+    ingredientRole: 'active' | 'inactive' | 'unknown';
+    source: 'saved_stack' | 'restriction' | 'allergy';
+    summary: string;
+};
+type DecisionSupportPersonalizedInsight = {
+    status: DecisionSupportPersonalizedResultLaneSectionStatus;
+    reasonCode?: 'SAVED_SUPPLEMENTS_NOT_ATTACHED' | null;
+    summary: string;
+    supportSummary: string;
+    conflictSummary: string;
+    supports: DecisionSupportPersonalizedSupportSignal[];
+    conflicts: DecisionSupportPersonalizedConflictSignal[];
+    expandableDetailsReady: boolean;
+};
+type DecisionSupportPersonalizedAllergyDetail = {
+    flag: string;
+    source: 'active_ingredient' | 'inactive_ingredient' | 'label_disclosure' | 'warning';
+    matchedText?: string | null;
+    confidence: 'high' | 'medium' | 'low';
+};
+type DecisionSupportPersonalizedAllergyInsight = {
+    status: DecisionSupportPersonalizedResultLaneSectionStatus;
+    reasonCode?: 'ALLERGY_PROFILE_NOT_ATTACHED' | 'NORMALIZED_PRODUCT_ALLERGY_FLAGS_NOT_ATTACHED' | null;
+    summary: string;
+    matchedAllergyFlags: string[];
+    matchedRestrictions: string[];
+    details: DecisionSupportPersonalizedAllergyDetail[];
+};
+type DecisionSupportPersonalizedDosageContext = {
+    status: DecisionSupportPersonalizedResultLaneSectionStatus;
+    reasonCode?: 'RECOMMENDED_DOSE_COMPARISON_NOT_ATTACHED' | 'NO_PRODUCT_DOSE_VISIBLE' | null;
+    summary: string;
+    assessment: DecisionSupportPersonalizedDoseAssessment;
+    comparisonMode: 'selected_goal' | 'best_detected_goal_preview' | 'not_attached';
+    previewGoalKey: GoalKey | null;
+    productDoseText: string | null;
+    productDirectionsText: string | null;
+};
+type DecisionSupportPersonalizedStandingAlternative = {
+    productId: string | null;
+    title: string;
+    reason: string | null;
+};
+type DecisionSupportPersonalizedProductStandingBlock = {
+    status: DecisionSupportPersonalizedResultLaneSectionStatus;
+    reasonCode?: 'PRODUCT_BENCHMARK_NOT_ATTACHED' | null;
+    summary: string;
+    standing: DecisionSupportPersonalizedProductStanding;
+    standingLabel: string | null;
+    benchmarkLabel: string | null;
+    percentile: number | null;
+    peerCount: number | null;
+    betterAlternatives: DecisionSupportPersonalizedStandingAlternative[];
+};
+type DecisionSupportPersonalizedResultLane = {
+    schemaVersion: 1;
+    contract: 'personalized_result_lane/v1';
+    recommendedSectionOrder: DecisionSupportPersonalizedResultLaneSectionKey[];
+    goalFit: DecisionSupportPersonalizedGoalFit;
+    personalInsight: DecisionSupportPersonalizedInsight;
+    allergyInsight: DecisionSupportPersonalizedAllergyInsight;
+    dosageContext: DecisionSupportPersonalizedDosageContext;
+    productStanding: DecisionSupportPersonalizedProductStandingBlock;
+};
 type DecisionSupportTemplatePayload = {
     digest?: string;
     decisionInputsHash?: string;
@@ -258,6 +355,7 @@ type DecisionSupportTemplatePayload = {
         evidenceType?: 'page' | 'search' | null;
         note?: string;
     };
+    personalizedResultLane?: DecisionSupportPersonalizedResultLane;
 };
 
 type ProductOverviewAiPayload = {
@@ -366,6 +464,28 @@ type WidgetTileProps = {
     tile: TileConfig;
     onPress: () => void;
 };
+
+type PersonalizedInsightTone = 'positive' | 'caution' | 'neutral';
+type PersonalizedInsightRow = {
+    key: string;
+    topic: TopSectionInsightTopic;
+    collapsedTitle: string;
+    expandedBullets: string[];
+    tone: PersonalizedInsightTone;
+    icon: React.ComponentType<{ size?: number; color?: string }>;
+    isExpandable: boolean;
+};
+
+export type AnalysisDashboardSaveItem = {
+    supplementId?: string | null;
+    barcode?: string | null;
+    productName: string;
+    brandName: string;
+    dosageText: string;
+    imageUrl?: string | null;
+};
+
+type SavePillState = 'save' | 'saved' | 'disabled';
 
 const FORCE_FULL_DASHBOARD_EFFECTS =
     process.env.EXPO_PUBLIC_FORCE_FULL_DASHBOARD_EFFECTS === 'true' ||
@@ -721,37 +841,6 @@ function luminance(hex: string) {
 function withAlpha(hex: string, alpha01: number) {
     const { r, g, b } = hexToRgb(hex);
     return `rgba(${r}, ${g}, ${b}, ${alpha01})`;
-}
-
-function inferSourceType(link?: string | null): SourceRef['type'] | null {
-    if (!link) return null;
-    const normalized = link.toLowerCase();
-    if (normalized.includes('pubmed') || normalized.includes('ncbi.nlm.nih.gov')) return 'pubmed';
-    if (normalized.includes('cochrane')) return 'cochrane';
-    if (normalized.includes('ods.od.nih.gov')) return 'ods';
-    return 'other';
-}
-
-function buildSourceRefs(
-    sources: { title?: string | null; link?: string | null }[],
-    sourceType?: SourceType
-): SourceRef[] {
-    const refs = new Map<string, SourceRef>();
-    if (sourceType === 'label_scan') {
-        refs.set('label', { type: 'label' });
-    }
-    sources.forEach((source) => {
-        const type = inferSourceType(source.link);
-        if (!type) return;
-        const key = `${type}:${source.link ?? ''}`;
-        if (refs.has(key)) return;
-        refs.set(key, {
-            type,
-            url: source.link ?? undefined,
-            title: source.title ?? undefined,
-        });
-    });
-    return Array.from(refs.values());
 }
 
 function computeCoverStatus(slotStates: boolean[]): CoverStatus {
@@ -1514,6 +1603,84 @@ function capitalizeSentences(value?: string | null) {
     if (!normalized) return '';
     return normalized.replace(/(^[a-z])|([.!?]\s+[a-z])/g, (match) => match.toUpperCase());
 }
+
+const FALLBACK_PERSONALIZED_SECTION_ORDER: DecisionSupportPersonalizedResultLaneSectionKey[] = [
+    'safety',
+    'goal_fit',
+    'personal_insight',
+    'allergy_insight',
+    'dosage_context',
+    'product_standing',
+];
+
+const joinCompactLabels = (values: Array<string | null | undefined>, limit: number = 3): string => {
+    const deduped = Array.from(
+        new Set(
+            values
+                .map((value) => normalizeText(value))
+                .filter(Boolean),
+        ),
+    ).slice(0, limit);
+
+    if (deduped.length === 0) return '';
+    if (deduped.length === 1) return deduped[0];
+    if (deduped.length === 2) return `${deduped[0]} and ${deduped[1]}`;
+    return `${deduped.slice(0, -1).join(', ')}, and ${deduped[deduped.length - 1]}`;
+};
+
+const getGoalLabel = (goalKey?: GoalKey | null): string | null => (
+    goalKey ? getGoalDisplayLabel(goalKey) : null
+);
+
+const getPersonalizedTonePalette = (tone: PersonalizedInsightTone) => {
+    if (tone === 'positive') {
+        return {
+            surface: '#F1FAF3',
+            border: '#D4EFD9',
+            accent: '#177B43',
+            chipFill: '#E2F5E8',
+            chipText: '#166534',
+            body: '#2F5E42',
+        };
+    }
+    if (tone === 'caution') {
+        return {
+            surface: '#FFF7E8',
+            border: '#F4DEB2',
+            accent: '#D97706',
+            chipFill: '#FDECC8',
+            chipText: '#B45309',
+            body: '#7C4A03',
+        };
+    }
+    return {
+        surface: '#EEF6FB',
+        border: '#D7E7F1',
+        accent: '#2563EB',
+        chipFill: '#DFECFB',
+        chipText: '#1D4ED8',
+        body: '#375569',
+    };
+};
+
+const getTopInsightIcon = (topic: TopSectionInsightTopic) => {
+    switch (topic) {
+        case 'goal':
+            return Zap;
+        case 'support':
+            return TrendingUp;
+        case 'allergy':
+            return Shield;
+        case 'dose':
+            return Pill;
+        case 'overlap':
+            return Bookmark;
+        case 'safety':
+            return AlertTriangle;
+        default:
+            return CheckCircle2;
+    }
+};
 
 const WidgetTile: React.FC<WidgetTileProps> = ({ tile, onPress }) => {
     const Icon = tile.icon;
@@ -3006,6 +3173,10 @@ const AnalysisBundleDashboard: React.FC<{
     miniHeaderMode?: 'inline' | 'header';
     onMiniScoreMetaChange?: (meta: { overallScore: number; overallBand: string | null; muted: boolean }) => void;
     onCoreReadyChange?: (ready: boolean) => void;
+    saveItem?: AnalysisDashboardSaveItem | null;
+    savePillState?: SavePillState;
+    onSavePress?: () => void;
+    onOpenSaved?: () => void;
 }> = ({
     bundle,
     analysis,
@@ -3018,9 +3189,14 @@ const AnalysisBundleDashboard: React.FC<{
     miniHeaderMode = 'inline',
     onMiniScoreMetaChange,
     onCoreReadyChange,
+    saveItem = null,
+    savePillState = 'disabled',
+    onSavePress,
+    onOpenSaved,
 }) => {
     const { t } = useTranslation();
     const [selectedTileType, setSelectedTileType] = useState<TileType | null>(null);
+    const [expandedInsightKey, setExpandedInsightKey] = useState<string | null>(null);
     const [bundleState, setBundleState] = useState<AnalysisBundle>(bundle);
     const [detailLoading, setDetailLoading] = useState(false);
     const [detailError, setDetailError] = useState<string | null>(null);
@@ -3560,9 +3736,13 @@ const AnalysisBundleDashboard: React.FC<{
                         resolvedBarcode,
                         objectPayload,
                     );
+                    const resolvedDecisionDigest =
+                        getDecisionPayloadDigest(objectPayload)
+                        || normalizeText(digestParam)
+                        || digestHint;
                     const selectedPayload = pickFreshDecisionPayloadForFacts(
                         currentFactsDigestHash,
-                        digestHint,
+                        resolvedDecisionDigest,
                         objectPayload,
                         inlineFallback ?? null,
                         decisionSupportByBarcodeRef.current.get(resolvedBarcode) ?? null,
@@ -3658,14 +3838,21 @@ const AnalysisBundleDashboard: React.FC<{
     }, [bundleState.meta]);
     const decisionTemplatePayload = useMemo<DecisionSupportTemplatePayload | null>(() => {
         const currentFactsDigestHash = normalizeText(bundleState.meta.factsDigestHash ?? null) || null;
-        const currentDecisionDigest =
-            typeof (bundleState.meta as { decisionSupportDigest?: unknown })?.decisionSupportDigest === 'string'
-                ? String((bundleState.meta as { decisionSupportDigest?: string }).decisionSupportDigest)
-                : null;
         const fetchedPayload =
             decisionSupportState.status === 'ready' && decisionSupportState.data && typeof decisionSupportState.data === 'object'
                 ? decisionSupportState.data
                 : null;
+        const fetchedDecisionDigest =
+            fetchedPayload && !isDecisionPayloadExplicitlyStale(fetchedPayload)
+                ? getDecisionPayloadDigest(fetchedPayload)
+                : null;
+        const currentDecisionDigest =
+            fetchedDecisionDigest
+            || (
+                typeof (bundleState.meta as { decisionSupportDigest?: unknown })?.decisionSupportDigest === 'string'
+                    ? String((bundleState.meta as { decisionSupportDigest?: string }).decisionSupportDigest)
+                    : null
+            );
         const selectedPayload = pickFreshDecisionPayloadForFacts(
             currentFactsDigestHash,
             currentDecisionDigest,
@@ -3686,6 +3873,7 @@ const AnalysisBundleDashboard: React.FC<{
     const decisionUsageBlock = decisionTemplatePayload?.usageBlock;
     const decisionSafetyBlock = decisionTemplatePayload?.safetyBlock;
     const decisionQualityMark = decisionTemplatePayload?.qualityMark;
+    const decisionPersonalizedResultLane = decisionTemplatePayload?.personalizedResultLane ?? null;
     const currentDecisionDigest =
         normalizeText(
             decisionTemplatePayload?.digest
@@ -3855,10 +4043,10 @@ const AnalysisBundleDashboard: React.FC<{
         ? 'Scan the Supplement Facts label for full details.'
         : null;
     const dataCeilingScienceLead = isDataCeiling ? 'Ingredients aren’t available in this record.' : null;
-    const dataCeilingScienceAction = isDataCeiling ? 'Try label scan to identify ingredients and amounts.' : null;
+    const dataCeilingScienceAction = isDataCeiling ? 'Try a clearer scan or verified product record to identify ingredients and amounts.' : null;
     const ingredientsNotProvidedCopy =
         isDataCeiling
-            ? 'Ingredients aren’t available in this record. Try label scan to identify ingredients and amounts.'
+            ? 'Ingredients aren’t available in this record. Try a clearer scan or verified product record to identify ingredients and amounts.'
             : bundleSourceType === 'lnhpd'
             ? 'Ingredients are not listed in the LNHPD record for this NPN. Capture the Supplement Facts panel to unlock ingredient analysis.'
             : bundleSourceType === 'dsld'
@@ -4278,6 +4466,86 @@ const AnalysisBundleDashboard: React.FC<{
         scienceIngredientsOverflowCount > 0
             ? `+${scienceIngredientsOverflowCount} more ingredients`
             : undefined;
+    const topSectionPresentation = useMemo(() => {
+        const goalFit = decisionPersonalizedResultLane?.goalFit;
+        const personalInsight = decisionPersonalizedResultLane?.personalInsight;
+        const allergyInsight = decisionPersonalizedResultLane?.allergyInsight;
+        const dosageContext = decisionPersonalizedResultLane?.dosageContext;
+        const firstConflict = (personalInsight?.conflicts ?? [])
+            .map((conflict) => normalizeText(conflict.summary))
+            .find(Boolean);
+
+        return buildAnalysisTopSectionPresentation({
+            goal: {
+                fitDecision: goalFit?.fitDecision ?? null,
+                selectedGoalLabel: getGoalLabel(goalFit?.selectedGoalKey ?? null),
+                previewGoalLabel: getGoalLabel(goalFit?.previewTopGoalKey ?? null),
+                previewTopTier: goalFit?.previewTopTier ?? null,
+            },
+            personalInsight: {
+                supportLabels: (personalInsight?.supports ?? []).map((signal) => signal.label),
+                conflictSummary: firstConflict ?? null,
+            },
+            allergy: {
+                status: allergyInsight?.status ?? null,
+                reasonCode: allergyInsight?.reasonCode ?? null,
+                summary: allergyInsight?.summary ?? null,
+                matchedLabels: [
+                    ...(allergyInsight?.matchedAllergyFlags ?? []),
+                    ...(allergyInsight?.matchedRestrictions ?? []),
+                ],
+                evidenceTexts: (allergyInsight?.details ?? [])
+                    .map((detail) => normalizeText(detail.matchedText))
+                    .filter(Boolean),
+            },
+            dose: {
+                status: dosageContext?.status ?? null,
+                assessment: dosageContext?.assessment ?? null,
+                goalLabel: getGoalLabel(dosageContext?.previewGoalKey ?? null),
+                productDoseText: dosageContext?.productDoseText ?? null,
+                productDirectionsText: dosageContext?.productDirectionsText ?? null,
+            },
+            safety: {
+                warningText: safetyWarningCoverText ?? null,
+                watchoutText: safetyTipCoverText ?? null,
+            },
+        });
+    }, [
+        decisionPersonalizedResultLane?.allergyInsight,
+        decisionPersonalizedResultLane?.dosageContext,
+        decisionPersonalizedResultLane?.goalFit,
+        decisionPersonalizedResultLane?.personalInsight,
+        safetyTipCoverText,
+        safetyWarningCoverText,
+    ]);
+    const personalizedHeroFit = topSectionPresentation.hero;
+    const personalizedHeroTone = getPersonalizedTonePalette(personalizedHeroFit.tone);
+    const topSectionBanner = topSectionPresentation.banner;
+    const personalizedInsightRows = useMemo<PersonalizedInsightRow[]>(
+        () =>
+            topSectionPresentation.insights.map((row) => ({
+                ...row,
+                icon: getTopInsightIcon(row.topic),
+            })),
+        [topSectionPresentation.insights],
+    );
+    useEffect(() => {
+        if (!expandedInsightKey) return;
+        if (personalizedInsightRows.some((row) => row.key === expandedInsightKey)) return;
+        setExpandedInsightKey(null);
+    }, [expandedInsightKey, personalizedInsightRows]);
+    const heroImageUri = saveItem?.imageUrl ?? productInfo?.image ?? null;
+    const verifiedLabelText = normalizeText(sourceBadgeLabel) || 'Verified Label Data';
+    const savePillLabel = savePillState === 'saved' ? 'Saved' : 'Save';
+    const handleSavePillPress = useCallback(() => {
+        if (savePillState === 'saved') {
+            onOpenSaved?.();
+            return;
+        }
+        if (savePillState === 'save') {
+            onSavePress?.();
+        }
+    }, [onOpenSaved, onSavePress, savePillState]);
 
     const overviewDataStatus = useMemo(() => {
         const missingReasons = new Set<MissingReason>();
@@ -4713,9 +4981,7 @@ const AnalysisBundleDashboard: React.FC<{
         bundleSourceType === 'lnhpd' || bundleSourceType === 'dsld' || bundleSourceType === 'web'
             ? bundleSourceType
             : 'unknown';
-    const hasLabelScanEvidence =
-        sourceType === 'label_scan' ||
-        normalizeText(overviewFacts?.provenance?.sourceFiles?.pdf ?? null).length > 0;
+    const hasScanEvidence = normalizeText(overviewFacts?.provenance?.sourceFiles?.pdf ?? null).length > 0;
     const hasSupplementalOverlayEvidence = decisionOverlayUsed;
     const decisionWarningLines = Array.isArray(decisionSafetyBlock?.labelWarnings) ? decisionSafetyBlock.labelWarnings : [];
     const hasDecisionProductWarnings = decisionWarningLines.some((line) => {
@@ -4739,7 +5005,7 @@ const AnalysisBundleDashboard: React.FC<{
     const verifiedFromDisplay =
         [
             verifiedFromBase,
-            hasLabelScanEvidence && bundleSourceForTrust !== 'web' ? 'label scan' : null,
+            hasScanEvidence && bundleSourceForTrust !== 'web' ? 'scan evidence' : null,
             hasSupplementalOverlayEvidence ? 'supplemental product-page label data' : null,
         ]
             .filter((part): part is string => Boolean(part))
@@ -4808,7 +5074,7 @@ const AnalysisBundleDashboard: React.FC<{
         {
             tag: 'User scan evidence',
             label: 'Label evidence',
-            value: hasLabelScanEvidence ? `available (${retrievedOn})` : 'not provided',
+            value: hasScanEvidence ? `available (${retrievedOn})` : 'not provided',
             url: null,
         },
         {
@@ -5629,7 +5895,10 @@ const AnalysisBundleDashboard: React.FC<{
         const controller = new AbortController();
         const fallbackBlock = buildIngredientOverviewFallbackClient(decisionScienceIngredientRows);
 
-        const run = async () => {
+        const run = async (
+            digestParam: string,
+            canRetry: boolean,
+        ): Promise<void> => {
             try {
                 setIngredientOverviewSidecarState(ingredientOverviewRequestKey, { status: 'loading' });
                 const baseUrl = String(Config.searchApiBaseUrl).replace(/\/$/, '');
@@ -5642,12 +5911,20 @@ const AnalysisBundleDashboard: React.FC<{
                     },
                     body: JSON.stringify({
                         barcode: decisionBarcodeForScience,
-                        decisionDigest: decisionDigestForScience,
+                        decisionDigest: digestParam,
                     }),
                     signal: controller.signal,
                 });
 
                 if (cancelled) return;
+
+                if (response.status === 409) {
+                    const mismatchPayload = await response.json().catch(() => null);
+                    const latestDigest = typeof mismatchPayload?.latestDigest === 'string' ? mismatchPayload.latestDigest : null;
+                    if (canRetry && latestDigest && latestDigest !== digestParam) {
+                        return run(latestDigest, false);
+                    }
+                }
 
                 if (!response.ok) {
                     settled = true;
@@ -5690,7 +5967,7 @@ const AnalysisBundleDashboard: React.FC<{
         };
 
         const interactionTask = InteractionManager.runAfterInteractions(() => {
-            void run();
+            void run(decisionDigestForScience, true);
         });
         return () => {
             cancelled = true;
@@ -5734,7 +6011,10 @@ const AnalysisBundleDashboard: React.FC<{
                 decisionScienceIngredientRows,
             );
 
-            void (async () => {
+            const run = async (
+                digestParam: string,
+                canRetry: boolean,
+            ): Promise<void> => {
                 try {
                     setScientificBackgroundSidecarState(requestKey, { status: 'loading' });
                     const response = await fetch(`${baseUrl}/api/scientific-background/v1`, {
@@ -5746,13 +6026,21 @@ const AnalysisBundleDashboard: React.FC<{
                         },
                         body: JSON.stringify({
                             barcode: decisionBarcodeForScience,
-                            decisionDigest: decisionDigestForScience,
+                            decisionDigest: digestParam,
                             selectedIngredientName: row.name,
                         }),
                         signal: controller.signal,
                     });
 
                     if (cancelled || currentRunKeyRef.current !== requestRunKey) return;
+
+                    if (response.status === 409) {
+                        const mismatchPayload = await response.json().catch(() => null);
+                        const latestDigest = typeof mismatchPayload?.latestDigest === 'string' ? mismatchPayload.latestDigest : null;
+                        if (canRetry && latestDigest && latestDigest !== digestParam) {
+                            return run(latestDigest, false);
+                        }
+                    }
 
                     if (!response.ok) {
                         settledRequestKey = requestKey;
@@ -5792,7 +6080,9 @@ const AnalysisBundleDashboard: React.FC<{
                         error: error instanceof Error ? error.message : 'Scientific background unavailable',
                     });
                 }
-            })();
+            };
+
+            void run(decisionDigestForScience, true);
         });
         return () => {
             cancelled = true;
@@ -7395,23 +7685,62 @@ const AnalysisBundleDashboard: React.FC<{
                 {!disableHeroHeader ? (
                     <View style={styles.heroHeader}>
                         <LinearGradient
-                            colors={['rgba(255,255,255,0.86)', 'rgba(255,255,255,0.58)']}
+                            colors={['rgba(255,255,255,0.82)', 'rgba(255,255,255,0.68)']}
                             start={{ x: 0, y: 0 }}
                             end={{ x: 1, y: 1 }}
                             style={styles.heroCard}
                         >
                             <DashboardBlur intensity={18} tint="light" style={StyleSheet.absoluteFill} />
 
-                            <View style={styles.heroTopRow}>
-                                {productInfo?.image ? (
+                            <View style={styles.heroCardHeaderRow}>
+                                <View
+                                    style={[
+                                        styles.heroSummaryChip,
+                                        {
+                                            backgroundColor: personalizedHeroTone.chipFill,
+                                            borderColor: personalizedHeroTone.border,
+                                        },
+                                    ]}
+                                >
+                                    <Text style={[styles.heroSummaryChipText, { color: personalizedHeroTone.chipText }]}>
+                                        {personalizedHeroFit.chip}
+                                    </Text>
+                                </View>
+
+                                <Pressable
+                                    accessibilityRole="button"
+                                    accessibilityState={{ disabled: savePillState === 'disabled' }}
+                                    disabled={savePillState === 'disabled'}
+                                    onPress={handleSavePillPress}
+                                    style={({ pressed }) => [
+                                        styles.heroSavePill,
+                                        savePillState === 'saved' && styles.heroSavePillSaved,
+                                        savePillState === 'disabled' && styles.heroSavePillDisabled,
+                                        pressed && savePillState !== 'disabled' ? styles.heroSavePillPressed : null,
+                                    ]}
+                                >
+                                    <Text
+                                        style={[
+                                            styles.heroSavePillText,
+                                            savePillState === 'saved' && styles.heroSavePillTextSaved,
+                                            savePillState === 'disabled' && styles.heroSavePillTextDisabled,
+                                        ]}
+                                    >
+                                        {savePillLabel}
+                                    </Text>
+                                </Pressable>
+                            </View>
+
+                            <View style={styles.heroProductRow}>
+                                {heroImageUri ? (
                                     <Image
-                                        source={{ uri: productInfo.image }}
+                                        source={{ uri: heroImageUri }}
                                         style={styles.heroImage}
                                         resizeMode="cover"
                                     />
                                 ) : (
                                     <View style={styles.heroImagePlaceholder}>
-                                        <BarChart3 size={18} color="#111827" />
+                                        <BarChart3 size={18} color="#94A3B8" />
                                     </View>
                                 )}
 
@@ -7424,18 +7753,28 @@ const AnalysisBundleDashboard: React.FC<{
                                             {productSubtitle}
                                         </Text>
                                     )}
-                                    <View style={styles.heroMetaRow}>
-                                        <GlassPill label={sourceBadgeLabel} />
-                                        {scoreBadge ? (
-                                            <GlassPill
-                                                label={scoreBadge}
-                                                accentColor={ringMuted ? '#9CA3AF' : '#111827'}
-                                            />
-                                        ) : null}
-                                    </View>
                                 </View>
                             </View>
+
+                            <View style={styles.heroDivider} />
+                            <Text style={styles.heroSummaryLine}>{personalizedHeroFit.summary}</Text>
+
+                            <View style={styles.heroVerifiedRow}>
+                                <Shield size={14} color="#64748B" />
+                                <Text style={styles.heroVerifiedText}>{verifiedLabelText}</Text>
+                            </View>
                         </LinearGradient>
+                    </View>
+                ) : null}
+
+                {topSectionBanner ? (
+                    <View style={styles.topBannerWrap}>
+                        <View style={styles.topBannerCard}>
+                            <View style={styles.topBannerIconWrap}>
+                                <AlertTriangle size={18} color="#D97706" />
+                            </View>
+                            <Text style={styles.topBannerText}>{topSectionBanner.title}</Text>
+                        </View>
                     </View>
                 ) : null}
 
@@ -7484,6 +7823,94 @@ const AnalysisBundleDashboard: React.FC<{
                 ) : null}
 
                 <>
+                        {personalizedInsightRows.length > 0 ? (
+                            <View style={styles.personalizedSection}>
+                                <Text style={styles.personalizedSectionTitle}>Personalized insights</Text>
+                                <View style={styles.personalizedSectionCard}>
+                                    <View style={styles.personalizedSectionInner}>
+                                        {personalizedInsightRows.map((row, index) => {
+                                            const palette = getPersonalizedTonePalette(row.tone);
+                                            const RowIcon = row.icon;
+                                            const isExpanded = expandedInsightKey === row.key;
+                                            return (
+                                                <View
+                                                    key={row.key}
+                                                >
+                                                    <Pressable
+                                                        onPress={() =>
+                                                            setExpandedInsightKey((current) =>
+                                                                current === row.key ? null : row.key,
+                                                            )
+                                                        }
+                                                        style={({ pressed }) => [
+                                                            styles.personalizedInsightRow,
+                                                            pressed ? styles.personalizedInsightRowPressed : null,
+                                                        ]}
+                                                    >
+                                                        <View
+                                                            style={[
+                                                                styles.personalizedInsightIconWrap,
+                                                                { backgroundColor: palette.chipFill, borderColor: palette.border },
+                                                            ]}
+                                                        >
+                                                            <RowIcon size={16} color={palette.accent} />
+                                                        </View>
+                                                        <View style={styles.personalizedInsightCopy}>
+                                                            <Text
+                                                                style={styles.personalizedInsightTitle}
+                                                                numberOfLines={isExpanded ? 3 : 1}
+                                                            >
+                                                                {row.collapsedTitle}
+                                                            </Text>
+                                                        </View>
+                                                        <View
+                                                            style={{
+                                                                transform: [{ rotate: isExpanded ? '90deg' : '0deg' }],
+                                                            }}
+                                                        >
+                                                            <ChevronRight size={16} color="rgba(100,116,139,0.9)" />
+                                                        </View>
+                                                    </Pressable>
+                                                    {isExpanded && row.expandedBullets.length > 0 ? (
+                                                        <Animated.View
+                                                            entering={FadeInUp.duration(180)}
+                                                            exiting={FadeOutDown.duration(140)}
+                                                            style={styles.personalizedInsightExpanded}
+                                                        >
+                                                            {row.expandedBullets.map((bullet, bulletIndex) => (
+                                                                <View
+                                                                    key={`${row.key}-${bulletIndex}`}
+                                                                    style={styles.personalizedInsightBulletRow}
+                                                                >
+                                                                    <View
+                                                                        style={[
+                                                                            styles.personalizedInsightBulletDot,
+                                                                            { backgroundColor: palette.accent },
+                                                                        ]}
+                                                                    />
+                                                                    <Text
+                                                                        style={[
+                                                                            styles.personalizedInsightBulletText,
+                                                                            { color: palette.body },
+                                                                        ]}
+                                                                    >
+                                                                        {bullet}
+                                                                    </Text>
+                                                                </View>
+                                                            ))}
+                                                        </Animated.View>
+                                                    ) : null}
+                                                    {index < personalizedInsightRows.length - 1 ? (
+                                                        <View style={styles.personalizedInsightDivider} />
+                                                    ) : null}
+                                                </View>
+                                            );
+                                        })}
+                                    </View>
+                                </View>
+                            </View>
+                        ) : null}
+
                         {/* SCORE_SECTION_FROZEN_RENDER_START */}
                         <View style={styles.scoreSection}>
                             <View style={styles.scoreHeroCard}>
@@ -7572,6 +7999,10 @@ type AnalysisDashboardProps = {
     miniHeaderMode?: 'inline' | 'header';
     onMiniScoreMetaChange?: (meta: { overallScore: number; overallBand: string | null; muted: boolean }) => void;
     onCoreReadyChange?: (ready: boolean) => void;
+    saveItem?: AnalysisDashboardSaveItem | null;
+    savePillState?: SavePillState;
+    onSavePress?: () => void;
+    onOpenSaved?: () => void;
 };
 
 const ensureModernAnalysisBundle = (
@@ -7630,6 +8061,10 @@ export const AnalysisDashboard: React.FC<AnalysisDashboardProps> = ({
     miniHeaderMode = 'inline',
     onMiniScoreMetaChange,
     onCoreReadyChange,
+    saveItem = null,
+    savePillState = 'disabled',
+    onSavePress,
+    onOpenSaved,
 }) => {
     const modernBundle = ensureModernAnalysisBundle(analysisBundle, analysis, scanSessionId);
     return (
@@ -7645,6 +8080,10 @@ export const AnalysisDashboard: React.FC<AnalysisDashboardProps> = ({
             miniHeaderMode={miniHeaderMode}
             onMiniScoreMetaChange={onMiniScoreMetaChange}
             onCoreReadyChange={onCoreReadyChange}
+            saveItem={saveItem}
+            savePillState={savePillState}
+            onSavePress={onSavePress}
+            onOpenSaved={onOpenSaved}
         />
     );
 };
@@ -8824,60 +9263,272 @@ const styles = StyleSheet.create({
     heroHeader: {
         marginTop: 8,
         marginBottom: 14,
-        paddingHorizontal: 20,
+        paddingHorizontal: 8,
     },
     heroCard: {
-        borderRadius: 26,
+        borderRadius: 32,
         overflow: 'hidden',
         borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.26)',
-        padding: 18,
+        borderColor: 'rgba(255,255,255,0.78)',
+        paddingHorizontal: 20,
+        paddingVertical: 18,
+        backgroundColor: 'rgba(255,255,255,0.70)',
+        shadowColor: '#0B1E36',
+        shadowOpacity: 0.04,
+        shadowRadius: 22,
+        shadowOffset: { width: 0, height: 8 },
     },
-    heroTopRow: {
+    heroCardHeaderRow: {
         flexDirection: 'row',
-        alignItems: 'flex-start',
-        gap: 14,
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: 12,
+        marginBottom: 18,
+    },
+    heroSummaryChip: {
+        alignSelf: 'flex-start',
+        borderRadius: 999,
+        borderWidth: 1,
+        paddingHorizontal: 14,
+        paddingVertical: 9,
+    },
+    heroSummaryChipText: {
+        fontSize: 14,
+        fontWeight: '700',
+        letterSpacing: -0.2,
+    },
+    heroSavePill: {
+        minWidth: 78,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderRadius: 999,
+        borderWidth: 1,
+        borderColor: 'rgba(96,165,250,0.30)',
+        backgroundColor: 'rgba(219,234,254,0.74)',
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+        shadowColor: '#60A5FA',
+        shadowOpacity: 0.16,
+        shadowRadius: 12,
+        shadowOffset: { width: 0, height: 6 },
+    },
+    heroSavePillSaved: {
+        borderColor: 'rgba(30,123,85,0.18)',
+        backgroundColor: 'rgba(234,245,240,0.9)',
+        shadowColor: '#1E7B55',
+    },
+    heroSavePillDisabled: {
+        backgroundColor: 'rgba(226,232,240,0.56)',
+        borderColor: 'rgba(148,163,184,0.16)',
+        shadowOpacity: 0,
+    },
+    heroSavePillPressed: {
+        opacity: 0.85,
+    },
+    heroSavePillText: {
+        fontSize: 14,
+        fontWeight: '700',
+        color: '#2563EB',
+        letterSpacing: -0.2,
+    },
+    heroSavePillTextSaved: {
+        color: '#1E7B55',
+    },
+    heroSavePillTextDisabled: {
+        color: '#94A3B8',
+    },
+    heroProductRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 16,
+        minHeight: 72,
     },
     heroImage: {
-        width: 68,
-        height: 68,
-        borderRadius: 18,
-        backgroundColor: 'rgba(255,255,255,0.25)',
+        width: 72,
+        height: 72,
+        borderRadius: 20,
+        backgroundColor: 'rgba(255,255,255,0.8)',
         borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.35)',
+        borderColor: 'rgba(255,255,255,0.88)',
     },
     heroImagePlaceholder: {
-        width: 68,
-        height: 68,
-        borderRadius: 18,
-        backgroundColor: 'rgba(255,255,255,0.32)',
+        width: 72,
+        height: 72,
+        borderRadius: 20,
+        backgroundColor: '#FFFFFF',
         borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.35)',
+        borderColor: 'rgba(226,232,240,0.9)',
         alignItems: 'center',
         justifyContent: 'center',
     },
     heroTextBlock: {
         flex: 1,
-        minHeight: 68,
         justifyContent: 'center',
     },
     heroTitle: {
-        fontSize: 21,
+        fontSize: 20,
         fontWeight: '800',
-        color: '#111827',
-        lineHeight: 26,
+        color: '#0B1E36',
+        lineHeight: 25,
+        letterSpacing: -0.45,
     },
     heroSubtitle: {
-        marginTop: 5,
-        fontSize: 13,
-        color: 'rgba(17,24,39,0.60)',
-        lineHeight: 18,
+        marginTop: 4,
+        fontSize: 15,
+        color: '#64748B',
+        lineHeight: 21,
+        fontWeight: '500',
+        letterSpacing: -0.2,
     },
-    heroMetaRow: {
-        marginTop: 10,
+    heroDivider: {
+        marginTop: 18,
+        marginBottom: 18,
+        height: StyleSheet.hairlineWidth,
+        backgroundColor: 'rgba(11,30,54,0.08)',
+    },
+    heroSummaryLine: {
+        fontSize: 15,
+        lineHeight: 21,
+        fontWeight: '600',
+        color: '#0B1E36',
+        letterSpacing: -0.2,
+    },
+    heroVerifiedRow: {
+        marginTop: 14,
         flexDirection: 'row',
-        flexWrap: 'wrap',
-        gap: 8,
+        alignItems: 'center',
+        gap: 6,
+    },
+    heroVerifiedText: {
+        fontSize: 13,
+        lineHeight: 18,
+        fontWeight: '500',
+        color: '#64748B',
+        letterSpacing: -0.08,
+    },
+
+    topBannerWrap: {
+        marginBottom: 18,
+        paddingHorizontal: 8,
+    },
+    topBannerCard: {
+        minHeight: 72,
+        borderRadius: 24,
+        borderWidth: 1,
+        borderColor: 'rgba(253,224,139,0.68)',
+        backgroundColor: 'rgba(255,248,234,0.88)',
+        paddingHorizontal: 16,
+        paddingVertical: 14,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 14,
+        shadowColor: '#D97706',
+        shadowOpacity: 0.06,
+        shadowRadius: 18,
+        shadowOffset: { width: 0, height: 8 },
+    },
+    topBannerIconWrap: {
+        width: 42,
+        height: 42,
+        borderRadius: 21,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#FEF3C7',
+        borderWidth: 1,
+        borderColor: 'rgba(253,230,138,0.78)',
+    },
+    topBannerText: {
+        flex: 1,
+        fontSize: 15,
+        lineHeight: 22,
+        fontWeight: '700',
+        color: '#B45309',
+        letterSpacing: -0.18,
+    },
+
+    personalizedSection: {
+        marginBottom: 18,
+        paddingHorizontal: 8,
+    },
+    personalizedSectionTitle: {
+        marginBottom: 14,
+        fontSize: 18,
+        fontWeight: '800',
+        color: '#0B1E36',
+        paddingHorizontal: 8,
+        letterSpacing: -0.45,
+    },
+    personalizedSectionCard: {
+        borderRadius: 32,
+        overflow: 'hidden',
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.72)',
+        backgroundColor: 'rgba(255,255,255,0.74)',
+        shadowColor: '#0B1E36',
+        shadowOpacity: 0.03,
+        shadowRadius: 20,
+        shadowOffset: { width: 0, height: 6 },
+    },
+    personalizedSectionInner: {
+        paddingHorizontal: 8,
+        paddingVertical: 8,
+    },
+    personalizedInsightRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+        borderRadius: 24,
+        paddingHorizontal: 14,
+        paddingVertical: 16,
+    },
+    personalizedInsightRowPressed: {
+        opacity: 0.85,
+    },
+    personalizedInsightIconWrap: {
+        width: 42,
+        height: 42,
+        borderRadius: 21,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 1,
+    },
+    personalizedInsightCopy: {
+        flex: 1,
+    },
+    personalizedInsightTitle: {
+        fontSize: 15,
+        lineHeight: 20,
+        fontWeight: '600',
+        color: '#0B1E36',
+        letterSpacing: -0.2,
+    },
+    personalizedInsightExpanded: {
+        paddingLeft: 56,
+        paddingRight: 14,
+        paddingBottom: 16,
+        gap: 10,
+    },
+    personalizedInsightBulletRow: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        gap: 10,
+    },
+    personalizedInsightBulletDot: {
+        width: 6,
+        height: 6,
+        borderRadius: 3,
+        marginTop: 7,
+    },
+    personalizedInsightBulletText: {
+        flex: 1,
+        fontSize: 13,
+        lineHeight: 18,
+        fontWeight: '600',
+    },
+    personalizedInsightDivider: {
+        marginHorizontal: 20,
+        height: StyleSheet.hairlineWidth,
+        backgroundColor: 'rgba(11,30,54,0.08)',
     },
 
     // ---------- Score hero + mini header ----------

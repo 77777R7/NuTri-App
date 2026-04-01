@@ -1,23 +1,20 @@
-import React from "react";
-import { StyleSheet, Text, View } from "react-native";
+import React, { useState } from "react";
+import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { BlurView } from "expo-blur";
+import { X } from "lucide-react-native";
 
-import { ConfidenceBadge } from "@/components/screens/personalization/ConfidenceBadge";
 import {
-  formatGoalFitConfidenceValue,
   summarizeGoalFitReasons,
 } from "@/lib/personalization/goalFitCopy";
 import {
   getDecisionModifierDisplayLabel,
   getDietLaneDisplayLabel,
   getReviewBundleDisplayLabel,
-  getDecisionModeDisplayLabel,
-  getSupportStateDisplayLabel,
   getTimingAnchorDisplayLabel,
 } from "@/lib/personalization/uiLabels";
 import type {
   ActivityPlan,
   DietReviewLane,
-  PreferenceVector,
   StackAudit,
 } from "@/types/personalization";
 
@@ -29,15 +26,14 @@ const formatFocusAreas = (focusAreas?: string[]) =>
 
 export function StackAuditCard({
   audit,
-  preferenceVector,
   dietLanes,
   activityPlan,
 }: {
   audit: StackAudit;
-  preferenceVector: PreferenceVector;
   dietLanes?: DietReviewLane[];
   activityPlan?: ActivityPlan;
 }) {
+  const [detailsVisible, setDetailsVisible] = useState(false);
   const primaryDietLane = dietLanes?.[0];
   const dietBundleLabel = getReviewBundleDisplayLabel(primaryDietLane?.reviewBundleKey);
   const dietFocusAreas = formatFocusAreas(primaryDietLane?.focusAreas);
@@ -48,74 +44,98 @@ export function StackAuditCard({
     : null;
 
   return (
-    <View style={styles.card}>
-      <Text style={styles.eyebrow}>Stack Audit</Text>
-      <Text style={styles.title}>{audit.headline}</Text>
-      <Text style={styles.body}>{audit.summary}</Text>
-
-      <View style={styles.metricRow}>
-        <ConfidenceBadge label="State" value={getSupportStateDisplayLabel(audit.supportState)} />
-        <ConfidenceBadge
-          label="Overlap"
-          value={formatGoalFitConfidenceValue(audit.overlapRisk)}
-        />
-        <ConfidenceBadge
-          label="Mode"
-          value={getDecisionModeDisplayLabel(preferenceVector.decisionMode)}
-        />
+    <>
+      <View style={styles.card}>
+        <Text style={styles.eyebrow}>Why these picks?</Text>
+        <Text style={styles.title}>{audit.headline}</Text>
+        <Text style={styles.body}>
+          Open this if you want the fuller story behind these picks.
+        </Text>
+        <Pressable onPress={() => setDetailsVisible(true)} style={styles.openButton}>
+          <Text style={styles.openButtonText}>See details</Text>
+        </Pressable>
       </View>
 
-      {primaryDietLane || activityBundleLabel || activityModifierLabel || activityAnchorLabel ? (
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Bundle steering</Text>
-          {primaryDietLane ? (
-            <Text style={styles.rowBody}>
-              {getDietLaneDisplayLabel(primaryDietLane.laneKey)}
-              {dietBundleLabel ? ` is running through ${dietBundleLabel.toLowerCase()}` : " is active"}
-              {dietFocusAreas ? ` and is biasing this stack toward ${dietFocusAreas}` : ""}.
-            </Text>
-          ) : null}
-          {activityBundleLabel || activityModifierLabel || activityAnchorLabel ? (
-            <Text style={styles.rowBody}>
-              {activityModifierLabel ?? "Your activity plan"} is shaping selection
-              {activityBundleLabel ? ` through ${activityBundleLabel.toLowerCase()}` : ""}
-              {activityAnchorLabel ? ` with ${activityAnchorLabel.toLowerCase()} as the easiest anchor` : ""}.
-            </Text>
-          ) : null}
-        </View>
-      ) : null}
+      <Modal visible={detailsVisible} transparent animationType="fade" onRequestClose={() => setDetailsVisible(false)}>
+        <View style={styles.overlay}>
+          <BlurView intensity={24} tint="dark" style={StyleSheet.absoluteFillObject} />
+          <Pressable style={StyleSheet.absoluteFillObject} onPress={() => setDetailsVisible(false)} />
 
-      {audit.kept.length > 0 ? (
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Kept forward</Text>
-          {audit.kept.map((item) => (
-            <View key={item.productId} style={styles.row}>
-              <Text style={styles.rowTitle}>{item.title ?? item.productId}</Text>
-              <Text style={styles.rowBody}>
-                {summarizeGoalFitReasons(item.reasons, "Structured fit signals kept this forward.")}
-              </Text>
+          <View style={styles.sheet}>
+            <View style={styles.sheetHeader}>
+              <View style={styles.sheetHeaderTextWrap}>
+                <Text style={styles.eyebrow}>Why these picks?</Text>
+                <Text style={styles.title}>{audit.headline}</Text>
+                <Text style={styles.body}>{audit.summary}</Text>
+              </View>
+              <Pressable onPress={() => setDetailsVisible(false)} style={styles.closeButton}>
+                <X size={18} color="#0f172a" />
+              </Pressable>
             </View>
-          ))}
-        </View>
-      ) : null}
 
-      {audit.heldBack.length > 0 ? (
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Held back</Text>
-          {audit.heldBack.map((item) => (
-            <View key={item.productId} style={styles.row}>
-              <Text style={styles.rowTitle}>{item.title ?? item.productId}</Text>
-              <Text style={styles.rowBody}>
-                {summarizeGoalFitReasons(
-                  item.reasons,
-                  "We are holding this back until the label or safety signal is stronger.",
-                )}
-              </Text>
-            </View>
-          ))}
+            <ScrollView
+              style={styles.scroll}
+              contentContainerStyle={styles.scrollContent}
+              showsVerticalScrollIndicator={false}
+            >
+              {primaryDietLane || activityBundleLabel || activityModifierLabel || activityAnchorLabel ? (
+                <View style={styles.section}>
+                  <Text style={styles.sectionTitle}>Context</Text>
+                  {primaryDietLane ? (
+                    <Text style={styles.rowBody}>
+                      {getDietLaneDisplayLabel(primaryDietLane.laneKey)}
+                      {dietBundleLabel ? ` is running through ${dietBundleLabel.toLowerCase()}` : " is active"}
+                      {dietFocusAreas ? ` and is biasing this stack toward ${dietFocusAreas}` : ""}.
+                    </Text>
+                  ) : null}
+                  {activityBundleLabel || activityModifierLabel || activityAnchorLabel ? (
+                    <Text style={styles.rowBody}>
+                      {activityModifierLabel ?? "Your activity plan"} is shaping selection
+                      {activityBundleLabel ? ` through ${activityBundleLabel.toLowerCase()}` : ""}
+                      {activityAnchorLabel ? ` with ${activityAnchorLabel.toLowerCase()} as the easiest anchor` : ""}.
+                    </Text>
+                  ) : null}
+                </View>
+              ) : null}
+
+              {audit.kept.length > 0 ? (
+                <View style={styles.section}>
+                  <Text style={styles.sectionTitle}>Still forward</Text>
+                  {audit.kept.map((item) => (
+                    <View key={item.productId} style={styles.row}>
+                      <Text style={styles.rowTitle}>{item.title ?? item.productId}</Text>
+                      <Text style={styles.rowBody}>
+                        {summarizeGoalFitReasons(
+                          item.reasons,
+                          "We kept this forward because the label gives us enough clear fit signals.",
+                        )}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+              ) : null}
+
+              {audit.heldBack.length > 0 ? (
+                <View style={styles.section}>
+                  <Text style={styles.sectionTitle}>Held back</Text>
+                  {audit.heldBack.map((item) => (
+                    <View key={item.productId} style={styles.row}>
+                      <Text style={styles.rowTitle}>{item.title ?? item.productId}</Text>
+                      <Text style={styles.rowBody}>
+                        {summarizeGoalFitReasons(
+                          item.reasons,
+                          "We are holding this back until the label is clearer or the safety signal is stronger.",
+                        )}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+              ) : null}
+            </ScrollView>
+          </View>
         </View>
-      ) : null}
-    </View>
+      </Modal>
+    </>
   );
 }
 
@@ -129,6 +149,50 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
     paddingVertical: 18,
     gap: 12,
+  },
+  overlay: {
+    flex: 1,
+    justifyContent: "flex-end",
+    backgroundColor: "rgba(15,23,42,0.28)",
+  },
+  sheet: {
+    maxHeight: "78%",
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    borderCurve: "continuous",
+    backgroundColor: "#ffffff",
+    overflow: "hidden",
+  },
+  sheetHeader: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    gap: 16,
+    paddingHorizontal: 20,
+    paddingTop: 18,
+    paddingBottom: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: "#eef2f7",
+  },
+  sheetHeaderTextWrap: {
+    flex: 1,
+    gap: 4,
+  },
+  closeButton: {
+    width: 34,
+    height: 34,
+    borderRadius: 999,
+    borderCurve: "continuous",
+    backgroundColor: "#f8fafc",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  scroll: { flexGrow: 0 },
+  scrollContent: {
+    paddingHorizontal: 20,
+    paddingTop: 18,
+    paddingBottom: 24,
+    gap: 14,
   },
   eyebrow: {
     fontSize: 11,
@@ -153,10 +217,22 @@ const styles = StyleSheet.create({
     color: "#475569",
     includeFontPadding: false,
   },
-  metricRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
+  openButton: {
+    minHeight: 42,
+    alignSelf: "flex-start",
+    paddingHorizontal: 14,
+    borderRadius: 999,
+    borderCurve: "continuous",
+    backgroundColor: "#0f172a",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  openButtonText: {
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: "800",
+    color: "#ffffff",
+    includeFontPadding: false,
   },
   section: {
     gap: 8,

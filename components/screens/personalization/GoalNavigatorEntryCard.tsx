@@ -25,7 +25,7 @@ export function GoalNavigatorEntryCard({
       <View style={styles.border} pointerEvents="none" />
       <View style={styles.content}>
         <View style={styles.textWrap}>
-          <Text style={styles.eyebrow}>Goal Navigator</Text>
+          <Text style={styles.eyebrow}>Explore by goal</Text>
           <Text style={styles.title}>{title}</Text>
           <Text style={styles.subtitle}>{subtitle}</Text>
         </View>

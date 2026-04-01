@@ -4,6 +4,7 @@ import type {
 } from "../../../../types/personalization.js";
 import {
   renderDeterministicExplanation,
+  personalizationAiInternals,
   type PersonalizationExplainer,
 } from "../ai.js";
 
@@ -37,9 +38,14 @@ const SYSTEM_PROMPT = [
   "You are NuTri's personalization explainer.",
   "Use only the structured facts provided.",
   "Do not introduce new recommendations, dosing guidance, disease claims, or deficiency claims.",
+  "For plan_preview, prioritize which ingredient directions NuTri will review for the user's selected goals when ingredient-lane facts are present.",
+  "If the user has multiple selected goals for plan_preview, do not silently drop them; mention every selected goal explicitly in the summary or bullets.",
+  "Phrase ingredient guidance as 'we will review' or 'we will look at', not as instructions to take a supplement.",
+  "Avoid generic summaries that only restate selected goals and supplement types.",
   "Return JSON only with keys: summary, bullets.",
   "summary must be one sentence.",
-  "bullets must be an array of 2 to 4 short strings.",
+  "For plan_preview, bullets should scale with the selected goals: if there are N goal ingredient lanes, return N short bullets so every selected goal is covered.",
+  "For other surfaces, bullets must be an array of 2 to 4 short strings.",
 ].join(" ");
 
 const truncate = (value: string, max = 1200): string =>
@@ -76,7 +82,7 @@ const sanitizeBullets = (value: unknown): string[] => {
   return value
     .map((entry) => (typeof entry === "string" ? entry.trim() : ""))
     .filter(Boolean)
-    .slice(0, 4);
+    .slice(0, 8);
 };
 
 const buildMessages = (payload: ExplanationPayload): DeepSeekChatMessage[] => [
@@ -131,7 +137,7 @@ const defaultTransport: DeepSeekTransport = async ({ apiKey, model, messages, ti
   }
 
   const json = (await response.json()) as {
-    choices?: Array<{ message?: { content?: string } }>;
+    choices?: { message?: { content?: string } }[];
   };
 
   return String(json.choices?.[0]?.message?.content ?? "");
@@ -162,10 +168,19 @@ export const createDeepSeekPersonalizationExplainer = (
         const parsed = parseResponse(raw);
         const summary = parsed?.summary?.trim();
         const bullets = sanitizeBullets(parsed?.bullets);
+        const deterministic = renderDeterministicExplanation(input);
+        const ingredientLaneCount =
+          input.surface === "plan_preview"
+            ? personalizationAiInternals.buildGoalIngredientLanes(input.selectedGoals).length
+            : 0;
+        const normalizedBullets =
+          input.surface === "plan_preview" && ingredientLaneCount > 0 && bullets.length < ingredientLaneCount
+            ? deterministic.bullets
+            : bullets;
 
-        if (!summary || bullets.length === 0) {
+        if (!summary || normalizedBullets.length === 0) {
           return {
-            ...renderDeterministicExplanation(input),
+            ...deterministic,
             model,
           };
         }
@@ -174,10 +189,10 @@ export const createDeepSeekPersonalizationExplainer = (
           source: "deepseek",
           fallback: false,
           summary,
-          bullets,
+          bullets: normalizedBullets,
           model,
         };
-      } catch (error) {
+      } catch {
         const fallback = renderDeterministicExplanation(input);
         return {
           ...fallback,

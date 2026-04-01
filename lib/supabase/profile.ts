@@ -6,12 +6,38 @@ import type { Database } from '@/types/supabase';
 
 type PublicClient = SupabaseClient<Database>;
 
+const LEGACY_ACTIVITY_LEVEL_MAP: Record<string, string> = {
+  sedentary: 'sedentary',
+  light: 'light',
+  lightly_active: 'light',
+  moderate: 'moderate',
+  moderately_active: 'moderate',
+  active: 'active',
+  very_active: 'very_active',
+  highly_active: 'very_active',
+};
+
+const LEGACY_GENDER_MAP: Record<string, string> = {
+  male: 'male',
+  female: 'female',
+  non_binary: 'non-binary',
+  nonbinary: 'non-binary',
+  other: 'other',
+  prefer_not_to_say: 'prefer_not_to_say',
+  prefernottosay: 'prefer_not_to_say',
+};
+
+const normalizeLegacyToken = (value?: string | null) =>
+  value
+    ?.trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '') ?? '';
+
 export const ensureUserProfileTable = async (client: PublicClient) => {
   const ddl = `
     create table if not exists public.user_profiles (
       user_id uuid primary key references auth.users(id) on delete cascade,
-      height decimal,
-      weight decimal,
       age integer,
       gender text,
       age_range text,
@@ -20,6 +46,8 @@ export const ensureUserProfileTable = async (client: PublicClient) => {
       dietary_preferences text[],
       activity_level text,
       preferred_types text[],
+      allergy_flags text[] not null default '{}'::text[],
+      ingredient_restrictions text[] not null default '{}'::text[],
       adherence_blocker text,
       permission_preferences jsonb,
       smart_filter_config jsonb,
@@ -43,6 +71,8 @@ export const ensureUserProfileTable = async (client: PublicClient) => {
       add column if not exists dietary_preferences text[],
       add column if not exists activity_level text,
       add column if not exists preferred_types text[],
+      add column if not exists allergy_flags text[] not null default '{}'::text[],
+      add column if not exists ingredient_restrictions text[] not null default '{}'::text[],
       add column if not exists adherence_blocker text,
       add column if not exists permission_preferences jsonb,
       add column if not exists smart_filter_config jsonb,
@@ -61,13 +91,19 @@ export const ensureUserProfileTable = async (client: PublicClient) => {
     create trigger user_profiles_set_updated_at
       before update on public.user_profiles
       for each row
-      execute procedure public.set_updated_at();
+      execute procedure public.set_current_timestamp_updated_at();
   `;
 
-  const { error } = await (client.rpc as any)('exec_sql', { sql: ddl }).catch(async (rpcError: unknown) => {
+  let error: unknown = null;
+
+  try {
+    const result = await (client.rpc as any)('exec_sql', { sql: ddl });
+    error = result?.error ?? null;
+  } catch (rpcError) {
     console.warn('[supabase] exec_sql rpc unavailable, attempting raw query', rpcError);
-    return client.from('user_profiles').select('user_id').limit(1);
-  });
+    const fallback = await client.from('user_profiles').select('user_id').limit(1);
+    error = fallback.error ?? null;
+  }
 
   if (error) {
     console.warn('[supabase] ensureUserProfileTable error', error);
@@ -79,18 +115,20 @@ const mapProfileDraft = (draft: ProfileDraft | null) => {
     goals: draft?.goals ?? null,
     preferredTypes: draft?.preferredTypes ?? null,
   });
+  const normalizedGender = LEGACY_GENDER_MAP[normalizeLegacyToken(draft?.gender ?? draft?.sex ?? null)] ?? null;
+  const normalizedActivity = LEGACY_ACTIVITY_LEVEL_MAP[normalizeLegacyToken(draft?.activity ?? null)] ?? null;
 
   return {
-    height: draft?.height ?? null,
-    weight: draft?.weight ?? null,
     age: draft?.age ?? null,
-    gender: draft?.gender ?? draft?.sex ?? null,
+    gender: normalizedGender,
     age_range: draft?.ageRange ?? null,
     sex: draft?.sex ?? draft?.gender ?? null,
     supplement_experience: draft?.supplementExperience ?? null,
     dietary_preferences: draft?.diets ?? null,
-    activity_level: draft?.activity ?? null,
+    activity_level: normalizedActivity,
     preferred_types: draft?.preferredTypes ?? null,
+    allergy_flags: draft?.allergyFlags ?? [],
+    ingredient_restrictions: draft?.ingredientRestrictions ?? [],
     adherence_blocker: draft?.adherenceBlocker ?? null,
     permission_preferences: draft?.permissionPreferences ?? null,
     smart_filter_config: draft?.smartFilterConfig ?? smartFilterConfig,
@@ -101,6 +139,32 @@ const mapProfileDraft = (draft: ProfileDraft | null) => {
     location_city: draft?.location?.city ?? null,
     health_goals: draft?.goals ?? null,
   };
+};
+
+const mapLiveCompatibleProfileDraft = (draft: ProfileDraft | null) => {
+  const country = draft?.location?.country?.trim();
+  const city = draft?.location?.city?.trim();
+  const location = [city, country].filter(Boolean).join(', ') || null;
+  const normalizedGender = LEGACY_GENDER_MAP[normalizeLegacyToken(draft?.gender ?? draft?.sex ?? null)] ?? null;
+  const normalizedActivity = LEGACY_ACTIVITY_LEVEL_MAP[normalizeLegacyToken(draft?.activity ?? null)] ?? null;
+
+  return {
+    age: draft?.age ?? null,
+    gender: normalizedGender,
+    dietary_preference: draft?.diets?.[0] ?? null,
+    activity_level: normalizedActivity,
+    location,
+    allergy_flags: draft?.allergyFlags ?? [],
+    ingredient_restrictions: draft?.ingredientRestrictions ?? [],
+  };
+};
+
+const isUserProfilesSchemaMismatchError = (error: { message?: string | null; details?: string | null; hint?: string | null } | null) => {
+  const haystack = `${error?.message ?? ''} ${error?.details ?? ''} ${error?.hint ?? ''}`.toLowerCase();
+  return (
+    haystack.includes("user_profiles") &&
+    (haystack.includes('schema cache') || haystack.includes('column') || haystack.includes('could not find'))
+  );
 };
 
 export const upsertUserProfile = async (client: PublicClient, userId: string, draft: ProfileDraft | null, trial: TrialState) => {
@@ -117,18 +181,31 @@ export const upsertUserProfile = async (client: PublicClient, userId: string, dr
 
   const { error } = await client.from('user_profiles').upsert(payload as any, { onConflict: 'user_id' });
 
+  if (error && isUserProfilesSchemaMismatchError(error)) {
+    const compatiblePayload = {
+      user_id: userId,
+      ...mapLiveCompatibleProfileDraft(draft),
+    };
+    const fallback = await client.from('user_profiles').upsert(compatiblePayload as any, { onConflict: 'user_id' });
+    if (!fallback.error) {
+      return { ok: true, mode: 'live_compatible_fallback' as const };
+    }
+    console.error('[supabase] Failed to upsert user profile with live-compatible fallback', fallback.error);
+    return { ok: false, error: fallback.error };
+  }
+
   if (error) {
     console.error('[supabase] Failed to upsert user profile', error);
     return { ok: false, error };
   }
 
-  return { ok: true };
+  return { ok: true, mode: 'full_payload' as const };
 };
 
 export const fetchUserProfile = async (client: PublicClient, userId: string) => {
   return client
     .from('user_profiles')
-    .select('user_id, onboarding_completed, updated_at')
+    .select('user_id, allergy_flags, ingredient_restrictions, updated_at')
     .eq('user_id', userId)
     .maybeSingle();
 };

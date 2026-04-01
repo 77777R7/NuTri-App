@@ -1,0 +1,1960 @@
+{
+  "schemaVersion": "scrapling_lane_registry.v1",
+  "generatedAt": "2026-03-21T05:44:45.380Z",
+  "defaults": {
+    "status": "HOLD",
+    "reason": "Default hold until a brand/source lane is proven with merge + coverage validation."
+  },
+  "laneStatuses": [
+    {
+      "brandName": "21st Century",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 4 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Absolute Nutrition",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 2 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Advance Physician Formulas",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 2 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Advanced Orthomolecular Research AOR",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 4 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Alani Nu",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 4 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Allimax",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 1 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "ALLMAX",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 5 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "ALPHA LION",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Manual GO override: iHerb supplement lane with soft description gaps; prior stale detection was caused by a browser challenge, not a non-supplement source."
+    },
+    {
+      "brandName": "Amazing Grass",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 3 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Amazing Herbs",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 7 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Amazing India",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 5 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Amazing Nutrition",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 2 wave(s), 16 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "American Biosciences",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 1 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "American Health",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 1 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "AN Supps",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Bootstrap GO: small iHerb-confirmed supplement lane with recoverable ingredient/dosage gaps and strong supplement-form signals."
+    },
+    {
+      "brandName": "Ancient Nutrition",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 3 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Animal",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 1 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Applied Nutrition",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 1 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "APS",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 2 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Arizona Natural",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 7 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Aura Cacia",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Bootstrap GO: small iHerb-confirmed supplement lane with recoverable ingredient/dosage gaps and strong supplement-form signals."
+    },
+    {
+      "brandName": "Aurora Nutrascience",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 3 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Bariatric Advantage",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 1 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Bariatric Fusion",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 1 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Barlean's",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 1 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Beekeeper's Naturals",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 1 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Bio Nutrition",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 2 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "BioEmblem",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 1 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "BioGaia",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Bootstrap GO: small clean iHerb-confirmed lane with warnings/suggested_use-only gaps and explicit supplement-form signals."
+    },
+    {
+      "brandName": "BioSchwartz",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 1 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "BioSil",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 1 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Blackmores",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Bootstrap GO: small iHerb-confirmed supplement lane with recoverable ingredient/dosage gaps and strong supplement-form signals."
+    },
+    {
+      "brandName": "Bloom",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 1 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Bluebonnet Nutrition",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 5 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "BodyBio",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 9 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "BodyHealth",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 2 wave(s), 16 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "BPI Sports",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 1 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "BrainMD",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 3 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Bucked Up",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 3 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "C4 / Cellucor",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 4 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "California Gold Nutrition",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 3 wave(s), 34 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Carlson",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Bootstrap GO: iHerb-confirmed lane with mostly warnings/suggested_use-only gaps and no obvious food/personal-care/OTC contamination."
+    },
+    {
+      "brandName": "CATALO",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Bootstrap GO: small iHerb-confirmed supplement lane with recoverable ingredient/dosage gaps and strong supplement-form signals."
+    },
+    {
+      "brandName": "Celsius",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 6 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Centrum",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 2 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Chapter One",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 1 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "ChildLife Essentials",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 5 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Christopher's Original Formulas",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Bootstrap GO: small iHerb-confirmed supplement lane with recoverable ingredient/dosage gaps and strong supplement-form signals."
+    },
+    {
+      "brandName": "Citrucel",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Bootstrap GO: small iHerb-confirmed supplement lane with recoverable ingredient/dosage gaps and strong supplement-form signals."
+    },
+    {
+      "brandName": "CodeAge",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 5 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Con-Cret",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 2 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Country Farms",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 1 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Country Life",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Bootstrap GO: small clean iHerb-confirmed lane with warnings/suggested_use-only gaps and explicit supplement-form signals."
+    },
+    {
+      "brandName": "Craftmix",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 1 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Creekside Natural Therapeutics",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Bootstrap GO: small clean iHerb-confirmed lane with warnings/suggested_use-only gaps and explicit supplement-form signals."
+    },
+    {
+      "brandName": "Crystal Star",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 1 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "D'adamo",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 12 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "DaVinci Laboratories",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 5 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Designs For Health",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Bootstrap GO: small iHerb-confirmed supplement lane with recoverable ingredient/dosage gaps and strong supplement-form signals."
+    },
+    {
+      "brandName": "Deva",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 3 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Doctor's Best",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 6 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Double Wood Supplements",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Bootstrap GO: small clean iHerb-confirmed lane with warnings/suggested_use-only gaps and explicit supplement-form signals."
+    },
+    {
+      "brandName": "Dr. Mercola",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 2 wave(s), 22 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Dr. Murray's",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 5 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Dr. Ohhira's",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 1 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "DripDrop",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 1 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Earth Circle Organics",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Bootstrap GO: iHerb-confirmed lane with mostly warnings/suggested_use-only gaps and no obvious food/personal-care/OTC contamination."
+    },
+    {
+      "brandName": "Eclectic Herb",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Bootstrap GO: small iHerb-confirmed supplement lane with recoverable ingredient/dosage gaps and strong supplement-form signals."
+    },
+    {
+      "brandName": "Econugenics",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 4 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Edward & Sons",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 1 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "EHPlabs",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 5 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Eidon Ionic Minerals",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 2 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Else",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 1 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Emerald Laboratories",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Bootstrap GO: small clean iHerb-confirmed lane with warnings/suggested_use-only gaps and explicit supplement-form signals."
+    },
+    {
+      "brandName": "Emerita",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 1 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Ener-C",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 6 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "EPI",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 1 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "EsterC",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 1 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "EuroMedica",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 1 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "EVLution Nutrition",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 2 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Fearn Natural Foods",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 1 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Fit & Lean",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 1 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "FlapJacked",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 1 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Flat Tummy",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 3 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Flora",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 2 wave(s), 14 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Force Factor",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 11 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Forest Leaf",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 1 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Fortune Pharm",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Bootstrap GO: small iHerb-confirmed supplement lane with recoverable ingredient/dosage gaps and strong supplement-form signals."
+    },
+    {
+      "brandName": "FutureBiotics",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Bootstrap GO: iHerb-confirmed lane with mostly warnings/suggested_use-only gaps and no obvious food/personal-care/OTC contamination."
+    },
+    {
+      "brandName": "G FUEL",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 5 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Gaea",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 2 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Gaia Herbs",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 2 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Garden of Life",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 2 wave(s), 19 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Gaspari Nutrition",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 2 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "GAT",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 1 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Global Healing",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 2 wave(s), 23 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Good Sense",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 4 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Great Wall Brand",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 1 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "GreenPeach",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Bootstrap GO: small clean iHerb-confirmed lane with warnings/suggested_use-only gaps and explicit supplement-form signals."
+    },
+    {
+      "brandName": "Greens First",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 4 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Grether's Pastilles",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Bootstrap GO: small clean iHerb-confirmed lane with warnings/suggested_use-only gaps and explicit supplement-form signals."
+    },
+    {
+      "brandName": "GROWUS",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Bootstrap GO: small iHerb-confirmed supplement lane with recoverable ingredient/dosage gaps and strong supplement-form signals."
+    },
+    {
+      "brandName": "Happy Healthy Hippie",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 3 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Health and Her",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 2 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Health Plus",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 1 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "HealthForce Superfoods",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 2 wave(s), 17 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Healths Harmony",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 3 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Healthy Heights",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Bootstrap GO: small clean iHerb-confirmed lane with warnings/suggested_use-only gaps and explicit supplement-form signals."
+    },
+    {
+      "brandName": "Her Own",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 1 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Herbal Secrets",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 2 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Herbion Naturals",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 1 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Herbs Etc.",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Bootstrap GO: small clean iHerb-confirmed lane with warnings/suggested_use-only gaps and explicit supplement-form signals."
+    },
+    {
+      "brandName": "Hi Tech Pharmaceuticals",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 4 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Himalaya",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 5 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Host Defense",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Bootstrap GO: small clean iHerb-confirmed lane with warnings/suggested_use-only gaps and explicit supplement-form signals."
+    },
+    {
+      "brandName": "Hyalogic",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Bootstrap GO: small clean iHerb-confirmed lane with warnings/suggested_use-only gaps and explicit supplement-form signals."
+    },
+    {
+      "brandName": "Hydroxycut",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 1 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Ilhwa",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Bootstrap GO: small iHerb-confirmed supplement lane with recoverable ingredient/dosage gaps and strong supplement-form signals."
+    },
+    {
+      "brandName": "InnovixLabs",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Bootstrap GO: small iHerb-confirmed supplement lane with recoverable ingredient/dosage gaps and strong supplement-form signals."
+    },
+    {
+      "brandName": "Intelligent Labs",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 1 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Irwin Naturals",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 1 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "J&R Port Trading",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Bootstrap GO: small iHerb-confirmed supplement lane with recoverable ingredient/dosage gaps and strong supplement-form signals."
+    },
+    {
+      "brandName": "Jacked Factory",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 4 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Jamieson Vitamins",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Bootstrap GO: small iHerb-confirmed supplement lane with recoverable ingredient/dosage gaps and strong supplement-form signals."
+    },
+    {
+      "brandName": "Jarrow Formulas",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 3 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Jigsaw Health",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Bootstrap GO: small iHerb-confirmed supplement lane with recoverable ingredient/dosage gaps and strong supplement-form signals."
+    },
+    {
+      "brandName": "JNX Sports",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 1 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Jovial",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 2 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "JoySpring",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 1 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Julian Bakery",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 3 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "JUNP Hydration",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 3 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Kaged",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 1 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "KAL",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 4 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "KetoLogic",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 2 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Ketone-IQ",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Bootstrap GO: iHerb-confirmed lane with mostly warnings/suggested_use-only gaps and no obvious food/personal-care/OTC contamination."
+    },
+    {
+      "brandName": "Kids Smart",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 1 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Knorr",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 1 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Kori",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 1 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "KOS",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 2 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "LA Republica",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Bootstrap GO: small clean iHerb-confirmed lane with warnings/suggested_use-only gaps and explicit supplement-form signals."
+    },
+    {
+      "brandName": "Lactofit",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 8 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Laird Superfood",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 3 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Lake Avenue Nutrition",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 2 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Lawry's",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 1 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Left Coast Performance",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 4 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Legendairy Milk",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 1 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Legendary Foods",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 2 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Lemme",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 1 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Levels",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 2 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Life Extension",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 4 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "LifeTime Vitamins",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 4 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "LoveBug Probiotics",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 3 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Macrolife Naturals",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 2 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Manitoba Harvest",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 5 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Martha Stewart Wellness",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 1 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "MaryRuth's",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 2 wave(s), 17 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Mason Natural",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 11 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Maxi Health",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Bootstrap GO: small iHerb-confirmed supplement lane with recoverable ingredient/dosage gaps and strong supplement-form signals."
+    },
+    {
+      "brandName": "MegaFood",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 3 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "MET-Rx",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 1 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Metabolic Maintenance",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 1 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Metabolic Nutrition",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 2 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Metagenics",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Bootstrap GO: small clean iHerb-confirmed lane with warnings/suggested_use-only gaps and explicit supplement-form signals."
+    },
+    {
+      "brandName": "Michael's Health",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 4 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Micro Ingredients",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Bootstrap GO: iHerb-confirmed lane with mostly warnings/suggested_use-only gaps and no obvious food/personal-care/OTC contamination."
+    },
+    {
+      "brandName": "Minami Nutrition",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 2 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Miss Jones Baking Co",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 1 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Mommy's Bliss",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Bootstrap GO: small clean iHerb-confirmed lane with warnings/suggested_use-only gaps and explicit supplement-form signals."
+    },
+    {
+      "brandName": "MRM Nutrition",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 4 wave(s), 40 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Mt. Capra",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 3 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "MuscleMeds",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 1 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "MuscleTech",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 3 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Natierra",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 2 wave(s), 13 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Natrol",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 1 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Natural Factors",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 6 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Natural Path Silver Wings",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Bootstrap GO: small iHerb-confirmed supplement lane with recoverable ingredient/dosage gaps and strong supplement-form signals."
+    },
+    {
+      "brandName": "Natural Stacks",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 4 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Natural Vitality",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 1 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Nature Made",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 12 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Nature's Bounty",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 5 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Nature's Craft",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 9 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Nature's Life",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 3 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Nature's Path",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 1 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Nature's Secret",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 1 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Nature's Truth",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 5 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Nature's Way",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Bootstrap GO: iHerb-confirmed lane with mostly warnings/suggested_use-only gaps and no obvious food/personal-care/OTC contamination."
+    },
+    {
+      "brandName": "NaturesPlus",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Bootstrap GO: iHerb-confirmed lane with mostly warnings/suggested_use-only gaps and no obvious food/personal-care/OTC contamination."
+    },
+    {
+      "brandName": "NB Pure",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 2 wave(s), 17 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "NBI",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 1 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Neurogan Health",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 4 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "New Chapter",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Bootstrap GO: iHerb-confirmed lane with mostly warnings/suggested_use-only gaps and no obvious food/personal-care/OTC contamination."
+    },
+    {
+      "brandName": "Nobi Nutrition",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 1 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Noor Vitamins",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 6 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Nordic Naturals",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 12 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Norigami",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 1 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "NOW Foods",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 9 wave(s), 76 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "NuBest",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 2 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Nutiva",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 1 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Nutra BioGenesis",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 1 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "NutraBio",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Bootstrap GO: small clean iHerb-confirmed lane with warnings/suggested_use-only gaps and explicit supplement-form signals."
+    },
+    {
+      "brandName": "NutraChamps",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 2 wave(s), 18 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "NutraMedix",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 1 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Nutrex Hawaii",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 1 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Nutri",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 2 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "NutriBiotic",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 3 wave(s), 36 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Nutricology",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 2 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Nutricost",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 3 wave(s), 28 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Nutrition Now",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 1 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Nuzest",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 2 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Ocean's Balance",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 1 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "OceanBlue",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 1 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "OLLY",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 2 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Olympian Labs",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 1 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Oregon's Wild Harvest",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 2 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Orgain",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 6 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Organic India",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Bootstrap GO: iHerb-confirmed lane with mostly warnings/suggested_use-only gaps and no obvious food/personal-care/OTC contamination."
+    },
+    {
+      "brandName": "Organic Traditions",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Bootstrap GO: iHerb-confirmed lane with mostly warnings/suggested_use-only gaps and no obvious food/personal-care/OTC contamination."
+    },
+    {
+      "brandName": "Organifi",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 1 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Organika",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 2 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Organix South",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 1 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Ovega-3",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 1 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "PB2 Foods",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 2 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Pendulum",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 1 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Perk Energy",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 1 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Pines International",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 1 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Pink Stork",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 2 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Planetary Herbals",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 10 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "PlantFusion",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 2 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Podium Nutrition",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 1 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Poshi",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 1 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Preggie",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 3 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Primaforce",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 1 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Prime Hydration",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 6 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Probase Nutrition",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Bootstrap GO: small clean iHerb-confirmed lane with warnings/suggested_use-only gaps and explicit supplement-form signals."
+    },
+    {
+      "brandName": "ProBioCare",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 1 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "ProHealth Longevity",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 5 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Promino",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 1 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Protocol for Life Balance",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Bootstrap GO: small iHerb-confirmed supplement lane with recoverable ingredient/dosage gaps and strong supplement-form signals."
+    },
+    {
+      "brandName": "Pure Co.",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 1 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Pure Encapsulations",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Bootstrap GO: small clean iHerb-confirmed lane with warnings/suggested_use-only gaps and explicit supplement-form signals."
+    },
+    {
+      "brandName": "Pure Encapsulations",
+      "sourceBucket": "official-browser-candidate",
+      "status": "STOP",
+      "reason": "Archived: browser discovery is 0; 6 rows moved to historical carry-forward, 2 rows improved via soft-field carry-forward but remain partial, and 29 rows were finalized as unresolved non-browser."
+    },
+    {
+      "brandName": "Pure Essence",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 5 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Pure Planet",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 1 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Pure Synergy",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 3 wave(s), 30 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Purity Products",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 8 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Quality of Life",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Bootstrap GO: small clean iHerb-confirmed lane with warnings/suggested_use-only gaps and explicit supplement-form signals."
+    },
+    {
+      "brandName": "Qunol",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 2 wave(s), 14 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Raw Nutrition",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Bootstrap GO: small clean iHerb-confirmed lane with warnings/suggested_use-only gaps and explicit supplement-form signals."
+    },
+    {
+      "brandName": "Real Ketones",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 6 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Real Mushrooms",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 1 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Redcon1",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 2 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Redd Remedies",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 1 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Redmond",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 6 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Renew Life",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 2 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Replesta",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Bootstrap GO: small iHerb-confirmed supplement lane with recoverable ingredient/dosage gaps and strong supplement-form signals."
+    },
+    {
+      "brandName": "Revive",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 1 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Ritual",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 2 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "RSP Nutrition",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 1 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Rule One Proteins",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 2 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "RxSugar",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 2 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "RYSE",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 3 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Ryukakusan",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 1 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "SaltStick",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Bootstrap GO: small clean iHerb-confirmed lane with warnings/suggested_use-only gaps and explicit supplement-form signals."
+    },
+    {
+      "brandName": "Schiff",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 2 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Seeking Health",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 1 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Serenity Kids",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 1 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Shiloh Farms",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 3 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "SmartyPants",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 6 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Snap Supplements",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 1 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Solaray",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 2 wave(s), 18 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Solely",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 1 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Solgar",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 2 wave(s), 22 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Song Shu Pai",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 1 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Source Naturals",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 3 wave(s), 31 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Sovereign Silver",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Bootstrap GO: iHerb-confirmed lane with mostly warnings/suggested_use-only gaps and no obvious food/personal-care/OTC contamination."
+    },
+    {
+      "brandName": "Sports Research",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 3 wave(s), 16 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Stur",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 2 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Sun Chlorella",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 2 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Sunergetic",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 4 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Sunwarrior",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 8 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Super Nutrition",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 1 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Swanson",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 3 wave(s), 31 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Swisse",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 1 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Swolverine",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 2 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Terry Naturally",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 4 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "The Akkermansia Company",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 1 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "the Vitamin Shoppe",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 2 wave(s), 15 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Theralogix",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 1 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Thinbi",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 1 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Thorne",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Bootstrap GO: small clean iHerb-confirmed lane with warnings/suggested_use-only gaps and explicit supplement-form signals."
+    },
+    {
+      "brandName": "Toniiq",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 1 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Trace",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 4 wave(s), 36 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Tribe Organics",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 1 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Troomy Nootropics",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 2 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Tropical Oasis",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Manual GO override: oral liquid mineral/vitamin supplement lane with soft description gaps; prior stale detection was caused by an iHerb browser challenge."
+    },
+    {
+      "brandName": "Tru Niagen",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 1 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "TruBiotics",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 1 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "True Sea Moss",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 2 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "TruHeight",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 3 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Truvani",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 2 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "TypeZero",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 1 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Ultima Replenisher",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 2 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Universal U",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 3 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "UpSpring",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 2 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "VeganSmart",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 1 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Vibrant Health",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Bootstrap GO: small clean iHerb-confirmed lane with warnings/suggested_use-only gaps and explicit supplement-form signals."
+    },
+    {
+      "brandName": "Vitacost",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 4 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Vital Nutrients",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 6 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Vitamatic",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 2 wave(s), 18 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Vitassium",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Bootstrap GO: small iHerb-confirmed supplement lane with recoverable ingredient/dosage gaps and strong supplement-form signals."
+    },
+    {
+      "brandName": "Vitauthority",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 1 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Vplab",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 2 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Waterboy",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 9 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Whole World Botanicals",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 1 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Wholesome Story",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 1 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Wholesome Yum",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 1 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "World Organic",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 1 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "YDY",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 1 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Yerba Prima",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 2 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Youtheory",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 2 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Yunnan Baiyao",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Bootstrap GO: small clean iHerb-confirmed lane with warnings/suggested_use-only gaps and explicit supplement-form signals."
+    },
+    {
+      "brandName": "Zahler",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 6 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Zhou Nutrition",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Derived from executed Scrapling lane, 1 wave(s), 2 full_overlay_ready uplift, static gates pass."
+    },
+    {
+      "brandName": "Zint",
+      "sourceBucket": "iherb-confirmed",
+      "status": "GO",
+      "reason": "Bootstrap GO: small clean iHerb-confirmed lane with warnings/suggested_use-only gaps and explicit supplement-form signals."
+    }
+  ],
+  "meta": {
+    "baseRegistryPath": "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/scrapling_lane_registry.v1.json",
+    "currentRegistryPath": "/Users/howard07/NuTriApp/nutri-app/output/scrapling_program_report_hold-push-v5/scrapling_lane_registry_current.json",
+    "importedDerivedLanes": 0,
+    "includeDerivedHold": false
+  }
+}

@@ -4,18 +4,24 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { listPersonalizationControlChips } from "@/lib/personalization/core/critiqueEngine";
 import type { PersonalizationControlKey, PreferenceVector } from "@/types/personalization";
 
+const VISIBLE_CHIP_KEYS: PersonalizationControlKey[] = ["simpler", "strong_only", "low_overlap"];
+
 export function CritiqueChipBar({
   preferenceVector,
   onToggleChip,
+  showLabel = true,
 }: {
   preferenceVector: PreferenceVector;
   onToggleChip: (input: { key: PersonalizationControlKey; active: boolean }) => void;
+  showLabel?: boolean;
 }) {
-  const chips = listPersonalizationControlChips(preferenceVector);
+  const chips = listPersonalizationControlChips(preferenceVector).filter((chip) =>
+    VISIBLE_CHIP_KEYS.includes(chip.key),
+  );
 
   return (
     <View style={styles.wrap}>
-      <Text style={styles.eyebrow}>Steer Personalization</Text>
+      {showLabel ? <Text style={styles.eyebrow}>Refine picks</Text> : null}
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}

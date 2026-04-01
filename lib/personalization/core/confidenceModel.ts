@@ -3,7 +3,7 @@ import type {
   GoalKey,
   ProductGoalMatch,
   SavedProductEvaluation,
-} from "@/types/personalization";
+} from "../../../types/personalization";
 
 const hasReasonCode = (
   reasons: Array<{ code: string }> | undefined,

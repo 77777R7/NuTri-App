@@ -11,7 +11,7 @@ import type {
   SavedProductEvaluationInput,
   SavedProductFactsStatus,
   SupplementTypeKey,
-} from "@/types/personalization";
+} from "../../../types/personalization";
 
 import { evaluateEligibilityPolicy } from "./eligibilityPolicy";
 import {

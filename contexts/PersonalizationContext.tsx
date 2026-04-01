@@ -461,10 +461,16 @@ export const PersonalizationProvider = ({ children }: { children: React.ReactNod
   const feedbackStateRef = useRef(feedbackState);
   const feedbackAdapterRef = useRef(createSupabaseBackedFeedbackAdapter());
   const lastSyncedStateKeyRef = useRef<string | null>(null);
+  const snapshotRef = useRef(DEFAULT_SNAPSHOT);
+  const userIdRef = useRef<string | undefined>(user?.id);
 
   useEffect(() => {
     feedbackStateRef.current = feedbackState;
   }, [feedbackState]);
+
+  useEffect(() => {
+    userIdRef.current = user?.id;
+  }, [user?.id]);
 
   useEffect(() => {
     let active = true;
@@ -664,6 +670,10 @@ export const PersonalizationProvider = ({ children }: { children: React.ReactNod
   );
 
   useEffect(() => {
+    snapshotRef.current = snapshot;
+  }, [snapshot]);
+
+  useEffect(() => {
     if (feedbackLoading) return;
 
     const syncKey = JSON.stringify({
@@ -699,18 +709,19 @@ export const PersonalizationProvider = ({ children }: { children: React.ReactNod
       surface: string;
       payload?: Record<string, unknown>;
     }) => {
+      const currentSnapshot = snapshotRef.current;
       const event = {
-        userId: user?.id,
+        userId: userIdRef.current,
         eventName: input.eventName,
         surface: input.surface,
-        snapshotId: snapshot.snapshotId,
-        rulesVersion: snapshot.rulesVersion,
-        supportState: snapshot.strategies.supportState,
+        snapshotId: currentSnapshot.snapshotId,
+        rulesVersion: currentSnapshot.rulesVersion,
+        supportState: currentSnapshot.strategies.supportState,
         payload: {
           ...input.payload,
-          decisionMode: snapshot.strategies.preferenceVector.decisionMode,
-          explanationStyle: snapshot.strategies.preferenceVector.explanationStyle,
-          notificationTolerance: snapshot.strategies.preferenceVector.notificationTolerance,
+          decisionMode: currentSnapshot.strategies.preferenceVector.decisionMode,
+          explanationStyle: currentSnapshot.strategies.preferenceVector.explanationStyle,
+          notificationTolerance: currentSnapshot.strategies.preferenceVector.notificationTolerance,
         },
       };
       await recordPersonalizationEvents([event]);
@@ -718,15 +729,7 @@ export const PersonalizationProvider = ({ children }: { children: React.ReactNod
         personalizationSupabaseInternals.appendPersonalizationEventsToSummary(current, [event]),
       );
     },
-    [
-      snapshot.rulesVersion,
-      snapshot.snapshotId,
-      snapshot.strategies.preferenceVector.decisionMode,
-      snapshot.strategies.preferenceVector.explanationStyle,
-      snapshot.strategies.preferenceVector.notificationTolerance,
-      snapshot.strategies.supportState,
-      user?.id,
-    ],
+    [],
   );
 
   const recordOverrideEvents = useCallback(

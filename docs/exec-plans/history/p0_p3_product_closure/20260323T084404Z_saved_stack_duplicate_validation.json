@@ -1,0 +1,265 @@
+{
+  "generatedAt": "2026-03-23T08:44:04.606Z",
+  "phase": "P1",
+  "phaseOutcomeStatus": "execution_success",
+  "tier1Ingredients": [
+    "Magnesium",
+    "Vitamin C",
+    "Zinc",
+    "Iron",
+    "Folate"
+  ],
+  "realVsControlled": {
+    "realSavedEnvironment": {
+      "enoughCoverage": true,
+      "totalCandidateRows": 10,
+      "blockers": []
+    },
+    "controlledQaFromImportedProducts": {
+      "fixtureCount": 4,
+      "realImportedProductCoverage": {
+        "magnesium": {
+          "displayName": "Magnesium",
+          "selectedCount": 2,
+          "passingCount": 1,
+          "samples": [
+            {
+              "productName": "Ultimate Man",
+              "source": "saved",
+              "ingredientDetected": "Magnesium",
+              "canonicalKey": "magnesium",
+              "rawDose": "25 mg",
+              "normalizedDose": "25 mg",
+              "ulValue": "350 mg",
+              "scope": "supplements_only",
+              "comparisonStatus": "below",
+              "renderedUlGuidanceLine": "Magnesium: estimated daily amount 25 mg; adult UL 350 mg; this appears below the UL. UL applies to supplemental magnesium (and medications), not naturally occurring food intake.",
+              "dailyDoseBasis": "one_serving_fallback",
+              "dailyDoseBasisReason": "snapshot_only_no_directions",
+              "pass": true,
+              "failureReason": null
+            },
+            {
+              "productName": "Whole Food Women's One Daily",
+              "source": "saved",
+              "ingredientDetected": "Magnesium",
+              "canonicalKey": "magnesium",
+              "rawDose": "10 mg",
+              "normalizedDose": "10 mg",
+              "ulValue": "350 mg",
+              "scope": "supplements_only",
+              "comparisonStatus": "below",
+              "renderedUlGuidanceLine": null,
+              "dailyDoseBasis": "one_serving_fallback",
+              "dailyDoseBasisReason": "snapshot_only_no_directions",
+              "pass": false,
+              "failureReason": "real_sample_eval_failed"
+            }
+          ]
+        },
+        "vitamin_c": {
+          "displayName": "Vitamin C",
+          "selectedCount": 2,
+          "passingCount": 2,
+          "samples": [
+            {
+              "productName": "Ester-C",
+              "source": "saved",
+              "ingredientDetected": "Vitamin C",
+              "canonicalKey": "vitamin_c",
+              "rawDose": "1000 mg",
+              "normalizedDose": "1000 mg",
+              "ulValue": "2000 mg",
+              "scope": "total_intake",
+              "comparisonStatus": "below",
+              "renderedUlGuidanceLine": "Vitamin C: estimated daily amount 1000 mg; adult UL 2000 mg; this appears below the UL.",
+              "dailyDoseBasis": "one_serving_fallback",
+              "dailyDoseBasisReason": "snapshot_only_no_directions",
+              "pass": true,
+              "failureReason": null
+            },
+            {
+              "productName": "Vitamin C 1000 mg",
+              "source": "saved",
+              "ingredientDetected": "Vitamin C",
+              "canonicalKey": "vitamin_c",
+              "rawDose": "1000 mg",
+              "normalizedDose": "1000 mg",
+              "ulValue": "2000 mg",
+              "scope": "total_intake",
+              "comparisonStatus": "below",
+              "renderedUlGuidanceLine": "Vitamin C: estimated daily amount 1000 mg; adult UL 2000 mg; this appears below the UL.",
+              "dailyDoseBasis": "one_serving_fallback",
+              "dailyDoseBasisReason": "snapshot_only_no_directions",
+              "pass": true,
+              "failureReason": null
+            }
+          ]
+        },
+        "zinc": {
+          "displayName": "Zinc",
+          "selectedCount": 2,
+          "passingCount": 2,
+          "samples": [
+            {
+              "productName": "Zinc Picolinate 15 mg",
+              "source": "saved",
+              "ingredientDetected": "Zinc",
+              "canonicalKey": "zinc",
+              "rawDose": "15 mg",
+              "normalizedDose": "15 mg",
+              "ulValue": "40 mg",
+              "scope": "total_intake",
+              "comparisonStatus": "below",
+              "renderedUlGuidanceLine": "Zinc: estimated daily amount 15 mg; adult UL 40 mg; this appears below the UL.",
+              "dailyDoseBasis": "one_serving_fallback",
+              "dailyDoseBasisReason": "snapshot_only_no_directions",
+              "pass": true,
+              "failureReason": null
+            },
+            {
+              "productName": "Zinc 25 mg",
+              "source": "saved",
+              "ingredientDetected": "Zinc",
+              "canonicalKey": "zinc",
+              "rawDose": "25 mg",
+              "normalizedDose": "25 mg",
+              "ulValue": "40 mg",
+              "scope": "total_intake",
+              "comparisonStatus": "below",
+              "renderedUlGuidanceLine": "Zinc: estimated daily amount 25 mg; adult UL 40 mg; this appears below the UL.",
+              "dailyDoseBasis": "one_serving_fallback",
+              "dailyDoseBasisReason": "snapshot_only_no_directions",
+              "pass": true,
+              "failureReason": null
+            }
+          ]
+        },
+        "iron": {
+          "displayName": "Iron",
+          "selectedCount": 2,
+          "passingCount": 2,
+          "samples": [
+            {
+              "productName": "Iron",
+              "source": "saved",
+              "ingredientDetected": "Iron",
+              "canonicalKey": "iron",
+              "rawDose": "40 mg",
+              "normalizedDose": "40 mg",
+              "ulValue": "45 mg",
+              "scope": "total_intake",
+              "comparisonStatus": "near",
+              "renderedUlGuidanceLine": "Iron: estimated daily amount 40 mg; adult UL 45 mg; this is close to the UL.",
+              "dailyDoseBasis": "one_serving_fallback",
+              "dailyDoseBasisReason": "snapshot_only_no_directions",
+              "pass": true,
+              "failureReason": null
+            },
+            {
+              "productName": "Whole Food Women's One Daily",
+              "source": "saved",
+              "ingredientDetected": "Iron",
+              "canonicalKey": "iron",
+              "rawDose": "3 mg",
+              "normalizedDose": "3 mg",
+              "ulValue": "45 mg",
+              "scope": "total_intake",
+              "comparisonStatus": "below",
+              "renderedUlGuidanceLine": "Iron: estimated daily amount 3 mg; adult UL 45 mg; this appears below the UL.",
+              "dailyDoseBasis": "one_serving_fallback",
+              "dailyDoseBasisReason": "snapshot_only_no_directions",
+              "pass": true,
+              "failureReason": null
+            }
+          ]
+        },
+        "folate": {
+          "displayName": "Folate",
+          "selectedCount": 2,
+          "passingCount": 2,
+          "samples": [
+            {
+              "productName": "Ultimate Man",
+              "source": "saved",
+              "ingredientDetected": "Folate",
+              "canonicalKey": "folate",
+              "rawDose": "667 mcg",
+              "normalizedDose": "0.667 mg",
+              "ulValue": "1000 mcg",
+              "scope": "supplements_or_fortified_only",
+              "comparisonStatus": "below",
+              "renderedUlGuidanceLine": "Folate: estimated daily amount 667 mcg; adult UL 1000 mcg; this appears below the UL. UL applies to folic acid from supplements or fortified foods, not naturally occurring food folate.",
+              "dailyDoseBasis": "one_serving_fallback",
+              "dailyDoseBasisReason": "snapshot_only_no_directions",
+              "pass": true,
+              "failureReason": null
+            },
+            {
+              "productName": "Whole Food Women's One Daily",
+              "source": "saved",
+              "ingredientDetected": "Folate",
+              "canonicalKey": "folate",
+              "rawDose": "800 mcg",
+              "normalizedDose": "0.8 mg",
+              "ulValue": "1000 mcg",
+              "scope": "supplements_or_fortified_only",
+              "comparisonStatus": "near",
+              "renderedUlGuidanceLine": "Folate: estimated daily amount 800 mcg; adult UL 1000 mcg; this is close to the UL. UL applies to folic acid from supplements or fortified foods, not naturally occurring food folate.",
+              "dailyDoseBasis": "one_serving_fallback",
+              "dailyDoseBasisReason": "snapshot_only_no_directions",
+              "pass": true,
+              "failureReason": null
+            }
+          ]
+        }
+      },
+      "passed": false
+    }
+  },
+  "requiredCaseCoverage": {
+    "simple_duplicate": {
+      "pass": true,
+      "evidence": "docs/exec-plans/active/week3_safety/week3_saved_stack_e2e_qa.json#magnesium_over_ul"
+    },
+    "multi_product_stack": {
+      "pass": true,
+      "evidence": "docs/exec-plans/active/week3_safety/week3_saved_stack_e2e_qa.json#mixed_stack_with_skipped_product"
+    },
+    "edge_weak_input": {
+      "pass": true,
+      "evidence": "docs/exec-plans/active/week3_safety/week3_saved_stack_e2e_qa.json#folate_uncertain"
+    }
+  },
+  "wordingValidation": [
+    {
+      "id": "supplements_only_scope",
+      "pass": true,
+      "detail": "Magnesium: estimated daily amount 200 mg; adult UL 350 mg; this appears below the UL. UL applies to supplemental magnesium (and medications), not naturally occurring food intake."
+    },
+    {
+      "id": "not_comparable_is_not_safe",
+      "pass": true,
+      "detail": "Folate: a UL reference exists (1000 mcg), but this product dose could not be safely compared. UL applies to folic acid from supplements or fortified foods, not naturally occurring food folate."
+    },
+    {
+      "id": "no_ul_established_is_not_no_risk",
+      "pass": true,
+      "detail": "NAC: no NIH ODS upper limit is established for this ingredient."
+    },
+    {
+      "id": "stack_summary_scoped",
+      "pass": true,
+      "detail": [
+        "Estimated total: 620 mg/day.",
+        "Adult supplemental UL: 350 mg/day.",
+        "UL applies to supplemental magnesium (and medications), not naturally occurring food intake."
+      ]
+    }
+  ],
+  "finalCall": {
+    "controlledTier1ClosurePasses": false,
+    "realSavedClosurePasses": true,
+    "closureVerdict": "Tier-1 duplicate reminder is closed on real saved stacks, with controlled QA retained as supporting evidence."
+  }
+}

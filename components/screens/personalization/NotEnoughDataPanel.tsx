@@ -9,7 +9,7 @@ export function NotEnoughDataPanel({ count }: { count: number }) {
       <Text style={styles.eyebrow}>Coverage note</Text>
       <Text style={styles.title}>We held back {count} products with weaker structured data.</Text>
       <Text style={styles.body}>
-        Goal Navigator only ranks products when the label data is complete enough to explain why they fit.
+        Explore by goal only ranks products when the label data is complete enough to explain why they fit.
       </Text>
     </View>
   );

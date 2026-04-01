@@ -16,9 +16,6 @@ export const METRIC_NAMES = [
   "training_write_breaker_open",
   "deepseek_bundle_success",
   "deepseek_bundle_fail_degraded",
-  "label_scan_metrics_write_success",
-  "label_scan_metrics_write_rejected",
-  "label_scan_metrics_write_timeout",
   "decision_support_digest_mismatch",
   "decision_inputs_hash_mismatch",
   "decision_support_refetch_count_per_scan",
@@ -52,12 +49,6 @@ type TimingMetricSummary = {
 };
 
 type TimingMetricsState = Record<TimingMetricName, TimingMetricSummary>;
-
-type LabelScanMetricsWriteRejectedDebug = {
-  at: string;
-  code: string | null;
-  message: string;
-};
 
 type RegulatoryWritePolicyDecisionKind =
   | "wouldBlock"
@@ -126,7 +117,6 @@ let timingWindow = buildEmptyTimings();
 const startedAt = new Date().toISOString();
 let lastFlushAt = startedAt;
 let flushStarted = false;
-const labelScanMetricsWriteRejectedRecent: LabelScanMetricsWriteRejectedDebug[] = [];
 const regulatoryWritePolicyTotals = buildEmptyRegulatoryPolicyDecisionCounts();
 const regulatoryWritePolicyBySourceKind = buildEmptyRegulatoryPolicyBucket();
 const regulatoryWritePolicyByIncomingRank = buildEmptyRegulatoryPolicyBucket();
@@ -180,20 +170,6 @@ export const recordMetricTiming = (name: TimingMetricName, ms: number): void => 
     current.maxMs = Math.max(current.maxMs, roundedMs);
     current.minMs = current.count === 1 ? roundedMs : Math.min(current.minMs, roundedMs);
   }
-};
-
-export const recordLabelScanMetricsWriteRejected = (message: string, code?: string | null): void => {
-  const cleaned = redactForInternalMetrics(message);
-  if (!cleaned) return;
-
-  labelScanMetricsWriteRejectedRecent.unshift({
-    at: new Date().toISOString(),
-    code: code ?? null,
-    message: cleaned,
-  });
-
-  // Keep a tiny ring buffer for diagnosis without leaking large payloads.
-  labelScanMetricsWriteRejectedRecent.length = Math.min(labelScanMetricsWriteRejectedRecent.length, 5);
 };
 
 const bumpRegulatoryPolicyBucket = (
@@ -272,7 +248,6 @@ export const getMetricsSnapshot = () => ({
     ]),
   ),
   debug: {
-    labelScanMetricsWriteRejectedRecent: [...labelScanMetricsWriteRejectedRecent],
     regulatoryWritePolicy: {
       totals: { ...regulatoryWritePolicyTotals },
       bySourceKind: { ...regulatoryWritePolicyBySourceKind },

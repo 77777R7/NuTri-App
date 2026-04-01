@@ -1,375 +1,506 @@
-import { StepSlide } from '@/components/animation/StepSlide';
-import { useTransitionDir } from '@/contexts/TransitionContext';
-
-// app/onboarding/welcome.tsx
 import React, { useCallback, useEffect, useMemo, useRef } from 'react';
-import { Animated, BackHandler, Dimensions, Easing, StyleSheet } from 'react-native';
+import {
+  Animated as RNAnimated,
+  BackHandler,
+  Easing as RNEasing,
+  Platform,
+  StyleSheet,
+  Text,
+  View,
+  useWindowDimensions,
+} from 'react-native';
+import * as Haptics from 'expo-haptics';
+import { BlurView } from 'expo-blur';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
+import Animated, {
+  Easing,
+  cancelAnimation,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withSequence,
+  withTiming,
+} from 'react-native-reanimated';
 
-// Use shared primitives to keep Animated typing predictable.
-import { Text, View } from '@/components/ui/nativewind-primitives';
-
-// Keep imports at the top to satisfy linting.
-import AppHeader from '@/components/common/AppHeader';
-import { ProgressBar } from '@/components/onboarding/ProgressBar';
-import { PrimaryButton } from '@/components/ui/Buttons';
-import { BrandGradient } from '@/components/BrandGradient';
+import { StepSlide } from '@/components/animation/StepSlide';
+import { WelcomeHeroCarousel } from '@/components/onboarding/welcome/WelcomeHeroCarousel';
+import { WelcomeHeroGlow } from '@/components/onboarding/welcome/WelcomeHeroGlow';
+import { WelcomePrimaryCTA } from '@/components/onboarding/welcome/WelcomePrimaryCTA';
+import {
+  ACTIVE_BLUE,
+  FOREGROUND,
+  INACTIVE_DOT,
+  MUTED,
+  WELCOME_BG,
+  WELCOME_BG_BOTTOM,
+  WELCOME_BG_TOP,
+} from '@/components/onboarding/welcome/welcomeTokens';
 import { useOnboarding } from '@/contexts/OnboardingContext';
+import { useTransitionDir } from '@/contexts/TransitionContext';
 import { trackOnboardingEvent } from '@/lib/analytics/onboarding';
-import { ONBOARDING_TOTAL_STEPS } from '@/lib/onboarding-v2';
-import { colors, radii, spacing, type } from '@/lib/theme';
 
-// ✅ 用 primitives 作为宿主，生成动画组件，避免 AnimatedProps<{}> 导致的 JSX 报错
-const AnimView = Animated.createAnimatedComponent(View as any);
-const AnimText = Animated.createAnimatedComponent(Text as any);
+const BLUR_PROPS =
+  Platform.OS === 'android'
+    ? ({ experimentalBlurMethod: 'dimezisBlurView' } as const)
+    : ({} as const);
 
 export default function WelcomeScreen() {
   const router = useRouter();
-  const { setProgress } = useOnboarding();
   const insets = useSafeAreaInsets();
+  const { width, height } = useWindowDimensions();
+  const { progress, setProgress } = useOnboarding();
   const { setDirection, consumeDirection } = useTransitionDir();
 
-  // entrance animations
-  const progressSlide = useRef(new Animated.Value(-12)).current;
-  const progressOpacity = useRef(new Animated.Value(0)).current;
-  const headlineOpacity = useRef(new Animated.Value(0)).current;
-  const headlineTranslate = useRef(new Animated.Value(12)).current;
-  const subOpacity = useRef(new Animated.Value(0)).current;
-  const subTranslate = useRef(new Animated.Value(12)).current;
-  const badgeScale = useRef(new Animated.Value(0.96)).current;
-  const accentFade = useRef(new Animated.Value(0)).current;
-  const accentScale = useRef(new Animated.Value(0.8)).current;
+  const cardWidth = Math.min(width - 56, 320);
+  const cardHeight = Math.round(cardWidth * 0.553);
+  const isCompactHeight = height < 860;
+
+  const enterDir = useMemo(() => {
+    const direction = consumeDirection();
+    return direction === 'none' ? 'none' : direction;
+  }, [consumeDirection]);
+
+  const logoOpacity = useRef(new RNAnimated.Value(0)).current;
+  const logoTranslate = useRef(new RNAnimated.Value(18)).current;
+  const heroOpacity = useRef(new RNAnimated.Value(0)).current;
+  const heroTranslate = useRef(new RNAnimated.Value(18)).current;
+  const copyOpacity = useRef(new RNAnimated.Value(0)).current;
+  const copyTranslate = useRef(new RNAnimated.Value(18)).current;
+  const footerOpacity = useRef(new RNAnimated.Value(0)).current;
+  const footerTranslate = useRef(new RNAnimated.Value(18)).current;
+  const microcopyOpacity = useRef(new RNAnimated.Value(1)).current;
+  const microcopyTranslate = useRef(new RNAnimated.Value(0)).current;
+  const isNavigatingRef = useRef(false);
+
+  const floatY = useSharedValue(0);
+  const pulse = useSharedValue(0);
+  const diffuse = useSharedValue(0);
 
   useFocusEffect(
     useCallback(() => {
       const onHardwareBackPress = () => true;
       const subscription = BackHandler.addEventListener('hardwareBackPress', onHardwareBackPress);
-
       return () => subscription.remove();
     }, []),
   );
 
   useEffect(() => {
-    Animated.sequence([
-      Animated.parallel([
-        Animated.timing(progressOpacity, {
+    if (progress !== 1) {
+      void setProgress(1);
+    }
+  }, [progress, setProgress]);
+
+  useEffect(() => {
+    RNAnimated.sequence([
+      RNAnimated.parallel([
+        RNAnimated.timing(logoOpacity, {
           toValue: 1,
-          duration: 420,
-          easing: Easing.out(Easing.cubic),
+          duration: 620,
+          easing: RNEasing.bezier(0.16, 1, 0.3, 1),
           useNativeDriver: true,
         }),
-        Animated.timing(progressSlide, {
+        RNAnimated.timing(logoTranslate, {
           toValue: 0,
-          duration: 420,
-          easing: Easing.out(Easing.cubic),
+          duration: 620,
+          easing: RNEasing.bezier(0.16, 1, 0.3, 1),
           useNativeDriver: true,
         }),
       ]),
-      Animated.parallel([
-          Animated.timing(headlineOpacity, {
-            toValue: 1,
-            duration: 360,
-            easing: Easing.bezier(0.16, 1, 0.3, 1),
-            useNativeDriver: true,
-          }),
-          Animated.timing(headlineTranslate, {
-            toValue: 0,
-            duration: 360,
-            easing: Easing.bezier(0.16, 1, 0.3, 1),
-            useNativeDriver: true,
-          }),
-      ]),
-      Animated.parallel([
-          Animated.timing(subOpacity, {
-            toValue: 1,
-            duration: 360,
-            easing: Easing.bezier(0.16, 1, 0.3, 1),
-            useNativeDriver: true,
-          }),
-          Animated.timing(subTranslate, {
-            toValue: 0,
-            duration: 360,
-            easing: Easing.bezier(0.16, 1, 0.3, 1),
-            useNativeDriver: true,
-          }),
-      ]),
-      Animated.parallel([
-        Animated.timing(badgeScale, {
+      RNAnimated.parallel([
+        RNAnimated.timing(heroOpacity, {
           toValue: 1,
-          duration: 360,
-          easing: Easing.bezier(0.16, 1, 0.3, 1),
+          duration: 720,
+          easing: RNEasing.bezier(0.16, 1, 0.3, 1),
           useNativeDriver: true,
         }),
-        Animated.parallel([
-          Animated.timing(accentFade, {
-            toValue: 1,
-            duration: 500,
-            easing: Easing.out(Easing.cubic),
-            useNativeDriver: true,
-          }),
-          Animated.timing(accentScale, {
-            toValue: 1,
-            duration: 500,
-            easing: Easing.out(Easing.cubic),
-            useNativeDriver: true,
-          }),
-        ]),
+        RNAnimated.timing(heroTranslate, {
+          toValue: 0,
+          duration: 720,
+          easing: RNEasing.bezier(0.16, 1, 0.3, 1),
+          useNativeDriver: true,
+        }),
+      ]),
+      RNAnimated.parallel([
+        RNAnimated.timing(copyOpacity, {
+          toValue: 1,
+          duration: 560,
+          easing: RNEasing.bezier(0.16, 1, 0.3, 1),
+          useNativeDriver: true,
+        }),
+        RNAnimated.timing(copyTranslate, {
+          toValue: 0,
+          duration: 560,
+          easing: RNEasing.bezier(0.16, 1, 0.3, 1),
+          useNativeDriver: true,
+        }),
+      ]),
+      RNAnimated.parallel([
+        RNAnimated.timing(footerOpacity, {
+          toValue: 1,
+          duration: 520,
+          easing: RNEasing.bezier(0.16, 1, 0.3, 1),
+          useNativeDriver: true,
+        }),
+        RNAnimated.timing(footerTranslate, {
+          toValue: 0,
+          duration: 520,
+          easing: RNEasing.bezier(0.16, 1, 0.3, 1),
+          useNativeDriver: true,
+        }),
       ]),
     ]).start();
-  }, [
-    accentFade,
-    accentScale,
-    badgeScale,
-    headlineOpacity,
-    headlineTranslate,
-    progressOpacity,
-    progressSlide,
-    subOpacity,
-    subTranslate,
-  ]);
+  }, [copyOpacity, copyTranslate, footerOpacity, footerTranslate, heroOpacity, heroTranslate, logoOpacity, logoTranslate]);
 
-  const screenH = Dimensions.get('window').height;
-  const isSmall = screenH < 740;
+  useEffect(() => {
+    floatY.value = withRepeat(
+      withSequence(
+        withTiming(-7, { duration: 3000, easing: Easing.inOut(Easing.ease) }),
+        withTiming(0, { duration: 3000, easing: Easing.inOut(Easing.ease) }),
+      ),
+      -1,
+      false,
+    );
 
-  const enterDir = useMemo(() => {
-    const dir = consumeDirection();
-    return dir === 'none' ? 'forward' : dir;
-  }, [consumeDirection]);
+    pulse.value = withRepeat(
+      withSequence(
+        withTiming(1, { duration: 2100, easing: Easing.inOut(Easing.ease) }),
+        withTiming(0, { duration: 2100, easing: Easing.inOut(Easing.ease) }),
+      ),
+      -1,
+      false,
+    );
 
-  const onGetStarted = () => {
-    setProgress(2);
+    diffuse.value = withRepeat(
+      withSequence(
+        withTiming(1, { duration: 3500, easing: Easing.bezier(0.16, 1, 0.3, 1) }),
+        withTiming(0, { duration: 0 }),
+      ),
+      -1,
+      false,
+    );
+
+    return () => {
+      cancelAnimation(floatY);
+      cancelAnimation(pulse);
+      cancelAnimation(diffuse);
+    };
+  }, [diffuse, floatY, pulse]);
+
+  const heroFloatStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: floatY.value }],
+  }));
+
+  const handleGetStarted = useCallback(async () => {
+    if (isNavigatingRef.current) return;
+    isNavigatingRef.current = true;
+
+    try {
+      await Haptics.selectionAsync();
+    } catch {
+      // noop
+    }
+
+    RNAnimated.parallel([
+      RNAnimated.timing(microcopyOpacity, {
+        toValue: 0,
+        duration: 280,
+        easing: RNEasing.bezier(0.16, 1, 0.3, 1),
+        useNativeDriver: true,
+      }),
+      RNAnimated.timing(microcopyTranslate, {
+        toValue: 8,
+        duration: 280,
+        easing: RNEasing.bezier(0.16, 1, 0.3, 1),
+        useNativeDriver: true,
+      }),
+    ]).start();
+
     setDirection('forward');
-    trackOnboardingEvent('onboarding_started', { version: 'v2' });
+    await new Promise((resolve) => setTimeout(resolve, 130));
+    await setProgress(2);
+    trackOnboardingEvent('onboarding_started', { version: 'welcome_cta_root_fix_v1' });
     router.replace('/onboarding/data-trust');
-  };
+  }, [microcopyOpacity, microcopyTranslate, router, setDirection, setProgress]);
 
   return (
-    <BrandGradient>
-      <StepSlide direction={enterDir} mountKey={`welcome-${enterDir}`} slideOnFirst>
-        <View style={{ flex: 1 }}>
-          {/* Decorative background layers are isolated so Animated types stay quiet. */}
-          <View pointerEvents="none" style={StyleSheet.absoluteFillObject}>
-            <AnimView
-            style={{
-              position: 'absolute',
-              top: -80,
-              right: -60,
-              width: 220,
-              height: 220,
-              borderRadius: 110,
-              backgroundColor: 'rgba(34,197,94,0.10)',
-              opacity: accentFade,
-              transform: [{ scale: accentScale }],
-            }}
-          />
-          <AnimView
-            style={{
-              position: 'absolute',
-              bottom: 60,
-              left: -80,
-              width: 200,
-              height: 200,
-              borderRadius: 100,
-              backgroundColor: 'rgba(16,185,129,0.08)',
-              opacity: accentFade,
-              transform: [
-                {
-                  scale: accentScale.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [0.6, 1],
-                  }),
-                },
-              ],
-            }}
-          />
-        </View>
+    <View style={styles.root}>
+      <LinearGradient
+        colors={[WELCOME_BG_TOP, WELCOME_BG_BOTTOM]}
+        start={{ x: 0.5, y: 0 }}
+        end={{ x: 0.5, y: 1 }}
+        style={StyleSheet.absoluteFillObject}
+      />
 
-        <AppHeader showBack={false} title={`Step 1 of ${ONBOARDING_TOTAL_STEPS}`} fallbackHref="/" />
-
-        {/* Progress indicator */}
-        <AnimView
-          style={{
-            paddingHorizontal: spacing.lg,
-            opacity: progressOpacity,
-            transform: [{ translateY: progressSlide }],
-          }}
-        >
-          <ProgressBar step={1} total={ONBOARDING_TOTAL_STEPS} />
-        </AnimView>
-
-        {/* Copy deck and centerpiece badge */}
-        <View
-          style={{
-            flex: 1,
-            paddingHorizontal: spacing.lg,
-            paddingTop: spacing.lg,
-          }}
-        >
-          <AnimText
+      <StepSlide direction={enterDir} slideOnFirst mountKey="welcome-cta-root-fix" style={styles.slideWrap}>
+        <View style={[styles.screen, { paddingTop: insets.top + 10 }]}>
+          <RNAnimated.View
             style={[
-              type.h1 as any,
+              styles.logoWrap,
               {
-                color: colors.text,
-                opacity: headlineOpacity,
-                transform: [{ translateY: headlineTranslate }],
+                opacity: logoOpacity,
+                transform: [{ translateY: logoTranslate }],
               },
             ]}
           >
-            Welcome to NuTri
-          </AnimText>
-
-          <AnimText
-            style={[
-              type.p as any,
-              {
-                marginTop: spacing.sm,
-                opacity: subOpacity,
-                transform: [{ translateY: subTranslate }],
-              },
-            ]}
-          >
-            Let’s build your personalized supplement setup in about 2 minutes.
-          </AnimText>
-
-          <AnimView
-            style={{
-              marginTop: spacing.xl,
-              alignSelf: 'center',
-              width: 104,
-              height: 104,
-              borderRadius: 52,
-              backgroundColor: colors.brand,
-              alignItems: 'center',
-              justifyContent: 'center',
-              shadowColor: colors.brandDark,
-              shadowOpacity: 0.25,
-              shadowRadius: 20,
-              shadowOffset: { width: 0, height: 12 },
-              transform: [{ scale: badgeScale }],
-            }}
-            accessibilityLabel="NuTri logo"
-          >
-            <Text
-              style={{
-                color: '#FFFFFF',
-                fontSize: 34,
-                fontWeight: '900',
-                letterSpacing: 0.5,
-              }}
-            >
-              Nu
-            </Text>
-          </AnimView>
-
-          {/* Overview card */}
-          <AnimView
-            style={{
-              marginTop: spacing.xl,
-              backgroundColor: colors.surfaceSoft,
-              borderRadius: radii.xl,
-              paddingVertical: spacing.xl,
-              paddingHorizontal: spacing.xl,
-              borderWidth: 1,
-              borderColor: 'rgba(16,185,129,0.12)',
-              opacity: subOpacity,
-              transform: [
-                {
-                  translateY: subTranslate.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [8, 0],
-                  }),
-                },
-              ],
-            }}
-          >
-            <Text
-              style={{
-                color: colors.brandDark,
-                fontSize: 16,
-                fontWeight: '700',
-                textAlign: 'center',
-              }}
-            >
-              What you’ll see next
-            </Text>
-            <View style={{ marginTop: spacing.md, gap: spacing.sm }}>
-              {[
-                'A trust-first overview of how your data is protected.',
-                '7 focused Q&A prompts connected to Smart Filter and setup.',
-                'A personalized preview before your first supplement action.',
-              ].map((item) => (
-                <View
-                  key={item}
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'flex-start',
-                    gap: spacing.sm,
-                  }}
-                >
-                  <View
-                    style={{
-                      width: 8,
-                      height: 8,
-                      borderRadius: 4,
-                      backgroundColor: colors.brand,
-                      marginTop: 6,
-                    }}
-                  />
-                  <Text
-                    style={{
-                      flex: 1,
-                      color: colors.subtext,
-                      fontSize: 15,
-                      lineHeight: 22,
-                    }}
-                  >
-                    {item}
-                  </Text>
-                </View>
-              ))}
+            <View style={styles.logoPill}>
+              <BlurView
+                intensity={18}
+                tint="light"
+                style={[StyleSheet.absoluteFillObject, styles.logoBlur]}
+                {...BLUR_PROPS}
+              />
+              <LinearGradient
+                colors={['rgba(255,255,255,0.58)', 'rgba(255,255,255,0.44)']}
+                start={{ x: 0.18, y: 0 }}
+                end={{ x: 0.82, y: 1 }}
+                style={StyleSheet.absoluteFillObject}
+              />
+              <View style={styles.logoPillBorder} pointerEvents="none" />
+              <Text allowFontScaling={false} style={styles.logoText}>
+                NuTri
+              </Text>
             </View>
-          </AnimView>
-        </View>
-      </View>
+          </RNAnimated.View>
 
-      {/* Floating action area anchored above the gradient */}
-      <View pointerEvents="box-none" style={StyleSheet.absoluteFillObject}>
-        <View
-          pointerEvents="box-none"
-          style={{
-            position: 'absolute',
-            right: spacing.lg,
-            bottom: insets.bottom + (isSmall ? spacing.lg : spacing.xl),
-            borderRadius: 20,
-            padding: 12,
-            backgroundColor: 'rgba(249,251,249,0.9)',
-            borderWidth: StyleSheet.hairlineWidth,
-            borderColor: 'rgba(15,118,110,0.18)',
-            shadowColor: '#000',
-            shadowOpacity: 0.12,
-            shadowRadius: 16,
-            shadowOffset: { width: 0, height: 8 },
-            elevation: 8,
-          }}
-        >
-          <PrimaryButton
-            title="Start"
-            onPress={onGetStarted}
-            style={{
-              minWidth: 168,
-              paddingHorizontal: 20,
-              backgroundColor: 'transparent',
-              shadowOpacity: 0,
-              elevation: 0,
-            }}
-            textStyle={{ color: '#111827', fontWeight: '800' }}
-            testID="welcome-start"
-          />
+          <View style={styles.main}>
+            <View style={[styles.viewport, isCompactHeight && styles.viewportCompact]}>
+              <RNAnimated.View
+                style={[
+                  styles.heroArea,
+                  isCompactHeight && styles.heroAreaCompact,
+                  {
+                    opacity: heroOpacity,
+                    transform: [{ translateY: heroTranslate }],
+                  },
+                ]}
+              >
+                <Animated.View style={[styles.heroShell, heroFloatStyle]}>
+                  <WelcomeHeroGlow
+                    cardWidth={cardWidth}
+                    cardHeight={cardHeight}
+                    pulse={pulse}
+                    diffuse={diffuse}
+                  />
+                  <WelcomeHeroCarousel cardWidth={cardWidth} cardHeight={cardHeight} />
+                </Animated.View>
+              </RNAnimated.View>
+
+              <RNAnimated.View
+                style={[
+                  styles.copyWrap,
+                  isCompactHeight && styles.copyWrapCompact,
+                  {
+                    opacity: copyOpacity,
+                    transform: [{ translateY: copyTranslate }],
+                  },
+                ]}
+              >
+                <Text allowFontScaling={false} style={[styles.headline, isCompactHeight && styles.headlineCompact]}>
+                  Welcome to NuTri
+                </Text>
+                <Text allowFontScaling={false} style={[styles.subtext, isCompactHeight && styles.subtextCompact]}>
+                  Answer a few quick questions and NuTri will shape the clearest next picks for you.
+                </Text>
+              </RNAnimated.View>
+            </View>
+
+            <RNAnimated.View
+              style={[
+                styles.footer,
+                isCompactHeight && styles.footerCompact,
+                {
+                  opacity: footerOpacity,
+                  transform: [{ translateY: footerTranslate }],
+                  paddingBottom: Math.max(insets.bottom, 18) + 10,
+                },
+              ]}
+            >
+              <View style={styles.progressRow}>
+                <View style={styles.progressActivePill} />
+                <View style={styles.progressInactiveDot} />
+              </View>
+
+              <WelcomePrimaryCTA title="Get Started" onPress={handleGetStarted} />
+
+              <View style={styles.microcopySlot}>
+                <RNAnimated.Text
+                  allowFontScaling={false}
+                  style={[
+                    styles.microcopy,
+                    {
+                      opacity: microcopyOpacity,
+                      transform: [{ translateY: microcopyTranslate }],
+                    },
+                  ]}
+                >
+                  Takes less than a minute
+                </RNAnimated.Text>
+              </View>
+            </RNAnimated.View>
+          </View>
         </View>
-      </View>
       </StepSlide>
-    </BrandGradient>
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+    backgroundColor: WELCOME_BG,
+  },
+  slideWrap: {
+    flex: 1,
+  },
+  screen: {
+    flex: 1,
+    backgroundColor: WELCOME_BG,
+  },
+  logoWrap: {
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 20,
+  },
+  main: {
+    flex: 1,
+  },
+  logoPill: {
+    minWidth: 86,
+    height: 40,
+    paddingHorizontal: 22,
+    borderRadius: 999,
+    overflow: 'hidden',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#CAD4E8',
+    shadowOpacity: 0.14,
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 8 },
+  },
+  logoBlur: {
+    borderRadius: 999,
+  },
+  logoPillBorder: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.9)',
+  },
+  logoText: {
+    fontSize: 16,
+    lineHeight: 18,
+    fontWeight: '700',
+    letterSpacing: -0.34,
+    color: FOREGROUND,
+  },
+  viewport: {
+    flex: 1,
+    marginTop: 4,
+    paddingTop: 0,
+    paddingBottom: 16,
+    justifyContent: 'space-between',
+  },
+  viewportCompact: {
+    paddingBottom: 10,
+  },
+  heroArea: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+    paddingTop: 0,
+    paddingBottom: 16,
+  },
+  heroAreaCompact: {
+    paddingBottom: 8,
+  },
+  heroShell: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  copyWrap: {
+    alignItems: 'center',
+    paddingHorizontal: 32,
+    paddingBottom: 0,
+  },
+  copyWrapCompact: {
+    paddingBottom: 0,
+  },
+  headline: {
+    fontSize: 44,
+    lineHeight: 48,
+    fontWeight: '700',
+    letterSpacing: -2,
+    textAlign: 'center',
+    color: FOREGROUND,
+  },
+  headlineCompact: {
+    fontSize: 42,
+    lineHeight: 45,
+    letterSpacing: -1.8,
+  },
+  subtext: {
+    marginTop: 12,
+    maxWidth: 312,
+    fontSize: 17,
+    lineHeight: 25,
+    fontWeight: '500',
+    textAlign: 'center',
+    color: MUTED,
+  },
+  subtextCompact: {
+    fontSize: 16,
+    lineHeight: 24,
+  },
+  footer: {
+    paddingHorizontal: 24,
+    paddingTop: 10,
+    alignItems: 'center',
+    minHeight: 166,
+  },
+  footerCompact: {
+    paddingTop: 8,
+    minHeight: 158,
+  },
+  progressRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    marginBottom: 16,
+  },
+  progressActivePill: {
+    width: 28,
+    height: 6,
+    borderRadius: 999,
+    backgroundColor: ACTIVE_BLUE,
+  },
+  progressInactiveDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 999,
+    backgroundColor: INACTIVE_DOT,
+  },
+  microcopy: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    textAlign: 'center',
+    fontSize: 13,
+    lineHeight: 16,
+    fontWeight: '500',
+    color: MUTED,
+  },
+  microcopySlot: {
+    width: '100%',
+    height: 20,
+    marginTop: 14,
+    position: 'relative',
+  },
+});

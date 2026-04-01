@@ -49,7 +49,7 @@ type InteractiveScoreRingProps = {
     };
     muted?: boolean;
     badgeText?: string;
-    sourceType?: 'barcode' | 'label_scan';
+    sourceType?: string;
     labels?: {
         overall?: string;
         effectiveness?: string;
@@ -213,7 +213,7 @@ export const InteractiveScoreRing = ({
 }: InteractiveScoreRingProps) => {
     const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
     const { width: viewportWidth, height: viewportHeight } = useWindowDimensions();
-    const valueLabel = labels?.valueLabel ?? (sourceType === 'label_scan' ? 'Formula Quality' : 'Value');
+    const valueLabel = labels?.valueLabel ?? 'Value';
     const overallLabel = labels?.overall ?? 'NUTRI SCORE';
     const effectivenessLabel = labels?.effectiveness ?? 'Effectiveness';
     const safetyLabel = labels?.safety ?? 'Safety';

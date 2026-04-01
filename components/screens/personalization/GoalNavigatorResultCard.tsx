@@ -3,13 +3,24 @@ import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
-import { ConfidenceBadge } from "@/components/screens/personalization/ConfidenceBadge";
 import {
-  formatGoalFitConfidenceValue,
   GOAL_FIT_TIER_LABELS,
   summarizeGoalFitReasons,
 } from "@/lib/personalization/goalFitCopy";
 import type { GoalNavigatorCandidate } from "@/types/personalization";
+
+const buildDecisionHint = (candidate: GoalNavigatorCandidate) => {
+  if (candidate.goalFitCard.confidence.routineFit === "easy") {
+    return "Easier to keep in a daily routine.";
+  }
+  if (candidate.goalFitCard.confidence.overlapRisk === "none") {
+    return "Lower overlap risk in your current stack.";
+  }
+  if (candidate.goalFitCard.confidence.evidence === "high") {
+    return "One of the stronger evidence signals for this goal.";
+  }
+  return "Coverage-ready label for a clearer decision.";
+};
 
 export function GoalNavigatorResultCard({
   candidate,
@@ -25,6 +36,7 @@ export function GoalNavigatorResultCard({
   onSave: () => void;
 }) {
   const display = candidate.evaluation.display;
+  const decisionHint = buildDecisionHint(candidate);
 
   return (
     <View style={styles.glassBlock}>
@@ -58,28 +70,14 @@ export function GoalNavigatorResultCard({
           </View>
         </View>
 
-        <View style={styles.metricRow}>
-          <ConfidenceBadge
-            label="Evidence"
-            value={formatGoalFitConfidenceValue(candidate.goalFitCard.confidence.evidence)}
-          />
-          <ConfidenceBadge
-            label="Label"
-            value={formatGoalFitConfidenceValue(candidate.goalFitCard.confidence.labelCompleteness)}
-          />
-          <ConfidenceBadge
-            label="Routine"
-            value={formatGoalFitConfidenceValue(candidate.goalFitCard.confidence.routineFit)}
-          />
-        </View>
-
         <Text style={styles.summaryText}>
           {summarizeGoalFitReasons(candidate.goalFitCard.whyFit, "Structured facts show a usable fit signal.")}
         </Text>
+        <Text style={styles.decisionHint}>{decisionHint}</Text>
 
         <View style={styles.actionRow}>
           <Pressable onPress={onOpen} style={styles.primaryButton}>
-            <Text style={styles.primaryButtonText}>View fit details</Text>
+            <Text style={styles.primaryButtonText}>Why this fits</Text>
           </Pressable>
           <Pressable
             onPress={onSave}
@@ -173,16 +171,18 @@ const styles = StyleSheet.create({
     color: "#1d4ed8",
     includeFontPadding: false,
   },
-  metricRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-  },
   summaryText: {
     fontSize: 14,
     lineHeight: 20,
     fontWeight: "600",
     color: "#334155",
+    includeFontPadding: false,
+  },
+  decisionHint: {
+    fontSize: 12,
+    lineHeight: 17,
+    fontWeight: "700",
+    color: "#2563eb",
     includeFontPadding: false,
   },
   actionRow: {

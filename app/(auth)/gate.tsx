@@ -78,7 +78,7 @@ export default function AuthGateScreen() {
             try {
               await Haptics.selectionAsync();
             } catch {}
-            router.replace('/onboarding/welcome' as Href);
+            router.replace('/onboarding' as Href);
           }}
           activeOpacity={0.8}
           style={styles.backLink}

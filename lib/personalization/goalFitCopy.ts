@@ -1,4 +1,4 @@
-import type { DecisionReason, GoalFitCard, GoalCompareEntry } from "@/types/personalization";
+import type { DecisionReason, GoalFitCard, GoalCompareEntry } from "../../types/personalization";
 
 export const GOAL_FIT_TIER_LABELS: Record<GoalFitCard["tier"], string> = {
   strong_match: "Strong fit",

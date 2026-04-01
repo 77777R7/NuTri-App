@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View, type TextStyle, type ViewStyle } from 'react-native';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -18,25 +18,29 @@ import {
 } from 'lucide-react-native';
 
 import { ContentFrame } from '@/components/common/ContentFrame';
-import { CritiqueChipBar } from '@/components/screens/personalization/CritiqueChipBar';
+import { BestFitsPreviewCard } from '@/components/screens/personalization/BestFitsPreviewCard';
 import { PersonalizationDebugCard } from '@/components/screens/personalization/PersonalizationDebugCard';
-import { GoalNavigatorEntryCard } from '@/components/screens/personalization/GoalNavigatorEntryCard';
+import { RefinePicksDrawer } from '@/components/screens/personalization/RefinePicksDrawer';
 import { StackAuditCard } from '@/components/screens/personalization/StackAuditCard';
+import { SupportModeCard } from '@/components/screens/personalization/SupportModeCard';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOnboarding } from '@/contexts/OnboardingContext';
 import { usePersonalization } from '@/contexts/PersonalizationContext';
 import { useScreenTokens } from '@/hooks/useScreenTokens';
+import { apiClient } from '@/lib/api-client';
 import { useTranslation } from '@/lib/i18n';
 import { buildPersonalizationControlEvents } from '@/lib/personalization/core/critiqueEngine';
 import { getGoalNavigatorEnabledGoals } from '@/lib/personalization/core/goalConfidenceProfiles';
-import { getGoalDisplayLabel } from '@/lib/personalization/uiLabels';
+import { summarizeGoalFitReasons } from '@/lib/personalization/goalFitCopy';
+import { PERSONALIZATION_RESEARCH_UI_ENABLED } from '@/lib/personalization/researchFlags';
+import { buildUserSupportSurface, getGoalDisplayLabel } from '@/lib/personalization/uiLabels';
 import {
   buildProfileScreenModel,
   type ProfileSnapshotId,
   type ProfileStatusId,
   type ProfileStatusState,
 } from '@/lib/profile/viewModel';
-import type { PersonalizationControlKey } from '@/types/personalization';
+import type { GoalNavigatorResponse, PersonalizationControlKey } from '@/types/personalization';
 
 const SCREEN_BG = '#F2F3F7';
 const STACK_GAP = 16;
@@ -142,6 +146,8 @@ export default function ProfileScreen({ navHeight }: ProfileScreenProps) {
   const tokens = useScreenTokens(navHeight);
   const model = buildProfileScreenModel({ user, draft, isBiometricEnabled });
   const [qaBusy, setQaBusy] = useState(false);
+  const [bestFitsResponse, setBestFitsResponse] = useState<GoalNavigatorResponse | null>(null);
+  const [bestFitsLoading, setBestFitsLoading] = useState(false);
 
   const contentTopPadding = tokens.contentTopPadding;
   const contentBottomPadding = tokens.contentBottomPadding;
@@ -164,13 +170,94 @@ export default function ProfileScreen({ navHeight }: ProfileScreenProps) {
     [goalNavigatorSeedGoal],
   );
   const stackAudit = snapshot.premiumInsights?.stackAudit;
+  const supportSurface = useMemo(
+    () =>
+      buildUserSupportSurface({
+        supportState: snapshot.strategies.supportState,
+        goalLabel: goalNavigatorTitleLabel,
+        scheduleDefaults: snapshot.surfaces.scheduleDefaults,
+        eventSummary,
+      }),
+    [
+      eventSummary,
+      goalNavigatorTitleLabel,
+      snapshot.strategies.supportState,
+      snapshot.surfaces.scheduleDefaults,
+    ],
+  );
+  const bestFitPreviewItems = useMemo(
+    () =>
+      (bestFitsResponse?.candidates ?? []).slice(0, 3).map(candidate => ({
+        id: candidate.productId,
+        title: candidate.evaluation.display?.title ?? 'Coverage-ready supplement',
+        summary: summarizeGoalFitReasons(
+          candidate.goalFitCard.whyFit,
+          'Structured facts show a usable fit signal for this goal.',
+        ),
+      })),
+    [bestFitsResponse?.candidates],
+  );
+
+  useEffect(() => {
+    let active = true;
+    if (!PERSONALIZATION_RESEARCH_UI_ENABLED || !goalNavigatorSeedGoal) {
+      setBestFitsResponse(null);
+      setBestFitsLoading(false);
+      return () => {
+        active = false;
+      };
+    }
+
+    setBestFitsLoading(true);
+
+    void apiClient
+      .fetchGoalNavigator({
+        goalKey: goalNavigatorSeedGoal,
+        preferredTypes: smartFilter.preselectedTypes,
+        limit: 3,
+        snapshotId: snapshot.snapshotId,
+        preferenceVector: snapshot.strategies.preferenceVector,
+        userContext: {
+          duplicateRisk: snapshot.profile.observed.duplicateRisk,
+          supplementExperience: snapshot.profile.declared.supplementExperience,
+          ageRange: snapshot.profile.declared.ageRange,
+          adherenceBlocker: snapshot.profile.declared.adherenceBlocker,
+        },
+      })
+      .then(next => {
+        if (!active) return;
+        setBestFitsResponse(next);
+      })
+      .catch(requestError => {
+        if (!active) return;
+        console.warn(
+          '[profile-personalization] failed to load best fits preview',
+          requestError instanceof Error ? requestError.message : requestError,
+        );
+        setBestFitsResponse(null);
+      })
+      .finally(() => {
+        if (!active) return;
+        setBestFitsLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [
+    goalNavigatorSeedGoal,
+    smartFilter.preselectedTypes,
+    snapshot.profile,
+    snapshot.snapshotId,
+    snapshot.strategies.preferenceVector,
+  ]);
 
   const handleStartQaTest = useCallback(async () => {
     if (qaBusy) return;
     setQaBusy(true);
     try {
       await resetLocalOnboarding();
-      router.replace('/onboarding/welcome');
+      router.replace('/onboarding');
     } finally {
       setQaBusy(false);
     }
@@ -408,59 +495,48 @@ export default function ProfileScreen({ navHeight }: ProfileScreenProps) {
             </View>
           </View>
 
-          <View style={styles.sectionBlock}>
-            <View style={styles.card}>
-              <Text style={styles.cardTitle}>{t.profilePersonalizationTitle}</Text>
-              <Text style={styles.cardBody}>{t.profilePersonalizationBody}</Text>
-              <View style={styles.chipWrap}>
-                {model.personalization.chips.map(chip => (
-                  <View
-                    key={chip.id}
-                    style={[
-                      styles.chip,
-                      chip.preview ? styles.chipPreview : styles.chipLive,
-                    ]}
-                  >
-                    <Text style={[styles.chipText, chip.preview ? styles.chipTextPreview : null]}>
-                      {chip.label}
-                    </Text>
-                    {chip.preview ? (
-                      <View style={styles.previewBadge}>
-                        <Text style={styles.previewBadgeText}>{t.profilePreviewBadge}</Text>
-                      </View>
-                    ) : null}
-                  </View>
-                ))}
-              </View>
-              <View style={styles.personalizationStack}>
-                <CritiqueChipBar
-                  preferenceVector={snapshot.strategies.preferenceVector}
-                  onToggleChip={handleToggleControl}
-                />
-                {goalNavigatorAvailableGoals.length > 0 ? (
-                  <GoalNavigatorEntryCard
-                    title={`Explore best fits for ${goalNavigatorTitleLabel}`}
-                    subtitle="Coverage-ready picks with the same fit logic as Smart Filter."
-                    onPress={openGoalNavigator}
+          {PERSONALIZATION_RESEARCH_UI_ENABLED ? (
+            <View style={styles.sectionBlock}>
+              <View style={styles.card}>
+                <Text style={styles.cardTitle}>{t.profilePersonalizationTitle}</Text>
+                <Text style={styles.cardBody}>{t.profilePersonalizationBody}</Text>
+                <View style={styles.personalizationStack}>
+                  <SupportModeCard
+                    mode={supportSurface.mode}
+                    title={supportSurface.title}
+                    body={supportSurface.body}
                   />
-                ) : null}
-                {stackAudit ? (
-                  <StackAuditCard
-                    audit={stackAudit}
-                    preferenceVector={snapshot.strategies.preferenceVector}
-                    dietLanes={snapshot.strategies.dietLanes}
-                    activityPlan={snapshot.strategies.activityPlan}
+                  <BestFitsPreviewCard
+                    goalLabel={goalNavigatorTitleLabel}
+                    items={bestFitPreviewItems}
+                    loading={bestFitsLoading}
+                    onOpenGoalNavigator={openGoalNavigator}
+                    secondaryAction={
+                      <RefinePicksDrawer
+                        preferenceVector={snapshot.strategies.preferenceVector}
+                        onToggleChip={handleToggleControl}
+                        helperText="Use this only when you want the result to lean simpler, stronger, or lower-overlap."
+                        variant="pill"
+                      />
+                    }
                   />
-                ) : null}
-                {__DEV__ ? (
-                  <PersonalizationDebugCard
-                    supportState={snapshot.strategies.supportState}
-                    eventSummary={eventSummary}
-                  />
-                ) : null}
+                  {stackAudit ? (
+                    <StackAuditCard
+                      audit={stackAudit}
+                      dietLanes={snapshot.strategies.dietLanes}
+                      activityPlan={snapshot.strategies.activityPlan}
+                    />
+                  ) : null}
+                  {__DEV__ ? (
+                    <PersonalizationDebugCard
+                      supportState={snapshot.strategies.supportState}
+                      eventSummary={eventSummary}
+                    />
+                  ) : null}
+                </View>
               </View>
             </View>
-          </View>
+          ) : null}
 
           <View style={styles.sectionBlock}>
             <View style={styles.card}>

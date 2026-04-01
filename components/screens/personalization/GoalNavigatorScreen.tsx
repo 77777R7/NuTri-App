@@ -16,8 +16,8 @@ import { X } from "lucide-react-native";
 
 import { CompareSheet } from "@/components/screens/my-supplement/CompareSheet";
 import { GoalFitScorecard } from "@/components/screens/my-supplement/GoalFitScorecard";
-import { CritiqueChipBar } from "@/components/screens/personalization/CritiqueChipBar";
 import { GoalNavigatorContextCard } from "@/components/screens/personalization/GoalNavigatorContextCard";
+import { RefinePicksDrawer } from "@/components/screens/personalization/RefinePicksDrawer";
 import { usePersonalization } from "@/contexts/PersonalizationContext";
 import { useSavedSupplements } from "@/contexts/SavedSupplementsContext";
 import { apiClient } from "@/lib/api-client";
@@ -285,10 +285,10 @@ export function GoalNavigatorScreen({ initialGoal }: { initialGoal?: string }) {
 
   const summaryLine = useMemo(() => {
     if (supportedGoals.length === 0 && conservativeGoals.length > 0) {
-      return "Core-confidence goals use Goal Navigator; conservative-review goals stay on a more cautious path.";
+      return "This view stays focused on goals where we can make clearer, more confident picks.";
     }
-    if (!selectedGoal) return "Pick a goal to see coverage-ready candidates.";
-    return `Coverage-ready picks for ${getGoalDisplayLabel(selectedGoal)} using the same fit engine as Smart Filter.`;
+    if (!selectedGoal) return "Pick a goal to see the strongest next picks we can explain clearly.";
+    return `The strongest next picks for ${getGoalDisplayLabel(selectedGoal)}, with quick reasons you can scan fast.`;
   }, [conservativeGoals.length, selectedGoal, supportedGoals.length]);
 
   return (
@@ -298,8 +298,8 @@ export function GoalNavigatorScreen({ initialGoal }: { initialGoal?: string }) {
           <X size={18} color="#0f172a" />
         </Pressable>
         <View style={styles.headerTextWrap}>
-          <Text style={styles.eyebrow}>Goal Navigator</Text>
-          <Text style={styles.title}>Explore best fits by goal</Text>
+          <Text style={styles.eyebrow}>Explore by goal</Text>
+          <Text style={styles.title}>Explore by goal</Text>
           <Text style={styles.subtitle}>{summaryLine}</Text>
         </View>
       </View>
@@ -321,9 +321,10 @@ export function GoalNavigatorScreen({ initialGoal }: { initialGoal?: string }) {
         ) : null}
 
         {supportedGoals.length > 0 ? (
-          <CritiqueChipBar
+          <RefinePicksDrawer
             preferenceVector={snapshot.strategies.preferenceVector}
             onToggleChip={handleToggleControl}
+            helperText="Only change this if you want simpler, stronger, or lower-overlap picks."
           />
         ) : null}
 
@@ -334,29 +335,23 @@ export function GoalNavigatorScreen({ initialGoal }: { initialGoal?: string }) {
           />
         ) : null}
 
-        {smartFilter.preselectedTypes.length > 0 ? (
-          <Text style={styles.preface}>
-            Preferred types in this pass: {smartFilter.preselectedTypes.join(", ")}
-          </Text>
-        ) : null}
-
         {supportedGoals.length === 0 && conservativeGoals.length > 0 ? (
           <View style={styles.emptyCard}>
             <Text style={styles.emptyTitle}>These goals stay in conservative review.</Text>
             <Text style={styles.emptyBody}>
               {conservativeGoals.map((goalKey) => getGoalDisplayLabel(goalKey)).join(", ")} currently use
-              a more cautious review path, so we are not pushing them through Goal Navigator ranking yet.
+              a more cautious review path, so we are not pushing them through the main ranking yet.
             </Text>
           </View>
         ) : loading ? (
           <View style={styles.loadingBlock}>
             <ActivityIndicator color="#2563eb" />
-            <Text style={styles.loadingText}>Scoring coverage-ready candidates...</Text>
+            <Text style={styles.loadingText}>Finding the clearest next picks...</Text>
           </View>
         ) : error ? (
           <View style={styles.emptyCard}>
             <Text style={styles.emptyTitle}>{error}</Text>
-            <Text style={styles.emptyBody}>Try again in a moment. We keep this route deterministic and data-first.</Text>
+            <Text style={styles.emptyBody}>Try again in a moment. We only show picks we can explain clearly.</Text>
           </View>
         ) : response?.candidates.length ? (
           <>
@@ -377,7 +372,7 @@ export function GoalNavigatorScreen({ initialGoal }: { initialGoal?: string }) {
           <View style={styles.emptyCard}>
             <Text style={styles.emptyTitle}>No strong candidates surfaced yet.</Text>
             <Text style={styles.emptyBody}>
-              We are only showing products with enough structured facts to explain why they fit.
+              We are only showing products with enough label detail to explain why they fit.
             </Text>
           </View>
         )}
@@ -400,7 +395,7 @@ export function GoalNavigatorScreen({ initialGoal }: { initialGoal?: string }) {
               >
                 <View style={styles.detailHeaderRow}>
                   <View style={styles.detailHeaderTextWrap}>
-                    <Text style={styles.detailEyebrow}>Goal Navigator</Text>
+                    <Text style={styles.detailEyebrow}>Explore by goal</Text>
                     <Text style={styles.detailTitle}>
                       {selectedCandidate.evaluation.display?.title ?? "Coverage-ready supplement"}
                     </Text>

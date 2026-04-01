@@ -136,6 +136,9 @@ test("buildExplanationPayload shapes a plan preview payload from snapshot-only f
   assert.ok(payload.facts.some((fact) => fact.code === "busy_day_blocker_mealtime_anchor"));
   assert.ok(payload.facts.some((fact) => fact.code === "vegan_lane_b12_review"));
   assert.ok(payload.facts.some((fact) => fact.code === "activity_recovery_direction"));
+  const ingredientLaneFact = payload.facts.find((fact) => fact.code === "plan_preview_goal_ingredient_lane");
+  assert.ok(ingredientLaneFact);
+  assert.match(String(ingredientLaneFact?.params?.ingredientLabels ?? ""), /Melatonin|Vitamin C|Zinc/i);
 });
 
 test("buildExplanationPayload adds explanation-first facts for goal-fit uncertainty", () => {

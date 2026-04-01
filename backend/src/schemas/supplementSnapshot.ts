@@ -10,6 +10,7 @@ const AnalysisStatusSchema = z.enum(['catalog_only', 'label_enriched', 'ai_enric
 
 const BarcodeNormalizedFormatSchema = z.enum(['gtin14', 'ean13', 'upca', 'unknown']);
 const NormalizedAmountUnitSchema = z.enum(['mg', 'mcg', 'g', 'iu', 'cfu', 'ml']);
+const normalizeLegacyLabelExtractionSource = (value: unknown) => (value === 'label_scan' ? 'dsld' : value);
 
 const ReferenceItemSchema = z.object({
   id: z.string(),
@@ -23,7 +24,7 @@ const ReferenceItemSchema = z.object({
 });
 
 const LabelExtractionSchema = z.object({
-  source: z.enum(['dsld', 'label_scan', 'lnhpd', 'manual']),
+  source: z.preprocess(normalizeLegacyLabelExtractionSource, z.enum(['dsld', 'lnhpd', 'manual'])),
   fetchedAt: z.string().nullable(),
   datasetVersion: z.string().nullable(),
 });

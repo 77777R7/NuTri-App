@@ -73,6 +73,7 @@ import {
   getSupplementTypeDisplayLabel,
   getTimingAnchorDisplayLabel,
 } from "@/lib/personalization/uiLabels";
+import { PERSONALIZATION_RESEARCH_UI_ENABLED } from "@/lib/personalization/researchFlags";
 import {
   buildGoalTagToKeyMap,
   buildTypeTagToKeyMap,
@@ -2075,6 +2076,7 @@ function DetailSheet({
   const autosyncedThisSessionRef = useRef(false);
   const detailOpenedAtRef = useRef<number>(Date.now());
   const odsFirstPaintLoggedRef = useRef(false);
+  const goalFitDetailTrackedKeyRef = useRef<string | null>(null);
 
   const lastSavedRef = useRef<RoutinePreferences>({
     note: item.routine?.note ?? "",
@@ -3426,7 +3428,15 @@ function DetailSheet({
   }, [compareEntries, detailDose, displayBrandName, goalFitCard, item.id, item.productName]);
 
   useEffect(() => {
-    if (!goalFitCard) return;
+    if (!PERSONALIZATION_RESEARCH_UI_ENABLED || !goalFitCard) return;
+    const trackKey = [
+      item.id,
+      goalFitCard.goalKey ?? "none",
+      goalFitCard.tier,
+      compareEntryList.length > 1 ? "compare" : "single",
+    ].join(":");
+    if (goalFitDetailTrackedKeyRef.current === trackKey) return;
+    goalFitDetailTrackedKeyRef.current = trackKey;
     void onTrackPersonalizationEvent?.({
       eventName: "goal_fit_detail_opened",
       surface: "my_saved_detail",
@@ -3751,7 +3761,7 @@ function DetailSheet({
                 </View>
               </View>
 
-              {goalFitCard ? (
+              {PERSONALIZATION_RESEARCH_UI_ENABLED && goalFitCard ? (
                 <GoalFitScorecard
                   card={goalFitCard}
                   tintColor={theme.glassTint}
@@ -4122,13 +4132,15 @@ function DetailSheet({
 		        onSelectDate={setSelectedStartDate}
 		        onClose={() => setStartDatePickerOpen(false)}
 		      />
-          <CompareSheet
-            visible={compareOpen}
-            entries={compareEntryList}
-            goalKey={goalFitCard?.goalKey}
-            tintColor={theme.glassTint}
-            onClose={() => setCompareOpen(false)}
-          />
+          {PERSONALIZATION_RESEARCH_UI_ENABLED ? (
+            <CompareSheet
+              visible={compareOpen}
+              entries={compareEntryList}
+              goalKey={goalFitCard?.goalKey}
+              tintColor={theme.glassTint}
+              onClose={() => setCompareOpen(false)}
+            />
+          ) : null}
 		    </Modal>
 		  );
 }

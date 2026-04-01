@@ -18,13 +18,12 @@ import { validateCheckInDateForItem } from '@/lib/check-in-eligibility';
 import { buildCheckInKey, getLocalDateKey, isDateKeyAfter } from '@/lib/check-ins';
 import { useTranslation } from '@/lib/i18n';
 import { selectDailyTip, type NutriTipSelection } from '@/lib/nutri-tips';
-import { getGoalDisplayLabel } from '@/lib/personalization/uiLabels';
 import type { RoutinePreferences } from '@/types/saved-supplements';
 import type { ScanHistoryItem } from '@/types/scan-history';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import {
   Activity,
@@ -46,7 +45,6 @@ import {
   Pill,
   Plus,
   ScanBarcode,
-  ScanText,
   ShieldPlus,
   User,
   Waves,
@@ -1787,6 +1785,12 @@ const RecentlyScanned = () => {
 type TabId = 'home' | 'progress' | 'saved' | 'profile';
 type TabType = 'text' | 'icon';
 
+const normalizeRequestedTab = (value: string | string[] | undefined): TabId | null => {
+  const raw = Array.isArray(value) ? value[0] : value;
+  if (raw === 'home' || raw === 'progress' || raw === 'saved' || raw === 'profile') return raw;
+  return null;
+};
+
 const TabItem = ({
   item,
   activeTabId,
@@ -2118,13 +2122,6 @@ const BottomNav = ({
                 exit={{ opacity: 0 }}
               >
                 <FloatingMenuItem
-                  labelTop="Text"
-                  labelBottom="Scan"
-                  Icon={ScanText}
-                  delay={100}
-                  onPress={() => router.replace('/scan/label')}
-                />
-                <FloatingMenuItem
                   labelTop="Barcode"
                   labelBottom="Scan"
                   Icon={ScanBarcode}
@@ -2357,42 +2354,10 @@ const HomeTab = () => {
   );
 
   const weekDays = useMemo(() => buildCalendarDays(baseDate, statusForDate), [baseDate, statusForDate]);
-  const primaryGoalLabel = home.prioritizedGoals[0]
-    ? getGoalDisplayLabel(home.prioritizedGoals[0])
-    : 'your goals';
-  const showOnboardingNudge = savedSupplements.length === 0;
   const tipSelection = useMemo(
     () => (tipsPayload ? selectDailyTip(tipsPayload, baseDate) : null),
     [tipsPayload, baseDate],
   );
-  const shouldLeadWithEducation = useMemo(
-    () =>
-      home.emphasizedModules.includes('education') ||
-      home.emphasizedModules.includes('diet_review') ||
-      home.emphasizedModules.includes('plan_preview'),
-    [home.emphasizedModules],
-  );
-  const onboardingNudgeCopy = useMemo(() => {
-    if (home.emphasizedModules.includes('schedule_setup')) {
-      return {
-        title: 'Start your routine',
-        body: `Add your first supplement so we can set up a ${primaryGoalLabel.toLowerCase()}-friendly schedule that fits Daily Check-in.`,
-      };
-    }
-
-    if (home.emphasizedModules.includes('education')) {
-      return {
-        title: 'Start with one supplement',
-        body: `Add your first supplement so NuTri can tailor tips and Smart Filter around ${primaryGoalLabel.toLowerCase()}.`,
-      };
-    }
-
-    return {
-      title: 'Day 0 reminder',
-      body: `Add your first supplement to unlock Smart Filter and start building around ${primaryGoalLabel.toLowerCase()}.`,
-    };
-  }, [home.emphasizedModules, primaryGoalLabel]);
-
   return (
     <View style={styles.screen}>
       <ScrollView
@@ -2414,15 +2379,6 @@ const HomeTab = () => {
             </Text>
           </View>
 
-          {showOnboardingNudge ? (
-            <View style={styles.sectionBlock}>
-              <View style={styles.onboardingNudgeCard}>
-                <Text style={styles.onboardingNudgeTitle}>{onboardingNudgeCopy.title}</Text>
-                <Text style={styles.onboardingNudgeBody}>{onboardingNudgeCopy.body}</Text>
-              </View>
-            </View>
-          ) : null}
-
           <WeekdaySelector
             items={weekDays}
             selectedDayId={selectedDayId}
@@ -2440,17 +2396,8 @@ const HomeTab = () => {
             <View style={styles.stack16}>
               <ProgressCard />
               <View style={styles.row16}>
-                {shouldLeadWithEducation ? (
-                  <>
-                    <NutriTipCard selection={tipSelection} loading={tipsLoading} error={tipsError} density={twoUpDensity} />
-                    <StreakCard density={twoUpDensity} />
-                  </>
-                ) : (
-                  <>
-                    <StreakCard density={twoUpDensity} />
-                    <NutriTipCard selection={tipSelection} loading={tipsLoading} error={tipsError} density={twoUpDensity} />
-                  </>
-                )}
+                <NutriTipCard selection={tipSelection} loading={tipsLoading} error={tipsError} density={twoUpDensity} />
+                <StreakCard density={twoUpDensity} />
               </View>
             </View>
           </View>
@@ -2477,16 +2424,26 @@ const ProfileTab = () => {
 // -----------------------------------------------------
 
 export default function MainScreen() {
+  const params = useLocalSearchParams<{ tab?: string | string[] }>();
+  const requestedTab = normalizeRequestedTab(params.tab);
   const [currentTab, setCurrentTab] = useState<TabId>('home');
   const screenTab = useSharedValue<TabId>(currentTab);
   const { savedSupplements, removeSupplements, updateRoutine } = useSavedSupplements();
   const tokens = useScreenTokens(NAV_HEIGHT);
   const insets = useSafeAreaInsets();
   const topFadeHeight = Math.max(52, Math.max(0, insets.top) + TOP_FADE_EXTRA);
+  const lastAppliedRouteTabRef = useRef<TabId | null>(null);
 
   useEffect(() => {
     screenTab.value = currentTab;
   }, [currentTab, screenTab]);
+
+  useEffect(() => {
+    if (!requestedTab) return;
+    if (lastAppliedRouteTabRef.current === requestedTab) return;
+    lastAppliedRouteTabRef.current = requestedTab;
+    setCurrentTab(requestedTab);
+  }, [requestedTab]);
 
   const handleDeleteSelected = useCallback(
     async (ids: string[]) => {
@@ -2622,26 +2579,6 @@ const styles = StyleSheet.create({
   },
   sectionBlock: {
     marginTop: SECTION_GAP,
-  },
-  onboardingNudgeCard: {
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#BBF7D0',
-    backgroundColor: '#F0FDF4',
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    gap: 6,
-  },
-  onboardingNudgeTitle: {
-    fontSize: 14,
-    lineHeight: 18,
-    fontWeight: '700',
-    color: '#166534',
-  },
-  onboardingNudgeBody: {
-    fontSize: 13,
-    lineHeight: 20,
-    color: '#15803D',
   },
   stack16: {
     gap: STACK_GAP,

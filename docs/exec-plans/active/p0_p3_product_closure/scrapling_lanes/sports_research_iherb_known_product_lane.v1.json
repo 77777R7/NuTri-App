@@ -1,0 +1,10 @@
+{
+  "name": "sports_research_iherb_known_product_lane",
+  "stagingPath": "output/p0_p3_codeage_remaining_six_closure_20260317/unified_wave/staging_products.official_refreshed.sanitized.json",
+  "queuePath": "output/iherb_overlay_execution_plan_sports_research_kpi_wave_20260313/active_priority_queue.json",
+  "outDir": "output/scrapling_lane_sports_research_template_run",
+  "brandFilter": "Sports Research",
+  "limit": 6,
+  "execute": true,
+  "scraplingMode": "plain"
+}

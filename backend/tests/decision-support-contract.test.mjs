@@ -51,6 +51,16 @@ test("decision support payload exposes safe science source metadata for explanat
   assert.match(source, /safeScienceFallbackType:\s*safeScienceSignals\?\.fallbackType \?\? null/);
 });
 
+test("decision support includes personalized result lane v1 contract and inline wiring", async () => {
+  const source = await readDecisionSupportSource();
+  assert.match(source, /export type DecisionSupportPersonalizedResultLane = \{/);
+  assert.match(source, /recommendedSectionOrder: DecisionSupportPersonalizedResultLaneSectionKey\[\]/);
+  assert.match(source, /personalizedResultLane: DecisionSupportPersonalizedResultLane;/);
+  assert.match(source, /const personalizedResultLane = buildPersonalizedResultLane\(/);
+  assert.match(source, /personalizedResultLane,\s*qualityMark/);
+  assert.match(source, /personalizedResultLane: payload\.personalizedResultLane/);
+});
+
 test("decision support route exposes 409 digest mismatch contract", async () => {
   const source = await readServerSource();
   const routeStart = source.indexOf('app.get("/api/decision-support/v1"');
@@ -62,4 +72,5 @@ test("decision support route exposes 409 digest mismatch contract", async () => 
   assert.match(routeSlice, /res\.status\(409\)\.json\(/);
   assert.match(routeSlice, /DECISION_SUPPORT_DIGEST_MISMATCH/);
   assert.match(routeSlice, /latestDigest:\s*decisionSupport\.digest/);
+  assert.match(routeSlice, /personalizedResultLane:\s*decisionSupport\.personalizedResultLane/);
 });

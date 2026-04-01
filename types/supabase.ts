@@ -2120,6 +2120,48 @@ export type Database = {
           },
         ]
       }
+      product_allergen_flags: {
+        Row: {
+          allergy_flags: string[]
+          canonical_source_id: string | null
+          computed_at: string
+          coverage_status: string
+          created_at: string
+          ingredient_restrictions: string[]
+          match_evidence: Json
+          normalization_version: string
+          source: string
+          source_id: string
+          updated_at: string
+        }
+        Insert: {
+          allergy_flags?: string[]
+          canonical_source_id?: string | null
+          computed_at?: string
+          coverage_status?: string
+          created_at?: string
+          ingredient_restrictions?: string[]
+          match_evidence?: Json
+          normalization_version?: string
+          source: string
+          source_id: string
+          updated_at?: string
+        }
+        Update: {
+          allergy_flags?: string[]
+          canonical_source_id?: string | null
+          computed_at?: string
+          coverage_status?: string
+          created_at?: string
+          ingredient_restrictions?: string[]
+          match_evidence?: Json
+          normalization_version?: string
+          source?: string
+          source_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       product_scores: {
         Row: {
           best_fit_goals: Json | null
@@ -2698,10 +2740,12 @@ export type Database = {
         Row: {
           activity_level: string | null
           age: number | null
+          allergy_flags: string[]
           created_at: string
           dietary_preference: string | null
           gender: string | null
           height: number | null
+          ingredient_restrictions: string[]
           location: string | null
           timezone: string | null
           updated_at: string
@@ -2711,10 +2755,12 @@ export type Database = {
         Insert: {
           activity_level?: string | null
           age?: number | null
+          allergy_flags?: string[]
           created_at?: string
           dietary_preference?: string | null
           gender?: string | null
           height?: number | null
+          ingredient_restrictions?: string[]
           location?: string | null
           timezone?: string | null
           updated_at?: string
@@ -2724,10 +2770,12 @@ export type Database = {
         Update: {
           activity_level?: string | null
           age?: number | null
+          allergy_flags?: string[]
           created_at?: string
           dietary_preference?: string | null
           gender?: string | null
           height?: number | null
+          ingredient_restrictions?: string[]
           location?: string | null
           timezone?: string | null
           updated_at?: string

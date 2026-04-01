@@ -1,75 +1,46 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 
-import { OnboardingCard } from '@/components/onboarding/OnboardingCard';
-import { OnboardingContainer } from '@/components/onboarding/OnboardingContainer';
+import { QASingleSelectScreen } from '@/components/onboarding/qa/QASingleSelectScreen';
 import { useOnboarding } from '@/contexts/OnboardingContext';
+import { useTransitionDir } from '@/contexts/TransitionContext';
+import { ADHERENCE_BLOCKER_OPTIONS } from '@/lib/onboarding-v2';
 import { trackOnboardingEvent } from '@/lib/analytics/onboarding';
-import { ADHERENCE_BLOCKER_OPTIONS, ONBOARDING_TOTAL_STEPS } from '@/lib/onboarding-v2';
-import { colors } from '@/lib/theme';
 
 export default function BlockerScreen() {
   const router = useRouter();
   const { draft, saveDraft } = useOnboarding();
-  const [selected, setSelected] = useState<string>(draft?.adherenceBlocker ?? '');
+  const { setDirection } = useTransitionDir();
+  const [selected, setSelected] = useState(draft?.adherenceBlocker ?? '');
 
   useEffect(() => {
     setSelected(draft?.adherenceBlocker ?? '');
   }, [draft?.adherenceBlocker]);
 
-  const handleNext = useCallback(async () => {
-    if (!selected) return;
-
-    await saveDraft({ adherenceBlocker: selected }, 8);
-    trackOnboardingEvent('question_answered', { question: 'adherence_blocker', answer: selected });
+  const persist = useCallback(async () => {
+    await saveDraft({ adherenceBlocker: selected || undefined }, 9);
+    trackOnboardingEvent('question_answered', { question: 'adherence_blocker', answer: selected || 'skipped' });
+    setDirection('forward');
     router.replace('/onboarding/setup');
-  }, [router, saveDraft, selected]);
+  }, [router, saveDraft, selected, setDirection]);
 
   return (
-    <OnboardingContainer
-      step={8}
-      totalSteps={ONBOARDING_TOTAL_STEPS}
-      title="What usually gets in the way of taking supplements consistently?"
+    <QASingleSelectScreen
+      screenKey="blocker"
+      qaStepIndex={7}
+      eyebrow="Daily rhythm"
+      title="What usually gets in the way?"
       subtitle="Pick the one that fits best right now."
-      fallbackHref="/onboarding/types"
-      scrollable
-      disableNext={!selected}
-      onNext={handleNext}
-      nextLabel="Continue"
-    >
-      <View style={styles.content}>
-        <Text style={styles.why}>Why we ask: we personalize reminders and guidance around your biggest blocker.</Text>
-        <View style={styles.list}>
-          {ADHERENCE_BLOCKER_OPTIONS.map((option) => {
-            const isSelected = selected === option;
-            return (
-              <OnboardingCard
-                key={option}
-                label={option}
-                selected={isSelected}
-                onPress={() => setSelected(option)}
-                accessibilityLabel={`${option}${isSelected ? ' selected' : ''}`}
-              />
-            );
-          })}
-        </View>
-      </View>
-    </OnboardingContainer>
+      options={[...ADHERENCE_BLOCKER_OPTIONS]}
+      value={selected}
+      onSelect={setSelected}
+      onBack={() => {
+        setDirection('back');
+        router.replace('/onboarding/allergy');
+      }}
+      onContinue={persist}
+      onSkip={persist}
+      continueLabel="Continue"
+    />
   );
 }
-
-const styles = StyleSheet.create({
-  content: {
-    flex: 1,
-    gap: 14,
-  },
-  why: {
-    fontSize: 13,
-    lineHeight: 20,
-    color: colors.textMuted,
-  },
-  list: {
-    gap: 12,
-  },
-});

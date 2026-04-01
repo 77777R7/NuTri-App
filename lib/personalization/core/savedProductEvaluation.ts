@@ -9,7 +9,7 @@ import type {
   SmartFilterProductBucket,
   SmartFilterProductMembership,
   SupplementTypeKey,
-} from '@/types/personalization';
+} from '../../../types/personalization';
 import { buildReason, dedupeReasons, REASON_CODES, RULE_IDS } from './reasonCodes';
 import { evaluateProductCoverageGate } from './productEvaluationGate';
 

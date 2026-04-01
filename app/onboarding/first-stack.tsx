@@ -1,9 +1,16 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 
-import { OnboardingCard } from '@/components/onboarding/OnboardingCard';
-import { OnboardingContainer } from '@/components/onboarding/OnboardingContainer';
+import { QAOptionRow } from '@/components/onboarding/qa/QAOptionRow';
+import { QAScreenShell } from '@/components/onboarding/qa/QAScreenShell';
+import {
+  QA_FOREGROUND,
+  QA_MUTED,
+} from '@/components/onboarding/qa/qaTokens';
+import { useOnboarding } from '@/contexts/OnboardingContext';
+import { usePersonalization } from '@/contexts/PersonalizationContext';
+import { useTransitionDir } from '@/contexts/TransitionContext';
 import {
   trackEvaluatedLoopClick,
   trackEvaluatedLoopConversion,
@@ -11,90 +18,35 @@ import {
   trackEvaluatedLoopSave,
 } from '@/lib/analytics/evaluated-loop';
 import { trackOnboardingEvent } from '@/lib/analytics/onboarding';
-import { useOnboarding } from '@/contexts/OnboardingContext';
-import { usePersonalization } from '@/contexts/PersonalizationContext';
-import { useSavedSupplements } from '@/contexts/SavedSupplementsContext';
 import {
-  getFirstStackRoleLabel,
   getScheduleTemplateDisplayLabel,
 } from '@/lib/personalization/uiLabels';
 import type { FirstStackPlan, FirstStackPlanItem, GoalKey } from '@/types/personalization';
-import { ONBOARDING_TOTAL_STEPS } from '@/lib/onboarding-v2';
-import { colors } from '@/lib/theme';
 
 const START_OPTIONS = [
-  { value: 'scan', label: 'Scan first supplement', description: 'Fastest way to unlock personalized insights.' },
-  { value: 'manual', label: 'Add manually', description: 'Upload or enter details without a live scan.' },
-  { value: 'later', label: 'I will do this later', description: 'Finish setup first and start from Home.' },
+  {
+    value: 'scan',
+    label: 'Scan first supplement',
+    description: 'Fastest way to unlock personalized insights.',
+  },
+  {
+    value: 'manual',
+    label: 'Search database',
+    description: 'Search by name to quickly find your supplement.',
+  },
+  {
+    value: 'later',
+    label: 'I will do this later',
+    description: 'Finish setup first and start from Home.',
+  },
 ] as const;
 
-const titleCase = (value: string) =>
-  value
-    .split(/[_\s-]+/)
-    .filter(Boolean)
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(' ');
-
-const looksOpaqueProductId = (value: string) =>
-  /^[0-9a-f]{8,}$/i.test(value.replace(/-/g, '')) || /^prod[_-]/i.test(value) || /^sku[_-]/i.test(value);
-
-const humanizeProductId = (productId: string) => {
-  const trimmed = productId.trim();
-  if (!trimmed || looksOpaqueProductId(trimmed)) {
-    return 'Recommended product';
-  }
-
-  return titleCase(
-    trimmed
-      .replace(/^foundation[_-]/i, '')
-      .replace(/^goal[_-]support[_-]/i, '')
-      .replace(/^optional[_-]/i, '')
-      .replace(/\s{2,}/g, ' ')
-      .trim(),
-  );
-};
-
-const humanizeGoal = (goalKey: GoalKey) =>
-  goalKey
-    .split('_')
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(' ');
-
-const extractSupportedGoals = (item: FirstStackPlanItem): string[] => {
-  const rawValue = item.reasons.find((reason) => typeof reason.params?.supportedGoals === 'string')?.params?.supportedGoals;
-  if (typeof rawValue !== 'string' || !rawValue.trim()) return [];
-
-  return rawValue
-    .split(',')
-    .map((value) => value.trim())
-    .filter(Boolean)
-    .map((value) => humanizeGoal(value as GoalKey));
-};
-
-const buildItemSupportCopy = (item: FirstStackPlanItem) => {
-  const supportedGoals = extractSupportedGoals(item);
-  if (supportedGoals.length > 0) {
-    return `Supports ${supportedGoals.join(' + ')}.`;
-  }
-
-  if (item.role === 'foundation') {
-    return 'Keeps your first routine grounded in the essentials.';
-  }
-
-  if (item.role === 'goal_support') {
-    return 'Adds targeted support for the goals you picked.';
-  }
-
-  return 'Held back as an optional add-on so your first plan stays manageable.';
-};
-
-type FirstStackActionPreference = (typeof START_OPTIONS)[number]['value'];
+export type FirstStackActionPreference = (typeof START_OPTIONS)[number]['value'];
 
 type FirstStackAnalyticsPayloadInput = {
   snapshotId: string;
   rulesVersion: string;
   firstStackPlan?: FirstStackPlan | null;
-  hasExplanation: boolean;
   selectedAction?: FirstStackActionPreference;
 };
 
@@ -111,11 +63,10 @@ const buildFirstStackRoleCounts = (plan?: FirstStackPlan | null) =>
     } satisfies Record<FirstStackPlanItem['role'], number>,
   );
 
-const buildFirstStackAnalyticsPayload = ({
+export const buildFirstStackAnalyticsPayload = ({
   snapshotId,
   rulesVersion,
   firstStackPlan,
-  hasExplanation,
   selectedAction,
 }: FirstStackAnalyticsPayloadInput) => {
   const roleCounts = buildFirstStackRoleCounts(firstStackPlan);
@@ -132,68 +83,165 @@ const buildFirstStackAnalyticsPayload = ({
     ...(firstStackPlan?.scheduleTemplateKey
       ? { scheduleTemplateKey: firstStackPlan.scheduleTemplateKey }
       : {}),
-    hasExplanation,
     ...(selectedAction ? { selectedAction } : {}),
   };
 };
 
-export default function FirstStackScreen() {
-  const router = useRouter();
-  const { draft, saveDraft } = useOnboarding();
-  const { savedSupplements } = useSavedSupplements();
-  const { loading, snapshot, firstStackPlan, explainSurface, recordOverrideEvents, trackPersonalizationEvent } = usePersonalization();
-  const [selected, setSelected] = useState<'scan' | 'manual' | 'later'>(draft?.firstActionPreference ?? 'scan');
-  const [explanation, setExplanation] = useState<{ summary: string; bullets: string[] } | null>(null);
-  const stackItems = useMemo(() => firstStackPlan?.items ?? [], [firstStackPlan]);
-  const evaluatedExposureTrackedRef = React.useRef(false);
-  const savedSupplementById = useMemo(
-    () => new Map(savedSupplements.map((item) => [item.id, item] as const)),
-    [savedSupplements],
-  );
-  const scheduleTemplateLabel = useMemo(
-    () => (firstStackPlan ? getScheduleTemplateDisplayLabel(firstStackPlan.scheduleTemplateKey) : null),
-    [firstStackPlan],
-  );
-  const stackCards = useMemo(
-    () =>
-      stackItems.map((item) => {
-        const savedItem = savedSupplementById.get(item.productId);
-        const title =
-          item.display?.title?.trim() ||
-          savedItem?.productName?.trim() ||
-          humanizeProductId(item.productId);
-        const brandName = item.display?.brandName?.trim() || savedItem?.brandName?.trim() || null;
-        const dosageText = item.display?.dosageText?.trim() || savedItem?.dosageText?.trim() || null;
+const humanizeGoal = (goalKey: GoalKey) =>
+  goalKey
+    .split('_')
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ');
 
-        return {
-          item,
-          title,
-          meta: [brandName, dosageText].filter(Boolean).join(' · '),
-          supportCopy: buildItemSupportCopy(item),
-        };
-      }),
-    [savedSupplementById, stackItems],
+const getPrimaryGoal = (goals?: string[]) => {
+  if (!goals?.length) return 'General Wellness';
+  if (goals.length === 1) return goals[0];
+  return 'General Wellness';
+};
+
+const getRoutineStyleLabel = (templateKey?: string | null) => {
+  if (!templateKey) return 'Guided simple plan';
+  return getScheduleTemplateDisplayLabel(templateKey);
+};
+
+const getCurrentStackLabel = (itemCount: number) => {
+  if (itemCount <= 0) return 'No supplements selected yet.';
+  return `${itemCount} evaluated item${itemCount > 1 ? 's' : ''}.`;
+};
+
+const getDisplayGoal = (draftGoals?: string[]) => {
+  if (!draftGoals?.length) return 'General Wellness';
+  const firstGoal = draftGoals[0];
+  return humanizeGoal(firstGoal as GoalKey);
+};
+
+const getDefaultSelection = (draftValue?: string) =>
+  (draftValue as FirstStackActionPreference | undefined) ?? 'later';
+
+function DetailRow({ label, value, muted = false }: { label: string; value: string; muted?: boolean }) {
+  return (
+    <View style={[styles.detailRow, muted && styles.detailRowMuted]}>
+      <Text allowFontScaling={false} style={styles.detailEyebrow}>
+        {label}
+      </Text>
+      <Text allowFontScaling={false} style={styles.detailValue}>
+        {value}
+      </Text>
+    </View>
   );
+}
+
+export type FirstStackScreenContentProps = {
+  onBack: () => void | Promise<void>;
+  onContinueSelection: (selected: FirstStackActionPreference) => void | Promise<void>;
+  transitionDirection?: 'forward' | 'back' | 'none';
+  disableStepSlide?: boolean;
+  enableHardwareBackHandling?: boolean;
+};
+
+type FirstStackBodyContentProps = {
+  topSummary: string;
+  routineStyleLabel: string;
+  displayGoal: string;
+  evaluatedItemCount: number;
+  selected: FirstStackActionPreference;
+  onSelectOption: (value: FirstStackActionPreference) => void;
+};
+
+export function FirstStackBodyContent({
+  topSummary,
+  routineStyleLabel,
+  displayGoal,
+  evaluatedItemCount,
+  selected,
+  onSelectOption,
+}: FirstStackBodyContentProps) {
+  return (
+    <>
+      <View style={styles.summaryCard}>
+        <View style={styles.summaryCardFill} pointerEvents="none" />
+        <View style={styles.summaryInset} pointerEvents="none" />
+
+        <Text allowFontScaling={false} style={styles.summaryEyebrow}>
+          Your first stack plan
+        </Text>
+        <Text allowFontScaling={false} style={styles.summaryTitle}>
+          What NuTri would start with
+        </Text>
+        <Text allowFontScaling={false} style={styles.summaryBody}>
+          {topSummary}
+        </Text>
+
+        <View style={styles.routineChip}>
+          <Text allowFontScaling={false} style={styles.routineChipText}>
+            {routineStyleLabel}
+          </Text>
+        </View>
+
+        <View style={styles.detailCard}>
+          <DetailRow label="Starting focus" value={`${displayGoal} first.`} />
+          <DetailRow label="Routine style" value={routineStyleLabel} />
+          <DetailRow
+            label="Current stack"
+            value={getCurrentStackLabel(evaluatedItemCount)}
+            muted
+          />
+        </View>
+      </View>
+
+      <View style={styles.optionSection}>
+        <Text allowFontScaling={false} style={styles.optionEyebrow}>
+          Choose your next move
+        </Text>
+        <Text allowFontScaling={false} style={styles.optionTitle}>
+          How do you want to start?
+        </Text>
+
+        <View style={styles.optionList}>
+          {START_OPTIONS.map((option) => (
+            <QAOptionRow
+              key={option.value}
+              label={option.label}
+              description={option.description}
+              selected={selected === option.value}
+              onPress={() => onSelectOption(option.value)}
+              selectionMode="single"
+            />
+          ))}
+        </View>
+      </View>
+    </>
+  );
+}
+
+export function FirstStackScreenContent({
+  onBack,
+  onContinueSelection,
+  transitionDirection,
+  disableStepSlide = false,
+  enableHardwareBackHandling = true,
+}: FirstStackScreenContentProps) {
+  const { draft } = useOnboarding();
+  const { loading, snapshot, firstStackPlan } = usePersonalization();
+
+  const [selected, setSelected] = useState<FirstStackActionPreference>(
+    getDefaultSelection(draft?.firstActionPreference),
+  );
+
+  const evaluatedExposureTrackedRef = useRef(false);
 
   useEffect(() => {
-    setSelected((draft?.firstActionPreference as 'scan' | 'manual' | 'later' | undefined) ?? 'scan');
+    setSelected(getDefaultSelection(draft?.firstActionPreference));
   }, [draft?.firstActionPreference]);
 
-  useEffect(() => {
-    let active = true;
-    if (loading) return () => undefined;
-    void explainSurface('first_stack')
-      .then((result) => {
-        if (!active) return;
-        setExplanation({ summary: result.summary, bullets: result.bullets });
-      })
-      .catch((error) => {
-        console.warn('[first-stack] explanation failed', error);
-      });
-    return () => {
-      active = false;
-    };
-  }, [explainSurface, loading]);
+  const selectedGoals = useMemo(() => draft?.goals ?? [], [draft?.goals]);
+  const primaryGoal = useMemo(() => getPrimaryGoal(selectedGoals), [selectedGoals]);
+  const displayGoal = useMemo(() => getDisplayGoal(selectedGoals), [selectedGoals]);
+  const routineStyleLabel = useMemo(
+    () => getRoutineStyleLabel(firstStackPlan?.scheduleTemplateKey),
+    [firstStackPlan?.scheduleTemplateKey],
+  );
+  const evaluatedItemCount = useMemo(() => firstStackPlan?.items.length ?? 0, [firstStackPlan?.items.length]);
 
   const analyticsPayload = useMemo(
     () =>
@@ -201,9 +249,8 @@ export default function FirstStackScreen() {
         snapshotId: snapshot.snapshotId,
         rulesVersion: snapshot.rulesVersion,
         firstStackPlan,
-        hasExplanation: Boolean(explanation),
       }),
-    [explanation, firstStackPlan, snapshot.rulesVersion, snapshot.snapshotId],
+    [firstStackPlan, snapshot.rulesVersion, snapshot.snapshotId],
   );
 
   useEffect(() => {
@@ -223,7 +270,6 @@ export default function FirstStackScreen() {
         snapshotId: snapshot.snapshotId,
         rulesVersion: snapshot.rulesVersion,
         firstStackPlan,
-        hasExplanation: Boolean(explanation),
         selectedAction: value,
       });
 
@@ -240,237 +286,266 @@ export default function FirstStackScreen() {
         actionKey: value,
       });
     },
-    [explanation, firstStackPlan, selected, snapshot.rulesVersion, snapshot.snapshotId],
+    [firstStackPlan, selected, snapshot.rulesVersion, snapshot.snapshotId],
   );
 
   const handleNext = useCallback(async () => {
-    await saveDraft({ firstActionPreference: selected }, 11);
-    await recordOverrideEvents([
-      {
-        id: `first_action_${Date.now()}`,
-        userId: null,
-        timestamp: new Date().toISOString(),
-        source: 'user',
-        surface: 'first_stack',
-        action: 'set',
-        field: 'firstActionPreference',
-        value: selected,
-      },
-    ]);
-    const completedPayload = buildFirstStackAnalyticsPayload({
-      snapshotId: snapshot.snapshotId,
-      rulesVersion: snapshot.rulesVersion,
-      firstStackPlan,
-      hasExplanation: Boolean(explanation),
-      selectedAction: selected,
-    });
-    trackEvaluatedLoopSave({
-      ...completedPayload,
-      source: 'user',
-      actionKey: selected,
-    });
-    trackEvaluatedLoopConversion({
-      ...completedPayload,
-      source: 'user',
-      actionKey: selected,
-      conversionType: 'first_stack_accepted',
-    });
-    await trackPersonalizationEvent({
-      eventName: 'first_stack_accepted',
-      surface: 'first_stack',
-      payload: {
-        selectedAction: selected,
-        itemCount: firstStackPlan?.items.length ?? 0,
-        hasExplanation: Boolean(explanation),
-      },
-    });
-    router.replace('/onboarding/done');
-  }, [explanation, firstStackPlan, recordOverrideEvents, router, saveDraft, selected, snapshot.rulesVersion, snapshot.snapshotId, trackPersonalizationEvent]);
+    await onContinueSelection(selected);
+  }, [onContinueSelection, selected]);
+
+  const handleBack = useCallback(async () => {
+    await onBack();
+  }, [onBack]);
+
+  const topSummary = useMemo(
+    () =>
+      `We'll start with ${primaryGoal} using a ${routineStyleLabel.toLowerCase()} so your first routine stays manageable.`,
+    [primaryGoal, routineStyleLabel],
+  );
 
   return (
-    <OnboardingContainer
-      step={11}
-      totalSteps={ONBOARDING_TOTAL_STEPS}
+    <QAScreenShell
+      screenKey="first-stack"
+      qaStepIndex={7}
+      transitionDirection={transitionDirection}
+      disableStepSlide={disableStepSlide}
+      enableHardwareBackHandling={enableHardwareBackHandling}
+      eyebrow="Finish setup"
       title="Build your first stack"
       subtitle="Pick how you want to start so we can guide your next action."
-      fallbackHref="/onboarding/plan-preview"
-      scrollable
-      onNext={handleNext}
-      nextLabel="Finish setup"
+      onBack={handleBack}
+      onContinue={handleNext}
+      continueLabel="Finish setup"
+      progressFillWidthOverride={108.641}
+      listContentContainerStyle={styles.listContent}
     >
-      <View style={styles.content}>
-        {explanation ? (
-          <View style={styles.summaryCard}>
-            <Text style={styles.summaryTitle}>Your first stack plan</Text>
-            <Text style={styles.summaryBody}>{explanation.summary}</Text>
-            {scheduleTemplateLabel ? (
-              <Text style={styles.summaryTemplate}>Schedule template: {scheduleTemplateLabel}</Text>
-            ) : null}
-            {explanation.bullets.map((bullet) => (
-              <Text key={bullet} style={styles.summaryBullet}>
-                • {bullet}
-              </Text>
-            ))}
-            {stackCards.length > 0 ? (
-              <View style={styles.stackSection}>
-                <Text style={styles.stackSectionTitle}>What we would start with</Text>
-                <View style={styles.stackList}>
-                  {stackCards.map(({ item, title, meta, supportCopy }, index) => (
-                    <View key={`${item.productId}-${item.role}`} style={styles.stackItemCard}>
-                      <View style={styles.stackItemHeader}>
-                        <Text style={styles.stackItemIndex}>{index + 1}</Text>
-                        <View style={styles.stackItemHeaderCopy}>
-                          <Text style={styles.stackItemTitle}>{title}</Text>
-                          <Text style={styles.stackItemRole}>{getFirstStackRoleLabel(item.role)}</Text>
-                        </View>
-                      </View>
-                      {meta ? <Text style={styles.stackItemMeta}>{meta}</Text> : null}
-                      <Text style={styles.stackItemSupport}>{supportCopy}</Text>
-                    </View>
-                  ))}
-                </View>
-              </View>
-            ) : (
-              <Text style={styles.summaryMuted}>
-                We will keep this simple until you add or scan the first supplement we can score.
-              </Text>
-            )}
-          </View>
-        ) : null}
-        <Text style={styles.why}>Why we ask: choosing your first move helps us reduce setup friction.</Text>
-        <View style={styles.list}>
-          {START_OPTIONS.map((option) => (
-            <OnboardingCard
-              key={option.value}
-              label={option.label}
-              description={option.description}
-              selected={selected === option.value}
-              onPress={() => handleSelectOption(option.value)}
-              accessibilityLabel={`${option.label}${selected === option.value ? ' selected' : ''}`}
-            />
-          ))}
-        </View>
-      </View>
-    </OnboardingContainer>
+      <FirstStackBodyContent
+        topSummary={topSummary}
+        routineStyleLabel={routineStyleLabel}
+        displayGoal={displayGoal}
+        evaluatedItemCount={evaluatedItemCount}
+        selected={selected}
+        onSelectOption={handleSelectOption}
+      />
+    </QAScreenShell>
+  );
+}
+
+export default function FirstStackScreen() {
+  const router = useRouter();
+  const { saveDraft } = useOnboarding();
+  const { setDirection } = useTransitionDir();
+  const { snapshot, firstStackPlan, recordOverrideEvents } = usePersonalization();
+
+  const handleContinueSelection = useCallback(
+    async (selected: FirstStackActionPreference) => {
+      await saveDraft({ firstActionPreference: selected }, 11);
+      await recordOverrideEvents([
+        {
+          id: `first_action_${Date.now()}`,
+          userId: null,
+          timestamp: new Date().toISOString(),
+          source: 'user',
+          surface: 'first_stack',
+          action: 'set',
+          field: 'firstActionPreference',
+          value: selected,
+        },
+      ]);
+
+      const completedPayload = buildFirstStackAnalyticsPayload({
+        snapshotId: snapshot.snapshotId,
+        rulesVersion: snapshot.rulesVersion,
+        firstStackPlan,
+        selectedAction: selected,
+      });
+
+      trackEvaluatedLoopSave({
+        ...completedPayload,
+        source: 'user',
+        actionKey: selected,
+      });
+      trackEvaluatedLoopConversion({
+        ...completedPayload,
+        source: 'user',
+        actionKey: selected,
+        conversionType: 'first_stack_accepted',
+      });
+
+      setDirection('forward');
+      router.replace('/onboarding/done');
+    },
+    [
+      firstStackPlan,
+      recordOverrideEvents,
+      router,
+      saveDraft,
+      setDirection,
+      snapshot.rulesVersion,
+      snapshot.snapshotId,
+    ],
+  );
+
+  const handleBack = useCallback(async () => {
+    setDirection('back');
+    router.replace('/onboarding/plan-preview');
+  }, [router, setDirection]);
+
+  return (
+    <FirstStackScreenContent
+      onBack={handleBack}
+      onContinueSelection={handleContinueSelection}
+    />
   );
 }
 
 const styles = StyleSheet.create({
-  content: {
-    flex: 1,
-    gap: 14,
-  },
-  why: {
-    fontSize: 13,
-    lineHeight: 20,
-    color: colors.textMuted,
-  },
-  list: {
-    gap: 12,
+  listContent: {
+    gap: 32,
+    paddingBottom: 24,
   },
   summaryCard: {
-    gap: 8,
-    padding: 16,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: '#FFFFFF',
+    minHeight: 542.03,
+    borderRadius: 32,
+    borderCurve: 'continuous',
+    overflow: 'hidden',
+    borderWidth: 0.678,
+    borderColor: 'rgba(255,255,255,0.8)',
+    backgroundColor: 'rgba(255,255,255,0.5)',
+    shadowColor: '#000000',
+    shadowOpacity: 0.04,
+    shadowRadius: 32,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 4,
+    paddingHorizontal: 24,
+    paddingTop: 24,
+    paddingBottom: 24,
+  },
+  summaryCardFill: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(255,255,255,0.5)',
+  },
+  summaryInset: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: 32,
+    borderCurve: 'continuous',
+    shadowColor: '#FFFFFF',
+    shadowOpacity: 1,
+    shadowRadius: 1,
+    shadowOffset: { width: 0, height: 1 },
+  },
+  summaryEyebrow: {
+    fontSize: 11,
+    lineHeight: 16.5,
+    fontWeight: '700',
+    letterSpacing: 1.1645,
+    textTransform: 'uppercase',
+    color: QA_MUTED,
   },
   summaryTitle: {
-    fontSize: 16,
+    marginTop: 16,
+    fontSize: 22,
+    lineHeight: 33,
     fontWeight: '700',
-    color: colors.text,
+    letterSpacing: -0.6978,
+    color: QA_FOREGROUND,
   },
   summaryBody: {
-    fontSize: 14,
-    lineHeight: 21,
-    color: colors.text,
+    marginTop: 16,
+    maxWidth: 306,
+    fontSize: 14.5,
+    lineHeight: 23.563,
+    fontWeight: '400',
+    letterSpacing: -0.1912,
+    color: QA_MUTED,
   },
-  summaryBullet: {
-    fontSize: 13,
-    lineHeight: 20,
-    color: colors.textMuted,
-  },
-  summaryTemplate: {
-    fontSize: 13,
-    lineHeight: 20,
-    fontWeight: '700',
-    color: colors.text,
-  },
-  summaryMuted: {
-    fontSize: 13,
-    lineHeight: 20,
-    color: colors.textMuted,
-  },
-  stackList: {
-    gap: 10,
-    paddingTop: 4,
-  },
-  stackSection: {
-    gap: 10,
-    paddingTop: 4,
-  },
-  stackSectionTitle: {
-    fontSize: 13,
-    lineHeight: 20,
-    fontWeight: '700',
-    color: colors.text,
-  },
-  stackItemCard: {
-    gap: 8,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    backgroundColor: '#F8FAFC',
-    paddingHorizontal: 12,
-    paddingVertical: 11,
-  },
-  stackItemHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  stackItemIndex: {
-    width: 22,
-    height: 22,
+  routineChip: {
+    marginTop: 24,
+    alignSelf: 'flex-start',
+    minHeight: 33.593,
+    paddingHorizontal: 14,
     borderRadius: 999,
+    borderWidth: 0.678,
+    borderColor: 'rgba(255,255,255,0.8)',
+    backgroundColor: 'rgba(220,232,255,0.6)',
+    justifyContent: 'center',
+    shadowColor: '#000000',
+    shadowOpacity: 0.03,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 2,
+  },
+  routineChipText: {
+    fontSize: 13.5,
+    lineHeight: 20.25,
+    fontWeight: '600',
+    letterSpacing: -0.1121,
+    color: '#3B6AF7',
+  },
+  detailCard: {
+    marginTop: 24,
+    borderRadius: 22,
+    borderCurve: 'continuous',
     overflow: 'hidden',
-    textAlign: 'center',
-    textAlignVertical: 'center',
-    fontSize: 13,
+    borderWidth: 0.678,
+    borderColor: 'rgba(0,0,0,0.05)',
+    backgroundColor: 'rgba(255,255,255,0.95)',
+    shadowColor: '#000000',
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    shadowOffset: { width: 0, height: 1 },
+    elevation: 2,
+  },
+  detailRow: {
+    minHeight: 77.919,
+    paddingHorizontal: 19.991,
+    paddingTop: 15.997,
+    paddingBottom: 15.997,
+    borderBottomWidth: 0.678,
+    borderBottomColor: 'rgba(0,0,0,0.04)',
+    gap: 5.996,
+    justifyContent: 'center',
+    backgroundColor: '#FFFFFF',
+  },
+  detailRowMuted: {
+    backgroundColor: 'rgba(248,250,252,0.8)',
+    borderBottomWidth: 0,
+  },
+  detailEyebrow: {
+    fontSize: 11.5,
+    lineHeight: 17.25,
+    fontWeight: '700',
+    letterSpacing: 0.6087,
+    textTransform: 'uppercase',
+    color: '#90A1B9',
+  },
+  detailValue: {
+    fontSize: 16,
     lineHeight: 22,
+    fontWeight: '600',
+    letterSpacing: -0.3125,
+    color: '#1D293D',
+  },
+  optionSection: {
+    gap: 20,
+  },
+  optionEyebrow: {
+    fontSize: 11,
+    lineHeight: 16.5,
     fontWeight: '700',
-    color: '#1D4ED8',
-    backgroundColor: '#DBEAFE',
+    letterSpacing: 1.1645,
+    textTransform: 'uppercase',
+    color: QA_MUTED,
   },
-  stackItemHeaderCopy: {
-    flex: 1,
-    gap: 2,
-  },
-  stackItemTitle: {
-    fontSize: 14,
-    lineHeight: 20,
+  optionTitle: {
+    marginTop: -6,
+    fontSize: 22,
+    lineHeight: 33,
     fontWeight: '700',
-    color: colors.text,
+    letterSpacing: -0.6978,
+    color: QA_FOREGROUND,
   },
-  stackItemRole: {
-    fontSize: 12,
-    lineHeight: 18,
-    color: colors.textMuted,
-  },
-  stackItemMeta: {
-    fontSize: 12,
-    lineHeight: 18,
-    color: colors.textMuted,
-  },
-  stackItemSupport: {
-    fontSize: 13,
-    lineHeight: 19,
-    color: colors.textMuted,
+  optionList: {
+    gap: 14,
   },
 });
-
-export const firstStackScreenInternals = {
-  buildFirstStackAnalyticsPayload,
-  buildFirstStackRoleCounts,
-};

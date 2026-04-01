@@ -29,8 +29,12 @@ type Props = {
   children: React.ReactNode;
   style?: ViewStyle;
   durationMs?: number;              // 覆盖位移时长（可选）
+  fadeDurationMs?: number;
   slideOnFirst?: boolean;           // 首屏是否也轻滑（默认 true）
   mountKey?: string | number;       // 强制重放用（推荐 `${step}-${direction}`）
+  distancePctOverride?: number;
+  tinyPctOverride?: number;
+  scaleFromOverride?: number;
 };
 
 export const StepSlide: React.FC<Props> = ({
@@ -38,8 +42,12 @@ export const StepSlide: React.FC<Props> = ({
   children,
   style,
   durationMs,
+  fadeDurationMs,
   slideOnFirst = true,
   mountKey,
+  distancePctOverride,
+  tinyPctOverride,
+  scaleFromOverride,
 }) => {
   const { width } = useWindowDimensions();
   const [reduceMotion, setReduceMotion] = useState(false);
@@ -49,8 +57,11 @@ export const StepSlide: React.FC<Props> = ({
   }, []);
 
   // 计算起点位移（含上限）
-  const base = Math.min(width * MOTION.distancePct, MOTION.capPx);
-  const tiny = Math.min(width * MOTION.tinyPct, MOTION.capPx * 0.6);
+  const base = Math.min(width * (distancePctOverride ?? MOTION.distancePct), MOTION.capPx);
+  const tiny = Math.min(
+    width * (tinyPctOverride ?? MOTION.tinyPct),
+    MOTION.capPx * 0.6,
+  );
 
   const fromX = useMemo(() => {
     if (direction === 'forward') return +base;
@@ -60,11 +71,11 @@ export const StepSlide: React.FC<Props> = ({
 
   // 如果系统“减少动态效果”开启，则直接无动画静态呈现
   const DURATION = durationMs ?? MOTION.duration;
-  const FADE = MOTION.fade;
+  const FADE = fadeDurationMs ?? MOTION.fade;
 
   const tx = useSharedValue(reduceMotion ? 0 : fromX);
   const op = useSharedValue(reduceMotion ? 1 : 0);
-  const sc = useSharedValue(reduceMotion ? 1 : MOTION.scaleFrom);
+  const sc = useSharedValue(reduceMotion ? 1 : scaleFromOverride ?? MOTION.scaleFrom);
 
   useEffect(() => {
     if (reduceMotion) return;

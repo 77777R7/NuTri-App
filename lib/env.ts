@@ -1,5 +1,16 @@
 import Constants from 'expo-constants';
 
+const DIRECT_PUBLIC_ENV: Record<string, string | undefined> = {
+  EXPO_PUBLIC_SUPABASE_URL: process.env.EXPO_PUBLIC_SUPABASE_URL,
+  EXPO_PUBLIC_SUPABASE_ANON_KEY: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY,
+  EXPO_PUBLIC_OPENAI_API_KEY: process.env.EXPO_PUBLIC_OPENAI_API_KEY,
+  EXPO_PUBLIC_PADDLE_OCR_ENDPOINT: process.env.EXPO_PUBLIC_PADDLE_OCR_ENDPOINT,
+  EXPO_PUBLIC_API_BASE_URL: process.env.EXPO_PUBLIC_API_BASE_URL,
+  EXPO_PUBLIC_SEARCH_API_BASE_URL: process.env.EXPO_PUBLIC_SEARCH_API_BASE_URL,
+  EXPO_PUBLIC_SCAN_TERMINAL_LOCK_ENABLED: process.env.EXPO_PUBLIC_SCAN_TERMINAL_LOCK_ENABLED,
+  EXPO_PUBLIC_API_PORT: process.env.EXPO_PUBLIC_API_PORT,
+};
+
 const toExpoPublicEnvKey = (key: string) => {
   return `EXPO_PUBLIC_${key.replace(/([A-Z])/g, '_$1').toUpperCase()}`;
 };
@@ -153,7 +164,7 @@ const getEnvValue = (key: string, options?: GetEnvValueOptions): string | undefi
   const extra = (Constants.expoConfig?.extra ?? {}) as Record<string, unknown>;
   const extraValue = extra[key];
   const envKey = toExpoPublicEnvKey(key);
-  const envValue = process.env[envKey] ?? process.env[key];
+  const envValue = DIRECT_PUBLIC_ENV[envKey] ?? process.env[envKey] ?? process.env[key];
   const value = (extraValue ?? envValue) as string | undefined;
 
   if (value && value.length > 0) {

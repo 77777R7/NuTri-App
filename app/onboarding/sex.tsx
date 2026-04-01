@@ -1,71 +1,58 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 
-import { OnboardingCard } from '@/components/onboarding/OnboardingCard';
-import { OnboardingContainer } from '@/components/onboarding/OnboardingContainer';
+import { QASingleSelectScreen } from '@/components/onboarding/qa/QASingleSelectScreen';
 import { useOnboarding } from '@/contexts/OnboardingContext';
+import { useTransitionDir } from '@/contexts/TransitionContext';
 import { trackOnboardingEvent } from '@/lib/analytics/onboarding';
-import { ONBOARDING_TOTAL_STEPS, SEX_OPTIONS } from '@/lib/onboarding-v2';
-import { colors } from '@/lib/theme';
+import { SEX_OPTIONS } from '@/lib/onboarding-v2';
 
 export default function SexScreen() {
   const router = useRouter();
-  const { draft, saveDraft } = useOnboarding();
-  const [selected, setSelected] = useState<string>(draft?.sex ?? draft?.gender ?? '');
+  const { draft, progress, saveDraft, setProgress } = useOnboarding();
+  const { setDirection } = useTransitionDir();
+  const [selected, setSelected] = useState(draft?.sex ?? draft?.gender ?? '');
 
   useEffect(() => {
     setSelected(draft?.sex ?? draft?.gender ?? '');
   }, [draft?.gender, draft?.sex]);
 
-  const handleNext = useCallback(async () => {
-    if (!selected) return;
+  useEffect(() => {
+    if (progress < 4) {
+      void setProgress(4);
+    }
+  }, [progress, setProgress]);
 
-    await saveDraft({ sex: selected, gender: selected }, 4);
-    trackOnboardingEvent('question_answered', { question: 'sex', answer: selected });
+  const persist = useCallback(async () => {
+    await saveDraft(
+      { sex: selected || undefined, gender: selected || undefined },
+      4,
+    );
+    trackOnboardingEvent('question_answered', {
+      question: 'sex',
+      answer: selected || 'skipped',
+    });
+    setDirection('forward');
     router.replace('/onboarding/experience');
-  }, [router, saveDraft, selected]);
+  }, [router, saveDraft, selected, setDirection]);
 
   return (
-    <OnboardingContainer
-      step={4}
-      totalSteps={ONBOARDING_TOTAL_STEPS}
+    <QASingleSelectScreen
+      screenKey="sex"
+      qaStepIndex={2}
+      eyebrow="About you"
       title="How do you identify?"
-      subtitle="Choose what feels right for your profile preferences."
-      fallbackHref="/onboarding/age-range"
-      scrollable
-      disableNext={!selected}
-      onNext={handleNext}
-    >
-      <View style={styles.content}>
-        <Text style={styles.why}>Why we ask: some guidance and messaging adapt to your profile context.</Text>
-        <View style={styles.list}>
-          {SEX_OPTIONS.map((option) => (
-            <OnboardingCard
-              key={option}
-              label={option}
-              selected={selected === option}
-              onPress={() => setSelected(option)}
-              accessibilityLabel={`${option}${selected === option ? ' selected' : ''}`}
-            />
-          ))}
-        </View>
-      </View>
-    </OnboardingContainer>
+      subtitle="Choose what feels right for your profile."
+      options={[...SEX_OPTIONS]}
+      value={selected}
+      onSelect={setSelected}
+      onBack={() => {
+        setDirection('back');
+        router.replace('/onboarding/age-range');
+      }}
+      onContinue={persist}
+      onSkip={persist}
+      continueLabel="Continue"
+    />
   );
 }
-
-const styles = StyleSheet.create({
-  content: {
-    flex: 1,
-    gap: 14,
-  },
-  why: {
-    fontSize: 13,
-    lineHeight: 20,
-    color: colors.textMuted,
-  },
-  list: {
-    gap: 12,
-  },
-});

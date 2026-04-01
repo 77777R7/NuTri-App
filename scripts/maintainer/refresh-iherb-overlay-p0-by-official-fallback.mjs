@@ -377,6 +377,63 @@ const extractNumericTokens = (value) => [
   ),
 ];
 
+const CATALOG_MATCH_GENERIC_TOKENS = new Set([
+  "a",
+  "and",
+  "caps",
+  "capsule",
+  "capsules",
+  "cap",
+  "chew",
+  "chews",
+  "default",
+  "fl",
+  "floz",
+  "food",
+  "foods",
+  "for",
+  "formula",
+  "g",
+  "gel",
+  "gels",
+  "gram",
+  "grams",
+  "isolate",
+  "lb",
+  "lbs",
+  "liquid",
+  "mg",
+  "ml",
+  "natural",
+  "now",
+  "nutrition",
+  "nutricost",
+  "of",
+  "organic",
+  "oz",
+  "pack",
+  "packs",
+  "powder",
+  "product",
+  "products",
+  "protein",
+  "serving",
+  "softgel",
+  "softgels",
+  "supplement",
+  "supplements",
+  "tablet",
+  "tablets",
+  "the",
+  "title",
+  "veg",
+  "vegcaps",
+  "veggie",
+  "vegetarian",
+  "vitamin",
+  "with",
+]);
+
 const scoreCatalogTitleMatch = (targetTitle, productTitle, variantTitle) => {
   const target = normalizeCatalogTitle(targetTitle);
   const candidate = normalizeCatalogTitle(`${productTitle ?? ""} ${variantTitle ?? ""}`);
@@ -391,10 +448,26 @@ const scoreCatalogTitleMatch = (targetTitle, productTitle, variantTitle) => {
   const overlap = targetTokens.filter((token) => candidateSet.has(token)).length;
   score += overlap * 8;
 
+  const targetDistinctiveTokens = targetTokens.filter((token) => !CATALOG_MATCH_GENERIC_TOKENS.has(token));
+  const missingDistinctiveCount = targetDistinctiveTokens.filter((token) => !candidateSet.has(token)).length;
+  score -= missingDistinctiveCount * 18;
+  if (targetDistinctiveTokens.length > 0 && missingDistinctiveCount === targetDistinctiveTokens.length) {
+    score -= 30;
+  }
+
   const targetNumbers = new Set(extractNumericTokens(target));
   const candidateNumbers = extractNumericTokens(candidate);
+  let numericMatches = 0;
   for (const token of candidateNumbers) {
-    if (targetNumbers.has(token)) score += 22;
+    if (targetNumbers.has(token)) {
+      score += 22;
+      numericMatches += 1;
+    } else if (targetNumbers.size > 0) {
+      score -= 16;
+    }
+  }
+  if (targetNumbers.size > 0 && candidateNumbers.length > 0 && numericMatches === 0) {
+    score -= 30;
   }
 
   return score;
@@ -421,6 +494,11 @@ const isLikelyProductImageUrl = (imageUrl) => {
   if (/cookie|logo|icon|sprite|banner|placeholder|poweredby|favicon/.test(value)) return false;
   return /\.(png|jpe?g|webp|gif)(?:$|\?)/i.test(value) || /\/media\/catalog\/product\/|cloudinary\.images-iherb\.com|cdn\.shopify\.com/.test(value);
 };
+const isIherbProductUrl = (pageUrl) => /:\/\/(?:www\.)?iherb\.com\/pr\//i.test(String(pageUrl ?? ""));
+const isSecurityVerificationBody = (text) =>
+  /performing security verification|uses a security service to protect against malicious bots|target url returned error 403|make sure you are authorized to access this page/i.test(
+    String(text ?? ""),
+  );
 const isIgnoredSearchCandidateTitle = (title) => {
   const normalized = normalizeLower(title);
   return (
@@ -1548,10 +1626,18 @@ const main = async () => {
       continue;
     }
 
-    if (selectedCandidate.pageUrl && /^https?:\/\//i.test(selectedCandidate.pageUrl)) {
+    const skipPageFetchForStagedIherbFallback =
+      Boolean(selectedCandidate?.stagedImageFallback) && isIherbProductUrl(selectedCandidate?.pageUrl);
+
+    if (!skipPageFetchForStagedIherbFallback && selectedCandidate.pageUrl && /^https?:\/\//i.test(selectedCandidate.pageUrl)) {
       try {
         pageMarkdown = await fetchText(selectedCandidate.pageUrl, `product page ${selectedCandidate.pageUrl}`);
-        pageHit = true;
+        if (isSecurityVerificationBody(pageMarkdown)) {
+          pageError = "ignored_security_verification_body";
+          pageMarkdown = null;
+        } else {
+          pageHit = true;
+        }
       } catch (error) {
         pageError = error instanceof Error ? error.message : String(error);
       }

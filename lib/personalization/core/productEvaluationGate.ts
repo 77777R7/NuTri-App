@@ -1,7 +1,7 @@
 import type {
   ProductCoverageDecision,
   SavedProductFactsStatus,
-} from '@/types/personalization';
+} from '../../../types/personalization';
 import { buildReason, REASON_CODES, RULE_IDS } from './reasonCodes';
 
 export type ProductEvaluationGateInput = {

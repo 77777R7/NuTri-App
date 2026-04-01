@@ -94,7 +94,7 @@ const resolveSourceAttribution = (
   }
   const sourceType = normalizeText(bundleMeta?.sourceType || sourceTypeHint).toLowerCase();
   if (sourceType === 'lnhpd' || sourceType === 'dsld') return 'verified_regulatory';
-  if (sourceType === 'label' || sourceType === 'label_scan') return 'label_record';
+  if (sourceType === 'label' || sourceType.startsWith('label_')) return 'label_record';
   if (sourceType === 'web') return 'web_hint_unverified';
   return 'unknown';
 };

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
 import { Pressable, StyleSheet, Text, View } from "react-native";
@@ -46,6 +46,12 @@ export function GoalFitScorecard({
   tintColor?: string;
 }) {
   const goalLabel = card.goalKey ? getGoalDisplayLabel(card.goalKey) : "your current goal";
+  const [detailsVisible, setDetailsVisible] = useState(false);
+  const hasAdvancedDetails =
+    card.holdbacks.length > 0 ||
+    (card.stackContext?.length ?? 0) > 0 ||
+    card.confidence.labelCompleteness !== "full" ||
+    card.confidence.overlapRisk !== "none";
 
   return (
     <View style={styles.glassBlock}>
@@ -69,8 +75,8 @@ export function GoalFitScorecard({
       <View style={styles.content}>
         <View style={styles.headerRow}>
           <View style={styles.headerTextWrap}>
-            <Text style={styles.eyebrow}>Goal-Fit Scorecard</Text>
-            <Text style={styles.title}>How this fits {goalLabel}</Text>
+            <Text style={styles.eyebrow}>Why this fits</Text>
+            <Text style={styles.title}>Why this fits {goalLabel}</Text>
           </View>
         </View>
 
@@ -81,14 +87,6 @@ export function GoalFitScorecard({
             value={formatGoalFitEvidenceValue(card.confidence.evidence)}
           />
           <ConfidenceBadge
-            label="Label"
-            value={formatGoalFitConfidenceValue(card.confidence.labelCompleteness)}
-          />
-          <ConfidenceBadge
-            label="Overlap"
-            value={formatGoalFitConfidenceValue(card.confidence.overlapRisk)}
-          />
-          <ConfidenceBadge
             label="Routine"
             value={formatGoalFitConfidenceValue(card.confidence.routineFit)}
           />
@@ -96,14 +94,42 @@ export function GoalFitScorecard({
 
         {renderReasonList("Why it fits", card.whyFit)}
         {renderReasonList("Why it is not stronger", card.whyNotStronger)}
-        {renderReasonList("What holds it back", card.holdbacks)}
-        {renderReasonList("What changes in my current stack", card.stackContext ?? [])}
 
-        {compareEnabled && onOpenCompare ? (
-          <Pressable onPress={onOpenCompare} style={styles.compareButton}>
-            <Text style={styles.compareButtonText}>Compare similar picks</Text>
-          </Pressable>
+        {detailsVisible ? (
+          <>
+            <View style={styles.detailDivider} />
+            <View style={styles.confidenceGrid}>
+              <ConfidenceBadge
+                label="Label"
+                value={formatGoalFitConfidenceValue(card.confidence.labelCompleteness)}
+              />
+              <ConfidenceBadge
+                label="Overlap"
+                value={formatGoalFitConfidenceValue(card.confidence.overlapRisk)}
+              />
+            </View>
+            {renderReasonList("What holds it back", card.holdbacks)}
+            {renderReasonList("What changes in my current stack", card.stackContext ?? [])}
+          </>
         ) : null}
+
+        <View style={styles.actionRow}>
+          {hasAdvancedDetails ? (
+            <Pressable
+              onPress={() => setDetailsVisible((current) => !current)}
+              style={styles.secondaryActionButton}
+            >
+              <Text style={styles.secondaryActionButtonText}>
+                {detailsVisible ? "Show less" : "See full reasoning"}
+              </Text>
+            </Pressable>
+          ) : null}
+          {compareEnabled && onOpenCompare ? (
+            <Pressable onPress={onOpenCompare} style={styles.compareButton}>
+              <Text style={styles.compareButtonText}>See differences</Text>
+            </Pressable>
+          ) : null}
+        </View>
       </View>
     </View>
   );
@@ -205,8 +231,18 @@ const styles = StyleSheet.create({
     color: "#334155",
     includeFontPadding: false,
   },
+  detailDivider: {
+    height: 1,
+    backgroundColor: "rgba(148,163,184,0.18)",
+  },
+  actionRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 10,
+  },
   compareButton: {
     minHeight: 44,
+    flexGrow: 1,
     borderRadius: 16,
     borderCurve: "continuous",
     backgroundColor: "#0f172a",
@@ -219,6 +255,24 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     fontWeight: "800",
     color: "#ffffff",
+    includeFontPadding: false,
+  },
+  secondaryActionButton: {
+    minHeight: 44,
+    paddingHorizontal: 16,
+    borderRadius: 16,
+    borderCurve: "continuous",
+    backgroundColor: "rgba(255,255,255,0.9)",
+    borderWidth: 1,
+    borderColor: "rgba(203,213,225,0.95)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  secondaryActionButtonText: {
+    fontSize: 14,
+    lineHeight: 18,
+    fontWeight: "800",
+    color: "#0f172a",
     includeFontPadding: false,
   },
 });

@@ -1,27 +1,20 @@
-import type { BarcodeScanResult, LabelScanResult } from './service';
+import type { BarcodeScanResult } from './service';
 
 const generateId = () => {
   try {
     return globalThis.crypto?.randomUUID?.() ?? Math.random().toString(36).slice(2);
-  } catch (error) {
+  } catch {
     return Math.random().toString(36).slice(2);
   }
 };
 
-
 export type ScanSession =
-  | {
+  {
     id: string;
     mode: 'barcode';
     input: { barcode: string };
     result?: BarcodeScanResult;
     isLoading?: boolean;
-  }
-  | {
-    id: string;
-    mode: 'label';
-    input: { imageUri: string; imageBase64?: string };
-    result: LabelScanResult;
   };
 
 export const SCAN_SESSION_SCHEMA_VERSION = 1 as const;
@@ -53,7 +46,7 @@ export type SessionConsumeResult =
     reasonCode: 'missing' | 'expired' | 'invalid';
   };
 
-// Keep an in-memory session map keyed by sessionId for barcode/label result routes.
+// Keep an in-memory session map keyed by sessionId for barcode result routes.
 // `legacySessionCandidate` preserves backward compatibility with historical singleton usage.
 const sessionStore = new Map<string, unknown>();
 let legacySessionCandidate: unknown = null;
@@ -73,20 +66,7 @@ const isBarcodeSession = (value: unknown): value is Extract<ScanSession, { mode:
   );
 };
 
-const isLabelSession = (value: unknown): value is Extract<ScanSession, { mode: 'label' }> => {
-  if (!isRecord(value)) return false;
-  const input = value.input;
-  return (
-    value.mode === 'label'
-    && typeof value.id === 'string'
-    && isRecord(input)
-    && typeof input.imageUri === 'string'
-    && 'result' in value
-  );
-};
-
-const isScanSession = (value: unknown): value is ScanSession =>
-  isBarcodeSession(value) || isLabelSession(value);
+const isScanSession = (value: unknown): value is ScanSession => isBarcodeSession(value);
 
 const normalizeEnvelope = (candidate: unknown): ScanSessionEnvelope | null => {
   if (!candidate) return null;

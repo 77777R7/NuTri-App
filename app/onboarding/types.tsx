@@ -1,100 +1,76 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 
-import { OnboardingCard } from '@/components/onboarding/OnboardingCard';
-import { OnboardingContainer } from '@/components/onboarding/OnboardingContainer';
+import { QAMultiSelectScreen } from '@/components/onboarding/qa/QAMultiSelectScreen';
 import { useOnboarding } from '@/contexts/OnboardingContext';
+import { useTransitionDir } from '@/contexts/TransitionContext';
 import { trackOnboardingEvent } from '@/lib/analytics/onboarding';
-import { buildSmartFilterConfig, ONBOARDING_TOTAL_STEPS, TYPE_OPTIONS } from '@/lib/onboarding-v2';
-import { colors } from '@/lib/theme';
+import { buildSmartFilterConfig, TYPE_OPTIONS } from '@/lib/onboarding-v2';
 
 export default function TypesScreen() {
   const router = useRouter();
-  const { draft, saveDraft } = useOnboarding();
-  const [selectedTypes, setSelectedTypes] = useState<string[]>(draft?.preferredTypes ?? []);
+  const { draft, progress, saveDraft, setProgress } = useOnboarding();
+  const { setDirection } = useTransitionDir();
+  const [selectedTypes, setSelectedTypes] = useState<string[]>(
+    draft?.preferredTypes ?? [],
+  );
 
   useEffect(() => {
     setSelectedTypes(draft?.preferredTypes ?? []);
   }, [draft?.preferredTypes]);
 
-  const toggleType = useCallback((type: string) => {
-    setSelectedTypes((current) => {
-      if (current.includes(type)) {
-        return current.filter((item) => item !== type);
-      }
-      return [...current, type];
-    });
+  useEffect(() => {
+    if (progress < 7) {
+      void setProgress(7);
+    }
+  }, [progress, setProgress]);
+
+  const toggleType = useCallback((value: string) => {
+    setSelectedTypes((current) =>
+      current.includes(value)
+        ? current.filter((item) => item !== value)
+        : [...current, value],
+    );
   }, []);
 
-  const persistAndContinue = useCallback(async () => {
-    const smartFilterConfig = buildSmartFilterConfig({
-      goals: draft?.goals ?? [],
-      preferredTypes: selectedTypes,
-    });
-
+  const persist = useCallback(async () => {
     await saveDraft(
       {
         preferredTypes: selectedTypes,
-        smartFilterConfig,
+        smartFilterConfig: buildSmartFilterConfig({
+          goals: draft?.goals ?? [],
+          preferredTypes: selectedTypes,
+        }),
       },
       7,
     );
-
     trackOnboardingEvent('question_answered', {
       question: 'preferred_types',
       answerCount: selectedTypes.length,
       answers: selectedTypes,
+      source: 'gemini_port',
     });
-
-    router.replace('/onboarding/blocker');
-  }, [draft?.goals, router, saveDraft, selectedTypes]);
+    setDirection('forward');
+    router.replace('/onboarding/allergy');
+  }, [draft?.goals, router, saveDraft, selectedTypes, setDirection]);
 
   return (
-    <OnboardingContainer
-      step={7}
-      totalSteps={ONBOARDING_TOTAL_STEPS}
+    <QAMultiSelectScreen
+      screenKey="types"
+      qaStepIndex={5}
+      eyebrow="Your focus"
       title="Which supplement types do you want to focus on first?"
-      subtitle="Optional. We will use this to pre-select your Smart Filter view."
-      fallbackHref="/onboarding/goals"
-      scrollable
-      showSkip
-      onSkip={persistAndContinue}
-      onNext={persistAndContinue}
-      nextLabel="Continue"
-    >
-      <View style={styles.content}>
-        <Text style={styles.why}>Why we ask: type preferences make your first Smart Filter session faster.</Text>
-        <View style={styles.list}>
-          {TYPE_OPTIONS.map((type) => {
-            const selected = selectedTypes.includes(type);
-            return (
-              <OnboardingCard
-                key={type}
-                label={type}
-                selected={selected}
-                onPress={() => toggleType(type)}
-                accessibilityLabel={`${type}${selected ? ' selected' : ''}`}
-              />
-            );
-          })}
-        </View>
-      </View>
-    </OnboardingContainer>
+      subtitle="Optional. Choose any you want to focus on first."
+      options={[...TYPE_OPTIONS]}
+      values={selectedTypes}
+      onToggle={toggleType}
+      onBack={() => {
+        setDirection('back');
+        router.replace('/onboarding/goals');
+      }}
+      onContinue={persist}
+      onSkip={persist}
+      continueLabel="Continue"
+    />
   );
 }
-
-const styles = StyleSheet.create({
-  content: {
-    flex: 1,
-    gap: 14,
-  },
-  why: {
-    fontSize: 13,
-    lineHeight: 20,
-    color: colors.textMuted,
-  },
-  list: {
-    gap: 12,
-  },
-});

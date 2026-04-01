@@ -3,7 +3,7 @@ import type {
   GoalFitCard,
   GoalKey,
   SavedProductEvaluation,
-} from "@/types/personalization";
+} from "../../../types/personalization";
 
 import { buildConfidenceBreakdown } from "./confidenceModel";
 

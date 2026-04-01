@@ -1,0 +1,29 @@
+{
+  "generatedAt": "2026-03-23T04:54:38.783Z",
+  "phase": "P0-B",
+  "phaseOutcomeStatus": "blocker_isolation",
+  "inputs": {
+    "reportPath": "output/iherb_overlay_high_frequency_validation_full_p0p1_final/high_frequency_hit_validation.json",
+    "reportGeneratedAt": "2026-03-13T07:23:51.563Z"
+  },
+  "baseline": {
+    "uniqueCandidates": 1651,
+    "completeHitCount": 627,
+    "completeHitRatePct": 38,
+    "anyRecordHitCount": 655,
+    "anyRecordHitRatePct": 39.7,
+    "activeQueueCount": 28,
+    "missingFromStagingCount": 996
+  },
+  "missClassification": {
+    "upstream_missing": 1024,
+    "transport_dropped": 0,
+    "consumer_dropped": 0,
+    "weak_but_visible": 0,
+    "identity_unstable": 0
+  },
+  "finalCall": {
+    "productLevelPass": false,
+    "reason": "The current representative/high-frequency set still fails product-level completeness because only 627/1651 candidates are complete hits and 1024 remain upstream-missing or still queued."
+  }
+}
