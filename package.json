@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "scripts": {
     "start": "expo start --go",
+    "start:tunnel": "expo start --tunnel",
     "start:dev": "expo start --dev-client",
     "start:dev-client": "expo start --dev-client",
     "reset-project": "node ./scripts/reset-project.js",
