@@ -1,6 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import type { LabelDraft } from './labelAnalysis.js';
-import type { AiSupplementAnalysis, SearchItem } from './types.js';
+import type { SearchItem } from './types.js';
 import { normalizeBarcodeInput } from './barcode.js';
 import {
   EXCERPT_MAX_CHARS,
@@ -17,7 +16,7 @@ export type SnapshotAnalysisPayload = {
     status: 'catalog_only' | 'label_enriched' | 'ai_enriched' | 'complete' | null;
     version: number | null;
     labelExtraction?: {
-      source: 'dsld' | 'label_scan' | 'lnhpd' | 'manual';
+      source: 'dsld' | 'lnhpd' | 'manual';
       fetchedAt: string | null;
       datasetVersion: string | null;
     } | null;
@@ -205,116 +204,6 @@ const baseSnapshot = (input: {
     },
     references: {
       items: [],
-    },
-  };
-};
-
-export const buildLabelSnapshot = (input: {
-  status: 'ok' | 'needs_confirmation' | 'failed';
-  analysis: AiSupplementAnalysis | null;
-  draft: LabelDraft | null;
-  message?: string;
-}): SupplementSnapshot => {
-  const timestamp = nowIso();
-  const statusFromAnalysis: SnapshotStatus | null =
-    input.analysis?.status === 'unknown_product'
-      ? 'unknown_product'
-      : input.analysis?.status === 'error'
-        ? 'error'
-        : null;
-
-  const status: SnapshotStatus =
-    input.status === 'failed'
-      ? 'error'
-      : statusFromAnalysis
-        ? statusFromAnalysis
-        : input.status === 'needs_confirmation'
-          ? 'partial'
-          : input.analysis?.status === 'success'
-            ? 'resolved'
-            : 'partial';
-
-  const errorMessage =
-    input.status === 'failed'
-      ? input.message ?? 'Label scan failed'
-      : statusFromAnalysis === 'error'
-        ? 'Label analysis failed'
-        : null;
-
-  const base = baseSnapshot({
-    status,
-    source: 'label',
-    barcodeRaw: null,
-    createdAt: timestamp,
-    error: errorMessage ? { code: 'label_scan_failed', message: errorMessage } : null,
-  });
-
-  const productInfo = input.analysis?.status === 'success'
-    ? input.analysis.productInfo
-    : null;
-
-  const actives = input.draft
-    ? input.draft.ingredients.map((ingredient) => {
-      const amountUnknown = ingredient.amount == null && ingredient.dvPercent == null;
-      return {
-        name: ingredient.name,
-        ingredientId: null,
-        amount: ingredient.amount ?? null,
-        amountUnit: ingredient.unit ?? null,
-        amountUnitRaw: ingredient.unit ?? null,
-        amountUnitNormalized: normalizeUnit(ingredient.unit ?? null),
-        dvPercent: ingredient.dvPercent ?? null,
-        form: null,
-        isProprietaryBlend: false,
-        amountUnknown,
-        source: 'label' as const,
-        confidence: ingredient.confidence ?? null,
-      };
-    })
-    : [];
-
-  return {
-    ...base,
-    product: {
-      ...base.product,
-      brand: productInfo?.brand ?? null,
-      name: productInfo?.name ?? null,
-      category: productInfo?.category ?? null,
-      imageUrl: productInfo?.image ?? null,
-    },
-    label: {
-      ...base.label,
-      servingSize: input.draft?.servingSize ?? null,
-      actives,
-      extraction: input.draft
-        ? {
-          parseCoverage: input.draft.parseCoverage ?? null,
-          confidenceScore: input.draft.confidenceScore ?? null,
-          issues: input.draft.issues?.length
-            ? input.draft.issues.map((issue) => `${issue.type}: ${issue.message}`)
-            : null,
-        }
-        : null,
-    },
-    references: {
-      items: input.analysis?.status === 'success'
-        ? input.analysis.sources.map((source, index) => {
-          const title = source.title?.trim() || 'Source';
-          const url = source.link?.trim() || '';
-          const excerpt = truncateExcerpt('');
-          const hash = hashString(`${url}\n${excerpt}`);
-          return {
-            id: `ref_${index + 1}_${hash}`,
-            sourceType: 'OTHER',
-            title,
-            url,
-            excerpt,
-            retrievedAt: timestamp,
-            hash,
-            evidenceFor: 'general' as const,
-          };
-        })
-        : [],
     },
   };
 };

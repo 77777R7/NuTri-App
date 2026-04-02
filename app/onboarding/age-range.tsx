@@ -1,71 +1,63 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 
-import { OnboardingCard } from '@/components/onboarding/OnboardingCard';
-import { OnboardingContainer } from '@/components/onboarding/OnboardingContainer';
+import { QASingleSelectScreen } from '@/components/onboarding/qa/QASingleSelectScreen';
 import { useOnboarding } from '@/contexts/OnboardingContext';
+import { useTransitionDir } from '@/contexts/TransitionContext';
 import { trackOnboardingEvent } from '@/lib/analytics/onboarding';
-import { AGE_RANGE_OPTIONS, ONBOARDING_TOTAL_STEPS } from '@/lib/onboarding-v2';
-import { colors } from '@/lib/theme';
+import { AGE_RANGE_OPTIONS } from '@/lib/onboarding-v2';
 
 export default function AgeRangeScreen() {
   const router = useRouter();
-  const { draft, saveDraft } = useOnboarding();
+  const { draft, progress, saveDraft, setProgress } = useOnboarding();
+  const { setDirection } = useTransitionDir();
   const [selected, setSelected] = useState<string>(draft?.ageRange ?? '');
 
   useEffect(() => {
     setSelected(draft?.ageRange ?? '');
   }, [draft?.ageRange]);
 
-  const handleNext = useCallback(async () => {
-    if (!selected) return;
+  useEffect(() => {
+    if (progress < 3) {
+      void setProgress(3);
+    }
+  }, [progress, setProgress]);
 
-    await saveDraft({ ageRange: selected }, 3);
-    trackOnboardingEvent('question_answered', { question: 'age_range', answer: selected });
-    router.replace('/onboarding/sex');
-  }, [router, saveDraft, selected]);
+  const goNext = useCallback(
+    async (skip: boolean) => {
+      if (!skip && !selected) return;
+
+      const answer = skip ? 'skipped' : selected;
+
+      setDirection('forward');
+      await saveDraft({ ageRange: skip ? undefined : selected }, 3);
+      trackOnboardingEvent('question_answered', {
+        question: 'age_range',
+        answer: answer,
+      });
+      router.replace('/onboarding/sex');
+    },
+    [router, saveDraft, selected, setDirection],
+  );
 
   return (
-    <OnboardingContainer
-      step={3}
-      totalSteps={ONBOARDING_TOTAL_STEPS}
-      title="Which age range are you in?"
-      subtitle="This helps us tune guidance tone and personalization for you."
-      fallbackHref="/onboarding/data-trust"
-      scrollable
-      disableNext={!selected}
-      onNext={handleNext}
-    >
-      <View style={styles.content}>
-        <Text style={styles.why}>Why we ask: age range helps tailor relevance and safety context.</Text>
-        <View style={styles.list}>
-          {AGE_RANGE_OPTIONS.map((option) => (
-            <OnboardingCard
-              key={option}
-              label={option}
-              selected={selected === option}
-              onPress={() => setSelected(option)}
-              accessibilityLabel={`${option}${selected === option ? ' selected' : ''}`}
-            />
-          ))}
-        </View>
-      </View>
-    </OnboardingContainer>
+    <QASingleSelectScreen
+      screenKey="age-range"
+      qaStepIndex={1}
+      eyebrow="About you"
+      title={'Which age range are\nyou in?'}
+      subtitle="This helps tailor how guidance fits you."
+      options={[...AGE_RANGE_OPTIONS]}
+      value={selected}
+      onSelect={setSelected}
+      onBack={() => {
+        setDirection('back');
+        router.replace('/onboarding/data-trust');
+      }}
+      onContinue={() => goNext(false)}
+      onSkip={() => goNext(true)}
+      continueLabel="Continue"
+      continueDisabled={!selected}
+    />
   );
 }
-
-const styles = StyleSheet.create({
-  content: {
-    flex: 1,
-    gap: 14,
-  },
-  why: {
-    fontSize: 13,
-    lineHeight: 20,
-    color: colors.textMuted,
-  },
-  list: {
-    gap: 12,
-  },
-});

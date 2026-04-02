@@ -98,6 +98,8 @@ export type EligibilityDecision = {
   rankEligible: boolean;
   caps: string[];
   reasons: DecisionReason[];
+  cautionClass?: 'clear' | 'review' | 'blocked';
+  suppressionLevel?: 'none' | 'deprioritize' | 'exclude';
 };
 
 export type ProductGoalMatch = {
@@ -106,12 +108,50 @@ export type ProductGoalMatch = {
   tier: ProductGoalMatchTier;
   reasons: DecisionReason[];
   caps?: string[];
+  confidence?: {
+    evidence: 'high' | 'medium' | 'low';
+    dose: 'meets' | 'below' | 'unknown' | 'not_applicable';
+    disclosure: 'full' | 'partial' | 'weak';
+  };
 };
 
 export type ProductCoverageDecision = {
   factsStatus: SavedProductFactsStatus;
   status: ProductCoverageStatus;
   reasons: DecisionReason[];
+};
+
+export type GoalFitCardTier = ProductGoalMatchTier | 'not_enough_structured_data';
+
+export type ConfidenceBreakdown = {
+  evidence: 'high' | 'medium' | 'low';
+  labelCompleteness: 'full' | 'partial' | 'weak';
+  overlapRisk: 'none' | 'watch' | 'high';
+  routineFit: 'easy' | 'moderate' | 'complex';
+};
+
+export type GoalFitCard = {
+  productId: string;
+  goalKey?: GoalKey;
+  tier: GoalFitCardTier;
+  confidence: ConfidenceBreakdown;
+  whyFit: DecisionReason[];
+  whyNotStronger: DecisionReason[];
+  holdbacks: DecisionReason[];
+  stackContext?: DecisionReason[];
+};
+
+export type GoalCompareEntry = {
+  productId: string;
+  goalKey?: GoalKey;
+  title?: string;
+  brandName?: string;
+  dosageText?: string;
+  tier: GoalFitCardTier;
+  confidence: ConfidenceBreakdown;
+  whyFit: DecisionReason[];
+  whyNotStronger: DecisionReason[];
+  holdbacks: DecisionReason[];
 };
 
 export type EvaluatedProductDisplay = {
@@ -124,12 +164,20 @@ export type EvaluatedProductDisplay = {
 export type SavedProductEvaluationInput = {
   productId: string;
   factsStatus: SavedProductFactsStatus;
+  typeKeys?: SupplementTypeKey[];
   productGoalMatches?: ProductGoalMatch[];
   eligibility?: EligibilityDecision;
   display?: EvaluatedProductDisplay;
 };
 
 export type BlockerStrategy = {
+  primarySupportFocus:
+    | 'reminder'
+    | 'schedule'
+    | 'explanation'
+    | 'education'
+    | 'checkin'
+    | 'optimization';
   reminderPriority: 'high' | 'medium' | 'low';
   scheduleComplexity: 'simple' | 'guided' | 'advanced';
   notificationBudget: 'light' | 'standard' | 'heavy';
@@ -137,6 +185,27 @@ export type BlockerStrategy = {
   emphasizeScheduleSetup: boolean;
   emphasizeExplanation: boolean;
 };
+
+export type SupportState =
+  | 'explore'
+  | 'choose'
+  | 'install'
+  | 'stabilize'
+  | 'optimize';
+
+export type PreferenceVector = {
+  decisionMode: 'best_fit' | 'simpler' | 'strong_only' | 'better_disclosure' | 'low_overlap';
+  explanationStyle: 'brief' | 'compare' | 'deep';
+  notificationTolerance: 'low' | 'medium' | 'high';
+};
+
+export type PersonalizationControlKey =
+  | 'simpler'
+  | 'strong_only'
+  | 'better_disclosure'
+  | 'low_overlap'
+  | 'explain_first'
+  | 'less_reminders';
 
 export type ExperienceMode = {
   explanationDepth: 'simple' | 'guided' | 'advanced';
@@ -149,6 +218,8 @@ export type DietReviewLane = {
   laneKey: string;
   priority: 'high' | 'medium' | 'low';
   reasons: DecisionReason[];
+  reviewBundleKey?: string;
+  focusAreas?: string[];
 };
 
 export type ActivityPlan = {
@@ -156,6 +227,8 @@ export type ActivityPlan = {
   suggestedTypes: SupplementTypeKey[];
   suggestedTimingAnchors: string[];
   reasons: DecisionReason[];
+  decisionModifier?: string;
+  reviewBundleKey?: string;
 };
 
 export type FirstStackPlanItem = {
@@ -171,7 +244,12 @@ export type FirstStackPlan = {
   explanationFacts: DecisionReason[];
 };
 
-export type ExplanationSurface = 'plan_preview' | 'first_stack';
+export type ExplanationSurface =
+  | 'plan_preview'
+  | 'first_stack'
+  | 'goal_fit_detail'
+  | 'product_compare'
+  | 'weekly_insight';
 
 export type ExplanationFact = {
   factId: string;
@@ -197,6 +275,49 @@ export type ExplanationResult = {
   model?: string;
 };
 
+export type GoalNavigatorUserContext = {
+  duplicateRisk?: PersonalizationObservedSignals['duplicateRisk'];
+  supplementExperience?: ExperienceLevel;
+  ageRange?: string;
+  adherenceBlocker?: BlockerKey;
+};
+
+export type GoalNavigatorRequest = {
+  goalKey: GoalKey;
+  preferredTypes?: SupplementTypeKey[];
+  limit?: number;
+  snapshotId?: string;
+  userContext?: GoalNavigatorUserContext;
+  preferenceVector?: PreferenceVector;
+};
+
+export type GoalNavigatorCandidate = {
+  productId: string;
+  goalKey: GoalKey;
+  tier: GoalFitCardTier;
+  score: number;
+  typeKeys: SupplementTypeKey[];
+  preferredTypeMatch: boolean;
+  sourceProductId?: string;
+  barcode?: string | null;
+  externalUrl?: string | null;
+  evaluation: SavedProductEvaluation;
+  goalFitCard: GoalFitCard;
+};
+
+export type GoalNavigatorResponse = {
+  goalKey: GoalKey;
+  snapshotId?: string;
+  rulesVersion: string;
+  preferredTypes: SupplementTypeKey[];
+  preferenceVector?: PreferenceVector;
+  candidates: GoalNavigatorCandidate[];
+  fallback: {
+    notEnoughStructuredDataCount: number;
+  };
+  reasons: DecisionReason[];
+};
+
 export type HomePersonalizationVM = {
   emphasizedModules: string[];
   prioritizedGoals: GoalKey[];
@@ -209,6 +330,7 @@ export type SmartFilterProductMembership = {
   factsStatus: SavedProductFactsStatus;
   coverageStatus: ProductCoverageStatus;
   bucket: SmartFilterProductBucket;
+  typeKeys: SupplementTypeKey[];
   highlightedGoal?: GoalKey;
   goalTiers: Partial<Record<GoalKey, ProductGoalMatchTier>>;
   eligibility?: Pick<EligibilityDecision, 'eligible' | 'rankEligible' | 'caps'>;
@@ -260,7 +382,8 @@ export type OverrideTargetSurface =
   | 'schedule_defaults'
   | 'smart_filter'
   | 'plan_preview'
-  | 'first_stack';
+  | 'first_stack'
+  | 'personalization_controls';
 
 export type OverrideEvent = {
   id: string;
@@ -271,6 +394,33 @@ export type OverrideEvent = {
   action: OverrideEventAction;
   field: string;
   value?: string | string[] | boolean | number;
+};
+
+export type PersonalizationEventName =
+  | 'goal_navigator_opened'
+  | 'goal_fit_detail_opened'
+  | 'compare_opened'
+  | 'control_selected'
+  | 'schedule_edited'
+  | 'reminder_disabled'
+  | 'save_then_unsave'
+  | 'first_stack_accepted';
+
+export type PersonalizationEventRecord = {
+  eventName: PersonalizationEventName;
+  surface: string;
+  createdAt: string;
+  snapshotId?: string | null;
+  rulesVersion?: string | null;
+  supportState?: SupportState | null;
+};
+
+export type PersonalizationEventSummary = {
+  totalCount: number;
+  lastEventAt: string | null;
+  countsByEventName: Partial<Record<PersonalizationEventName, number>>;
+  countsBySurface: Record<string, number>;
+  recentEvents: PersonalizationEventRecord[];
 };
 
 export type FeedbackState = {
@@ -293,8 +443,28 @@ export type FeedbackState = {
       acceptedProductIds: string[];
       scheduleTemplateKey: string;
     }>;
+    controls?: Partial<PreferenceVector>;
   };
   dismissals: Partial<Record<OverrideTargetSurface, string[]>>;
+};
+
+export type StackAuditItem = {
+  productId: string;
+  title?: string;
+  status: 'kept' | 'held_back' | 'watch';
+  goalKey?: GoalKey;
+  confidence?: ConfidenceBreakdown;
+  reasons: DecisionReason[];
+};
+
+export type StackAudit = {
+  supportState: SupportState;
+  overlapRisk: ConfidenceBreakdown['overlapRisk'];
+  headline: string;
+  summary: string;
+  kept: StackAuditItem[];
+  heldBack: StackAuditItem[];
+  reasons: DecisionReason[];
 };
 
 export type PersonalizationSnapshot = {
@@ -307,12 +477,15 @@ export type PersonalizationSnapshot = {
     experience: ExperienceMode;
     dietLanes: DietReviewLane[];
     activityPlan: ActivityPlan;
+    supportState: SupportState;
+    preferenceVector: PreferenceVector;
   };
   evaluations: {
     productGoalMatches: Record<string, ProductGoalMatch[]>;
     eligibility?: Record<string, EligibilityDecision>;
     coverage?: Record<string, ProductCoverageDecision>;
     savedProductEvaluations?: Record<string, SavedProductEvaluation>;
+    goalFitCards?: Record<string, GoalFitCard>;
     firstStackPlan?: FirstStackPlan;
   };
   surfaces: {
@@ -320,6 +493,9 @@ export type PersonalizationSnapshot = {
     smartFilter: SmartFilterPersonalizationVM;
     planPreview: PlanPreviewPersonalizationVM;
     scheduleDefaults: ScheduleDefaultsPersonalizationVM;
+  };
+  premiumInsights?: {
+    stackAudit?: StackAudit;
   };
   trace: DecisionReason[];
 };

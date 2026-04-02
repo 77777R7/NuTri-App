@@ -1,105 +1,81 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 
-import { OnboardingCard } from '@/components/onboarding/OnboardingCard';
-import { OnboardingContainer } from '@/components/onboarding/OnboardingContainer';
+import { QAMultiSelectScreen } from '@/components/onboarding/qa/QAMultiSelectScreen';
 import { useOnboarding } from '@/contexts/OnboardingContext';
+import { useTransitionDir } from '@/contexts/TransitionContext';
 import { trackOnboardingEvent } from '@/lib/analytics/onboarding';
-import { buildSmartFilterConfig, GOAL_OPTIONS, ONBOARDING_TOTAL_STEPS } from '@/lib/onboarding-v2';
-import { colors } from '@/lib/theme';
+import { buildSmartFilterConfig, GOAL_OPTIONS } from '@/lib/onboarding-v2';
 
 export default function GoalsScreen() {
   const router = useRouter();
-  const { draft, saveDraft } = useOnboarding();
-  const [selectedGoals, setSelectedGoals] = useState<string[]>(draft?.goals ?? []);
+  const { draft, progress, saveDraft, setProgress } = useOnboarding();
+  const { setDirection } = useTransitionDir();
+  const [selectedGoals, setSelectedGoals] = useState<string[]>(
+    draft?.goals ?? [],
+  );
 
   useEffect(() => {
     setSelectedGoals(draft?.goals ?? []);
   }, [draft?.goals]);
 
+  useEffect(() => {
+    if (progress < 6) {
+      void setProgress(6);
+    }
+  }, [progress, setProgress]);
+
   const toggleGoal = useCallback((goal: string) => {
-    setSelectedGoals((current) => {
-      if (current.includes(goal)) {
-        return current.filter((item) => item !== goal);
-      }
-      return [...current, goal];
-    });
+    setSelectedGoals((current) =>
+      current.includes(goal)
+        ? current.filter((item) => item !== goal)
+        : [...current, goal],
+    );
   }, []);
 
-  const handleNext = useCallback(async () => {
-    if (selectedGoals.length === 0) return;
-
-    const smartFilterConfig = buildSmartFilterConfig({
-      goals: selectedGoals,
-      preferredTypes: draft?.preferredTypes ?? [],
-    });
-
+  const persist = useCallback(async () => {
     await saveDraft(
       {
         goals: selectedGoals,
-        smartFilterConfig,
+        smartFilterConfig: buildSmartFilterConfig({
+          goals: selectedGoals,
+          preferredTypes: draft?.preferredTypes ?? [],
+        }),
       },
       6,
     );
-
     trackOnboardingEvent('question_answered', {
       question: 'goals',
       answerCount: selectedGoals.length,
       answers: selectedGoals,
+      source: 'gemini_port',
     });
+    setDirection('forward');
     router.replace('/onboarding/types');
-  }, [draft?.preferredTypes, router, saveDraft, selectedGoals]);
+  }, [draft?.preferredTypes, router, saveDraft, selectedGoals, setDirection]);
 
   return (
-    <OnboardingContainer
-      step={6}
-      totalSteps={ONBOARDING_TOTAL_STEPS}
+    <QAMultiSelectScreen
+      screenKey="goals"
+      qaStepIndex={4}
+      eyebrow="Your goal"
       title="What are your goals right now?"
-      subtitle="Select at least one. Your selected goals will appear in Smart Filter."
-      fallbackHref="/onboarding/experience"
-      scrollable
-      disableNext={selectedGoals.length === 0}
-      onNext={handleNext}
-    >
-      <View style={styles.content}>
-        <Text style={styles.why}>Why we ask: goals directly power your Smart Filter and recommendation focus.</Text>
-        <View style={styles.list}>
-          {GOAL_OPTIONS.map((goal) => {
-            const selected = selectedGoals.includes(goal);
-            return (
-              <OnboardingCard
-                key={goal}
-                label={goal}
-                selected={selected}
-                onPress={() => toggleGoal(goal)}
-                accessibilityLabel={`${goal}${selected ? ' selected' : ''}`}
-              />
-            );
-          })}
-        </View>
-        {selectedGoals.length === 0 ? <Text style={styles.error}>Select at least one goal to continue.</Text> : null}
-      </View>
-    </OnboardingContainer>
+      subtitle="Select at least one."
+      options={[...GOAL_OPTIONS]}
+      values={selectedGoals}
+      onToggle={toggleGoal}
+      onBack={() => {
+        setDirection('back');
+        router.replace('/onboarding/experience');
+      }}
+      onContinue={persist}
+      onSkip={persist}
+      continueLabel="Continue"
+      footerHint={
+        selectedGoals.length === 0
+          ? 'Select at least one goal to continue.'
+          : undefined
+      }
+    />
   );
 }
-
-const styles = StyleSheet.create({
-  content: {
-    flex: 1,
-    gap: 14,
-  },
-  why: {
-    fontSize: 13,
-    lineHeight: 20,
-    color: colors.textMuted,
-  },
-  list: {
-    gap: 12,
-  },
-  error: {
-    fontSize: 13,
-    color: '#EF4444',
-    fontWeight: '600',
-  },
-});

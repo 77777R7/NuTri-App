@@ -1,0 +1,2 @@
+class DefaultAddons:
+    UBO = "ubo"

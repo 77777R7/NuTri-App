@@ -1,6 +1,6 @@
 import { supabase } from './supabase.js';
 import { extractErrorMeta, type RetryErrorMeta, withRetry } from './supabaseRetry.js';
-import type { LabelDraft } from './labelAnalysis.js';
+import type { LabelDraft } from './labelTypes.js';
 import { sanitizeFactsDTO, type FactsDTO } from './insights/dto.js';
 import { isActiveIngredient, isBlendPlaceholder } from './insights/ingredientPredicates.js';
 import { canonicalizeLnhpdFormTokens } from './formTaxonomy/lnhpdFormTokenMap.js';

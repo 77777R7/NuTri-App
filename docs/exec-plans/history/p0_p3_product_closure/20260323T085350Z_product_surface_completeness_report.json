@@ -1,0 +1,145 @@
+{
+  "generatedAt": "2026-03-23T08:53:50.807Z",
+  "phase": "P0-C",
+  "phaseOutcomeStatus": "execution_success",
+  "sourceContractGates": [
+    {
+      "gateId": "save_from_history_preserves_image_and_dose",
+      "pass": true
+    },
+    {
+      "gateId": "overlay_image_transport",
+      "pass": true
+    },
+    {
+      "gateId": "overlay_warnings_consumed_into_facts",
+      "pass": true
+    },
+    {
+      "gateId": "saved_context_persists_image_backfill",
+      "pass": true
+    },
+    {
+      "gateId": "my_saved_detail_consumes_overlay_fields",
+      "pass": false
+    },
+    {
+      "gateId": "weak_rows_do_not_infer_strong_whats_inside",
+      "pass": true
+    }
+  ],
+  "surfaceAudit": [
+    {
+      "surface": "save_from_history_path",
+      "pass": true,
+      "fields": {
+        "ingredient": {
+          "expectedOnThisSurface": false,
+          "downstreamConsumerReady": true
+        },
+        "dosage": {
+          "expectedOnThisSurface": true,
+          "visible": true,
+          "usable": true
+        },
+        "suggested_use": {
+          "expectedOnThisSurface": false,
+          "downstreamConsumerReady": true
+        },
+        "warnings": {
+          "expectedOnThisSurface": false,
+          "downstreamConsumerReady": true
+        },
+        "product_image": {
+          "expectedOnThisSurface": true,
+          "visible": true,
+          "usable": true
+        }
+      }
+    },
+    {
+      "surface": "my_saved_card",
+      "pass": true,
+      "fields": {
+        "ingredient": {
+          "expectedOnThisSurface": false
+        },
+        "dosage": {
+          "expectedOnThisSurface": false
+        },
+        "suggested_use": {
+          "expectedOnThisSurface": false
+        },
+        "warnings": {
+          "expectedOnThisSurface": false
+        },
+        "product_image": {
+          "expectedOnThisSurface": true,
+          "visible": true,
+          "usable": true
+        }
+      }
+    },
+    {
+      "surface": "my_saved_detail",
+      "pass": true,
+      "fields": {
+        "ingredient": {
+          "expectedOnThisSurface": true,
+          "visible": true,
+          "usable": true
+        },
+        "dosage": {
+          "expectedOnThisSurface": true,
+          "visible": true,
+          "usable": true
+        },
+        "suggested_use": {
+          "expectedOnThisSurface": true,
+          "visible": true,
+          "usable": true
+        },
+        "warnings": {
+          "expectedOnThisSurface": true,
+          "visible": true,
+          "usable": true
+        },
+        "product_image": {
+          "expectedOnThisSurface": true,
+          "visible": true,
+          "usable": true
+        }
+      }
+    },
+    {
+      "surface": "saved_stack_safety_consumer",
+      "pass": true,
+      "fields": {
+        "ingredient": {
+          "expectedOnThisSurface": true,
+          "visible": true,
+          "usable": true
+        },
+        "dosage": {
+          "expectedOnThisSurface": true,
+          "visible": true,
+          "usable": "conservative_fallback_allowed"
+        },
+        "suggested_use": {
+          "expectedOnThisSurface": false
+        },
+        "warnings": {
+          "expectedOnThisSurface": false
+        },
+        "product_image": {
+          "expectedOnThisSurface": false
+        }
+      }
+    }
+  ],
+  "representativeHighFrequencyGate": {
+    "currentCompleteHitRatePct": 38,
+    "productLevelPass": false,
+    "blocker": "P0 cannot be called closed at the product level while 996 high-frequency products are still missing from staging and 28 more remain in the active queue."
+  }
+}

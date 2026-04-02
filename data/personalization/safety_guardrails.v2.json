@@ -1,0 +1,30 @@
+{
+  "version": "v2",
+  "guardrails": [
+    {
+      "capKey": "duplicate_overlap_high",
+      "cautionClass": "review",
+      "suppressionLevel": "deprioritize"
+    },
+    {
+      "capKey": "low_disclosure",
+      "cautionClass": "review",
+      "suppressionLevel": "deprioritize"
+    },
+    {
+      "capKey": "proprietary_blend",
+      "cautionClass": "review",
+      "suppressionLevel": "deprioritize"
+    },
+    {
+      "capKey": "diet_constraint_conflict",
+      "cautionClass": "blocked",
+      "suppressionLevel": "exclude"
+    },
+    {
+      "capKey": "generic_safety_path",
+      "cautionClass": "review",
+      "suppressionLevel": "deprioritize"
+    }
+  ]
+}

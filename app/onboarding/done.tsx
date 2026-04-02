@@ -1,21 +1,21 @@
-import React, { useCallback, useState } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 
-import { BrandGradient } from '@/components/BrandGradient';
+import { GlassSurface } from '@/components/onboarding/shared/GlassSurface';
+import { onboardingPalette } from '@/components/onboarding/shared/theme';
 import { useOnboarding } from '@/contexts/OnboardingContext';
 import { trackOnboardingEvent } from '@/lib/analytics/onboarding';
 import { buildSmartFilterConfig, ONBOARDING_TOTAL_STEPS } from '@/lib/onboarding-v2';
-import { colors } from '@/lib/theme';
 
 export default function OnboardingDoneScreen() {
   const router = useRouter();
   const { draft, markCompletedLocal, saveDraft, setProgress } = useOnboarding();
-  const [busy, setBusy] = useState<null | 'scan' | 'manual' | 'home'>(null);
+  const [message, setMessage] = useState('Finishing your setup…');
+  const hasStartedRef = useRef(false);
 
   const finalize = useCallback(
     async (destination: 'scan' | 'manual' | 'home') => {
-      setBusy(destination);
       const completionAt = new Date().toISOString();
       const smartFilterConfig = buildSmartFilterConfig({
         goals: draft?.goals ?? [],
@@ -59,143 +59,96 @@ export default function OnboardingDoneScreen() {
     [draft?.firstActionPreference, draft?.goals, draft?.preferredTypes, markCompletedLocal, router, saveDraft, setProgress],
   );
 
+  useEffect(() => {
+    if (hasStartedRef.current) return;
+    hasStartedRef.current = true;
+
+    const preference = draft?.firstActionPreference ?? 'later';
+    const destination = preference === 'later' ? 'home' : preference;
+
+    if (destination === 'scan') {
+      setMessage('Opening scanner…');
+    } else if (destination === 'manual') {
+      setMessage('Opening search…');
+    } else {
+      setMessage('Taking you home…');
+    }
+
+    void finalize(destination);
+  }, [draft?.firstActionPreference, finalize]);
+
   return (
-    <BrandGradient>
-      <View style={styles.container}>
-        <View style={styles.headerBlock}>
-          <Text style={styles.title}>Your Smart Filter is ready</Text>
-          <Text style={styles.subtitle}>
-            NuTri is now personalized to your goals. Start with your first supplement when you are ready.
-          </Text>
-        </View>
-
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Next best actions</Text>
-          <Text style={styles.cardBody}>1. Scan your first supplement for instant setup.</Text>
-          <Text style={styles.cardBody}>2. Add a second supplement and compare your stack.</Text>
-        </View>
-
-        <View style={styles.footer}>
-          <TouchableOpacity
-            style={[styles.primary, busy !== null && busy !== 'scan' ? styles.disabled : null]}
-            activeOpacity={0.92}
-            disabled={busy !== null}
-            onPress={() => {
-              void finalize('scan');
-            }}
-          >
-            <Text style={styles.primaryText}>{busy === 'scan' ? 'Opening scanner...' : 'Scan first supplement'}</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.secondary, busy !== null && busy !== 'manual' ? styles.disabled : null]}
-            activeOpacity={0.9}
-            disabled={busy !== null}
-            onPress={() => {
-              void finalize('manual');
-            }}
-          >
-            <Text style={styles.secondaryText}>{busy === 'manual' ? 'Opening upload...' : 'Add manually'}</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.ghost}
-            activeOpacity={0.9}
-            disabled={busy !== null}
-            onPress={() => {
-              void finalize('home');
-            }}
-          >
-            <Text style={styles.ghostText}>{busy === 'home' ? 'Finishing...' : 'Go to Home'}</Text>
-          </TouchableOpacity>
-        </View>
+    <View style={styles.root}>
+      <View pointerEvents="none" style={StyleSheet.absoluteFillObject}>
+        <View style={styles.bg} />
+        <View style={styles.mistOne} />
+        <View style={styles.mistTwo} />
       </View>
-    </BrandGradient>
+      <View style={styles.center}>
+        <GlassSurface variant="panel" borderRadius={32} style={styles.card}>
+          <ActivityIndicator size="small" color={onboardingPalette.primary} />
+          <Text style={styles.title}>NuTri is ready</Text>
+          <Text style={styles.body}>{message}</Text>
+        </GlassSurface>
+      </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  root: {
     flex: 1,
+    backgroundColor: onboardingPalette.background,
+  },
+  bg: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: onboardingPalette.background,
+  },
+  mistOne: {
+    position: 'absolute',
+    top: 120,
+    left: 24,
+    right: 24,
+    height: 240,
+    borderRadius: 240,
+    backgroundColor: 'rgba(79,125,255,0.06)',
+    opacity: 0.35,
+  },
+  mistTwo: {
+    position: 'absolute',
+    bottom: 180,
+    left: 70,
+    right: 70,
+    height: 220,
+    borderRadius: 220,
+    backgroundColor: 'rgba(255,255,255,0.55)',
+    opacity: 0.65,
+  },
+  center: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
     paddingHorizontal: 24,
-    paddingVertical: 32,
-    justifyContent: 'space-between',
-  },
-  headerBlock: {
-    gap: 12,
-  },
-  title: {
-    fontSize: 30,
-    lineHeight: 36,
-    fontWeight: '800',
-    color: colors.text,
-    textAlign: 'center',
-  },
-  subtitle: {
-    fontSize: 16,
-    lineHeight: 24,
-    color: colors.textMuted,
-    textAlign: 'center',
   },
   card: {
-    borderRadius: 20,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: 20,
+    width: '100%',
+    paddingHorizontal: 24,
+    paddingVertical: 24,
+    alignItems: 'center',
     gap: 10,
   },
-  cardTitle: {
-    fontSize: 17,
+  title: {
+    color: onboardingPalette.text,
+    fontSize: 22,
+    lineHeight: 28,
     fontWeight: '700',
-    color: colors.text,
+    letterSpacing: -0.4,
   },
-  cardBody: {
-    fontSize: 14,
-    lineHeight: 22,
-    color: colors.textMuted,
-  },
-  footer: {
-    gap: 12,
-  },
-  primary: {
-    height: 56,
-    borderRadius: 16,
-    backgroundColor: colors.brand,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  primaryText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '700',
-  },
-  secondary: {
-    height: 56,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: '#FFFFFF',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  secondaryText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.text,
-  },
-  ghost: {
-    height: 48,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  ghostText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.textMuted,
-  },
-  disabled: {
-    opacity: 0.6,
+  body: {
+    color: onboardingPalette.textMuted,
+    fontSize: 14.5,
+    lineHeight: 21,
+    fontWeight: '500',
+    textAlign: 'center',
   },
 });

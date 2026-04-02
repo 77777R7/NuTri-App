@@ -44,6 +44,12 @@ output/
 build-preview*.ipa
 build-production*.ipa
 .codex/
+test-results/
+tmp/
+.tmp_*
+supabase/.temp/
+scripts/maintainer/python/.venv_*/
+scripts/maintainer/python/__pycache__/
 
 # typescript
 *.tsbuildinfo

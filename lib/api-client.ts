@@ -4,6 +4,8 @@ import { AUTH_DISABLED } from './auth-mode';
 import type {
   ExplanationResult,
   ExplanationSurface,
+  GoalNavigatorRequest,
+  GoalNavigatorResponse,
   PersonalizationSnapshot,
 } from '@/types/personalization';
 
@@ -241,6 +243,77 @@ export type PersonalizationExplainResponse = {
   result: ExplanationResult;
 };
 
+export type GoalNavigatorBundleDebugResponse = {
+  run: {
+    id: string;
+    artifactKind: string;
+    schemaVersion: string;
+    rulesVersion: string;
+    sourceTable: string;
+    sourceRowCount: number;
+    preparedCandidateCount: number;
+    notEnoughStructuredDataCount: number;
+    artifactPath: string | null;
+    storageBucket: string | null;
+    storagePath: string | null;
+    artifactByteSize: number | null;
+    artifactChecksum: string | null;
+    isActive: boolean;
+    activatedAt: string | null;
+    generatedAt: string;
+    createdAt: string;
+    buildMeta: Record<string, unknown>;
+  } | null;
+  summary: {
+    totalGapRows: number;
+    returnedGapRows: number;
+    gapCodeCounts: Record<string, number>;
+    factsStatusCounts: Record<string, number>;
+    priorities: Array<{
+      key: string;
+      affectedProducts: number;
+      recommendedAction: string;
+      sampleTitles: string[];
+    }>;
+  };
+  gaps: Array<{
+    id: string;
+    productId: string;
+    sourceProductId: string | null;
+    title: string | null;
+    brandName: string | null;
+    factsStatus: string;
+    gapCodes: string[];
+    details: Record<string, unknown>;
+    createdAt: string;
+  }>;
+  runtime: {
+    currentBundle: {
+      source: 'storage' | 'disk' | 'live' | null;
+      activeRunId: string | null;
+      generatedAt: string | null;
+      loadedAt: string | null;
+      storageBucket: string | null;
+      storagePath: string | null;
+      artifactPath: string | null;
+    };
+    counters: {
+      storageHits: number;
+      diskHits: number;
+      liveHits: number;
+      liveBuildCount: number;
+      precomputedMissCount: number;
+      fallbackToLiveBuildCount: number;
+      totalLoads: number;
+      precomputedHitRate: number;
+    };
+    lastErrors: {
+      storage: string | null;
+      disk: string | null;
+    };
+  };
+};
+
 export type EnsureOverviewFactActive = {
   name: string;
   amount: number | null;
@@ -382,6 +455,27 @@ export const apiClient = {
       body: JSON.stringify(payload),
       ...options,
     }),
+
+  fetchGoalNavigator: (payload: GoalNavigatorRequest, options?: AuthenticatedRequestOptions) =>
+    request<GoalNavigatorResponse>('/api/personalization/goal-navigator', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+      ...options,
+    }),
+
+  fetchGoalNavigatorBundleDebug: (
+    payload: { limit?: number } = {},
+    options?: AuthenticatedRequestOptions,
+  ) =>
+    request<GoalNavigatorBundleDebugResponse>(
+      `/api/personalization/debug/goal-navigator-bundle?${new URLSearchParams({
+        ...(payload.limit ? { limit: String(payload.limit) } : {}),
+      }).toString()}`,
+      {
+        method: 'GET',
+        ...options,
+      },
+    ),
 
   ensureOverview: (payload: EnsureOverviewRequest, options?: AuthenticatedRequestOptions) =>
     request<EnsureOverviewResponse>('/api/ensure-overview', {

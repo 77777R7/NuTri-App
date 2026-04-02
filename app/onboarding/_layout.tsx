@@ -33,6 +33,7 @@ const OnboardingGate = () => {
       <Stack.Screen name="experience" />
       <Stack.Screen name="goals" />
       <Stack.Screen name="types" />
+      <Stack.Screen name="allergy" />
       <Stack.Screen name="blocker" />
       <Stack.Screen name="setup" />
       <Stack.Screen name="plan-preview" />

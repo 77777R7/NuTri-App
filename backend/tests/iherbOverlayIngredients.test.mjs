@@ -55,6 +55,60 @@ test("normalizeIherbSupplementFactsRows preserves chemical forms", () => {
   ]);
 });
 
+test("normalizeIherbSupplementFactsRows splits concatenated proprietary blend members", () => {
+  const rows = normalizeIherbSupplementFactsRows([
+    {
+      substancy:
+        "Proprietary Extract BlendMarshmallow (Althaea officinalis) Root Extract, Fennel (Foeniculum vulgare) Seed Extract, Black Walnut (Juglans nigra) Hull Extract, Slippery Elm (Ulmus rubra) Bark Extract, Pumpkin (Cucurbita pepo) Seed Extract, Wormwood (Artemisia absinthium) Herb Extract, Clove (Syzygium aromaticum) Flower Extract, Garlic (Allium sativum) Bulb Extract, Peppermint (Mentha x piperita) Leaf Extract, Oregano (Origanum vulgare) Leaf Extract.",
+      amountPerServing: "77 mg",
+      dailyValuePercent: "**",
+    },
+  ]);
+
+  assert.deepEqual(rows, [
+    {
+      name: "Marshmallow (Althaea officinalis) Root Extract",
+      dose: null,
+    },
+    {
+      name: "Fennel (Foeniculum vulgare) Seed Extract",
+      dose: null,
+    },
+    {
+      name: "Black Walnut (Juglans nigra) Hull Extract",
+      dose: null,
+    },
+    {
+      name: "Slippery Elm (Ulmus rubra) Bark Extract",
+      dose: null,
+    },
+    {
+      name: "Pumpkin (Cucurbita pepo) Seed Extract",
+      dose: null,
+    },
+    {
+      name: "Wormwood (Artemisia absinthium) Herb Extract",
+      dose: null,
+    },
+    {
+      name: "Clove (Syzygium aromaticum) Flower Extract",
+      dose: null,
+    },
+    {
+      name: "Garlic (Allium sativum) Bulb Extract",
+      dose: null,
+    },
+    {
+      name: "Peppermint (Mentha x piperita) Leaf Extract",
+      dose: null,
+    },
+    {
+      name: "Oregano (Origanum vulgare) Leaf Extract",
+      dose: null,
+    },
+  ]);
+});
+
 test("selectScienceIngredientRows source-locks to iHerb when primary active coverage passes", () => {
   const selection = selectScienceIngredientRows({
     digest: {

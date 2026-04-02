@@ -10,9 +10,7 @@ import {
   Maximize2,
   Moon,
   NotebookPen,
-  Plus,
   Search,
-  SlidersHorizontal,
   StickyNote,
   Sun,
   X,
@@ -42,6 +40,9 @@ import { AutoFitText } from "@/components/common/AutoFitText";
 import { CalendarStrip } from "@/components/ui/calendar-strip";
 import { DuplicateIngredientGroupCard } from "@/components/screens/mySaved/DuplicateIngredientGroupCard";
 import { SavedStackSafetySummary } from "@/components/screens/mySaved/SavedStackSafetySummary";
+import { CompareSheet } from "@/components/screens/my-supplement/CompareSheet";
+import { GoalFitScorecard } from "@/components/screens/my-supplement/GoalFitScorecard";
+import { MySavedSmartFilterPanel } from "@/components/screens/my-supplement/MySavedSmartFilterPanel";
 import type {
   StackDuplicateGroup,
   StackLevelSafetySummary,
@@ -72,6 +73,18 @@ import {
   getSupplementTypeDisplayLabel,
   getTimingAnchorDisplayLabel,
 } from "@/lib/personalization/uiLabels";
+import { PERSONALIZATION_RESEARCH_UI_ENABLED } from "@/lib/personalization/researchFlags";
+import {
+  buildGoalTagToKeyMap,
+  buildTypeTagToKeyMap,
+  filterSupplementsByActiveTags,
+  getMembershipMatchTier,
+  getMembershipReasonCodes,
+  isEvaluatedCoverageReadyMembership,
+  matchesEvaluatedSmartFilterTag,
+} from "@/lib/personalization/smartFilterMatching";
+import { buildGoalCompareEntries } from "@/lib/personalization/core/compareModel";
+import { buildGoalFitCard } from "@/lib/personalization/core/goalFitCardBuilder";
 import { resolveRoutineTimeUserSet } from "@/lib/routineIntent";
 import {
   loadMealTimePrefs,
@@ -98,8 +111,10 @@ import {
 import type { RoutineDayOfWeek, RoutinePreferences, SavedSupplement } from "@/types/saved-supplements";
 import type {
   GoalKey,
+  GoalCompareEntry,
   OverrideEvent,
   ScheduleDefaultsPersonalizationVM,
+  SavedProductEvaluation,
   SmartFilterProductMembership,
   SupplementTypeKey,
 } from "@/types/personalization";
@@ -154,14 +169,6 @@ const ROUTINE_DAY_OPTIONS: Array<{ value: RoutineDayOfWeek; label: string; summa
   { value: 4, label: "T", summaryLabel: "Thursday" },
   { value: 5, label: "F", summaryLabel: "Friday" },
   { value: 6, label: "S", summaryLabel: "Saturday" },
-];
-
-const ALL_SUPPLEMENT_TYPE_KEYS: SupplementTypeKey[] = [
-  "vitamin",
-  "mineral",
-  "herb",
-  "probiotic",
-  "protein",
 ];
 
 const getSuggestedSlotKey = (slot: Pick<SuggestedRoutineSlot, "label" | "time">) => `${slot.label}:${slot.time}`;
@@ -807,88 +814,6 @@ const getTimeCategory = (time?: string) => {
     pillStyle: { backgroundColor: "#f1f5f9", borderColor: "#e2e8f0" },
   };
 };
-
-const buildGoalTagToKeyMap = (visibleGoals: GoalKey[]) =>
-  new Map(visibleGoals.map((goalKey) => [getGoalDisplayLabel(goalKey), goalKey] as const));
-
-const buildTypeTagToKeyMap = () =>
-  new Map(
-    ALL_SUPPLEMENT_TYPE_KEYS.map((typeKey) => [getSupplementTypeDisplayLabel(typeKey), typeKey] as const),
-  );
-
-const getMembershipReasonCodes = (membership?: SmartFilterProductMembership) =>
-  Array.from(new Set((membership?.reasons ?? []).map((reason) => reason.code).filter(Boolean)));
-
-const getMembershipMatchTier = (membership: SmartFilterProductMembership, goalKey?: GoalKey) =>
-  goalKey ? membership.goalTiers[goalKey] ?? undefined : membership.highlightedGoal ? membership.goalTiers[membership.highlightedGoal] : undefined;
-
-const isEvaluatedCoverageReadyMembership = (membership?: SmartFilterProductMembership) =>
-  !!membership && membership.coverageStatus === "coverage_ready" && membership.bucket !== "no_match";
-
-const matchesEvaluatedSmartFilterTag = ({
-  tag,
-  membership,
-  goalTagToKey,
-  typeTagToKey,
-}: {
-  tag: string;
-  membership?: SmartFilterProductMembership;
-  goalTagToKey: Map<string, GoalKey>;
-  typeTagToKey: Map<string, SupplementTypeKey>;
-}) => {
-  if (!membership) return false;
-
-  const goalKey = goalTagToKey.get(tag);
-  if (goalKey) {
-    const tier = membership.goalTiers[goalKey];
-    return membership.coverageStatus === "coverage_ready" && membership.eligibility?.rankEligible !== false && !!tier;
-  }
-
-  const typeKey = typeTagToKey.get(tag);
-  if (typeKey) {
-    return false;
-  }
-
-  return false;
-};
-
-const filterSupplementsByActiveTags = ({
-  items,
-  activeTags,
-  membershipById,
-  goalTagToKey,
-  typeTagToKey,
-}: {
-  items: SavedSupplement[];
-  activeTags: Set<string>;
-  membershipById: Record<string, SmartFilterProductMembership | undefined>;
-  goalTagToKey: Map<string, GoalKey>;
-  typeTagToKey: Map<string, SupplementTypeKey>;
-}) =>
-  items.filter((item) => {
-    for (const tag of activeTags) {
-      if (tag === "Recently Viewed" && !!item.lastViewed) {
-        return true;
-      }
-
-      if (item.tags?.some((itemTag) => itemTag === tag)) {
-        return true;
-      }
-
-      if (
-        matchesEvaluatedSmartFilterTag({
-          tag,
-          membership: membershipById[item.id],
-          goalTagToKey,
-          typeTagToKey,
-        })
-      ) {
-        return true;
-      }
-    }
-
-    return false;
-  });
 
 const parseTimeToMinutes = (time: string | null | undefined): number | null => {
   const value = typeof time === "string" ? time.trim() : "";
@@ -2038,6 +1963,9 @@ function DetailSheet({
   item,
   theme,
   scheduleDefaults,
+  selectedGoalKey,
+  savedProductEvaluation,
+  compareEntries,
   stackOverlaps,
   stackSafetySummary,
   duplicateGroups,
@@ -2047,12 +1975,16 @@ function DetailSheet({
   onClose,
   onSaveRoutine,
   onRecordOverrideEvents,
+  onTrackPersonalizationEvent,
   smartFilterAnalyticsContext,
   onTrackSmartFilterEvent,
 }: {
   item: SavedSupplement;
   theme: Theme;
   scheduleDefaults: ScheduleDefaultsPersonalizationVM;
+  selectedGoalKey?: GoalKey;
+  savedProductEvaluation?: SavedProductEvaluation;
+  compareEntries?: GoalCompareEntry[];
   stackOverlaps?: StackOverlapItem[];
   stackSafetySummary?: StackLevelSafetySummary | null;
   duplicateGroups?: StackDuplicateGroup[];
@@ -2066,6 +1998,11 @@ function DetailSheet({
   onClose: () => void;
   onSaveRoutine?: (id: string, prefs: RoutinePreferences) => void | Promise<void>;
   onRecordOverrideEvents?: (events: OverrideEvent[]) => Promise<void>;
+  onTrackPersonalizationEvent?: (input: {
+    eventName: "goal_fit_detail_opened" | "compare_opened";
+    surface: string;
+    payload?: Record<string, unknown>;
+  }) => Promise<void>;
   smartFilterAnalyticsContext?: SmartFilterEvaluatedDetailAnalyticsContext | null;
   onTrackSmartFilterEvent?: (event: string, payload: Record<string, unknown>) => void;
 }) {
@@ -2132,12 +2069,14 @@ function DetailSheet({
   const authoritativeDoseRepairRef = useRef<string | null>(null);
   const [overviewExpanded, setOverviewExpanded] = useState(false);
   const [whatsInsideExpanded, setWhatsInsideExpanded] = useState(false);
+  const [compareOpen, setCompareOpen] = useState(false);
   const [selectedAnchorKey, setSelectedAnchorKey] = useState<string | null>(null);
   const autoAnchorSyncedRef = useRef<string | null>(null);
   const [anchorPrefilled, setAnchorPrefilled] = useState(false);
   const autosyncedThisSessionRef = useRef(false);
   const detailOpenedAtRef = useRef<number>(Date.now());
   const odsFirstPaintLoggedRef = useRef(false);
+  const goalFitDetailTrackedKeyRef = useRef<string | null>(null);
 
   const lastSavedRef = useRef<RoutinePreferences>({
     note: item.routine?.note ?? "",
@@ -3459,6 +3398,69 @@ function DetailSheet({
   const showWhatsInsideToggle =
     (whatsInsideDisplay.source === "overlay" || whatsInsideDisplay.source === "actives") &&
     whatsInsideOverflowCount > 0;
+  const goalFitCard = useMemo(
+    () =>
+      buildGoalFitCard({
+        evaluation: savedProductEvaluation,
+        goalKey: selectedGoalKey,
+        stackOverlapCount: stackOverlaps?.length ?? 0,
+      }),
+    [savedProductEvaluation, selectedGoalKey, stackOverlaps],
+  );
+  const compareEntryList = useMemo(() => {
+    if (!goalFitCard) return compareEntries ?? [];
+
+    const currentEntry: GoalCompareEntry = {
+      productId: item.id,
+      goalKey: goalFitCard.goalKey,
+      title: item.productName,
+      brandName: formatBrandForPill(displayBrandName),
+      dosageText: detailDose ?? undefined,
+      tier: goalFitCard.tier,
+      confidence: goalFitCard.confidence,
+      whyFit: goalFitCard.whyFit,
+      whyNotStronger: goalFitCard.whyNotStronger,
+      holdbacks: goalFitCard.holdbacks,
+    };
+
+    const peers = (compareEntries ?? []).filter((entry) => entry.productId !== item.id);
+    return [currentEntry, ...peers].slice(0, 3);
+  }, [compareEntries, detailDose, displayBrandName, goalFitCard, item.id, item.productName]);
+
+  useEffect(() => {
+    if (!PERSONALIZATION_RESEARCH_UI_ENABLED || !goalFitCard) return;
+    const trackKey = [
+      item.id,
+      goalFitCard.goalKey ?? "none",
+      goalFitCard.tier,
+      compareEntryList.length > 1 ? "compare" : "single",
+    ].join(":");
+    if (goalFitDetailTrackedKeyRef.current === trackKey) return;
+    goalFitDetailTrackedKeyRef.current = trackKey;
+    void onTrackPersonalizationEvent?.({
+      eventName: "goal_fit_detail_opened",
+      surface: "my_saved_detail",
+      payload: {
+        goalKey: goalFitCard.goalKey ?? null,
+        productId: item.id,
+        tier: goalFitCard.tier,
+        compareEnabled: compareEntryList.length > 1,
+      },
+    });
+  }, [compareEntryList.length, goalFitCard, item.id, onTrackPersonalizationEvent]);
+
+  const handleOpenCompare = useCallback(() => {
+    setCompareOpen(true);
+    void onTrackPersonalizationEvent?.({
+      eventName: "compare_opened",
+      surface: "my_saved_detail",
+      payload: {
+        goalKey: goalFitCard?.goalKey ?? selectedGoalKey ?? null,
+        currentProductId: item.id,
+        comparedProductCount: compareEntryList.length,
+      },
+    });
+  }, [compareEntryList.length, goalFitCard?.goalKey, item.id, onTrackPersonalizationEvent, selectedGoalKey]);
 
   return (
     <Modal visible transparent animationType="none" onRequestClose={onClose}>
@@ -3758,6 +3760,15 @@ function DetailSheet({
                   </View>
                 </View>
               </View>
+
+              {PERSONALIZATION_RESEARCH_UI_ENABLED && goalFitCard ? (
+                <GoalFitScorecard
+                  card={goalFitCard}
+                  tintColor={theme.glassTint}
+                  compareEnabled={compareEntryList.length > 1}
+                  onOpenCompare={compareEntryList.length > 1 ? handleOpenCompare : undefined}
+                />
+              ) : null}
 
               <View style={{ marginTop: 24 }}>
                 <View style={styles.routineBlock}>
@@ -4121,6 +4132,15 @@ function DetailSheet({
 		        onSelectDate={setSelectedStartDate}
 		        onClose={() => setStartDatePickerOpen(false)}
 		      />
+          {PERSONALIZATION_RESEARCH_UI_ENABLED ? (
+            <CompareSheet
+              visible={compareOpen}
+              entries={compareEntryList}
+              goalKey={goalFitCard?.goalKey}
+              tintColor={theme.glassTint}
+              onClose={() => setCompareOpen(false)}
+            />
+          ) : null}
 		    </Modal>
 		  );
 }
@@ -4185,6 +4205,7 @@ export function MySupplementView({ data, onDeleteSelected, onSaveRoutine }: Prop
     smartFilter,
     scheduleDefaults,
     recordOverrideEvents,
+    trackPersonalizationEvent,
     smartFilterEvaluationLoading,
     smartFilterMembershipById,
   } = usePersonalization();
@@ -5468,6 +5489,40 @@ export function MySupplementView({ data, onDeleteSelected, onSaveRoutine }: Prop
     () => (detailItem ? idToThemeMap.get(detailItem.id) || THEMES[0] : null),
     [detailItem, idToThemeMap],
   );
+  const detailSavedProductEvaluation = useMemo(
+    () =>
+      detailItem
+        ? (snapshot.evaluations.savedProductEvaluations?.[detailItem.id] ?? undefined)
+        : undefined,
+    [detailItem, snapshot.evaluations.savedProductEvaluations],
+  );
+  const detailGoalKey = useMemo(
+    () =>
+      activeGoalKeys[0] ??
+      detailSavedProductEvaluation?.smartFilterMembership.highlightedGoal ??
+      (detailItem ? smartFilterMembershipById[detailItem.id]?.highlightedGoal : undefined),
+    [activeGoalKeys, detailItem, detailSavedProductEvaluation, smartFilterMembershipById],
+  );
+  const detailCompareEntries = useMemo(() => {
+    if (!detailItem) return [];
+
+    const evaluations = Object.values(snapshot.evaluations.savedProductEvaluations ?? {})
+      .filter((evaluation): evaluation is SavedProductEvaluation => Boolean(evaluation));
+    const compareCandidates = evaluations.filter(
+      (evaluation) =>
+        evaluation.productId === detailItem.id || evaluation.coverage.status === "coverage_ready",
+    );
+
+    return buildGoalCompareEntries({
+      evaluations: compareCandidates,
+      currentProductId: detailItem.id,
+      goalKey: detailGoalKey,
+    });
+  }, [
+    detailGoalKey,
+    detailItem,
+    snapshot.evaluations.savedProductEvaluations,
+  ]);
 
   const viewingNoteItem = useMemo(
     () => (viewingNoteId ? resolvedData.find((item) => item.id === viewingNoteId) ?? null : null),
@@ -5508,277 +5563,43 @@ export function MySupplementView({ data, onDeleteSelected, onSaveRoutine }: Prop
       const isVisible = isOverlay ? overlayVisible : inlineVisible;
 
       return (
-        <MotiView
-          ref={isOverlay ? undefined : filterWrapRef}
-          shouldRasterizeIOS
-          renderToHardwareTextureAndroid
-          from={{
-            width: FILTER_COLLAPSED_SIZE,
-            height: FILTER_COLLAPSED_SIZE,
-            borderRadius: 27,
-            backgroundColor: "#E4E7EB",
-            borderColor: "rgba(255,255,255,0)",
-          }}
-          style={[
-            styles.filterWrap,
-            isOverlay && filterAnchor
-              ? {
-                  right: filterAnchorRight,
-                  top: filterAnchor.y,
-                }
-              : null,
-          ]}
-          animate={{
-            width: filterState === "closed" ? FILTER_COLLAPSED_SIZE : contentWidth,
-            height: filterState === "open" ? filterOpenHeight : FILTER_COLLAPSED_SIZE,
-            borderRadius: filterState === "closed" ? 27 : 32,
-            backgroundColor: filterState === "closed" ? "#E4E7EB" : "rgba(255,255,255,0.72)",
-            borderColor: filterState === "closed" ? "rgba(255,255,255,0)" : "rgba(255,255,255,0.5)",
-            opacity: isVisible ? 1 : 0,
-          }}
-          transition={{
-            width: { type: "timing", duration: FILTER_WIDTH_DURATION, easing: FILTER_EASING },
-            height: { type: "timing", duration: FILTER_HEIGHT_DURATION, easing: FILTER_EASING },
-            borderRadius: { type: "timing", duration: 240, easing: FILTER_EASING },
-            backgroundColor: { type: "timing", duration: 220, easing: FILTER_EASING },
-            borderColor: { type: "timing", duration: 220, easing: FILTER_EASING },
-            opacity: { type: "timing", duration: 180, easing: FILTER_EASING },
-          }}
-          pointerEvents={isVisible ? "auto" : "none"}
-        >
-        <AnimatePresence>
-          {filterContentVisible ? (
-            <MotiView
-              key="filter-open"
-              shouldRasterizeIOS
-              renderToHardwareTextureAndroid
-              animate={{
-                opacity: filterContentActive ? 1 : 0,
-                translateY: filterContentActive ? 0 : 6,
-              }}
-              transition={{ type: "timing", duration: 200 }}
-              style={styles.filterInner}
-              pointerEvents={filterContentActive ? "auto" : "none"}
-            >
-              <BlurView intensity={36} tint="light" style={StyleSheet.absoluteFillObject} />
-              <View style={styles.filterInnerTint} pointerEvents="none" />
-              <LinearGradient
-                pointerEvents="none"
-                colors={["rgba(255,255,255,0.70)", "rgba(255,255,255,0.28)", "rgba(255,255,255,0)"]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={StyleSheet.absoluteFillObject}
-              />
-              <View style={styles.filterInnerBorder} pointerEvents="none" />
-
-              <KeyboardAvoidingView
-                behavior={Platform.OS === "ios" ? "padding" : "height"}
-                keyboardVerticalOffset={Math.max(0, (filterAnchor?.y ?? tokens.insets.top) + 120)}
-                style={styles.filterKeyboard}
-              >
-                <MotiView
-                  from={{ opacity: 0, translateY: 10 }}
-                  animate={{ opacity: 1, translateY: 0 }}
-                  transition={{ type: "timing", duration: 200 }}
-                  style={styles.filterHeader}
-                >
-                  <View>
-                    <Text style={styles.filterTitle}>Smart Filter</Text>
-                    <Text style={styles.filterSubtitle}>
-                      {highlightedGoalTag ? `Suggested focus: ${highlightedGoalTag}` : "Categorize your stack"}
-                    </Text>
-                  </View>
-                  <Pressable onPress={closeFilter} style={styles.filterCloseBtn}>
-                    <X size={20} color="#475569" />
-                  </Pressable>
-                </MotiView>
-
-                <ScrollView
-                  ref={filterScrollRef}
-                  style={styles.filterContent}
-                  showsVerticalScrollIndicator={false}
-                  keyboardDismissMode="on-drag"
-                  keyboardShouldPersistTaps="handled"
-                  contentContainerStyle={[
-                    styles.filterContentInner,
-                    { paddingBottom: Math.max(24, keyboardHeight + 12) },
-                  ]}
-                >
-                  {smartTagCategories.map((category, index) => (
-                    <MotiView
-                      key={category.title}
-                      from={{ opacity: 0, translateY: 12 }}
-                      animate={{ opacity: 1, translateY: 0 }}
-                      transition={{ type: "timing", duration: 240, delay: 120 + index * 60 }}
-                      style={styles.filterSection}
-                    >
-                      <View style={styles.filterSectionHeader}>
-                        <View
-                          style={[
-                            styles.filterDot,
-                            {
-                              backgroundColor: category.activeColor.bg,
-                              borderColor: category.activeColor.border,
-                            },
-                          ]}
-                        />
-                        <Text style={styles.filterSectionTitle}>{category.title}</Text>
-                      </View>
-                      <View style={styles.filterTagsRow}>
-                        {category.tags.map((tag) => {
-                          const isActive = activeTags.has(tag);
-                          return (
-                            <Pressable
-                              key={tag}
-                              onPress={() => toggleTag(tag)}
-                              style={[
-                                styles.filterTag,
-                                isActive
-                                  ? {
-                                      backgroundColor: category.activeColor.bg,
-                                      borderColor: category.activeColor.border,
-                                    }
-                                  : {
-                                      backgroundColor: "#ffffff",
-                                      borderColor: "#e2e8f0",
-                                    },
-                              ]}
-                            >
-                              <Text
-                                style={[
-                                  styles.filterTagText,
-                                  { color: isActive ? category.activeColor.text : "#475569" },
-                                ]}
-                              >
-                                {tag}
-                              </Text>
-                            </Pressable>
-                          );
-                        })}
-                      </View>
-                    </MotiView>
-                  ))}
-
-                  <MotiView
-                    from={{ opacity: 0, translateY: 12 }}
-                    animate={{ opacity: 1, translateY: 0 }}
-                    transition={{ type: "timing", duration: 240, delay: 380 }}
-                    style={styles.filterSection}
-                  >
-                    <View style={styles.filterSectionHeader}>
-                      <View style={[styles.filterDot, styles.filterDotNeutral]} />
-                      <Text style={styles.filterSectionTitle}>My Tags</Text>
-                    </View>
-
-                    <View style={styles.filterTagsRow}>
-                      {userTags.map((tag) => {
-                        const isActive = activeTags.has(tag);
-                        return (
-                          <View key={tag} style={styles.userTagWrap}>
-                            <Pressable
-                              onPress={() => toggleTag(tag)}
-                              style={[
-                                styles.userTag,
-                                isActive
-                                  ? {
-                                      backgroundColor: "rgba(100,116,139,0.15)",
-                                      borderColor: "rgba(148,163,184,0.5)",
-                                    }
-                                  : {
-                                      backgroundColor: "#ffffff",
-                                      borderColor: "#e2e8f0",
-                                    },
-                              ]}
-                            >
-                              <Text style={[styles.userTagText, isActive && { color: "#1e293b" }]}>{tag}</Text>
-                            </Pressable>
-                            <Pressable
-                              onPress={(event) => {
-                                event.stopPropagation();
-                                handleDeleteTag(tag);
-                              }}
-                              style={styles.userTagDelete}
-                            >
-                              <X size={13} color={isActive ? "#64748b" : "#94a3b8"} />
-                            </Pressable>
-                          </View>
-                        );
-                      })}
-
-                      {!isCreatingTag ? (
-                        <Pressable
-                          onPress={() => {
-                            setIsCreatingTag(true);
-                            requestAnimationFrame(() => filterScrollRef.current?.scrollToEnd({ animated: true }));
-                          }}
-                          style={styles.newTagBtn}
-                        >
-                          <Plus size={14} color="#94a3b8" />
-                          <Text style={styles.newTagText}>New Tag</Text>
-                        </Pressable>
-                      ) : (
-                        <View style={styles.newTagInputRow}>
-                          <TextInput
-                            autoFocus
-                            value={newTagText}
-                            onChangeText={setNewTagText}
-                            placeholder="Tag name..."
-                            placeholderTextColor="#94a3b8"
-                            onSubmitEditing={handleCreateTag}
-                            onFocus={() => filterScrollRef.current?.scrollToEnd({ animated: true })}
-                            style={styles.newTagInput}
-                          />
-                          <Pressable onPress={handleCreateTag} style={styles.newTagConfirm}>
-                            <Check size={14} color="#ffffff" />
-                          </Pressable>
-                          <Pressable onPress={() => setIsCreatingTag(false)} style={styles.newTagCancel}>
-                            <X size={14} color="#64748b" />
-                          </Pressable>
-                        </View>
-                      )}
-                    </View>
-                  </MotiView>
-                </ScrollView>
-
-                <MotiView
-                  from={{ opacity: 0, translateY: 10 }}
-                  animate={{ opacity: 1, translateY: 0 }}
-                  transition={{ type: "timing", duration: 200, delay: 280 }}
-                  style={styles.filterFooter}
-                >
-                  <Text style={styles.filterFooterText}>
-                    {activeTags.size > 0 ? `${activeTags.size} selected` : "No filters"}
-                  </Text>
-                  {activeTags.size > 0 ? (
-                    <Pressable onPress={() => setActiveTags(new Set())} style={styles.clearFiltersBtn}>
-                      <Text style={styles.clearFiltersText}>Clear All</Text>
-                    </Pressable>
-                  ) : null}
-                </MotiView>
-              </KeyboardAvoidingView>
-            </MotiView>
-          ) : null}
-        </AnimatePresence>
-
-        <MotiView
-          style={styles.filterCollapsedOverlay}
-          animate={
-            showFilterCollapsed
-              ? { opacity: 1, translateX: 0, scale: 1 }
-              : { opacity: 0, translateX: -filterIconShift, scale: 0.94 }
-          }
-          transition={{
-            opacity: { type: "timing", duration: 360, easing: FILTER_EASING },
-            translateX: { type: "timing", duration: FILTER_WIDTH_DURATION, easing: FILTER_EASING },
-            scale: { type: "timing", duration: FILTER_WIDTH_DURATION, easing: FILTER_EASING },
-          }}
-          pointerEvents={filterState === "closed" ? "auto" : "none"}
-        >
-          <Pressable style={styles.filterCollapsedButton} onPress={openFilter}>
-            <SlidersHorizontal size={18} color="#0f172a" />
-          </Pressable>
-        </MotiView>
-        </MotiView>
+        <MySavedSmartFilterPanel
+          variant={variant}
+          styles={styles}
+          filterWrapRef={filterWrapRef}
+          filterScrollRef={filterScrollRef}
+          isVisible={isVisible}
+          filterAnchorRight={filterAnchorRight}
+          filterAnchorY={filterAnchor?.y}
+          contentWidth={contentWidth}
+          filterOpenHeight={filterOpenHeight}
+          filterCollapsedSize={FILTER_COLLAPSED_SIZE}
+          filterWidthDuration={FILTER_WIDTH_DURATION}
+          filterHeightDuration={FILTER_HEIGHT_DURATION}
+          filterEasing={FILTER_EASING}
+          filterState={filterState}
+          filterContentVisible={filterContentVisible}
+          filterContentActive={filterContentActive}
+          showFilterCollapsed={showFilterCollapsed}
+          filterIconShift={filterIconShift}
+          highlightedGoalTag={highlightedGoalTag}
+          smartTagCategories={smartTagCategories}
+          activeTags={activeTags}
+          userTags={userTags}
+          isCreatingTag={isCreatingTag}
+          newTagText={newTagText}
+          keyboardHeight={keyboardHeight}
+          topInset={tokens.insets.top}
+          onOpen={openFilter}
+          onClose={closeFilter}
+          onToggleTag={toggleTag}
+          onDeleteTag={handleDeleteTag}
+          onStartCreatingTag={() => setIsCreatingTag(true)}
+          onCancelCreatingTag={() => setIsCreatingTag(false)}
+          onCreateTag={handleCreateTag}
+          onChangeNewTagText={setNewTagText}
+          onClearAll={() => setActiveTags(new Set())}
+        />
       );
     },
     [
@@ -6205,6 +6026,9 @@ export function MySupplementView({ data, onDeleteSelected, onSaveRoutine }: Prop
           item={detailItem}
           theme={detailTheme}
           scheduleDefaults={scheduleDefaults}
+          selectedGoalKey={detailGoalKey}
+          savedProductEvaluation={detailSavedProductEvaluation}
+          compareEntries={detailCompareEntries}
           stackOverlaps={detailItem.supplementId ? stackOverlapBySupplementId.get(detailItem.supplementId) ?? [] : []}
           stackSafetySummary={detailItem.supplementId ? stackSafetySummaryBySupplementId.get(detailItem.supplementId) ?? null : null}
           duplicateGroups={detailItem.supplementId ? duplicateGroupsBySupplementId.get(detailItem.supplementId) ?? [] : []}
@@ -6217,6 +6041,7 @@ export function MySupplementView({ data, onDeleteSelected, onSaveRoutine }: Prop
           }}
           onSaveRoutine={handleSaveRoutine}
           onRecordOverrideEvents={recordOverrideEvents}
+          onTrackPersonalizationEvent={trackPersonalizationEvent}
           smartFilterAnalyticsContext={detailAnalyticsContext}
           onTrackSmartFilterEvent={trackSmartFilterEvaluatedEvent}
         />

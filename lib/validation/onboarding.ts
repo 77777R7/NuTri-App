@@ -1,16 +1,16 @@
 import { z } from 'zod';
 import {
   ADHERENCE_BLOCKER_OPTIONS,
+  ALLERGY_FLAG_OPTIONS,
   AGE_RANGE_OPTIONS,
   GOAL_OPTIONS,
+  INGREDIENT_RESTRICTION_OPTIONS,
   SEX_OPTIONS,
   SUPPLEMENT_EXPERIENCE_OPTIONS,
   TYPE_OPTIONS,
 } from '@/lib/onboarding-v2';
 
 export const profileSchema = z.object({
-  height: z.number().min(120).max(240),
-  weight: z.number().min(30).max(200),
   age: z.number().min(13).max(100),
   gender: z.enum(['Male', 'Female', 'Other', 'Prefer not to say']),
 });
@@ -81,6 +81,14 @@ export const preferredTypesSchema = z.object({
 });
 
 export type PreferredTypesFormValues = z.infer<typeof preferredTypesSchema>;
+
+export const allergyPreferencesSchema = z.object({
+  allergyFlags: z.array(z.enum(ALLERGY_FLAG_OPTIONS)).default([]),
+  ingredientRestrictions: z.array(z.enum(INGREDIENT_RESTRICTION_OPTIONS)).default([]),
+  noKnownAllergies: z.boolean().default(false),
+});
+
+export type AllergyPreferencesFormValues = z.infer<typeof allergyPreferencesSchema>;
 
 export const adherenceBlockerSchema = z.object({
   adherenceBlocker: z.enum(ADHERENCE_BLOCKER_OPTIONS),

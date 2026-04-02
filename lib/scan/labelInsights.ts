@@ -1,4 +1,4 @@
-import type { LabelDraft } from '@/backend/src/labelAnalysis';
+import type { LabelDraft } from '@/backend/src/labelTypes';
 
 export type LabelProductType =
   | 'b_complex'
@@ -312,7 +312,7 @@ function isPlaceholderLabelName(name?: string | null) {
   if (!name) return true;
   const trimmed = name.trim();
   if (!trimmed) return true;
-  if (/^label scan result$/i.test(trimmed)) return true;
+  if (/^scan result$/i.test(trimmed)) return true;
   if (/^supplement$/i.test(trimmed)) return true;
   return LABEL_NAME_NOISE_PATTERNS.some((pattern) => pattern.test(trimmed));
 }
@@ -340,7 +340,7 @@ function buildProductName({
   }
   if (productType === 'multi_active_general') return `Multi-Active (${totalActives} actives)`;
   if (productType === 'single_active' && first) return shortenIngredientName(first.name);
-  return first ? shortenIngredientName(first.name) : 'Label Scan Result';
+  return first ? shortenIngredientName(first.name) : 'Scan Result';
 }
 
 function selectHighlightCandidates({
@@ -471,9 +471,9 @@ export function buildLabelInsights(options: {
   if (!draft) {
     return {
       productType: 'unknown',
-      productName: analysisName ?? 'Label Scan Result',
-      metaLine: 'Label scan',
-      profileLine: 'Label-only summary based on extracted ingredients.',
+      productName: analysisName ?? 'Scan Result',
+      metaLine: 'Scan evidence',
+      profileLine: 'Scan-only summary based on extracted ingredients.',
       highlights: [],
       scienceBars: [],
       detailHighlights: [],

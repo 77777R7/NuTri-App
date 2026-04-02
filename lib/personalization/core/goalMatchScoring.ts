@@ -95,6 +95,7 @@ type ScoredCandidate = {
   tier: ProductGoalMatchTier;
   reasons: DecisionReason[];
   caps: string[];
+  confidence: NonNullable<ProductGoalMatch['confidence']>;
 };
 
 type DoseEvaluation =
@@ -510,6 +511,33 @@ const scoreCandidate = (
     );
   }
 
+  const confidence: NonNullable<ProductGoalMatch['confidence']> = {
+    evidence:
+      !evidenceGrade
+        ? row.tier === 'strong_match'
+          ? 'medium'
+          : 'low'
+        : evidenceAuditStatus && !isAuditedStatus(evidenceAuditStatus)
+          ? 'medium'
+          : evidenceGrade === 'A'
+            ? 'high'
+            : evidenceGrade === 'B'
+              ? 'medium'
+              : 'low',
+    dose:
+      doseEvaluation.status === 'meets' ||
+      doseEvaluation.status === 'below' ||
+      doseEvaluation.status === 'unknown'
+        ? doseEvaluation.status
+        : 'not_applicable',
+    disclosure:
+      disclosureQuality === 'high' && !proprietaryBlendWithoutClearActives && !ingredient.proprietaryBlend
+        ? 'full'
+        : disclosureQuality === 'low' || proprietaryBlendWithoutClearActives || ingredient.proprietaryBlend
+          ? 'weak'
+          : 'partial',
+  };
+
   return {
     ingredientKey: row.ingredientKey,
     ingredientLabel,
@@ -517,6 +545,7 @@ const scoreCandidate = (
     tier: applyTierCap(scoreToTier(score), maxTier),
     reasons,
     caps: Array.from(new Set(caps)),
+    confidence,
   };
 };
 
@@ -535,6 +564,11 @@ const buildNoMatch = (goalKey: GoalKey): ProductGoalMatch => ({
       goalKey,
     }),
   ],
+  confidence: {
+    evidence: 'low',
+    dose: 'not_applicable',
+    disclosure: 'weak',
+  },
 });
 
 const getTargetGoals = (inputGoals: ProductGoalMatchScoringInput['goals']): GoalKey[] => {
@@ -593,6 +627,7 @@ export const scoreProductGoalMatches = (input: ProductGoalMatchScoringInput): Pr
       tier: primary.tier,
       reasons,
       ...(caps.length > 0 ? { caps } : {}),
+      confidence: primary.confidence,
     };
   });
 };

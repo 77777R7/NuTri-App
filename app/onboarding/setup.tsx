@@ -1,96 +1,143 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 
-import { OnboardingContainer } from '@/components/onboarding/OnboardingContainer';
-import { PermissionCard } from '@/components/onboarding/PermissionCard';
+import { QAOptionRow } from '@/components/onboarding/qa/QAOptionRow';
+import { QAScreenShell } from '@/components/onboarding/qa/QAScreenShell';
 import { useOnboarding } from '@/contexts/OnboardingContext';
+import { useTransitionDir } from '@/contexts/TransitionContext';
 import { trackOnboardingEvent } from '@/lib/analytics/onboarding';
-import { ONBOARDING_TOTAL_STEPS } from '@/lib/onboarding-v2';
-import { colors } from '@/lib/theme';
+import { SETUP_OPTIONS } from '@/lib/onboarding-v2';
 
-type SetupState = {
-  camera: boolean;
-  notifications: boolean;
-  photos: boolean;
-};
+const SETUP_UI_OPTIONS = SETUP_OPTIONS.map((option, index) => ({
+  label: option.title,
+  value: index === 0 ? 'camera' : index === 1 ? 'notifications' : 'photos',
+  description: option.description,
+})) as const;
+
+type SetupPreferenceValue = (typeof SETUP_UI_OPTIONS)[number]['value'];
+
+const DEFAULT_SETUP_VALUES: SetupPreferenceValue[] = ['camera', 'notifications', 'photos'];
 
 export default function SetupPreferencesScreen() {
   const router = useRouter();
   const { draft, saveDraft } = useOnboarding();
-  const [values, setValues] = useState<SetupState>({
-    camera: Boolean(draft?.permissionPreferences?.camera),
-    notifications: Boolean(draft?.permissionPreferences?.notifications),
-    photos: Boolean(draft?.permissionPreferences?.photos),
-  });
+  const { setDirection } = useTransitionDir();
+  const permissionPreferences = draft?.permissionPreferences;
+
+  const initialSelection = useMemo(() => {
+    const hasExplicitPreference =
+      typeof permissionPreferences?.camera === 'boolean' ||
+      typeof permissionPreferences?.notifications === 'boolean' ||
+      typeof permissionPreferences?.photos === 'boolean';
+
+    if (!hasExplicitPreference) {
+      return [...DEFAULT_SETUP_VALUES];
+    }
+
+    const selected: SetupPreferenceValue[] = [];
+    if (permissionPreferences?.camera) selected.push('camera');
+    if (permissionPreferences?.notifications) selected.push('notifications');
+    if (permissionPreferences?.photos) selected.push('photos');
+    return selected;
+  }, [
+    permissionPreferences,
+  ]);
+
+  const [selectedSetup, setSelectedSetup] =
+    useState<SetupPreferenceValue[]>(initialSelection);
 
   useEffect(() => {
-    setValues({
-      camera: Boolean(draft?.permissionPreferences?.camera),
-      notifications: Boolean(draft?.permissionPreferences?.notifications),
-      photos: Boolean(draft?.permissionPreferences?.photos),
-    });
-  }, [draft?.permissionPreferences]);
+    setSelectedSetup(initialSelection);
+  }, [initialSelection]);
 
-  const toggle = useCallback((key: keyof SetupState) => {
-    setValues((current) => ({ ...current, [key]: !current[key] }));
+  const toggle = useCallback(async (value: SetupPreferenceValue) => {
+    try {
+      await Haptics.selectionAsync();
+    } catch {
+      // noop
+    }
+
+    setSelectedSetup((current) =>
+      current.includes(value)
+        ? current.filter((item) => item !== value)
+        : [...current, value],
+    );
   }, []);
 
-  const handleNext = useCallback(async () => {
-    await saveDraft({ permissionPreferences: values }, 9);
-    trackOnboardingEvent('question_answered', {
-      question: 'setup_preferences',
-      answers: values,
-    });
+  const persistSelection = useCallback(
+    async (values: SetupPreferenceValue[]) => {
+      const permissionPreferences = {
+        camera: values.includes('camera'),
+        notifications: values.includes('notifications'),
+        photos: values.includes('photos'),
+      };
+      const selectedSetupLabels = SETUP_UI_OPTIONS.filter((option) =>
+        values.includes(option.value),
+      ).map((option) => option.label);
+
+      await saveDraft(
+        {
+          permissionPreferences,
+          setupPreferences: selectedSetupLabels,
+        },
+        10,
+      );
+
+      trackOnboardingEvent('question_answered', {
+        question: 'setup_preferences',
+        answers: selectedSetupLabels,
+        permissionPreferences,
+      });
+    },
+    [saveDraft],
+  );
+
+  const handleContinue = useCallback(async () => {
+    await persistSelection(selectedSetup);
+    setDirection('forward');
     router.replace('/onboarding/plan-preview');
-  }, [router, saveDraft, values]);
+  }, [persistSelection, router, selectedSetup, setDirection]);
+
+  const handleSkip = useCallback(async () => {
+    await persistSelection([]);
+    setDirection('forward');
+    router.replace('/onboarding/plan-preview');
+  }, [persistSelection, router, setDirection]);
 
   return (
-    <OnboardingContainer
-      step={9}
-      totalSteps={ONBOARDING_TOTAL_STEPS}
+    <QAScreenShell
+      screenKey="setup"
+      qaStepIndex={7}
+      eyebrow="Start setup"
       title="Which setup would help you start strong?"
-      subtitle="These are preferences only. We ask for OS permissions only when you use the feature."
-      fallbackHref="/onboarding/blocker"
-      onNext={handleNext}
-      nextLabel="Preview my plan"
+      subtitle="These are only preferences. We ask for access only when you use the feature."
+      onBack={() => {
+        setDirection('back');
+        router.replace('/onboarding/blocker');
+      }}
+      onContinue={handleContinue}
+      onSkip={handleSkip}
+      continueLabel="Preview my plan"
+      listContentContainerStyle={styles.listContent}
     >
-      <View style={styles.content}>
-        <Text style={styles.why}>Why we ask: this lets us tune onboarding without interrupting you with permission popups now.</Text>
-
-        <PermissionCard
-          title="Camera for label scan"
-          description="Request only when you tap Scan."
-          value={values.camera}
-          onPress={() => toggle('camera')}
+      {SETUP_UI_OPTIONS.map((option) => (
+        <QAOptionRow
+          key={option.value}
+          label={option.label}
+          description={option.description}
+          selected={selectedSetup.includes(option.value)}
+          selectionMode="multiple"
+          onPress={() => void toggle(option.value)}
         />
-
-        <PermissionCard
-          title="Daily reminder nudges"
-          description="Request only when you enable reminders."
-          value={values.notifications}
-          onPress={() => toggle('notifications')}
-        />
-
-        <PermissionCard
-          title="Photo library upload"
-          description="Request only when you tap Upload/Attach."
-          value={values.photos}
-          onPress={() => toggle('photos')}
-        />
-      </View>
-    </OnboardingContainer>
+      ))}
+    </QAScreenShell>
   );
 }
 
-const styles = StyleSheet.create({
-  content: {
-    flex: 1,
-    gap: 16,
+const styles = {
+  listContent: {
+    gap: 18,
+    paddingBottom: 18,
   },
-  why: {
-    fontSize: 13,
-    lineHeight: 20,
-    color: colors.textMuted,
-  },
-});
+} as const;

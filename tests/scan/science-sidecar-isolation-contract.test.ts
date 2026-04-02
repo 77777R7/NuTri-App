@@ -15,7 +15,9 @@ test('science UI uses new B/C sidecars and removes the legacy ingredient summary
   assert.ok(dashboardSource.includes('/api/ingredient-overview/v1'));
   assert.ok(dashboardSource.includes('/api/scientific-background/v1'));
   assert.equal(dashboardSource.includes('/api/summary/ingredient'), false);
-  assert.ok(dashboardSource.includes("if (decisionSupportState.status !== 'ready') return;"));
+  assert.ok(dashboardSource.includes('if (!shouldLoadScienceSidecars) return;'));
+  assert.ok(dashboardSource.includes('if (!ingredientOverviewRequestKey || !decisionBarcodeForScience || !decisionDigestForScience) return;'));
+  assert.ok(dashboardSource.includes('if (!decisionBarcodeForScience || !decisionDigestForScience) return;'));
   assert.ok(dashboardSource.includes('const interactionTask = InteractionManager.runAfterInteractions(() => {'));
 });
 

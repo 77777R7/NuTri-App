@@ -8,7 +8,8 @@ import type {
   SavedProductEvaluationInput,
   SmartFilterProductBucket,
   SmartFilterProductMembership,
-} from '@/types/personalization';
+  SupplementTypeKey,
+} from '../../../types/personalization';
 import { buildReason, dedupeReasons, REASON_CODES, RULE_IDS } from './reasonCodes';
 import { evaluateProductCoverageGate } from './productEvaluationGate';
 
@@ -47,6 +48,10 @@ const toEligibilitySummary = (decision?: EligibilityDecision) =>
         caps: [...decision.caps],
       }
     : undefined;
+
+const getTypeKeys = (
+  savedProduct: Pick<SavedProductEvaluationInput, 'typeKeys'>,
+): SupplementTypeKey[] => Array.from(new Set(savedProduct.typeKeys ?? []));
 
 const getGoalTiers = (
   prioritizedGoals: GoalKey[],
@@ -99,12 +104,14 @@ const getHighlightedGoal = (
 const buildNotEnoughStructuredDataMembership = (input: {
   productId: string;
   factsStatus: SavedProductEvaluationInput['factsStatus'];
+  typeKeys: SupplementTypeKey[];
   coverage: ProductCoverageDecision;
 }): SmartFilterProductMembership => ({
   productId: input.productId,
   factsStatus: input.factsStatus,
   coverageStatus: input.coverage.status,
   bucket: 'not_enough_structured_data',
+  typeKeys: input.typeKeys,
   goalTiers: {},
   reasons: [...input.coverage.reasons],
 });
@@ -112,6 +119,7 @@ const buildNotEnoughStructuredDataMembership = (input: {
 const buildCoverageReadyMembership = (input: {
   productId: string;
   factsStatus: SavedProductEvaluationInput['factsStatus'];
+  typeKeys: SupplementTypeKey[];
   coverage: ProductCoverageDecision;
   prioritizedGoals: GoalKey[];
   productGoalMatches: ProductGoalMatch[];
@@ -125,6 +133,7 @@ const buildCoverageReadyMembership = (input: {
     factsStatus: input.factsStatus,
     coverageStatus: input.coverage.status,
     bucket,
+    typeKeys: input.typeKeys,
     ...(highlightedGoal ? { highlightedGoal } : {}),
     goalTiers: getGoalTiers(input.prioritizedGoals, input.productGoalMatches),
     ...(input.eligibility ? { eligibility: toEligibilitySummary(input.eligibility) } : {}),
@@ -155,11 +164,13 @@ const evaluateSavedProduct = (input: {
   const coverage = evaluateProductCoverageGate({
     factsStatus: input.savedProduct.factsStatus,
   });
+  const typeKeys = getTypeKeys(input.savedProduct);
 
   if (coverage.status !== 'coverage_ready') {
     const smartFilterMembership = buildNotEnoughStructuredDataMembership({
       productId: input.savedProduct.productId,
       factsStatus: input.savedProduct.factsStatus,
+      typeKeys,
       coverage,
     });
 
@@ -194,6 +205,7 @@ const evaluateSavedProduct = (input: {
   const smartFilterMembership = buildCoverageReadyMembership({
     productId: input.savedProduct.productId,
     factsStatus: input.savedProduct.factsStatus,
+    typeKeys,
     coverage,
     prioritizedGoals: input.prioritizedGoals,
     productGoalMatches,
@@ -296,5 +308,6 @@ export const savedProductEvaluationInternals = {
   getGoalTiers,
   getHighlightedGoal,
   getMatchBucket,
+  getTypeKeys,
   projectSavedProductEvaluations,
 };

@@ -1,0 +1,12 @@
+{
+  "name": "codeage_iherb_human_supplement_lane",
+  "stagingPath": "output/p0_p3_codeage_remaining_six_closure_20260317/unified_wave/staging_products.official_refreshed.sanitized.json",
+  "queuePath": "output/iherb_overlay_execution_plan_full_p0p1_final/active_priority_queue.json",
+  "outDir": "output/scrapling_lane_codeage_iherb_human_run",
+  "brandFilter": "Codeage",
+  "limit": 6,
+  "execute": true,
+  "scraplingMode": "plain",
+  "sourcePreference": "iherb",
+  "includeProductIds": ["143300", "121637"]
+}

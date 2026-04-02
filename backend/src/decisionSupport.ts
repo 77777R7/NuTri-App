@@ -24,16 +24,46 @@ import { getQualityMarkProgramDefinition } from "./qualityMarks/programs.js";
 import type { QualityMarkProgramMatch, QualityMarkVerificationSummary } from "./qualityMarks/types.js";
 import { buildProductSafetySummary } from "./safety/productSafetySummary.js";
 import type { UlGuidanceEntry } from "./safety/types.js";
-import goalMatchScoringModule, {
-  type ProductIngredientLikeInput,
-} from "../../lib/personalization/core/goalMatchScoring.ts";
+import { buildAllergyInsight } from "./allergy/allergyInsightBuilder.js";
+import * as goalMatchScoringModule from "../../lib/personalization/core/goalMatchScoring.js";
+import * as catalogProductEvaluationModule from "../../lib/personalization/core/catalogProductEvaluation.ts";
+import * as goalFitCopyModule from "../../lib/personalization/goalFitCopy.ts";
+import type { ProductIngredientLikeInput } from "../../lib/personalization/core/goalMatchScoring.ts";
 import type {
+  CatalogOverlayIngredientRow,
+  CatalogProductEvaluationResult,
+} from "../../lib/personalization/core/catalogProductEvaluation.ts";
+import type {
+  BlockerKey,
+  ExperienceLevel,
   GoalKey,
+  PersonalizationProfile,
   ProductGoalMatch,
   ProductGoalMatchTier,
+  SupplementTypeKey,
 } from "../../types/personalization.js";
 
-const { scoreProductGoalMatches } = goalMatchScoringModule;
+const { scoreProductGoalMatches } = goalMatchScoringModule as {
+  scoreProductGoalMatches: (
+    input: Parameters<typeof import("../../lib/personalization/core/goalMatchScoring.ts").scoreProductGoalMatches>[0],
+  ) => ReturnType<typeof import("../../lib/personalization/core/goalMatchScoring.ts").scoreProductGoalMatches>;
+};
+
+const { evaluateCatalogProduct } = catalogProductEvaluationModule as {
+  evaluateCatalogProduct: (
+    input: Parameters<typeof import("../../lib/personalization/core/catalogProductEvaluation.ts").evaluateCatalogProduct>[0],
+  ) => ReturnType<typeof import("../../lib/personalization/core/catalogProductEvaluation.ts").evaluateCatalogProduct>;
+};
+
+const { formatGoalFitReason, summarizeGoalFitReasons } = goalFitCopyModule as {
+  formatGoalFitReason: (
+    reason: Parameters<typeof import("../../lib/personalization/goalFitCopy.ts").formatGoalFitReason>[0],
+  ) => string;
+  summarizeGoalFitReasons: (
+    reasons: Parameters<typeof import("../../lib/personalization/goalFitCopy.ts").summarizeGoalFitReasons>[0],
+    fallback: Parameters<typeof import("../../lib/personalization/goalFitCopy.ts").summarizeGoalFitReasons>[1],
+  ) => string;
+};
 
 export type DecisionSupportViewMode = "details";
 
@@ -346,7 +376,7 @@ export type DecisionSupportPersonalizedGoalFit = {
 export type DecisionSupportPersonalizedSupportSignal = {
   goalKey: GoalKey;
   label: string;
-  source: "goal_match_scoring_preview";
+  source: "goal_match_scoring_preview" | "selected_goal_evaluation";
 };
 
 export type DecisionSupportPersonalizedConflictSignal = {
@@ -384,6 +414,44 @@ export type DecisionSupportPersonalizedAllergyInsight = {
   matchedAllergyFlags: string[];
   matchedRestrictions: string[];
   details: DecisionSupportPersonalizedAllergyDetail[];
+};
+
+export type DecisionSupportAttachedAllergyContext = {
+  userAllergyFlags?: string[] | null;
+  userIngredientRestrictions?: string[] | null;
+  productAllergyFlags?: string[] | null;
+  productIngredientRestrictions?: string[] | null;
+  productCoverageStatus?: "resolved" | "partial" | "insufficient" | null;
+  productMatchEvidence?: Record<string, unknown> | null;
+};
+
+export type DecisionSupportAttachedStackOverlapItem = {
+  ingredientKey: string;
+  ingredientDisplay: string;
+  count: number;
+  supplements: Array<{
+    supplementId: string;
+    productName: string;
+  }>;
+};
+
+export type DecisionSupportAttachedStackOverlapContext = {
+  status: "ok" | "partial";
+  savedStackCount: number;
+  overlapCount: number;
+  overlaps: DecisionSupportAttachedStackOverlapItem[];
+};
+
+export type DecisionSupportAttachedPersonalizationContext = {
+  profile?: PersonalizationProfile | null;
+  prioritizedGoals?: GoalKey[] | null;
+  selectedGoalKey?: GoalKey | null;
+  preferredTypes?: SupplementTypeKey[] | null;
+  supplementExperience?: ExperienceLevel | null;
+  ageRange?: string | null;
+  adherenceBlocker?: BlockerKey | null;
+  stackOverlap?: DecisionSupportAttachedStackOverlapContext | null;
+  allergyContext?: DecisionSupportAttachedAllergyContext | null;
 };
 
 export type DecisionSupportPersonalizedDosageContext = {
@@ -501,6 +569,8 @@ export type DecisionSupportPayload = {
     overlayAugmentationVersion: string | null;
     overlayAugmentationSource: "iherb" | "none";
     patchActivationCanonical: string;
+    allergyContextCanonical: string;
+    personalizationContextCanonical: string;
     decisionContractVersion: string;
     digestInputParts: {
       factsDigestHash: string;
@@ -516,6 +586,8 @@ export type DecisionSupportPayload = {
       overlayAugmentationVersion: string | null;
       overlayClaimsHash: string | null;
       patchActivationCanonical: string;
+      allergyContextCanonical: string;
+      personalizationContextCanonical: string;
     };
   };
 };
@@ -548,6 +620,8 @@ type DecisionSupportCompileParams = {
     appliedLaneIds?: string[];
   } | null;
   overlayClaims?: DecisionSupportOverlayClaims | null;
+  allergyContext?: DecisionSupportAttachedAllergyContext | null;
+  personalizationContext?: DecisionSupportAttachedPersonalizationContext | null;
 };
 
 export const DECISION_SUPPORT_CONTRACT_VERSION = "dc-v1";
@@ -626,6 +700,14 @@ const canonicalizePatchActivation = (
 
 const canonicalizeOverlayClaims = (
   value: DecisionSupportOverlayClaims | null | undefined,
+): string => stableStringify(value ?? null);
+
+const canonicalizeAllergyContext = (
+  value: DecisionSupportAttachedAllergyContext | null | undefined,
+): string => stableStringify(value ?? null);
+
+const canonicalizePersonalizationContext = (
+  value: DecisionSupportAttachedPersonalizationContext | null | undefined,
 ): string => stableStringify(value ?? null);
 
 const hashCanonicalString = (value: string): string =>
@@ -790,6 +872,308 @@ const buildDirectionsPreviewText = (usageBlock: DecisionSupportUsageBlock): stri
   return text || null;
 };
 
+const buildCatalogIngredientRowsFromDigest = (digest: FactsDigest): CatalogOverlayIngredientRow[] =>
+  (Array.isArray(digest?.actives) ? digest.actives : [])
+    .map((active): CatalogOverlayIngredientRow | null => {
+      const name = normalizeDisplayText(active?.name);
+      if (!name) return null;
+
+      const amountText = normalizeDisplayText(active?.amountText);
+      if (amountText) {
+        return { name, dose: amountText };
+      }
+
+      if (
+        typeof active?.amount === "number"
+        && Number.isFinite(active.amount)
+        && active.amount > 0
+        && normalizeDisplayText(active?.unit).length > 0
+      ) {
+        return {
+          name,
+          dose: formatDoseText(active.amount, normalizeDisplayText(active.unit)),
+        };
+      }
+
+      return { name, dose: null };
+    })
+    .filter((row): row is CatalogOverlayIngredientRow => Boolean(row));
+
+const buildDecisionSupportProductId = (digest: FactsDigest): string =>
+  `${digest.sourceType}:${normalizeDisplayText(digest.identity?.value) || "unknown"}`;
+
+const resolveGoalFitDecision = (
+  tier: ProductGoalMatchTier | "unknown",
+): DecisionSupportPersonalizedGoalFitDecision => {
+  switch (tier) {
+    case "strong_match":
+    case "related":
+      return "fits";
+    case "weak_match":
+      return "mixed";
+    case "no_match":
+      return "does_not_fit";
+    default:
+      return "unknown";
+  }
+};
+
+const hasReasonCode = (
+  reasons: Array<{ code: string }> | null | undefined,
+  code: string,
+): boolean => Array.isArray(reasons) && reasons.some((reason) => reason.code === code);
+
+const buildConflictSignalsFromOverlap = (
+  overlapContext: DecisionSupportAttachedStackOverlapContext | null | undefined,
+): DecisionSupportPersonalizedConflictSignal[] =>
+  (overlapContext?.overlaps ?? []).map((item) => {
+    const otherCount = Math.max(1, item.count - 1);
+    return {
+      ingredient: item.ingredientDisplay,
+      ingredientRole: "active",
+      source: "saved_stack",
+      summary:
+        otherCount === 1
+          ? `${item.ingredientDisplay} also appears in 1 saved supplement.`
+          : `${item.ingredientDisplay} also appears in ${otherCount} saved supplements.`,
+    };
+  });
+
+const buildCurrentProductEvaluation = (params: {
+  digest: FactsDigest;
+  usageBlock: DecisionSupportUsageBlock;
+  personalizationContext: DecisionSupportAttachedPersonalizationContext;
+  selectedGoalKey: GoalKey | null;
+}): CatalogProductEvaluationResult | null => {
+  const { selectedGoalKey } = params;
+  if (!selectedGoalKey) return null;
+
+  const ingredientRows = buildCatalogIngredientRowsFromDigest(params.digest);
+  const overlapCount = params.personalizationContext.stackOverlap?.overlaps?.length ?? 0;
+  const duplicateRiskLevel =
+    overlapCount > 1 ? "high" : overlapCount === 1 ? "medium" : "none";
+
+  return evaluateCatalogProduct({
+    productId: buildDecisionSupportProductId(params.digest),
+    goalKey: selectedGoalKey,
+    preferredTypes: params.personalizationContext.preferredTypes ?? undefined,
+    title: params.digest.product.name ?? params.digest.product.brandDisplay ?? "Unknown supplement",
+    brandName: params.digest.product.brandDisplay ?? params.digest.product.brandLegal ?? null,
+    dosageText: buildProductDosePreviewText(params.digest),
+    suggestedUse: buildDirectionsPreviewText(params.usageBlock),
+    ingredients: ingredientRows,
+    duplicateRisk: {
+      level: duplicateRiskLevel,
+      ingredientKeys: (params.personalizationContext.stackOverlap?.overlaps ?? []).map((item) => item.ingredientKey),
+    },
+    supplementExperience: params.personalizationContext.supplementExperience ?? undefined,
+    ageRange: params.personalizationContext.ageRange ?? undefined,
+    adherenceBlocker: params.personalizationContext.adherenceBlocker ?? undefined,
+  });
+};
+
+const buildGoalFitSummaryFromEvaluation = (params: {
+  goalKey: GoalKey;
+  evaluation: CatalogProductEvaluationResult;
+}): string => {
+  const goalLabel = humanizeGoalKey(params.goalKey);
+  const card = params.evaluation.goalFitCard;
+  const tier = card?.tier ?? "not_enough_structured_data";
+
+  switch (tier) {
+    case "strong_match":
+      return `Strong support for your ${goalLabel} goal. ${summarizeGoalFitReasons(card?.whyFit ?? [], `The current label shows a strong fit for ${goalLabel}.`)}`;
+    case "related":
+      return `This looks aligned with your ${goalLabel} goal. ${summarizeGoalFitReasons(card?.whyFit ?? [], `The current label shows a useful fit for ${goalLabel}.`)}`;
+    case "weak_match":
+      return `This may help with your ${goalLabel} goal, but the signal is still limited. ${summarizeGoalFitReasons(card?.whyNotStronger ?? [], `The current label shows only a limited fit for ${goalLabel}.`)}`;
+    case "no_match":
+      return `This is not a strong fit for your ${goalLabel} goal right now. ${summarizeGoalFitReasons(card?.whyNotStronger ?? [], `We are not seeing enough goal-specific support for ${goalLabel}.`)}`;
+    default:
+      return `We need more structured data before we can score this confidently for ${goalLabel}.`;
+  }
+};
+
+const buildSupportSignalsFromEvaluation = (params: {
+  goalKey: GoalKey;
+  evaluation: CatalogProductEvaluationResult;
+}): DecisionSupportPersonalizedSupportSignal[] => {
+  const tier = params.evaluation.goalFitCard?.tier ?? "not_enough_structured_data";
+  if (tier === "strong_match" || tier === "related" || tier === "weak_match") {
+    return [
+      {
+        goalKey: params.goalKey,
+        label: humanizeGoalKey(params.goalKey),
+        source: "selected_goal_evaluation",
+      },
+    ];
+  }
+  return [];
+};
+
+const buildPersonalInsightSummary = (params: {
+  selectedGoalKey: GoalKey | null;
+  supportSignals: DecisionSupportPersonalizedSupportSignal[];
+  conflictSignals: DecisionSupportPersonalizedConflictSignal[];
+  overlapContext: DecisionSupportAttachedStackOverlapContext | null | undefined;
+}): {
+  summary: string;
+  supportSummary: string;
+  conflictSummary: string;
+} => {
+  const goalLabel = params.selectedGoalKey ? humanizeGoalKey(params.selectedGoalKey) : null;
+  const supportSummary = params.supportSignals.length > 0
+    ? goalLabel
+      ? `Supports your ${goalLabel} goal.`
+      : `Detected a usable support signal from the current label.`
+    : goalLabel
+      ? `Not a strong fit for your ${goalLabel} goal right now.`
+      : `No strong personalized support signal surfaced from the current label.`;
+
+  const conflictSummary = params.conflictSignals.length > 0
+    ? params.conflictSignals[0]?.summary ?? "May overlap with your saved supplements."
+    : (params.overlapContext?.savedStackCount ?? 0) > 0
+      ? "No major overlap found with your saved supplements."
+      : "No saved supplements to compare yet.";
+
+  const summary = params.conflictSignals.length > 0
+    ? "May overlap with your saved supplements."
+    : supportSummary;
+
+  return { summary, supportSummary, conflictSummary };
+};
+
+const buildDosageContextFromEvaluation = (params: {
+  selectedGoalKey: GoalKey | null;
+  evaluation: CatalogProductEvaluationResult | null;
+  digest: FactsDigest;
+  usageBlock: DecisionSupportUsageBlock;
+}): DecisionSupportPersonalizedDosageContext => {
+  const productDoseText = buildProductDosePreviewText(params.digest);
+  const productDirectionsText = buildDirectionsPreviewText(params.usageBlock);
+  const hasVisibleProductDose = Boolean(productDoseText || productDirectionsText);
+
+  if (!hasVisibleProductDose) {
+    return {
+      status: "unavailable",
+      reasonCode: "NO_PRODUCT_DOSE_VISIBLE",
+      summary: "Recommended-dose comparison is reserved here, and this label does not expose enough dose or directions detail yet.",
+      assessment: "unknown",
+      comparisonMode: "not_attached",
+      previewGoalKey: params.selectedGoalKey,
+      productDoseText,
+      productDirectionsText,
+    };
+  }
+
+  if (!params.selectedGoalKey || !params.evaluation) {
+    return {
+      status: "pending",
+      reasonCode: "RECOMMENDED_DOSE_COMPARISON_NOT_ATTACHED",
+      summary: "Product dose is visible, but selected-goal dose comparison is not attached yet.",
+      assessment: "unclear",
+      comparisonMode: "not_attached",
+      previewGoalKey: null,
+      productDoseText,
+      productDirectionsText,
+    };
+  }
+
+  const whyFit = params.evaluation.goalFitCard?.whyFit ?? [];
+  const whyNotStronger = params.evaluation.goalFitCard?.whyNotStronger ?? [];
+  const assessment: DecisionSupportPersonalizedDoseAssessment = hasReasonCode(whyFit, "dose_meets_effective_floor")
+    ? "aligned"
+    : hasReasonCode(whyNotStronger, "dose_below_effective_floor")
+      ? "low"
+      : "unclear";
+  const goalLabel = humanizeGoalKey(params.selectedGoalKey);
+  const summary = assessment === "aligned"
+    ? `The disclosed serving looks aligned for your ${goalLabel} goal.`
+    : assessment === "low"
+      ? `The disclosed serving looks lighter than a stronger ${goalLabel} fit usually requires.`
+      : `The product dose is visible, but it is still hard to compare confidently for your ${goalLabel} goal.`;
+
+  return {
+    status: "ready",
+    reasonCode: null,
+    summary,
+    assessment,
+    comparisonMode: "selected_goal",
+    previewGoalKey: params.selectedGoalKey,
+    productDoseText,
+    productDirectionsText,
+  };
+};
+
+const normalizeAllergyDetailSource = (
+  value: unknown,
+): DecisionSupportPersonalizedAllergyDetail["source"] | null => {
+  switch (String(value ?? "").trim()) {
+    case "active_ingredient":
+    case "inactive_ingredient":
+    case "label_disclosure":
+    case "warning":
+      return String(value) as DecisionSupportPersonalizedAllergyDetail["source"];
+    default:
+      return null;
+  }
+};
+
+const normalizeAllergyDetailConfidence = (
+  value: unknown,
+): DecisionSupportPersonalizedAllergyDetail["confidence"] => {
+  switch (String(value ?? "").trim()) {
+    case "high":
+    case "low":
+      return String(value) as DecisionSupportPersonalizedAllergyDetail["confidence"];
+    case "medium":
+    default:
+      return "medium";
+  }
+};
+
+const parseAttachedAllergyDetails = (
+  matchEvidence: Record<string, unknown> | null | undefined,
+): DecisionSupportPersonalizedAllergyDetail[] => {
+  if (!matchEvidence || typeof matchEvidence !== "object" || Array.isArray(matchEvidence)) {
+    return [];
+  }
+
+  const flagsBucket = "flags" in matchEvidence ? (matchEvidence.flags as unknown) : null;
+  if (!flagsBucket || typeof flagsBucket !== "object" || Array.isArray(flagsBucket)) {
+    return [];
+  }
+
+  const details: DecisionSupportPersonalizedAllergyDetail[] = [];
+  const seen = new Set<string>();
+
+  Object.entries(flagsBucket as Record<string, unknown>).forEach(([flag, rawEntries]) => {
+    if (!Array.isArray(rawEntries)) return;
+    rawEntries.forEach((rawEntry) => {
+      if (!rawEntry || typeof rawEntry !== "object" || Array.isArray(rawEntry)) return;
+      const entry = rawEntry as Record<string, unknown>;
+      const source = normalizeAllergyDetailSource(entry.source);
+      if (!source) return;
+      const matchedText =
+        typeof entry.matchedText === "string" && entry.matchedText.trim().length > 0
+          ? entry.matchedText.trim()
+          : null;
+      const confidence = normalizeAllergyDetailConfidence(entry.confidence);
+      const key = [flag, source, matchedText ?? "", confidence].join("|");
+      if (seen.has(key)) return;
+      seen.add(key);
+      details.push({
+        flag,
+        source,
+        matchedText,
+        confidence,
+      });
+    });
+  });
+
+  return details;
+};
+
 const resolvePreviewDoseAssessment = (
   match: ProductGoalMatch | null,
 ): DecisionSupportPersonalizedDoseAssessment => {
@@ -809,15 +1193,40 @@ const resolvePreviewDoseAssessment = (
 const buildPersonalizedResultLane = (params: {
   digest: FactsDigest;
   usageBlock: DecisionSupportUsageBlock;
+  allergyContext?: DecisionSupportAttachedAllergyContext | null;
+  personalizationContext?: DecisionSupportAttachedPersonalizationContext | null;
 }): DecisionSupportPersonalizedResultLane => {
   const goalPreviewMatches = buildGoalPreviewMatches(params.digest);
   const previewTopGoal = goalPreviewMatches[0] ?? null;
-  const candidateGoalKeys = goalPreviewMatches.slice(0, 3).map((match) => match.goalKey);
-  const supportSignals: DecisionSupportPersonalizedSupportSignal[] = candidateGoalKeys.map((goalKey) => ({
-    goalKey,
-    label: humanizeGoalKey(goalKey),
-    source: "goal_match_scoring_preview",
-  }));
+  const attachedContext = params.personalizationContext ?? null;
+  const selectedGoalKey = attachedContext?.selectedGoalKey ?? null;
+  const candidateGoalKeys =
+    (attachedContext?.prioritizedGoals?.length ?? 0) > 0
+      ? (attachedContext?.prioritizedGoals ?? []).slice(0, 3)
+      : goalPreviewMatches.slice(0, 3).map((match) => match.goalKey);
+  const previewSupportSignals: DecisionSupportPersonalizedSupportSignal[] = goalPreviewMatches
+    .slice(0, 3)
+    .map((match) => ({
+      goalKey: match.goalKey,
+      label: humanizeGoalKey(match.goalKey),
+      source: "goal_match_scoring_preview" as const,
+    }));
+  const currentProductEvaluation = attachedContext
+    ? buildCurrentProductEvaluation({
+      digest: params.digest,
+      usageBlock: params.usageBlock,
+      personalizationContext: attachedContext,
+      selectedGoalKey,
+    })
+    : null;
+  const supportSignals =
+    currentProductEvaluation && selectedGoalKey
+      ? buildSupportSignalsFromEvaluation({
+        goalKey: selectedGoalKey,
+        evaluation: currentProductEvaluation,
+      })
+      : previewSupportSignals;
+  const conflictSignals = buildConflictSignalsFromOverlap(attachedContext?.stackOverlap);
   const supportLabels = supportSignals.map((signal) => signal.label);
   const productDoseText = buildProductDosePreviewText(params.digest);
   const productDirectionsText = buildDirectionsPreviewText(params.usageBlock);
@@ -832,55 +1241,114 @@ const buildPersonalizedResultLane = (params: {
     schemaVersion: 1,
     contract: "personalized_result_lane/v1",
     recommendedSectionOrder: [...PERSONALIZED_RESULT_LANE_SECTION_ORDER],
-    goalFit: {
-      status: "pending",
-      reasonCode: previewTopGoal ? "USER_GOAL_CONTEXT_NOT_ATTACHED" : "NO_GOAL_SUPPORT_SIGNALS_DETECTED",
-      summary: previewTopGoal
-        ? `Detected strongest goal-fit preview for ${humanizeGoalKey(previewTopGoal.goalKey)}, but user goal selection is not attached to this decision support payload yet.`
-        : "Goal-fit contract is reserved here, but user goal selection is not attached and the current label does not yield a strong preview signal yet.",
-      selectedGoalKey: null,
-      fitDecision: "unknown",
-      fitTier: "unknown",
-      previewTopGoalKey: previewTopGoal?.goalKey ?? null,
-      previewTopTier: previewTopGoal?.tier ?? "unknown",
-      candidateGoalKeys,
-    },
-    personalInsight: {
-      status: "pending",
-      reasonCode: "SAVED_SUPPLEMENTS_NOT_ATTACHED",
-      summary: supportLabels.length > 0
-        ? `Detected product-level support signals for ${joinDisplayLabels(supportLabels)}, but saved supplement conflict matching is not attached yet.`
-        : "Personal insight contract is reserved here, but saved supplement conflict matching is not attached yet.",
-      supportSummary: supportLabels.length > 0
-        ? `Detected product-level support signals for ${joinDisplayLabels(supportLabels)}.`
-        : "No clear product-level support signal was strong enough to surface from the current label.",
-      conflictSummary: "Saved supplement conflict matching is not attached to this decision support payload yet.",
-      supports: supportSignals,
-      conflicts: [],
-      expandableDetailsReady: false,
-    },
-    allergyInsight: {
-      status: "pending",
-      reasonCode: "ALLERGY_PROFILE_NOT_ATTACHED",
-      summary: "Allergy-aware reasoning is reserved here, but user allergy settings and normalized product allergen flags are not attached yet.",
-      matchedAllergyFlags: [],
-      matchedRestrictions: [],
-      details: [],
-    },
-    dosageContext: {
-      status: hasVisibleProductDose ? "pending" : "unavailable",
-      reasonCode: hasVisibleProductDose ? "RECOMMENDED_DOSE_COMPARISON_NOT_ATTACHED" : "NO_PRODUCT_DOSE_VISIBLE",
-      summary: !hasVisibleProductDose
-        ? "Recommended-dose comparison is reserved here, and this label does not expose enough dose or directions detail yet."
-        : previewTopGoal
-          ? `Product dose is visible. The best detected goal preview points to ${humanizeGoalKey(previewTopGoal.goalKey)}, but selected-goal dosage comparison is not attached yet.`
-          : "Product dose is visible, but recommended-dose comparison is not attached yet.",
-      assessment: dosageAssessment,
-      comparisonMode: previewTopGoal && hasVisibleProductDose ? "best_detected_goal_preview" : "not_attached",
-      previewGoalKey: previewTopGoal?.goalKey ?? null,
-      productDoseText,
-      productDirectionsText,
-    },
+    goalFit: currentProductEvaluation && selectedGoalKey
+      ? {
+        status: "ready",
+        reasonCode: null,
+        summary: buildGoalFitSummaryFromEvaluation({
+          goalKey: selectedGoalKey,
+          evaluation: currentProductEvaluation,
+        }),
+        selectedGoalKey,
+        fitDecision: resolveGoalFitDecision(
+          currentProductEvaluation.goalFitCard?.tier === "not_enough_structured_data"
+            ? "unknown"
+            : (currentProductEvaluation.goalFitCard?.tier ?? "unknown"),
+        ),
+        fitTier:
+          currentProductEvaluation.goalFitCard?.tier === "not_enough_structured_data"
+            ? "unknown"
+            : (currentProductEvaluation.goalFitCard?.tier ?? "unknown"),
+        previewTopGoalKey: previewTopGoal?.goalKey ?? null,
+        previewTopTier: previewTopGoal?.tier ?? "unknown",
+        candidateGoalKeys,
+      }
+      : {
+        status: "pending",
+        reasonCode: previewTopGoal ? "USER_GOAL_CONTEXT_NOT_ATTACHED" : "NO_GOAL_SUPPORT_SIGNALS_DETECTED",
+        summary: previewTopGoal
+          ? `Detected strongest goal-fit preview for ${humanizeGoalKey(previewTopGoal.goalKey)}, but user goal selection is not attached to this decision support payload yet.`
+          : "Goal-fit contract is reserved here, but user goal selection is not attached and the current label does not yield a strong preview signal yet.",
+        selectedGoalKey: null,
+        fitDecision: "unknown",
+        fitTier: "unknown",
+        previewTopGoalKey: previewTopGoal?.goalKey ?? null,
+        previewTopTier: previewTopGoal?.tier ?? "unknown",
+        candidateGoalKeys,
+      },
+    personalInsight: attachedContext
+      ? (() => {
+        const { summary, supportSummary, conflictSummary } = buildPersonalInsightSummary({
+          selectedGoalKey,
+          supportSignals,
+          conflictSignals,
+          overlapContext: attachedContext.stackOverlap,
+        });
+
+        return {
+          status: "ready" as const,
+          reasonCode: null,
+          summary,
+          supportSummary,
+          conflictSummary,
+          supports: supportSignals,
+          conflicts: conflictSignals,
+          expandableDetailsReady: supportSignals.length > 0 || conflictSignals.length > 0,
+        };
+      })()
+      : {
+        status: "pending",
+        reasonCode: "SAVED_SUPPLEMENTS_NOT_ATTACHED",
+        summary: supportLabels.length > 0
+          ? `Detected product-level support signals for ${joinDisplayLabels(supportLabels)}, but saved supplement conflict matching is not attached yet.`
+          : "Personal insight contract is reserved here, but saved supplement conflict matching is not attached yet.",
+        supportSummary: supportLabels.length > 0
+          ? `Detected product-level support signals for ${joinDisplayLabels(supportLabels)}.`
+          : "No clear product-level support signal was strong enough to surface from the current label.",
+        conflictSummary: "Saved supplement conflict matching is not attached to this decision support payload yet.",
+        supports: supportSignals,
+        conflicts: [],
+        expandableDetailsReady: false,
+      },
+    allergyInsight: (attachedContext?.allergyContext ?? params.allergyContext)
+      ? buildAllergyInsight({
+        userAllergyFlags: (attachedContext?.allergyContext ?? params.allergyContext)?.userAllergyFlags ?? [],
+        userIngredientRestrictions: (attachedContext?.allergyContext ?? params.allergyContext)?.userIngredientRestrictions ?? [],
+        productAllergyFlags: (attachedContext?.allergyContext ?? params.allergyContext)?.productAllergyFlags ?? null,
+        productIngredientRestrictions: (attachedContext?.allergyContext ?? params.allergyContext)?.productIngredientRestrictions ?? null,
+        productCoverageStatus: (attachedContext?.allergyContext ?? params.allergyContext)?.productCoverageStatus ?? null,
+        productDetails: parseAttachedAllergyDetails((attachedContext?.allergyContext ?? params.allergyContext)?.productMatchEvidence),
+      })
+      : {
+        status: "pending",
+        reasonCode: "ALLERGY_PROFILE_NOT_ATTACHED",
+        summary:
+          "Allergy-aware reasoning is reserved here, but user allergy settings and normalized product allergen flags are not attached yet.",
+        matchedAllergyFlags: [],
+        matchedRestrictions: [],
+        details: [],
+      },
+    dosageContext: attachedContext
+      ? buildDosageContextFromEvaluation({
+        selectedGoalKey,
+        evaluation: currentProductEvaluation,
+        digest: params.digest,
+        usageBlock: params.usageBlock,
+      })
+      : {
+        status: hasVisibleProductDose ? "pending" : "unavailable",
+        reasonCode: hasVisibleProductDose ? "RECOMMENDED_DOSE_COMPARISON_NOT_ATTACHED" : "NO_PRODUCT_DOSE_VISIBLE",
+        summary: !hasVisibleProductDose
+          ? "Recommended-dose comparison is reserved here, and this label does not expose enough dose or directions detail yet."
+          : previewTopGoal
+            ? `Product dose is visible. The best detected goal preview points to ${humanizeGoalKey(previewTopGoal.goalKey)}, but selected-goal dosage comparison is not attached yet.`
+            : "Product dose is visible, but recommended-dose comparison is not attached yet.",
+        assessment: dosageAssessment,
+        comparisonMode: previewTopGoal && hasVisibleProductDose ? "best_detected_goal_preview" : "not_attached",
+        previewGoalKey: previewTopGoal?.goalKey ?? null,
+        productDoseText,
+        productDirectionsText,
+      },
     productStanding: {
       status: "pending",
       reasonCode: "PRODUCT_BENCHMARK_NOT_ATTACHED",
@@ -3694,6 +4162,10 @@ export const compileDecisionSupport = (
   const flagsSnapshotCanonical = canonicalizeFlagsSnapshot(params.flagsSnapshot);
   const patchActivationCanonical = canonicalizePatchActivation(params.patchActivation ?? null);
   const overlayAugmentation = buildDecisionSupportOverlayAugmentationMeta(params.overlayClaims ?? null);
+  const allergyContextCanonical = canonicalizeAllergyContext(params.allergyContext ?? null);
+  const personalizationContextCanonical = canonicalizePersonalizationContext(
+    params.personalizationContext ?? null,
+  );
   const localeCanonical = String(params.locale ?? "en").trim().toLowerCase();
   const digestInputParts = {
     factsDigestHash: params.factsDigestHash,
@@ -3709,6 +4181,8 @@ export const compileDecisionSupport = (
     overlayAugmentationVersion: overlayAugmentation.version,
     overlayClaimsHash: overlayAugmentation.claimsHash,
     patchActivationCanonical,
+    allergyContextCanonical,
+    personalizationContextCanonical,
   } as const;
   const digestInput = [
     digestInputParts.factsDigestHash,
@@ -3724,6 +4198,8 @@ export const compileDecisionSupport = (
     digestInputParts.overlayAugmentationVersion ?? "none",
     digestInputParts.overlayClaimsHash ?? "none",
     digestInputParts.patchActivationCanonical,
+    digestInputParts.allergyContextCanonical,
+    digestInputParts.personalizationContextCanonical,
   ].join(DECISION_SUPPORT_DIGEST_DELIMITER);
   const decisionInputsHash = hashCanonicalString(digestInput);
   const digest = decisionInputsHash;
@@ -3797,6 +4273,8 @@ export const compileDecisionSupport = (
   const personalizedResultLane = buildPersonalizedResultLane({
     digest: params.digest,
     usageBlock,
+    allergyContext: params.allergyContext ?? null,
+    personalizationContext: params.personalizationContext ?? null,
   });
 
   return {
@@ -3846,6 +4324,8 @@ export const compileDecisionSupport = (
       overlayAugmentationVersion: overlayAugmentation.version,
       overlayAugmentationSource: overlayAugmentation.source,
       patchActivationCanonical,
+      allergyContextCanonical,
+      personalizationContextCanonical,
       decisionContractVersion: DECISION_SUPPORT_CONTRACT_VERSION,
       digestInputParts,
     },

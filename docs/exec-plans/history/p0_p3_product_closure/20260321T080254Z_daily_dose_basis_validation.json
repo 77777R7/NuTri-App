@@ -1,0 +1,22 @@
+{
+  "generatedAt": "2026-03-21T08:02:54.837Z",
+  "phase": "P1-daily-dose-basis",
+  "phaseOutcomeStatus": "execution_success",
+  "parserCoverage": {
+    "simpleDaily": true,
+    "rangedDaily": true,
+    "twiceDaily": true
+  },
+  "controlledValidation": {
+    "labelDailyEstimateObserved": false,
+    "conservativeFallbackObserved": true
+  },
+  "realImportedSampleValidation": {
+    "totalSavedProductsEvaluated": 10,
+    "labelDailyEstimateCount": 0,
+    "oneServingFallbackCount": 10,
+    "skippedForInsufficientData": 2,
+    "note": "Current saved coverage still relies on conservative one-serving fallback because cached snapshot directions are sparse."
+  },
+  "executionResidue": []
+}

@@ -2,6 +2,7 @@ import type {
   ActivityPlan,
   FeedbackState,
   GoalKey,
+  PersonalizationEventSummary,
   PersonalizationProfile,
   PersonalizationSnapshot,
   ProductGoalMatch,
@@ -35,6 +36,10 @@ import {
   DEFAULT_PERSONALIZATION_COMPUTED_AT,
   PERSONALIZATION_RULES_VERSION,
 } from './reasonCodes';
+import { buildGoalFitCard } from './goalFitCardBuilder';
+import { compileSupportState } from './supportStateMachine';
+import { compilePreferenceVector } from './critiqueEngine';
+import { buildStackAudit } from './stackAudit';
 
 type SnapshotEvaluationsInput = {
   productGoalMatches?: Record<string, ProductGoalMatch[]>;
@@ -53,6 +58,7 @@ export type PersonalizationCompilerInput = {
   evaluations?: SnapshotEvaluationsInput;
   feedbackState?: FeedbackState;
   overrideEvents?: FeedbackState['events'];
+  eventSummary?: PersonalizationEventSummary;
 };
 
 const hashString = (value: string) => {
@@ -122,6 +128,18 @@ const buildDefaultEvaluations = (input: {
     duplicateRiskLevel: input.profile.observed.duplicateRisk.level,
   });
 
+  const goalFitCards = savedProductEvaluationSet?.savedProductEvaluations
+    ? Object.fromEntries(
+        Object.values(savedProductEvaluationSet.savedProductEvaluations).flatMap((evaluation) => {
+          const card = buildGoalFitCard({
+            evaluation,
+            goalKey: evaluation.smartFilterMembership.highlightedGoal,
+          });
+          return card ? [[evaluation.productId, card] as const] : [];
+        }),
+      )
+    : undefined;
+
   return {
     productGoalMatches,
     eligibility,
@@ -131,6 +149,7 @@ const buildDefaultEvaluations = (input: {
           savedProductEvaluations: savedProductEvaluationSet.savedProductEvaluations,
         }
       : {}),
+    ...(goalFitCards ? { goalFitCards } : {}),
     firstStackPlan: input.evaluations?.firstStackPlan ?? defaultFirstStackPlan,
   };
 };
@@ -143,9 +162,72 @@ const collectEvaluationReasons = (evaluations: PersonalizationSnapshot['evaluati
     Object.values(evaluations.eligibility ?? {}).flatMap((decision) => decision.reasons),
     Object.values(evaluations.coverage ?? {}).flatMap((decision) => decision.reasons),
     Object.values(evaluations.savedProductEvaluations ?? {}).flatMap((evaluation) => evaluation.reasons),
+    Object.values(evaluations.goalFitCards ?? {}).flatMap((card) => [
+      ...card.whyFit,
+      ...card.whyNotStronger,
+      ...card.holdbacks,
+      ...(card.stackContext ?? []),
+    ]),
     evaluations.firstStackPlan?.items.flatMap((item) => item.reasons) ?? [],
     evaluations.firstStackPlan?.explanationFacts ?? [],
   );
+
+const buildPreferenceReason = (
+  code: string,
+  params?: Record<string, string | number | boolean>,
+) => ({
+  code,
+  ruleId: 'personalization.preference_vector.v1',
+  source: 'derived' as const,
+  ...(params ? { params } : {}),
+});
+
+const applyPreferenceVectorToSurfaces = (input: {
+  preferenceVector: PersonalizationSnapshot['strategies']['preferenceVector'];
+  home: PersonalizationSnapshot['surfaces']['home'];
+  smartFilter: PersonalizationSnapshot['surfaces']['smartFilter'];
+  planPreview: PersonalizationSnapshot['surfaces']['planPreview'];
+  scheduleDefaults: PersonalizationSnapshot['surfaces']['scheduleDefaults'];
+}) => {
+  if (input.preferenceVector.explanationStyle !== 'brief') {
+    input.home.emphasizedModules = Array.from(
+      new Set([...input.home.emphasizedModules, 'education']),
+    );
+    input.planPreview.reasons = dedupeReasons(
+      input.planPreview.reasons,
+      [
+        buildPreferenceReason('preference_vector_explanation_applied', {
+          explanationStyle: input.preferenceVector.explanationStyle,
+        }),
+      ],
+    );
+  }
+
+  input.smartFilter.reasons = dedupeReasons(
+    input.smartFilter.reasons,
+    [
+      buildPreferenceReason('preference_vector_decision_mode_applied', {
+        decisionMode: input.preferenceVector.decisionMode,
+      }),
+    ],
+  );
+
+  if (input.preferenceVector.notificationTolerance === 'low') {
+    input.scheduleDefaults.reminderPriority = 'low';
+  } else if (input.preferenceVector.notificationTolerance === 'high') {
+    input.scheduleDefaults.reminderPriority = 'high';
+  }
+
+  input.scheduleDefaults.reasons = dedupeReasons(
+    input.scheduleDefaults.reasons,
+    [
+      buildPreferenceReason('preference_vector_notification_applied', {
+        notificationTolerance: input.preferenceVector.notificationTolerance,
+        reminderPriority: input.scheduleDefaults.reminderPriority,
+      }),
+    ],
+  );
+};
 
 export const compilePersonalizationSnapshot = (
   input: PersonalizationCompilerInput = {},
@@ -153,10 +235,33 @@ export const compilePersonalizationSnapshot = (
   const profile = resolveCompilerProfile(input);
   const computedAt = input.computedAt ?? profile.meta.computedAt ?? DEFAULT_PERSONALIZATION_COMPUTED_AT;
   const rulesVersion = input.rulesVersion ?? PERSONALIZATION_RULES_VERSION;
+  const effectiveFeedbackState =
+    input.overrideEvents && input.overrideEvents.length > 0
+      ? reduceFeedbackState(
+          input.feedbackState ?? {
+            version: 'personalization-feedback/v1',
+            updatedAt: computedAt,
+            events: [],
+            overrides: {},
+            dismissals: {},
+          },
+          input.overrideEvents,
+        )
+      : input.feedbackState;
   const blockerStrategyResult = compileBlockerStrategy(profile);
   const experienceModeResult = compileExperienceMode(profile);
   const dietLanes = compileDietLanes(profile);
   const activityPlan = compileActivityPlan(profile);
+  const supportStateResult = compileSupportState({
+    profile,
+    feedbackState: effectiveFeedbackState,
+    eventSummary: input.eventSummary,
+  });
+  const preferenceVectorResult = compilePreferenceVector({
+    profile,
+    supportState: supportStateResult.supportState,
+    feedbackState: effectiveFeedbackState,
+  });
   const prioritizedGoals = getPrioritizedGoals(profile, activityPlan);
   const selectedTypes = getSelectedTypes(profile, activityPlan);
 
@@ -193,6 +298,19 @@ export const compilePersonalizationSnapshot = (
     blockerAnchors: blockerStrategyResult.preferredTimingAnchors,
     activityPlan,
   });
+  applyPreferenceVectorToSurfaces({
+    preferenceVector: preferenceVectorResult.preferenceVector,
+    home,
+    smartFilter,
+    planPreview,
+    scheduleDefaults,
+  });
+  const stackAudit = buildStackAudit({
+    profile,
+    supportState: supportStateResult.supportState,
+    preferenceVector: preferenceVectorResult.preferenceVector,
+    evaluations,
+  });
 
   const baseSnapshot: PersonalizationSnapshot = {
     snapshotId: input.snapshotId ?? buildSnapshotId(profile, computedAt, rulesVersion),
@@ -204,6 +322,8 @@ export const compilePersonalizationSnapshot = (
       experience: experienceModeResult.mode,
       dietLanes,
       activityPlan,
+      supportState: supportStateResult.supportState,
+      preferenceVector: preferenceVectorResult.preferenceVector,
     },
     evaluations,
     surfaces: {
@@ -212,33 +332,25 @@ export const compilePersonalizationSnapshot = (
       planPreview,
       scheduleDefaults,
     },
+    premiumInsights: {
+      stackAudit,
+    },
     trace: dedupeReasons(
       buildProfileTrace(profile, input.profileInput),
       blockerStrategyResult.reasons,
       experienceModeResult.reasons,
       dietLanes.flatMap((lane) => lane.reasons),
       activityPlan.reasons,
+      supportStateResult.reasons,
+      preferenceVectorResult.reasons,
       home.reasons,
       smartFilter.reasons,
       planPreview.reasons,
       scheduleDefaults.reasons,
       collectEvaluationReasons(evaluations),
+      stackAudit.reasons,
     ),
   };
-
-  const effectiveFeedbackState =
-    input.overrideEvents && input.overrideEvents.length > 0
-      ? reduceFeedbackState(
-          input.feedbackState ?? {
-            version: 'personalization-feedback/v1',
-            updatedAt: computedAt,
-            events: [],
-            overrides: {},
-            dismissals: {},
-          },
-          input.overrideEvents,
-        )
-      : input.feedbackState;
 
   return applyFeedbackStateToSnapshot(baseSnapshot, effectiveFeedbackState);
 };

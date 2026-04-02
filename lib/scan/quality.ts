@@ -1,4 +1,4 @@
-import type { LabelDraft } from '@/backend/src/labelAnalysis';
+import type { LabelDraft } from '@/backend/src/labelTypes';
 
 export type DraftIssue = { type: string; message?: string };
 

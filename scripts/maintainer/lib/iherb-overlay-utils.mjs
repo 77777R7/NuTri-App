@@ -151,6 +151,13 @@ export const normalizeDescriptionSections = (rawSections, fallbackAllDescription
     if (!text) continue;
     sections[canonical] = text;
   }
+  // iHerb frequently exposes consumer-facing caution copy under "Disclaimer"
+  // without a separate "Warnings" heading. Preserve the original disclaimer
+  // and mirror it into Warnings so completeness/gating can recognize the page
+  // as having usable safety text.
+  if (!sections.Warnings && sections.Disclaimer) {
+    sections.Warnings = sections.Disclaimer;
+  }
   return sections;
 };
 
@@ -501,11 +508,12 @@ export const deriveCompleteness = (record) => {
   const nutritionalFacts = Array.isArray(supplementFacts?.nutritionalFacts)
     ? supplementFacts.nutritionalFacts
     : [];
+  const warningsText = normalizeText(sections.Warnings ?? sections.Disclaimer ?? null);
   const core = {
     ingredient: nutritionalFacts.length > 0,
     dosage: nutritionalFacts.some((row) => normalizeText(row?.amountPerServing)),
     suggested_use: Boolean(normalizeText(sections["Suggested use"])),
-    warnings: Boolean(normalizeText(sections.Warnings)),
+    warnings: Boolean(warningsText),
     product_image:
       Boolean(normalizeText(record?.productCatalogImage)) ||
       (Array.isArray(record?.productImages) && record.productImages.length > 0),

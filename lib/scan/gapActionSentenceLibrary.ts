@@ -79,7 +79,7 @@ export const buildGapActionSentences = (
 
   if (lines.length < 2) {
     lines.push('Some expected fields are not available in this source.');
-    lines.push('Use a clearer label scan to improve product-specific guidance.');
+    lines.push('Use clearer scan evidence to improve product-specific guidance.');
   }
 
   return lines;

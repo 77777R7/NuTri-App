@@ -1,0 +1,59 @@
+{
+  "generatedAt": "2026-03-22T23:42:45.377Z",
+  "phase": "P2",
+  "phaseOutcomeStatus": "blocker_isolation",
+  "targetSetReadiness": {
+    "realSavedInventory": {
+      "totalSavedItems": 14,
+      "usableCandidateItems": 10,
+      "totalCandidateRows": 10,
+      "environmentHadEnoughRealSavedProducts": true
+    },
+    "stableImportToConsumerLinks": {
+      "saveFromHistoryPreservesDoseAndImage": true,
+      "mySavedDetailCanUseFactsOverlay": false,
+      "savedStackSafetyFlowPresent": true
+    }
+  },
+  "weakDataClasses": [
+    {
+      "class": "label_only",
+      "count": 2,
+      "handlingMode": "skip"
+    },
+    {
+      "class": "snapshot_only",
+      "count": 0,
+      "handlingMode": "backfill_candidate"
+    },
+    {
+      "class": "no_usable_actives",
+      "count": 2,
+      "handlingMode": "hold_blocker"
+    },
+    {
+      "class": "no_dose_basis",
+      "count": 10,
+      "handlingMode": "degrade"
+    },
+    {
+      "class": "no_stable_identity",
+      "count": 2,
+      "handlingMode": "hold_blocker"
+    },
+    {
+      "class": "image_only_non_consumable",
+      "count": 0,
+      "handlingMode": "backfill_candidate"
+    },
+    {
+      "class": "other",
+      "count": 0,
+      "handlingMode": "hold_blocker"
+    }
+  ],
+  "finalCall": {
+    "closed": false,
+    "reason": "Saved/detail/safety consumers are wired, but the target set still lacks enough stable real Saved coverage to treat consumption readiness as product-level closed."
+  }
+}

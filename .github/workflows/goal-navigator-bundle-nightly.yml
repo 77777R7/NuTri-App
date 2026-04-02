@@ -1,0 +1,101 @@
+name: Goal Navigator Bundle (Nightly)
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "15 8 * * *" # daily 08:15 UTC
+
+concurrency:
+  group: goal-navigator-bundle-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  rebuild-bundle:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+
+    steps:
+      - name: Check Bundle Build Prerequisites
+        id: gate
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [[ -z "${SUPABASE_URL}" || -z "${SUPABASE_SERVICE_ROLE_KEY}" ]]; then
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "Skipping Goal Navigator bundle rebuild because required Supabase secrets are missing."
+            exit 0
+          fi
+
+          echo "enabled=true" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout
+        if: steps.gate.outputs.enabled == 'true'
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        if: steps.gate.outputs.enabled == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install Root Dependencies
+        if: steps.gate.outputs.enabled == 'true'
+        run: npm ci --ignore-scripts
+
+      - name: Install Backend Dependencies
+        if: steps.gate.outputs.enabled == 'true'
+        run: npm --prefix backend ci
+
+      - name: Rebuild Goal Navigator Bundle
+        if: steps.gate.outputs.enabled == 'true'
+        run: npm run personalization:build-goal-bundle
+
+      - name: Upload Bundle Artifact
+        if: ${{ always() && steps.gate.outputs.enabled == 'true' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: goal-navigator-bundle-${{ github.run_id }}-${{ github.run_attempt }}
+          path: backend/data/personalization/goal_navigator_candidate_bundle.v1.json
+          if-no-files-found: error
+
+      - name: Detect Bundle Changes
+        if: steps.gate.outputs.enabled == 'true'
+        id: bundle_changes
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if git diff --quiet -- backend/data/personalization/goal_navigator_candidate_bundle.v1.json; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "No bundle change detected."
+            exit 0
+          fi
+
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+
+      - name: Create Bundle Refresh PR
+        if: ${{ steps.gate.outputs.enabled == 'true' && steps.bundle_changes.outputs.changed == 'true' }}
+        uses: peter-evans/create-pull-request@v7
+        with:
+          add-paths: backend/data/personalization/goal_navigator_candidate_bundle.v1.json
+          branch: automation/goal-navigator-bundle
+          commit-message: "chore(personalization): refresh Goal Navigator bundle"
+          title: "chore(personalization): refresh Goal Navigator bundle"
+          body: |
+            Automated refresh for the Goal Navigator candidate bundle.
+
+            - Rebuilt with `npm run personalization:build-goal-bundle`
+            - Uploads the generated JSON as a workflow artifact
+            - Opens or updates this PR instead of pushing directly to the default branch
+          delete-branch: true

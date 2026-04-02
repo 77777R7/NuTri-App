@@ -9,6 +9,7 @@ import {
 } from 'react';
 import type { ReactNode } from 'react';
 
+import { useAuth } from '@/contexts/AuthContext';
 import {
   getDraft,
   getFlags,
@@ -18,6 +19,8 @@ import {
   setFlags,
   setProgress as persistProgress,
 } from '@/lib/storage/onboarding';
+import { supabase } from '@/lib/supabase';
+import { upsertUserProfile } from '@/lib/supabase/profile';
 import { ONBOARDING_TOTAL_STEPS } from '@/lib/onboarding-v2';
 import type { OnboardingState, ProfileDraft, TrialState } from '@/types/onboarding';
 
@@ -72,6 +75,7 @@ const mergeProfileDraft = (current: ProfileDraft | null, updates: Partial<Profil
 };
 
 export const OnboardingProvider = ({ children }: OnboardingProviderProps) => {
+  const { loading: authLoading, session } = useAuth();
   const [loading, setLoading] = useState(true);
   const [progress, setProgressState] = useState(1);
   const [draft, setDraft] = useState<ProfileDraft | null>(null);
@@ -79,7 +83,12 @@ export const OnboardingProvider = ({ children }: OnboardingProviderProps) => {
   const [onbCompleted, setOnbCompleted] = useState(false);
   const [draftUpdatedAt, setDraftUpdatedAt] = useState<string | undefined>(undefined);
   const [serverSyncedAt, setServerSyncedAtState] = useState<string | undefined>(undefined);
+  const draftRef = useRef<ProfileDraft | null>(null);
+  const progressRef = useRef(1);
   const draftUpdatedAtRef = useRef<string | undefined>(undefined);
+  const flushQueueRef = useRef<Promise<void>>(Promise.resolve());
+  const syncInFlightRef = useRef(false);
+  const syncRequestedDraftAtRef = useRef<string | undefined>(undefined);
 
   useEffect(() => {
     let isMounted = true;
@@ -92,6 +101,8 @@ export const OnboardingProvider = ({ children }: OnboardingProviderProps) => {
         if (!isMounted) return;
 
         draftUpdatedAtRef.current = flags.draftUpdatedAt ?? draftPayload.updatedAt;
+        draftRef.current = draftPayload.draft;
+        progressRef.current = storedProgress;
         setDraftUpdatedAt(draftUpdatedAtRef.current);
         setDraft(draftPayload.draft);
         setProgressState(storedProgress);
@@ -117,34 +128,58 @@ export const OnboardingProvider = ({ children }: OnboardingProviderProps) => {
     };
   }, []);
 
-  const setProgress = useCallback(async (value: number) => {
+  const commitProgress = useCallback((value: number) => {
     const sanitized = Math.max(1, Math.min(value, ONBOARDING_TOTAL_STEPS));
+    progressRef.current = sanitized;
     setProgressState(sanitized);
-    await persistProgress(sanitized);
   }, []);
+
+  const flushDraft = useCallback(async () => {
+    const snapshot = {
+      draft: draftRef.current,
+      draftUpdatedAt: draftUpdatedAtRef.current,
+      progress: progressRef.current,
+    };
+
+    const persistSnapshot = async () => {
+      await persistDraft(snapshot.draft, snapshot.draftUpdatedAt ?? new Date().toISOString());
+      await setFlags({ draftUpdatedAt: snapshot.draftUpdatedAt ?? '' });
+      await persistProgress(snapshot.progress);
+    };
+
+    const queued = flushQueueRef.current.catch(() => undefined).then(persistSnapshot);
+    flushQueueRef.current = queued;
+    await queued;
+  }, []);
+
+  const setProgress = useCallback(async (value: number) => {
+    commitProgress(value);
+    await flushDraft();
+  }, [commitProgress, flushDraft]);
+
+  const commitDraft = useCallback(
+    (updates: Partial<ProfileDraft>, nextProgress?: number) => {
+      const nextDraft = mergeProfileDraft(draftRef.current, updates);
+      draftRef.current = nextDraft;
+      setDraft(nextDraft);
+
+      const timestamp = nextDraft ? new Date().toISOString() : undefined;
+      draftUpdatedAtRef.current = timestamp;
+      setDraftUpdatedAt(timestamp);
+
+      if (typeof nextProgress === 'number') {
+        commitProgress(nextProgress);
+      }
+    },
+    [commitProgress],
+  );
 
   const saveDraft = useCallback(
     async (updates: Partial<ProfileDraft>, nextProgress?: number) => {
-      let computedDraft: ProfileDraft | null = null;
-
-      setDraft(current => {
-        computedDraft = mergeProfileDraft(current, updates);
-        return computedDraft;
-      });
-
-      const timestamp = new Date().toISOString();
-      const nextUpdatedAt = computedDraft ? timestamp : undefined;
-      draftUpdatedAtRef.current = nextUpdatedAt;
-      setDraftUpdatedAt(nextUpdatedAt);
-
-      await persistDraft(computedDraft, timestamp);
-      await setFlags({ draftUpdatedAt: nextUpdatedAt ?? '' });
-
-      if (typeof nextProgress === 'number') {
-        await setProgress(nextProgress);
-      }
+      commitDraft(updates, nextProgress);
+      await flushDraft();
     },
-    [setProgress],
+    [commitDraft, flushDraft],
   );
 
   const setTrial = useCallback(async (nextTrial: TrialState) => {
@@ -161,6 +196,7 @@ export const OnboardingProvider = ({ children }: OnboardingProviderProps) => {
   }, []);
 
   const clearDraft = useCallback(async () => {
+    draftRef.current = null;
     setDraft(null);
     draftUpdatedAtRef.current = undefined;
     setDraftUpdatedAt(undefined);
@@ -169,6 +205,8 @@ export const OnboardingProvider = ({ children }: OnboardingProviderProps) => {
   }, []);
 
   const resetLocalOnboarding = useCallback(async () => {
+    draftRef.current = null;
+    progressRef.current = 1;
     setDraft(null);
     setProgressState(1);
     setOnbCompleted(false);
@@ -184,6 +222,33 @@ export const OnboardingProvider = ({ children }: OnboardingProviderProps) => {
     await setFlags({ serverSyncedAt: iso });
   }, []);
 
+  useEffect(() => {
+    if (loading || authLoading) return;
+    if (!onbCompleted || !draftRef.current) return;
+
+    const userId = session?.user?.id;
+    const draftUpdatedAt = draftUpdatedAtRef.current;
+
+    if (!userId || !draftUpdatedAt) return;
+    if (serverSyncedAt && serverSyncedAt >= draftUpdatedAt) return;
+    if (syncInFlightRef.current && syncRequestedDraftAtRef.current === draftUpdatedAt) return;
+
+    syncInFlightRef.current = true;
+    syncRequestedDraftAtRef.current = draftUpdatedAt;
+
+    void upsertUserProfile(supabase, userId, draftRef.current, trial)
+      .then(async result => {
+        if (!result.ok) return;
+        await setServerSyncedAt(draftUpdatedAt);
+      })
+      .catch(error => {
+        console.warn('[onboarding] failed to sync user profile', error);
+      })
+      .finally(() => {
+        syncInFlightRef.current = false;
+      });
+  }, [authLoading, loading, onbCompleted, serverSyncedAt, session?.user?.id, setServerSyncedAt, trial]);
+
   const value = useMemo<OnboardingState>(
     () => ({
       loading,
@@ -193,6 +258,9 @@ export const OnboardingProvider = ({ children }: OnboardingProviderProps) => {
       onbCompleted,
       serverSyncedAt,
       trial,
+      commitDraft,
+      commitProgress,
+      flushDraft,
       saveDraft,
       setProgress,
       setTrial,
@@ -203,8 +271,11 @@ export const OnboardingProvider = ({ children }: OnboardingProviderProps) => {
     }),
     [
       clearDraft,
+      commitDraft,
+      commitProgress,
       draft,
       draftUpdatedAt,
+      flushDraft,
       loading,
       markCompletedLocal,
       onbCompleted,

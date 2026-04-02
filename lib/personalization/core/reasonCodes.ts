@@ -1,4 +1,4 @@
-import type { DecisionReason, DecisionReasonSource } from '@/types/personalization';
+import type { DecisionReason, DecisionReasonSource } from '../../../types/personalization';
 
 export const PERSONALIZATION_PROFILE_VERSION = 'personalization-profile/v1-phase1';
 export const PERSONALIZATION_RULES_VERSION = 'personalization-rules/v1-phase7';

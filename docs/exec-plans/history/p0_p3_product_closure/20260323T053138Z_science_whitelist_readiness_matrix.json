@@ -1,0 +1,96 @@
+{
+  "generatedAt": "2026-03-23T05:31:38.121Z",
+  "phase": "P3",
+  "phaseOutcomeStatus": "execution_success",
+  "scope": "week4_science_whitelist_readiness_only",
+  "priorityOrder": [
+    "magnesium",
+    "vitamin_c",
+    "omega_3",
+    "n_acetylcysteine",
+    "astaxanthin",
+    "iron",
+    "zinc",
+    "folate",
+    "vitamin_b12"
+  ],
+  "matrix": [
+    {
+      "canonicalKey": "magnesium",
+      "displayName": "Magnesium",
+      "readiness": "product_ready",
+      "subsetEntryCount": 11,
+      "safeFallbackPresent": true,
+      "compilerSupport": true
+    },
+    {
+      "canonicalKey": "vitamin_c",
+      "displayName": "Vitamin C",
+      "readiness": "product_ready",
+      "subsetEntryCount": 6,
+      "safeFallbackPresent": true,
+      "compilerSupport": true
+    },
+    {
+      "canonicalKey": "omega_3",
+      "displayName": "Omega-3",
+      "readiness": "fallback_only",
+      "subsetEntryCount": 0,
+      "safeFallbackPresent": true,
+      "compilerSupport": true,
+      "supportingKnowledge": true
+    },
+    {
+      "canonicalKey": "n_acetylcysteine",
+      "displayName": "NAC",
+      "readiness": "missing_absorption_form_differentiation",
+      "subsetEntryCount": 0,
+      "safeFallbackPresent": false,
+      "compilerSupport": true
+    },
+    {
+      "canonicalKey": "astaxanthin",
+      "displayName": "Astaxanthin",
+      "readiness": "missing_bioavailability_evidence",
+      "subsetEntryCount": 0,
+      "safeFallbackPresent": false,
+      "compilerSupport": true,
+      "supportingKnowledge": true
+    },
+    {
+      "canonicalKey": "iron",
+      "displayName": "Iron",
+      "readiness": "missing_bioavailability_evidence",
+      "subsetEntryCount": 0,
+      "safeFallbackPresent": false,
+      "compilerSupport": true,
+      "supportingKnowledge": true
+    },
+    {
+      "canonicalKey": "zinc",
+      "displayName": "Zinc",
+      "readiness": "product_ready",
+      "subsetEntryCount": 8,
+      "safeFallbackPresent": true,
+      "compilerSupport": true
+    },
+    {
+      "canonicalKey": "folate",
+      "displayName": "Folate",
+      "readiness": "missing_bioavailability_evidence",
+      "subsetEntryCount": 0,
+      "safeFallbackPresent": false,
+      "compilerSupport": true,
+      "supportingKnowledge": true
+    },
+    {
+      "canonicalKey": "vitamin_b12",
+      "displayName": "Vitamin B12",
+      "readiness": "missing_form_evidence",
+      "subsetEntryCount": 0,
+      "safeFallbackPresent": false,
+      "compilerSupport": true,
+      "supportingKnowledge": true
+    }
+  ]
+}

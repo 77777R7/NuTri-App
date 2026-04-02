@@ -6,13 +6,14 @@ import test from 'node:test';
 test('my supplement smart filter consumes evaluated membership without regressing local filters', () => {
   const filePath = path.resolve(process.cwd(), 'components/screens/MySupplement.tsx');
   const source = fs.readFileSync(filePath, 'utf8');
+  const helperPath = path.resolve(process.cwd(), 'lib/personalization/smartFilterMatching.ts');
+  const helperSource = fs.readFileSync(helperPath, 'utf8');
 
   assert.match(source, /smartFilterMembershipById/);
   assert.match(source, /smartFilterEvaluationLoading/);
   assert.match(source, /matchesEvaluatedSmartFilterTag/);
   assert.match(source, /filterSupplementsByActiveTags/);
-  assert.match(source, /tag === "Recently Viewed"/);
-  assert.match(source, /item\.tags\?\.some\(\(itemTag\) => itemTag === tag\)/);
+  assert.match(source, /MySavedSmartFilterPanel/);
   assert.match(source, /membershipById:\s*smartFilterMembershipById/);
   assert.match(source, /if \(smartFilterEvaluationLoading\) return;/);
   assert.match(source, /trackSmartFilterEvaluatedEvent/);
@@ -27,4 +28,9 @@ test('my supplement smart filter consumes evaluated membership without regressin
   assert.match(source, /smart_filter_evaluated_batch_schedule_applied/);
   assert.match(source, /smartFilterAnalyticsContext=\{detailAnalyticsContext\}/);
   assert.equal(source.includes('const hasMatchingStaticTag = s.tags && s.tags.some((tag) => activeTags.has(tag));'), false);
+  assert.match(helperSource, /tag === 'Recently Viewed'/);
+  assert.match(helperSource, /item\.tags\?\.some\(\(itemTag\) => itemTag === tag\)/);
+  assert.match(helperSource, /membership\.typeKeys\.includes\(typeKey\)/);
+  assert.match(helperSource, /membership\.coverageStatus === 'coverage_ready'/);
+  assert.match(helperSource, /membership\.eligibility\?\.rankEligible !== false/);
 });

@@ -1,0 +1,47 @@
+{
+  "version": "v1",
+  "controls": [
+    {
+      "key": "simpler",
+      "label": "More simple",
+      "field": "decisionMode",
+      "value": "simpler",
+      "group": "decision"
+    },
+    {
+      "key": "strong_only",
+      "label": "Strong match only",
+      "field": "decisionMode",
+      "value": "strong_only",
+      "group": "decision"
+    },
+    {
+      "key": "low_overlap",
+      "label": "Less overlap",
+      "field": "decisionMode",
+      "value": "low_overlap",
+      "group": "decision"
+    },
+    {
+      "key": "better_disclosure",
+      "label": "Better disclosure",
+      "field": "decisionMode",
+      "value": "better_disclosure",
+      "group": "decision"
+    },
+    {
+      "key": "explain_first",
+      "label": "Explain first",
+      "field": "explanationStyle",
+      "value": "compare",
+      "group": "explanation"
+    },
+    {
+      "key": "less_reminders",
+      "label": "Fewer reminders",
+      "field": "notificationTolerance",
+      "value": "low",
+      "group": "notification"
+    }
+  ]
+}

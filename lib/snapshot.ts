@@ -1,5 +1,5 @@
 import type { AiSupplementAnalysis } from '@/backend/src/types';
-import type { LabelDraft } from '@/backend/src/labelAnalysis';
+import type { LabelDraft } from '@/backend/src/labelTypes';
 import type {
   NormalizedAmountUnit,
   SnapshotSource,
@@ -430,9 +430,9 @@ export const buildLabelSnapshot = (input: {
 
   const errorMessage =
     input.status === 'failed'
-      ? input.message ?? 'Label scan failed'
+      ? input.message ?? 'Scan failed'
       : statusFromAnalysis === 'error'
-        ? 'Label analysis failed'
+        ? 'Scan analysis failed'
         : null;
 
   const base = baseSnapshot({
@@ -441,7 +441,7 @@ export const buildLabelSnapshot = (input: {
     barcodeRaw: null,
     createdAt: timestamp,
     error: errorMessage
-      ? { code: 'label_scan_failed', message: errorMessage }
+      ? { code: 'scan_failed', message: errorMessage }
       : null,
   });
 

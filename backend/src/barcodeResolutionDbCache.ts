@@ -175,7 +175,8 @@ const resolveWriteGuardMode = (override?: ContractMode): ContractMode =>
   resolveContractMode(override ?? process.env.WRITE_GUARD_V2, "enforce");
 
 export const mapSourceToRank = (source: string): number => {
-  const normalized = String(source ?? "").trim().toLowerCase();
+  const normalizedRaw = String(source ?? "").trim().toLowerCase();
+  const normalized = normalizedRaw === "label_scan" ? "dsld" : normalizedRaw;
   if (!normalized) return 100;
   if (
     normalized === "verified_regulatory" ||
@@ -189,7 +190,6 @@ export const mapSourceToRank = (source: string): number => {
   if (
     normalized === "label_record" ||
     normalized === "dsld" ||
-    normalized === "label_scan" ||
     normalized === "catalog_label"
   ) {
     return 300;

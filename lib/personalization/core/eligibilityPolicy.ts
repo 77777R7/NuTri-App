@@ -7,6 +7,7 @@ import type {
 } from '../../../types/personalization';
 import type { DuplicateRiskLevel } from '../../../types/personalization';
 import safetyRulesData from '../../../data/personalization/safety_rules.v1.json';
+import safetyGuardrailsData from '../../../data/personalization/safety_guardrails.v2.json';
 
 type SafetyEligibilityRule = {
   ruleId: string;
@@ -29,6 +30,15 @@ type SafetyRulesFile = {
   eligibilityRules?: SafetyEligibilityRule[];
 };
 
+type SafetyGuardrailsFile = {
+  version?: string;
+  guardrails?: Array<{
+    capKey: string;
+    cautionClass: NonNullable<EligibilityDecision['cautionClass']>;
+    suppressionLevel: NonNullable<EligibilityDecision['suppressionLevel']>;
+  }>;
+};
+
 export type EligibilityPolicyInput = {
   productGoalMatches?: ProductGoalMatch[] | null;
   duplicateRisk?: {
@@ -43,6 +53,7 @@ export type EligibilityPolicyInput = {
 };
 
 const SAFETY_RULES = safetyRulesData as SafetyRulesFile;
+const SAFETY_GUARDRAILS = safetyGuardrailsData as SafetyGuardrailsFile;
 
 const makeReason = (
   code: string,
@@ -128,11 +139,33 @@ export const evaluateEligibilityPolicy = (input: EligibilityPolicyInput): Eligib
 
   reasons.push(...buildCapReasons(Array.from(new Set(caps))));
 
+  const guardrails = Array.from(new Set(caps))
+    .map((cap) => SAFETY_GUARDRAILS.guardrails?.find((guardrail) => guardrail.capKey === cap))
+    .filter((guardrail): guardrail is NonNullable<SafetyGuardrailsFile['guardrails']>[number] => !!guardrail);
+
+  const cautionClass: NonNullable<EligibilityDecision['cautionClass']> =
+    !eligible
+      ? 'blocked'
+      : guardrails.some((guardrail) => guardrail.cautionClass === 'blocked')
+        ? 'blocked'
+        : guardrails.some((guardrail) => guardrail.cautionClass === 'review')
+          ? 'review'
+          : 'clear';
+
+  const suppressionLevel: NonNullable<EligibilityDecision['suppressionLevel']> =
+    !eligible
+      ? 'exclude'
+      : !rankEligible || guardrails.some((guardrail) => guardrail.suppressionLevel === 'deprioritize')
+        ? 'deprioritize'
+        : 'none';
+
   return {
     eligible,
     rankEligible,
     caps: Array.from(new Set(caps)),
     reasons,
+    cautionClass,
+    suppressionLevel,
   };
 };
 

@@ -19,11 +19,12 @@ test('compileBlockerStrategy overlays high reminder priority for low consistency
   const result = compileBlockerStrategy(profile);
 
   assert.deepEqual(result.strategy, {
+    primarySupportFocus: 'explanation',
     reminderPriority: 'high',
     scheduleComplexity: 'simple',
     notificationBudget: 'standard',
     emphasizeHomeCheckIn: true,
-    emphasizeScheduleSetup: true,
+    emphasizeScheduleSetup: false,
     emphasizeExplanation: true,
   });
   assert.ok(result.reasons.some((reason) => reason.code === 'personalization.blocker_strategy.consistency_overlay'));
@@ -44,6 +45,7 @@ test('compileBlockerStrategy upgrades schedule setup emphasis for larger observe
   const result = compileBlockerStrategy(profile);
 
   assert.equal(result.strategy.scheduleComplexity, 'advanced');
+  assert.equal(result.strategy.primarySupportFocus, 'optimization');
   assert.equal(result.strategy.emphasizeScheduleSetup, true);
   assert.ok(result.reasons.some((reason) => reason.code === 'personalization.blocker_strategy.stack_overlay'));
 });

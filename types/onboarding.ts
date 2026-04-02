@@ -1,6 +1,6 @@
+import type { AllergyFlag, IngredientRestriction } from '@/lib/onboarding-v2';
+
 export type ProfileDraft = {
-  height?: number;
-  weight?: number;
   age?: number;
   gender?: string;
   ageRange?: string;
@@ -10,6 +10,11 @@ export type ProfileDraft = {
   activity?: string;
   preferredTypes?: string[];
   adherenceBlocker?: string;
+  allergyFlags?: AllergyFlag[];
+  ingredientRestrictions?: IngredientRestriction[];
+  noKnownAllergies?: boolean;
+  avoidItems?: string[];
+  setupPreferences?: string[];
   location?: {
     country?: string;
     city?: string;
@@ -51,6 +56,9 @@ export type OnboardingState = {
   onbCompleted: boolean;
   serverSyncedAt?: string;
   trial: TrialState;
+  commitDraft: (draft: Partial<ProfileDraft>, nextProgress?: number) => void;
+  commitProgress: (progress: number) => void;
+  flushDraft: () => Promise<void>;
   saveDraft: (draft: Partial<ProfileDraft>, nextProgress?: number) => Promise<void>;
   setProgress: (progress: number) => Promise<void>;
   setTrial: (trial: TrialState) => Promise<void>;

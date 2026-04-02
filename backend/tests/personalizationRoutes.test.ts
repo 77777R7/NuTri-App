@@ -52,6 +52,7 @@ const SNAPSHOT: PersonalizationSnapshot = {
   },
   strategies: {
     blocker: {
+      primarySupportFocus: "reminder",
       reminderPriority: "high",
       scheduleComplexity: "simple",
       notificationBudget: "heavy",
@@ -71,6 +72,12 @@ const SNAPSHOT: PersonalizationSnapshot = {
       suggestedTypes: [],
       suggestedTimingAnchors: ["breakfast"],
       reasons: [],
+    },
+    supportState: "explore",
+    preferenceVector: {
+      decisionMode: "best_fit",
+      explanationStyle: "brief",
+      notificationTolerance: "medium",
     },
   },
   evaluations: {
@@ -108,13 +115,14 @@ const SNAPSHOT: PersonalizationSnapshot = {
       highlightedGoal: "sleep",
       reasons: [],
     },
-    planPreview: {
-      goals: ["sleep"],
-      types: ["vitamin"],
-      blockerStrategy: {
-        reminderPriority: "high",
-        scheduleComplexity: "simple",
-        notificationBudget: "heavy",
+      planPreview: {
+        goals: ["sleep"],
+        types: ["vitamin"],
+        blockerStrategy: {
+          primarySupportFocus: "reminder",
+          reminderPriority: "high",
+          scheduleComplexity: "simple",
+          notificationBudget: "heavy",
         emphasizeHomeCheckIn: true,
         emphasizeScheduleSetup: true,
         emphasizeExplanation: true,

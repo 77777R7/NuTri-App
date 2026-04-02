@@ -73,6 +73,8 @@ import {
   DECISION_SUPPORT_PATCH_VERSION,
   DECISION_SUPPORT_RUBRIC_VERSION,
   toDecisionSupportInline,
+  type DecisionSupportAttachedAllergyContext,
+  type DecisionSupportAttachedPersonalizationContext,
   type DecisionSupportOverlayClaims,
   type DecisionSupportViewMode,
 } from "./decisionSupport.js";
@@ -129,29 +131,13 @@ import {
 } from "./ingredientScienceContext.js";
 import { normalizeIherbSupplementFactsRows } from "./iherbOverlayIngredients.js";
 import { getKbRuntime, lookupKbFormExplain, lookupKbRuntimeFormInsights, lookupSafeScienceSignals } from "./kbRuntime.js";
-import { analyzeLabelDraftWithDiagnostics, formatForDeepSeek, needsConfirmation, validateIngredient, type LabelAnalysisDiagnostics, type LabelDraft } from "./labelAnalysis.js";
-import { logLabelScanMetric, updateLabelScanClientTiming } from "./labelScanMetrics.js";
-import {
-  LABEL_PARSER_VERSION,
-  buildParseCacheKey,
-  buildVersionedOcrCacheKey,
-  normalizePreprocessProfile,
-} from "./labelScanVersion.js";
+import { type LabelDraft } from "./labelTypes.js";
 import { getMetricsSnapshot, incrementMetric, recordMetricTiming, startMetricsFlush } from "./metrics.js";
 import { buildMySupplementFactsV1, type MySupplementFactsV1 } from "./mySupplementFacts.js";
 import { getMySupplementOverviewV2GateReason } from "./mySupplementOverviewGate.js";
 import { getNutriTipsData } from "./nutriTips.js";
-import {
-  getAnalysisCachedResult,
-  getCachedResult,
-  getParseCachedResult,
-  hasCompletedAnalysis,
-  setAnalysisCachedResult,
-  setCachedResult,
-  setParseCachedResult,
-  updateCachedAnalysis,
-} from "./ocrCache.js";
 import { buildRuleBasedOverview } from "./overviewRuleBased.js";
+import { resolvePersonalizationProfile } from "../../lib/personalization/core/profileResolver.ts";
 import {
   buildEnsureOverviewInflightKey,
   isRegulatoryMapMiss,
@@ -186,7 +172,7 @@ import {
   scoreSearchItem,
   scoreSearchQuality
 } from "./searchQuality.js";
-import { buildBarcodeSnapshot, buildLabelSnapshot, validateSnapshotOrFallback, type SnapshotAnalysisPayload } from "./snapshot.js";
+import { buildBarcodeSnapshot, validateSnapshotOrFallback, type SnapshotAnalysisPayload } from "./snapshot.js";
 import { getSnapshotCache, storeSnapshotCache } from "./snapshotCache.js";
 import { deriveDailyDoseBasis } from "./safety/dailyDoseBasis.js";
 import { buildSnapshotSafetyDigestBundle } from "./safety/snapshotSafety.js";
@@ -195,6 +181,8 @@ import {
   type StackOverlapSupplementInput,
 } from "./stackOverlap.js";
 import { createPersonalizationExplanationRouteHandlers } from "./personalization/routes.js";
+import { createGoalNavigatorRouteHandlers } from "./personalization/goalNavigatorRoutes.js";
+import { createGoalNavigatorDebugRouteHandlers } from "./personalization/goalNavigatorDebugRoutes.js";
 import { supabase } from "./supabase.js";
 import type {
   AiSupplementAnalysis,
@@ -530,7 +518,7 @@ const collectDecisionSupportFlagsSnapshot = (): Record<string, unknown> => ({
 });
 const HTTP_ACCESS_LOG_ENABLED = parseBooleanEnv(process.env.HTTP_ACCESS_LOG_ENABLED, true);
 const STREAM_VERBOSE_LOG_ENABLED = parseBooleanEnv(process.env.STREAM_VERBOSE_LOG_ENABLED, false);
-const LABEL_SCAN_OUTPUT_RULES = `LABEL-SCAN OUTPUT RULES:
+const LABEL_FACTS_OUTPUT_RULES = `LABEL FACTS OUTPUT RULES:
 1) overviewSummary must include serving unit (e.g., per softgel/caplet/serving) and 2-3 key ingredients with doses if present.
 2) coreBenefits must list 3 items in "Ingredient - dose per unit" format; if dose missing, say "dose not specified".
 3) overallAssessment must include a transparency note (e.g., proprietary blend or missing doses).
@@ -1065,9 +1053,15 @@ const CACHE_TTL_COMPLETE_MS = Number(
 type AnalysisStatus = 'catalog_only' | 'label_enriched' | 'ai_enriched' | 'complete';
 
 type LabelExtractionMeta = {
-  source: 'dsld' | 'label_scan' | 'lnhpd' | 'manual';
+  source: 'dsld' | 'lnhpd' | 'manual';
   fetchedAt: string | null;
   datasetVersion: string | null;
+};
+
+const normalizeLabelExtractionSource = (source?: string | null): LabelExtractionMeta['source'] | null => {
+  if (source === 'label_scan') return 'dsld';
+  if (source === 'dsld' || source === 'lnhpd' || source === 'manual') return source;
+  return null;
 };
 
 type AnalysisMeta = {
@@ -7039,9 +7033,6 @@ const regressionAuthRoutes = new Set([
   "/api/summary/safety",
   "/api/kb/runtime/form-insights/batch",
   "/api/patch-shadow/status",
-  "/api/analyze-label",
-  "/api/label-scan/metrics",
-  "/api/label-scan/metrics/smoke",
 ]);
 const DECISION_SUPPORT_FETCH_WINDOW_MS = 10 * 60 * 1000;
 const decisionSupportFetchCountsByScanSession = new Map<string, { count: number; lastSeenAt: number }>();
@@ -7860,7 +7851,7 @@ TASK: Analyze this supplement based on the label facts above.
 Focus on: ingredient forms, dosage adequacy, evidence strength, safety risks/ULs, interactions, allergens, and practical usage guidance.
 If information is not available, use null instead of guessing.
 
-${LABEL_SCAN_OUTPUT_RULES}`;
+${LABEL_FACTS_OUTPUT_RULES}`;
 
     const bundle = await fetchAnalysisBundle(context, params.model, params.deepseekKey, backgroundResilience);
     if (!bundle) {
@@ -7940,61 +7931,9 @@ ${LABEL_SCAN_OUTPUT_RULES}`;
   });
 };
 
-const buildValidatedLabelSnapshot = (input: {
-  status: "ok" | "needs_confirmation" | "failed";
-  draft?: LabelDraft;
-  analysis?: AiSupplementAnalysis | null;
-  message?: string;
-}): SupplementSnapshot => {
-  const candidate = buildLabelSnapshot({
-    status: input.status,
-    analysis: input.analysis ?? null,
-    draft: input.draft ?? null,
-    message: input.message,
-  });
-
-  return validateSnapshotOrFallback({
-    candidate,
-    fallback: {
-      source: "label",
-      barcodeRaw: null,
-      productInfo: {
-        brand: input.analysis?.status === "success" ? input.analysis.productInfo?.brand ?? null : null,
-        name: input.analysis?.status === "success" ? input.analysis.productInfo?.name ?? null : null,
-        category: input.analysis?.status === "success" ? input.analysis.productInfo?.category ?? null : null,
-        imageUrl: input.analysis?.status === "success" ? input.analysis.productInfo?.image ?? null : null,
-      },
-      createdAt: candidate.createdAt,
-    },
-  });
-};
-
 const buildBarcodeCacheKey = (barcode: string): string => {
   const normalized = normalizeBarcodeInput(barcode);
   return normalized ? normalized.code.padStart(14, "0") : barcode;
-};
-
-const buildAndCacheLabelSnapshot = async (input: {
-  status: "ok" | "needs_confirmation" | "failed";
-  draft?: LabelDraft;
-  analysis?: AiSupplementAnalysis | null;
-  message?: string;
-  imageHash: string;
-}): Promise<SupplementSnapshot> => {
-  const snapshot = buildValidatedLabelSnapshot({
-    status: input.status,
-    draft: input.draft,
-    analysis: input.analysis,
-    message: input.message,
-  });
-
-  void storeSnapshotCache({
-    key: input.imageHash,
-    source: "label",
-    snapshot,
-  });
-
-  return snapshot;
 };
 
 const enrichStreamBodySchema = z
@@ -8428,6 +8367,360 @@ const parseUserSupplementNotes = (rawNotes: string | null): Record<string, unkno
   }
 };
 
+type StackOverlapUserSupplementRow = {
+  id: string;
+  supplement_id: string | null;
+  notes: string | null;
+  supplements:
+    | {
+      id?: string | null;
+      name?: string | null;
+      barcode?: string | null;
+    }
+    | Array<{
+      id?: string | null;
+      name?: string | null;
+      barcode?: string | null;
+    }>
+    | null;
+};
+
+type RemoteStackOverlapInputsResult = {
+  processedInputs: StackOverlapSupplementInput[];
+  processedSupplements: number;
+  skippedSupplements: number;
+  truncated: boolean;
+  status: "ok" | "partial";
+};
+
+const buildStackOverlapInputFromBarcode = async (params: {
+  supplementId: string;
+  productName: string;
+  barcode: string;
+}): Promise<StackOverlapSupplementInput | null> => {
+  const normalized = normalizeBarcodeInput(params.barcode);
+  if (!normalized) return null;
+
+  const cacheKey = buildBarcodeCacheKey(normalized.code);
+  const cached = await getSnapshotCache(
+    { key: cacheKey, source: "barcode" },
+    { timeoutMs: STACK_OVERLAP_SNAPSHOT_TIMEOUT_MS },
+  ).catch(() => null);
+  const snapshot = cached?.snapshot ?? null;
+  if (!snapshot) return null;
+
+  const ingredientRows = (snapshot.label.actives ?? [])
+    .map((active) => {
+      const name = safeTrim(active.name);
+      if (!name) return null;
+      return {
+        name,
+        amount: active.amountUnknown ? null : active.amount ?? null,
+        unit: active.amountUnitNormalized ?? active.amountUnit ?? active.amountUnitRaw ?? null,
+        amountText:
+          !active.amountUnknown && active.amount != null && (active.amountUnitNormalized ?? active.amountUnit ?? active.amountUnitRaw)
+            ? `${active.amount} ${active.amountUnitNormalized ?? active.amountUnit ?? active.amountUnitRaw}`.trim()
+            : null,
+        chemicalForm: active.form ?? null,
+      };
+    })
+    .filter((row): row is NonNullable<typeof row> => Boolean(row))
+    .slice(0, 24);
+  if (ingredientRows.length === 0) return null;
+
+  const safetyBundle = buildSnapshotSafetyDigestBundle({
+    snapshot,
+    supplementId: params.supplementId,
+    barcodeGtin14: normalized.code.padStart(14, "0"),
+    brandName: snapshot.product.brand ?? "",
+    productName: params.productName,
+  });
+  const usableIngredientRows = ingredientRows.filter((row) => row.amount != null && Boolean(row.unit));
+  const dailyDoseContext = deriveDailyDoseBasis({
+    labelDirectionsRawText: safetyBundle.labelDirectionsRawText,
+    hasUsableActiveDose: usableIngredientRows.length > 0,
+    sourceContext: "snapshot_only",
+  });
+
+  return {
+    supplementId: params.supplementId,
+    productName: params.productName,
+    ingredientNames: ingredientRows.map((row) => row.name),
+    ingredientRows: usableIngredientRows,
+    dailyMultiplier: dailyDoseContext.dailyMultiplier,
+    dailyDoseBasis: dailyDoseContext.dailyDoseBasis,
+    dailyDoseBasisReason: dailyDoseContext.dailyDoseBasisReason,
+  };
+};
+
+const combineStackOverlapInputs = (
+  values: Array<RemoteStackOverlapInputsResult | null | undefined>,
+): RemoteStackOverlapInputsResult | null => {
+  const available = values.filter((value): value is RemoteStackOverlapInputsResult => Boolean(value));
+  if (available.length === 0) return null;
+
+  const dedupedInputs: StackOverlapSupplementInput[] = [];
+  const seen = new Set<string>();
+  available.forEach((value) => {
+    value.processedInputs.forEach((input) => {
+      const key = safeTrim(input.supplementId)?.toLowerCase()
+        || `${safeTrim(input.productName)?.toLowerCase() ?? "unknown"}:${safeTrim(input.ingredientNames[0] ?? "")?.toLowerCase() ?? ""}`;
+      if (seen.has(key)) return;
+      seen.add(key);
+      dedupedInputs.push(input);
+    });
+  });
+
+  const processedSupplements = dedupedInputs.length;
+  const skippedSupplements = available.reduce((sum, value) => sum + value.skippedSupplements, 0);
+  const truncated = available.some((value) => value.truncated);
+  const status = truncated || skippedSupplements > 0 || available.some((value) => value.status === "partial")
+    ? "partial"
+    : "ok";
+
+  return {
+    processedInputs: dedupedInputs,
+    processedSupplements,
+    skippedSupplements,
+    truncated,
+    status,
+  };
+};
+
+const fetchRemoteStackOverlapInputs = async (
+  userId: string,
+): Promise<RemoteStackOverlapInputsResult | null> => {
+  const { data, error } = await supabase
+    .from("user_supplements")
+    .select("id, supplement_id, notes, supplements ( id, name, barcode )")
+    .eq("user_id", userId)
+    .order("saved_at", { ascending: false })
+    .limit(STACK_OVERLAP_MAX_SUPPLEMENTS_PER_REQUEST + 1);
+
+  if (error) {
+    console.warn("[stack-overlap] user_supplements query failed", error.message);
+    return null;
+  }
+
+  const rows = (Array.isArray(data) ? data : []) as StackOverlapUserSupplementRow[];
+  const truncated = rows.length > STACK_OVERLAP_MAX_SUPPLEMENTS_PER_REQUEST;
+  const selectedRows = rows.slice(0, STACK_OVERLAP_MAX_SUPPLEMENTS_PER_REQUEST);
+  let skippedSupplements = Math.max(0, rows.length - selectedRows.length);
+
+  type CandidateResult =
+    | { type: "processed"; value: StackOverlapSupplementInput }
+    | { type: "skipped" };
+
+  const candidates = await mapWithConcurrency(
+    selectedRows,
+    STACK_OVERLAP_SNAPSHOT_CONCURRENCY,
+    async (row): Promise<CandidateResult> => {
+      const linkedSupplement = Array.isArray(row.supplements)
+        ? row.supplements[0] ?? null
+        : row.supplements ?? null;
+      const notes = parseUserSupplementNotes(row.notes ?? null);
+
+      const supplementIdRaw =
+        row.supplement_id ??
+        (typeof linkedSupplement?.id === "string" ? linkedSupplement.id : null) ??
+        row.id;
+      const supplementId = safeTrim(supplementIdRaw);
+      if (!supplementId) return { type: "skipped" };
+
+      const notesProductName =
+        notes && typeof notes.productName === "string" ? safeTrim(notes.productName) : null;
+      const productName =
+        safeTrim(linkedSupplement?.name ?? null) ??
+        notesProductName ??
+        "Unknown supplement";
+
+      const barcode = safeTrim(linkedSupplement?.barcode ?? null);
+      if (!barcode) return { type: "skipped" };
+      const processed = await buildStackOverlapInputFromBarcode({
+        supplementId,
+        productName,
+        barcode,
+      });
+      if (!processed) return { type: "skipped" };
+
+      return {
+        type: "processed",
+        value: processed,
+      };
+    },
+  );
+
+  const processedInputs = candidates
+    .filter((candidate): candidate is { type: "processed"; value: StackOverlapSupplementInput } => candidate.type === "processed")
+    .map((candidate) => candidate.value);
+  skippedSupplements += candidates.length - processedInputs.length;
+
+  return {
+    processedInputs,
+    processedSupplements: processedInputs.length,
+    skippedSupplements,
+    truncated,
+    status: truncated || skippedSupplements > 0 ? "partial" : "ok",
+  };
+};
+
+const fetchLocalStackOverlapInputs = async (
+  savedSupplements: LocalDecisionSupportSavedSupplement[] | undefined,
+): Promise<RemoteStackOverlapInputsResult | null> => {
+  const items = Array.isArray(savedSupplements) ? savedSupplements : [];
+  if (items.length === 0) return null;
+
+  const selectedItems = items.slice(0, STACK_OVERLAP_MAX_SUPPLEMENTS_PER_REQUEST);
+  const truncated = items.length > selectedItems.length;
+
+  type CandidateResult =
+    | { type: "processed"; value: StackOverlapSupplementInput }
+    | { type: "skipped" };
+
+  const candidates = await mapWithConcurrency(
+    selectedItems,
+    STACK_OVERLAP_SNAPSHOT_CONCURRENCY,
+    async (item): Promise<CandidateResult> => {
+      const supplementId = safeTrim(item.supplementId) ?? safeTrim(item.barcode) ?? safeTrim(item.productName);
+      const productName = safeTrim(item.productName) ?? "Unknown supplement";
+      const barcode = safeTrim(item.barcode);
+      if (!supplementId || !barcode) return { type: "skipped" };
+
+      const processed = await buildStackOverlapInputFromBarcode({
+        supplementId,
+        productName,
+        barcode,
+      });
+      if (!processed) return { type: "skipped" };
+      return { type: "processed", value: processed };
+    },
+  );
+
+  const processedInputs = candidates
+    .filter((candidate): candidate is { type: "processed"; value: StackOverlapSupplementInput } => candidate.type === "processed")
+    .map((candidate) => candidate.value);
+  const skippedSupplements =
+    Math.max(0, items.length - selectedItems.length) + (candidates.length - processedInputs.length);
+
+  return {
+    processedInputs,
+    processedSupplements: processedInputs.length,
+    skippedSupplements,
+    truncated,
+    status: truncated || skippedSupplements > 0 ? "partial" : "ok",
+  };
+};
+
+const buildDecisionSupportCurrentStackInput = (params: {
+  digest: FactsDigest;
+  barcodeGtin14: string;
+}): StackOverlapSupplementInput | null => {
+  const ingredientRows = (Array.isArray(params.digest.actives) ? params.digest.actives : [])
+    .map((active) => {
+      const name = safeTrim(active?.name ?? null);
+      if (!name) return null;
+      return {
+        name,
+        amount: typeof active?.amount === "number" && Number.isFinite(active.amount) ? active.amount : null,
+        unit: safeTrim(active?.unit ?? null),
+        amountText: safeTrim(active?.amountText ?? null),
+        chemicalForm: safeTrim(active?.chemicalForm ?? null),
+      };
+    })
+    .filter((row): row is NonNullable<typeof row> => Boolean(row));
+
+  if (ingredientRows.length === 0) return null;
+
+  return {
+    supplementId: params.barcodeGtin14,
+    productName: safeTrim(params.digest.product.name ?? null) ?? "Current product",
+    ingredientNames: ingredientRows.map((row) => row.name),
+    ingredientRows: ingredientRows.filter((row) => row.amount != null && Boolean(row.unit)),
+  };
+};
+
+const buildDecisionSupportPersonalizationContext = (params: {
+  userProfile: UserDecisionSupportProfileRow | null;
+  allergyContext: DecisionSupportAttachedAllergyContext | null;
+  remoteStackInputs: RemoteStackOverlapInputsResult | null;
+  currentProductInput: StackOverlapSupplementInput | null;
+}): DecisionSupportAttachedPersonalizationContext | null => {
+  const hasProfile = Boolean(params.userProfile);
+  const hasRemoteStack = Boolean(params.remoteStackInputs);
+  const hasAllergy = Boolean(params.allergyContext);
+  if (!hasProfile && !hasRemoteStack && !hasAllergy) return null;
+
+  const declaredDiets = params.userProfile?.dietary_preferences?.length
+    ? params.userProfile.dietary_preferences
+    : params.userProfile?.dietary_preference
+      ? [params.userProfile.dietary_preference]
+      : [];
+
+  const profile = params.userProfile
+    ? resolvePersonalizationProfile({
+      draft: {
+        ageRange: params.userProfile.age_range ?? undefined,
+        sex: params.userProfile.sex ?? params.userProfile.gender ?? undefined,
+        supplementExperience: params.userProfile.supplement_experience ?? undefined,
+        diets: declaredDiets,
+        activity: params.userProfile.activity_level ?? undefined,
+        preferredTypes: params.userProfile.preferred_types ?? undefined,
+        adherenceBlocker: params.userProfile.adherence_blocker ?? undefined,
+        location: {
+          country: params.userProfile.location_country ?? undefined,
+          city: params.userProfile.location_city ?? undefined,
+        },
+        goals: params.userProfile.health_goals ?? undefined,
+      },
+      observed: {
+        savedStackCount: params.remoteStackInputs?.processedSupplements ?? 0,
+        duplicateRiskLevel:
+          (params.remoteStackInputs?.processedSupplements ?? 0) >= 8
+            ? "high"
+            : (params.remoteStackInputs?.processedSupplements ?? 0) >= 4
+              ? "medium"
+              : "none",
+      },
+    })
+    : null;
+
+  const currentProductOverlap = params.currentProductInput && params.remoteStackInputs
+    ? (() => {
+      const overlap = buildStackOverlapResult(
+        [params.currentProductInput, ...params.remoteStackInputs.processedInputs],
+        {
+          maxPerSupplement: STACK_OVERLAP_ACTIVES_PER_SUPPLEMENT,
+          maxOverlaps: STACK_OVERLAP_MAX_ITEMS,
+          skippedSupplements: params.remoteStackInputs.skippedSupplements,
+        },
+      );
+
+      return overlap.overlaps.filter((item) =>
+        item.supplements.some((supplement) => supplement.supplementId === params.currentProductInput?.supplementId),
+      );
+    })()
+    : [];
+
+  return {
+    profile,
+    prioritizedGoals: profile?.declared.goals.map((goal) => goal.key) ?? [],
+    selectedGoalKey: profile?.declared.goals[0]?.key ?? null,
+    preferredTypes: profile?.declared.preferredTypes ?? [],
+    supplementExperience: profile?.declared.supplementExperience ?? null,
+    ageRange: profile?.declared.ageRange ?? null,
+    adherenceBlocker: profile?.declared.adherenceBlocker ?? null,
+    stackOverlap: params.remoteStackInputs
+      ? {
+        status: params.remoteStackInputs.status,
+        savedStackCount: params.remoteStackInputs.processedSupplements,
+        overlapCount: currentProductOverlap.length,
+        overlaps: currentProductOverlap,
+      }
+      : null,
+    allergyContext: params.allergyContext,
+  };
+};
+
 const inflightSnapshotPopulateByBarcode = new Map<string, Promise<void>>();
 
 const populateBarcodeSnapshotCache = async (barcodeDigits: string): Promise<void> => {
@@ -8601,8 +8894,8 @@ const buildMySupplementDigestQuick = async (params: {
     : null;
 
   if (snapshot) {
-    const source = snapshot.analysis?.labelExtraction?.source ?? null;
-    if (source === "dsld" || source === "label_scan") {
+    const source = normalizeLabelExtractionSource(snapshot.analysis?.labelExtraction?.source ?? null);
+    if (source === "dsld") {
       const prioritizedDsldLabelIdFromCanonical = await resolvePrioritizedDsldLabelId();
       if (prioritizedDsldLabelIdFromCanonical && msLeft() > 0) {
         const canonicalDigest = await tryBuildCanonicalDsldDigest({
@@ -8886,8 +9179,8 @@ const buildMySupplementDigestForEnsureOverview = async (params: {
 
   // Snapshot fallback (no LNHPD/DSLD facts found). Prefer DSLD snapshot shape when possible.
   if (snapshot) {
-    const source = snapshot.analysis?.labelExtraction?.source ?? null;
-    if (source === "dsld" || source === "label_scan") {
+    const source = normalizeLabelExtractionSource(snapshot.analysis?.labelExtraction?.source ?? null);
+    if (source === "dsld") {
       const fallbackFacts = buildDsldFactsInputFromSnapshot(snapshot);
       const factsSourceVersion = `dsld:${snapshot.analysis?.labelExtraction?.datasetVersion ?? snapshot.analysis?.labelExtraction?.fetchedAt ?? "unknown"}`;
       const digest = buildFactsDigestFromDsld({
@@ -9293,6 +9586,8 @@ const kbFormInsightsBatchBodySchema = z
 // ============================================================================
 
 const personalizationExplanationHandlers = createPersonalizationExplanationRouteHandlers();
+const goalNavigatorHandlers = createGoalNavigatorRouteHandlers();
+const goalNavigatorDebugHandlers = createGoalNavigatorDebugRouteHandlers();
 
 /**
  * NuTri daily tips dataset
@@ -9320,6 +9615,34 @@ app.post("/api/personalization/explain", verifySupabaseToken, async (req: Reques
     } satisfies ErrorResponse);
   }
 });
+
+app.post("/api/personalization/goal-navigator", verifySupabaseToken, async (req: Request, res: Response) => {
+  try {
+    await goalNavigatorHandlers.goalNavigator(req, res);
+  } catch (error) {
+    captureException(error, { route: "/api/personalization/goal-navigator" });
+    console.error("/api/personalization/goal-navigator unexpected error", error);
+    return res.status(500).json({
+      error: "goal_navigator_failed",
+    } satisfies ErrorResponse);
+  }
+});
+
+app.get(
+  "/api/personalization/debug/goal-navigator-bundle",
+  verifySupabaseToken,
+  async (req: Request, res: Response) => {
+    try {
+      await goalNavigatorDebugHandlers.bundleDebug(req, res);
+    } catch (error) {
+      captureException(error, { route: "/api/personalization/debug/goal-navigator-bundle" });
+      console.error("/api/personalization/debug/goal-navigator-bundle unexpected error", error);
+      return res.status(500).json({
+        error: "goal_navigator_bundle_debug_failed",
+      } satisfies ErrorResponse);
+    }
+  },
+);
 
 /**
  * Legacy endpoint for barcode search only (no AI analysis)
@@ -10094,6 +10417,272 @@ const buildDecisionSupportAuthorityBundle = async (
   };
 };
 
+type UserDecisionSupportProfileRow = {
+  age: number | null;
+  age_range: string | null;
+  gender: string | null;
+  sex: string | null;
+  dietary_preference: string | null;
+  dietary_preferences: string[] | null;
+  activity_level: string | null;
+  supplement_experience: string | null;
+  preferred_types: string[] | null;
+  adherence_blocker: string | null;
+  location: string | null;
+  location_country: string | null;
+  location_city: string | null;
+  health_goals: string[] | null;
+  allergy_flags: string[] | null;
+  ingredient_restrictions: string[] | null;
+};
+
+const localDecisionSupportProfileSchema = z.object({
+  ageRange: z.string().trim().min(1).max(64).optional(),
+  sex: z.string().trim().min(1).max(64).optional(),
+  supplementExperience: z.string().trim().min(1).max(64).optional(),
+  diets: z.array(z.string().trim().min(1).max(64)).max(8).optional(),
+  activity: z.string().trim().min(1).max(64).optional(),
+  preferredTypes: z.array(z.string().trim().min(1).max(64)).max(8).optional(),
+  adherenceBlocker: z.string().trim().min(1).max(64).optional(),
+  location: z.object({
+    country: z.string().trim().min(1).max(128).optional(),
+    city: z.string().trim().min(1).max(128).optional(),
+  }).optional(),
+  goals: z.array(z.string().trim().min(1).max(64)).max(8).optional(),
+  allergyFlags: z.array(z.string().trim().min(1).max(64)).max(12).optional(),
+  ingredientRestrictions: z.array(z.string().trim().min(1).max(64)).max(12).optional(),
+});
+
+const localDecisionSupportSavedSupplementSchema = z.object({
+  supplementId: z.string().trim().min(1).max(128).nullable().optional(),
+  barcode: z.string().trim().min(1).max(32).nullable().optional(),
+  productName: z.string().trim().min(1).max(256),
+  brandName: z.string().trim().min(1).max(256).nullable().optional(),
+  dosageText: z.string().trim().min(1).max(256).nullable().optional(),
+});
+
+const localDecisionSupportContextSchema = z.object({
+  profile: localDecisionSupportProfileSchema.nullable().optional(),
+  savedSupplements: z.array(localDecisionSupportSavedSupplementSchema).max(8).optional(),
+});
+
+type LocalDecisionSupportContext = z.infer<typeof localDecisionSupportContextSchema>;
+type LocalDecisionSupportProfile = z.infer<typeof localDecisionSupportProfileSchema>;
+type LocalDecisionSupportSavedSupplement = z.infer<typeof localDecisionSupportSavedSupplementSchema>;
+
+type ProductAllergenFlagsLookupRow = {
+  source: string;
+  source_id: string;
+  canonical_source_id: string | null;
+  allergy_flags: string[] | null;
+  ingredient_restrictions: string[] | null;
+  coverage_status: "resolved" | "partial" | "insufficient" | null;
+  match_evidence: Record<string, unknown> | null;
+  updated_at: string;
+};
+
+const sanitizeLocalDecisionSupportStrings = (values: string[] | undefined): string[] =>
+  (Array.isArray(values) ? values : [])
+    .map((value) => safeTrim(value))
+    .filter((value): value is string => Boolean(value));
+
+const parseLocalDecisionSupportContext = (req: Request): LocalDecisionSupportContext | null => {
+  const rawHeader = req.headers["x-local-personalization"];
+  const rawValue = Array.isArray(rawHeader) ? rawHeader[0] : rawHeader;
+  const normalized = safeTrim(rawValue);
+  if (!normalized) return null;
+
+  try {
+    const parsed = JSON.parse(normalized);
+    const result = localDecisionSupportContextSchema.safeParse(parsed);
+    if (!result.success) {
+      console.warn("[decision-support] invalid local personalization header", result.error.issues[0]?.message ?? "unknown_error");
+      return null;
+    }
+    return result.data;
+  } catch (error) {
+    console.warn(
+      "[decision-support] failed to parse local personalization header",
+      error instanceof Error ? error.message : String(error),
+    );
+    return null;
+  }
+};
+
+const buildUserDecisionSupportProfileRowFromLocalProfile = (
+  profile: LocalDecisionSupportProfile | null | undefined,
+): UserDecisionSupportProfileRow | null => {
+  if (!profile) return null;
+
+  const dietaryPreferences = sanitizeLocalDecisionSupportStrings(profile.diets);
+  const preferredTypes = sanitizeLocalDecisionSupportStrings(profile.preferredTypes);
+  const healthGoals = sanitizeLocalDecisionSupportStrings(profile.goals);
+  const allergyFlags = sanitizeLocalDecisionSupportStrings(profile.allergyFlags);
+  const ingredientRestrictions = sanitizeLocalDecisionSupportStrings(profile.ingredientRestrictions);
+  const locationCountry = safeTrim(profile.location?.country);
+  const locationCity = safeTrim(profile.location?.city);
+  const location = [locationCity, locationCountry].filter(Boolean).join(", ") || null;
+
+  const hasMeaningfulValue =
+    Boolean(safeTrim(profile.ageRange))
+    || Boolean(safeTrim(profile.sex))
+    || Boolean(safeTrim(profile.supplementExperience))
+    || Boolean(safeTrim(profile.activity))
+    || Boolean(safeTrim(profile.adherenceBlocker))
+    || Boolean(locationCountry)
+    || Boolean(locationCity)
+    || dietaryPreferences.length > 0
+    || preferredTypes.length > 0
+    || healthGoals.length > 0
+    || allergyFlags.length > 0
+    || ingredientRestrictions.length > 0;
+
+  if (!hasMeaningfulValue) return null;
+
+  return {
+    age: null,
+    age_range: safeTrim(profile.ageRange),
+    gender: null,
+    sex: safeTrim(profile.sex),
+    dietary_preference: dietaryPreferences[0] ?? null,
+    dietary_preferences: dietaryPreferences,
+    activity_level: safeTrim(profile.activity),
+    supplement_experience: safeTrim(profile.supplementExperience),
+    preferred_types: preferredTypes,
+    adherence_blocker: safeTrim(profile.adherenceBlocker),
+    location,
+    location_country: locationCountry,
+    location_city: locationCity,
+    health_goals: healthGoals,
+    allergy_flags: allergyFlags,
+    ingredient_restrictions: ingredientRestrictions,
+  };
+};
+
+const coverageStatusRank = (value: ProductAllergenFlagsLookupRow["coverage_status"]): number => {
+  switch (value) {
+    case "resolved":
+      return 3;
+    case "partial":
+      return 2;
+    case "insufficient":
+      return 1;
+    default:
+      return 0;
+  }
+};
+
+const compareProductAllergenRows = (
+  left: ProductAllergenFlagsLookupRow,
+  right: ProductAllergenFlagsLookupRow,
+): number => {
+  const coverageDelta = coverageStatusRank(right.coverage_status) - coverageStatusRank(left.coverage_status);
+  if (coverageDelta !== 0) return coverageDelta;
+  return String(right.updated_at ?? "").localeCompare(String(left.updated_at ?? ""));
+};
+
+const fetchUserDecisionSupportProfile = async (
+  userId: string | null | undefined,
+): Promise<UserDecisionSupportProfileRow | null> => {
+  const normalizedUserId = String(userId ?? "").trim();
+  if (!normalizedUserId) return null;
+
+  const { data, error } = await supabase
+    .from("user_profiles")
+    .select(
+      "age, age_range, gender, sex, dietary_preference, dietary_preferences, activity_level, supplement_experience, preferred_types, adherence_blocker, location, location_country, location_city, health_goals, allergy_flags, ingredient_restrictions",
+    )
+    .eq("user_id", normalizedUserId)
+    .maybeSingle();
+
+  if (error) {
+    console.warn("[decision-support] user profile query failed", error.message);
+    return null;
+  }
+
+  return (data ?? null) as UserDecisionSupportProfileRow | null;
+};
+
+const fetchProductAllergenFlagsForDecisionSupport = async (
+  digest: FactsDigest,
+  barcodeGtin14: string,
+): Promise<ProductAllergenFlagsLookupRow | null> => {
+  const candidates: ProductAllergenFlagsLookupRow[] = [];
+
+  const digestIdentityType = String(digest.identity?.type ?? "").trim();
+  const digestIdentityValue = String(digest.identity?.value ?? "").trim();
+
+  if (digest.sourceType === "dsld" && digestIdentityType === "dsldLabelId" && digestIdentityValue) {
+    const { data, error } = await supabase
+      .from("product_allergen_flags")
+      .select(
+        "source, source_id, canonical_source_id, allergy_flags, ingredient_restrictions, coverage_status, match_evidence, updated_at",
+      )
+      .eq("source", "dsld")
+      .eq("source_id", digestIdentityValue)
+      .maybeSingle();
+
+    if (error) {
+      console.warn("[decision-support] dsld allergy flags query failed", error.message);
+    } else if (data) {
+      candidates.push(data as ProductAllergenFlagsLookupRow);
+    }
+  }
+
+  if (digest.sourceType === "lnhpd" && digestIdentityType === "npn" && digestIdentityValue) {
+    const { data, error } = await supabase
+      .from("product_allergen_flags")
+      .select(
+        "source, source_id, canonical_source_id, allergy_flags, ingredient_restrictions, coverage_status, match_evidence, updated_at",
+      )
+      .eq("source", "lnhpd")
+      .eq("canonical_source_id", digestIdentityValue)
+      .maybeSingle();
+
+    if (error) {
+      console.warn("[decision-support] lnhpd allergy flags query failed", error.message);
+    } else if (data) {
+      candidates.push(data as ProductAllergenFlagsLookupRow);
+    }
+  }
+
+  if (barcodeGtin14) {
+    const { data, error } = await supabase
+      .from("product_allergen_flags")
+      .select(
+        "source, source_id, canonical_source_id, allergy_flags, ingredient_restrictions, coverage_status, match_evidence, updated_at",
+      )
+      .in("source", ["iherb_overlay", "ocr"])
+      .eq("canonical_source_id", barcodeGtin14);
+
+    if (error) {
+      console.warn("[decision-support] barcode allergy flags query failed", error.message);
+    } else if (Array.isArray(data)) {
+      candidates.push(...(data as ProductAllergenFlagsLookupRow[]));
+    }
+  }
+
+  if (candidates.length === 0) return null;
+  candidates.sort(compareProductAllergenRows);
+  return candidates[0] ?? null;
+};
+
+const buildDecisionSupportAllergyContext = (params: {
+  userProfile: UserDecisionSupportProfileRow | null;
+  productFlags: ProductAllergenFlagsLookupRow | null;
+}): DecisionSupportAttachedAllergyContext | null => {
+  if (!params.userProfile && !params.productFlags) return null;
+
+  return {
+    userAllergyFlags: params.userProfile?.allergy_flags ?? [],
+    userIngredientRestrictions: params.userProfile?.ingredient_restrictions ?? [],
+    productAllergyFlags: params.productFlags?.allergy_flags ?? null,
+    productIngredientRestrictions: params.productFlags?.ingredient_restrictions ?? null,
+    productCoverageStatus: params.productFlags?.coverage_status ?? null,
+    productMatchEvidence: params.productFlags?.match_evidence ?? null,
+  };
+};
+
 app.get("/api/decision-support/v1", verifySupabaseToken, async (req: Request, res: Response) => {
   const barcodeRaw = typeof req.query.barcode === "string" ? req.query.barcode.trim() : "";
   const normalizedBarcode = normalizeBarcodeInput(barcodeRaw);
@@ -10122,6 +10711,9 @@ app.get("/api/decision-support/v1", verifySupabaseToken, async (req: Request, re
   const debugDecisionRequested = parseDebugDecisionRequested(req);
 
   try {
+    const authedReq = req as AuthenticatedRequest;
+    const userId = authedReq.user?.id ?? null;
+    const localContext = parseLocalDecisionSupportContext(req);
     const barcodeGtin14 = normalizedBarcode.code.padStart(14, "0");
     const fetchCount = recordDecisionSupportFetchForScanSession(scanSessionId, barcodeGtin14);
     const overlayClaims = await fetchIherbOverlayClaimsByBarcode(barcodeGtin14);
@@ -10147,6 +10739,31 @@ app.get("/api/decision-support/v1", verifySupabaseToken, async (req: Request, re
       barcodeGtin14,
       identityKeys: debugIdentityKeys,
     });
+    const [userProfile, productFlags, remoteStackInputs, localStackInputs] = await Promise.all([
+      fetchUserDecisionSupportProfile(userId),
+      fetchProductAllergenFlagsForDecisionSupport(patched.digest, barcodeGtin14),
+      userId ? fetchRemoteStackOverlapInputs(userId) : Promise.resolve(null),
+      fetchLocalStackOverlapInputs(localContext?.savedSupplements),
+    ]);
+    const effectiveUserProfile =
+      userProfile ?? buildUserDecisionSupportProfileRowFromLocalProfile(localContext?.profile);
+    const effectiveStackInputs = combineStackOverlapInputs([
+      remoteStackInputs,
+      localStackInputs,
+    ]);
+    const allergyContext = buildDecisionSupportAllergyContext({
+      userProfile: effectiveUserProfile,
+      productFlags,
+    });
+    const personalizationContext = buildDecisionSupportPersonalizationContext({
+      userProfile: effectiveUserProfile,
+      allergyContext,
+      remoteStackInputs: effectiveStackInputs,
+      currentProductInput: buildDecisionSupportCurrentStackInput({
+        digest: patched.digest,
+        barcodeGtin14,
+      }),
+    });
 
     const decisionSupport = compileDecisionSupport({
       digest: patched.digest,
@@ -10156,6 +10773,8 @@ app.get("/api/decision-support/v1", verifySupabaseToken, async (req: Request, re
       flagsSnapshot: collectDecisionSupportFlagsSnapshot(),
       patchActivation: patched.activation,
       overlayClaims,
+      allergyContext,
+      personalizationContext,
     });
 
     if (
@@ -10192,7 +10811,6 @@ app.get("/api/decision-support/v1", verifySupabaseToken, async (req: Request, re
       return res.status(409).json(mismatchPayload);
     }
 
-    const authedReq = req as AuthenticatedRequest;
     const allowPatchDebug = authDisabled || authedReq.regressionAuth === true;
     const allowDecisionDebug = allowPatchDebug && debugDecisionRequested;
     return res.json({
@@ -15741,9 +16359,11 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
         });
       }
       const cachedLabelSource =
-        cachedFast.snapshot.analysis?.labelExtraction?.source ??
-        cachedFast.analysisPayload?.analysis?.labelExtraction?.source ??
-        null;
+        normalizeLabelExtractionSource(
+          cachedFast.snapshot.analysis?.labelExtraction?.source ??
+          cachedFast.analysisPayload?.analysis?.labelExtraction?.source ??
+          null,
+        );
       const cachedSnapshotAnalysisMeta =
         cachedFast.snapshot.analysis && typeof cachedFast.snapshot.analysis === "object"
           ? (cachedFast.snapshot.analysis as Record<string, unknown>)
@@ -15938,9 +16558,11 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
       // This makes cache hits deterministic for clients that rely on analysis_bundle.
       if (!forceStage1) {
         const snapshotLabelSource =
-          cachedFast.snapshot.analysis?.labelExtraction?.source
-          ?? cachedFast.analysisPayload?.analysis?.labelExtraction?.source
-          ?? null;
+          normalizeLabelExtractionSource(
+            cachedFast.snapshot.analysis?.labelExtraction?.source
+            ?? cachedFast.analysisPayload?.analysis?.labelExtraction?.source
+            ?? null,
+          );
         const snapshotLabelVersion =
           cachedFast.snapshot.analysis?.labelExtraction?.datasetVersion
           ?? cachedFast.analysisPayload?.analysis?.labelExtraction?.datasetVersion
@@ -15983,7 +16605,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
 
           // Prefer DSLD identity when present.
           const dsldLabelIdRaw = cachedFast.snapshot.regulatory.dsldLabelId;
-          if ((snapshotLabelSource === "dsld" || snapshotLabelSource === "label_scan") && dsldLabelIdRaw) {
+          if (snapshotLabelSource === "dsld" && dsldLabelIdRaw) {
             const fallbackFacts = buildDsldFactsInputFromSnapshot(cachedFast.snapshot);
             identityType = "dsldLabelId";
             identityValue = dsldLabelIdRaw;
@@ -16087,9 +16709,11 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
       if (!needsEnrichment && snapshotIsVerified) {
         if (!forceStage1) {
           const snapshotLabelSource =
-            cachedFast.snapshot.analysis?.labelExtraction?.source
-            ?? cachedFast.analysisPayload?.analysis?.labelExtraction?.source
-            ?? null;
+            normalizeLabelExtractionSource(
+              cachedFast.snapshot.analysis?.labelExtraction?.source
+              ?? cachedFast.analysisPayload?.analysis?.labelExtraction?.source
+              ?? null,
+            );
           const snapshotLabelVersion =
             cachedFast.snapshot.analysis?.labelExtraction?.datasetVersion
             ?? cachedFast.analysisPayload?.analysis?.labelExtraction?.datasetVersion
@@ -16140,7 +16764,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
           if (!digest) {
             const dsldLabelIdRaw = cachedFast.snapshot.regulatory.dsldLabelId;
             const dsldLabelId = dsldLabelIdRaw ? Number(dsldLabelIdRaw) : Number.NaN;
-            if ((snapshotLabelSource === "dsld" || snapshotLabelSource === "label_scan") && dsldLabelIdRaw && Number.isFinite(dsldLabelId)) {
+            if (snapshotLabelSource === "dsld" && dsldLabelIdRaw && Number.isFinite(dsldLabelId)) {
               identityType = "dsldLabelId";
               identityValue = dsldLabelIdRaw;
               const dsldTimeoutSignal = createTimeoutSignal(RESILIENCE_LNHPD_TIMEOUT_MS);
@@ -17497,9 +18121,11 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
         // even when we are returning from the in-flight wait path.
         if (!stage0BundlePromise) {
           const snapshotLabelSource =
-            after.snapshot.analysis?.labelExtraction?.source ??
-            after.analysisPayload?.analysis?.labelExtraction?.source ??
-            null;
+            normalizeLabelExtractionSource(
+              after.snapshot.analysis?.labelExtraction?.source ??
+              after.analysisPayload?.analysis?.labelExtraction?.source ??
+              null,
+            );
           const snapshotLabelVersion =
             after.snapshot.analysis?.labelExtraction?.datasetVersion ??
             after.analysisPayload?.analysis?.labelExtraction?.datasetVersion ??
@@ -17532,7 +18158,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
           const snapshotDsldLabelId = after.snapshot.regulatory.dsldLabelId ?? null;
           if (
             !digest &&
-            (snapshotLabelSource === "dsld" || snapshotLabelSource === "label_scan") &&
+            snapshotLabelSource === "dsld" &&
             snapshotDsldLabelId
           ) {
             identityType = "dsldLabelId";
@@ -22396,144 +23022,20 @@ app.get("/api/user-stack-overlap", verifySupabaseToken, async (req: Request, res
     return res.status(401).json({ error: "unauthorized" } satisfies ErrorResponse);
   }
 
-  type UserSupplementRow = {
-    id: string;
-    supplement_id: string | null;
-    notes: string | null;
-    supplements:
-    | {
-      id?: string | null;
-      name?: string | null;
-      barcode?: string | null;
-    }
-    | Array<{
-      id?: string | null;
-      name?: string | null;
-      barcode?: string | null;
-    }>
-    | null;
-  };
-
   try {
-    const { data, error } = await supabase
-      .from("user_supplements")
-      .select("id, supplement_id, notes, supplements ( id, name, barcode )")
-      .eq("user_id", user.id)
-      .order("saved_at", { ascending: false })
-      .limit(STACK_OVERLAP_MAX_SUPPLEMENTS_PER_REQUEST + 1);
-
-    if (error) {
-      console.warn("[stack-overlap] user_supplements query failed", error.message);
+    const remoteInputs = await fetchRemoteStackOverlapInputs(user.id);
+    if (!remoteInputs) {
       return res.status(500).json({ error: "stack_overlap_failed" } satisfies ErrorResponse);
     }
 
-    const rows = (Array.isArray(data) ? data : []) as UserSupplementRow[];
-    const truncated = rows.length > STACK_OVERLAP_MAX_SUPPLEMENTS_PER_REQUEST;
-    const selectedRows = rows.slice(0, STACK_OVERLAP_MAX_SUPPLEMENTS_PER_REQUEST);
-    let skippedSupplements = Math.max(0, rows.length - selectedRows.length);
-
-    type CandidateResult =
-      | { type: "processed"; value: StackOverlapSupplementInput }
-      | { type: "skipped" };
-
-    const candidates = await mapWithConcurrency(
-      selectedRows,
-      STACK_OVERLAP_SNAPSHOT_CONCURRENCY,
-      async (row): Promise<CandidateResult> => {
-        const linkedSupplement = Array.isArray(row.supplements)
-          ? row.supplements[0] ?? null
-          : row.supplements ?? null;
-        const notes = parseUserSupplementNotes(row.notes ?? null);
-
-        const supplementIdRaw =
-          row.supplement_id ??
-          (typeof linkedSupplement?.id === "string" ? linkedSupplement.id : null) ??
-          row.id;
-        const supplementId = safeTrim(supplementIdRaw);
-        if (!supplementId) return { type: "skipped" };
-
-        const notesProductName =
-          notes && typeof notes.productName === "string" ? safeTrim(notes.productName) : null;
-        const productName =
-          safeTrim(linkedSupplement?.name ?? null) ??
-          notesProductName ??
-          "Unknown supplement";
-
-        const barcode = safeTrim(linkedSupplement?.barcode ?? null);
-        if (!barcode) return { type: "skipped" };
-
-        const normalized = normalizeBarcodeInput(barcode);
-        if (!normalized) return { type: "skipped" };
-
-        const cacheKey = buildBarcodeCacheKey(normalized.code);
-        const cached = await getSnapshotCache(
-          { key: cacheKey, source: "barcode" },
-          { timeoutMs: STACK_OVERLAP_SNAPSHOT_TIMEOUT_MS },
-        ).catch(() => null);
-        const snapshot = cached?.snapshot ?? null;
-        if (!snapshot) return { type: "skipped" };
-
-        const ingredientRows = (snapshot.label.actives ?? [])
-          .map((active) => {
-            const name = safeTrim(active.name);
-            if (!name) return null;
-            return {
-              name,
-              amount: active.amountUnknown ? null : active.amount ?? null,
-              unit: active.amountUnitNormalized ?? active.amountUnit ?? active.amountUnitRaw ?? null,
-              amountText:
-                !active.amountUnknown && active.amount != null && (active.amountUnitNormalized ?? active.amountUnit ?? active.amountUnitRaw)
-                  ? `${active.amount} ${active.amountUnitNormalized ?? active.amountUnit ?? active.amountUnitRaw}`.trim()
-                  : null,
-              chemicalForm: active.form ?? null,
-            };
-          })
-          .filter((row): row is NonNullable<typeof row> => Boolean(row))
-          .slice(0, 24);
-        if (ingredientRows.length === 0) return { type: "skipped" };
-
-        const safetyBundle = buildSnapshotSafetyDigestBundle({
-          snapshot,
-          supplementId,
-          barcodeGtin14: normalized.code.padStart(14, "0"),
-          brandName: snapshot.product.brand ?? "",
-          productName,
-        });
-        const usableIngredientRows = ingredientRows.filter((row) => row.amount != null && Boolean(row.unit));
-        const dailyDoseContext = deriveDailyDoseBasis({
-          labelDirectionsRawText: safetyBundle.labelDirectionsRawText,
-          hasUsableActiveDose: usableIngredientRows.length > 0,
-          sourceContext: "snapshot_only",
-        });
-
-        return {
-          type: "processed",
-          value: {
-            supplementId,
-            productName,
-            ingredientNames: ingredientRows.map((row) => row.name),
-            ingredientRows: usableIngredientRows,
-            dailyMultiplier: dailyDoseContext.dailyMultiplier,
-            dailyDoseBasis: dailyDoseContext.dailyDoseBasis,
-            dailyDoseBasisReason: dailyDoseContext.dailyDoseBasisReason,
-          },
-        };
-      },
-    );
-
-    const processedInputs = candidates
-      .filter((candidate): candidate is { type: "processed"; value: StackOverlapSupplementInput } => candidate.type === "processed")
-      .map((candidate) => candidate.value);
-    skippedSupplements += candidates.length - processedInputs.length;
-
-    const overlap = buildStackOverlapResult(processedInputs, {
+    const overlap = buildStackOverlapResult(remoteInputs.processedInputs, {
       maxPerSupplement: STACK_OVERLAP_ACTIVES_PER_SUPPLEMENT,
       maxOverlaps: STACK_OVERLAP_MAX_ITEMS,
-      skippedSupplements,
+      skippedSupplements: remoteInputs.skippedSupplements,
     });
-    const processedSupplements = processedInputs.length;
+    const processedSupplements = remoteInputs.processedSupplements;
     const totalSkippedSupplements = overlap.meta.skippedSupplements;
-    const status = truncated || totalSkippedSupplements > 0 ? "partial" : "ok";
+    const status = remoteInputs.truncated || totalSkippedSupplements > 0 ? "partial" : "ok";
     const latencyMs = Math.round(performance.now() - startedAt);
 
     console.info("[stack-overlap]", {
@@ -22541,7 +23043,7 @@ app.get("/api/user-stack-overlap", verifySupabaseToken, async (req: Request, res
       processedSupplements,
       skippedSupplements: totalSkippedSupplements,
       overlapCount: overlap.overlapCount,
-      truncated,
+      truncated: remoteInputs.truncated,
       latencyMs,
     });
 
@@ -22552,14 +23054,14 @@ app.get("/api/user-stack-overlap", verifySupabaseToken, async (req: Request, res
         processedSupplements,
         skippedSupplements: totalSkippedSupplements,
         overlapCount: overlap.overlapCount,
-        truncated,
+        truncated: remoteInputs.truncated,
         hiddenOverlapCount: overlap.hiddenOverlapCount,
       },
       stackLevelSummary: overlap.stackLevelSummary,
       duplicateGroups: overlap.duplicateGroups,
       meta: {
         ...overlap.meta,
-        truncated,
+        truncated: remoteInputs.truncated,
         overlapCount: overlap.overlapCount,
         hiddenOverlapCount: overlap.hiddenOverlapCount,
       },
@@ -22873,1868 +23375,6 @@ app.get("/api/barcode-metadata", verifySupabaseToken, async (req: Request, res: 
     captureException(error, { route: "/api/barcode-metadata" });
     console.error("/api/barcode-metadata error", error);
     return res.status(500).json({ error: "barcode_metadata_failed" } satisfies ErrorResponse);
-  }
-});
-
-// ============================================================================
-// RATE LIMITING FOR LABEL SCAN
-// ============================================================================
-
-interface RateLimitEntry {
-  count: number;
-  resetAt: number;
-}
-
-const rateLimitMinute = new Map<string, RateLimitEntry>();
-const rateLimitDay = new Map<string, RateLimitEntry>();
-
-const OCR_RATE_LIMIT_PER_MINUTE = Number(process.env.OCR_RATE_LIMIT_PER_MINUTE ?? 10);
-const OCR_RATE_LIMIT_PER_DAY = Number(process.env.OCR_RATE_LIMIT_PER_DAY ?? 50);
-const LABEL_SCAN_DRAFT_ASYNC_PERCENT = Number(
-  process.env.LABEL_SCAN_DRAFT_ASYNC_PERCENT ?? process.env.EXPO_PUBLIC_LABEL_SCAN_DRAFT_ASYNC_PERCENT ?? 50,
-);
-const LABEL_SCAN_FORCE_CONTROL =
-  process.env.LABEL_SCAN_FORCE_CONTROL === "1" || process.env.LABEL_SCAN_FORCE_CONTROL === "true";
-const LABEL_SCAN_ASYNC_ANALYSIS_ENABLED = !(
-  process.env.LABEL_SCAN_ASYNC_ANALYSIS_ENABLED === "0"
-  || process.env.LABEL_SCAN_ASYNC_ANALYSIS_ENABLED === "false"
-);
-
-function stableBucketFromString(value: string): number {
-  let hash = 0;
-  for (let i = 0; i < value.length; i++) {
-    hash = (hash * 31 + value.charCodeAt(i)) >>> 0;
-  }
-  return hash % 100;
-}
-
-function resolveLabelScanVariant(stableKey: string): "control" | "draft_first_async" {
-  if (LABEL_SCAN_FORCE_CONTROL) {
-    return "control";
-  }
-  if (!Number.isFinite(LABEL_SCAN_DRAFT_ASYNC_PERCENT) || LABEL_SCAN_DRAFT_ASYNC_PERCENT <= 0) {
-    return "control";
-  }
-  if (LABEL_SCAN_DRAFT_ASYNC_PERCENT >= 100) {
-    return "draft_first_async";
-  }
-  return stableBucketFromString(stableKey) < LABEL_SCAN_DRAFT_ASYNC_PERCENT
-    ? "draft_first_async"
-    : "control";
-}
-
-function checkRateLimit(userId: string): { allowed: boolean; retryAfter?: number } {
-  const now = Date.now();
-  const minuteKey = `${userId}:minute`;
-  const dayKey = `${userId}:day`;
-
-  // Check minute limit
-  let minuteEntry = rateLimitMinute.get(minuteKey);
-  if (!minuteEntry || now > minuteEntry.resetAt) {
-    minuteEntry = { count: 0, resetAt: now + 60000 };
-    rateLimitMinute.set(minuteKey, minuteEntry);
-  }
-  if (minuteEntry.count >= OCR_RATE_LIMIT_PER_MINUTE) {
-    return { allowed: false, retryAfter: Math.ceil((minuteEntry.resetAt - now) / 1000) };
-  }
-
-  // Check day limit
-  let dayEntry = rateLimitDay.get(dayKey);
-  if (!dayEntry || now > dayEntry.resetAt) {
-    dayEntry = { count: 0, resetAt: now + 86400000 };
-    rateLimitDay.set(dayKey, dayEntry);
-  }
-  if (dayEntry.count >= OCR_RATE_LIMIT_PER_DAY) {
-    return { allowed: false, retryAfter: Math.ceil((dayEntry.resetAt - now) / 1000) };
-  }
-
-  // Increment counters
-  minuteEntry.count++;
-  dayEntry.count++;
-
-  return { allowed: true };
-}
-
-// P1-2: Cleanup expired rate limit entries every 10 minutes
-setInterval(() => {
-  const now = Date.now();
-  for (const [key, entry] of rateLimitMinute) {
-    if (now > entry.resetAt) rateLimitMinute.delete(key);
-  }
-  for (const [key, entry] of rateLimitDay) {
-    if (now > entry.resetAt) rateLimitDay.delete(key);
-  }
-}, 10 * 60 * 1000);
-
-// ============================================================================
-// LABEL SCAN ENDPOINTS
-// ============================================================================
-
-const validationIssueTypeSchema = z.enum([
-  "unit_invalid",
-  "value_anomaly",
-  "missing_serving_size",
-  "header_not_found",
-  "low_coverage",
-  "incomplete_ingredients",
-  "possible_missing_column",
-  "non_ingredient_line_detected",
-  "unit_boundary_suspect",
-  "dose_inconsistency_or_claim",
-]);
-
-const parsedIngredientSchema = z.object({
-  name: z.string(),
-  amount: z.number().nullable(),
-  unit: z.string().nullable(),
-  dvPercent: z.number().nullable(),
-  confidence: z.number(),
-  rawLine: z.string(),
-});
-
-const labelDraftSchema = z.object({
-  servingSize: z.string().nullable(),
-  ingredients: z.array(parsedIngredientSchema),
-  parseCoverage: z.number(),
-  confidenceScore: z.number(),
-  issues: z.array(
-    z.object({
-      type: validationIssueTypeSchema,
-      message: z.string(),
-    }),
-  ),
-});
-
-const analyzeLabelBodySchema = z
-  .object({
-    imageBase64: z.string().nullable().optional(),
-    imageHash: z.string().min(1),
-    saveImage: z.boolean().optional(),
-    deviceId: z.string().optional(),
-    debug: z.boolean().optional(),
-    includeAnalysis: z.union([z.boolean(), z.string()]).optional(),
-    async: z.union([z.boolean(), z.string()]).optional(),
-    preprocessProfile: z.string().optional(),
-    clientStartedAtMs: z.number().optional(),
-  })
-  .passthrough();
-
-const analyzeLabelConfirmBodySchema = z
-  .object({
-    imageHash: z.string().min(1),
-    confirmedDraft: labelDraftSchema,
-    preprocessProfile: z.string().optional(),
-  })
-  .passthrough();
-
-const labelScanClientMetricsBodySchema = z
-  .object({
-    requestId: z.string().min(1),
-    timingClient: z
-      .object({
-        tClickToDraftRenderMs: z.number().optional(),
-        tClickToAnalysisCompleteRenderMs: z.number().optional(),
-        tClickToDraftResponseMs: z.number().optional(),
-      })
-      .optional(),
-    lockedFieldConflictCount: z.number().int().min(0).optional(),
-    appState: z.enum(["active", "background", "inactive", "unknown"]).optional(),
-  })
-  .passthrough();
-
-const labelScanMetricsSmokeBodySchema = z
-  .object({
-    runId: z.string().min(1),
-  })
-  .passthrough();
-
-type AnalyzeLabelRequest = z.infer<typeof analyzeLabelBodySchema>;
-
-interface LabelAnalysisResponse {
-  status: "ok" | "needs_confirmation" | "failed";
-  requestId?: string;
-  imageHash?: string;
-  jobId?: string;
-  flagVariant?: "control" | "draft_first_async";
-  draftRevision?: number | null;
-  analysisForDraftRevision?: number | null;
-  patchId?: string | null;
-  patchType?: "partial" | "final" | null;
-  parserVersion?: string;
-  preprocessProfile?: string;
-  laneSplitTriggered?: boolean;
-  laneSplitChosen?: "baseline" | "lane_split";
-  laneSplitRevertedReason?: string | null;
-  cacheLayerHits?: {
-    mode: "strict" | "legacy_read";
-    ocr: boolean;
-    parse: boolean | null;
-    analysis: boolean | null;
-  };
-  suggestedUpdates?: {
-    analysis?: AiSupplementAnalysis | null;
-  };
-  timing?: LabelScanTiming;
-  draft?: LabelDraft;
-  analysis?: AiSupplementAnalysis | null;
-  analysisStatus?: "complete" | "partial" | "pending" | "skipped" | "unavailable" | "failed" | "timeout";
-  analysisIssues?: string[];
-  message?: string;
-  suggestion?: string;
-  issues?: { type: string; message: string }[]; // P0-2: Return validation issues to frontend
-  snapshot?: SupplementSnapshot;
-  debug?: LabelAnalysisDebug;
-}
-
-interface LabelScanTiming {
-  serverReceivedAt: string;
-  draftReadyAt: string | null;
-  tDecodeMs: number | null;
-  tOcrMs: number | null;
-  tParseMs: number | null;
-  tLlmMs: number | null;
-  tFirstDraftServerMs: number | null;
-}
-
-interface LabelAnalysisDebug {
-  timing: {
-    decodeMs: number | null;
-    preprocessMs: number | null;
-    requestBodyMs: number | null;
-    visionClientInitMs: number | null;
-    visionMs: number | null;
-    postprocessMs: number | null;
-    llmMs: number | null;
-    totalMs: number | null;
-  };
-  image: {
-    inputBytes: number | null;
-    inputMime: string | null;
-    inputWidth: number | null;
-    inputHeight: number | null;
-    preprocessedBytes: number | null;
-    preprocessedWidth: number | null;
-    preprocessedHeight: number | null;
-  };
-  vision: {
-    languageHints: string[];
-    fullTextLength: number;
-    fullTextPreview: string;
-    tokenCount: number;
-    avgTokenConfidence: number | null;
-    p10TokenConfidence: number | null;
-    p50TokenConfidence: number | null;
-    p90TokenConfidence: number | null;
-    medianTokenHeight: number | null;
-  };
-  heuristics: LabelAnalysisDiagnostics["heuristics"] | null;
-  laneSplit: LabelAnalysisDiagnostics["laneSplit"] | null;
-  completeness: LabelAnalysisDiagnostics["completeness"] | null;
-  drafts: LabelAnalysisDiagnostics["drafts"] | null;
-}
-
-const FULL_TEXT_PREVIEW_LIMIT = 500;
-
-interface TokenStats {
-  tokenCount: number;
-  avgTokenConfidence: number | null;
-  p10TokenConfidence: number | null;
-  p50TokenConfidence: number | null;
-  p90TokenConfidence: number | null;
-  medianTokenHeight: number | null;
-}
-
-function hashPatchPayload(value: unknown): string {
-  const raw = JSON.stringify(value ?? null);
-  let hash = 0;
-  for (let i = 0; i < raw.length; i++) {
-    hash = (hash * 33 + raw.charCodeAt(i)) >>> 0;
-  }
-  return hash.toString(16).padStart(8, "0");
-}
-
-function percentile(values: number[], percentileValue: number): number | null {
-  if (values.length === 0) return null;
-  const index = Math.floor((percentileValue / 100) * (values.length - 1));
-  return values[Math.max(0, Math.min(index, values.length - 1))] ?? null;
-}
-
-function computeTokenStats(tokens: { confidence: number; height: number }[]): TokenStats {
-  const tokenCount = tokens.length;
-  if (tokenCount === 0) {
-    return {
-      tokenCount,
-      avgTokenConfidence: null,
-      p10TokenConfidence: null,
-      p50TokenConfidence: null,
-      p90TokenConfidence: null,
-      medianTokenHeight: null,
-    };
-  }
-
-  const confidences = tokens.map((token) => token.confidence).sort((a, b) => a - b);
-  const heights = tokens.map((token) => token.height).sort((a, b) => a - b);
-  const avgTokenConfidence = confidences.reduce((sum, value) => sum + value, 0) / tokenCount;
-
-  return {
-    tokenCount,
-    avgTokenConfidence,
-    p10TokenConfidence: percentile(confidences, 10),
-    p50TokenConfidence: percentile(confidences, 50),
-    p90TokenConfidence: percentile(confidences, 90),
-    medianTokenHeight: heights[Math.floor(heights.length / 2)] ?? null,
-  };
-}
-
-interface LabelAnalysisInFlightTask {
-  jobId: string;
-  promise: Promise<void>;
-  startedAt: string;
-}
-
-const labelAnalysisInFlight = new Map<string, LabelAnalysisInFlightTask>();
-const LABEL_FINAL_PATCH_TRACK_LIMIT = 4096;
-const labelFinalPatchByJob = new Map<string, string>();
-
-function recordFinalPatchForJob(jobId: string, patchId: string): void {
-  labelFinalPatchByJob.set(jobId, patchId);
-  if (labelFinalPatchByJob.size <= LABEL_FINAL_PATCH_TRACK_LIMIT) return;
-  const oldestKey = labelFinalPatchByJob.keys().next().value;
-  if (oldestKey) {
-    labelFinalPatchByJob.delete(oldestKey);
-  }
-}
-
-async function buildLabelScanAnalysis(options: {
-  draft: LabelDraft;
-  imageHash: string;
-  model: string;
-  apiKey: string;
-  contextLabel?: string;
-  disclaimer?: string;
-  resilience?: DeepseekResilienceOptions;
-}): Promise<{ analysis: AiSupplementAnalysis; analysisIssues: string[]; analysisStatus: "complete" | "partial"; llmMs: number }> {
-  const { draft, imageHash, model, apiKey, resilience } = options;
-  const contextLabel = options.contextLabel ?? "from OCR";
-  const disclaimer =
-    options.disclaimer ?? "This analysis is based on label information only. Not a substitute for medical advice.";
-  const llmStart = performance.now();
-  const ingredientContext = formatForDeepSeek(draft);
-  const labelContext = `PRODUCT INFORMATION (${contextLabel}):
-${ingredientContext}
-
-TASK: Analyze this supplement based on the ingredient list above.
-Focus on: ingredient forms, dosage adequacy, evidence strength.
-If information is not available, use null instead of guessing.
-
-${LABEL_SCAN_OUTPUT_RULES}`;
-
-  let bundle: Awaited<ReturnType<typeof fetchAnalysisBundle>> | null = null;
-  try {
-    bundle = await fetchAnalysisBundle(labelContext, model, apiKey, resilience);
-  } catch (error) {
-    if (!isAbortError(error)) {
-      console.warn("[LabelScan] analysis bundle failed", error);
-    }
-  }
-  if (bundle) {
-    incrementMetric("deepseek_bundle_success");
-  } else if (!resilience?.signal?.aborted) {
-    incrementMetric("deepseek_bundle_fail_degraded");
-  }
-  const efficacyRaw = bundle?.efficacy ?? null;
-  const safetyRaw = bundle?.safety ?? null;
-  const usageRaw = bundle?.usagePayload ?? null;
-
-  const efficacy = efficacyRaw as {
-    score?: number;
-    verdict?: string;
-    coreBenefits?: string[];
-    overallAssessment?: string;
-    overviewSummary?: string;
-    marketingVsReality?: string;
-    primaryActive?: {
-      name?: string;
-      form?: string | null;
-      formQuality?: string;
-      formNote?: string | null;
-      dosageValue?: number | null;
-      dosageUnit?: string | null;
-      evidenceLevel?: string;
-      evidenceSummary?: string | null;
-    };
-    ingredients?: {
-      name?: string;
-      dosageValue?: number | null;
-      dosageUnit?: string | null;
-      dosageAssessment?: string;
-      evidenceLevel?: string;
-      formQuality?: string;
-    }[];
-  } | null;
-  const safety = safetyRaw as { score?: number; verdict?: string; risks?: string[]; redFlags?: string[] } | null;
-  const usage = usageRaw as { usage?: { summary?: string; timing?: string; withFood?: boolean; interactions?: string[] }; value?: { score?: number; verdict?: string; analysis?: string }; social?: { score?: number; summary?: string } } | null;
-  const analysisIssues: string[] = [];
-  if (!efficacy) analysisIssues.push("efficacy_parse_failed");
-  if (!safety) analysisIssues.push("safety_parse_failed");
-  if (!usage) analysisIssues.push("usage_parse_failed");
-
-  const normalizeNameKey = (value?: string | null) =>
-    value?.toLowerCase().replace(/[^a-z0-9]+/g, "").trim() ?? "";
-  const clampTextField = (value?: string | null) => (value && value.trim().length ? value.trim() : null);
-  const mergeList = (primary: string[] | undefined, fallback: string[], limit: number) => {
-    const results: string[] = [];
-    const seen = new Set<string>();
-    const add = (value?: string | null) => {
-      if (!value) return;
-      const trimmed = value.trim();
-      if (!trimmed) return;
-      const key = trimmed.toLowerCase();
-      if (seen.has(key)) return;
-      seen.add(key);
-      results.push(trimmed);
-    };
-    (primary ?? []).forEach(add);
-    fallback.forEach(add);
-    return results.slice(0, limit);
-  };
-
-  const labelActives = (() => {
-    const results: { name: string; doseText: string; dosageValue: number | null; dosageUnit: string | null }[] = [];
-    const seen = new Set<string>();
-    for (const ing of draft.ingredients) {
-      const name = ing.name?.trim();
-      if (!name) continue;
-      const key = normalizeNameKey(name);
-      if (!key || seen.has(key)) continue;
-      seen.add(key);
-      const doseText =
-        ing.amount != null && ing.unit
-          ? `${ing.amount} ${ing.unit}`
-          : ing.dvPercent != null
-            ? `${ing.dvPercent}% DV`
-            : "dose not specified";
-      results.push({
-        name,
-        doseText,
-        dosageValue: ing.amount ?? null,
-        dosageUnit: ing.unit ?? null,
-      });
-    }
-    return results;
-  })();
-
-  const labelActivesSummary = labelActives.slice(0, 3);
-  const labelActivesForList = labelActives.slice(0, 8);
-  const labelActivesByKey = new Map(labelActives.map((active) => [normalizeNameKey(active.name), active]));
-
-  const labelPrimary = labelActivesSummary[0];
-  const labelCoreBenefits = labelActivesSummary.map((active) => `${active.name} - ${active.doseText}`);
-  const labelSummary = labelActivesSummary.length
-    ? `Label-only summary${draft.servingSize ? ` (${draft.servingSize})` : ''}: ${labelActivesSummary
-      .map((active) => `${active.name} ${active.doseText}`)
-      .join(', ')}.`
-    : "Label-only summary based on listed ingredients.";
-  const transparencyNote = draft.issues.some((issue) =>
-    ["incomplete_ingredients", "header_not_found", "non_ingredient_line_detected", "unit_boundary_suspect", "dose_inconsistency_or_claim"].includes(issue.type)
-  )
-    ? "Ingredient disclosure may be incomplete or require review."
-    : "Ingredient disclosure appears clear on the label.";
-
-  const transparencyScore = (() => {
-    const base = Math.round(4 + draft.confidenceScore * 6);
-    let penalty = 0;
-    if (draft.parseCoverage < 0.7) penalty += 2;
-    if (draft.issues.some((issue) => issue.type === "incomplete_ingredients")) penalty += 2;
-    if (draft.issues.some((issue) => issue.type === "non_ingredient_line_detected")) penalty += 2;
-    if (draft.issues.some((issue) => issue.type === "unit_boundary_suspect")) penalty += 2;
-    if (draft.issues.some((issue) => issue.type === "dose_inconsistency_or_claim")) penalty += 2;
-    const score = Math.max(1, Math.min(10, base - penalty));
-    return score;
-  })();
-  const transparencyVerdict =
-    transparencyScore >= 8
-      ? "Clear ingredient disclosure"
-      : transparencyScore >= 6
-        ? "Moderate ingredient transparency"
-        : "Limited ingredient transparency";
-  const transparencyAnalysis = transparencyNote;
-
-  const toFormQuality = (value?: string | null): IngredientAnalysis["formQuality"] => {
-    if (value === "high" || value === "medium" || value === "low" || value === "unknown") return value;
-    return "unknown";
-  };
-
-  const toEvidenceLevel = (value?: string | null): IngredientAnalysis["evidenceLevel"] => {
-    if (value === "strong" || value === "moderate" || value === "weak" || value === "none") return value;
-    return "none";
-  };
-
-  const toDosageAssessment = (value?: string | null): IngredientAnalysis["dosageAssessment"] => {
-    if (value === "adequate" || value === "underdosed" || value === "overdosed" || value === "unknown") return value;
-    return "unknown";
-  };
-
-  const normalizePrimaryActive = (active?: any): PrimaryActive | null => {
-    if (!active?.name) return null;
-    return {
-      name: String(active.name),
-      form: active.form ?? null,
-      formQuality: toFormQuality(active.formQuality),
-      formNote: active.formNote ?? null,
-      dosageValue: typeof active.dosageValue === "number" ? active.dosageValue : null,
-      dosageUnit: active.dosageUnit ?? null,
-      evidenceLevel: toEvidenceLevel(active.evidenceLevel),
-      evidenceSummary: active.evidenceSummary ?? null,
-    };
-  };
-
-  const normalizeIngredient = (ingredient?: any): IngredientAnalysis | null => {
-    if (!ingredient?.name) return null;
-    return {
-      name: String(ingredient.name),
-      form: ingredient.form ?? null,
-      formQuality: toFormQuality(ingredient.formQuality),
-      formNote: ingredient.formNote ?? null,
-      dosageValue: typeof ingredient.dosageValue === "number" ? ingredient.dosageValue : null,
-      dosageUnit: ingredient.dosageUnit ?? null,
-      recommendedMin: typeof ingredient.recommendedMin === "number" ? ingredient.recommendedMin : null,
-      recommendedMax: typeof ingredient.recommendedMax === "number" ? ingredient.recommendedMax : null,
-      recommendedUnit: ingredient.recommendedUnit ?? null,
-      dosageAssessment: toDosageAssessment(ingredient.dosageAssessment),
-      evidenceLevel: toEvidenceLevel(ingredient.evidenceLevel),
-      evidenceSummary: ingredient.evidenceSummary ?? null,
-      rdaSource: ingredient.rdaSource ?? null,
-      ulValue: typeof ingredient.ulValue === "number" ? ingredient.ulValue : null,
-      ulUnit: ingredient.ulUnit ?? null,
-    };
-  };
-
-  const llmPrimaryActive = normalizePrimaryActive(efficacy?.primaryActive);
-  const labelPrimaryActive = labelPrimary
-    ? normalizePrimaryActive({
-      name: labelPrimary.name,
-      form: null,
-      formQuality: "unknown",
-      formNote: null,
-      dosageValue: labelPrimary.dosageValue,
-      dosageUnit: labelPrimary.dosageUnit,
-      evidenceLevel: "none",
-      evidenceSummary: "Not specified on label",
-    })
-    : null;
-  const fillPrimaryFromLabel = (active: PrimaryActive | null) => {
-    if (!active?.name) return active;
-    const match = labelActivesByKey.get(normalizeNameKey(active.name));
-    if (!match) return active;
-    return {
-      ...active,
-      dosageValue: active.dosageValue ?? match.dosageValue ?? null,
-      dosageUnit: active.dosageUnit ?? match.dosageUnit ?? null,
-    };
-  };
-  const primaryActive = fillPrimaryFromLabel(llmPrimaryActive ?? labelPrimaryActive);
-
-  const llmIngredients = (Array.isArray(efficacy?.ingredients) ? efficacy.ingredients : [])
-    .map((ingredient: any) => normalizeIngredient(ingredient))
-    .filter((item): item is IngredientAnalysis => Boolean(item));
-  const labelIngredientFallbacks = labelActivesForList
-    .map((active) =>
-      normalizeIngredient({
-        name: active.name,
-        form: null,
-        formQuality: "unknown",
-        formNote: null,
-        dosageValue: active.dosageValue,
-        dosageUnit: active.dosageUnit,
-        recommendedMin: null,
-        recommendedMax: null,
-        recommendedUnit: null,
-        dosageAssessment: "unknown",
-        evidenceLevel: "none",
-        evidenceSummary: "Not specified on label",
-        rdaSource: null,
-        ulValue: null,
-        ulUnit: null,
-      })
-    )
-    .filter((item): item is IngredientAnalysis => Boolean(item));
-  const applyLabelDose = (ingredient: IngredientAnalysis) => {
-    const match = labelActivesByKey.get(normalizeNameKey(ingredient.name));
-    if (!match) return ingredient;
-    return {
-      ...ingredient,
-      dosageValue: ingredient.dosageValue ?? match.dosageValue ?? null,
-      dosageUnit: ingredient.dosageUnit ?? match.dosageUnit ?? null,
-    };
-  };
-  const mergedIngredients = (() => {
-    const results: IngredientAnalysis[] = [];
-    const seen = new Set<string>();
-    const add = (ingredient: IngredientAnalysis) => {
-      const key = normalizeNameKey(ingredient.name);
-      if (!key || seen.has(key)) return;
-      seen.add(key);
-      results.push(ingredient);
-    };
-    llmIngredients.map(applyLabelDose).forEach(add);
-    labelIngredientFallbacks.forEach(add);
-    return results;
-  })();
-
-  const legacyBenefits = (efficacy as { benefits?: unknown } | null)?.benefits;
-  const rawBenefits: string[] =
-    Array.isArray(efficacy?.coreBenefits) && efficacy.coreBenefits.length
-      ? efficacy.coreBenefits
-      : Array.isArray(legacyBenefits)
-        ? legacyBenefits.filter((benefit): benefit is string => typeof benefit === "string")
-        : [];
-  const preferLabelBenefits =
-    rawBenefits.length === 0 || rawBenefits.every((benefit) => !/\d/.test(benefit));
-  const llmCoreBenefits = mergeList(
-    preferLabelBenefits ? [...labelCoreBenefits, ...rawBenefits] : rawBenefits,
-    labelCoreBenefits,
-    3
-  );
-  const overviewSummary = (() => {
-    const llmSummary = clampTextField(efficacy?.overviewSummary);
-    if (!llmSummary) return labelSummary;
-    if (llmSummary.length >= 60) return llmSummary;
-    return labelSummary ? `${llmSummary} ${labelSummary}` : llmSummary;
-  })();
-  const overallAssessment = clampTextField(efficacy?.overallAssessment) ?? transparencyNote;
-  const marketingRequirement = "Label-only analysis; no price/brand verification.";
-  const marketingBase = clampTextField(efficacy?.marketingVsReality);
-  const marketingVsReality = marketingBase
-    ? (marketingBase.toLowerCase().includes("label-only analysis")
-      ? marketingBase
-      : `${marketingBase} ${marketingRequirement}`)
-    : marketingRequirement;
-  const valueVerdict = clampTextField(usage?.value?.verdict) ?? transparencyVerdict;
-  const valueAnalysis = clampTextField(usage?.value?.analysis) ?? transparencyAnalysis;
-
-  const analysis: AiSupplementAnalysis = {
-    schemaVersion: 1,
-    barcode: `label:${imageHash.slice(0, 16)}`,
-    generatedAt: new Date().toISOString(),
-    model,
-    status: "success",
-    overallScore: efficacy?.score ?? 5,
-    confidence: draft.confidenceScore > 0.8 ? "high" : draft.confidenceScore > 0.5 ? "medium" : "low",
-    productInfo: {
-      brand: null,
-      name: "Label Scan Result",
-      category: "supplement",
-      image: null,
-    },
-    efficacy: {
-      score: (efficacy?.score ?? 5) as RatingScore,
-      benefits: llmCoreBenefits,
-      dosageAssessment: {
-        text: overallAssessment,
-        isUnderDosed: false,
-      },
-      verdict: clampTextField(efficacy?.verdict) ?? undefined,
-      highlights: llmCoreBenefits.length ? llmCoreBenefits : undefined,
-      warnings: [],
-      coreBenefits: llmCoreBenefits.length ? llmCoreBenefits : undefined,
-      overviewSummary,
-      overallAssessment,
-      marketingVsReality,
-      primaryActive,
-      ingredients: mergedIngredients,
-    },
-    value: {
-      score: transparencyScore as RatingScore,
-      verdict: valueVerdict,
-      analysis: valueAnalysis,
-    },
-    safety: {
-      score: (safety?.score ?? 5) as RatingScore,
-      risks: safety?.risks ?? [],
-      redFlags: safety?.redFlags ?? [],
-      additivesInfo: null,
-      verdict: safety?.verdict ?? undefined,
-    },
-    social: {
-      score: (usage?.social?.score ?? 3) as RatingScore,
-      tier: "unknown",
-      summary: usage?.social?.summary ?? "Brand reputation unknown from label scan.",
-      tags: [],
-    },
-    usage: {
-      summary: usage?.usage?.summary ?? "Follow label directions",
-      timing: usage?.usage?.timing ?? null,
-      withFood: usage?.usage?.withFood ?? null,
-      conflicts: usage?.usage?.interactions ?? [],
-      sourceType: "product_label",
-    },
-    sources: [],
-    disclaimer,
-    analysisIssues: analysisIssues.length ? analysisIssues : undefined,
-  };
-
-  const analysisStatus = analysisIssues.length ? "partial" : "complete";
-  const llmMs = performance.now() - llmStart;
-
-  return { analysis, analysisIssues, analysisStatus, llmMs };
-}
-
-/**
- * POST /api/analyze-label
- * Analyze a supplement label image using Vision OCR + DeepSeek
- */
-app.post("/api/analyze-label", verifySupabaseToken, async (req: Request, res: Response) => {
-  try {
-    const totalStart = performance.now();
-    const requestId = String(res.getHeader("x-request-id") ?? randomUUID());
-    const serverReceivedAt = new Date().toISOString();
-    const parsedBody = parseRequestBody(analyzeLabelBodySchema, req, res);
-    if (!parsedBody) {
-      return;
-    }
-    const body: AnalyzeLabelRequest = parsedBody;
-    const authedReq = req as AuthenticatedRequest;
-    const imageBase64 = body.imageBase64 ?? undefined;
-    const { imageHash, deviceId } = body;
-    const preprocessProfile = normalizePreprocessProfile(body.preprocessProfile);
-    const clientStartedAtMs =
-      typeof body.clientStartedAtMs === "number" && Number.isFinite(body.clientStartedAtMs)
-        ? body.clientStartedAtMs
-        : null;
-    const includeAnalysisQuery = Array.isArray(req.query.includeAnalysis)
-      ? req.query.includeAnalysis
-      : req.query.includeAnalysis
-        ? [String(req.query.includeAnalysis)]
-        : [];
-    const includeAnalysisBody =
-      typeof body.includeAnalysis === "string"
-        ? body.includeAnalysis === "true" || body.includeAnalysis === "1"
-        : body.includeAnalysis === true;
-    const includeAnalysis =
-      includeAnalysisBody
-      || includeAnalysisQuery.some((value) => value === "true" || value === "1")
-      || (typeof body.includeAnalysis === "undefined" && includeAnalysisQuery.length === 0 && Boolean(imageBase64));
-    const asyncQuery = Array.isArray(req.query.async)
-      ? req.query.async
-      : req.query.async
-        ? [String(req.query.async)]
-        : [];
-    const asyncBody =
-      typeof body.async === "string"
-        ? body.async === "true" || body.async === "1"
-        : body.async === true;
-    const asyncRequested =
-      asyncBody || asyncQuery.some((value) => value === "true" || value === "1");
-    const stableUserId = authedReq.user?.id?.trim() || "";
-    const stableDeviceId = deviceId?.trim() || "";
-    const variantStableKey = stableUserId || stableDeviceId;
-    // P0 guard: missing userId/deviceId always falls back to control to avoid noisy bucket contamination.
-    const flagVariant = variantStableKey
-      ? resolveLabelScanVariant(variantStableKey)
-      : "control";
-    const asyncAnalysis = includeAnalysis
-      && LABEL_SCAN_ASYNC_ANALYSIS_ENABLED
-      && flagVariant === "draft_first_async";
-    const cacheKey = buildVersionedOcrCacheKey(imageHash, preprocessProfile);
-    const responseTiming: LabelScanTiming = {
-      serverReceivedAt,
-      draftReadyAt: null,
-      tDecodeMs: null,
-      tOcrMs: null,
-      tParseMs: null,
-      tLlmMs: null,
-      tFirstDraftServerMs: null,
-    };
-    let responseJobId: string | null = null;
-    let responseDraftRevision: number | null = null;
-    let responseDiagnostics: LabelAnalysisDiagnostics | null = null;
-    let responseCacheMode: "strict" | "legacy_read" = "strict";
-    let responseOcrCacheHit = false;
-    let responseParseCacheHit: boolean | null = null;
-    let responseAnalysisCacheHit: boolean | null = null;
-    let responseOcrCallCount = 0;
-
-    const baseJson = res.json.bind(res);
-    const enrichLabelResponse = (bodyValue: unknown): unknown => {
-      if (!bodyValue || typeof bodyValue !== "object") return bodyValue;
-      const maybeStatus = (bodyValue as { status?: unknown }).status;
-      if (typeof maybeStatus !== "string") return bodyValue;
-
-      const payload = bodyValue as LabelAnalysisResponse;
-      if (payload.draft && !responseTiming.draftReadyAt) {
-        responseTiming.draftReadyAt = new Date().toISOString();
-      }
-      if (responseTiming.draftReadyAt) {
-        const draftReadyMs = Date.parse(responseTiming.draftReadyAt);
-        const receivedMs = Date.parse(serverReceivedAt);
-        if (Number.isFinite(draftReadyMs) && Number.isFinite(receivedMs) && draftReadyMs >= receivedMs) {
-          responseTiming.tFirstDraftServerMs = draftReadyMs - receivedMs;
-        }
-      }
-
-      const draftRevision = payload.draftRevision ?? (payload.draft ? (responseDraftRevision ?? 1) : null);
-      let patchAnalysis = payload.suggestedUpdates?.analysis ?? payload.analysis ?? null;
-      const analysisForDraftRevision =
-        payload.analysisForDraftRevision
-        ?? (patchAnalysis ? (draftRevision ?? 1) : null);
-      // Keep patch identity monotonic across retries/polling for the same scan payload.
-      const patchJobId = payload.jobId ?? responseJobId ?? null;
-      const patchRevision = analysisForDraftRevision ?? draftRevision ?? 1;
-      let patchId =
-        payload.patchId
-        ?? (patchAnalysis ? `${patchJobId ?? imageHash}:${patchRevision}:${hashPatchPayload(patchAnalysis)}` : null);
-      let patchType =
-        payload.patchType
-        ?? (patchAnalysis
-          ? (payload.analysisStatus === "partial" ? "partial" : "final")
-          : null);
-      const existingFinalPatchId = patchJobId ? labelFinalPatchByJob.get(patchJobId) : null;
-      if (existingFinalPatchId) {
-        if (patchType !== "final" || patchId !== existingFinalPatchId) {
-          patchAnalysis = null;
-          patchId = existingFinalPatchId;
-          patchType = "final";
-        }
-      } else if (patchType === "final" && patchId && patchJobId) {
-        recordFinalPatchForJob(patchJobId, patchId);
-      }
-
-      const enrichedPayload = {
-        ...payload,
-        requestId,
-        imageHash,
-        jobId: patchJobId ?? undefined,
-        flagVariant,
-        draftRevision,
-        analysisForDraftRevision,
-        patchId,
-        patchType,
-        parserVersion: LABEL_PARSER_VERSION,
-        preprocessProfile,
-        laneSplitTriggered: responseDiagnostics?.laneSplit?.triggered ?? false,
-        laneSplitChosen: responseDiagnostics?.laneSplit?.chosen ?? "baseline",
-        laneSplitRevertedReason: responseDiagnostics?.laneSplit?.revertedReason ?? null,
-        cacheLayerHits: {
-          mode: responseCacheMode,
-          ocr: responseOcrCacheHit,
-          parse: responseParseCacheHit,
-          analysis: responseAnalysisCacheHit,
-        },
-        timing: payload.timing ?? responseTiming,
-        analysis: patchAnalysis ?? undefined,
-        suggestedUpdates: patchAnalysis ? { analysis: patchAnalysis } : undefined,
-      } satisfies LabelAnalysisResponse;
-
-      const metricMeta: Record<string, unknown> = {
-        asyncRequested,
-        asyncApplied: asyncAnalysis,
-        includeAnalysisRequested:
-          typeof body.includeAnalysis === "string"
-            ? body.includeAnalysis === "true" || body.includeAnalysis === "1"
-            : body.includeAnalysis === true,
-        heuristics: responseDiagnostics?.heuristics ?? null,
-        laneSplit: responseDiagnostics?.laneSplit ?? null,
-        completeness: responseDiagnostics?.completeness ?? null,
-      };
-      // CI E2E requests (regression auth) should be counted as synthetic and excluded from KPI metrics.
-      if (authedReq.regressionAuth && typeof metricMeta.source !== "string") {
-        metricMeta.source = "ci_e2e";
-      }
-
-      void logLabelScanMetric({
-        requestId,
-        imageHash,
-        jobId: enrichedPayload.jobId ?? null,
-        parserVersion: LABEL_PARSER_VERSION,
-        preprocessProfile,
-        flagVariant,
-        cacheMode: responseCacheMode,
-        ocrCacheHit: responseOcrCacheHit,
-        parseCacheHit: responseParseCacheHit,
-        analysisCacheHit: responseAnalysisCacheHit,
-        ocrCallCount: responseOcrCallCount,
-        analysisForDraftRevision: enrichedPayload.analysisForDraftRevision ?? null,
-        patchId: enrichedPayload.patchId ?? null,
-        patchType: enrichedPayload.patchType ?? null,
-        laneSplitTriggered: enrichedPayload.laneSplitTriggered ?? false,
-        laneSplitChosen: enrichedPayload.laneSplitChosen ?? null,
-        laneSplitRevertedReason: enrichedPayload.laneSplitRevertedReason ?? null,
-        responseStatus: enrichedPayload.status,
-        analysisStatus: enrichedPayload.analysisStatus ?? null,
-        parseCoverage: enrichedPayload.draft?.parseCoverage ?? null,
-        needsConfirmation: Boolean(enrichedPayload.draft && needsConfirmation(enrichedPayload.draft)),
-        issueTypes: (enrichedPayload.draft?.issues ?? enrichedPayload.issues ?? []).map((issue) => issue.type),
-        timing: {
-          tDecodeMs: enrichedPayload.timing?.tDecodeMs ?? null,
-          tOcrMs: enrichedPayload.timing?.tOcrMs ?? null,
-          tParseMs: enrichedPayload.timing?.tParseMs ?? null,
-          tLlmMs: enrichedPayload.timing?.tLlmMs ?? null,
-          tFirstDraftServerMs: enrichedPayload.timing?.tFirstDraftServerMs ?? null,
-        },
-        clientStartedAtMs,
-        meta: metricMeta,
-      });
-
-      return enrichedPayload;
-    };
-    (res as Response & { json: (body: unknown) => Response }).json = ((bodyValue: unknown) =>
-      baseJson(enrichLabelResponse(bodyValue))) as (body: unknown) => Response;
-
-    const labelBudget = new DeadlineBudget(Date.now() + RESILIENCE_TOTAL_BUDGET_MS);
-    const labelAbort = createRequestAbort(res);
-    const labelDeepseekResilience: DeepseekResilienceOptions = {
-      signal: labelAbort.signal,
-      budget: labelBudget,
-      breaker: deepseekBreaker,
-      semaphore: deepseekSemaphore,
-      timeoutMs: RESILIENCE_DEEPSEEK_TIMEOUT_MS,
-      queueTimeoutMs: RESILIENCE_DEEPSEEK_QUEUE_TIMEOUT_MS,
-    };
-    const debugEnabled =
-      body.debug === true
-      || (Array.isArray(req.query.debug)
-        ? req.query.debug.includes("true")
-        : req.query.debug === "true");
-
-    // Validate input
-    if (!imageHash) {
-      return res.status(400).json({
-        status: "failed",
-        message: "Missing required field: imageHash",
-      } satisfies LabelAnalysisResponse);
-    }
-
-    // Rate limiting
-    const userId = stableUserId || stableDeviceId || req.ip || imageHash;
-    const rateCheck = checkRateLimit(userId);
-    if (!rateCheck.allowed) {
-      res.setHeader("Retry-After", String(rateCheck.retryAfter ?? 60));
-      return res.status(429).json({
-        status: "failed",
-        message: "Rate limit exceeded. Please try again later.",
-        suggestion: `Wait ${rateCheck.retryAfter ?? 60} seconds before trying again.`,
-      } satisfies LabelAnalysisResponse);
-    }
-
-    const cached = !debugEnabled ? await getCachedResult(imageHash, { preprocessProfile }) : null;
-    const parseCacheKey = buildParseCacheKey(cacheKey);
-    const cachedParse = !debugEnabled ? await getParseCachedResult(cacheKey) : null;
-    if (cached) {
-      responseCacheMode = cached.cacheMode;
-      responseOcrCacheHit = true;
-      responseParseCacheHit = Boolean(cachedParse ?? cached.parsedIngredients);
-      responseAnalysisCacheHit = null;
-      responseOcrCallCount = 0;
-    } else {
-      responseCacheMode = "strict";
-      responseOcrCacheHit = false;
-      responseParseCacheHit = cachedParse ? true : null;
-      responseAnalysisCacheHit = null;
-    }
-
-    if (!imageBase64 && !cached && !cachedParse) {
-      return res.status(400).json({
-        status: "failed",
-        message: "Missing required field: imageBase64",
-      } satisfies LabelAnalysisResponse);
-    }
-
-    if (cached && !debugEnabled) {
-      const cachedDraft = cachedParse?.parsedIngredients ?? cached.parsedIngredients ?? null;
-      const cachedAnalysisLayer = await getAnalysisCachedResult(parseCacheKey);
-      responseAnalysisCacheHit = Boolean(cachedAnalysisLayer?.analysis);
-
-      if (hasCompletedAnalysis(cached)) {
-        console.log(`[LabelScan] Cache hit with analysis for ${imageHash.slice(0, 8)}...`);
-        responseTiming.tDecodeMs = 0;
-        responseTiming.tOcrMs = 0;
-        responseTiming.tParseMs = 0;
-        responseTiming.tLlmMs = 0;
-        responseTiming.draftReadyAt = new Date().toISOString();
-        responseDraftRevision = 1;
-        const layerAnalysis = cachedAnalysisLayer?.analysis ?? null;
-        const effectiveAnalysis = layerAnalysis ?? cached.analysis;
-        const cachedAnalysisIssues =
-          cachedAnalysisLayer?.analysisIssues
-          ?? ((effectiveAnalysis as { analysisIssues?: string[] } | null)?.analysisIssues ?? []);
-        const cachedAnalysisStatus =
-          cachedAnalysisLayer?.analysisStatus === "partial"
-            ? "partial"
-            : cachedAnalysisIssues.length
-              ? "partial"
-              : "complete";
-        if (cachedDraft) {
-          void upsertProductIngredientsFromDraft({
-            sourceId: imageHash,
-            draft: cachedDraft,
-            basis: "label_serving",
-          });
-        }
-        const snapshot = await buildAndCacheLabelSnapshot({
-          status: "ok",
-          draft: cachedDraft ?? undefined,
-          analysis: effectiveAnalysis ?? null,
-          imageHash,
-        });
-        return res.json({
-          status: "ok",
-          draft: cachedDraft ?? undefined,
-          analysis: effectiveAnalysis,
-          analysisStatus: cachedAnalysisStatus,
-          analysisIssues: cachedAnalysisIssues.length ? cachedAnalysisIssues : undefined,
-          snapshot,
-        } satisfies LabelAnalysisResponse);
-      }
-
-      if (cachedDraft) {
-        if (!cachedParse) {
-          await setParseCachedResult(cacheKey, {
-            parsedIngredients: cachedDraft,
-            diagnostics: null,
-          });
-        }
-        responseParseCacheHit = true;
-        responseTiming.tDecodeMs = 0;
-        responseTiming.tOcrMs = 0;
-        responseTiming.tParseMs = 0;
-        responseTiming.draftReadyAt = new Date().toISOString();
-        responseDraftRevision = 1;
-        void upsertProductIngredientsFromDraft({
-          sourceId: imageHash,
-          draft: cachedDraft,
-          basis: "label_serving",
-        });
-        const cachedNeedsConfirmation = needsConfirmation(cachedDraft);
-        const cachedStatus = cachedNeedsConfirmation ? "needs_confirmation" : "ok";
-
-        if (!includeAnalysis) {
-          console.log(`[LabelScan] Cache hit with draft only for ${imageHash.slice(0, 8)}...`);
-          const snapshot = await buildAndCacheLabelSnapshot({
-            status: cachedStatus,
-            draft: cachedDraft,
-            analysis: null,
-            message: cachedNeedsConfirmation ? "Please review the extracted ingredients." : undefined,
-            imageHash,
-          });
-          return res.json({
-            status: cachedStatus,
-            draft: cachedDraft,
-            message: cachedNeedsConfirmation ? "Please review the extracted ingredients." : undefined,
-            analysisStatus: "skipped",
-            snapshot,
-          } satisfies LabelAnalysisResponse);
-        }
-
-        const deepseekKey = process.env.DEEPSEEK_API_KEY;
-        const model = process.env.DEEPSEEK_MODEL || "deepseek-chat";
-
-        if (!deepseekKey) {
-          const snapshot = await buildAndCacheLabelSnapshot({
-            status: cachedStatus,
-            draft: cachedDraft,
-            analysis: null,
-            message: "Analysis service unavailable. Please try again later.",
-            imageHash,
-          });
-          return res.json({
-            status: cachedStatus,
-            draft: cachedDraft,
-            message: "Analysis service unavailable. Please try again later.",
-            analysisStatus: "unavailable",
-            snapshot,
-          } satisfies LabelAnalysisResponse);
-        }
-
-        if (asyncAnalysis) {
-          console.log(`[LabelScan] Deferring DeepSeek analysis for ${imageHash.slice(0, 8)}...`);
-          if (!labelAnalysisInFlight.has(cacheKey)) {
-            const jobId = randomUUID();
-            const taskPromise = (async () => {
-              try {
-                const backgroundBudget = new DeadlineBudget(Date.now() + RESILIENCE_TOTAL_BUDGET_MS);
-                const backgroundResilience: DeepseekResilienceOptions = {
-                  budget: backgroundBudget,
-                  breaker: deepseekBreaker,
-                  semaphore: deepseekSemaphore,
-                  timeoutMs: RESILIENCE_DEEPSEEK_TIMEOUT_MS,
-                  queueTimeoutMs: RESILIENCE_DEEPSEEK_QUEUE_TIMEOUT_MS,
-                };
-                const { analysis, llmMs } = await buildLabelScanAnalysis({
-                  draft: cachedDraft,
-                  imageHash,
-                  model,
-                  apiKey: deepseekKey,
-                  resilience: backgroundResilience,
-                });
-                await updateCachedAnalysis(imageHash, analysis, { preprocessProfile });
-                await setAnalysisCachedResult(parseCacheKey, {
-                  analysis,
-                  analysisStatus: "complete",
-                  analysisIssues: [],
-                  llmMs,
-                });
-                console.log(`[LabelScan] Async analysis complete for ${imageHash.slice(0, 8)} in ${Math.round(llmMs)}ms...`);
-              } catch (error) {
-                console.error(`[LabelScan] Async analysis failed for ${imageHash.slice(0, 8)}:`, error);
-              }
-            })();
-            labelAnalysisInFlight.set(cacheKey, { jobId, promise: taskPromise, startedAt: new Date().toISOString() });
-            taskPromise.finally(() => labelAnalysisInFlight.delete(cacheKey));
-          }
-          responseJobId = labelAnalysisInFlight.get(cacheKey)?.jobId ?? null;
-          const snapshot = await buildAndCacheLabelSnapshot({
-            status: cachedStatus,
-            draft: cachedDraft,
-            analysis: null,
-            message: cachedNeedsConfirmation ? "Please review the extracted ingredients." : undefined,
-            imageHash,
-          });
-          return res.json({
-            status: cachedStatus,
-            draft: cachedDraft,
-            analysisStatus: "pending",
-            snapshot,
-          } satisfies LabelAnalysisResponse);
-        }
-
-        if (cachedAnalysisLayer?.analysis) {
-          const layerStatus = cachedAnalysisLayer.analysisStatus === "partial" ? "partial" : "complete";
-          const snapshot = await buildAndCacheLabelSnapshot({
-            status: cachedStatus,
-            draft: cachedDraft,
-            analysis: cachedAnalysisLayer.analysis,
-            imageHash,
-          });
-          return res.json({
-            status: cachedStatus,
-            draft: cachedDraft,
-            analysis: cachedAnalysisLayer.analysis,
-            analysisStatus: layerStatus,
-            analysisIssues: cachedAnalysisLayer.analysisIssues.length ? cachedAnalysisLayer.analysisIssues : undefined,
-            snapshot,
-          } satisfies LabelAnalysisResponse);
-        }
-
-        console.log(`[LabelScan] Running DeepSeek analysis from cache...`);
-        const { analysis, analysisIssues, analysisStatus, llmMs } = await buildLabelScanAnalysis({
-          draft: cachedDraft,
-          imageHash,
-          model,
-          apiKey: deepseekKey,
-          resilience: labelDeepseekResilience,
-        });
-        responseTiming.tLlmMs = llmMs;
-        responseAnalysisCacheHit = false;
-        await updateCachedAnalysis(imageHash, analysis, { preprocessProfile });
-        await setAnalysisCachedResult(parseCacheKey, {
-          analysis,
-          analysisStatus,
-          analysisIssues,
-          llmMs,
-        });
-
-        console.log(`[LabelScan] Analysis complete for ${imageHash.slice(0, 8)} in ${Math.round(llmMs)}ms...`);
-        const snapshot = await buildAndCacheLabelSnapshot({
-          status: cachedStatus,
-          draft: cachedDraft,
-          analysis,
-          imageHash,
-        });
-        return res.json({
-          status: cachedStatus,
-          draft: cachedDraft,
-          analysis,
-          analysisStatus,
-          analysisIssues: analysisIssues.length ? analysisIssues : undefined,
-          snapshot,
-        } satisfies LabelAnalysisResponse);
-      }
-    }
-
-    if (!cached && cachedParse && !debugEnabled) {
-      const draftFromParseCache = cachedParse.parsedIngredients;
-      const cachedAnalysisLayer = await getAnalysisCachedResult(parseCacheKey);
-      responseParseCacheHit = true;
-      responseAnalysisCacheHit = Boolean(cachedAnalysisLayer?.analysis);
-      responseTiming.tDecodeMs = 0;
-      responseTiming.tOcrMs = 0;
-      responseTiming.tParseMs = 0;
-      responseTiming.draftReadyAt = new Date().toISOString();
-      responseDraftRevision = 1;
-
-      void upsertProductIngredientsFromDraft({
-        sourceId: imageHash,
-        draft: draftFromParseCache,
-        basis: "label_serving",
-      });
-
-      const cachedNeedsConfirmation = needsConfirmation(draftFromParseCache);
-      const cachedStatus = cachedNeedsConfirmation ? "needs_confirmation" : "ok";
-
-      if (!includeAnalysis) {
-        const snapshot = await buildAndCacheLabelSnapshot({
-          status: cachedStatus,
-          draft: draftFromParseCache,
-          analysis: null,
-          message: cachedNeedsConfirmation ? "Please review the extracted ingredients." : undefined,
-          imageHash,
-        });
-        return res.json({
-          status: cachedStatus,
-          draft: draftFromParseCache,
-          message: cachedNeedsConfirmation ? "Please review the extracted ingredients." : undefined,
-          analysisStatus: "skipped",
-          snapshot,
-        } satisfies LabelAnalysisResponse);
-      }
-
-      if (cachedAnalysisLayer?.analysis) {
-        const layerStatus = cachedAnalysisLayer.analysisStatus === "partial" ? "partial" : "complete";
-        const snapshot = await buildAndCacheLabelSnapshot({
-          status: cachedStatus,
-          draft: draftFromParseCache,
-          analysis: cachedAnalysisLayer.analysis,
-          imageHash,
-        });
-        return res.json({
-          status: cachedStatus,
-          draft: draftFromParseCache,
-          analysis: cachedAnalysisLayer.analysis,
-          analysisStatus: layerStatus,
-          analysisIssues: cachedAnalysisLayer.analysisIssues.length ? cachedAnalysisLayer.analysisIssues : undefined,
-          snapshot,
-        } satisfies LabelAnalysisResponse);
-      }
-
-      const deepseekKey = process.env.DEEPSEEK_API_KEY;
-      const model = process.env.DEEPSEEK_MODEL || "deepseek-chat";
-      if (!deepseekKey) {
-        const snapshot = await buildAndCacheLabelSnapshot({
-          status: cachedStatus,
-          draft: draftFromParseCache,
-          analysis: null,
-          message: "Analysis service unavailable. Please try again later.",
-          imageHash,
-        });
-        return res.json({
-          status: cachedStatus,
-          draft: draftFromParseCache,
-          message: "Analysis service unavailable. Please try again later.",
-          analysisStatus: "unavailable",
-          snapshot,
-        } satisfies LabelAnalysisResponse);
-      }
-
-      if (asyncAnalysis) {
-        if (!labelAnalysisInFlight.has(cacheKey)) {
-          const jobId = randomUUID();
-          const taskPromise = (async () => {
-            try {
-              const backgroundBudget = new DeadlineBudget(Date.now() + RESILIENCE_TOTAL_BUDGET_MS);
-              const backgroundResilience: DeepseekResilienceOptions = {
-                budget: backgroundBudget,
-                breaker: deepseekBreaker,
-                semaphore: deepseekSemaphore,
-                timeoutMs: RESILIENCE_DEEPSEEK_TIMEOUT_MS,
-                queueTimeoutMs: RESILIENCE_DEEPSEEK_QUEUE_TIMEOUT_MS,
-              };
-              const { analysis, llmMs } = await buildLabelScanAnalysis({
-                draft: draftFromParseCache,
-                imageHash,
-                model,
-                apiKey: deepseekKey,
-                resilience: backgroundResilience,
-              });
-              await setAnalysisCachedResult(parseCacheKey, {
-                analysis,
-                analysisStatus: "complete",
-                analysisIssues: [],
-                llmMs,
-              });
-            } catch (error) {
-              console.error(`[LabelScan] Async parse-cache analysis failed for ${imageHash.slice(0, 8)}:`, error);
-            }
-          })();
-          labelAnalysisInFlight.set(cacheKey, { jobId, promise: taskPromise, startedAt: new Date().toISOString() });
-          taskPromise.finally(() => labelAnalysisInFlight.delete(cacheKey));
-        }
-        responseJobId = labelAnalysisInFlight.get(cacheKey)?.jobId ?? null;
-        const snapshot = await buildAndCacheLabelSnapshot({
-          status: cachedStatus,
-          draft: draftFromParseCache,
-          analysis: null,
-          message: cachedNeedsConfirmation ? "Please review the extracted ingredients." : undefined,
-          imageHash,
-        });
-        return res.json({
-          status: cachedStatus,
-          draft: draftFromParseCache,
-          analysisStatus: "pending",
-          snapshot,
-        } satisfies LabelAnalysisResponse);
-      }
-
-      const { analysis, analysisIssues, analysisStatus, llmMs } = await buildLabelScanAnalysis({
-        draft: draftFromParseCache,
-        imageHash,
-        model,
-        apiKey: deepseekKey,
-        resilience: labelDeepseekResilience,
-      });
-      responseTiming.tLlmMs = llmMs;
-      responseAnalysisCacheHit = false;
-      await setAnalysisCachedResult(parseCacheKey, {
-        analysis,
-        analysisStatus,
-        analysisIssues,
-        llmMs,
-      });
-      const snapshot = await buildAndCacheLabelSnapshot({
-        status: cachedStatus,
-        draft: draftFromParseCache,
-        analysis,
-        imageHash,
-      });
-      return res.json({
-        status: cachedStatus,
-        draft: draftFromParseCache,
-        analysis,
-        analysisStatus,
-        analysisIssues: analysisIssues.length ? analysisIssues : undefined,
-        snapshot,
-      } satisfies LabelAnalysisResponse);
-    }
-
-    // Call Vision OCR
-    console.log(`[LabelScan] Calling Vision OCR for ${imageHash.slice(0, 8)}...`);
-    responseOcrCallCount = 1;
-    responseAnalysisCacheHit = false;
-    const requestBodyMs = performance.now() - totalStart;
-    let visionResult;
-    try {
-      visionResult = await callVisionOcr({ imageBase64 }, { debug: debugEnabled });
-      responseTiming.tDecodeMs = visionResult.diagnostics?.timing.decodeMs ?? null;
-      responseTiming.tOcrMs = visionResult.diagnostics?.timing.visionMs ?? null;
-    } catch (visionError) {
-      console.error("[LabelScan] Vision OCR failed:", visionError);
-      const snapshot = await buildAndCacheLabelSnapshot({
-        status: "failed",
-        draft: undefined,
-        analysis: null,
-        message: "OCR processing failed. Please try again.",
-        imageHash,
-      });
-      return res.status(500).json({
-        status: "failed",
-        message: "OCR processing failed. Please try again.",
-        suggestion: "Try taking a clearer photo with better lighting and less glare.",
-        snapshot,
-      } satisfies LabelAnalysisResponse);
-    }
-
-    const fullText = visionResult.fullText ?? "";
-    const tokenStats = computeTokenStats(visionResult.tokens);
-
-    const buildDebugPayload = (
-      postprocessMs: number | null,
-      diagnostics: LabelAnalysisDiagnostics | null,
-      llmMs: number | null,
-      requestBodyMs: number | null
-    ): LabelAnalysisDebug | undefined => {
-      if (!debugEnabled) return undefined;
-      const timing = visionResult.diagnostics?.timing;
-      const image = visionResult.diagnostics?.image;
-      return {
-        timing: {
-          decodeMs: timing?.decodeMs ?? null,
-          preprocessMs: timing?.preprocessMs ?? null,
-          requestBodyMs,
-          visionClientInitMs: timing?.visionClientInitMs ?? null,
-          visionMs: timing?.visionMs ?? null,
-          postprocessMs,
-          llmMs,
-          totalMs: performance.now() - totalStart,
-        },
-        image: {
-          inputBytes: image?.inputBytes ?? null,
-          inputMime: image?.inputMime ?? null,
-          inputWidth: image?.inputWidth ?? null,
-          inputHeight: image?.inputHeight ?? null,
-          preprocessedBytes: image?.preprocessedBytes ?? null,
-          preprocessedWidth: image?.preprocessedWidth ?? null,
-          preprocessedHeight: image?.preprocessedHeight ?? null,
-        },
-        vision: {
-          languageHints: visionResult.diagnostics?.languageHints ?? [],
-          fullTextLength: fullText.length,
-          fullTextPreview: fullText.slice(0, FULL_TEXT_PREVIEW_LIMIT),
-          tokenCount: tokenStats.tokenCount,
-          avgTokenConfidence: tokenStats.avgTokenConfidence,
-          p10TokenConfidence: tokenStats.p10TokenConfidence,
-          p50TokenConfidence: tokenStats.p50TokenConfidence,
-          p90TokenConfidence: tokenStats.p90TokenConfidence,
-          medianTokenHeight: tokenStats.medianTokenHeight,
-        },
-        heuristics: diagnostics?.heuristics ?? null,
-        laneSplit: diagnostics?.laneSplit ?? null,
-        completeness: diagnostics?.completeness ?? null,
-        drafts: diagnostics?.drafts ?? null,
-      };
-    };
-
-    if (tokenStats.tokenCount === 0 && fullText.trim().length === 0) {
-      const snapshot = await buildAndCacheLabelSnapshot({
-        status: "failed",
-        draft: undefined,
-        analysis: null,
-        message: "Could not detect any text in the image.",
-        imageHash,
-      });
-      return res.json({
-        status: "failed",
-        message: "Could not detect any text in the image.",
-        suggestion: "Make sure the Supplement Facts label is clearly visible and in focus.",
-        debug: buildDebugPayload(null, null, null, requestBodyMs),
-        snapshot,
-      } satisfies LabelAnalysisResponse);
-    }
-
-    // Post-processing: infer rows and extract ingredients
-    console.log(`[LabelScan] Processing ${visionResult.tokens.length} tokens...`);
-    const postprocessStart = performance.now();
-    const analyzed = analyzeLabelDraftWithDiagnostics(visionResult.tokens, fullText);
-    const draft: LabelDraft = analyzed.draft;
-    const analysisDiagnostics: LabelAnalysisDiagnostics | null = analyzed.diagnostics;
-    responseDiagnostics = analysisDiagnostics;
-    const postprocessMs = performance.now() - postprocessStart;
-    responseTiming.tParseMs = postprocessMs;
-    responseTiming.draftReadyAt = new Date().toISOString();
-    responseDraftRevision = 1;
-    let llmMs: number | null = null;
-    let debugPayload = buildDebugPayload(postprocessMs, analysisDiagnostics, llmMs, requestBodyMs);
-    console.log(`[LabelScan] Extracted ${draft.ingredients.length} ingredients, confidence: ${draft.confidenceScore.toFixed(2)}`);
-
-    // Cache the draft
-    // P0-5: Only store visionRaw in debug mode to save space and protect privacy
-    const shouldStoreVisionRaw = process.env.OCR_STORE_VISION_RAW === "true";
-    await setCachedResult(imageHash, {
-      visionRaw: shouldStoreVisionRaw ? visionResult.rawResponse : null,
-      parsedIngredients: draft,
-      confidence: draft.confidenceScore,
-      preprocessProfile,
-    });
-    await setParseCachedResult(cacheKey, {
-      parsedIngredients: draft,
-      diagnostics: analysisDiagnostics,
-    });
-    void upsertProductIngredientsFromDraft({
-      sourceId: imageHash,
-      draft,
-      basis: "label_serving",
-    });
-
-    const needsReview = needsConfirmation(draft);
-    // Check if confirmation needed
-    if (needsReview && !includeAnalysis) {
-      console.log(`[LabelScan] Low confidence, requesting confirmation`);
-      const snapshot = await buildAndCacheLabelSnapshot({
-        status: "needs_confirmation",
-        draft,
-        analysis: null,
-        message: "Please review the extracted ingredients.",
-        imageHash,
-      });
-      return res.json({
-        status: "needs_confirmation",
-        draft,
-        message: "Please review the extracted ingredients.",
-        debug: debugPayload,
-        analysisStatus: "skipped",
-        snapshot,
-      } satisfies LabelAnalysisResponse);
-    }
-
-    if (!includeAnalysis) {
-      const snapshot = await buildAndCacheLabelSnapshot({
-        status: "ok",
-        draft,
-        analysis: null,
-        imageHash,
-      });
-      return res.json({
-        status: "ok",
-        draft,
-        debug: debugPayload,
-        analysisStatus: "skipped",
-        snapshot,
-      } satisfies LabelAnalysisResponse);
-    }
-
-    // High confidence: proceed with DeepSeek analysis
-    const deepseekKey = process.env.DEEPSEEK_API_KEY;
-    const model = process.env.DEEPSEEK_MODEL || "deepseek-chat";
-
-    if (!deepseekKey) {
-      const snapshot = await buildAndCacheLabelSnapshot({
-        status: needsReview ? "needs_confirmation" : "ok",
-        draft,
-        analysis: null,
-        message: "Analysis service unavailable. Please try again later.",
-        imageHash,
-      });
-      return res.json({
-        status: needsReview ? "needs_confirmation" : "ok",
-        draft,
-        message: "Analysis service unavailable. Please try again later.",
-        debug: debugPayload,
-        analysisStatus: "unavailable",
-        snapshot,
-      } satisfies LabelAnalysisResponse);
-    }
-
-    if (asyncAnalysis) {
-      console.log(`[LabelScan] Deferring DeepSeek analysis for ${imageHash.slice(0, 8)}...`);
-      if (!labelAnalysisInFlight.has(cacheKey)) {
-        const jobId = randomUUID();
-        const taskPromise = (async () => {
-          try {
-            const backgroundBudget = new DeadlineBudget(Date.now() + RESILIENCE_TOTAL_BUDGET_MS);
-            const backgroundResilience: DeepseekResilienceOptions = {
-              budget: backgroundBudget,
-              breaker: deepseekBreaker,
-              semaphore: deepseekSemaphore,
-              timeoutMs: RESILIENCE_DEEPSEEK_TIMEOUT_MS,
-              queueTimeoutMs: RESILIENCE_DEEPSEEK_QUEUE_TIMEOUT_MS,
-            };
-            const { analysis, llmMs: asyncLlmMs } = await buildLabelScanAnalysis({
-              draft,
-              imageHash,
-              model,
-              apiKey: deepseekKey,
-              resilience: backgroundResilience,
-            });
-            await updateCachedAnalysis(imageHash, analysis, { preprocessProfile });
-            await setAnalysisCachedResult(parseCacheKey, {
-              analysis,
-              analysisStatus: "complete",
-              analysisIssues: [],
-              llmMs: asyncLlmMs,
-            });
-            console.log(`[LabelScan] Async analysis complete for ${imageHash.slice(0, 8)} in ${Math.round(asyncLlmMs)}ms...`);
-          } catch (error) {
-            console.error(`[LabelScan] Async analysis failed for ${imageHash.slice(0, 8)}:`, error);
-          }
-        })();
-        labelAnalysisInFlight.set(cacheKey, { jobId, promise: taskPromise, startedAt: new Date().toISOString() });
-        taskPromise.finally(() => labelAnalysisInFlight.delete(cacheKey));
-      }
-      responseJobId = labelAnalysisInFlight.get(cacheKey)?.jobId ?? null;
-      const snapshot = await buildAndCacheLabelSnapshot({
-        status: needsReview ? "needs_confirmation" : "ok",
-        draft,
-        analysis: null,
-        message: needsReview ? "Please review the extracted ingredients." : undefined,
-        imageHash,
-      });
-      return res.json({
-        status: needsReview ? "needs_confirmation" : "ok",
-        draft,
-        message: needsReview ? "Please review the extracted ingredients." : undefined,
-        debug: debugPayload,
-        analysisStatus: "pending",
-        snapshot,
-      } satisfies LabelAnalysisResponse);
-    }
-
-    console.log(`[LabelScan] Running DeepSeek analysis...`);
-    const { analysis, analysisIssues, analysisStatus, llmMs: resolvedLlmMs } = await buildLabelScanAnalysis({
-      draft,
-      imageHash,
-      model,
-      apiKey: deepseekKey,
-      resilience: labelDeepseekResilience,
-    });
-
-    llmMs = resolvedLlmMs;
-    responseTiming.tLlmMs = resolvedLlmMs;
-
-    // Update cache with analysis
-    await updateCachedAnalysis(imageHash, analysis, { preprocessProfile });
-    await setAnalysisCachedResult(parseCacheKey, {
-      analysis,
-      analysisStatus,
-      analysisIssues,
-      llmMs: resolvedLlmMs,
-    });
-    debugPayload = buildDebugPayload(postprocessMs, analysisDiagnostics, llmMs, requestBodyMs);
-
-    console.log(`[LabelScan] Analysis complete for ${imageHash.slice(0, 8)}...`);
-    const snapshot = await buildAndCacheLabelSnapshot({
-      status: needsReview ? "needs_confirmation" : "ok",
-      draft,
-      analysis,
-      message: needsReview ? "Please review the extracted ingredients." : undefined,
-      imageHash,
-    });
-    return res.json({
-      status: needsReview ? "needs_confirmation" : "ok",
-      draft,
-      analysis,
-      message: needsReview ? "Please review the extracted ingredients." : undefined,
-      debug: debugPayload,
-      analysisStatus,
-      analysisIssues: analysisIssues.length ? analysisIssues : undefined,
-      snapshot,
-    } satisfies LabelAnalysisResponse);
-
-  } catch (error) {
-    captureException(error, { route: "/api/analyze-label" });
-    console.error("[LabelScan] Unexpected error:", error);
-    return res.status(500).json({
-      status: "failed",
-      message: "An unexpected error occurred.",
-      suggestion: "Please try again. If the problem persists, try a different photo.",
-    } satisfies LabelAnalysisResponse);
-  }
-});
-
-/**
- * POST /api/label-scan/metrics/smoke
- * Regression-only sentinel insert to prove scorecard write/query alignment.
- */
-app.post("/api/label-scan/metrics/smoke", verifySupabaseToken, async (req: Request, res: Response) => {
-  try {
-    const parsedBody = parseRequestBody(labelScanMetricsSmokeBodySchema, req, res);
-    if (!parsedBody) return;
-
-    if (!(req as AuthenticatedRequest).regressionAuth) {
-      return res.status(403).json({ error: "forbidden" } satisfies ErrorResponse);
-    }
-
-    const requestId = `ci_smoke_${parsedBody.runId}`;
-
-    const { data: existing, error: selectError } = await supabase
-      .from("label_scan_metrics")
-      .select("request_id")
-      .eq("request_id", requestId)
-      .limit(1);
-    if (selectError) {
-      return res.status(500).json({
-        error: "label_scan_metrics_smoke_select_failed",
-        message: selectError.message,
-      });
-    }
-
-    if (Array.isArray(existing) && existing.length > 0) {
-      return res.json({ ok: true, requestId, idempotent: true });
-    }
-
-    const { error: insertError } = await supabase
-      .from("label_scan_metrics")
-      .insert({
-        request_id: requestId,
-        image_hash: requestId,
-        job_id: null,
-        parser_version: LABEL_PARSER_VERSION,
-        preprocess_profile: "ci_smoke",
-        flag_variant: "control",
-        cache_mode: "strict",
-        ocr_cache_hit: false,
-        parse_cache_hit: null,
-        analysis_cache_hit: null,
-        ocr_call_count: 0,
-        analysis_for_draft_revision: null,
-        patch_id: null,
-        patch_type: null,
-        lane_split_triggered: null,
-        lane_split_chosen: null,
-        lane_split_reverted_reason: null,
-        locked_field_conflict_count: 0,
-        response_status: "ok",
-        analysis_status: null,
-        parse_coverage: null,
-        needs_confirmation: false,
-        issue_types: [],
-        t_decode_ms: null,
-        t_ocr_ms: null,
-        t_parse_ms: null,
-        t_llm_ms: null,
-        t_first_draft_server_ms: null,
-        client_started_at_ms: null,
-        t_client_roundtrip_ms: null,
-        meta: { source: "ci_smoke", runId: parsedBody.runId, note: "scorecard_sentinel" },
-      });
-
-    if (insertError) {
-      return res.status(500).json({
-        error: "label_scan_metrics_smoke_insert_failed",
-        message: insertError.message,
-      });
-    }
-
-    return res.json({ ok: true, requestId, idempotent: false });
-  } catch (error) {
-    captureException(error, { route: "/api/label-scan/metrics/smoke" });
-    return res.status(500).json({ error: "label_scan_metrics_smoke_failed" } satisfies ErrorResponse);
-  }
-});
-
-/**
- * POST /api/label-scan/metrics
- * Client-perceived timing + merge conflict telemetry (non-blocking UX metrics)
- */
-app.post("/api/label-scan/metrics", verifySupabaseToken, async (req: Request, res: Response) => {
-  try {
-    const parsedBody = parseRequestBody(labelScanClientMetricsBodySchema, req, res);
-    if (!parsedBody) return;
-
-    await updateLabelScanClientTiming({
-      requestId: parsedBody.requestId,
-      appState: parsedBody.appState,
-      timingClient: parsedBody.timingClient,
-      lockedFieldConflictCount: parsedBody.lockedFieldConflictCount,
-    });
-
-    return res.json({ status: "ok" });
-  } catch (error) {
-    captureException(error, { route: "/api/label-scan/metrics" });
-    return res.status(500).json({ error: "label_scan_metrics_failed" } satisfies ErrorResponse);
-  }
-});
-
-/**
- * POST /api/analyze-label/confirm
- * Confirm edited ingredients and run DeepSeek analysis
- */
-app.post("/api/analyze-label/confirm", verifySupabaseToken, async (req: Request, res: Response) => {
-  try {
-    const parsedBody = parseRequestBody(analyzeLabelConfirmBodySchema, req, res);
-    if (!parsedBody) {
-      return;
-    }
-    const { imageHash, confirmedDraft } = parsedBody;
-    const preprocessProfile = normalizePreprocessProfile(parsedBody.preprocessProfile);
-    const ocrCacheKey = buildVersionedOcrCacheKey(imageHash, preprocessProfile);
-    const parseCacheKey = buildParseCacheKey(ocrCacheKey);
-    const confirmBudget = new DeadlineBudget(Date.now() + RESILIENCE_TOTAL_BUDGET_MS);
-    const confirmAbort = createRequestAbort(res);
-    const confirmDeepseekResilience: DeepseekResilienceOptions = {
-      signal: confirmAbort.signal,
-      budget: confirmBudget,
-      breaker: deepseekBreaker,
-      semaphore: deepseekSemaphore,
-      timeoutMs: RESILIENCE_DEEPSEEK_TIMEOUT_MS,
-      queueTimeoutMs: RESILIENCE_DEEPSEEK_QUEUE_TIMEOUT_MS,
-    };
-
-    if (!imageHash || !confirmedDraft) {
-      return res.status(400).json({
-        status: "failed",
-        message: "Missing required fields: imageHash and confirmedDraft",
-      } satisfies LabelAnalysisResponse);
-    }
-
-    // P0-4: Validate confirmed ingredients before analysis
-    const validationIssues: { type: string; message: string }[] = [];
-    for (const ing of confirmedDraft.ingredients) {
-      const ingIssues = validateIngredient(ing);
-      validationIssues.push(...ingIssues);
-    }
-
-    const hasBlockingIssues = validationIssues.some(
-      (i) => i.type === 'unit_invalid' || i.type === 'value_anomaly'
-    );
-
-    if (hasBlockingIssues) {
-      // P0-2: Return 200 with needs_confirmation, not 400 (frontend treats 400 as system error)
-      const snapshot = await buildAndCacheLabelSnapshot({
-        status: "needs_confirmation",
-        draft: confirmedDraft,
-        analysis: null,
-        message: "Some ingredients have validation issues. Please review and correct.",
-        imageHash,
-      });
-      return res.json({
-        status: "needs_confirmation",
-        draft: confirmedDraft,
-        message: "Some ingredients have validation issues. Please review and correct.",
-        issues: validationIssues, // Return specific issues so user knows what to fix
-        snapshot,
-      } satisfies LabelAnalysisResponse);
-    }
-
-    void upsertProductIngredientsFromDraft({
-      sourceId: imageHash,
-      draft: confirmedDraft,
-      basis: "label_serving",
-    });
-    await setParseCachedResult(ocrCacheKey, {
-      parsedIngredients: confirmedDraft,
-      diagnostics: null,
-    });
-
-    const deepseekKey = process.env.DEEPSEEK_API_KEY;
-    const model = process.env.DEEPSEEK_MODEL || "deepseek-chat";
-
-    if (!deepseekKey) {
-      const snapshot = await buildAndCacheLabelSnapshot({
-        status: "failed",
-        draft: confirmedDraft,
-        analysis: null,
-        message: "Analysis service unavailable.",
-        imageHash,
-      });
-      return res.status(503).json({
-        status: "failed",
-        message: "Analysis service unavailable.",
-        snapshot,
-      } satisfies LabelAnalysisResponse);
-    }
-
-    console.log(`[LabelScan/Confirm] Running analysis for ${imageHash.slice(0, 8)}...`);
-    const { analysis, analysisIssues, analysisStatus } = await buildLabelScanAnalysis({
-      draft: confirmedDraft,
-      imageHash,
-      model,
-      apiKey: deepseekKey,
-      contextLabel: "user-confirmed from OCR",
-      disclaimer: "This analysis is based on user-confirmed label information. Not a substitute for medical advice.",
-      resilience: confirmDeepseekResilience,
-    });
-
-    // P1-1: Use updateCachedAnalysis instead of setCachedResult to preserve created_at (TTL)
-    await updateCachedAnalysis(imageHash, analysis, { preprocessProfile });
-    await setAnalysisCachedResult(parseCacheKey, {
-      analysis,
-      analysisStatus,
-      analysisIssues,
-      llmMs: null,
-    });
-
-    console.log(`[LabelScan/Confirm] Complete for ${imageHash.slice(0, 8)}...`);
-    const snapshot = await buildAndCacheLabelSnapshot({
-      status: "ok",
-      draft: confirmedDraft,
-      analysis,
-      imageHash,
-    });
-    return res.json({
-      status: "ok",
-      draft: confirmedDraft,
-      analysis,
-      analysisStatus,
-      analysisIssues: analysisIssues.length ? analysisIssues : undefined,
-      snapshot,
-    } satisfies LabelAnalysisResponse);
-
-  } catch (error) {
-    captureException(error, { route: "/api/analyze-label/confirm" });
-    console.error("[LabelScan/Confirm] Unexpected error:", error);
-    return res.status(500).json({
-      status: "failed",
-      message: "An unexpected error occurred.",
-    } satisfies LabelAnalysisResponse);
   }
 });
 

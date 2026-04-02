@@ -31,8 +31,10 @@ import {
 import { compilePersonalizationSnapshot } from '@/lib/personalization/core/personalizationCompiler';
 import {
   loadFeedbackState,
-  recordFeedbackEvents,
+  persistFeedbackState,
+  reduceFeedbackState,
 } from '@/lib/personalization/feedback/feedbackStore';
+import { derivePersonalizationEventsFromOverrideEvents } from '@/lib/personalization/feedback/personalizationEvents';
 import {
   selectFirstStackPlan,
   selectHomePersonalization,
@@ -47,6 +49,8 @@ import type {
   FeedbackState,
   GoalKey,
   OverrideEvent,
+  PersonalizationEventSummary,
+  PersonalizationEventName,
   PersonalizationSnapshot,
   ProductGoalMatch,
   SavedProductEvaluationInput,
@@ -54,11 +58,19 @@ import type {
   SupplementTypeKey,
 } from '@/types/personalization';
 import type { SavedSupplement } from '@/types/saved-supplements';
+import {
+  createSupabaseBackedFeedbackAdapter,
+  loadRemotePersonalizationEventSummary,
+  personalizationSupabaseInternals,
+  recordPersonalizationEvents,
+  syncUserPersonalizationState,
+} from '@/lib/supabase/personalization';
 
 type PersonalizationContextValue = {
   loading: boolean;
   snapshot: PersonalizationSnapshot;
   feedbackState: FeedbackState;
+  eventSummary: PersonalizationEventSummary;
   smartFilterEvaluationLoading: boolean;
   smartFilterMembershipById: Record<string, SmartFilterProductMembership>;
   firstStackPlan: ReturnType<typeof selectFirstStackPlan>;
@@ -67,12 +79,24 @@ type PersonalizationContextValue = {
   planPreview: ReturnType<typeof selectPlanPreviewPersonalization>;
   scheduleDefaults: ReturnType<typeof selectScheduleDefaultsPersonalization>;
   recordOverrideEvents: (events: OverrideEvent[]) => Promise<void>;
+  trackPersonalizationEvent: (input: {
+    eventName: PersonalizationEventName;
+    surface: string;
+    payload?: Record<string, unknown>;
+  }) => Promise<void>;
   explainSurface: (surface: ExplanationSurface) => Promise<ExplanationResult>;
 };
 
 const PersonalizationContext = createContext<PersonalizationContextValue | undefined>(undefined);
 
 const DEFAULT_SNAPSHOT = compilePersonalizationSnapshot();
+const EMPTY_EVENT_SUMMARY: PersonalizationEventSummary = {
+  totalCount: 0,
+  lastEventAt: null,
+  countsByEventName: {},
+  countsBySurface: {},
+  recentEvents: [],
+};
 
 type CoverageStatus = 'full' | 'partial' | 'none';
 
@@ -237,11 +261,13 @@ const buildSavedProductEvaluation = (params: {
   const ensuredFacts = params.ensured?.facts ?? null;
   const factsStatus = params.ensured?.factsStatus ?? 'none';
   const coverageReady = hasCoverageReadyFacts(ensuredFacts, factsStatus);
+  const typeKeys = ensuredFacts ? deriveTypeKeysFromFacts(ensuredFacts) : [];
   if (!coverageReady || !ensuredFacts || params.visibleGoals.length === 0) {
     return {
       savedProduct: {
         productId: params.item.id,
         factsStatus,
+        ...(typeKeys.length > 0 ? { typeKeys } : {}),
         display: {
           ...(pickFirstText(
             ensuredFacts?.product.name,
@@ -311,6 +337,7 @@ const buildSavedProductEvaluation = (params: {
     savedProduct: {
       productId: params.item.id,
       factsStatus,
+      ...(typeKeys.length > 0 ? { typeKeys } : {}),
       productGoalMatches,
       eligibility,
       display: {
@@ -426,15 +453,29 @@ export const PersonalizationProvider = ({ children }: { children: React.ReactNod
     overrides: {},
     dismissals: {},
   });
+  const [eventSummary, setEventSummary] = useState<PersonalizationEventSummary>(EMPTY_EVENT_SUMMARY);
   const [feedbackLoading, setFeedbackLoading] = useState(true);
   const [productEvaluations, setProductEvaluations] =
     useState<ProductEvaluationState>(EMPTY_PRODUCT_EVALUATIONS);
   const ensureOverviewCacheRef = useRef(new Map<string, Promise<EnsureOverviewResponse | null>>());
+  const feedbackStateRef = useRef(feedbackState);
+  const feedbackAdapterRef = useRef(createSupabaseBackedFeedbackAdapter());
+  const lastSyncedStateKeyRef = useRef<string | null>(null);
+  const snapshotRef = useRef(DEFAULT_SNAPSHOT);
+  const userIdRef = useRef<string | undefined>(user?.id);
+
+  useEffect(() => {
+    feedbackStateRef.current = feedbackState;
+  }, [feedbackState]);
+
+  useEffect(() => {
+    userIdRef.current = user?.id;
+  }, [user?.id]);
 
   useEffect(() => {
     let active = true;
     setFeedbackLoading(true);
-    void loadFeedbackState(user?.id)
+    void loadFeedbackState(user?.id, feedbackAdapterRef.current)
       .then((state) => {
         if (!active) return;
         setFeedbackState(state);
@@ -452,6 +493,33 @@ export const PersonalizationProvider = ({ children }: { children: React.ReactNod
       active = false;
     };
   }, [user?.id]);
+
+  useEffect(() => {
+    let active = true;
+
+    if (!user?.id) {
+      setEventSummary(EMPTY_EVENT_SUMMARY);
+      return () => {
+        active = false;
+      };
+    }
+
+    void loadRemotePersonalizationEventSummary(user.id)
+      .then((summary) => {
+        if (!active) return;
+        setEventSummary(summary);
+      })
+      .catch((error) => {
+        console.warn('[personalization] Failed to load event summary', error);
+        if (active) {
+          setEventSummary(EMPTY_EVENT_SUMMARY);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [user?.id, feedbackState.updatedAt]);
 
   const observedSignals = useMemo(
     () => buildObservedSignals(savedSupplements, checkInsByDate),
@@ -474,8 +542,9 @@ export const PersonalizationProvider = ({ children }: { children: React.ReactNod
       compilePersonalizationSnapshot({
         profileInput,
         feedbackState,
+        eventSummary,
       }),
-    [feedbackState, profileInput],
+    [eventSummary, feedbackState, profileInput],
   );
 
   const fetchEnsureOverviewForSavedSupplement = useCallback(
@@ -592,19 +661,113 @@ export const PersonalizationProvider = ({ children }: { children: React.ReactNod
       compilePersonalizationSnapshot({
         profile: baseSnapshot.profile,
         feedbackState,
+        eventSummary,
         evaluations: {
           savedProducts: productEvaluations.savedProducts,
         },
       }),
-    [baseSnapshot.profile, feedbackState, productEvaluations.savedProducts],
+    [baseSnapshot.profile, eventSummary, feedbackState, productEvaluations.savedProducts],
+  );
+
+  useEffect(() => {
+    snapshotRef.current = snapshot;
+  }, [snapshot]);
+
+  useEffect(() => {
+    if (feedbackLoading) return;
+
+    const syncKey = JSON.stringify({
+      userId: user?.id ?? null,
+      updatedAt: feedbackState.updatedAt,
+      snapshotId: snapshot.snapshotId,
+      supportState: snapshot.strategies.supportState,
+      preferenceVector: snapshot.strategies.preferenceVector,
+    });
+
+    if (lastSyncedStateKeyRef.current === syncKey) return;
+    lastSyncedStateKeyRef.current = syncKey;
+
+    void syncUserPersonalizationState({
+      userId: user?.id,
+      feedbackState,
+      snapshotId: snapshot.snapshotId,
+      supportState: snapshot.strategies.supportState,
+      preferenceVector: snapshot.strategies.preferenceVector,
+    });
+  }, [
+    feedbackLoading,
+    feedbackState,
+    snapshot.snapshotId,
+    snapshot.strategies.preferenceVector,
+    snapshot.strategies.supportState,
+    user?.id,
+  ]);
+
+  const trackPersonalizationEvent = useCallback(
+    async (input: {
+      eventName: PersonalizationEventName;
+      surface: string;
+      payload?: Record<string, unknown>;
+    }) => {
+      const currentSnapshot = snapshotRef.current;
+      const event = {
+        userId: userIdRef.current,
+        eventName: input.eventName,
+        surface: input.surface,
+        snapshotId: currentSnapshot.snapshotId,
+        rulesVersion: currentSnapshot.rulesVersion,
+        supportState: currentSnapshot.strategies.supportState,
+        payload: {
+          ...input.payload,
+          decisionMode: currentSnapshot.strategies.preferenceVector.decisionMode,
+          explanationStyle: currentSnapshot.strategies.preferenceVector.explanationStyle,
+          notificationTolerance: currentSnapshot.strategies.preferenceVector.notificationTolerance,
+        },
+      };
+      await recordPersonalizationEvents([event]);
+      setEventSummary((current) =>
+        personalizationSupabaseInternals.appendPersonalizationEventsToSummary(current, [event]),
+      );
+    },
+    [],
   );
 
   const recordOverrideEvents = useCallback(
     async (events: OverrideEvent[]) => {
-      const next = await recordFeedbackEvents(user?.id, events);
+      const next = reduceFeedbackState(feedbackStateRef.current, events);
+      await persistFeedbackState(user?.id, next, feedbackAdapterRef.current);
       setFeedbackState(next);
+
+      const derivedEvents = derivePersonalizationEventsFromOverrideEvents(events);
+      if (derivedEvents.length > 0) {
+        const personalizationEvents = derivedEvents.map((event) => ({
+          userId: user?.id,
+          eventName: event.eventName,
+          surface: event.surface,
+          snapshotId: snapshot.snapshotId,
+          rulesVersion: snapshot.rulesVersion,
+          supportState: snapshot.strategies.supportState,
+          payload: {
+            ...event.payload,
+            decisionMode: snapshot.strategies.preferenceVector.decisionMode,
+          },
+        }));
+        await recordPersonalizationEvents(personalizationEvents);
+        setEventSummary((current) =>
+          personalizationSupabaseInternals.appendPersonalizationEventsToSummary(
+            current,
+            personalizationEvents,
+          ),
+        );
+      }
     },
-    [user?.id],
+    [
+      snapshot.rulesVersion,
+      snapshot.snapshotId,
+      snapshot.strategies.preferenceVector.decisionMode,
+      snapshot.strategies.supportState,
+      user?.id,
+    ],
   );
 
   const explainSurface = useCallback(
@@ -630,6 +793,7 @@ export const PersonalizationProvider = ({ children }: { children: React.ReactNod
       loading: onboardingLoading || savedLoading || checkInLoading || feedbackLoading,
       snapshot,
       feedbackState,
+      eventSummary,
       smartFilterEvaluationLoading: productEvaluations.loading,
       smartFilterMembershipById: snapshot.surfaces.smartFilter.productMembershipById ?? {},
       firstStackPlan,
@@ -638,6 +802,7 @@ export const PersonalizationProvider = ({ children }: { children: React.ReactNod
       planPreview,
       scheduleDefaults,
       recordOverrideEvents,
+      trackPersonalizationEvent,
       explainSurface,
     }),
     [
@@ -645,6 +810,7 @@ export const PersonalizationProvider = ({ children }: { children: React.ReactNod
       explainSurface,
       feedbackLoading,
       feedbackState,
+      eventSummary,
       firstStackPlan,
       home,
       onboardingLoading,
@@ -655,6 +821,7 @@ export const PersonalizationProvider = ({ children }: { children: React.ReactNod
       scheduleDefaults,
       smartFilter,
       snapshot,
+      trackPersonalizationEvent,
     ],
   );
 

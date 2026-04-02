@@ -1,7 +1,7 @@
-import blockerBehaviorRulesData from '@/data/personalization/blocker_behavior_rules.v1.json';
-import activityGoalMapData from '@/data/personalization/activity_goal_map.v1.json';
-import dietLaneMapData from '@/data/personalization/diet_nutrient_lane_map.v1.json';
-import type { ProfileDraft } from '@/types/onboarding';
+import blockerBehaviorRulesData from '../../../data/personalization/blocker_behavior_rules.v1.json';
+import activityGoalMapData from '../../../data/personalization/activity_goal_map.v1.json';
+import dietLaneMapData from '../../../data/personalization/diet_nutrient_lane_map.v1.json';
+import type { ProfileDraft } from '../../../types/onboarding';
 import type {
   BlockerKey,
   ConsistencyLevel,
@@ -13,7 +13,7 @@ import type {
   PersonalizationObservedSignals,
   PersonalizationProfile,
   SupplementTypeKey,
-} from '@/types/personalization';
+} from '../../../types/personalization';
 import {
   DEFAULT_PERSONALIZATION_COMPUTED_AT,
   PERSONALIZATION_PROFILE_VERSION,

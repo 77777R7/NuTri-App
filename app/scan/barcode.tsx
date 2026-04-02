@@ -246,19 +246,6 @@ export default function BarcodeScanScreen() {
         <Text style={styles.instructionText}>
           {status === 'success' ? 'Scanned!' : 'Align barcode within frame'}
         </Text>
-
-        <TouchableOpacity
-          style={styles.manualButton}
-          activeOpacity={0.8}
-          onPress={() =>
-            router.push({
-              pathname: '/scan/label',
-              params: isOnboardingScan ? { from: 'barcode', source: 'onboarding' } : { from: 'barcode' },
-            })
-          }
-        >
-          <Text style={styles.manualButtonText}>Enter code manually</Text>
-        </TouchableOpacity>
       </SafeAreaView>
     </View>
   );
@@ -413,15 +400,5 @@ const createStyles = (tokens: DesignTokens, topInset: number, bottomInset: numbe
       fontSize: 16,
       fontWeight: '500',
       opacity: 0.9,
-    },
-    manualButton: {
-      paddingVertical: 12,
-      paddingHorizontal: 24,
-    },
-    manualButtonText: {
-      color: '#fff',
-      fontSize: 14,
-      opacity: 0.7,
-      textDecorationLine: 'underline',
     },
   });

@@ -1,0 +1,52 @@
+{
+  "phase": "p0_p3_product_closure",
+  "generatedAt": "2026-03-22T23:51:27.757Z",
+  "priorityOrder": [
+    "P0",
+    "P1",
+    "P2",
+    "P3"
+  ],
+  "reports": [
+    "program_manifest_current",
+    "program_result_current",
+    "blocker_registry",
+    "import_quality_validation_report",
+    "high_frequency_product_hit_validation",
+    "product_surface_completeness_report",
+    "saved_stack_duplicate_validation",
+    "daily_dose_basis_validation",
+    "consumption_readiness_report",
+    "science_whitelist_readiness_matrix"
+  ],
+  "steps": [
+    {
+      "order": 1,
+      "id": "p0_import_quality_validation"
+    },
+    {
+      "order": 2,
+      "id": "p0_high_frequency_hit_validation"
+    },
+    {
+      "order": 3,
+      "id": "p0_product_surface_completeness_audit"
+    },
+    {
+      "order": 4,
+      "id": "p1_duplicate_ingredient_real_sample_closure"
+    },
+    {
+      "order": 5,
+      "id": "p1_daily_dose_basis_stabilization"
+    },
+    {
+      "order": 6,
+      "id": "p2_saved_item_consumption_readiness"
+    },
+    {
+      "order": 7,
+      "id": "p3_science_whitelist_readiness"
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "version": "v2",
+  "bundles": [
+    {
+      "planKey": "activity_strength_support",
+      "reviewBundleKey": "strength_easy_start",
+      "decisionModifier": "easy_start_strength"
+    },
+    {
+      "planKey": "activity_endurance_support",
+      "reviewBundleKey": "endurance_anchor_review",
+      "decisionModifier": "timing_anchor_endurance"
+    },
+    {
+      "planKey": "activity_mobility_support",
+      "reviewBundleKey": "mobility_recovery_review",
+      "decisionModifier": "consistency_friendly"
+    },
+    {
+      "planKey": "activity_performance_support",
+      "reviewBundleKey": "performance_anchor_review",
+      "decisionModifier": "performance_anchor"
+    },
+    {
+      "planKey": "activity_general_support",
+      "reviewBundleKey": "general_fitness_review",
+      "decisionModifier": "easy_start_general"
+    }
+  ]
+}

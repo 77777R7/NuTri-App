@@ -36,11 +36,12 @@ test('compilePersonalizationSnapshot emits a stable phase 3 snapshot with extrac
   assert.equal(snapshot.rulesVersion, 'personalization-rules/v1-phase7');
   assert.equal(snapshot.profile.declared.goals[0]?.key, 'focus');
   assert.deepEqual(snapshot.strategies.blocker, {
+    primarySupportFocus: 'explanation',
     reminderPriority: 'high',
     scheduleComplexity: 'simple',
     notificationBudget: 'standard',
     emphasizeHomeCheckIn: true,
-    emphasizeScheduleSetup: true,
+    emphasizeScheduleSetup: false,
     emphasizeExplanation: true,
   });
   assert.deepEqual(snapshot.strategies.experience, {
@@ -50,6 +51,12 @@ test('compilePersonalizationSnapshot emits a stable phase 3 snapshot with extrac
     showDetailedForms: false,
   });
   assert.deepEqual(snapshot.strategies.activityPlan.suggestedTimingAnchors, ['evening']);
+  assert.equal(snapshot.strategies.supportState, 'choose');
+  assert.deepEqual(snapshot.strategies.preferenceVector, {
+    decisionMode: 'best_fit',
+    explanationStyle: 'compare',
+    notificationTolerance: 'high',
+  });
   assert.deepEqual(snapshot.surfaces.smartFilter.visibleGoals, ['focus', 'energy']);
   assert.deepEqual(snapshot.surfaces.smartFilter.productMembershipById, {});
   assert.deepEqual(snapshot.surfaces.smartFilter.fallback?.notEnoughStructuredDataProductIds, []);
@@ -166,6 +173,7 @@ test('compilePersonalizationSnapshot gates saved-product smart-filter membership
         ready_product: {
           productId: 'ready_product',
           factsStatus: 'full',
+          typeKeys: ['vitamin'],
           display: {
             title: 'Immune Support Complex',
             brandName: 'NuTri Labs',
@@ -184,6 +192,7 @@ test('compilePersonalizationSnapshot gates saved-product smart-filter membership
         partial_product: {
           productId: 'partial_product',
           factsStatus: 'partial',
+          typeKeys: ['protein'],
           productGoalMatches: [
             { goalKey: 'immunity', score: 88, tier: 'strong_match', reasons: [], caps: [] },
           ],
@@ -211,9 +220,19 @@ test('compilePersonalizationSnapshot gates saved-product smart-filter membership
     'partial_product',
   ]);
   assert.deepEqual(
+    snapshot.surfaces.smartFilter.productMembershipById?.ready_product?.typeKeys,
+    ['vitamin'],
+  );
+  assert.deepEqual(
+    snapshot.surfaces.smartFilter.productMembershipById?.partial_product?.typeKeys,
+    ['protein'],
+  );
+  assert.deepEqual(
     snapshot.evaluations.firstStackPlan?.items.map((item) => item.productId),
     ['ready_product'],
   );
+  assert.equal(snapshot.evaluations.goalFitCards?.ready_product?.tier, 'strong_match');
+  assert.equal(snapshot.premiumInsights?.stackAudit?.heldBack[0]?.productId, 'partial_product');
   assert.deepEqual(snapshot.evaluations.firstStackPlan?.items[0]?.display, {
     title: 'Immune Support Complex',
     brandName: 'NuTri Labs',
@@ -262,6 +281,7 @@ test('compilePersonalizationSnapshot prefers evaluated candidate bundles over st
             factsStatus: 'full',
             coverageStatus: 'coverage_ready',
             bucket: 'strong_match',
+            typeKeys: ['vitamin'],
             goalTiers: { immunity: 'strong_match' },
             reasons: [],
           },
@@ -297,6 +317,7 @@ test('compilePersonalizationSnapshot keeps neutral fallbacks when optional signa
     blockerMode: undefined,
   });
   assert.deepEqual(snapshot.strategies.blocker, {
+    primarySupportFocus: 'reminder',
     reminderPriority: 'medium',
     scheduleComplexity: 'simple',
     notificationBudget: 'standard',

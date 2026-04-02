@@ -1,29 +1,47 @@
-import explanationTemplatesData from "../../../data/personalization/explanation_templates.v1.json";
+import explanationTemplatesData from "../../../data/personalization/explanation_templates.v1.json" with { type: "json" };
+import goalIngredientMapData from "../../../data/personalization/goal_ingredient_map.v1.json" with { type: "json" };
 import type {
-  BlockerKey,
   DecisionReason,
   ExplanationFact,
   ExplanationPayload,
   ExplanationResult,
   ExplanationSurface,
   FirstStackPlan,
+  GoalFitCard,
   GoalKey,
   PersonalizationSnapshot,
   SupplementTypeKey,
-} from "../../../types/personalization";
+} from "../../../types/personalization.js";
 
 type ExplanationTemplateFile = {
   version: string;
-  templates: Array<{
+  templates: {
     code: string;
     template: string;
     placeholders: string[];
-  }>;
+  }[];
 };
 
 type ExplanationTemplate = ExplanationTemplateFile["templates"][number];
+type GoalIngredientMapFile = {
+  version: string;
+  mappings: {
+    goalKey: GoalKey;
+    ingredientMatches: {
+      ingredientKey: string;
+      tier: string;
+      evidenceGrade?: string;
+      caps?: string[];
+    }[];
+  }[];
+};
+type GoalIngredientLane = {
+  goalLabel: string;
+  ingredients: string[];
+};
 
 const EXPLANATION_TEMPLATE_FILE = explanationTemplatesData as ExplanationTemplateFile;
+const GOAL_INGREDIENT_MAP_FILE = goalIngredientMapData as GoalIngredientMapFile;
 
 const TEMPLATE_ALIASES: Record<string, string> = {
   duplicate_overlap_high: "duplicate_overlap_downgrade",
@@ -33,6 +51,54 @@ const TEMPLATE_ALIASES: Record<string, string> = {
 const TEMPLATES_BY_CODE = new Map<string, ExplanationTemplate>(
   EXPLANATION_TEMPLATE_FILE.templates.map((template) => [template.code, template]),
 );
+const GOAL_INGREDIENT_MATCHES = new Map(
+  GOAL_INGREDIENT_MAP_FILE.mappings.map((mapping) => [mapping.goalKey, mapping.ingredientMatches] as const),
+);
+const GENERIC_SAFETY_CAP = "eligibility_requires_generic_safety_path";
+const INGREDIENT_LABEL_OVERRIDES: Record<string, string> = {
+  ashwagandha: "Ashwagandha",
+  bacopa: "Bacopa",
+  beta_glucan: "Beta-glucan",
+  caffeine: "Caffeine",
+  citicoline: "Citicoline",
+  coenzyme_q10: "CoQ10",
+  collagen_peptides: "Collagen peptides",
+  creatine: "Creatine",
+  elderberry: "Elderberry",
+  fiber: "Fiber",
+  glycine: "Glycine",
+  green_tea_extract: "Green tea extract",
+  iron: "Iron",
+  l_theanine: "L-theanine",
+  l_tyrosine: "L-tyrosine",
+  lemon_balm_extract: "Lemon balm",
+  maca: "Maca",
+  magnesium: "Magnesium",
+  melatonin: "Melatonin",
+  omega_3: "Omega-3",
+  protein: "Protein",
+  quercetin: "Quercetin",
+  rhodiola_rosea: "Rhodiola",
+  tart_cherry: "Tart cherry",
+  valerian_root_extract: "Valerian root",
+  vitamin_b12: "Vitamin B12",
+  vitamin_c: "Vitamin C",
+  vitamin_d: "Vitamin D",
+  zinc: "Zinc",
+};
+const TIER_RANK: Record<string, number> = {
+  strong_match: 3,
+  related: 2,
+  supporting: 1,
+  weak_match: 1,
+  no_match: 0,
+};
+const EVIDENCE_RANK: Record<string, number> = {
+  A: 3,
+  B: 2,
+  C: 1,
+  D: 0,
+};
 
 const titleCase = (value: string): string =>
   value
@@ -55,15 +121,8 @@ const humanizeGoal = (goal: GoalKey): string => {
 };
 
 const humanizeType = (type: SupplementTypeKey): string => titleCase(type);
-
-const humanizeAnchor = (anchor: string): string =>
-  anchor
-    .split("_")
-    .map((part) => {
-      if (part.toLowerCase() === "workout") return "workout";
-      return part.charAt(0).toUpperCase() + part.slice(1);
-    })
-    .join(" ");
+const humanizeIngredient = (ingredientKey: string): string =>
+  INGREDIENT_LABEL_OVERRIDES[ingredientKey] ?? titleCase(ingredientKey);
 
 const humanizeScheduleTemplate = (templateKey: string): string => {
   if (templateKey.includes("advanced")) return "advanced";
@@ -172,6 +231,7 @@ const buildPlanPreviewDerivedFacts = (snapshot: PersonalizationSnapshot): Explan
   const blocker = snapshot.profile.declared.adherenceBlocker;
   const diets = snapshot.profile.declared.diets ?? [];
   const activityGoals = snapshot.strategies.activityPlan.suggestedGoals;
+  const ingredientLanes = buildGoalIngredientLanes(snapshot.surfaces.planPreview.goals);
 
   if (blocker === "busy_day_forgetfulness") {
     facts.push({ factId: "plan_preview_busy_day", code: "busy_day_blocker_mealtime_anchor" });
@@ -181,6 +241,13 @@ const buildPlanPreviewDerivedFacts = (snapshot: PersonalizationSnapshot): Explan
     facts.push({ factId: "plan_preview_routine_changes", code: "routine_changes_schedule_guided" });
   }
 
+  if (blocker === "goal_fit_uncertainty") {
+    facts.push({
+      factId: "plan_preview_goal_fit_uncertainty",
+      code: "goal_fit_uncertainty_explanation_first",
+    });
+  }
+
   if (diets.includes("vegan") && snapshot.strategies.dietLanes.some((lane) => lane.laneKey === "diet_vegan_support")) {
     facts.push({ factId: "plan_preview_vegan_lane", code: "vegan_lane_b12_review" });
   }
@@ -188,6 +255,17 @@ const buildPlanPreviewDerivedFacts = (snapshot: PersonalizationSnapshot): Explan
   if (activityGoals.includes("recovery")) {
     facts.push({ factId: "plan_preview_activity_recovery", code: "activity_recovery_direction" });
   }
+
+  ingredientLanes.forEach((lane, index) => {
+    facts.push({
+      factId: `plan_preview_goal_ingredients_${index + 1}`,
+      code: "plan_preview_goal_ingredient_lane",
+      params: {
+        goalLabel: lane.goalLabel,
+        ingredientLabels: lane.ingredients.join(", "),
+      },
+    });
+  });
 
   return facts;
 };
@@ -229,6 +307,81 @@ const buildFirstStackDerivedFacts = (plan: FirstStackPlan): ExplanationFact[] =>
   return facts;
 };
 
+const buildGoalFitDerivedFacts = (
+  snapshot: PersonalizationSnapshot,
+  surface: Extract<ExplanationSurface, "goal_fit_detail" | "product_compare">,
+): ExplanationFact[] => {
+  const goalFitCards: Record<string, GoalFitCard> = snapshot.evaluations.goalFitCards ?? {};
+  const cards = Object.values(goalFitCards).slice(
+    0,
+    surface === "product_compare" ? 2 : 1,
+  );
+
+  if (cards.length === 0) {
+    return [];
+  }
+
+  const facts: ExplanationFact[] = [
+    {
+      factId: `${surface}_overview`,
+      code: surface === "product_compare" ? "product_compare_ready" : "goal_fit_detail_primary",
+      params:
+        surface === "product_compare"
+          ? {
+              candidateCount: cards.length,
+            }
+          : {
+              goalLabel: humanizeGoal(
+                cards[0]?.goalKey ?? snapshot.surfaces.planPreview.goals[0] ?? "sleep",
+              ),
+              fitTier: titleCase(cards[0]?.tier?.replace(/_/g, " ") ?? "related"),
+              evidenceLevel: titleCase(cards[0]?.confidence.evidence ?? "medium"),
+            },
+    },
+  ];
+
+  cards.forEach((card, index) => {
+    [...card.whyFit, ...card.whyNotStronger, ...card.holdbacks, ...(card.stackContext ?? [])].forEach(
+      (reason, reasonIndex) => {
+        facts.push(
+          reasonToFact(
+            reason,
+            `${surface}_card_${index + 1}_reason_${reasonIndex + 1}`,
+          ),
+        );
+      },
+    );
+  });
+
+  return facts;
+};
+
+const buildWeeklyInsightDerivedFacts = (snapshot: PersonalizationSnapshot): ExplanationFact[] => {
+  const stackAudit = snapshot.premiumInsights?.stackAudit;
+
+  return dedupeFacts([
+    {
+      factId: "weekly_insight_support_state",
+      code: "weekly_insight_support_state",
+      params: {
+        supportState: titleCase(snapshot.strategies.supportState),
+        decisionMode: titleCase(snapshot.strategies.preferenceVector.decisionMode.replace(/_/g, " ")),
+      },
+    },
+    ...(stackAudit?.heldBack.length
+      ? [
+          {
+            factId: "weekly_insight_held_back",
+            code: "weekly_insight_held_back",
+            params: {
+              heldBackCount: stackAudit.heldBack.length,
+            },
+          } satisfies ExplanationFact,
+        ]
+      : []),
+  ]);
+};
+
 const getRoleLabel = (role: FirstStackPlan["items"][number]["role"]): string => {
   switch (role) {
     case "foundation":
@@ -261,6 +414,31 @@ export const buildExplanationPayload = (
       selectedGoals,
       selectedTypes,
       facts,
+    };
+  }
+
+  if (surface === "goal_fit_detail" || surface === "product_compare") {
+    return {
+      snapshotId: snapshot.snapshotId,
+      rulesVersion: snapshot.rulesVersion,
+      surface,
+      selectedGoals,
+      selectedTypes,
+      facts: dedupeFacts(buildGoalFitDerivedFacts(snapshot, surface)),
+    };
+  }
+
+  if (surface === "weekly_insight") {
+    return {
+      snapshotId: snapshot.snapshotId,
+      rulesVersion: snapshot.rulesVersion,
+      surface,
+      selectedGoals,
+      selectedTypes,
+      facts: dedupeFacts([
+        ...buildSurfaceFactsFromReasons(snapshot.premiumInsights?.stackAudit?.reasons ?? [], surface),
+        ...buildWeeklyInsightDerivedFacts(snapshot),
+      ]),
     };
   }
 
@@ -307,6 +485,48 @@ const renderTemplate = (fact: ExplanationFact): string | null => {
     return `${productLabel} is included as ${roleLabel}.`;
   }
 
+  if (fact.code === "goal_fit_uncertainty_explanation_first") {
+    return "We will start by explaining why a supplement fits your goals before we push reminder setup or routine complexity.";
+  }
+
+  if (fact.code === "plan_preview_goal_ingredient_lane") {
+    const goalLabel = typeof fact.params?.goalLabel === "string" ? fact.params.goalLabel : "your goal";
+    const ingredientLabels =
+      typeof fact.params?.ingredientLabels === "string" ? fact.params.ingredientLabels.trim() : "";
+
+    if (ingredientLabels) {
+      return `For ${goalLabel}, we'll first review ingredients like ${ingredientLabels}.`;
+    }
+
+    return `For ${goalLabel}, we'll first review the ingredient lanes most often used for that goal.`;
+  }
+
+  if (fact.code === "goal_fit_detail_primary") {
+    const goalLabel = typeof fact.params?.goalLabel === "string" ? fact.params.goalLabel : "your goal";
+    const fitTier = typeof fact.params?.fitTier === "string" ? fact.params.fitTier : "Related";
+    const evidenceLevel =
+      typeof fact.params?.evidenceLevel === "string" ? fact.params.evidenceLevel : "Medium";
+    return `For ${goalLabel}, the current lead fit sits at ${fitTier} with ${evidenceLevel} evidence confidence.`;
+  }
+
+  if (fact.code === "product_compare_ready") {
+    const candidateCount = Number(fact.params?.candidateCount ?? 0);
+    return `We can compare ${candidateCount} coverage-ready products on fit, evidence, disclosure, overlap, and routine ease.`;
+  }
+
+  if (fact.code === "weekly_insight_support_state") {
+    const supportState =
+      typeof fact.params?.supportState === "string" ? fact.params.supportState : "Explore";
+    const decisionMode =
+      typeof fact.params?.decisionMode === "string" ? fact.params.decisionMode : "Best Fit";
+    return `You're currently in ${supportState} mode, with personalization steering toward ${decisionMode}.`;
+  }
+
+  if (fact.code === "weekly_insight_held_back") {
+    const heldBackCount = Number(fact.params?.heldBackCount ?? 0);
+    return `${heldBackCount} saved product${heldBackCount === 1 ? "" : "s"} stayed behind the main stack because the confidence or safety signal is still conservative.`;
+  }
+
   const template = TEMPLATES_BY_CODE.get(fact.code);
   if (!template) return null;
 
@@ -317,6 +537,37 @@ const renderTemplate = (fact: ExplanationFact): string | null => {
 };
 
 const buildPlanPreviewSummary = (payload: ExplanationPayload): string => {
+  const ingredientLanes = buildGoalIngredientLanes(payload.selectedGoals);
+  const hasGoalFitUncertaintyFact = payload.facts.some(
+    (fact) => fact.code === "goal_fit_uncertainty_explanation_first",
+  );
+  if (ingredientLanes.length > 0) {
+    const goalLabels = ingredientLanes.map((lane) => lane.goalLabel);
+    const ingredientLabels = Array.from(
+      new Set(ingredientLanes.flatMap((lane) => lane.ingredients)),
+    ).slice(0, goalLabels.length > 3 ? 6 : goalLabels.length > 1 ? 4 : 3);
+
+    if (goalLabels.length === 1) {
+      if (hasGoalFitUncertaintyFact) {
+        return `We'll start by reviewing ingredients commonly used for ${goalLabels[0]} and clarifying why they fit that goal, starting with ${formatList(ingredientLabels)}.`;
+      }
+      return `We'll start by surfacing ingredients commonly reviewed for ${goalLabels[0]}, starting with ${formatList(ingredientLabels)}.`;
+    }
+
+    if (goalLabels.length > 3) {
+      if (hasGoalFitUncertaintyFact) {
+        return `We'll start by surfacing ingredient directions for ${formatList(goalLabels)} support, clarifying how each lane fits, and starting with ${formatList(ingredientLabels)} and related ingredients for each goal.`;
+      }
+      return `We'll start by surfacing ingredient directions for ${formatList(goalLabels)} support, starting with ${formatList(ingredientLabels)} and related ingredients for each goal.`;
+    }
+
+    if (hasGoalFitUncertaintyFact) {
+      return `We'll start by surfacing ingredient directions for ${formatList(goalLabels)} support and clarifying why each lane fits, starting with ${formatList(ingredientLabels)}.`;
+    }
+
+    return `We'll start by surfacing ingredient directions for ${formatList(goalLabels)} support, starting with ${formatList(ingredientLabels)}.`;
+  }
+
   const goalText =
     payload.selectedGoals.length > 0
       ? payload.selectedGoals.map(humanizeGoal).join(", ")
@@ -341,8 +592,8 @@ const buildFirstStackSummary = (payload: ExplanationPayload): string => {
 
   const leadProducts = payload.firstStackPlan?.items
     .slice(0, 2)
-    .map((item) => humanizeProductId(item.productId))
-    .filter((label) => label !== "Recommended product") ?? [];
+    .map((item: FirstStackPlan["items"][number]) => humanizeProductId(item.productId))
+    .filter((label: string) => label !== "Recommended product") ?? [];
 
   if (leadProducts.length > 0) {
     return `We'll start with ${leadProducts.join(" and ")} in a ${scheduleStyle} schedule so the plan stays realistic.`;
@@ -351,29 +602,63 @@ const buildFirstStackSummary = (payload: ExplanationPayload): string => {
   return `We'll start with ${itemCount} stack item${itemCount === 1 ? "" : "s"} and a ${scheduleStyle} schedule so the plan stays realistic.`;
 };
 
+const buildGoalFitSummary = (payload: ExplanationPayload): string =>
+  `We explain goal fit using deterministic match reasons, confidence signals, and stack context from structured product facts.`;
+
+const buildProductCompareSummary = (payload: ExplanationPayload): string =>
+  `We compare products with deterministic fit, evidence, disclosure, overlap, and routine signals instead of AI ranking.`;
+
+const buildWeeklyInsightSummary = (payload: ExplanationPayload): string =>
+  `This week's insight focuses on what stayed forward in your stack and what the system is still treating conservatively.`;
+
 const buildPlanPreviewBullets = (payload: ExplanationPayload): string[] => {
-  const bullets = payload.facts
+  const ingredientLanes = buildGoalIngredientLanes(payload.selectedGoals);
+  const ingredientBullets = ingredientLanes
+    .map(
+      (lane) =>
+        `For ${lane.goalLabel}, we'll first look at ${formatList(lane.ingredients.slice(0, 3))}.`,
+    );
+
+  if (ingredientBullets.length > 0) {
+    if (ingredientBullets.length <= 2) {
+      const extraFactBullets = payload.facts
+        .filter((fact) => fact.code !== "plan_preview_goal_ingredient_lane")
+        .map(renderTemplate)
+        .filter((value: string | null): value is string => Boolean(value))
+        .slice(0, 2);
+
+      return [...ingredientBullets, ...extraFactBullets];
+    }
+
+    return ingredientBullets;
+  }
+
+  const factBullets = payload.facts
+    .filter((fact) => fact.code !== "plan_preview_goal_ingredient_lane")
     .map(renderTemplate)
-    .filter((value): value is string => Boolean(value))
-    .slice(0, 3);
+    .filter((value: string | null): value is string => Boolean(value));
+
+  if (factBullets.length > 0) {
+    return factBullets;
+  }
+
+  if (payload.selectedTypes.length > 0) {
+    return [
+      `We'll pre-focus ${payload.selectedTypes.map(humanizeType).join(", ")} when Smart Filter opens.`,
+    ];
+  }
 
   if (payload.selectedGoals.length > 0) {
-    bullets.unshift(`Your current goals are ${payload.selectedGoals.map(humanizeGoal).join(", ")}.`);
+    return [`Your current goals are ${payload.selectedGoals.map(humanizeGoal).join(", ")}.`];
   }
 
-  if (payload.selectedTypes.length > 0 && bullets.length < 4) {
-    bullets.push(
-      `We'll pre-select ${payload.selectedTypes.map(humanizeType).join(", ")} the first time you open Smart Filter.`,
-    );
-  }
-
-  return bullets.slice(0, 4);
+  return ["We'll keep your first plan simple until more personalization signals are available."];
 };
 
 const buildFirstStackBullets = (payload: ExplanationPayload): string[] => {
   const bullets = payload.facts
     .map(renderTemplate)
-    .filter((value): value is string => Boolean(value))
+    .filter((value: string | null): value is string => Boolean(value))
     .slice(0, 4);
 
   if (payload.firstStackPlan && bullets.length < 4) {
@@ -389,17 +674,37 @@ const buildFirstStackBullets = (payload: ExplanationPayload): string[] => {
   return bullets.slice(0, 4);
 };
 
+const buildGenericBullets = (payload: ExplanationPayload, fallback: string): string[] => {
+  const bullets = payload.facts
+    .map(renderTemplate)
+    .filter((value: string | null): value is string => Boolean(value))
+    .slice(0, 4);
+
+  return bullets.length > 0 ? bullets : [fallback];
+};
+
 export const renderDeterministicExplanation = (
   payload: ExplanationPayload,
 ): ExplanationResult => {
   const summary =
     payload.surface === "plan_preview"
       ? buildPlanPreviewSummary(payload)
-      : buildFirstStackSummary(payload);
+      : payload.surface === "first_stack"
+        ? buildFirstStackSummary(payload)
+        : payload.surface === "goal_fit_detail"
+          ? buildGoalFitSummary(payload)
+          : payload.surface === "product_compare"
+            ? buildProductCompareSummary(payload)
+            : buildWeeklyInsightSummary(payload);
   const bullets =
     payload.surface === "plan_preview"
       ? buildPlanPreviewBullets(payload)
-      : buildFirstStackBullets(payload);
+      : payload.surface === "first_stack"
+        ? buildFirstStackBullets(payload)
+        : buildGenericBullets(
+            payload,
+            "We'll keep this explanation tied to structured facts until stronger product-level context is available.",
+          );
 
   return {
     source: "deterministic",
@@ -430,15 +735,54 @@ export const createPersonalizationExplanationService = (
   buildPayload: buildExplanationPayload,
   async explainSnapshot(snapshot, surface) {
     const payload = buildExplanationPayload(snapshot, surface);
-    const result = await explainer.explain(payload);
+    const result =
+      surface === "plan_preview"
+        ? renderDeterministicExplanation(payload)
+        : await explainer.explain(payload);
     return { payload, result };
   },
 });
+
+const buildGoalIngredientLanes = (goals: readonly GoalKey[]): GoalIngredientLane[] =>
+  goals
+    .map((goalKey) => {
+      const ingredientMatches = GOAL_INGREDIENT_MATCHES.get(goalKey) ?? [];
+      const safeMatches = ingredientMatches.filter(
+        (match) => !match.caps?.includes(GENERIC_SAFETY_CAP),
+      );
+      const ranked = (safeMatches.length > 0 ? safeMatches : ingredientMatches)
+        .slice()
+        .sort((left, right) => {
+          const tierDiff = (TIER_RANK[right.tier] ?? 0) - (TIER_RANK[left.tier] ?? 0);
+          if (tierDiff !== 0) return tierDiff;
+
+          return (EVIDENCE_RANK[right.evidenceGrade ?? ""] ?? 0) - (EVIDENCE_RANK[left.evidenceGrade ?? ""] ?? 0);
+        });
+      const ingredients = Array.from(
+        new Set(ranked.map((match) => humanizeIngredient(match.ingredientKey))),
+      ).slice(0, 3);
+
+      return ingredients.length > 0
+        ? {
+            goalLabel: humanizeGoal(goalKey),
+            ingredients,
+          }
+        : null;
+    })
+    .filter((lane): lane is GoalIngredientLane => lane != null);
+
+const formatList = (values: readonly string[]): string => {
+  if (values.length === 0) return "the leading ingredient lanes";
+  if (values.length === 1) return values[0];
+  if (values.length === 2) return `${values[0]} and ${values[1]}`;
+  return `${values.slice(0, -1).join(", ")}, and ${values[values.length - 1]}`;
+};
 
 export const personalizationAiInternals = {
   buildSurfaceFactsFromReasons,
   buildPlanPreviewDerivedFacts,
   buildFirstStackDerivedFacts,
+  buildGoalIngredientLanes,
   renderTemplate,
   dedupeFacts,
 };

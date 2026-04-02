@@ -9,6 +9,7 @@
     "dev:stable": "npm run build && node dist/server.js",
     "start": "node dist/server.js",
     "build": "node scripts/build-render-runtime-wrapper.mjs",
+    "build:goal-navigator-bundle": "tsx --tsconfig tsconfig.runtime.json scripts/build-goal-navigator-candidate-bundle.ts",
     "test": "tsx --tsconfig tsconfig.runtime.json --test tests/*.test.mjs",
     "cleanup:supabase": "tsx --tsconfig tsconfig.runtime.json scripts/cleanup-supabase-caches.ts"
   },

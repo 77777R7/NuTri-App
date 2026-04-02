@@ -1,0 +1,53 @@
+{
+  "version": "v1",
+  "goals": [
+    {
+      "goalKey": "sleep",
+      "confidenceProfile": "core_confidence",
+      "goalNavigatorEnabled": true,
+      "coachTone": "standard"
+    },
+    {
+      "goalKey": "energy",
+      "confidenceProfile": "core_confidence",
+      "goalNavigatorEnabled": true,
+      "coachTone": "standard"
+    },
+    {
+      "goalKey": "immunity",
+      "confidenceProfile": "core_confidence",
+      "goalNavigatorEnabled": true,
+      "coachTone": "standard"
+    },
+    {
+      "goalKey": "recovery",
+      "confidenceProfile": "core_confidence",
+      "goalNavigatorEnabled": true,
+      "coachTone": "standard"
+    },
+    {
+      "goalKey": "focus",
+      "confidenceProfile": "core_confidence",
+      "goalNavigatorEnabled": true,
+      "coachTone": "standard"
+    },
+    {
+      "goalKey": "stress_support",
+      "confidenceProfile": "conservative_review",
+      "goalNavigatorEnabled": false,
+      "coachTone": "conservative"
+    },
+    {
+      "goalKey": "weight_management",
+      "confidenceProfile": "conservative_review",
+      "goalNavigatorEnabled": false,
+      "coachTone": "conservative"
+    },
+    {
+      "goalKey": "libido_enhancement",
+      "confidenceProfile": "conservative_review",
+      "goalNavigatorEnabled": false,
+      "coachTone": "conservative"
+    }
+  ]
+}

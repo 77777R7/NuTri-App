@@ -1,0 +1,437 @@
+{
+  "generatedAt": "2026-03-23T08:53:50.807Z",
+  "phase": "P0-A",
+  "phaseOutcomeStatus": "execution_success",
+  "inputs": {
+    "mergeReportPath": "output/refill_mega_04/item_expansion_01/merge_baseline_v5/overlay_merge_coverage_report.json",
+    "stagingPath": "output/refill_mega_04/item_expansion_01/merge_validation/staging_products.scrapling_merged.payload.json",
+    "mergeReportGeneratedAt": "2026-03-23T08:53:46.905Z"
+  },
+  "baseline": {
+    "totalRows": 50873,
+    "eligibleRows": 50733,
+    "strictMergeReady": 27899,
+    "queued": 22731,
+    "blocked": 243
+  },
+  "fieldMetrics": [
+    {
+      "field": "ingredient",
+      "label": "ingredient",
+      "resolvedCount": 32615,
+      "missingCount": 18258,
+      "completenessRatePct": 64.1,
+      "nullOrEmptyRatePct": 35.9,
+      "parseFailureCountObserved": 655,
+      "mappingMismatchCountObserved": 26635,
+      "measurementStatus": "directly_instrumented",
+      "parseFailureExamples": [
+        {
+          "barcodeGtin14": "00813424025135",
+          "productId": "152325",
+          "title": "ACURE, Scar Treatment Balm, 1.4 oz (40 g)",
+          "reason": "ingredient_like_input_present_but_structured_ingredient_not_resolved"
+        },
+        {
+          "barcodeGtin14": "00310119601921",
+          "productId": "156056",
+          "title": "Alaway, Eye Itch Relief, Antihistamine Eye Drops, Twin Pack, 2 Bottles, 0.34 fl oz (10 ml) Each",
+          "reason": "ingredient_like_input_present_but_structured_ingredient_not_resolved"
+        },
+        {
+          "barcodeGtin14": "00678226015605",
+          "productId": "24192",
+          "title": "American Biosciences, DGP®, 60 Fast Acting Chewable Tablets",
+          "reason": "ingredient_like_input_present_but_structured_ingredient_not_resolved"
+        },
+        {
+          "barcodeGtin14": "00678226009307",
+          "productId": "143174",
+          "title": "American Biosciences, NK-9™, Immune System Support, 30 Capsules",
+          "reason": "ingredient_like_input_present_but_structured_ingredient_not_resolved"
+        },
+        {
+          "barcodeGtin14": "00796289001615",
+          "productId": "152123",
+          "title": "Animal Essentials, Colon Rescue Powder, For Dogs & Cats, 1 oz (30 g)",
+          "reason": "ingredient_like_input_present_but_structured_ingredient_not_resolved"
+        },
+        {
+          "barcodeGtin14": "00630694000088",
+          "productId": "78581",
+          "title": "Animal Essentials, Plant Enzyme & Probiotic, For Dogs & Cats, 10.6 oz (300 g)",
+          "reason": "ingredient_like_input_present_but_structured_ingredient_not_resolved"
+        },
+        {
+          "barcodeGtin14": "00630694000033",
+          "productId": "78579",
+          "title": "Animal Essentials, Sea-Cal, For Dogs and Cats, 12 oz (340 g)",
+          "reason": "ingredient_like_input_present_but_structured_ingredient_not_resolved"
+        },
+        {
+          "barcodeGtin14": "00630694008244",
+          "productId": "152130",
+          "title": "Animal Essentials, Turkey Tail Mushroom Combat, For Dogs & Cats, 2.5 oz (70 g)",
+          "reason": "ingredient_like_input_present_but_structured_ingredient_not_resolved"
+        }
+      ],
+      "mappingMismatchExamples": [
+        {
+          "barcodeGtin14": "00740985272879",
+          "productId": "41312",
+          "title": "21st Century, 600 + D3 Plus Minerals, Fruit Punch, 75 Tablets",
+          "example": {
+            "substancy": "Includes 1 g Added Sugars",
+            "amountPerServing": "",
+            "dailyValuePercent": "2%‡"
+          }
+        },
+        {
+          "barcodeGtin14": "00740985271292",
+          "productId": "15223",
+          "title": "21st Century, Alaska Wild Fish Oil, Mega Omega 3, 90 Enteric Coated Softgels",
+          "example": {
+            "substancy": "",
+            "amountPerServing": "Amount Per Serving",
+            "dailyValuePercent": "%Daily Value"
+          }
+        },
+        {
+          "barcodeGtin14": "00740985280157",
+          "productId": "115006",
+          "title": "21st Century, Apple Cider Vinegar, 90 Capsules",
+          "example": {
+            "substancy": "",
+            "amountPerServing": "Amount Per Serving",
+            "dailyValuePercent": "%Daily Value"
+          }
+        },
+        {
+          "barcodeGtin14": "00740985226230",
+          "productId": "37348",
+          "title": "21st Century, Arthri-Flex Advantage® + Vitamin D3, 120 Coated Tablets",
+          "example": {
+            "substancy": "",
+            "amountPerServing": "Amount Per Serving",
+            "dailyValuePercent": "%Daily Value"
+          }
+        },
+        {
+          "barcodeGtin14": "00740985279243",
+          "productId": "120057",
+          "title": "21st Century, Arthri-Flex® Advantage + Turmeric, 90 Vegetarian Capsules",
+          "example": {
+            "substancy": "",
+            "amountPerServing": "Amount Per Serving",
+            "dailyValuePercent": "%Daily Value"
+          }
+        },
+        {
+          "barcodeGtin14": "00740985222706",
+          "productId": "151982",
+          "title": "21st Century, Beet Root, 90 Capsules (500 mg per Capsule)",
+          "example": {
+            "substancy": "",
+            "amountPerServing": "Amount Per Serving",
+            "dailyValuePercent": "%Daily Value"
+          }
+        },
+        {
+          "barcodeGtin14": "00740985222720",
+          "productId": "151983",
+          "title": "21st Century, Berberine HCI, 60 Vegetarian Capsules (500 mg per Capsule)",
+          "example": {
+            "substancy": "",
+            "amountPerServing": "Amount Per Serving",
+            "dailyValuePercent": "%Daily Value"
+          }
+        },
+        {
+          "barcodeGtin14": "00740985274927",
+          "productId": "51901",
+          "title": "21st Century, Calcium Citrate + D3 Maximum, 75 Tablets",
+          "example": {
+            "substancy": "",
+            "amountPerServing": "Amount Per Serving",
+            "dailyValuePercent": "%Daily Value"
+          }
+        }
+      ]
+    },
+    {
+      "field": "dosage",
+      "label": "dosage",
+      "resolvedCount": 32609,
+      "missingCount": 18264,
+      "completenessRatePct": 64.1,
+      "nullOrEmptyRatePct": 35.9,
+      "parseFailureCountObserved": 6,
+      "mappingMismatchCountObserved": 9724,
+      "measurementStatus": "directly_instrumented",
+      "parseFailureExamples": [
+        {
+          "barcodeGtin14": "00084783447108",
+          "productId": "54418",
+          "title": "Christopher's Original Formulas, Kid-e-Trac™, Emotional Clarity, 2 fl oz",
+          "reason": "ingredient_rows_present_but_display_safe_dosage_missing"
+        },
+        {
+          "barcodeGtin14": "00023363322749",
+          "productId": "97238",
+          "title": "Eclectic Herb, Herbal Glycerite, ParaFight , 2 fl oz (60 ml)",
+          "reason": "ingredient_rows_present_but_display_safe_dosage_missing"
+        },
+        {
+          "barcodeGtin14": "00755571947420",
+          "productId": "138717",
+          "title": "Metagenics, UltraInflamX Plus 360°®, Tropical Mango, 21.23 oz (602 g)",
+          "reason": "ingredient_rows_present_but_display_safe_dosage_missing"
+        },
+        {
+          "barcodeGtin14": "00076950208681",
+          "productId": "141623",
+          "title": "Yogi Tea, Focus, Spiced Blackberry, 16 Tea Bags, 1.12 oz (32 g)",
+          "reason": "ingredient_rows_present_but_display_safe_dosage_missing"
+        },
+        {
+          "barcodeGtin14": "00076950450103",
+          "productId": "5491",
+          "title": "Yogi Tea, Immune Support, Echinacea, Caffeine Free, 16 Tea Bags, 0.85 oz (24 g)",
+          "reason": "ingredient_rows_present_but_display_safe_dosage_missing"
+        },
+        {
+          "barcodeGtin14": "00076950209046",
+          "productId": "140370",
+          "title": "Yogi Tea, Mindfulness™, Mandarin Mint, Caffeine Free, 16 Tea Bags, 1.12 oz (32 g)",
+          "reason": "ingredient_rows_present_but_display_safe_dosage_missing"
+        }
+      ],
+      "mappingMismatchExamples": [
+        {
+          "barcodeGtin14": "00740985272879",
+          "productId": "41312",
+          "title": "21st Century, 600 + D3 Plus Minerals, Fruit Punch, 75 Tablets",
+          "example": {
+            "substancy": "Includes 1 g Added Sugars",
+            "amountPerServing": "",
+            "dailyValuePercent": "2%‡"
+          }
+        },
+        {
+          "barcodeGtin14": "00740985279243",
+          "productId": "120057",
+          "title": "21st Century, Arthri-Flex® Advantage + Turmeric, 90 Vegetarian Capsules",
+          "example": {
+            "substancy": "†Percent Daily Value is based on a 2,000 calorie diet.**Daily Values not established.",
+            "amountPerServing": "",
+            "dailyValuePercent": null
+          }
+        },
+        {
+          "barcodeGtin14": "00740985278482",
+          "productId": "69338",
+          "title": "21st Century, Cranberry Plus Probiotic, 60 Tablets",
+          "example": {
+            "substancy": "Includes 0 g Added Sugars",
+            "amountPerServing": "",
+            "dailyValuePercent": "0%‡"
+          }
+        },
+        {
+          "barcodeGtin14": "00740985222751",
+          "productId": "156538",
+          "title": "21st Century, Electrolyte Hydrate Gummies, Orange, 60 Gummies",
+          "example": {
+            "substancy": "Includes 3 g Added Sugars",
+            "amountPerServing": "",
+            "dailyValuePercent": "6%†"
+          }
+        },
+        {
+          "barcodeGtin14": "00740985228722",
+          "productId": "37359",
+          "title": "21st Century, Fish Oil, 1,000 mg, 120 Softgels",
+          "example": {
+            "substancy": "EPA (Eicosapentaenoic Acid)",
+            "amountPerServing": "",
+            "dailyValuePercent": "**"
+          }
+        },
+        {
+          "barcodeGtin14": "00740985214954",
+          "productId": "43875",
+          "title": "21st Century, Fish Oil, 1,000 mg, 60 Softgels",
+          "example": {
+            "substancy": "EPA (Eicosapentaenoic Acid)",
+            "amountPerServing": "",
+            "dailyValuePercent": "**"
+          }
+        },
+        {
+          "barcodeGtin14": "00740985273487",
+          "productId": "43876",
+          "title": "21st Century, Fish Oil, 1,200 mg, 140 Softgels",
+          "example": {
+            "substancy": "EPA (Eicosapentaenoic Acid)",
+            "amountPerServing": "",
+            "dailyValuePercent": "**"
+          }
+        },
+        {
+          "barcodeGtin14": "00740985222744",
+          "productId": "154189",
+          "title": "21st Century, Full Fuel 365™, Creatine Monohydrate Gummies, Mixed Berry, 75 Gummies (1 g per Gummy)",
+          "example": {
+            "substancy": "Includes 5 g Added Sugars",
+            "amountPerServing": "",
+            "dailyValuePercent": "10%†"
+          }
+        }
+      ]
+    },
+    {
+      "field": "suggested_use",
+      "label": "suggested use",
+      "resolvedCount": 44629,
+      "missingCount": 6244,
+      "completenessRatePct": 87.7,
+      "nullOrEmptyRatePct": 12.3,
+      "parseFailureCountObserved": 0,
+      "mappingMismatchCountObserved": 12214,
+      "measurementStatus": "directly_instrumented",
+      "parseFailureExamples": [],
+      "mappingMismatchExamples": [
+        {
+          "barcodeGtin14": "00843585102826",
+          "productId": "147999",
+          "title": "100% PURE, Acai Pulp Facial Scrub, 2 fl oz (59 ml)",
+          "example": "Massage onto clean, wet skin for 60 seconds. Rinse."
+        },
+        {
+          "barcodeGtin14": "00843585101942",
+          "productId": "148012",
+          "title": "100% PURE, Burdock & Neem Healthy Scalp Shampoo, 8 fl oz (236 ml)",
+          "example": "Massage onto wet hair and scalp to create lather. Rinse."
+        },
+        {
+          "barcodeGtin14": "00843585104202",
+          "productId": "148001",
+          "title": "100% PURE, Charcoal Clay Cleanser, 2.7 fl oz (80 ml)",
+          "example": "Shake bottle. Squeeze cleanser onto konjac sponge, facial brush, or directly onto wet skin. Gently massage in circular motions, then rinse with warm water."
+        },
+        {
+          "barcodeGtin14": "00843585103304",
+          "productId": "148004",
+          "title": "100% PURE, Coffee Bean Caffeine Brightening Eye Cream, 1 fl oz (30 ml)",
+          "example": "Apply dime sized amount onto freshly cleansed skin, around the eye area (including eyelids). Can be used AM and PM."
+        },
+        {
+          "barcodeGtin14": "00843585112863",
+          "productId": "147993",
+          "title": "100% PURE, Coffee Bean Caffeine Restorative Moisturizer, 1.4 fl oz (40 ml)",
+          "example": "Use every morning, including on neck, decollete and other areas frequently sun exposed or that need firming. Can be used in the PM but we recommend AM use due to the caffeine content."
+        },
+        {
+          "barcodeGtin14": "00843585114492",
+          "productId": "148011",
+          "title": "100% PURE, Coffee Bean Caffeine Restorative Serum, 1 fl oz (30 ml)",
+          "example": "Use on cleansed skin. Can be used both AM and PM but please note caffeine content."
+        },
+        {
+          "barcodeGtin14": "00843585100686",
+          "productId": "148030",
+          "title": "100% PURE, Creamy Long Last Eyeliner, Blackest, 0.04 oz (1.14 g)",
+          "example": "To apply, trace a thin line on your lid, as close to your lashes as possible. Work in short strokes to achieve a smooth, wiggle-free line. For a smokey eye effect, line eyes then buff out with a cruelty-free smudger brush."
+        },
+        {
+          "barcodeGtin14": "00843585101072",
+          "productId": "147997",
+          "title": "100% PURE, Fermented Rice Water Brightening Toner, 3.3 fl oz (100 ml)",
+          "example": "Apply quarter sized amount directly onto cleansed skin or saturate cotton pad and wipe skin, including neck and décolleté area."
+        }
+      ]
+    },
+    {
+      "field": "warnings",
+      "label": "warnings",
+      "resolvedCount": 41518,
+      "missingCount": 9355,
+      "completenessRatePct": 81.6,
+      "nullOrEmptyRatePct": 18.4,
+      "parseFailureCountObserved": 0,
+      "mappingMismatchCountObserved": 4242,
+      "measurementStatus": "directly_instrumented",
+      "parseFailureExamples": [],
+      "mappingMismatchExamples": [
+        {
+          "barcodeGtin14": "00853104007334",
+          "productId": "106115",
+          "title": "4th & Heart, Ghee Clarified Butter, Grass-Fed, Vanilla Bean, 16 oz (454 g)",
+          "example": "Do not microwave.Do not refrigerate. For best results, keep clean and dry, and use within 3 months."
+        },
+        {
+          "barcodeGtin14": "00853104007327",
+          "productId": "104635",
+          "title": "4th & Heart, Ghee Clarified Butter, Himalayan Pink Salt, 16 oz ( 454 g)",
+          "example": "Do not microwave. Do not refrigerate. For best results, keep clean and dry, and use within 3 months."
+        },
+        {
+          "barcodeGtin14": "00817252012213",
+          "productId": "73984",
+          "title": "A La Maison de Provence, Deodorant, Fresh Sea Salt, 2.4 oz (70 g)",
+          "example": "For external use only. Keep at room temperature."
+        },
+        {
+          "barcodeGtin14": "00817252010080",
+          "productId": "55985",
+          "title": "A La Maison de Provence, Hand & Body Bar Soap, Oat Milk, 4 Bars, 3.5 oz (100 g) Each",
+          "example": "For external use only. Keep at room temperature."
+        },
+        {
+          "barcodeGtin14": "00817252012114",
+          "productId": "152140",
+          "title": "A La Maison de Provence, Hand & Body Lotion, Honeysuckle, 8 fl oz (240 ml)",
+          "example": "For external use only."
+        },
+        {
+          "barcodeGtin14": "00817252012121",
+          "productId": "152141",
+          "title": "A La Maison de Provence, Hand & Body Lotion, Lavender Aloe, 8 fl oz (240 ml)",
+          "example": "For external use only."
+        },
+        {
+          "barcodeGtin14": "00817252017003",
+          "productId": "152142",
+          "title": "A La Maison de Provence, Hand & Body Lotion, Orange Bergamot, 8 fl oz (240 ml)",
+          "example": "For external use only."
+        },
+        {
+          "barcodeGtin14": "00817252011964",
+          "productId": "68967",
+          "title": "A La Maison de Provence, Hand Cream, Honeysuckle, 1.7 oz (50 ml)",
+          "example": "For external use only."
+        }
+      ]
+    },
+    {
+      "field": "product_image",
+      "label": "product image",
+      "resolvedCount": 50637,
+      "missingCount": 236,
+      "completenessRatePct": 99.5,
+      "nullOrEmptyRatePct": 0.5,
+      "parseFailureCountObserved": 0,
+      "mappingMismatchCountObserved": 0,
+      "measurementStatus": "directly_instrumented",
+      "parseFailureExamples": [],
+      "mappingMismatchExamples": []
+    }
+  ],
+  "provenance": {
+    "authoritativeDsldBacked": 13791,
+    "highConfidenceProductPageBacked": 14108,
+    "overlayOnlyOrUnclassified": 22974
+  },
+  "directInstrumentationClosed": true,
+  "blockers": []
+}

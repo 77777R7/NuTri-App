@@ -3,7 +3,12 @@ import { z } from "zod";
 const nonEmptyString = z.string().trim().min(1);
 const isoDateTimeSchema = z.string().datetime({ offset: true });
 
-export const factsSourceSchema = z.enum(["label_scan", "lnhpd", "dsld", "web_verified"]);
+const normalizeLegacyFactsSource = (value: unknown) => (value === "label_scan" ? "dsld" : value);
+
+export const factsSourceSchema = z.preprocess(
+  normalizeLegacyFactsSource,
+  z.enum(["lnhpd", "dsld", "web_verified"]),
+);
 
 export const factsIngredientSchema = z
   .object({

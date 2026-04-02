@@ -1,0 +1,68 @@
+{
+  "schemaVersion": "scrapling_lane_registry.v1",
+  "updatedAt": "2026-03-20T23:59:00.000Z",
+  "rules": [
+    {
+      "ruleId": "lane:pure-encapsulations/smartq-product-stop",
+      "match": {
+        "brandName": "Pure Encapsulations",
+        "sourceBucket": "smartq-product"
+      },
+      "decision": "STOP",
+      "quarantine": {
+        "active": true,
+        "reasons": [
+          "distributor_or_unavailable_source",
+          "stale_or_unavailable_product_page",
+          "missing_primary_image"
+        ]
+      },
+      "notes": "SmartQ product URLs currently resolve to weak or unavailable pages and should not be promoted into the main Scrapling lane."
+    },
+    {
+      "ruleId": "lane:codeage/official-human-hold",
+      "match": {
+        "configPathIncludes": "codeage_official_human_supplement_lane"
+      },
+      "decision": "HOLD",
+      "quarantine": {
+        "active": true,
+        "reasons": [
+          "official_site_structure_weak",
+          "missing_structured_facts"
+        ]
+      },
+      "notes": "Official Codeage product pages are still treated as conservative hold sources until section/facts extraction is consistently strong."
+    },
+    {
+      "ruleId": "lane:codeage/non-human-stop",
+      "match": {
+        "configPathIncludes": "codeage_iherb_pet_food_lane"
+      },
+      "decision": "STOP",
+      "quarantine": {
+        "active": true,
+        "reasons": [
+          "non_human_scope",
+          "pet_or_food_sku"
+        ]
+      },
+      "notes": "Pet/food or otherwise non-human Codeage rows stay quarantined and must not be promoted into human supplement Scrapling lanes."
+    },
+    {
+      "ruleId": "lane:codeage/excluded-non-human-stop",
+      "match": {
+        "laneName": "codeage_iherb_excluded_non_human"
+      },
+      "decision": "STOP",
+      "quarantine": {
+        "active": true,
+        "reasons": [
+          "non_human_scope",
+          "pet_or_food_sku"
+        ]
+      },
+      "notes": "Excluded non-human Codeage samples are preserved only for auditability, not for promotion."
+    }
+  ]
+}

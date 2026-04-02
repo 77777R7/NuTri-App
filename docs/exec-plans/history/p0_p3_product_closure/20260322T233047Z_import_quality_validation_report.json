@@ -1,0 +1,238 @@
+{
+  "generatedAt": "2026-03-22T23:30:47.110Z",
+  "phase": "P0-A",
+  "phaseOutcomeStatus": "execution_success",
+  "inputs": {
+    "mergeReportPath": "output/partial_overlay_conversion_v1/overlay_merge_coverage_report.updated.json",
+    "stagingPath": "output/partial_overlay_conversion_v1/current_staging_products.scrapling_merged.json",
+    "mergeReportGeneratedAt": "2026-03-21T08:00:00.000Z"
+  },
+  "baseline": {
+    "totalRows": 51174,
+    "eligibleRows": 51034,
+    "strictMergeReady": 26721,
+    "queued": 23909,
+    "blocked": 484
+  },
+  "fieldMetrics": [
+    {
+      "field": "ingredient",
+      "label": "ingredient",
+      "resolvedCount": 32860,
+      "missingCount": 18314,
+      "completenessRatePct": 64.2,
+      "nullOrEmptyRatePct": 35.8,
+      "parseFailureCountObserved": 0,
+      "mappingMismatchCountObserved": 0,
+      "measurementStatus": "directly_instrumented",
+      "parseFailureExamples": [],
+      "mappingMismatchExamples": []
+    },
+    {
+      "field": "dosage",
+      "label": "dosage",
+      "resolvedCount": 32855,
+      "missingCount": 18319,
+      "completenessRatePct": 64.2,
+      "nullOrEmptyRatePct": 35.8,
+      "parseFailureCountObserved": 0,
+      "mappingMismatchCountObserved": 0,
+      "measurementStatus": "directly_instrumented",
+      "parseFailureExamples": [],
+      "mappingMismatchExamples": []
+    },
+    {
+      "field": "suggested_use",
+      "label": "suggested use",
+      "resolvedCount": 43915,
+      "missingCount": 7257,
+      "completenessRatePct": 85.8,
+      "nullOrEmptyRatePct": 14.2,
+      "parseFailureCountObserved": 0,
+      "mappingMismatchCountObserved": 43915,
+      "measurementStatus": "directly_instrumented",
+      "parseFailureExamples": [],
+      "mappingMismatchExamples": [
+        {
+          "barcodeGtin14": "00843585102826",
+          "productId": "147999",
+          "title": "100% PURE, Acai Pulp Facial Scrub, 2 fl oz (59 ml)",
+          "example": null
+        },
+        {
+          "barcodeGtin14": "00843585100082",
+          "productId": "154084",
+          "title": "100% PURE, Bright Eyes, Hydrogel Eye Mask, 1 Pair, 0.28 oz",
+          "example": null
+        },
+        {
+          "barcodeGtin14": "00843585100594",
+          "productId": "154085",
+          "title": "100% PURE, Bright Eyes, Hydrogel Eye Masks, 5 Masks, 0.28 oz (8 g) Each",
+          "example": null
+        },
+        {
+          "barcodeGtin14": "00843585103243",
+          "productId": "148015",
+          "title": "100% PURE, Burdock & Neem Healthy Scalp Conditioner, 8 fl oz (236 ml)",
+          "example": null
+        },
+        {
+          "barcodeGtin14": "00843585101942",
+          "productId": "148012",
+          "title": "100% PURE, Burdock & Neem Healthy Scalp Shampoo, 8 fl oz (236 ml)",
+          "example": null
+        },
+        {
+          "barcodeGtin14": "00843585104202",
+          "productId": "148001",
+          "title": "100% PURE, Charcoal Clay Cleanser, 2.7 fl oz (80 ml)",
+          "example": null
+        },
+        {
+          "barcodeGtin14": "00843585103304",
+          "productId": "148004",
+          "title": "100% PURE, Coffee Bean Caffeine Brightening Eye Cream, 1 fl oz (30 ml)",
+          "example": null
+        },
+        {
+          "barcodeGtin14": "00843585112863",
+          "productId": "147993",
+          "title": "100% PURE, Coffee Bean Caffeine Restorative Moisturizer, 1.4 fl oz (40 ml)",
+          "example": null
+        }
+      ]
+    },
+    {
+      "field": "warnings",
+      "label": "warnings",
+      "resolvedCount": 40395,
+      "missingCount": 10775,
+      "completenessRatePct": 78.9,
+      "nullOrEmptyRatePct": 21.1,
+      "parseFailureCountObserved": 0,
+      "mappingMismatchCountObserved": 40395,
+      "measurementStatus": "directly_instrumented",
+      "parseFailureExamples": [],
+      "mappingMismatchExamples": [
+        {
+          "barcodeGtin14": "00843585103304",
+          "productId": "148004",
+          "title": "100% PURE, Coffee Bean Caffeine Brightening Eye Cream, 1 fl oz (30 ml)",
+          "example": null
+        },
+        {
+          "barcodeGtin14": "08809433340873",
+          "productId": "155578",
+          "title": "107 Beauty, 107 Micro Drizzle Hydro Toner, 5.2 fl oz (155 ml)",
+          "example": null
+        },
+        {
+          "barcodeGtin14": "08809433340668",
+          "productId": "131202",
+          "title": "107 Beauty, Avocado Cuddle, Beauty Sheet Masks, 5 Sheets, 0.88 oz (25 g) Each",
+          "example": null
+        },
+        {
+          "barcodeGtin14": "08809433340651",
+          "productId": "131198",
+          "title": "107 Beauty, Chaga Jelly, Low pH Cleanser, 4 fl oz (120 ml)",
+          "example": null
+        },
+        {
+          "barcodeGtin14": "08809433340644",
+          "productId": "131201",
+          "title": "107 Beauty, Everyday Plump, Hydro Cream, 1.7 fl oz (50 ml)",
+          "example": null
+        },
+        {
+          "barcodeGtin14": "08809433340774",
+          "productId": "140046",
+          "title": "107 Beauty, Hair & Scalp Hydrating Microbiome Treatment, 6.08 fl oz (180 ml)",
+          "example": null
+        },
+        {
+          "barcodeGtin14": "08809433340705",
+          "productId": "131199",
+          "title": "107 Beauty, Micro Drizzle, Hydro Toner, 6.1 fl oz (180 ml)",
+          "example": null
+        },
+        {
+          "barcodeGtin14": "08809433340859",
+          "productId": "153687",
+          "title": "107 Beauty, Scalp Purifying Microbiome Shampoo, 12.84 fl oz (380 ml)",
+          "example": null
+        }
+      ]
+    },
+    {
+      "field": "product_image",
+      "label": "product image",
+      "resolvedCount": 50699,
+      "missingCount": 475,
+      "completenessRatePct": 99.1,
+      "nullOrEmptyRatePct": 0.9,
+      "parseFailureCountObserved": 0,
+      "mappingMismatchCountObserved": 50699,
+      "measurementStatus": "directly_instrumented",
+      "parseFailureExamples": [],
+      "mappingMismatchExamples": [
+        {
+          "barcodeGtin14": "00843585102826",
+          "productId": "147999",
+          "title": "100% PURE, Acai Pulp Facial Scrub, 2 fl oz (59 ml)",
+          "example": null
+        },
+        {
+          "barcodeGtin14": "00843585100082",
+          "productId": "154084",
+          "title": "100% PURE, Bright Eyes, Hydrogel Eye Mask, 1 Pair, 0.28 oz",
+          "example": null
+        },
+        {
+          "barcodeGtin14": "00843585100594",
+          "productId": "154085",
+          "title": "100% PURE, Bright Eyes, Hydrogel Eye Masks, 5 Masks, 0.28 oz (8 g) Each",
+          "example": null
+        },
+        {
+          "barcodeGtin14": "00843585103243",
+          "productId": "148015",
+          "title": "100% PURE, Burdock & Neem Healthy Scalp Conditioner, 8 fl oz (236 ml)",
+          "example": null
+        },
+        {
+          "barcodeGtin14": "00843585101942",
+          "productId": "148012",
+          "title": "100% PURE, Burdock & Neem Healthy Scalp Shampoo, 8 fl oz (236 ml)",
+          "example": null
+        },
+        {
+          "barcodeGtin14": "00843585104202",
+          "productId": "148001",
+          "title": "100% PURE, Charcoal Clay Cleanser, 2.7 fl oz (80 ml)",
+          "example": null
+        },
+        {
+          "barcodeGtin14": "00843585103304",
+          "productId": "148004",
+          "title": "100% PURE, Coffee Bean Caffeine Brightening Eye Cream, 1 fl oz (30 ml)",
+          "example": null
+        },
+        {
+          "barcodeGtin14": "00843585112863",
+          "productId": "147993",
+          "title": "100% PURE, Coffee Bean Caffeine Restorative Moisturizer, 1.4 fl oz (40 ml)",
+          "example": null
+        }
+      ]
+    }
+  ],
+  "provenance": {
+    "authoritativeDsldBacked": 13238,
+    "highConfidenceProductPageBacked": 13385,
+    "overlayOnlyOrUnclassified": 24551
+  },
+  "directInstrumentationClosed": true,
+  "blockers": []
+}

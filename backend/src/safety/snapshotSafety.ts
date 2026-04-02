@@ -64,9 +64,10 @@ export const buildSnapshotSafetyDigestBundle = (params: {
   labelDirectionsRawText: string | null;
 } => {
   const { snapshot, supplementId, barcodeGtin14, brandName, productName } = params;
-  const source = snapshot.analysis?.labelExtraction?.source ?? null;
+  const sourceRaw = snapshot.analysis?.labelExtraction?.source ?? null;
+  const source = sourceRaw === "label_scan" ? "dsld" : sourceRaw;
 
-  if (source === "dsld" || source === "label_scan") {
+  if (source === "dsld") {
     const digest = buildFactsDigestFromDsld({
       facts: buildDsldFactsInputFromSnapshot(snapshot),
       snapshot,

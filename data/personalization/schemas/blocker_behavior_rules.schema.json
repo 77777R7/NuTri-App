@@ -10,7 +10,7 @@
       "minItems": 6,
       "items": {
         "type": "object",
-        "required": ["key", "onboardingLabel", "blockerMode", "reminderPriority", "scheduleComplexity", "notificationBudget", "emphasizeHomeCheckIn", "emphasizeScheduleSetup", "emphasizeExplanation", "preferredTimingAnchors"],
+        "required": ["key", "onboardingLabel", "blockerMode", "primarySupportFocus", "reminderPriority", "scheduleComplexity", "notificationBudget", "emphasizeHomeCheckIn", "emphasizeScheduleSetup", "emphasizeExplanation", "preferredTimingAnchors"],
         "properties": {
           "key": { "type": "string", "enum": ["busy_day_forgetfulness", "routine_changes_day_to_day", "goal_fit_uncertainty", "label_and_dosage_confusion", "weak_tracking_habit", "already_consistent"] },
           "onboardingLabel": {
@@ -25,6 +25,10 @@
             ]
           },
           "blockerMode": { "type": "string", "minLength": 1 },
+          "primarySupportFocus": {
+            "type": "string",
+            "enum": ["reminder", "schedule", "explanation", "check_in", "optimization"]
+          },
           "reminderPriority": { "type": "string", "enum": ["high", "medium", "low"] },
           "scheduleComplexity": { "type": "string", "enum": ["simple", "guided", "advanced"] },
           "notificationBudget": { "type": "string", "enum": ["light", "standard", "heavy"] },

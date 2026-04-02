@@ -25,7 +25,7 @@ export default function AppIndex() {
   }
 
   if (!onbCompleted) {
-    return <Redirect href="/onboarding/welcome" />;
+    return <Redirect href="/onboarding" />;
   }
 
   return <Redirect href="/main" />;

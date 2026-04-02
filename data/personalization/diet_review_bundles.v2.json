@@ -1,0 +1,45 @@
+{
+  "version": "v2",
+  "bundles": [
+    {
+      "laneKey": "diet_general_review",
+      "reviewBundleKey": "general_nutrition_review",
+      "focusAreas": ["label alignment", "easy start products"]
+    },
+    {
+      "laneKey": "diet_vegan_support",
+      "reviewBundleKey": "vegan_gap_review",
+      "focusAreas": ["b12", "iron", "omega-3"]
+    },
+    {
+      "laneKey": "diet_vegetarian_support",
+      "reviewBundleKey": "vegetarian_gap_review",
+      "focusAreas": ["iron", "b12", "routine simplicity"]
+    },
+    {
+      "laneKey": "diet_low_dairy_review",
+      "reviewBundleKey": "low_dairy_review",
+      "focusAreas": ["calcium", "vitamin d", "routine fit"]
+    },
+    {
+      "laneKey": "diet_low_sugar_review",
+      "reviewBundleKey": "low_sugar_review",
+      "focusAreas": ["gummy load", "easy adherence"]
+    },
+    {
+      "laneKey": "diet_gluten_free_review",
+      "reviewBundleKey": "gluten_free_review",
+      "focusAreas": ["label completeness", "ingredient disclosure"]
+    },
+    {
+      "laneKey": "diet_kosher_review",
+      "reviewBundleKey": "kosher_review",
+      "focusAreas": ["label completeness", "product review"]
+    },
+    {
+      "laneKey": "diet_halal_review",
+      "reviewBundleKey": "halal_review",
+      "focusAreas": ["label completeness", "product review"]
+    }
+  ]
+}
