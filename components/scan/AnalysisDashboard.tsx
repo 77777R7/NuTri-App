@@ -51,8 +51,6 @@ import { InteractiveScoreRing } from '@/components/ui/InteractiveScoreRing';
 import { ContentSection } from '@/components/ui/ScoreDetailCard';
 import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
 import { Config } from '@/constants/Config';
-import { useOnboarding } from '@/contexts/OnboardingContext';
-import { useSavedSupplements } from '@/contexts/SavedSupplementsContext';
 import { withAuthHeaders } from '@/lib/auth-token';
 import { useTranslation } from '@/lib/i18n';
 import { lookupFoundationForIngredient, summarizeFoundationHits } from '@/lib/knowledge/foundationLookup';
@@ -77,8 +75,6 @@ import type {
 } from '@/shared/types/ingredientScience';
 import type { FactsDTO } from '@/shared/types/scan-insights';
 import type { GoalKey, ProductGoalMatchTier } from '@/types/personalization';
-import type { ProfileDraft } from '@/types/onboarding';
-import type { SavedSupplement } from '@/types/saved-supplements';
 import type {
     AnalysisBundle,
     AnalysisBundleV4,
@@ -490,29 +486,6 @@ export type AnalysisDashboardSaveItem = {
 };
 
 type SavePillState = 'save' | 'saved' | 'disabled';
-type LocalDecisionSupportProfilePayload = {
-    ageRange?: string;
-    sex?: string;
-    supplementExperience?: string;
-    diets?: string[];
-    activity?: string;
-    preferredTypes?: string[];
-    adherenceBlocker?: string;
-    location?: {
-        country?: string;
-        city?: string;
-    };
-    goals?: string[];
-    allergyFlags?: string[];
-    ingredientRestrictions?: string[];
-};
-type LocalDecisionSupportSavedSupplementPayload = {
-    supplementId?: string | null;
-    barcode?: string | null;
-    productName: string;
-    brandName?: string | null;
-    dosageText?: string | null;
-};
 
 const FORCE_FULL_DASHBOARD_EFFECTS =
     process.env.EXPO_PUBLIC_FORCE_FULL_DASHBOARD_EFFECTS === 'true' ||
@@ -547,89 +520,6 @@ const normalizeBarcodeForDecision = (value?: string | null): string | null => {
     const digits = String(value ?? '').replace(/\D/g, '');
     if (digits.length < 8) return null;
     return digits.length > 14 ? digits.slice(-14) : digits.padStart(14, '0');
-};
-const toLocalDecisionSupportProfilePayload = (
-    draft: ProfileDraft | null,
-): LocalDecisionSupportProfilePayload | null => {
-    if (!draft) return null;
-
-    const payload: LocalDecisionSupportProfilePayload = {
-        ageRange: normalizeText(draft.ageRange),
-        sex: normalizeText(draft.sex ?? draft.gender),
-        supplementExperience: normalizeText(draft.supplementExperience),
-        diets: Array.isArray(draft.diets)
-            ? draft.diets.map((value) => normalizeText(value)).filter(Boolean) as string[]
-            : [],
-        activity: normalizeText(draft.activity),
-        preferredTypes: Array.isArray(draft.preferredTypes)
-            ? draft.preferredTypes.map((value) => normalizeText(value)).filter(Boolean) as string[]
-            : [],
-        adherenceBlocker: normalizeText(draft.adherenceBlocker),
-        location: {
-            country: normalizeText(draft.location?.country),
-            city: normalizeText(draft.location?.city),
-        },
-        goals: Array.isArray(draft.goals)
-            ? draft.goals.map((value) => normalizeText(value)).filter(Boolean) as string[]
-            : [],
-        allergyFlags: Array.isArray(draft.allergyFlags)
-            ? draft.allergyFlags.map((value) => normalizeText(value)).filter(Boolean) as string[]
-            : [],
-        ingredientRestrictions: Array.isArray(draft.ingredientRestrictions)
-            ? draft.ingredientRestrictions.map((value) => normalizeText(value)).filter(Boolean) as string[]
-            : [],
-    };
-
-    const hasMeaningfulValue =
-        Boolean(payload.ageRange)
-        || Boolean(payload.sex)
-        || Boolean(payload.supplementExperience)
-        || Boolean(payload.activity)
-        || Boolean(payload.adherenceBlocker)
-        || Boolean(payload.location?.country)
-        || Boolean(payload.location?.city)
-        || (payload.diets?.length ?? 0) > 0
-        || (payload.preferredTypes?.length ?? 0) > 0
-        || (payload.goals?.length ?? 0) > 0
-        || (payload.allergyFlags?.length ?? 0) > 0
-        || (payload.ingredientRestrictions?.length ?? 0) > 0;
-
-    return hasMeaningfulValue ? payload : null;
-};
-
-const toLocalDecisionSupportSavedSupplementPayload = (
-    items: SavedSupplement[],
-): LocalDecisionSupportSavedSupplementPayload[] =>
-    items
-        .slice(0, 8)
-        .map((item) => ({
-            supplementId: item.supplementId ?? null,
-            barcode: normalizeText(item.barcode ?? null),
-            productName: normalizeText(item.productName) || 'Unknown supplement',
-            brandName: normalizeText(item.brandName),
-            dosageText: normalizeText(item.dosageText),
-        }))
-        .filter((item) => Boolean(item.productName));
-
-const buildLocalDecisionSupportHeader = (input: {
-    profileDraft: ProfileDraft | null;
-    savedSupplements: SavedSupplement[];
-    includeLocalProfile: boolean;
-    includeLocalSavedSupplements: boolean;
-}): string | null => {
-    const profile = input.includeLocalProfile
-        ? toLocalDecisionSupportProfilePayload(input.profileDraft)
-        : null;
-    const savedSupplements = input.includeLocalSavedSupplements
-        ? toLocalDecisionSupportSavedSupplementPayload(input.savedSupplements)
-        : [];
-
-    if (!profile && savedSupplements.length === 0) return null;
-
-    return JSON.stringify({
-        profile,
-        savedSupplements,
-    });
 };
 const SIMPLE_TAXONOMY_WHITELIST = new Set(
     [
@@ -3305,8 +3195,6 @@ const AnalysisBundleDashboard: React.FC<{
     onOpenSaved,
 }) => {
     const { t } = useTranslation();
-    const { draft: onboardingDraft, onbCompleted } = useOnboarding();
-    const { savedSupplements } = useSavedSupplements();
     const [selectedTileType, setSelectedTileType] = useState<TileType | null>(null);
     const [expandedInsightKey, setExpandedInsightKey] = useState<string | null>(null);
     const [bundleState, setBundleState] = useState<AnalysisBundle>(bundle);
@@ -3349,29 +3237,6 @@ const AnalysisBundleDashboard: React.FC<{
         if (digits.length < 8) return null;
         return digits.length > 14 ? digits.slice(-14) : digits.padStart(14, '0');
     }, [analysisBarcodeRaw]);
-    const shouldAttachLocalProfileContext = useMemo(
-        () => Boolean(onbCompleted && onboardingDraft),
-        [onbCompleted, onboardingDraft],
-    );
-    const shouldAttachLocalSavedContext = useMemo(
-        () => (savedSupplements?.length ?? 0) > 0,
-        [savedSupplements],
-    );
-    const localDecisionSupportHeader = useMemo(
-        () =>
-            buildLocalDecisionSupportHeader({
-                profileDraft: onboardingDraft,
-                savedSupplements,
-                includeLocalProfile: shouldAttachLocalProfileContext,
-                includeLocalSavedSupplements: shouldAttachLocalSavedContext,
-            }),
-        [
-            onboardingDraft,
-            savedSupplements,
-            shouldAttachLocalProfileContext,
-            shouldAttachLocalSavedContext,
-        ],
-    );
     const foundationMetricLoggedRef = useRef<Set<string>>(new Set());
     const overlayConsumerMetricLoggedRef = useRef<Set<string>>(new Set());
     const currentRunKeyRef = useRef<string | null>(null);
@@ -3817,16 +3682,9 @@ const AnalysisBundleDashboard: React.FC<{
                 if (digestParam) params.set('digest', digestParam);
                 if (normalizedSessionIdRaw) params.set('scanSessionId', normalizedSessionIdRaw);
                 if (decisionInputsHashHint) params.set('decisionInputsHash', decisionInputsHashHint);
-                const requestHeaders = await withAuthHeaders(
-                    localDecisionSupportHeader
-                        ? {
-                            'X-Local-Personalization': localDecisionSupportHeader,
-                        }
-                        : {},
-                );
                 const res = await fetch(`${baseUrl}/api/decision-support/v1?${params.toString()}`, {
                     method: 'GET',
-                    headers: requestHeaders,
+                    headers: await withAuthHeaders(),
                 });
                 if (cancelled || requestSeq !== decisionSupportRequestSeqRef.current) return;
 
@@ -3957,7 +3815,6 @@ const AnalysisBundleDashboard: React.FC<{
         (bundleState.meta as { decisionSupportDigest?: string | null })?.decisionSupportDigest,
         (bundleState.meta as { decisionInputsHash?: string | null })?.decisionInputsHash,
         bundleState.meta.factsDigestHash,
-        localDecisionSupportHeader,
         scanSessionId,
     ]);
 

@@ -77,7 +77,7 @@ const ensurePeriod = (value?: string | null) => {
   return /[.!?]$/.test(normalized) ? normalized : `${normalized}.`;
 };
 
-const uniqueLines = (values: (string | null | undefined)[], limit: number = 3): string[] => {
+const uniqueLines = (values: Array<string | null | undefined>, limit: number = 3): string[] => {
   const lines = Array.from(
     new Set(
       values
@@ -382,7 +382,7 @@ const buildAllergyInsight = (
       key: 'allergy_insight',
       topic: 'allergy',
       tone: 'neutral',
-      collapsedTitle: 'Allergy preferences not set',
+      collapsedTitle: 'Add your allergy preferences for automatic checks',
       expandedBullets: uniqueLines([
         'Save your allergy or ingredient restrictions to compare products automatically',
         summary || null,
@@ -495,9 +495,9 @@ const buildDoseInsight = (dose: TopSectionDoseInput): TopSectionInsightPresentat
         key: 'dosage_context',
         topic: 'dose',
         tone: 'neutral',
-        collapsedTitle: 'Daily dose is listed on the label',
+        collapsedTitle: 'Dose is shown, but hard to compare',
         expandedBullets: uniqueLines([
-          dose.productDoseText || 'The label shows a visible dose and serving pattern',
+          dose.productDoseText || 'The label shows dose, but the comparison is still not specific enough',
           dose.productDirectionsText,
         ]),
         isExpandable: true,
@@ -529,23 +529,6 @@ const buildSafetyInsight = (
   };
 };
 
-const isLowSignalInsight = (insight: TopSectionInsightPresentation): boolean => {
-  if (insight.topic === 'goal' && insight.collapsedTitle === 'Need more context for a stronger match') {
-    return true;
-  }
-  if (insight.topic === 'allergy' && insight.collapsedTitle === 'Allergy preferences not set') {
-    return true;
-  }
-  if (
-    insight.topic === 'dose' &&
-    (insight.collapsedTitle === 'Daily dose is listed on the label'
-      || insight.collapsedTitle === 'Dose comparison unavailable')
-  ) {
-    return true;
-  }
-  return false;
-};
-
 export const buildAnalysisTopSectionPresentation = (input: {
   goal: TopSectionHeroInput;
   personalInsight: TopSectionPersonalInsightInput;
@@ -555,20 +538,15 @@ export const buildAnalysisTopSectionPresentation = (input: {
 }): TopSectionPresentation => {
   const banner = buildBanner(input);
   const hero = buildHero({ goal: input.goal, banner });
-  const candidateInsights = [
+  const insights = [
     buildGoalInsight(input.goal),
     buildSupportInsight(input.personalInsight, banner),
     buildAllergyInsight(input.allergy, banner),
     buildDoseInsight(input.dose),
     buildSafetyInsight(input.safety, banner),
-  ].filter((row): row is TopSectionInsightPresentation => Boolean(row));
-
-  const highSignalInsights = candidateInsights.filter((row) => !isLowSignalInsight(row));
-  const insights = (
-    highSignalInsights.length > 0
-      ? highSignalInsights
-      : candidateInsights.slice(0, 1)
-  ).slice(0, 4);
+  ]
+    .filter((row): row is TopSectionInsightPresentation => Boolean(row))
+    .slice(0, 4);
 
   return {
     hero,
