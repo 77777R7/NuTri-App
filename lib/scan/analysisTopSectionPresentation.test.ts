@@ -1,13 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import {
-  buildAnalysisTopSectionPresentation,
-  buildAnalysisTopSectionSyncKey,
-  resolveAnalysisTopSectionDefaultExpandedKey,
-} from './analysisTopSectionPresentation';
+import { buildAnalysisTopSectionPresentation } from '@/lib/scan/analysisTopSectionPresentation';
 
-test('hero stays goal-fit-only even when allergy conflict banner is present', () => {
+test('allergy banner wins priority and removes allergy row from insights', () => {
   const result = buildAnalysisTopSectionPresentation({
     goal: {
       fitDecision: 'fits',
@@ -28,19 +24,16 @@ test('hero stays goal-fit-only even when allergy conflict banner is present', ()
       assessment: 'aligned',
       productDoseText: '1 capsule daily',
     },
-    safety: {
-      warningText: 'Consult a healthcare professional before use.',
-    },
+    safety: {},
   });
 
   assert.equal(result.banner?.kind, 'allergy');
-  assert.equal(result.hero.chip, 'Strong fit for you');
-  assert.equal(result.hero.summary, 'Best aligned with your Immunity goal');
+  assert.equal(result.banner?.title, 'Ingredients may conflict with your allergies');
+  assert.equal(result.hero.chip, 'Review before using');
   assert.equal(result.insights.some((row) => row.topic === 'allergy'), false);
-  assert.equal(result.insights.some((row) => row.topic === 'safety'), true);
 });
 
-test('generic safety stays in insights when present and is never promoted to top banner', () => {
+test('when no banner is needed allergy remains a normal insight row', () => {
   const result = buildAnalysisTopSectionPresentation({
     goal: {
       previewTopTier: 'related',
@@ -48,116 +41,88 @@ test('generic safety stays in insights when present and is never promoted to top
     },
     personalInsight: {
       supportLabels: ['Energy'],
-      conflictSummary: 'Overlaps with a supplement already in your stack.',
     },
     allergy: {
       status: 'ready',
       matchedLabels: [],
-      evidenceTexts: [],
+      evidenceTexts: ['soy lecithin'],
       summary: 'This product does not appear to match your saved allergy settings.',
     },
     dose: {
       status: 'ready',
-      assessment: 'high',
-      productDoseText: '2 capsules per serving',
+      assessment: 'aligned',
+      productDoseText: '2 gummies daily',
+    },
+    safety: {},
+  });
+
+  assert.equal(result.banner, null);
+  const allergyRow = result.insights.find((row) => row.topic === 'allergy');
+  assert.ok(allergyRow);
+  assert.equal(allergyRow?.collapsedTitle, 'No ingredients flagged by your allergies');
+});
+
+test('banner priority prefers allergy over safety and overlap', () => {
+  const result = buildAnalysisTopSectionPresentation({
+    goal: {},
+    personalInsight: {
+      supportLabels: [],
+      conflictSummary: 'Overlaps with a supplement already in your stack.',
+    },
+    allergy: {
+      status: 'ready',
+      matchedLabels: ['Soy'],
+      evidenceTexts: [],
+      summary: 'Matched your saved settings: Soy.',
+    },
+    dose: {
+      status: 'ready',
+      assessment: 'unclear',
     },
     safety: {
       warningText: 'Consult a healthcare professional before use.',
     },
   });
 
-  assert.equal(result.banner, null);
-  assert.equal(result.insights.some((row) => row.topic === 'safety'), true);
-  assert.equal(result.insights.some((row) => row.topic === 'support'), true);
+  assert.equal(result.banner?.kind, 'allergy');
 });
 
-test('safety remains visible when more than four candidate rows exist', () => {
+test('insights are capped at four rows and remain expandable', () => {
   const result = buildAnalysisTopSectionPresentation({
     goal: {
-      fitDecision: 'fits',
-      selectedGoalLabel: 'Immunity',
+      fitDecision: 'mixed',
+      selectedGoalLabel: 'Sleep',
     },
     personalInsight: {
-      supportLabels: ['Immunity'],
-      conflictSummary: 'May overlap with your existing vitamin D supplement.',
+      supportLabels: ['Sleep', 'Stress'],
     },
     allergy: {
-      status: 'ready',
+      status: 'pending',
       matchedLabels: [],
-      evidenceTexts: ['dairy'],
-      summary: 'This product does not appear to match your saved allergy settings.',
+      evidenceTexts: [],
+      summary: 'We are still attaching allergen coverage for this product.',
+      reasonCode: 'NORMALIZED_PRODUCT_ALLERGY_FLAGS_NOT_ATTACHED',
     },
     dose: {
       status: 'ready',
-      assessment: 'aligned',
-      productDoseText: '1 capsule daily',
+      assessment: 'high',
+      productDoseText: '3 capsules per serving',
     },
     safety: {
-      watchoutText: 'May need extra caution based on the label.',
+      watchoutText: 'Consult a clinician if you are taking other medications.',
     },
   });
 
   assert.equal(result.insights.length, 4);
-  assert.equal(result.insights.some((row) => row.topic === 'safety'), true);
-  assert.equal(result.insights.some((row) => row.topic === 'overlap'), false);
+  assert.equal(result.insights.every((row) => row.isExpandable), true);
+  assert.equal(result.insights.every((row) => row.expandedBullets.length > 0), true);
 });
 
-test('default expanded key resolves to the first available row when preferred key is missing', () => {
+test('low-signal placeholder rows collapse down when no stronger personalization exists', () => {
   const result = buildAnalysisTopSectionPresentation({
-    goal: {
-      previewTopTier: 'related',
-      previewGoalLabel: 'Recovery',
-    },
+    goal: {},
     personalInsight: {
-      supportLabels: ['Recovery'],
-    },
-    allergy: {
-      status: 'ready',
-      matchedLabels: [],
-      evidenceTexts: [],
-      summary: 'This product does not appear to match your saved allergy settings.',
-    },
-    dose: {
-      status: 'ready',
-      assessment: 'aligned',
-      productDoseText: '1 serving daily',
-    },
-    safety: {},
-  });
-
-  assert.equal(resolveAnalysisTopSectionDefaultExpandedKey(result, 'missing'), result.insights[0]?.key ?? null);
-});
-
-test('sync key changes when hero or insight structure changes', () => {
-  const first = buildAnalysisTopSectionPresentation({
-    goal: {
-      fitDecision: 'fits',
-      selectedGoalLabel: 'Immunity',
-    },
-    personalInsight: {
-      supportLabels: ['Immunity'],
-    },
-    allergy: {
-      status: 'ready',
-      matchedLabels: [],
-      evidenceTexts: [],
-      summary: 'This product does not appear to match your saved allergy settings.',
-    },
-    dose: {
-      status: 'ready',
-      assessment: 'aligned',
-      productDoseText: '1 capsule daily',
-    },
-    safety: {},
-  });
-
-  const second = buildAnalysisTopSectionPresentation({
-    goal: {
-      fitDecision: 'mixed',
-      selectedGoalLabel: 'Recovery',
-    },
-    personalInsight: {
-      supportLabels: ['Recovery'],
+      supportLabels: [],
     },
     allergy: {
       status: 'ready',
@@ -168,23 +133,41 @@ test('sync key changes when hero or insight structure changes', () => {
     dose: {
       status: 'ready',
       assessment: 'unclear',
-      productDoseText: '1 capsule daily',
+      productDoseText: '1 softgel daily',
     },
     safety: {},
   });
 
-  const firstKey = buildAnalysisTopSectionSyncKey({
-    productIdentity: 'product-1',
-    hero: first.hero,
-    banner: first.banner,
-    insights: first.insights,
-  });
-  const secondKey = buildAnalysisTopSectionSyncKey({
-    productIdentity: 'product-1',
-    hero: second.hero,
-    banner: second.banner,
-    insights: second.insights,
+  assert.equal(result.insights.length, 1);
+  assert.equal(result.insights[0]?.topic, 'goal');
+  assert.equal(result.insights[0]?.collapsedTitle, 'Need more context for a stronger match');
+});
+
+test('low-signal helper rows are dropped when stronger insights exist', () => {
+  const result = buildAnalysisTopSectionPresentation({
+    goal: {
+      fitDecision: 'does_not_fit',
+      selectedGoalLabel: 'Sleep',
+    },
+    personalInsight: {
+      supportLabels: [],
+    },
+    allergy: {
+      status: 'ready',
+      matchedLabels: [],
+      evidenceTexts: [],
+      summary: 'No allergy or restriction settings saved yet.',
+    },
+    dose: {
+      status: 'ready',
+      assessment: 'unclear',
+      productDoseText: '1 softgel daily',
+    },
+    safety: {},
   });
 
-  assert.notEqual(firstKey, secondKey);
+  assert.deepEqual(
+    result.insights.map((row) => row.collapsedTitle),
+    ['Not a strong match for your sleep goal'],
+  );
 });

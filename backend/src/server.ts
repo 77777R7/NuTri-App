@@ -137,7 +137,7 @@ import { buildMySupplementFactsV1, type MySupplementFactsV1 } from "./mySuppleme
 import { getMySupplementOverviewV2GateReason } from "./mySupplementOverviewGate.js";
 import { getNutriTipsData } from "./nutriTips.js";
 import { buildRuleBasedOverview } from "./overviewRuleBased.js";
-import * as profileResolverModule from "../../lib/personalization/core/profileResolver.ts";
+import { resolvePersonalizationProfile } from "../../lib/personalization/core/profileResolver.ts";
 import {
   buildEnsureOverviewInflightKey,
   isRegulatoryMapMiss,
@@ -206,21 +206,6 @@ import {
 } from "./webIdentityProviders.js";
 import { sanitizeWebText } from "./webSanitizer.js";
 import { applyWebVerifyRevise } from "./webVerifyRevise.js";
-
-type ProfileResolverModuleShape = {
-  resolvePersonalizationProfile?: typeof import("../../lib/personalization/core/profileResolver.ts").resolvePersonalizationProfile;
-  default?: {
-    resolvePersonalizationProfile?: typeof import("../../lib/personalization/core/profileResolver.ts").resolvePersonalizationProfile;
-  };
-};
-
-const resolvePersonalizationProfile =
-  (profileResolverModule as ProfileResolverModuleShape).resolvePersonalizationProfile
-  ?? (profileResolverModule as ProfileResolverModuleShape).default?.resolvePersonalizationProfile;
-
-if (typeof resolvePersonalizationProfile !== "function") {
-  throw new Error("[personalization] profileResolver module did not expose resolvePersonalizationProfile");
-}
 
 dotenv.config();
 

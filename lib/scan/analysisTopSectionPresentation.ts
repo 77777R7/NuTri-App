@@ -33,8 +33,8 @@ export type TopSectionSafetyInput = {
   watchoutText?: string | null;
 };
 
-export type TopSectionBannerKind = 'allergy';
-export type TopSectionInsightTopic = 'support' | 'allergy' | 'dose' | 'overlap' | 'safety';
+export type TopSectionBannerKind = 'allergy' | 'safety' | 'overlap';
+export type TopSectionInsightTopic = 'goal' | 'support' | 'allergy' | 'dose' | 'overlap' | 'safety';
 
 export type TopSectionHeroPresentation = {
   tone: TopSectionTone;
@@ -63,19 +63,7 @@ export type TopSectionPresentation = {
   insights: TopSectionInsightPresentation[];
 };
 
-type RankedInsight = TopSectionInsightPresentation & {
-  priority: number;
-  lowSignal?: boolean;
-  required?: boolean;
-};
-
 const normalizeText = (value?: string | null) => value?.replace(/\s+/g, ' ').trim() ?? '';
-
-const ensurePeriod = (value?: string | null) => {
-  const normalized = normalizeText(value);
-  if (!normalized) return '';
-  return /[.!?]$/.test(normalized) ? normalized : `${normalized}.`;
-};
 
 const lowerFirst = (value?: string | null) => {
   const normalized = normalizeText(value);
@@ -83,13 +71,31 @@ const lowerFirst = (value?: string | null) => {
   return normalized.charAt(0).toLowerCase() + normalized.slice(1);
 };
 
-const uniqueLines = (values: (string | null | undefined)[], limit = 3): string[] => {
-  const lines = Array.from(new Set(values.map((value) => ensurePeriod(value)).filter(Boolean)));
+const ensurePeriod = (value?: string | null) => {
+  const normalized = normalizeText(value);
+  if (!normalized) return '';
+  return /[.!?]$/.test(normalized) ? normalized : `${normalized}.`;
+};
+
+const uniqueLines = (values: (string | null | undefined)[], limit: number = 3): string[] => {
+  const lines = Array.from(
+    new Set(
+      values
+        .map((value) => ensurePeriod(value))
+        .filter(Boolean),
+    ),
+  );
   return lines.slice(0, limit);
 };
 
-const joinLabels = (values: string[], limit = 3): string => {
-  const unique = Array.from(new Set(values.map((value) => normalizeText(value)).filter(Boolean))).slice(0, limit);
+const joinLabels = (values: string[], limit: number = 3): string => {
+  const unique = Array.from(
+    new Set(
+      values
+        .map((value) => normalizeText(value))
+        .filter(Boolean),
+    ),
+  ).slice(0, limit);
 
   if (unique.length === 0) return '';
   if (unique.length === 1) return unique[0];
@@ -97,19 +103,24 @@ const joinLabels = (values: string[], limit = 3): string => {
   return `${unique.slice(0, -1).join(', ')}, and ${unique[unique.length - 1]}`;
 };
 
-const safeGoalSummary = (goalLabel?: string | null, kind: 'best' | 'some' | 'weak' = 'best') => {
-  const goal = normalizeText(goalLabel);
+const buildGoalTitle = (goalLabel?: string | null, strength: 'strong' | 'soft' | 'weak' = 'strong') => {
+  const goal = lowerFirst(goalLabel);
   if (!goal) {
-    if (kind === 'weak') return 'Not a strong match for your goal';
-    if (kind === 'some') return 'Shows some support for your goals';
-    return 'Best aligned with your goals';
+    if (strength === 'weak') return 'Not a strong goal match yet';
+    if (strength === 'soft') return 'Could work for your goals';
+    return 'Supports your health goals';
   }
-  if (kind === 'weak') return `Not a strong match for your ${goal} goal`;
-  if (kind === 'some') return `Shows some support for your ${goal} goal`;
-  return `Best aligned with your ${goal} goal`;
+  if (goal === 'immunity') {
+    if (strength === 'weak') return 'Not a strong immunity match yet';
+    if (strength === 'soft') return 'Could help with your immune health';
+    return 'Supports your immunity health';
+  }
+  if (strength === 'weak') return `Not a strong match for your ${goal} goal`;
+  if (strength === 'soft') return `Could help with your ${goal} goal`;
+  return `Supports your ${goal} goal`;
 };
 
-const buildHero = (goal: TopSectionHeroInput): TopSectionHeroPresentation => {
+const buildHeroBase = (goal: TopSectionHeroInput): TopSectionHeroPresentation => {
   const selectedGoalLabel = normalizeText(goal.selectedGoalLabel);
   const previewGoalLabel = normalizeText(goal.previewGoalLabel);
   const resolvedGoalLabel = selectedGoalLabel || previewGoalLabel;
@@ -118,50 +129,44 @@ const buildHero = (goal: TopSectionHeroInput): TopSectionHeroPresentation => {
     return {
       tone: 'positive',
       chip: 'Strong fit for you',
-      summary: safeGoalSummary(selectedGoalLabel, 'best'),
+      summary: `Best aligned with your ${selectedGoalLabel} goal`,
     };
   }
-
   if (goal.fitDecision === 'mixed' && selectedGoalLabel) {
     return {
       tone: 'neutral',
       chip: 'Could work for you',
-      summary: safeGoalSummary(selectedGoalLabel, 'some'),
+      summary: `Shows some support for your ${selectedGoalLabel} goal`,
     };
   }
-
   if (goal.fitDecision === 'does_not_fit' && selectedGoalLabel) {
     return {
       tone: 'caution',
-      chip: 'Not a strong fit for your goal',
-      summary: safeGoalSummary(selectedGoalLabel, 'weak'),
+      chip: 'Review before using',
+      summary: `Not a strong match for your ${selectedGoalLabel} goal`,
     };
   }
-
   if (goal.previewTopTier === 'strong_match' && resolvedGoalLabel) {
     return {
       tone: 'positive',
       chip: 'Strong fit for you',
-      summary: safeGoalSummary(resolvedGoalLabel, 'best'),
+      summary: `Best aligned with your ${resolvedGoalLabel} goal`,
     };
   }
-
   if (goal.previewTopTier === 'related' && resolvedGoalLabel) {
     return {
       tone: 'neutral',
       chip: 'Could work for you',
-      summary: safeGoalSummary(resolvedGoalLabel, 'some'),
+      summary: `Most related to your ${resolvedGoalLabel} goal`,
     };
   }
-
   if (goal.previewTopTier === 'weak_match' && resolvedGoalLabel) {
     return {
       tone: 'neutral',
       chip: 'Need a bit more context',
-      summary: safeGoalSummary(resolvedGoalLabel, 'weak'),
+      summary: `Only light support for your ${resolvedGoalLabel} goal`,
     };
   }
-
   return {
     tone: 'neutral',
     chip: 'Need a bit more context',
@@ -169,42 +174,188 @@ const buildHero = (goal: TopSectionHeroInput): TopSectionHeroPresentation => {
   };
 };
 
-const hasAllergyConflict = (allergy: TopSectionAllergyInput): boolean => {
-  const matched = allergy.matchedLabels.map((value) => normalizeText(value)).filter(Boolean);
-  if (matched.length > 0) return true;
+const buildBanner = ({
+  allergy,
+  safety,
+  personalInsight,
+}: {
+  allergy: TopSectionAllergyInput;
+  safety: TopSectionSafetyInput;
+  personalInsight: TopSectionPersonalInsightInput;
+}): TopSectionBannerPresentation | null => {
+  if (allergy.matchedLabels.length > 0) {
+    return {
+      kind: 'allergy',
+      tone: 'caution',
+      title: 'Ingredients may conflict with your allergies',
+    };
+  }
 
-  const summary = normalizeText(allergy.summary).toLowerCase();
-  if (!summary) return false;
-  const positiveSafePatterns = [
-    'does not appear to match',
-    'no allergy or restriction settings saved yet',
-    'still loading',
-    'needs more label detail',
-    'not enough label detail',
-  ];
-  if (positiveSafePatterns.some((pattern) => summary.includes(pattern))) return false;
-  return /conflict|matched your saved settings|matched your saved allergies|may conflict/i.test(summary);
+  if (normalizeText(safety.warningText) || normalizeText(safety.watchoutText)) {
+    return {
+      kind: 'safety',
+      tone: 'caution',
+      title: 'Check with a healthcare professional before use',
+    };
+  }
+
+  if (normalizeText(personalInsight.conflictSummary)) {
+    return {
+      kind: 'overlap',
+      tone: 'caution',
+      title: 'May overlap with your saved supplements',
+    };
+  }
+
+  return null;
 };
 
-const buildBanner = (allergy: TopSectionAllergyInput): TopSectionBannerPresentation | null => {
-  if (!hasAllergyConflict(allergy)) return null;
+const buildHero = ({
+  goal,
+  banner,
+}: {
+  goal: TopSectionHeroInput;
+  banner: TopSectionBannerPresentation | null;
+}): TopSectionHeroPresentation => {
+  if (!banner) return buildHeroBase(goal);
+  if (banner.kind === 'allergy') {
+    return {
+      tone: 'caution',
+      chip: 'Review before using',
+      summary: 'May conflict with your saved allergies',
+    };
+  }
+  if (banner.kind === 'safety') {
+    return {
+      tone: 'caution',
+      chip: 'Review before using',
+      summary: 'May need extra caution before use',
+    };
+  }
   return {
-    kind: 'allergy',
-    tone: 'caution',
-    title: 'Ingredients may conflict with your allergies',
+    tone: 'neutral',
+    chip: 'Could work for you',
+    summary: 'May overlap with your saved supplements',
   };
 };
 
-const buildSupportInsight = (personalInsight: TopSectionPersonalInsightInput): RankedInsight | null => {
-  const supportLabels = personalInsight.supportLabels.map((label) => normalizeText(label)).filter(Boolean);
+const buildGoalInsight = (goal: TopSectionHeroInput): TopSectionInsightPresentation => {
+  const selectedGoalLabel = normalizeText(goal.selectedGoalLabel);
+  const previewGoalLabel = normalizeText(goal.previewGoalLabel);
+  const resolvedGoalLabel = selectedGoalLabel || previewGoalLabel;
+
+  if (goal.fitDecision === 'fits' && selectedGoalLabel) {
+    return {
+      key: 'goal_fit',
+      topic: 'goal',
+      tone: 'positive',
+      collapsedTitle: buildGoalTitle(selectedGoalLabel, 'strong'),
+      expandedBullets: uniqueLines([
+        `This product is the clearest match for your ${selectedGoalLabel} goal`,
+        'The strongest visible label signals line up well with that goal',
+      ]),
+      isExpandable: true,
+    };
+  }
+
+  if (goal.fitDecision === 'mixed' && selectedGoalLabel) {
+    return {
+      key: 'goal_fit',
+      topic: 'goal',
+      tone: 'neutral',
+      collapsedTitle: buildGoalTitle(selectedGoalLabel, 'soft'),
+      expandedBullets: uniqueLines([
+        `There is meaningful support for your ${selectedGoalLabel} goal`,
+        'The fit is promising, but not fully clean yet',
+      ]),
+      isExpandable: true,
+    };
+  }
+
+  if (goal.fitDecision === 'does_not_fit' && selectedGoalLabel) {
+    return {
+      key: 'goal_fit',
+      topic: 'goal',
+      tone: 'caution',
+      collapsedTitle: buildGoalTitle(selectedGoalLabel, 'weak'),
+      expandedBullets: uniqueLines([
+        `The current product signals do not line up strongly with your ${selectedGoalLabel} goal`,
+        'You may want a product with clearer goal support',
+      ]),
+      isExpandable: true,
+    };
+  }
+
+  if (goal.previewTopTier === 'strong_match' && resolvedGoalLabel) {
+    return {
+      key: 'goal_fit',
+      topic: 'goal',
+      tone: 'positive',
+      collapsedTitle: buildGoalTitle(resolvedGoalLabel, 'strong'),
+      expandedBullets: uniqueLines([
+        `This product looks most related to your ${resolvedGoalLabel} goal`,
+        'The strongest visible label signals point in that direction',
+      ]),
+      isExpandable: true,
+    };
+  }
+
+  if (goal.previewTopTier === 'related' && resolvedGoalLabel) {
+    return {
+      key: 'goal_fit',
+      topic: 'goal',
+      tone: 'neutral',
+      collapsedTitle: buildGoalTitle(resolvedGoalLabel, 'soft'),
+      expandedBullets: uniqueLines([
+        `There is some support for your ${resolvedGoalLabel} goal`,
+        'A stronger goal match would need clearer or more complete evidence',
+      ]),
+      isExpandable: true,
+    };
+  }
+
+  return {
+    key: 'goal_fit',
+    topic: 'goal',
+    tone: 'neutral',
+    collapsedTitle: 'Need more context for a stronger match',
+    expandedBullets: uniqueLines([
+      'The current label does not point clearly to one goal yet',
+      'A clearer goal match needs stronger ingredient or dose support',
+    ]),
+    isExpandable: true,
+  };
+};
+
+const buildSupportInsight = (
+  personalInsight: TopSectionPersonalInsightInput,
+  banner: TopSectionBannerPresentation | null,
+): TopSectionInsightPresentation | null => {
+  const conflictSummary = normalizeText(personalInsight.conflictSummary);
+  if (conflictSummary && banner?.kind !== 'overlap') {
+    return {
+      key: 'personal_overlap',
+      topic: 'overlap',
+      tone: 'caution',
+      collapsedTitle: 'May overlap with your saved supplements',
+      expandedBullets: uniqueLines([
+        conflictSummary,
+        'Review ingredient overlap before adding this product to your stack',
+      ]),
+      isExpandable: true,
+    };
+  }
+
+  const supportLabels = personalInsight.supportLabels
+    .map((label) => normalizeText(label))
+    .filter(Boolean);
   if (supportLabels.length === 0) return null;
 
-  const single = supportLabels.length === 1 ? supportLabels[0] : null;
-  const collapsedTitle = single
-    ? single.toLowerCase() === 'immunity'
-      ? 'Supports your immunity health'
-      : `Supports your ${lowerFirst(single)} goal`
-    : `Supports your ${joinLabels(supportLabels.map((label) => lowerFirst(label)))} goals`;
+  const joinedLabels = joinLabels(supportLabels.map((label) => lowerFirst(label)));
+  const collapsedTitle =
+    supportLabels.length === 1
+      ? buildGoalTitle(supportLabels[0], 'strong')
+      : `Supports your ${joinedLabels} goals`;
 
   return {
     key: 'personal_support',
@@ -212,63 +363,60 @@ const buildSupportInsight = (personalInsight: TopSectionPersonalInsightInput): R
     tone: 'positive',
     collapsedTitle,
     expandedBullets: uniqueLines([
-      `Visible ingredients may support ${joinLabels(supportLabels)}.`,
-      'This looks more aligned with those goals than with an unrelated baseline.',
+      `Top support areas from the current label: ${joinLabels(supportLabels)}`,
+      'These support signals come from the visible ingredient and dose pattern',
     ]),
     isExpandable: true,
-    priority: 100,
   };
 };
 
-const buildAllergyInsight = (allergy: TopSectionAllergyInput, banner: TopSectionBannerPresentation | null): RankedInsight | null => {
+const buildAllergyInsight = (
+  allergy: TopSectionAllergyInput,
+  banner: TopSectionBannerPresentation | null,
+): TopSectionInsightPresentation | null => {
   if (banner?.kind === 'allergy') return null;
 
   const summary = normalizeText(allergy.summary);
-  const upperReason = normalizeText(allergy.reasonCode).toUpperCase();
-
   if (/no allergy or restriction settings saved yet/i.test(summary)) {
     return {
       key: 'allergy_insight',
       topic: 'allergy',
       tone: 'neutral',
-      collapsedTitle: 'Add your allergy preferences for automatic checks',
+      collapsedTitle: 'Allergy preferences not set',
       expandedBullets: uniqueLines([
-        'Save your allergy or ingredient preferences so NuTri can check products automatically.',
-        summary,
+        'Save your allergy or ingredient restrictions to compare products automatically',
+        summary || null,
       ]),
       isExpandable: true,
-      priority: 28,
-      lowSignal: true,
     };
   }
 
-  if (allergy.status === 'pending' || upperReason === 'NORMALIZED_PRODUCT_ALLERGY_FLAGS_NOT_ATTACHED') {
+  if (
+    allergy.status === 'pending' ||
+    normalizeText(allergy.reasonCode).toUpperCase() === 'NORMALIZED_PRODUCT_ALLERGY_FLAGS_NOT_ATTACHED'
+  ) {
     return {
       key: 'allergy_insight',
       topic: 'allergy',
       tone: 'neutral',
       collapsedTitle: 'Allergy check is still loading',
       expandedBullets: uniqueLines([
-        summary || 'NuTri is still attaching allergy coverage for this product.',
+        summary || 'We are still attaching allergen coverage for this product',
       ]),
       isExpandable: true,
-      priority: 34,
-      lowSignal: true,
     };
   }
 
-  if (/needs more label detail/i.test(summary) || /not enough label detail/i.test(summary)) {
+  if (/needs more label detail/i.test(summary)) {
     return {
       key: 'allergy_insight',
       topic: 'allergy',
       tone: 'neutral',
       collapsedTitle: 'Not enough label detail for an allergy check',
       expandedBullets: uniqueLines([
-        summary || 'This product label does not show enough detail for a full allergy check yet.',
+        summary || 'This label does not show enough detail to confirm an allergy check yet',
       ]),
       isExpandable: true,
-      priority: 32,
-      lowSignal: true,
     };
   }
 
@@ -278,16 +426,19 @@ const buildAllergyInsight = (allergy: TopSectionAllergyInput, banner: TopSection
     tone: 'positive',
     collapsedTitle: 'No ingredients flagged by your allergies',
     expandedBullets: uniqueLines([
-      summary || 'This product does not appear to match your saved allergy settings.',
-      allergy.evidenceTexts.length > 0 ? `Checked against: ${joinLabels(allergy.evidenceTexts)}.` : null,
+      summary || 'This product does not appear to match your saved allergy settings',
+      allergy.evidenceTexts.length > 0 ? `Checked against: ${joinLabels(allergy.evidenceTexts)}` : null,
     ]),
     isExpandable: true,
-    priority: 92,
   };
 };
 
-const buildDoseInsight = (dose: TopSectionDoseInput): RankedInsight => {
-  const goalLabel = normalizeText(dose.goalLabel);
+const buildDoseInsight = (dose: TopSectionDoseInput): TopSectionInsightPresentation => {
+  const details = uniqueLines([
+    dose.productDoseText,
+    dose.productDirectionsText,
+    dose.status === 'unavailable' ? 'This label does not show enough dose detail to compare yet' : null,
+  ]);
 
   if (dose.status === 'unavailable') {
     return {
@@ -295,12 +446,8 @@ const buildDoseInsight = (dose: TopSectionDoseInput): RankedInsight => {
       topic: 'dose',
       tone: 'neutral',
       collapsedTitle: 'Dose comparison unavailable',
-      expandedBullets: uniqueLines([
-        'This label does not show enough dose detail to compare yet.',
-      ]),
-      isExpandable: true,
-      priority: 30,
-      lowSignal: true,
+      expandedBullets: details,
+      isExpandable: details.length > 0,
     };
   }
 
@@ -310,26 +457,24 @@ const buildDoseInsight = (dose: TopSectionDoseInput): RankedInsight => {
         key: 'dosage_context',
         topic: 'dose',
         tone: 'positive',
-        collapsedTitle: goalLabel ? `Dose looks aligned for ${lowerFirst(goalLabel)}` : 'Dose looks aligned for daily use',
+        collapsedTitle: 'Dose looks aligned for daily use',
         expandedBullets: uniqueLines([
-          dose.productDoseText || 'The visible dose looks aligned for everyday use.',
+          dose.productDoseText || 'The visible dose lines up well with normal daily use',
           dose.productDirectionsText,
         ]),
         isExpandable: true,
-        priority: 84,
       };
     case 'low':
       return {
         key: 'dosage_context',
         topic: 'dose',
-        tone: 'neutral',
+        tone: 'caution',
         collapsedTitle: 'Dose may be lighter than expected',
         expandedBullets: uniqueLines([
-          dose.productDoseText || 'The visible dose may run a little lighter than expected.',
+          dose.productDoseText || 'The visible dose may run on the lighter side',
           dose.productDirectionsText,
         ]),
         isExpandable: true,
-        priority: 74,
       };
     case 'high':
       return {
@@ -338,11 +483,10 @@ const buildDoseInsight = (dose: TopSectionDoseInput): RankedInsight => {
         tone: 'caution',
         collapsedTitle: 'Stronger dose than a basic daily baseline',
         expandedBullets: uniqueLines([
-          dose.productDoseText || 'The visible dose looks stronger than a basic daily baseline.',
+          dose.productDoseText || 'The visible dose looks stronger than a basic daily baseline',
           dose.productDirectionsText,
         ]),
         isExpandable: true,
-        priority: 76,
       };
     case 'unclear':
     case 'unknown':
@@ -351,119 +495,55 @@ const buildDoseInsight = (dose: TopSectionDoseInput): RankedInsight => {
         key: 'dosage_context',
         topic: 'dose',
         tone: 'neutral',
-        collapsedTitle: 'Dose comparison unavailable',
+        collapsedTitle: 'Daily dose is listed on the label',
         expandedBullets: uniqueLines([
-          dose.productDoseText || 'The label shows a dose, but it is still hard to compare.',
+          dose.productDoseText || 'The label shows a visible dose and serving pattern',
           dose.productDirectionsText,
         ]),
         isExpandable: true,
-        priority: 36,
-        lowSignal: true,
       };
   }
 };
 
-const buildOverlapInsight = (personalInsight: TopSectionPersonalInsightInput): RankedInsight | null => {
-  const conflictSummary = normalizeText(personalInsight.conflictSummary);
-  if (!conflictSummary) return null;
+const buildSafetyInsight = (
+  safety: TopSectionSafetyInput,
+  banner: TopSectionBannerPresentation | null,
+): TopSectionInsightPresentation | null => {
+  if (banner?.kind === 'safety') return null;
 
-  return {
-    key: 'personal_overlap',
-    topic: 'overlap',
-    tone: 'neutral',
-    collapsedTitle: 'May overlap with your saved supplements',
-    expandedBullets: uniqueLines([
-      conflictSummary,
-      'Review your saved stack before adding this product.',
-    ]),
-    isExpandable: true,
-    priority: 68,
-  };
-};
-
-const buildSafetyInsight = (safety: TopSectionSafetyInput): RankedInsight | null => {
   const warning = normalizeText(safety.warningText);
   const watchout = normalizeText(safety.watchoutText);
   if (!warning && !watchout) return null;
-
-  const collapsedTitle = /pregnan|nurs|blood thinner|surgery|medication|clinician|healthcare professional/i.test(`${warning} ${watchout}`)
-    ? 'Check with a healthcare professional first'
-    : 'May need extra caution based on the label';
 
   return {
     key: 'safety',
     topic: 'safety',
     tone: 'caution',
-    collapsedTitle,
+    collapsedTitle: 'May need extra caution before use',
     expandedBullets: uniqueLines([
       warning,
       watchout,
-      'Review the label and your personal health context before use.',
+      'Check the product label and your personal health context before use',
     ]),
     isExpandable: true,
-    priority: 90,
-    required: true,
   };
 };
 
-const buildLowSignalFallback = (): RankedInsight => ({
-  key: 'limited_personalization',
-  topic: 'support',
-  tone: 'neutral',
-  collapsedTitle: 'Limited personalized signals right now',
-  expandedBullets: uniqueLines([
-    'We need a little more product detail or saved context to judge this item more clearly.',
-  ]),
-  isExpandable: true,
-  priority: 12,
-  lowSignal: true,
-});
-
-const orderRows = (rows: RankedInsight[]): RankedInsight[] => {
-  const order: TopSectionInsightTopic[] = ['support', 'allergy', 'dose', 'safety', 'overlap'];
-  return [...rows].sort((a, b) => {
-    const topicDelta = order.indexOf(a.topic) - order.indexOf(b.topic);
-    if (topicDelta !== 0) return topicDelta;
-    return b.priority - a.priority;
-  });
-};
-
-const capRows = (rows: RankedInsight[]): RankedInsight[] => {
-  let ordered = orderRows(rows);
-  if (ordered.length <= 4) return ordered;
-
-  const safetyRow = ordered.find((row) => row.topic === 'safety');
-  if (!safetyRow) return ordered.slice(0, 4);
-
-  const kept = ordered.filter((row) => row.topic !== 'overlap');
-  if (kept.length <= 4) return orderRows(kept);
-
-  ordered = kept.filter((row) => !(row.lowSignal && row.topic === 'dose'));
-  if (ordered.length <= 4) return orderRows(ordered);
-
-  ordered = ordered.filter((row) => !(row.lowSignal && row.topic === 'allergy'));
-  if (ordered.length <= 4) return orderRows(ordered);
-
-  return orderRows(ordered.slice(0, 4));
-};
-
-export const resolveAnalysisTopSectionDefaultExpandedKey = (
-  presentation: TopSectionPresentation,
-  preferredKey?: string | null,
-): string | null => {
-  if (preferredKey && presentation.insights.some((row) => row.key === preferredKey)) return preferredKey;
-  return presentation.insights[0]?.key ?? null;
-};
-
-export const buildAnalysisTopSectionSyncKey = (input: {
-  productIdentity?: string | null;
-  hero: TopSectionHeroPresentation;
-  banner: TopSectionBannerPresentation | null;
-  insights: TopSectionInsightPresentation[];
-}): string => {
-  const identity = normalizeText(input.productIdentity) || 'unknown-product';
-  const insightSignature = input.insights.map((row) => `${row.key}:${row.collapsedTitle}`).join('|');
-  return [identity, input.hero.chip, input.hero.summary, input.banner?.title ?? 'no-banner', insightSignature].join('::');
+const isLowSignalInsight = (insight: TopSectionInsightPresentation): boolean => {
+  if (insight.topic === 'goal' && insight.collapsedTitle === 'Need more context for a stronger match') {
+    return true;
+  }
+  if (insight.topic === 'allergy' && insight.collapsedTitle === 'Allergy preferences not set') {
+    return true;
+  }
+  if (
+    insight.topic === 'dose' &&
+    (insight.collapsedTitle === 'Daily dose is listed on the label'
+      || insight.collapsedTitle === 'Dose comparison unavailable')
+  ) {
+    return true;
+  }
+  return false;
 };
 
 export const buildAnalysisTopSectionPresentation = (input: {
@@ -473,38 +553,26 @@ export const buildAnalysisTopSectionPresentation = (input: {
   dose: TopSectionDoseInput;
   safety: TopSectionSafetyInput;
 }): TopSectionPresentation => {
-  const banner = buildBanner(input.allergy);
-  const hero = buildHero(input.goal);
+  const banner = buildBanner(input);
+  const hero = buildHero({ goal: input.goal, banner });
+  const candidateInsights = [
+    buildGoalInsight(input.goal),
+    buildSupportInsight(input.personalInsight, banner),
+    buildAllergyInsight(input.allergy, banner),
+    buildDoseInsight(input.dose),
+    buildSafetyInsight(input.safety, banner),
+  ].filter((row): row is TopSectionInsightPresentation => Boolean(row));
 
-  const support = buildSupportInsight(input.personalInsight);
-  const allergy = buildAllergyInsight(input.allergy, banner);
-  const dose = buildDoseInsight(input.dose);
-  const overlap = buildOverlapInsight(input.personalInsight);
-  const safety = buildSafetyInsight(input.safety);
-
-  const highSignalRows = [support, allergy, dose, safety, overlap].filter(
-    (row): row is RankedInsight => Boolean(row && !row.lowSignal),
-  );
-
-  let insights = capRows(highSignalRows);
-
-  if (insights.length < 4) {
-    const lowSignalRows = [allergy, dose].filter((row): row is RankedInsight => Boolean(row?.lowSignal));
-    for (const row of lowSignalRows) {
-      if (insights.some((existing) => existing.key === row.key)) continue;
-      insights.push(row);
-      if (insights.length >= 4) break;
-    }
-    insights = orderRows(insights);
-  }
-
-  if (insights.length === 0) {
-    insights = [buildLowSignalFallback()];
-  }
+  const highSignalInsights = candidateInsights.filter((row) => !isLowSignalInsight(row));
+  const insights = (
+    highSignalInsights.length > 0
+      ? highSignalInsights
+      : candidateInsights.slice(0, 1)
+  ).slice(0, 4);
 
   return {
     hero,
     banner,
-    insights: insights.map(({ priority, lowSignal, required, ...rest }) => rest),
+    insights,
   };
 };

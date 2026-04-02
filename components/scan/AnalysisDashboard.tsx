@@ -47,7 +47,6 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { OdsFoundationPanel } from '@/components/ods/OdsFoundationPanel';
-import { AnalysisTopSectionRedesign } from '@/components/scan/AnalysisTopSectionRedesign';
 import { InteractiveScoreRing } from '@/components/ui/InteractiveScoreRing';
 import { ContentSection } from '@/components/ui/ScoreDetailCard';
 import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
@@ -60,11 +59,7 @@ import { lookupFoundationForIngredient, summarizeFoundationHits } from '@/lib/kn
 import { getGoalDisplayLabel } from '@/lib/personalization/uiLabels';
 import { resolveDataCeilingSignal } from '@/lib/scan/dataCeiling';
 import { buildGapActionSentences } from '@/lib/scan/gapActionSentenceLibrary';
-import {
-    buildAnalysisTopSectionPresentation,
-    buildAnalysisTopSectionSyncKey,
-    resolveAnalysisTopSectionDefaultExpandedKey,
-} from '@/lib/scan/analysisTopSectionPresentation';
+import { buildAnalysisTopSectionPresentation, type TopSectionInsightTopic } from '@/lib/scan/analysisTopSectionPresentation';
 import { isNutritionLabelLikeIngredient } from '@/lib/scan/isNutritionLabelLikeIngredient';
 import { enforceNeverBlank, isPlaceholderText, sanitizeCoverBullets, sanitizeCoverLine } from '@/lib/scan/neverBlank';
 import { buildRecordFactsViewModel } from '@/lib/scan/recordFactsViewModel';
@@ -472,6 +467,17 @@ type TileConfig = {
 type WidgetTileProps = {
     tile: TileConfig;
     onPress: () => void;
+};
+
+type PersonalizedInsightTone = 'positive' | 'caution' | 'neutral';
+type PersonalizedInsightRow = {
+    key: string;
+    topic: TopSectionInsightTopic;
+    collapsedTitle: string;
+    expandedBullets: string[];
+    tone: PersonalizedInsightTone;
+    icon: React.ComponentType<{ size?: number; color?: string }>;
+    isExpandable: boolean;
 };
 
 export type AnalysisDashboardSaveItem = {
@@ -1735,6 +1741,56 @@ const joinCompactLabels = (values: Array<string | null | undefined>, limit: numb
 const getGoalLabel = (goalKey?: GoalKey | null): string | null => (
     goalKey ? getGoalDisplayLabel(goalKey) : null
 );
+
+const getPersonalizedTonePalette = (tone: PersonalizedInsightTone) => {
+    if (tone === 'positive') {
+        return {
+            surface: '#F1FAF3',
+            border: '#D4EFD9',
+            accent: '#177B43',
+            chipFill: '#E2F5E8',
+            chipText: '#166534',
+            body: '#2F5E42',
+        };
+    }
+    if (tone === 'caution') {
+        return {
+            surface: '#FFF7E8',
+            border: '#F4DEB2',
+            accent: '#D97706',
+            chipFill: '#FDECC8',
+            chipText: '#B45309',
+            body: '#7C4A03',
+        };
+    }
+    return {
+        surface: '#EEF6FB',
+        border: '#D7E7F1',
+        accent: '#2563EB',
+        chipFill: '#DFECFB',
+        chipText: '#1D4ED8',
+        body: '#375569',
+    };
+};
+
+const getTopInsightIcon = (topic: TopSectionInsightTopic) => {
+    switch (topic) {
+        case 'goal':
+            return Zap;
+        case 'support':
+            return TrendingUp;
+        case 'allergy':
+            return Shield;
+        case 'dose':
+            return Pill;
+        case 'overlap':
+            return Bookmark;
+        case 'safety':
+            return AlertTriangle;
+        default:
+            return CheckCircle2;
+    }
+};
 
 const WidgetTile: React.FC<WidgetTileProps> = ({ tile, onPress }) => {
     const Icon = tile.icon;
@@ -3244,11 +3300,15 @@ const AnalysisBundleDashboard: React.FC<{
     onMiniScoreMetaChange,
     onCoreReadyChange,
     saveItem = null,
+    savePillState = 'disabled',
+    onSavePress,
+    onOpenSaved,
 }) => {
     const { t } = useTranslation();
     const { draft: onboardingDraft, onbCompleted } = useOnboarding();
     const { savedSupplements } = useSavedSupplements();
     const [selectedTileType, setSelectedTileType] = useState<TileType | null>(null);
+    const [expandedInsightKey, setExpandedInsightKey] = useState<string | null>(null);
     const [bundleState, setBundleState] = useState<AnalysisBundle>(bundle);
     const [detailLoading, setDetailLoading] = useState(false);
     const [detailError, setDetailError] = useState<string | null>(null);
@@ -4601,33 +4661,34 @@ const AnalysisBundleDashboard: React.FC<{
         safetyTipCoverText,
         safetyWarningCoverText,
     ]);
+    const personalizedHeroFit = topSectionPresentation.hero;
+    const personalizedHeroTone = getPersonalizedTonePalette(personalizedHeroFit.tone);
+    const topSectionBanner = topSectionPresentation.banner;
+    const personalizedInsightRows = useMemo<PersonalizedInsightRow[]>(
+        () =>
+            topSectionPresentation.insights.map((row) => ({
+                ...row,
+                icon: getTopInsightIcon(row.topic),
+            })),
+        [topSectionPresentation.insights],
+    );
+    useEffect(() => {
+        if (!expandedInsightKey) return;
+        if (personalizedInsightRows.some((row) => row.key === expandedInsightKey)) return;
+        setExpandedInsightKey(null);
+    }, [expandedInsightKey, personalizedInsightRows]);
     const heroImageUri = saveItem?.imageUrl ?? productInfo?.image ?? null;
     const verifiedLabelText = normalizeText(sourceBadgeLabel) || 'Verified Label Data';
-    const topSectionSyncKey = useMemo(
-        () =>
-            buildAnalysisTopSectionSyncKey({
-                productIdentity:
-                    saveItem?.supplementId
-                    ?? saveItem?.barcode
-                    ?? productTitle
-                    ?? 'scan-result-top-section',
-                hero: topSectionPresentation.hero,
-                banner: topSectionPresentation.banner,
-                insights: topSectionPresentation.insights,
-            }),
-        [
-            productTitle,
-            saveItem?.barcode,
-            saveItem?.supplementId,
-            topSectionPresentation.banner,
-            topSectionPresentation.hero,
-            topSectionPresentation.insights,
-        ],
-    );
-    const topSectionDefaultExpandedKey = useMemo(
-        () => resolveAnalysisTopSectionDefaultExpandedKey(topSectionPresentation),
-        [topSectionPresentation],
-    );
+    const savePillLabel = savePillState === 'saved' ? 'Saved' : 'Save';
+    const handleSavePillPress = useCallback(() => {
+        if (savePillState === 'saved') {
+            onOpenSaved?.();
+            return;
+        }
+        if (savePillState === 'save') {
+            onSavePress?.();
+        }
+    }, [onOpenSaved, onSavePress, savePillState]);
 
     const overviewDataStatus = useMemo(() => {
         const missingReasons = new Set<MissingReason>();
@@ -7765,17 +7826,99 @@ const AnalysisBundleDashboard: React.FC<{
                 {...scrollProps}
             >
                 {!disableHeroHeader ? (
-                    <AnalysisTopSectionRedesign
-                        hero={topSectionPresentation.hero}
-                        banner={topSectionPresentation.banner}
-                        insights={topSectionPresentation.insights}
-                        title={productTitle}
-                        brand={productSubtitle}
-                        imageSource={heroImageUri ? { uri: heroImageUri } : null}
-                        verifiedLabelText={verifiedLabelText}
-                        defaultExpandedKey={topSectionDefaultExpandedKey}
-                        syncKey={topSectionSyncKey}
-                    />
+                    <View style={styles.heroHeader}>
+                        <LinearGradient
+                            colors={['rgba(255,255,255,0.82)', 'rgba(255,255,255,0.68)']}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 1 }}
+                            style={styles.heroCard}
+                        >
+                            <DashboardBlur intensity={18} tint="light" style={StyleSheet.absoluteFill} />
+
+                            <View style={styles.heroCardHeaderRow}>
+                                <View
+                                    style={[
+                                        styles.heroSummaryChip,
+                                        {
+                                            backgroundColor: personalizedHeroTone.chipFill,
+                                            borderColor: personalizedHeroTone.border,
+                                        },
+                                    ]}
+                                >
+                                    <Text style={[styles.heroSummaryChipText, { color: personalizedHeroTone.chipText }]}>
+                                        {personalizedHeroFit.chip}
+                                    </Text>
+                                </View>
+
+                                <Pressable
+                                    accessibilityRole="button"
+                                    accessibilityState={{ disabled: savePillState === 'disabled' }}
+                                    disabled={savePillState === 'disabled'}
+                                    onPress={handleSavePillPress}
+                                    style={({ pressed }) => [
+                                        styles.heroSavePill,
+                                        savePillState === 'saved' && styles.heroSavePillSaved,
+                                        savePillState === 'disabled' && styles.heroSavePillDisabled,
+                                        pressed && savePillState !== 'disabled' ? styles.heroSavePillPressed : null,
+                                    ]}
+                                >
+                                    <Text
+                                        style={[
+                                            styles.heroSavePillText,
+                                            savePillState === 'saved' && styles.heroSavePillTextSaved,
+                                            savePillState === 'disabled' && styles.heroSavePillTextDisabled,
+                                        ]}
+                                    >
+                                        {savePillLabel}
+                                    </Text>
+                                </Pressable>
+                            </View>
+
+                            <View style={styles.heroProductRow}>
+                                {heroImageUri ? (
+                                    <Image
+                                        source={{ uri: heroImageUri }}
+                                        style={styles.heroImage}
+                                        resizeMode="cover"
+                                    />
+                                ) : (
+                                    <View style={styles.heroImagePlaceholder}>
+                                        <BarChart3 size={18} color="#94A3B8" />
+                                    </View>
+                                )}
+
+                                <View style={styles.heroTextBlock}>
+                                    <Text style={styles.heroTitle} numberOfLines={2}>
+                                        {productTitle}
+                                    </Text>
+                                    {!!productSubtitle && (
+                                        <Text style={styles.heroSubtitle} numberOfLines={2} ellipsizeMode="tail">
+                                            {productSubtitle}
+                                        </Text>
+                                    )}
+                                </View>
+                            </View>
+
+                            <View style={styles.heroDivider} />
+                            <Text style={styles.heroSummaryLine}>{personalizedHeroFit.summary}</Text>
+
+                            <View style={styles.heroVerifiedRow}>
+                                <Shield size={14} color="#64748B" />
+                                <Text style={styles.heroVerifiedText}>{verifiedLabelText}</Text>
+                            </View>
+                        </LinearGradient>
+                    </View>
+                ) : null}
+
+                {topSectionBanner ? (
+                    <View style={styles.topBannerWrap}>
+                        <View style={styles.topBannerCard}>
+                            <View style={styles.topBannerIconWrap}>
+                                <AlertTriangle size={18} color="#D97706" />
+                            </View>
+                            <Text style={styles.topBannerText}>{topSectionBanner.title}</Text>
+                        </View>
+                    </View>
                 ) : null}
 
                 {SHOW_SCAN_DEBUG ? (
@@ -7821,6 +7964,95 @@ const AnalysisBundleDashboard: React.FC<{
                         </View>
                     </View>
                 ) : null}
+
+                <>
+                        {personalizedInsightRows.length > 0 ? (
+                            <View style={styles.personalizedSection}>
+                                <Text style={styles.personalizedSectionTitle}>Personalized insights</Text>
+                                <View style={styles.personalizedSectionCard}>
+                                    <View style={styles.personalizedSectionInner}>
+                                        {personalizedInsightRows.map((row, index) => {
+                                            const palette = getPersonalizedTonePalette(row.tone);
+                                            const RowIcon = row.icon;
+                                            const isExpanded = expandedInsightKey === row.key;
+                                            return (
+                                                <View
+                                                    key={row.key}
+                                                >
+                                                    <Pressable
+                                                        onPress={() =>
+                                                            setExpandedInsightKey((current) =>
+                                                                current === row.key ? null : row.key,
+                                                            )
+                                                        }
+                                                        style={({ pressed }) => [
+                                                            styles.personalizedInsightRow,
+                                                            pressed ? styles.personalizedInsightRowPressed : null,
+                                                        ]}
+                                                    >
+                                                        <View
+                                                            style={[
+                                                                styles.personalizedInsightIconWrap,
+                                                                { backgroundColor: palette.chipFill, borderColor: palette.border },
+                                                            ]}
+                                                        >
+                                                            <RowIcon size={16} color={palette.accent} />
+                                                        </View>
+                                                        <View style={styles.personalizedInsightCopy}>
+                                                            <Text
+                                                                style={styles.personalizedInsightTitle}
+                                                                numberOfLines={isExpanded ? 3 : 1}
+                                                            >
+                                                                {row.collapsedTitle}
+                                                            </Text>
+                                                        </View>
+                                                        <View
+                                                            style={{
+                                                                transform: [{ rotate: isExpanded ? '90deg' : '0deg' }],
+                                                            }}
+                                                        >
+                                                            <ChevronRight size={16} color="rgba(100,116,139,0.9)" />
+                                                        </View>
+                                                    </Pressable>
+                                                    {isExpanded && row.expandedBullets.length > 0 ? (
+                                                        <Animated.View
+                                                            entering={FadeInUp.duration(180)}
+                                                            exiting={FadeOutDown.duration(140)}
+                                                            style={styles.personalizedInsightExpanded}
+                                                        >
+                                                            {row.expandedBullets.map((bullet, bulletIndex) => (
+                                                                <View
+                                                                    key={`${row.key}-${bulletIndex}`}
+                                                                    style={styles.personalizedInsightBulletRow}
+                                                                >
+                                                                    <View
+                                                                        style={[
+                                                                            styles.personalizedInsightBulletDot,
+                                                                            { backgroundColor: palette.accent },
+                                                                        ]}
+                                                                    />
+                                                                    <Text
+                                                                        style={[
+                                                                            styles.personalizedInsightBulletText,
+                                                                            { color: palette.body },
+                                                                        ]}
+                                                                    >
+                                                                        {bullet}
+                                                                    </Text>
+                                                                </View>
+                                                            ))}
+                                                        </Animated.View>
+                                                    ) : null}
+                                                    {index < personalizedInsightRows.length - 1 ? (
+                                                        <View style={styles.personalizedInsightDivider} />
+                                                    ) : null}
+                                                </View>
+                                            );
+                                        })}
+                                    </View>
+                                </View>
+                            </View>
+                        ) : null}
 
                         {/* SCORE_SECTION_FROZEN_RENDER_START */}
                         <View style={styles.scoreSection}>
@@ -7881,6 +8113,7 @@ const AnalysisBundleDashboard: React.FC<{
                                 <Text style={styles.bisectNoticeText}>Set by `no_tiles` in `EXPO_PUBLIC_SCAN_DASHBOARD_BISECT`.</Text>
                             </View>
                         )}
+                    </>
             </ScrollContainer>
 
             {!disableModalPane ? (
@@ -9167,6 +9400,278 @@ const styles = StyleSheet.create({
         fontSize: 12,
         fontWeight: '700',
         color: 'rgba(17,24,39,0.75)',
+    },
+
+    // ---------- Hero header ----------
+    heroHeader: {
+        marginTop: 8,
+        marginBottom: 14,
+        paddingHorizontal: 8,
+    },
+    heroCard: {
+        borderRadius: 32,
+        overflow: 'hidden',
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.78)',
+        paddingHorizontal: 20,
+        paddingVertical: 18,
+        backgroundColor: 'rgba(255,255,255,0.70)',
+        shadowColor: '#0B1E36',
+        shadowOpacity: 0.04,
+        shadowRadius: 22,
+        shadowOffset: { width: 0, height: 8 },
+    },
+    heroCardHeaderRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: 12,
+        marginBottom: 18,
+    },
+    heroSummaryChip: {
+        alignSelf: 'flex-start',
+        borderRadius: 999,
+        borderWidth: 1,
+        paddingHorizontal: 14,
+        paddingVertical: 9,
+    },
+    heroSummaryChipText: {
+        fontSize: 14,
+        fontWeight: '700',
+        letterSpacing: -0.2,
+    },
+    heroSavePill: {
+        minWidth: 78,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderRadius: 999,
+        borderWidth: 1,
+        borderColor: 'rgba(96,165,250,0.30)',
+        backgroundColor: 'rgba(219,234,254,0.74)',
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+        shadowColor: '#60A5FA',
+        shadowOpacity: 0.16,
+        shadowRadius: 12,
+        shadowOffset: { width: 0, height: 6 },
+    },
+    heroSavePillSaved: {
+        borderColor: 'rgba(30,123,85,0.18)',
+        backgroundColor: 'rgba(234,245,240,0.9)',
+        shadowColor: '#1E7B55',
+    },
+    heroSavePillDisabled: {
+        backgroundColor: 'rgba(226,232,240,0.56)',
+        borderColor: 'rgba(148,163,184,0.16)',
+        shadowOpacity: 0,
+    },
+    heroSavePillPressed: {
+        opacity: 0.85,
+    },
+    heroSavePillText: {
+        fontSize: 14,
+        fontWeight: '700',
+        color: '#2563EB',
+        letterSpacing: -0.2,
+    },
+    heroSavePillTextSaved: {
+        color: '#1E7B55',
+    },
+    heroSavePillTextDisabled: {
+        color: '#94A3B8',
+    },
+    heroProductRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 16,
+        minHeight: 72,
+    },
+    heroImage: {
+        width: 72,
+        height: 72,
+        borderRadius: 20,
+        backgroundColor: 'rgba(255,255,255,0.8)',
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.88)',
+    },
+    heroImagePlaceholder: {
+        width: 72,
+        height: 72,
+        borderRadius: 20,
+        backgroundColor: '#FFFFFF',
+        borderWidth: 1,
+        borderColor: 'rgba(226,232,240,0.9)',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    heroTextBlock: {
+        flex: 1,
+        justifyContent: 'center',
+    },
+    heroTitle: {
+        fontSize: 20,
+        fontWeight: '800',
+        color: '#0B1E36',
+        lineHeight: 25,
+        letterSpacing: -0.45,
+    },
+    heroSubtitle: {
+        marginTop: 4,
+        fontSize: 15,
+        color: '#64748B',
+        lineHeight: 21,
+        fontWeight: '500',
+        letterSpacing: -0.2,
+    },
+    heroDivider: {
+        marginTop: 18,
+        marginBottom: 18,
+        height: StyleSheet.hairlineWidth,
+        backgroundColor: 'rgba(11,30,54,0.08)',
+    },
+    heroSummaryLine: {
+        fontSize: 15,
+        lineHeight: 21,
+        fontWeight: '600',
+        color: '#0B1E36',
+        letterSpacing: -0.2,
+    },
+    heroVerifiedRow: {
+        marginTop: 14,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+    },
+    heroVerifiedText: {
+        fontSize: 13,
+        lineHeight: 18,
+        fontWeight: '500',
+        color: '#64748B',
+        letterSpacing: -0.08,
+    },
+
+    topBannerWrap: {
+        marginBottom: 18,
+        paddingHorizontal: 8,
+    },
+    topBannerCard: {
+        minHeight: 72,
+        borderRadius: 24,
+        borderWidth: 1,
+        borderColor: 'rgba(253,224,139,0.68)',
+        backgroundColor: 'rgba(255,248,234,0.88)',
+        paddingHorizontal: 16,
+        paddingVertical: 14,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 14,
+        shadowColor: '#D97706',
+        shadowOpacity: 0.06,
+        shadowRadius: 18,
+        shadowOffset: { width: 0, height: 8 },
+    },
+    topBannerIconWrap: {
+        width: 42,
+        height: 42,
+        borderRadius: 21,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#FEF3C7',
+        borderWidth: 1,
+        borderColor: 'rgba(253,230,138,0.78)',
+    },
+    topBannerText: {
+        flex: 1,
+        fontSize: 15,
+        lineHeight: 22,
+        fontWeight: '700',
+        color: '#B45309',
+        letterSpacing: -0.18,
+    },
+
+    personalizedSection: {
+        marginBottom: 18,
+        paddingHorizontal: 8,
+    },
+    personalizedSectionTitle: {
+        marginBottom: 14,
+        fontSize: 18,
+        fontWeight: '800',
+        color: '#0B1E36',
+        paddingHorizontal: 8,
+        letterSpacing: -0.45,
+    },
+    personalizedSectionCard: {
+        borderRadius: 32,
+        overflow: 'hidden',
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.72)',
+        backgroundColor: 'rgba(255,255,255,0.74)',
+        shadowColor: '#0B1E36',
+        shadowOpacity: 0.03,
+        shadowRadius: 20,
+        shadowOffset: { width: 0, height: 6 },
+    },
+    personalizedSectionInner: {
+        paddingHorizontal: 8,
+        paddingVertical: 8,
+    },
+    personalizedInsightRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+        borderRadius: 24,
+        paddingHorizontal: 14,
+        paddingVertical: 16,
+    },
+    personalizedInsightRowPressed: {
+        opacity: 0.85,
+    },
+    personalizedInsightIconWrap: {
+        width: 42,
+        height: 42,
+        borderRadius: 21,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 1,
+    },
+    personalizedInsightCopy: {
+        flex: 1,
+    },
+    personalizedInsightTitle: {
+        fontSize: 15,
+        lineHeight: 20,
+        fontWeight: '600',
+        color: '#0B1E36',
+        letterSpacing: -0.2,
+    },
+    personalizedInsightExpanded: {
+        paddingLeft: 56,
+        paddingRight: 14,
+        paddingBottom: 16,
+        gap: 10,
+    },
+    personalizedInsightBulletRow: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        gap: 10,
+    },
+    personalizedInsightBulletDot: {
+        width: 6,
+        height: 6,
+        borderRadius: 3,
+        marginTop: 7,
+    },
+    personalizedInsightBulletText: {
+        flex: 1,
+        fontSize: 13,
+        lineHeight: 18,
+        fontWeight: '600',
+    },
+    personalizedInsightDivider: {
+        marginHorizontal: 20,
+        height: StyleSheet.hairlineWidth,
+        backgroundColor: 'rgba(11,30,54,0.08)',
     },
 
     // ---------- Score hero + mini header ----------
