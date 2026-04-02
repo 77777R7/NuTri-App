@@ -10501,6 +10501,34 @@ const sanitizeLocalDecisionSupportStrings = (values: string[] | undefined): stri
     .map((value) => safeTrim(value))
     .filter((value): value is string => Boolean(value));
 
+const LOCAL_DECISION_SUPPORT_HEADER_PREFIX = "uri:";
+
+const parseLocalDecisionSupportHeaderJson = (value: string): unknown => JSON.parse(value);
+
+const decodeLocalDecisionSupportHeader = (value: string): unknown => {
+  try {
+    return parseLocalDecisionSupportHeaderJson(value);
+  } catch (rawError) {
+    const decodeCandidates: string[] = [];
+
+    if (value.startsWith(LOCAL_DECISION_SUPPORT_HEADER_PREFIX)) {
+      decodeCandidates.push(value.slice(LOCAL_DECISION_SUPPORT_HEADER_PREFIX.length));
+    } else if (/%[0-9A-Fa-f]{2}/.test(value)) {
+      decodeCandidates.push(value);
+    }
+
+    for (const candidate of decodeCandidates) {
+      try {
+        return parseLocalDecisionSupportHeaderJson(decodeURIComponent(candidate));
+      } catch {
+        // Try the next decode candidate below.
+      }
+    }
+
+    throw rawError;
+  }
+};
+
 const parseLocalDecisionSupportContext = (req: Request): LocalDecisionSupportContext | null => {
   const rawHeader = req.headers["x-local-personalization"];
   const rawValue = Array.isArray(rawHeader) ? rawHeader[0] : rawHeader;
@@ -10508,7 +10536,7 @@ const parseLocalDecisionSupportContext = (req: Request): LocalDecisionSupportCon
   if (!normalized) return null;
 
   try {
-    const parsed = JSON.parse(normalized);
+    const parsed = decodeLocalDecisionSupportHeader(normalized);
     const result = localDecisionSupportContextSchema.safeParse(parsed);
     if (!result.success) {
       console.warn("[decision-support] invalid local personalization header", result.error.issues[0]?.message ?? "unknown_error");

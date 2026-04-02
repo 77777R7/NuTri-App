@@ -542,35 +542,41 @@ const normalizeBarcodeForDecision = (value?: string | null): string | null => {
     if (digits.length < 8) return null;
     return digits.length > 14 ? digits.slice(-14) : digits.padStart(14, '0');
 };
+const LOCAL_DECISION_SUPPORT_HEADER_PREFIX = 'uri:';
+const clampLocalDecisionHeaderText = (value?: string | null, maxLength = 120): string => {
+    const normalized = normalizeText(value);
+    if (!normalized) return '';
+    return normalized.length > maxLength ? normalized.slice(0, maxLength).trim() : normalized;
+};
 const toLocalDecisionSupportProfilePayload = (
     draft: ProfileDraft | null,
 ): LocalDecisionSupportProfilePayload | null => {
     if (!draft) return null;
 
     const payload: LocalDecisionSupportProfilePayload = {
-        ageRange: normalizeText(draft.ageRange),
-        sex: normalizeText(draft.sex ?? draft.gender),
-        supplementExperience: normalizeText(draft.supplementExperience),
+        ageRange: clampLocalDecisionHeaderText(draft.ageRange, 48),
+        sex: clampLocalDecisionHeaderText(draft.sex ?? draft.gender, 32),
+        supplementExperience: clampLocalDecisionHeaderText(draft.supplementExperience, 48),
         diets: Array.isArray(draft.diets)
-            ? draft.diets.map((value) => normalizeText(value)).filter(Boolean) as string[]
+            ? draft.diets.map((value) => clampLocalDecisionHeaderText(value, 48)).filter(Boolean) as string[]
             : [],
-        activity: normalizeText(draft.activity),
+        activity: clampLocalDecisionHeaderText(draft.activity, 48),
         preferredTypes: Array.isArray(draft.preferredTypes)
-            ? draft.preferredTypes.map((value) => normalizeText(value)).filter(Boolean) as string[]
+            ? draft.preferredTypes.map((value) => clampLocalDecisionHeaderText(value, 48)).filter(Boolean) as string[]
             : [],
-        adherenceBlocker: normalizeText(draft.adherenceBlocker),
+        adherenceBlocker: clampLocalDecisionHeaderText(draft.adherenceBlocker, 64),
         location: {
-            country: normalizeText(draft.location?.country),
-            city: normalizeText(draft.location?.city),
+            country: clampLocalDecisionHeaderText(draft.location?.country, 56),
+            city: clampLocalDecisionHeaderText(draft.location?.city, 56),
         },
         goals: Array.isArray(draft.goals)
-            ? draft.goals.map((value) => normalizeText(value)).filter(Boolean) as string[]
+            ? draft.goals.map((value) => clampLocalDecisionHeaderText(value, 48)).filter(Boolean) as string[]
             : [],
         allergyFlags: Array.isArray(draft.allergyFlags)
-            ? draft.allergyFlags.map((value) => normalizeText(value)).filter(Boolean) as string[]
+            ? draft.allergyFlags.map((value) => clampLocalDecisionHeaderText(value, 48)).filter(Boolean) as string[]
             : [],
         ingredientRestrictions: Array.isArray(draft.ingredientRestrictions)
-            ? draft.ingredientRestrictions.map((value) => normalizeText(value)).filter(Boolean) as string[]
+            ? draft.ingredientRestrictions.map((value) => clampLocalDecisionHeaderText(value, 48)).filter(Boolean) as string[]
             : [],
     };
 
@@ -595,13 +601,13 @@ const toLocalDecisionSupportSavedSupplementPayload = (
     items: SavedSupplement[],
 ): LocalDecisionSupportSavedSupplementPayload[] =>
     items
-        .slice(0, 8)
+        .slice(0, 6)
         .map((item) => ({
             supplementId: item.supplementId ?? null,
-            barcode: normalizeText(item.barcode ?? null),
-            productName: normalizeText(item.productName) || 'Unknown supplement',
-            brandName: normalizeText(item.brandName),
-            dosageText: normalizeText(item.dosageText),
+            barcode: clampLocalDecisionHeaderText(item.barcode ?? null, 24),
+            productName: clampLocalDecisionHeaderText(item.productName, 120) || 'Unknown supplement',
+            brandName: clampLocalDecisionHeaderText(item.brandName, 80),
+            dosageText: clampLocalDecisionHeaderText(item.dosageText, 160),
         }))
         .filter((item) => Boolean(item.productName));
 
@@ -620,10 +626,12 @@ const buildLocalDecisionSupportHeader = (input: {
 
     if (!profile && savedSupplements.length === 0) return null;
 
-    return JSON.stringify({
+    const payload = JSON.stringify({
         profile,
         savedSupplements,
     });
+
+    return `${LOCAL_DECISION_SUPPORT_HEADER_PREFIX}${encodeURIComponent(payload)}`;
 };
 const SIMPLE_TAXONOMY_WHITELIST = new Set(
     [
