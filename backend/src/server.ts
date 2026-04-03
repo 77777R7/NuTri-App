@@ -224,11 +224,11 @@ if (typeof resolvePersonalizationProfile !== "function") {
 
 dotenv.config();
 
-const resolvePersonalizationProfile =
+const resolvePersonalizationProfileCompat =
   profileResolverModule.resolvePersonalizationProfile ??
   profileResolverModule.default?.resolvePersonalizationProfile;
 
-if (typeof resolvePersonalizationProfile !== "function") {
+if (typeof resolvePersonalizationProfileCompat !== "function") {
   throw new Error(
     "[server] Failed to load resolvePersonalizationProfile from ../../lib/personalization/core/profileResolver.ts",
   );
@@ -8689,7 +8689,7 @@ const buildDecisionSupportPersonalizationContext = (params: {
       : [];
 
   const profile = params.userProfile
-    ? resolvePersonalizationProfile({
+    ? resolvePersonalizationProfileCompat({
       draft: {
         ageRange: params.userProfile.age_range ?? undefined,
         sex: params.userProfile.sex ?? params.userProfile.gender ?? undefined,
