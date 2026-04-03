@@ -6,10 +6,24 @@
   "build": {
     "development": {
       "developmentClient": true,
-      "distribution": "internal"
+      "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_SUPABASE_URL": "https://dlwlobgmjzcmpirwvetq.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRsd2xvYmdtanpjbXBpcnd2ZXRxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDUyNzQ4MzIsImV4cCI6MjA2MDg1MDgzMn0.HsdCWj8ghjdJhA1GVft-E3_Cs9bjlsQ91LIc9oSjzcA",
+        "EXPO_PUBLIC_API_BASE_URL": "https://nutri-app-qn0u.onrender.com",
+        "EXPO_PUBLIC_SEARCH_API_BASE_URL": "https://nutri-app-qn0u.onrender.com",
+        "EXPO_PUBLIC_DISABLE_AUTH": "0"
+      }
     },
     "preview": {
-      "distribution": "internal"
+      "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_SUPABASE_URL": "https://dlwlobgmjzcmpirwvetq.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRsd2xvYmdtanpjbXBpcnd2ZXRxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDUyNzQ4MzIsImV4cCI6MjA2MDg1MDgzMn0.HsdCWj8ghjdJhA1GVft-E3_Cs9bjlsQ91LIc9oSjzcA",
+        "EXPO_PUBLIC_API_BASE_URL": "https://nutri-app-qn0u.onrender.com",
+        "EXPO_PUBLIC_SEARCH_API_BASE_URL": "https://nutri-app-qn0u.onrender.com",
+        "EXPO_PUBLIC_DISABLE_AUTH": "0"
+      }
     },
     "preview_dashboard_static": {
       "extends": "preview",
