@@ -25,7 +25,7 @@ import type { QualityMarkProgramMatch, QualityMarkVerificationSummary } from "./
 import { buildProductSafetySummary } from "./safety/productSafetySummary.js";
 import type { UlGuidanceEntry } from "./safety/types.js";
 import { buildAllergyInsight } from "./allergy/allergyInsightBuilder.js";
-import * as goalMatchScoringModule from "../../lib/personalization/core/goalMatchScoring.js";
+import * as goalMatchScoringModule from "../../lib/personalization/core/goalMatchScoring.ts";
 import * as catalogProductEvaluationModule from "../../lib/personalization/core/catalogProductEvaluation.ts";
 import * as goalFitCopyModule from "../../lib/personalization/goalFitCopy.ts";
 import type { ProductIngredientLikeInput } from "../../lib/personalization/core/goalMatchScoring.ts";
@@ -43,27 +43,33 @@ import type {
   SupplementTypeKey,
 } from "../../types/personalization.js";
 
-const { scoreProductGoalMatches } = goalMatchScoringModule as {
-  scoreProductGoalMatches: (
-    input: Parameters<typeof import("../../lib/personalization/core/goalMatchScoring.ts").scoreProductGoalMatches>[0],
-  ) => ReturnType<typeof import("../../lib/personalization/core/goalMatchScoring.ts").scoreProductGoalMatches>;
-};
+const scoreProductGoalMatches =
+  goalMatchScoringModule.scoreProductGoalMatches ??
+  goalMatchScoringModule.default?.scoreProductGoalMatches;
 
-const { evaluateCatalogProduct } = catalogProductEvaluationModule as {
-  evaluateCatalogProduct: (
-    input: Parameters<typeof import("../../lib/personalization/core/catalogProductEvaluation.ts").evaluateCatalogProduct>[0],
-  ) => ReturnType<typeof import("../../lib/personalization/core/catalogProductEvaluation.ts").evaluateCatalogProduct>;
-};
+const evaluateCatalogProduct =
+  catalogProductEvaluationModule.evaluateCatalogProduct ??
+  catalogProductEvaluationModule.default?.evaluateCatalogProduct;
 
-const { formatGoalFitReason, summarizeGoalFitReasons } = goalFitCopyModule as {
-  formatGoalFitReason: (
-    reason: Parameters<typeof import("../../lib/personalization/goalFitCopy.ts").formatGoalFitReason>[0],
-  ) => string;
-  summarizeGoalFitReasons: (
-    reasons: Parameters<typeof import("../../lib/personalization/goalFitCopy.ts").summarizeGoalFitReasons>[0],
-    fallback: Parameters<typeof import("../../lib/personalization/goalFitCopy.ts").summarizeGoalFitReasons>[1],
-  ) => string;
-};
+const formatGoalFitReason =
+  goalFitCopyModule.formatGoalFitReason ??
+  goalFitCopyModule.default?.formatGoalFitReason;
+const summarizeGoalFitReasons =
+  goalFitCopyModule.summarizeGoalFitReasons ??
+  goalFitCopyModule.default?.summarizeGoalFitReasons;
+
+if (typeof scoreProductGoalMatches !== "function") {
+  throw new Error("[decisionSupport] Failed to load scoreProductGoalMatches");
+}
+if (typeof evaluateCatalogProduct !== "function") {
+  throw new Error("[decisionSupport] Failed to load evaluateCatalogProduct");
+}
+if (typeof formatGoalFitReason !== "function") {
+  throw new Error("[decisionSupport] Failed to load formatGoalFitReason");
+}
+if (typeof summarizeGoalFitReasons !== "function") {
+  throw new Error("[decisionSupport] Failed to load summarizeGoalFitReasons");
+}
 
 export type DecisionSupportViewMode = "details";
 

@@ -224,6 +224,16 @@ if (typeof resolvePersonalizationProfile !== "function") {
 
 dotenv.config();
 
+const resolvePersonalizationProfile =
+  profileResolverModule.resolvePersonalizationProfile ??
+  profileResolverModule.default?.resolvePersonalizationProfile;
+
+if (typeof resolvePersonalizationProfile !== "function") {
+  throw new Error(
+    "[server] Failed to load resolvePersonalizationProfile from ../../lib/personalization/core/profileResolver.ts",
+  );
+}
+
 const SENTRY_DSN = process.env.SENTRY_DSN ?? "";
 const SENTRY_ENVIRONMENT = process.env.SENTRY_ENVIRONMENT ?? process.env.NODE_ENV ?? "development";
 const SENTRY_ENABLED = SENTRY_DSN.length > 0;
@@ -7092,6 +7102,13 @@ const verifySupabaseToken = async (req: Request, res: Response, next: NextFuncti
       : authBypassHeader === "1") &&
     (process.env.NODE_ENV !== "production" || allowAuthBypass);
   if (allowBypass) {
+    const debugUserHeader = req.headers["x-debug-user-id"];
+    const debugUserId = Array.isArray(debugUserHeader)
+      ? String(debugUserHeader[0] ?? "").trim()
+      : String(debugUserHeader ?? "").trim();
+    if (debugUserId) {
+      (req as AuthenticatedRequest).user = { id: debugUserId };
+    }
     return next();
   }
 

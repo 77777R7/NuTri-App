@@ -13,13 +13,11 @@ import type {
   SupplementTypeKey,
 } from "../../../types/personalization";
 
-import { evaluateEligibilityPolicy } from "./eligibilityPolicy";
-import {
-  scoreProductGoalMatches,
-  type ProductIngredientLikeInput,
-} from "./goalMatchScoring";
-import { buildGoalFitCard } from "./goalFitCardBuilder";
-import { evaluateSavedProducts } from "./savedProductEvaluation";
+import * as eligibilityPolicyModule from "./eligibilityPolicy.ts";
+import * as goalMatchScoringModule from "./goalMatchScoring.ts";
+import type { ProductIngredientLikeInput } from "./goalMatchScoring.ts";
+import * as goalFitCardBuilderModule from "./goalFitCardBuilder.ts";
+import * as savedProductEvaluationModule from "./savedProductEvaluation.ts";
 
 export type CatalogOverlayIngredientRow = {
   name: string;
@@ -88,6 +86,32 @@ export type CatalogProductEvaluationResult = {
   goalFitCard: GoalFitCard | null;
   candidate?: GoalNavigatorCandidate;
 };
+
+const evaluateEligibilityPolicy =
+  eligibilityPolicyModule.evaluateEligibilityPolicy ??
+  eligibilityPolicyModule.default?.evaluateEligibilityPolicy;
+const scoreProductGoalMatches =
+  goalMatchScoringModule.scoreProductGoalMatches ??
+  goalMatchScoringModule.default?.scoreProductGoalMatches;
+const buildGoalFitCard =
+  goalFitCardBuilderModule.buildGoalFitCard ??
+  goalFitCardBuilderModule.default?.buildGoalFitCard;
+const evaluateSavedProducts =
+  savedProductEvaluationModule.evaluateSavedProducts ??
+  savedProductEvaluationModule.default?.evaluateSavedProducts;
+
+if (typeof evaluateEligibilityPolicy !== "function") {
+  throw new Error("[catalogProductEvaluation] Failed to load evaluateEligibilityPolicy");
+}
+if (typeof scoreProductGoalMatches !== "function") {
+  throw new Error("[catalogProductEvaluation] Failed to load scoreProductGoalMatches");
+}
+if (typeof buildGoalFitCard !== "function") {
+  throw new Error("[catalogProductEvaluation] Failed to load buildGoalFitCard");
+}
+if (typeof evaluateSavedProducts !== "function") {
+  throw new Error("[catalogProductEvaluation] Failed to load evaluateSavedProducts");
+}
 
 const PROPRIETARY_BLEND_PATTERN = /\b(blend|complex|matrix|formula)\b/i;
 
