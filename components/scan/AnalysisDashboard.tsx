@@ -47,6 +47,7 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { OdsFoundationPanel } from '@/components/ods/OdsFoundationPanel';
+import { AnalysisTopSectionRedesign } from '@/components/scan/AnalysisTopSectionRedesign';
 import { InteractiveScoreRing } from '@/components/ui/InteractiveScoreRing';
 import { ContentSection } from '@/components/ui/ScoreDetailCard';
 import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
@@ -57,7 +58,7 @@ import { lookupFoundationForIngredient, summarizeFoundationHits } from '@/lib/kn
 import { getGoalDisplayLabel } from '@/lib/personalization/uiLabels';
 import { resolveDataCeilingSignal } from '@/lib/scan/dataCeiling';
 import { buildGapActionSentences } from '@/lib/scan/gapActionSentenceLibrary';
-import { buildAnalysisTopSectionPresentation, type TopSectionInsightTopic } from '@/lib/scan/analysisTopSectionPresentation';
+import { buildAnalysisTopSectionPresentation } from '@/lib/scan/analysisTopSectionPresentation';
 import { isNutritionLabelLikeIngredient } from '@/lib/scan/isNutritionLabelLikeIngredient';
 import { enforceNeverBlank, isPlaceholderText, sanitizeCoverBullets, sanitizeCoverLine } from '@/lib/scan/neverBlank';
 import { buildRecordFactsViewModel } from '@/lib/scan/recordFactsViewModel';
@@ -465,17 +466,6 @@ type WidgetTileProps = {
     onPress: () => void;
 };
 
-type PersonalizedInsightTone = 'positive' | 'caution' | 'neutral';
-type PersonalizedInsightRow = {
-    key: string;
-    topic: TopSectionInsightTopic;
-    collapsedTitle: string;
-    expandedBullets: string[];
-    tone: PersonalizedInsightTone;
-    icon: React.ComponentType<{ size?: number; color?: string }>;
-    isExpandable: boolean;
-};
-
 export type AnalysisDashboardSaveItem = {
     supplementId?: string | null;
     barcode?: string | null;
@@ -484,8 +474,6 @@ export type AnalysisDashboardSaveItem = {
     dosageText: string;
     imageUrl?: string | null;
 };
-
-type SavePillState = 'save' | 'saved' | 'disabled';
 
 const FORCE_FULL_DASHBOARD_EFFECTS =
     process.env.EXPO_PUBLIC_FORCE_FULL_DASHBOARD_EFFECTS === 'true' ||
@@ -1631,56 +1619,6 @@ const joinCompactLabels = (values: Array<string | null | undefined>, limit: numb
 const getGoalLabel = (goalKey?: GoalKey | null): string | null => (
     goalKey ? getGoalDisplayLabel(goalKey) : null
 );
-
-const getPersonalizedTonePalette = (tone: PersonalizedInsightTone) => {
-    if (tone === 'positive') {
-        return {
-            surface: '#F1FAF3',
-            border: '#D4EFD9',
-            accent: '#177B43',
-            chipFill: '#E2F5E8',
-            chipText: '#166534',
-            body: '#2F5E42',
-        };
-    }
-    if (tone === 'caution') {
-        return {
-            surface: '#FFF7E8',
-            border: '#F4DEB2',
-            accent: '#D97706',
-            chipFill: '#FDECC8',
-            chipText: '#B45309',
-            body: '#7C4A03',
-        };
-    }
-    return {
-        surface: '#EEF6FB',
-        border: '#D7E7F1',
-        accent: '#2563EB',
-        chipFill: '#DFECFB',
-        chipText: '#1D4ED8',
-        body: '#375569',
-    };
-};
-
-const getTopInsightIcon = (topic: TopSectionInsightTopic) => {
-    switch (topic) {
-        case 'goal':
-            return Zap;
-        case 'support':
-            return TrendingUp;
-        case 'allergy':
-            return Shield;
-        case 'dose':
-            return Pill;
-        case 'overlap':
-            return Bookmark;
-        case 'safety':
-            return AlertTriangle;
-        default:
-            return CheckCircle2;
-    }
-};
 
 const WidgetTile: React.FC<WidgetTileProps> = ({ tile, onPress }) => {
     const Icon = tile.icon;
@@ -3174,9 +3112,6 @@ const AnalysisBundleDashboard: React.FC<{
     onMiniScoreMetaChange?: (meta: { overallScore: number; overallBand: string | null; muted: boolean }) => void;
     onCoreReadyChange?: (ready: boolean) => void;
     saveItem?: AnalysisDashboardSaveItem | null;
-    savePillState?: SavePillState;
-    onSavePress?: () => void;
-    onOpenSaved?: () => void;
 }> = ({
     bundle,
     analysis,
@@ -3190,13 +3125,9 @@ const AnalysisBundleDashboard: React.FC<{
     onMiniScoreMetaChange,
     onCoreReadyChange,
     saveItem = null,
-    savePillState = 'disabled',
-    onSavePress,
-    onOpenSaved,
 }) => {
     const { t } = useTranslation();
     const [selectedTileType, setSelectedTileType] = useState<TileType | null>(null);
-    const [expandedInsightKey, setExpandedInsightKey] = useState<string | null>(null);
     const [bundleState, setBundleState] = useState<AnalysisBundle>(bundle);
     const [detailLoading, setDetailLoading] = useState(false);
     const [detailError, setDetailError] = useState<string | null>(null);
@@ -4518,34 +4449,8 @@ const AnalysisBundleDashboard: React.FC<{
         safetyTipCoverText,
         safetyWarningCoverText,
     ]);
-    const personalizedHeroFit = topSectionPresentation.hero;
-    const personalizedHeroTone = getPersonalizedTonePalette(personalizedHeroFit.tone);
-    const topSectionBanner = topSectionPresentation.banner;
-    const personalizedInsightRows = useMemo<PersonalizedInsightRow[]>(
-        () =>
-            topSectionPresentation.insights.map((row) => ({
-                ...row,
-                icon: getTopInsightIcon(row.topic),
-            })),
-        [topSectionPresentation.insights],
-    );
-    useEffect(() => {
-        if (!expandedInsightKey) return;
-        if (personalizedInsightRows.some((row) => row.key === expandedInsightKey)) return;
-        setExpandedInsightKey(null);
-    }, [expandedInsightKey, personalizedInsightRows]);
     const heroImageUri = saveItem?.imageUrl ?? productInfo?.image ?? null;
     const verifiedLabelText = normalizeText(sourceBadgeLabel) || 'Verified Label Data';
-    const savePillLabel = savePillState === 'saved' ? 'Saved' : 'Save';
-    const handleSavePillPress = useCallback(() => {
-        if (savePillState === 'saved') {
-            onOpenSaved?.();
-            return;
-        }
-        if (savePillState === 'save') {
-            onSavePress?.();
-        }
-    }, [onOpenSaved, onSavePress, savePillState]);
 
     const overviewDataStatus = useMemo(() => {
         const missingReasons = new Set<MissingReason>();
@@ -7683,99 +7588,15 @@ const AnalysisBundleDashboard: React.FC<{
                 {...scrollProps}
             >
                 {!disableHeroHeader ? (
-                    <View style={styles.heroHeader}>
-                        <LinearGradient
-                            colors={['rgba(255,255,255,0.82)', 'rgba(255,255,255,0.68)']}
-                            start={{ x: 0, y: 0 }}
-                            end={{ x: 1, y: 1 }}
-                            style={styles.heroCard}
-                        >
-                            <DashboardBlur intensity={18} tint="light" style={StyleSheet.absoluteFill} />
-
-                            <View style={styles.heroCardHeaderRow}>
-                                <View
-                                    style={[
-                                        styles.heroSummaryChip,
-                                        {
-                                            backgroundColor: personalizedHeroTone.chipFill,
-                                            borderColor: personalizedHeroTone.border,
-                                        },
-                                    ]}
-                                >
-                                    <Text style={[styles.heroSummaryChipText, { color: personalizedHeroTone.chipText }]}>
-                                        {personalizedHeroFit.chip}
-                                    </Text>
-                                </View>
-
-                                <Pressable
-                                    accessibilityRole="button"
-                                    accessibilityState={{ disabled: savePillState === 'disabled' }}
-                                    disabled={savePillState === 'disabled'}
-                                    onPress={handleSavePillPress}
-                                    style={({ pressed }) => [
-                                        styles.heroSavePill,
-                                        savePillState === 'saved' && styles.heroSavePillSaved,
-                                        savePillState === 'disabled' && styles.heroSavePillDisabled,
-                                        pressed && savePillState !== 'disabled' ? styles.heroSavePillPressed : null,
-                                    ]}
-                                >
-                                    <Text
-                                        style={[
-                                            styles.heroSavePillText,
-                                            savePillState === 'saved' && styles.heroSavePillTextSaved,
-                                            savePillState === 'disabled' && styles.heroSavePillTextDisabled,
-                                        ]}
-                                    >
-                                        {savePillLabel}
-                                    </Text>
-                                </Pressable>
-                            </View>
-
-                            <View style={styles.heroProductRow}>
-                                {heroImageUri ? (
-                                    <Image
-                                        source={{ uri: heroImageUri }}
-                                        style={styles.heroImage}
-                                        resizeMode="cover"
-                                    />
-                                ) : (
-                                    <View style={styles.heroImagePlaceholder}>
-                                        <BarChart3 size={18} color="#94A3B8" />
-                                    </View>
-                                )}
-
-                                <View style={styles.heroTextBlock}>
-                                    <Text style={styles.heroTitle} numberOfLines={2}>
-                                        {productTitle}
-                                    </Text>
-                                    {!!productSubtitle && (
-                                        <Text style={styles.heroSubtitle} numberOfLines={2} ellipsizeMode="tail">
-                                            {productSubtitle}
-                                        </Text>
-                                    )}
-                                </View>
-                            </View>
-
-                            <View style={styles.heroDivider} />
-                            <Text style={styles.heroSummaryLine}>{personalizedHeroFit.summary}</Text>
-
-                            <View style={styles.heroVerifiedRow}>
-                                <Shield size={14} color="#64748B" />
-                                <Text style={styles.heroVerifiedText}>{verifiedLabelText}</Text>
-                            </View>
-                        </LinearGradient>
-                    </View>
-                ) : null}
-
-                {topSectionBanner ? (
-                    <View style={styles.topBannerWrap}>
-                        <View style={styles.topBannerCard}>
-                            <View style={styles.topBannerIconWrap}>
-                                <AlertTriangle size={18} color="#D97706" />
-                            </View>
-                            <Text style={styles.topBannerText}>{topSectionBanner.title}</Text>
-                        </View>
-                    </View>
+                    <AnalysisTopSectionRedesign
+                        hero={topSectionPresentation.hero}
+                        banner={topSectionPresentation.banner}
+                        insights={topSectionPresentation.insights}
+                        productTitle={productTitle}
+                        productSubtitle={productSubtitle}
+                        heroImageUri={heroImageUri}
+                        verifiedLabelText={verifiedLabelText}
+                    />
                 ) : null}
 
                 {SHOW_SCAN_DEBUG ? (
@@ -7823,94 +7644,6 @@ const AnalysisBundleDashboard: React.FC<{
                 ) : null}
 
                 <>
-                        {personalizedInsightRows.length > 0 ? (
-                            <View style={styles.personalizedSection}>
-                                <Text style={styles.personalizedSectionTitle}>Personalized insights</Text>
-                                <View style={styles.personalizedSectionCard}>
-                                    <View style={styles.personalizedSectionInner}>
-                                        {personalizedInsightRows.map((row, index) => {
-                                            const palette = getPersonalizedTonePalette(row.tone);
-                                            const RowIcon = row.icon;
-                                            const isExpanded = expandedInsightKey === row.key;
-                                            return (
-                                                <View
-                                                    key={row.key}
-                                                >
-                                                    <Pressable
-                                                        onPress={() =>
-                                                            setExpandedInsightKey((current) =>
-                                                                current === row.key ? null : row.key,
-                                                            )
-                                                        }
-                                                        style={({ pressed }) => [
-                                                            styles.personalizedInsightRow,
-                                                            pressed ? styles.personalizedInsightRowPressed : null,
-                                                        ]}
-                                                    >
-                                                        <View
-                                                            style={[
-                                                                styles.personalizedInsightIconWrap,
-                                                                { backgroundColor: palette.chipFill, borderColor: palette.border },
-                                                            ]}
-                                                        >
-                                                            <RowIcon size={16} color={palette.accent} />
-                                                        </View>
-                                                        <View style={styles.personalizedInsightCopy}>
-                                                            <Text
-                                                                style={styles.personalizedInsightTitle}
-                                                                numberOfLines={isExpanded ? 3 : 1}
-                                                            >
-                                                                {row.collapsedTitle}
-                                                            </Text>
-                                                        </View>
-                                                        <View
-                                                            style={{
-                                                                transform: [{ rotate: isExpanded ? '90deg' : '0deg' }],
-                                                            }}
-                                                        >
-                                                            <ChevronRight size={16} color="rgba(100,116,139,0.9)" />
-                                                        </View>
-                                                    </Pressable>
-                                                    {isExpanded && row.expandedBullets.length > 0 ? (
-                                                        <Animated.View
-                                                            entering={FadeInUp.duration(180)}
-                                                            exiting={FadeOutDown.duration(140)}
-                                                            style={styles.personalizedInsightExpanded}
-                                                        >
-                                                            {row.expandedBullets.map((bullet, bulletIndex) => (
-                                                                <View
-                                                                    key={`${row.key}-${bulletIndex}`}
-                                                                    style={styles.personalizedInsightBulletRow}
-                                                                >
-                                                                    <View
-                                                                        style={[
-                                                                            styles.personalizedInsightBulletDot,
-                                                                            { backgroundColor: palette.accent },
-                                                                        ]}
-                                                                    />
-                                                                    <Text
-                                                                        style={[
-                                                                            styles.personalizedInsightBulletText,
-                                                                            { color: palette.body },
-                                                                        ]}
-                                                                    >
-                                                                        {bullet}
-                                                                    </Text>
-                                                                </View>
-                                                            ))}
-                                                        </Animated.View>
-                                                    ) : null}
-                                                    {index < personalizedInsightRows.length - 1 ? (
-                                                        <View style={styles.personalizedInsightDivider} />
-                                                    ) : null}
-                                                </View>
-                                            );
-                                        })}
-                                    </View>
-                                </View>
-                            </View>
-                        ) : null}
-
                         {/* SCORE_SECTION_FROZEN_RENDER_START */}
                         <View style={styles.scoreSection}>
                             <View style={styles.scoreHeroCard}>
@@ -8000,9 +7733,6 @@ type AnalysisDashboardProps = {
     onMiniScoreMetaChange?: (meta: { overallScore: number; overallBand: string | null; muted: boolean }) => void;
     onCoreReadyChange?: (ready: boolean) => void;
     saveItem?: AnalysisDashboardSaveItem | null;
-    savePillState?: SavePillState;
-    onSavePress?: () => void;
-    onOpenSaved?: () => void;
 };
 
 const ensureModernAnalysisBundle = (
@@ -8062,9 +7792,6 @@ export const AnalysisDashboard: React.FC<AnalysisDashboardProps> = ({
     onMiniScoreMetaChange,
     onCoreReadyChange,
     saveItem = null,
-    savePillState = 'disabled',
-    onSavePress,
-    onOpenSaved,
 }) => {
     const modernBundle = ensureModernAnalysisBundle(analysisBundle, analysis, scanSessionId);
     return (
@@ -8081,9 +7808,6 @@ export const AnalysisDashboard: React.FC<AnalysisDashboardProps> = ({
             onMiniScoreMetaChange={onMiniScoreMetaChange}
             onCoreReadyChange={onCoreReadyChange}
             saveItem={saveItem}
-            savePillState={savePillState}
-            onSavePress={onSavePress}
-            onOpenSaved={onOpenSaved}
         />
     );
 };

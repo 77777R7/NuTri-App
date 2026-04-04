@@ -1,14 +1,14 @@
 import { BlurView } from 'expo-blur';
 import Constants from 'expo-constants';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { ArrowLeft, FileText } from 'lucide-react-native';
+import { FileText } from 'lucide-react-native';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import Animated, { useAnimatedStyle, useSharedValue, type SharedValue } from 'react-native-reanimated';
+import { useSharedValue } from 'react-native-reanimated';
 
 import { ResponsiveScreen } from '@/components/common/ResponsiveScreen';
+import { ScanResultHeaderChrome } from '@/components/scan/ScanResultHeaderChrome';
 import { OrganicSpinner } from '@/components/ui/OrganicSpinner';
 import { ShinyText } from '@/components/ui/ShinyText';
 import { useScanHistory } from '@/contexts/ScanHistoryContext';
@@ -48,61 +48,6 @@ const HEADER_MINI_SCORE_RANGE = 70;
 
 const emitScanUxMetric = (event: string, payload: Record<string, unknown> = {}) => {
   console.info('[scan-ux-metric]', { event, ...payload });
-};
-
-const getHeaderOverallBandLabel = (score: number, explicitBand?: string | null): string => {
-  const normalized = typeof explicitBand === 'string' ? explicitBand.trim() : '';
-  if (normalized) return normalized;
-  if (score >= 90) return 'Excellent';
-  if (score >= 80) return 'Strong';
-  if (score >= 70) return 'Good';
-  if (score >= 60) return 'Fair';
-  if (score >= 45) return 'Limited';
-  return 'Weak';
-};
-
-const getHeaderOverallBandTone = (score: number, explicitBand?: string | null) => {
-  const band = getHeaderOverallBandLabel(score, explicitBand).toLowerCase();
-  if (band === 'excellent') {
-    return {
-      bubbleBorder: 'rgba(21,128,61,0.24)',
-      bubbleFill: 'rgba(21,128,61,0.16)',
-      bubbleText: '#166534',
-    };
-  }
-  if (band === 'strong') {
-    return {
-      bubbleBorder: 'rgba(22,163,74,0.24)',
-      bubbleFill: 'rgba(22,163,74,0.16)',
-      bubbleText: '#166534',
-    };
-  }
-  if (band === 'good') {
-    return {
-      bubbleBorder: 'rgba(101,163,13,0.24)',
-      bubbleFill: 'rgba(101,163,13,0.16)',
-      bubbleText: '#4D7C0F',
-    };
-  }
-  if (band === 'fair') {
-    return {
-      bubbleBorder: 'rgba(217,119,6,0.24)',
-      bubbleFill: 'rgba(217,119,6,0.16)',
-      bubbleText: '#B45309',
-    };
-  }
-  if (band === 'limited') {
-    return {
-      bubbleBorder: 'rgba(234,88,12,0.24)',
-      bubbleFill: 'rgba(234,88,12,0.16)',
-      bubbleText: '#C2410C',
-    };
-  }
-  return {
-    bubbleBorder: 'rgba(220,38,38,0.24)',
-    bubbleFill: 'rgba(220,38,38,0.16)',
-    bubbleText: '#B91C1C',
-  };
 };
 
 const resolveDashboardRenderMode = (_isExpoGo: boolean): 'full' => {
@@ -615,7 +560,11 @@ export default function ScanResultScreen() {
   if (!sessionResolved) {
     return (
       <ResponsiveScreen contentStyle={styles.screen}>
-        <Header onBack={handleBack} title="Scan Result" />
+        <ScanResultHeaderChrome
+          onBack={handleBack}
+          title="Analysis"
+          savePillState="disabled"
+        />
         <View style={styles.loadingContainer}>
           <OrganicSpinner size={28} color="#52525b" />
           <Text style={styles.loadingTitle}>Loading scan session…</Text>
@@ -628,7 +577,11 @@ export default function ScanResultScreen() {
   if (!session) {
     return (
       <ResponsiveScreen contentStyle={styles.screen}>
-        <Header onBack={handleBack} title="Scan Result" />
+        <ScanResultHeaderChrome
+          onBack={handleBack}
+          title="Analysis"
+          savePillState="disabled"
+        />
         <View style={styles.fallbackContainer}>
           <FileText size={48} color="#52525b" />
           <Text style={styles.fallbackTitle}>Session Expired</Text>
@@ -648,7 +601,11 @@ export default function ScanResultScreen() {
   if (barcodeQuality.page === 'not_found') {
     return (
       <ResponsiveScreen contentStyle={styles.screen}>
-        <Header onBack={handleBack} title="Scan Result" />
+        <ScanResultHeaderChrome
+          onBack={handleBack}
+          title="Analysis"
+          savePillState="disabled"
+        />
         <View style={styles.fallbackContainer}>
           <FileText size={48} color="#52525b" />
           <Text style={styles.fallbackTitle}>Not Found</Text>
@@ -678,7 +635,11 @@ export default function ScanResultScreen() {
         : (error || reasonCodeMessage || 'We lost connection while analyzing. Please retry.');
     return (
       <ResponsiveScreen contentStyle={styles.screen}>
-        <Header onBack={handleBack} title="Scan Result" />
+        <ScanResultHeaderChrome
+          onBack={handleBack}
+          title="Analysis"
+          savePillState="disabled"
+        />
         <View style={styles.fallbackContainer}>
           <FileText size={48} color="#52525b" />
           <Text style={styles.fallbackTitle}>{recoverableTitle}</Text>
@@ -696,7 +657,11 @@ export default function ScanResultScreen() {
   if (barcodeQuality.page === 'session_expired') {
     return (
       <ResponsiveScreen contentStyle={styles.screen}>
-        <Header onBack={handleBack} title="Scan Result" />
+        <ScanResultHeaderChrome
+          onBack={handleBack}
+          title="Analysis"
+          savePillState="disabled"
+        />
         <View style={styles.fallbackContainer}>
           <FileText size={48} color="#52525b" />
           <Text style={styles.fallbackTitle}>Session Expired</Text>
@@ -758,10 +723,15 @@ export default function ScanResultScreen() {
         }}
       />
       <StatusBar style="dark" />
-      <Header
+      <ScanResultHeaderChrome
         onBack={handleBack}
         title="Analysis"
         miniScore={headerMiniScore ? { ...headerMiniScore, scrollY: analysisHeaderScrollY } : null}
+        savePillState={dashboardSaveItem ? (isDashboardItemSaved ? 'saved' : 'save') : 'disabled'}
+        onSavePress={handleSaveFromDashboard}
+        onOpenSaved={handleOpenSaved}
+        miniScoreThresholdStart={HEADER_MINI_SCORE_START}
+        miniScoreThresholdRange={HEADER_MINI_SCORE_RANGE}
       />
 
       {/* We render dashboard immediately. 
@@ -779,9 +749,6 @@ export default function ScanResultScreen() {
           onMiniScoreMetaChange={handleHeaderMiniScoreChange}
           onCoreReadyChange={handleDashboardCoreReadyChange}
           saveItem={dashboardSaveItem}
-          savePillState={dashboardSaveItem ? (isDashboardItemSaved ? 'saved' : 'save') : 'disabled'}
-          onSavePress={handleSaveFromDashboard}
-          onOpenSaved={handleOpenSaved}
         />
       </DashboardErrorBoundary>
 
@@ -808,95 +775,6 @@ export default function ScanResultScreen() {
         </BlurView>
       )}
     </ResponsiveScreen>
-  );
-}
-
-function Header({
-  onBack,
-  title,
-  miniScore,
-}: {
-  onBack: () => void,
-  title: string,
-  miniScore?: (HeaderMiniScoreState & { scrollY: SharedValue<number> }) | null,
-}) {
-  const miniScoreTone = useMemo(
-    () => (miniScore ? getHeaderOverallBandTone(miniScore.overallScore, miniScore.overallBand) : null),
-    [miniScore]
-  );
-  const titleAnimatedStyle = useAnimatedStyle(() => {
-    const progress = miniScore
-      ? Math.max(0, Math.min(1, (miniScore.scrollY.value - HEADER_MINI_SCORE_START) / HEADER_MINI_SCORE_RANGE))
-      : 0;
-    return {
-      opacity: 1 - progress,
-      transform: [
-        { translateY: progress * 8 },
-        { scale: 1 - progress * 0.06 },
-      ],
-    };
-  }, [miniScore]);
-  const miniScoreAnimatedStyle = useAnimatedStyle(() => {
-    const progress = miniScore
-      ? Math.max(0, Math.min(1, (miniScore.scrollY.value - HEADER_MINI_SCORE_START) / HEADER_MINI_SCORE_RANGE))
-      : 0;
-    return {
-      opacity: progress,
-      transform: [
-        { translateY: (1 - progress) * 10 },
-        { scale: 0.82 + progress * 0.18 },
-      ],
-    };
-  }, [miniScore]);
-
-  return (
-    <View style={styles.header}>
-      <TouchableOpacity style={styles.backButton} onPress={onBack} activeOpacity={0.7}>
-        <ArrowLeft size={20} color="#000" />
-      </TouchableOpacity>
-      <View style={styles.headerCenterSlot} pointerEvents="none">
-        <Animated.View style={[styles.headerTitleLayer, titleAnimatedStyle]}>
-          <Text style={styles.headerTitle}>{title}</Text>
-        </Animated.View>
-        {miniScore && miniScoreTone ? (
-          <Animated.View style={[styles.headerMiniScoreLayer, miniScoreAnimatedStyle]}>
-            <LinearGradient
-              colors={
-                miniScore.muted
-                  ? ['rgba(255,255,255,0.94)', 'rgba(241,245,249,0.78)']
-                  : ['rgba(255,255,255,0.96)', miniScoreTone.bubbleFill]
-              }
-              locations={[0, 1]}
-              start={{ x: 0.15, y: 0.05 }}
-              end={{ x: 0.85, y: 1 }}
-              style={[
-                styles.headerMiniScoreShell,
-                miniScore.muted ? styles.headerMiniScoreShellMuted : { borderColor: miniScoreTone.bubbleBorder },
-              ]}
-            >
-              <View
-                style={[
-                  styles.headerMiniScoreCore,
-                  miniScore.muted
-                    ? styles.headerMiniScoreCoreMuted
-                    : { borderColor: miniScoreTone.bubbleBorder, backgroundColor: 'rgba(255,255,255,0.34)' },
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.headerMiniScoreText,
-                    miniScore.muted ? styles.headerMiniScoreTextMuted : { color: miniScoreTone.bubbleText },
-                  ]}
-                >
-                  {miniScore.muted ? '--' : Math.round(miniScore.overallScore)}
-                </Text>
-              </View>
-            </LinearGradient>
-          </Animated.View>
-        ) : null}
-      </View>
-      <View style={styles.headerSpacer} />
-    </View>
   );
 }
 
