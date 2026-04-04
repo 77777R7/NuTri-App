@@ -849,25 +849,72 @@ const buildGoalPreviewMatches = (digest: FactsDigest): ProductGoalMatch[] => {
     .sort(compareGoalPreviewMatches);
 };
 
-const buildProductDosePreviewText = (digest: FactsDigest): string | null => {
-  for (const active of digest.actives ?? []) {
-    const ingredientName = normalizeDisplayText(active?.name);
-    if (!ingredientName) continue;
+const GENERIC_NUTRITION_ACTIVE_REGEX =
+  /\bcalories?\b|\btotal fat\b|\bsaturated fat\b|\bcholesterol\b|\bsodium\b|\bcarbohydrate\b|\bprotein\b/;
 
-    const amountText = normalizeDisplayText(active?.amountText);
-    if (amountText) return `${ingredientName}: ${amountText} per serving`;
+const isGenericNutritionActiveName = (value: string | null | undefined): boolean =>
+  GENERIC_NUTRITION_ACTIVE_REGEX.test(normalizeDisplayText(value).toLowerCase());
 
-    if (
-      typeof active?.amount === "number"
-      && Number.isFinite(active.amount)
-      && active.amount > 0
-      && normalizeDisplayText(active?.unit).length > 0
-    ) {
-      return `${ingredientName}: ${formatDoseText(active.amount, normalizeDisplayText(active.unit))} per serving`;
-    }
+type DosePreviewCandidate = {
+  name: string;
+  doseText: string;
+};
+
+const buildDosePreviewCandidate = (active: FactsDigest["actives"][number] | null | undefined): DosePreviewCandidate | null => {
+  const ingredientName = normalizeDisplayText(active?.name);
+  if (!ingredientName || isGenericNutritionActiveName(ingredientName)) return null;
+
+  const amountText = normalizeDisplayText(active?.amountText);
+  if (amountText) {
+    return {
+      name: ingredientName,
+      doseText: amountText,
+    };
+  }
+
+  if (
+    typeof active?.amount === "number"
+    && Number.isFinite(active.amount)
+    && active.amount > 0
+    && normalizeDisplayText(active?.unit).length > 0
+  ) {
+    return {
+      name: ingredientName,
+      doseText: formatDoseText(active.amount, normalizeDisplayText(active.unit)),
+    };
   }
 
   return null;
+};
+
+const buildProductDosePreviewText = (digest: FactsDigest): string | null => {
+  const candidates = (digest.actives ?? [])
+    .map((active) => buildDosePreviewCandidate(active))
+    .filter((candidate): candidate is DosePreviewCandidate => Boolean(candidate));
+
+  if (candidates.length === 0) return null;
+
+  if (detectCategoryId(digest) === "fish_oil_omega3") {
+    const epa = candidates.find((candidate) => /\bepa\b|\beicosapentaenoic\b/i.test(candidate.name));
+    const dha = candidates.find((candidate) => /\bdha\b|\bdocosahexaenoic\b/i.test(candidate.name));
+    if (epa && dha) {
+      return `EPA ${epa.doseText} + DHA ${dha.doseText} per serving`;
+    }
+
+    const totalOmega3 = candidates.find((candidate) =>
+      /\b(total\s+)?omega[-\s]?3\b|\bomega[-\s]?3 fatty acids?\b/i.test(candidate.name),
+    );
+    if (totalOmega3) {
+      return `${totalOmega3.name}: ${totalOmega3.doseText} per serving`;
+    }
+
+    const fishOil = candidates.find((candidate) => /\bfish oil\b|\bpollock oil\b|\bmarine oil\b/i.test(candidate.name));
+    if (fishOil) {
+      return `${fishOil.name}: ${fishOil.doseText} per serving`;
+    }
+  }
+
+  return `${candidates[0].name}: ${candidates[0].doseText} per serving`;
 };
 
 const buildDirectionsPreviewText = (usageBlock: DecisionSupportUsageBlock): string | null => {
@@ -883,6 +930,7 @@ const buildCatalogIngredientRowsFromDigest = (digest: FactsDigest): CatalogOverl
     .map((active): CatalogOverlayIngredientRow | null => {
       const name = normalizeDisplayText(active?.name);
       if (!name) return null;
+      if (isGenericNutritionActiveName(name)) return null;
 
       const amountText = normalizeDisplayText(active?.amountText);
       if (amountText) {
@@ -3762,7 +3810,9 @@ const parseDailyFrequencyRangeFromText = (
 const resolvePrimaryActiveDose = (
   digest: FactsDigest,
 ): { name: string; amount: number; unit: string; evidenceText: string | null } | null => {
-  const primary = (digest.actives ?? [])[0];
+  const primary =
+    (digest.actives ?? []).find((active) => !isGenericNutritionActiveName(active?.name ?? null)) ??
+    (digest.actives ?? [])[0];
   if (!primary) return null;
   const unitFromField = normalizeDisplayText(primary.unit);
   const numericFromField = Number(primary.amount);

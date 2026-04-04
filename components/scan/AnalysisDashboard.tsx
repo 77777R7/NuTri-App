@@ -4397,6 +4397,39 @@ const AnalysisBundleDashboard: React.FC<{
         scienceIngredientsOverflowCount > 0
             ? `+${scienceIngredientsOverflowCount} more ingredients`
             : undefined;
+    const topSectionDosePreviewText = useMemo(() => {
+        if (isOmegaLikeCover) {
+            const totalDose = normalizeText(omegaCoverSignals.total?.dose);
+            const epaDose = normalizeText(omegaCoverSignals.epa?.dose);
+            const dhaDose = normalizeText(omegaCoverSignals.dha?.dose);
+            const fishDose = normalizeText(omegaCoverSignals.fish?.dose);
+
+            if (epaDose && dhaDose) return `EPA ${epaDose} + DHA ${dhaDose} per serving`;
+            if (totalDose) return `Total omega-3: ${totalDose} per serving`;
+            if (epaDose) return `EPA ${epaDose} per serving`;
+            if (dhaDose) return `DHA ${dhaDose} per serving`;
+            if (fishDose) return `Fish oil: ${fishDose} per serving`;
+        }
+
+        const firstMeaningfulScienceDose = scienceIngredientsAll.find((row) => {
+            const name = normalizeText(row.name);
+            const dose = normalizeText(row.dose);
+            return dose.length > 0 && !isNutritionLabelLikeIngredient(name);
+        });
+
+        if (firstMeaningfulScienceDose) {
+            return `${normalizeText(firstMeaningfulScienceDose.name)}: ${normalizeText(firstMeaningfulScienceDose.dose)} per serving`;
+        }
+
+        return null;
+    }, [
+        isOmegaLikeCover,
+        omegaCoverSignals.dha?.dose,
+        omegaCoverSignals.epa?.dose,
+        omegaCoverSignals.fish?.dose,
+        omegaCoverSignals.total?.dose,
+        scienceIngredientsAll,
+    ]);
     const topSectionPresentation = useMemo(() => {
         const goalFit = decisionPersonalizedResultLane?.goalFit;
         const personalInsight = decisionPersonalizedResultLane?.personalInsight;
@@ -4433,7 +4466,7 @@ const AnalysisBundleDashboard: React.FC<{
                 status: dosageContext?.status ?? null,
                 assessment: dosageContext?.assessment ?? null,
                 goalLabel: getGoalLabel(dosageContext?.previewGoalKey ?? null),
-                productDoseText: dosageContext?.productDoseText ?? null,
+                productDoseText: topSectionDosePreviewText ?? dosageContext?.productDoseText ?? null,
                 productDirectionsText: dosageContext?.productDirectionsText ?? null,
             },
             safety: {
@@ -4448,6 +4481,7 @@ const AnalysisBundleDashboard: React.FC<{
         decisionPersonalizedResultLane?.personalInsight,
         safetyTipCoverText,
         safetyWarningCoverText,
+        topSectionDosePreviewText,
     ]);
     const heroImageUri = saveItem?.imageUrl ?? productInfo?.image ?? null;
     const verifiedLabelText = normalizeText(sourceBadgeLabel) || 'Verified Label Data';
