@@ -1,23 +1,21 @@
-import React, { useCallback, useMemo } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
-import { ArrowLeft } from 'lucide-react-native';
-import Animated, { SharedValue, useAnimatedStyle } from 'react-native-reanimated';
+import { ChevronLeft } from 'lucide-react-native';
+import React, { useMemo } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import Animated, { useAnimatedStyle, type SharedValue } from 'react-native-reanimated';
 
-export type HeaderMiniScoreState = {
-  overallScore: number | null;
+type HeaderMiniScoreState = {
+  overallScore: number;
   overallBand: string | null;
   muted: boolean;
 };
-
-type SaveState = 'save' | 'saved' | 'disabled';
 
 type ScanResultHeaderChromeProps = {
   onBack: () => void;
   title: string;
   miniScore?: (HeaderMiniScoreState & { scrollY: SharedValue<number> }) | null;
-  savePillState: SaveState;
+  savePillState?: 'save' | 'saved' | 'disabled';
   onSavePress?: () => void;
   onOpenSaved?: () => void;
   miniScoreThresholdStart?: number;
@@ -79,18 +77,18 @@ const getHeaderOverallBandTone = (score: number, explicitBand?: string | null) =
   };
 };
 
-export function ScanResultHeaderChrome({
+export const ScanResultHeaderChrome: React.FC<ScanResultHeaderChromeProps> = ({
   onBack,
   title,
-  miniScore,
-  savePillState,
+  miniScore = null,
+  savePillState = 'disabled',
   onSavePress,
   onOpenSaved,
   miniScoreThresholdStart = 210,
   miniScoreThresholdRange = 70,
-}: ScanResultHeaderChromeProps) {
+}) => {
   const miniScoreTone = useMemo(
-    () => (miniScore ? getHeaderOverallBandTone(miniScore.overallScore ?? 0, miniScore.overallBand) : null),
+    () => (miniScore ? getHeaderOverallBandTone(miniScore.overallScore, miniScore.overallBand) : null),
     [miniScore],
   );
 
@@ -114,27 +112,27 @@ export function ScanResultHeaderChrome({
     };
   }, [miniScore, miniScoreThresholdRange, miniScoreThresholdStart]);
 
-  const saveLabel = savePillState === 'saved' ? 'Saved' : 'Save';
-  const handleSavePress = useCallback(() => {
-    if (savePillState === 'disabled') return;
+  const handleSavePress = () => {
     if (savePillState === 'saved') {
       onOpenSaved?.();
       return;
     }
-    onSavePress?.();
-  }, [onOpenSaved, onSavePress, savePillState]);
+    if (savePillState === 'save') {
+      onSavePress?.();
+    }
+  };
 
   return (
     <View style={styles.header}>
-      <Pressable style={({ pressed }) => [styles.backButton, pressed && styles.backButtonPressed]} onPress={onBack}>
-        <ArrowLeft size={20} color="#000" strokeWidth={2.5} />
+      <Pressable onPress={onBack} style={({ pressed }) => [styles.chromeButton, pressed && styles.chromeButtonPressed]}>
+        <BlurView intensity={18} tint="light" style={StyleSheet.absoluteFill} />
+        <ChevronLeft size={22} color="#0B1E36" strokeWidth={2.5} />
       </Pressable>
 
       <View style={styles.headerCenterSlot} pointerEvents="none">
         <Animated.View style={[styles.headerTitleLayer, titleAnimatedStyle]}>
           <Text style={styles.headerTitle}>{title}</Text>
         </Animated.View>
-
         {miniScore && miniScoreTone ? (
           <Animated.View style={[styles.headerMiniScoreLayer, miniScoreAnimatedStyle]}>
             <LinearGradient
@@ -165,7 +163,7 @@ export function ScanResultHeaderChrome({
                     miniScore.muted ? styles.headerMiniScoreTextMuted : { color: miniScoreTone.bubbleText },
                   ]}
                 >
-                  {miniScore.muted ? '--' : Math.round(miniScore.overallScore ?? 0)}
+                  {miniScore.muted ? '--' : Math.round(miniScore.overallScore)}
                 </Text>
               </View>
             </LinearGradient>
@@ -178,22 +176,14 @@ export function ScanResultHeaderChrome({
         accessibilityState={{ disabled: savePillState === 'disabled' }}
         disabled={savePillState === 'disabled'}
         onPress={handleSavePress}
-        style={({ pressed }) => [styles.savePillWrap, pressed && savePillState !== 'disabled' && styles.savePillPressed]}
+        style={({ pressed }) => [
+          styles.savePill,
+          savePillState === 'saved' && styles.savePillSaved,
+          savePillState === 'disabled' && styles.savePillDisabled,
+          pressed && savePillState !== 'disabled' ? styles.chromeButtonPressed : null,
+        ]}
       >
-        <BlurView intensity={20} tint="light" style={StyleSheet.absoluteFillObject} />
-        <LinearGradient
-          colors={savePillState === 'saved' ? ['rgba(235,248,240,0.9)', 'rgba(224,244,233,0.72)'] : ['rgba(255,255,255,0.88)', 'rgba(248,250,252,0.74)']}
-          start={{ x: 0.12, y: 0.02 }}
-          end={{ x: 0.88, y: 1 }}
-          style={StyleSheet.absoluteFillObject}
-        />
-        <View
-          style={[
-            styles.savePillBorder,
-            savePillState === 'saved' && styles.savePillBorderSaved,
-            savePillState === 'disabled' && styles.savePillBorderDisabled,
-          ]}
-        />
+        <BlurView intensity={18} tint="light" style={StyleSheet.absoluteFill} />
         <Text
           style={[
             styles.savePillText,
@@ -201,42 +191,28 @@ export function ScanResultHeaderChrome({
             savePillState === 'disabled' && styles.savePillTextDisabled,
           ]}
         >
-          {saveLabel}
+          {savePillState === 'saved' ? 'Saved' : 'Save'}
         </Text>
       </Pressable>
     </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
   header: {
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 12,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    position: 'relative',
+    paddingHorizontal: 24,
+    paddingTop: 16,
+    paddingBottom: 12,
     backgroundColor: '#F2F2F7',
     zIndex: 10,
   },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#f4f4f5',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: '#e4e4e7',
-  },
-  backButtonPressed: {
-    opacity: 0.82,
-  },
   headerCenterSlot: {
     position: 'absolute',
-    left: 76,
-    right: 94,
+    left: 86,
+    right: 86,
     top: 16,
     bottom: 12,
     alignItems: 'center',
@@ -246,77 +222,66 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#000',
-  },
   headerMiniScoreLayer: {
     position: 'absolute',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  headerMiniScoreShell: {
-    width: 58,
-    height: 58,
-    borderRadius: 29,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    overflow: 'hidden',
+  headerTitle: {
+    fontSize: 17,
+    lineHeight: 25.5,
+    fontWeight: '600',
+    color: '#0B1E36',
+    letterSpacing: -0.86,
   },
-  headerMiniScoreShellMuted: {
-    borderColor: 'rgba(203,213,225,0.56)',
-  },
-  headerMiniScoreCore: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-  },
-  headerMiniScoreCoreMuted: {
-    borderColor: 'rgba(203,213,225,0.4)',
-    backgroundColor: 'rgba(255,255,255,0.44)',
-  },
-  headerMiniScoreText: {
-    fontSize: 19,
-    fontWeight: '800',
-    letterSpacing: -0.55,
-  },
-  headerMiniScoreTextMuted: {
-    color: '#94A3B8',
-  },
-  savePillWrap: {
-    width: 72,
+  chromeButton: {
+    width: 40,
     height: 40,
-    borderRadius: 20,
+    borderRadius: 999,
+    borderWidth: 0.678,
+    borderColor: 'rgba(255,255,255,0.6)',
+    backgroundColor: 'rgba(255,255,255,0.4)',
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
-    position: 'relative',
+    shadowColor: '#000000',
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    shadowOffset: { width: 0, height: 1 },
   },
-  savePillBorder: {
-    ...StyleSheet.absoluteFillObject,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(148,163,184,0.18)',
+  chromeButtonPressed: {
+    opacity: 0.85,
   },
-  savePillBorderSaved: {
+  savePill: {
+    minWidth: 64,
+    height: 40,
+    borderRadius: 999,
+    borderWidth: 0.678,
+    borderColor: 'rgba(255,255,255,0.6)',
+    backgroundColor: 'rgba(255,255,255,0.4)',
+    paddingHorizontal: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+    shadowColor: '#000000',
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    shadowOffset: { width: 0, height: 1 },
+  },
+  savePillSaved: {
     borderColor: 'rgba(30,123,85,0.18)',
+    backgroundColor: 'rgba(234,245,240,0.72)',
   },
-  savePillBorderDisabled: {
-    borderColor: 'rgba(148,163,184,0.14)',
-  },
-  savePillPressed: {
-    opacity: 0.86,
+  savePillDisabled: {
+    borderColor: 'rgba(255,255,255,0.5)',
+    backgroundColor: 'rgba(255,255,255,0.26)',
   },
   savePillText: {
     fontSize: 14,
-    fontWeight: '700',
-    color: '#2563EB',
-    letterSpacing: -0.2,
+    lineHeight: 21,
+    fontWeight: '600',
+    color: '#64748B',
+    letterSpacing: -0.5,
   },
   savePillTextSaved: {
     color: '#1E7B55',
@@ -324,4 +289,41 @@ const styles = StyleSheet.create({
   savePillTextDisabled: {
     color: '#94A3B8',
   },
+  headerMiniScoreShell: {
+    width: 58,
+    height: 58,
+    borderRadius: 999,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#111827',
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 8 },
+  },
+  headerMiniScoreShellMuted: {
+    borderColor: 'rgba(203,213,225,0.8)',
+  },
+  headerMiniScoreCore: {
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+  },
+  headerMiniScoreCoreMuted: {
+    borderColor: 'rgba(203,213,225,0.9)',
+    backgroundColor: 'rgba(248,250,252,0.84)',
+  },
+  headerMiniScoreText: {
+    fontSize: 18,
+    fontWeight: '800',
+    letterSpacing: -0.6,
+  },
+  headerMiniScoreTextMuted: {
+    color: '#94A3B8',
+  },
 });
+
+export default ScanResultHeaderChrome;

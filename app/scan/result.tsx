@@ -5,7 +5,7 @@ import { StatusBar } from 'expo-status-bar';
 import { FileText } from 'lucide-react-native';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { useSharedValue, type SharedValue } from 'react-native-reanimated';
+import { useSharedValue } from 'react-native-reanimated';
 
 import { ResponsiveScreen } from '@/components/common/ResponsiveScreen';
 import { ScanResultHeaderChrome } from '@/components/scan/ScanResultHeaderChrome';
@@ -560,7 +560,11 @@ export default function ScanResultScreen() {
   if (!sessionResolved) {
     return (
       <ResponsiveScreen contentStyle={styles.screen}>
-        <Header onBack={handleBack} title="Scan Result" />
+        <ScanResultHeaderChrome
+          onBack={handleBack}
+          title="Analysis"
+          savePillState="disabled"
+        />
         <View style={styles.loadingContainer}>
           <OrganicSpinner size={28} color="#52525b" />
           <Text style={styles.loadingTitle}>Loading scan session…</Text>
@@ -573,7 +577,11 @@ export default function ScanResultScreen() {
   if (!session) {
     return (
       <ResponsiveScreen contentStyle={styles.screen}>
-        <Header onBack={handleBack} title="Scan Result" />
+        <ScanResultHeaderChrome
+          onBack={handleBack}
+          title="Analysis"
+          savePillState="disabled"
+        />
         <View style={styles.fallbackContainer}>
           <FileText size={48} color="#52525b" />
           <Text style={styles.fallbackTitle}>Session Expired</Text>
@@ -593,7 +601,11 @@ export default function ScanResultScreen() {
   if (barcodeQuality.page === 'not_found') {
     return (
       <ResponsiveScreen contentStyle={styles.screen}>
-        <Header onBack={handleBack} title="Scan Result" />
+        <ScanResultHeaderChrome
+          onBack={handleBack}
+          title="Analysis"
+          savePillState="disabled"
+        />
         <View style={styles.fallbackContainer}>
           <FileText size={48} color="#52525b" />
           <Text style={styles.fallbackTitle}>Not Found</Text>
@@ -623,7 +635,11 @@ export default function ScanResultScreen() {
         : (error || reasonCodeMessage || 'We lost connection while analyzing. Please retry.');
     return (
       <ResponsiveScreen contentStyle={styles.screen}>
-        <Header onBack={handleBack} title="Scan Result" />
+        <ScanResultHeaderChrome
+          onBack={handleBack}
+          title="Analysis"
+          savePillState="disabled"
+        />
         <View style={styles.fallbackContainer}>
           <FileText size={48} color="#52525b" />
           <Text style={styles.fallbackTitle}>{recoverableTitle}</Text>
@@ -641,7 +657,11 @@ export default function ScanResultScreen() {
   if (barcodeQuality.page === 'session_expired') {
     return (
       <ResponsiveScreen contentStyle={styles.screen}>
-        <Header onBack={handleBack} title="Scan Result" />
+        <ScanResultHeaderChrome
+          onBack={handleBack}
+          title="Analysis"
+          savePillState="disabled"
+        />
         <View style={styles.fallbackContainer}>
           <FileText size={48} color="#52525b" />
           <Text style={styles.fallbackTitle}>Session Expired</Text>
@@ -703,13 +723,15 @@ export default function ScanResultScreen() {
         }}
       />
       <StatusBar style="dark" />
-      <Header
+      <ScanResultHeaderChrome
         onBack={handleBack}
         title="Analysis"
         miniScore={headerMiniScore ? { ...headerMiniScore, scrollY: analysisHeaderScrollY } : null}
         savePillState={dashboardSaveItem ? (isDashboardItemSaved ? 'saved' : 'save') : 'disabled'}
         onSavePress={handleSaveFromDashboard}
         onOpenSaved={handleOpenSaved}
+        miniScoreThresholdStart={HEADER_MINI_SCORE_START}
+        miniScoreThresholdRange={HEADER_MINI_SCORE_RANGE}
       />
 
       {/* We render dashboard immediately. 
@@ -753,35 +775,6 @@ export default function ScanResultScreen() {
         </BlurView>
       )}
     </ResponsiveScreen>
-  );
-}
-
-function Header({
-  onBack,
-  title,
-  miniScore,
-  savePillState = 'disabled',
-  onSavePress,
-  onOpenSaved,
-}: {
-  onBack: () => void,
-  title: string,
-  miniScore?: (HeaderMiniScoreState & { scrollY: SharedValue<number> }) | null,
-  savePillState?: 'save' | 'saved' | 'disabled',
-  onSavePress?: () => void,
-  onOpenSaved?: () => void,
-}) {
-  return (
-    <ScanResultHeaderChrome
-      onBack={onBack}
-      title={title}
-      miniScore={miniScore ?? null}
-      savePillState={savePillState}
-      onSavePress={onSavePress}
-      onOpenSaved={onOpenSaved}
-      miniScoreThresholdStart={HEADER_MINI_SCORE_START}
-      miniScoreThresholdRange={HEADER_MINI_SCORE_RANGE}
-    />
   );
 }
 

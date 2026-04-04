@@ -1,6 +1,16 @@
+import { BlurView } from 'expo-blur';
+import { LinearGradient } from 'expo-linear-gradient';
+import {
+  AlertTriangle,
+  CheckCircle2,
+  ChevronDown,
+  Info,
+  Layers,
+  Shield,
+  Target,
+} from 'lucide-react-native';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Image,
   LayoutAnimation,
   Platform,
   Pressable,
@@ -8,11 +18,8 @@ import {
   Text,
   UIManager,
   View,
-  type ImageSourcePropType,
+  Image,
 } from 'react-native';
-import { BlurView } from 'expo-blur';
-import { LinearGradient } from 'expo-linear-gradient';
-import { AlertTriangle, Bookmark, CheckCircle2, ChevronDown, Info, Shield, Target } from 'lucide-react-native';
 import Animated, { FadeInUp, FadeOutDown } from 'react-native-reanimated';
 
 import type {
@@ -20,181 +27,173 @@ import type {
   TopSectionHeroPresentation,
   TopSectionInsightPresentation,
   TopSectionInsightTopic,
-  TopSectionTone,
 } from '@/lib/scan/analysisTopSectionPresentation';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
-const BLUR_PROPS = Platform.OS === 'android'
-  ? ({ experimentalBlurMethod: 'dimezisBlurView' } as const)
-  : ({} as const);
-
-const getTonePalette = (tone: TopSectionTone) => {
-  if (tone === 'positive') {
-    return {
-      chipFill: '#EAF5F0',
-      chipBorder: 'rgba(30,123,85,0.10)',
-      chipText: '#1E7B55',
-      rowIconFill: '#EAF5F0',
-      rowIconBorder: 'rgba(30,123,85,0.10)',
-      rowIconText: '#1E7B55',
-      bullet: '#CBD5E1',
-    };
-  }
-  if (tone === 'caution') {
-    return {
-      chipFill: '#FFF6E7',
-      chipBorder: 'rgba(217,119,6,0.16)',
-      chipText: '#B45309',
-      rowIconFill: '#FEF3C7',
-      rowIconBorder: 'rgba(217,119,6,0.14)',
-      rowIconText: '#D97706',
-      bullet: '#D6C7A0',
-    };
-  }
-  return {
-    chipFill: '#EDF4FF',
-    chipBorder: 'rgba(37,99,235,0.12)',
-    chipText: '#2563EB',
-    rowIconFill: '#EBF3FF',
-    rowIconBorder: 'rgba(37,99,235,0.12)',
-    rowIconText: '#2563EB',
-    bullet: '#CBD5E1',
-  };
-};
-
-const getRowIcon = (topic: TopSectionInsightTopic) => {
-  switch (topic) {
-    case 'support':
-      return Target;
-    case 'allergy':
-      return CheckCircle2;
-    case 'dose':
-      return Info;
-    case 'overlap':
-      return Bookmark;
-    case 'safety':
-      return AlertTriangle;
-    default:
-      return Shield;
-  }
-};
-
 type AnalysisTopSectionRedesignProps = {
   hero: TopSectionHeroPresentation;
   banner: TopSectionBannerPresentation | null;
   insights: TopSectionInsightPresentation[];
-  title: string;
-  brand?: string | null;
-  imageSource?: ImageSourcePropType | null;
-  verifiedLabelText?: string;
-  defaultExpandedKey?: string | null;
-  syncKey?: string;
+  productTitle: string;
+  productSubtitle?: string | null;
+  heroImageUri?: string | null;
+  verifiedLabelText: string;
 };
 
-export function AnalysisTopSectionRedesign({
+const resolveInsightIcon = (topic: TopSectionInsightTopic, tone: TopSectionHeroPresentation['tone']) => {
+  switch (topic) {
+    case 'support':
+      return { Icon: Target, iconBg: '#EAF5F0', iconColor: '#1E7B55' };
+    case 'allergy':
+      return tone === 'positive'
+        ? { Icon: CheckCircle2, iconBg: '#EAF5F0', iconColor: '#1E7B55' }
+        : { Icon: Shield, iconBg: '#EEF4FB', iconColor: '#64748B' };
+    case 'dose':
+      return { Icon: Info, iconBg: '#EBF3FF', iconColor: '#2563EB' };
+    case 'overlap':
+      return { Icon: Layers, iconBg: '#F1F5F9', iconColor: '#475569' };
+    case 'safety':
+    default:
+      return { Icon: AlertTriangle, iconBg: '#FFF4E5', iconColor: '#D97706' };
+  }
+};
+
+const getHeroChipColors = (tone: TopSectionHeroPresentation['tone']) => {
+  if (tone === 'positive') {
+    return {
+      fill: '#EAF5F0',
+      border: 'rgba(30,123,85,0.10)',
+      text: '#1E7B55',
+    };
+  }
+  if (tone === 'caution') {
+    return {
+      fill: '#FFF4E5',
+      border: 'rgba(217,119,6,0.12)',
+      text: '#B45309',
+    };
+  }
+  return {
+    fill: '#EEF4FB',
+    border: 'rgba(37,99,235,0.10)',
+    text: '#375569',
+  };
+};
+
+const getExpandedFrameHeight = (lineCount: number) => {
+  if (lineCount >= 3) return 164;
+  if (lineCount === 2) return 126;
+  return 92;
+};
+
+export const AnalysisTopSectionRedesign: React.FC<AnalysisTopSectionRedesignProps> = ({
   hero,
   banner,
   insights,
-  title,
-  brand,
-  imageSource,
-  verifiedLabelText = 'Verified Label Data',
-  defaultExpandedKey = null,
-  syncKey,
-}: AnalysisTopSectionRedesignProps) {
-  const heroPalette = useMemo(() => getTonePalette(hero.tone), [hero.tone]);
-  const resolvedDefaultExpandedKey = useMemo(() => {
-    if (defaultExpandedKey && insights.some((row) => row.key === defaultExpandedKey)) {
-      return defaultExpandedKey;
-    }
-    return insights[0]?.key ?? null;
-  }, [defaultExpandedKey, insights]);
+  productTitle,
+  productSubtitle,
+  heroImageUri,
+  verifiedLabelText,
+}) => {
   const derivedSyncKey = useMemo(
-    () => syncKey ?? `${hero.chip}::${hero.summary}::${banner?.title ?? 'no-banner'}::${insights.map((row) => `${row.key}:${row.collapsedTitle}`).join('|')}`,
-    [banner?.title, hero.chip, hero.summary, insights, syncKey],
+    () =>
+      `${hero.chip}::${hero.summary}::${banner?.title ?? 'no-banner'}::${insights
+        .map((row) => `${row.key}:${row.collapsedTitle}`)
+        .join('|')}`,
+    [banner?.title, hero.chip, hero.summary, insights],
   );
-
+  const defaultExpandedKey = insights[0]?.key ?? null;
   const lastSyncKeyRef = useRef<string>(derivedSyncKey);
-  const [expandedKey, setExpandedKey] = useState<string | null>(() => resolvedDefaultExpandedKey);
+  const [expandedKey, setExpandedKey] = useState<string | null>(defaultExpandedKey);
 
   useEffect(() => {
     if (lastSyncKeyRef.current === derivedSyncKey) return;
     lastSyncKeyRef.current = derivedSyncKey;
-    setExpandedKey(resolvedDefaultExpandedKey);
-  }, [derivedSyncKey, resolvedDefaultExpandedKey]);
+    setExpandedKey(defaultExpandedKey);
+  }, [defaultExpandedKey, derivedSyncKey]);
 
   useEffect(() => {
     if (!expandedKey) return;
     if (insights.some((row) => row.key === expandedKey)) return;
-    setExpandedKey(resolvedDefaultExpandedKey);
-  }, [expandedKey, insights, resolvedDefaultExpandedKey]);
+    setExpandedKey(defaultExpandedKey);
+  }, [defaultExpandedKey, expandedKey, insights]);
+
+  const heroChipColors = getHeroChipColors(hero.tone);
 
   return (
-    <View style={styles.wrap}>
-      <Animated.View entering={FadeInUp.duration(260)} style={styles.heroWrap}>
+    <View style={styles.wrapper}>
+      <Animated.View entering={FadeInUp.duration(260)} style={styles.heroSection}>
         <LinearGradient
-          colors={['rgba(255,255,255,0.84)', 'rgba(255,255,255,0.70)']}
-          start={{ x: 0.12, y: 0.02 }}
-          end={{ x: 0.88, y: 1 }}
+          colors={['rgba(255,255,255,0.82)', 'rgba(255,255,255,0.72)']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
           style={styles.heroCard}
         >
-          <BlurView intensity={18} tint="light" style={StyleSheet.absoluteFillObject} {...BLUR_PROPS} />
-          <View style={styles.heroHairline} />
-
-          <View style={styles.heroChipRow}>
-            <View
-              style={[
-                styles.heroChip,
-                {
-                  backgroundColor: heroPalette.chipFill,
-                  borderColor: heroPalette.chipBorder,
-                },
-              ]}
-            >
-              <Text style={[styles.heroChipText, { color: heroPalette.chipText }]}>{hero.chip}</Text>
-            </View>
+          <BlurView intensity={18} tint="light" style={StyleSheet.absoluteFill} />
+          <LinearGradient
+            colors={['rgba(0,0,0,0)', 'rgba(255,255,255,0.85)', 'rgba(0,0,0,0)']}
+            locations={[0, 0.5, 1]}
+            start={{ x: 0, y: 0.5 }}
+            end={{ x: 1, y: 0.5 }}
+            style={styles.heroTopSheen}
+          />
+          <View style={[styles.heroChip, { backgroundColor: heroChipColors.fill, borderColor: heroChipColors.border }]}>
+            <Text style={[styles.heroChipText, { color: heroChipColors.text }]}>{hero.chip}</Text>
           </View>
 
-          <View style={styles.heroProductRow}>
-            <View style={styles.imageShell}>
-              {imageSource ? (
-                <Image source={imageSource} style={styles.heroImage} resizeMode="cover" />
-              ) : (
+          <View style={styles.productRow}>
+            {heroImageUri ? (
+              <Image source={{ uri: heroImageUri }} style={styles.productImage} resizeMode="cover" />
+            ) : (
+              <View style={styles.productImageWrap}>
                 <LinearGradient
-                  colors={['#FFFFFF', '#F1F5F9']}
-                  start={{ x: 0.2, y: 0.1 }}
-                  end={{ x: 0.9, y: 1 }}
-                  style={styles.placeholderCard}
+                  colors={['#FFFFFF', '#FCFDFE', '#F9FBFD', '#F7F9FB', '#F4F7FA', '#F1F5F9']}
+                  locations={[0, 0.2, 0.4, 0.6, 0.8, 1]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.productImageGlass}
+                />
+                <LinearGradient
+                  colors={['#E2E8F0', '#DEE5ED', '#DAE2EB', '#D6DEE8', '#D3DBE6', '#CFD8E3', '#CBD5E1']}
+                  locations={[0, 0.1667, 0.3333, 0.5, 0.6667, 0.8333, 1]}
+                  start={{ x: 0.5, y: 0 }}
+                  end={{ x: 0.5, y: 1 }}
+                  style={styles.productBottle}
                 >
-                  <View style={styles.placeholderBottle} />
+                  <View style={styles.productBottleCap} />
                 </LinearGradient>
-              )}
-            </View>
+              </View>
+            )}
 
-            <View style={styles.heroTextBlock}>
-              <Text style={styles.heroTitle} numberOfLines={2}>{title}</Text>
-              {!!brand ? <Text style={styles.heroBrand}>{brand}</Text> : null}
+            <View style={styles.productTextWrap}>
+              <Text style={styles.productTitle} numberOfLines={2}>
+                {productTitle}
+              </Text>
+              {!!productSubtitle ? (
+                <Text style={styles.productSubtitle} numberOfLines={2}>
+                  {productSubtitle}
+                </Text>
+              ) : null}
             </View>
           </View>
 
           <View style={styles.heroDivider} />
           <Text style={styles.heroSummary}>{hero.summary}</Text>
-
-          <View style={styles.verifiedRow}>
+          <View style={styles.heroVerifiedRow}>
             <Shield size={14} color="#64748B" />
-            <Text style={styles.verifiedText}>{verifiedLabelText}</Text>
+            <Text style={styles.heroVerifiedText}>{verifiedLabelText}</Text>
           </View>
         </LinearGradient>
       </Animated.View>
 
       {banner ? (
-        <Animated.View entering={FadeInUp.delay(60).duration(240)} style={styles.bannerWrap}>
+        <Animated.View entering={FadeInUp.duration(260).delay(60)} style={styles.bannerWrap}>
           <View style={styles.bannerCard}>
-            <View style={styles.bannerIconShell}>
-              <AlertTriangle size={18} color="#D97706" strokeWidth={2.4} />
+            <View style={styles.bannerIconWrap}>
+              <AlertTriangle size={18} color="#D97706" />
             </View>
             <Text style={styles.bannerText}>{banner.title}</Text>
           </View>
@@ -202,328 +201,345 @@ export function AnalysisTopSectionRedesign({
       ) : null}
 
       {insights.length > 0 ? (
-        <Animated.View entering={FadeInUp.delay(120).duration(280)} style={styles.insightsWrap}>
-          <Text style={styles.sectionTitle}>Personalized insights</Text>
-          <View style={styles.listCard}>
-            {insights.map((row, index) => (
-              <InsightAccordionRow
-                key={`${derivedSyncKey}:${row.key}`}
-                row={row}
-                isExpanded={expandedKey === row.key}
-                isLast={index === insights.length - 1}
-                onToggle={() => {
-                  LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-                  setExpandedKey((current) => (current === row.key ? null : row.key));
-                }}
-              />
-            ))}
+        <Animated.View entering={FadeInUp.duration(260).delay(100)} style={styles.insightsSection}>
+          <Text style={styles.insightsTitle}>Personalized Insights</Text>
+          <View style={styles.insightsCard}>
+            {insights.map((row, index) => {
+              const isExpanded = expandedKey === row.key;
+              const { Icon, iconBg, iconColor } = resolveInsightIcon(row.topic, row.tone);
+              const expandedFrameHeight = getExpandedFrameHeight(row.expandedBullets.length);
+
+              const handleToggle = () => {
+                LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+                setExpandedKey((current) => (current === row.key ? null : row.key));
+              };
+
+              return (
+                <View
+                  key={row.key}
+                  style={isExpanded ? [styles.rowBlockExpanded, { minHeight: expandedFrameHeight }] : null}
+                >
+                  <Pressable onPress={handleToggle} style={styles.rowPressable}>
+                    <View style={[styles.rowIconWrap, { backgroundColor: iconBg }]}>
+                      <Icon size={18} color={iconColor} />
+                    </View>
+                    <View style={styles.rowCopy}>
+                      <Text style={styles.rowTitle}>{row.collapsedTitle}</Text>
+                    </View>
+                    <View style={[styles.chevronWrap, isExpanded && styles.chevronWrapExpanded]}>
+                      <ChevronDown size={20} color="#64748B" strokeWidth={2.2} />
+                    </View>
+                  </Pressable>
+
+                  {isExpanded && row.expandedBullets.length > 0 ? (
+                    <Animated.View
+                      entering={FadeInUp.duration(200)}
+                      exiting={FadeOutDown.duration(140)}
+                      style={[styles.expandedWrap, { minHeight: Math.max(expandedFrameHeight - 58, 44) }]}
+                    >
+                      {row.expandedBullets.map((bullet, bulletIndex) => (
+                        <Text key={`${row.key}-${bulletIndex}`} style={styles.expandedLine}>
+                          {bullet}
+                        </Text>
+                      ))}
+                    </Animated.View>
+                  ) : null}
+
+                  {index < insights.length - 1 ? (
+                    <LinearGradient
+                      colors={['rgba(11,30,54,0)', 'rgba(11,30,54,0.05)', 'rgba(11,30,54,0)']}
+                      locations={[0, 0.5, 1]}
+                      start={{ x: 0, y: 0.5 }}
+                      end={{ x: 1, y: 0.5 }}
+                      style={styles.divider}
+                    />
+                  ) : null}
+                </View>
+              );
+            })}
           </View>
         </Animated.View>
       ) : null}
     </View>
   );
-}
-
-type InsightAccordionRowProps = {
-  row: TopSectionInsightPresentation;
-  isExpanded: boolean;
-  isLast: boolean;
-  onToggle: () => void;
 };
 
-function InsightAccordionRow({ row, isExpanded, isLast, onToggle }: InsightAccordionRowProps) {
-  const palette = getTonePalette(row.tone);
-  const Icon = getRowIcon(row.topic);
-
-  return (
-    <View>
-      <Pressable onPress={onToggle} style={({ pressed }) => [styles.rowPressable, pressed && styles.rowPressablePressed]}>
-        <View
-          style={[
-            styles.rowIconShell,
-            {
-              backgroundColor: palette.rowIconFill,
-              borderColor: palette.rowIconBorder,
-            },
-          ]}
-        >
-          <Icon size={18} color={palette.rowIconText} strokeWidth={2.2} />
-        </View>
-
-        <View style={styles.rowCopyWrap}>
-          <Text style={styles.rowTitle} numberOfLines={isExpanded ? 3 : 2}>
-            {row.collapsedTitle}
-          </Text>
-        </View>
-
-        <View style={[styles.chevronWrap, isExpanded && styles.chevronWrapExpanded]}>
-          <ChevronDown size={20} color="#64748B" strokeWidth={2.4} />
-        </View>
-      </Pressable>
-
-      {isExpanded && row.expandedBullets.length > 0 ? (
-        <Animated.View entering={FadeInUp.duration(180)} exiting={FadeOutDown.duration(140)} style={styles.expandedWrap}>
-          {row.expandedBullets.map((bullet, index) => (
-            <View key={`${row.key}-${index}`} style={styles.bulletRow}>
-              <View style={[styles.bulletDot, { backgroundColor: palette.bullet }]} />
-              <Text style={styles.bulletText}>{bullet}</Text>
-            </View>
-          ))}
-        </Animated.View>
-      ) : null}
-
-      {!isLast ? <View style={styles.rowDivider} /> : null}
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
-  wrap: {
-    marginTop: 8,
-    marginBottom: 18,
+  wrapper: {
     paddingHorizontal: 8,
+    marginBottom: 24,
+    gap: 16,
   },
-  heroWrap: {
-    marginBottom: 16,
+  heroSection: {
+    marginTop: 8,
   },
   heroCard: {
     overflow: 'hidden',
     borderRadius: 32,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.82)',
-    paddingHorizontal: 22,
-    paddingVertical: 20,
-    backgroundColor: 'rgba(255,255,255,0.72)',
+    borderColor: 'rgba(255,255,255,0.8)',
+    paddingHorizontal: 24,
+    paddingTop: 24,
+    paddingBottom: 26,
     shadowColor: '#0B1E36',
-    shadowOpacity: 0.035,
-    shadowRadius: 20,
+    shadowOpacity: 0.04,
+    shadowRadius: 32,
     shadowOffset: { width: 0, height: 8 },
+    backgroundColor: 'rgba(255,255,255,0.72)',
   },
-  heroHairline: {
-    ...StyleSheet.absoluteFillObject,
-    borderRadius: 32,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.58)',
-  },
-  heroChipRow: {
-    marginBottom: 18,
+  heroTopSheen: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 1,
+    opacity: 0.8,
   },
   heroChip: {
     alignSelf: 'flex-start',
+    minHeight: 33,
     borderRadius: 999,
-    borderWidth: 1,
-    paddingHorizontal: 18,
-    paddingVertical: 11,
+    borderWidth: 0.678,
+    paddingHorizontal: 14,
+    justifyContent: 'center',
+    shadowColor: '#1E7B55',
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
   },
   heroChipText: {
-    fontSize: 14,
-    fontWeight: '700',
-    letterSpacing: -0.2,
+    fontSize: 13,
+    lineHeight: 19.5,
+    fontWeight: '600',
+    letterSpacing: -0.4,
   },
-  heroProductRow: {
+  productRow: {
+    marginTop: 24,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 16,
   },
-  imageShell: {
-    width: 76,
-    height: 76,
-    borderRadius: 22,
-    overflow: 'hidden',
-    backgroundColor: '#FFFFFF',
+  productImage: {
+    width: 72,
+    height: 72,
+    borderRadius: 20,
     borderWidth: 1,
-    borderColor: 'rgba(226,232,240,0.95)',
+    borderColor: '#FFFFFF',
+    backgroundColor: '#FFFFFF',
+  },
+  productImageWrap: {
+    width: 72,
+    height: 72,
+    borderRadius: 20,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#FFFFFF',
+    shadowColor: '#000000',
+    shadowOpacity: 0.06,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 4 },
+    backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  heroImage: {
-    width: '100%',
-    height: '100%',
+  productImageGlass: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: 20,
   },
-  placeholderCard: {
-    width: '100%',
-    height: '100%',
+  productBottle: {
+    width: 32,
+    height: 48,
+    borderRadius: 8,
+    borderWidth: 0.7,
+    borderColor: '#FFFFFF',
     alignItems: 'center',
-    justifyContent: 'center',
+    paddingTop: 8,
+    shadowColor: '#000000',
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
   },
-  placeholderBottle: {
-    width: 28,
-    height: 44,
-    borderRadius: 10,
-    backgroundColor: '#CBD5E1',
-    opacity: 0.9,
+  productBottleCap: {
+    width: 16,
+    height: 6,
+    borderRadius: 999,
+    backgroundColor: 'rgba(255,255,255,0.6)',
   },
-  heroTextBlock: {
+  productTextWrap: {
     flex: 1,
     justifyContent: 'center',
   },
-  heroTitle: {
+  productTitle: {
     fontSize: 20,
     lineHeight: 25,
     fontWeight: '800',
-    letterSpacing: -0.45,
     color: '#0B1E36',
+    letterSpacing: -0.45,
   },
-  heroBrand: {
-    marginTop: 5,
+  productSubtitle: {
+    marginTop: 4,
     fontSize: 15,
-    lineHeight: 20,
+    lineHeight: 22.5,
     fontWeight: '500',
     color: '#64748B',
-    letterSpacing: -0.16,
+    letterSpacing: -0.23,
   },
   heroDivider: {
-    marginTop: 18,
-    marginBottom: 18,
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: 'rgba(11,30,54,0.08)',
+    marginTop: 24,
+    marginBottom: 20,
+    height: 0.7,
+    backgroundColor: 'rgba(11,30,54,0.05)',
   },
   heroSummary: {
     fontSize: 15,
-    lineHeight: 22,
-    fontWeight: '650',
+    lineHeight: 20.625,
+    fontWeight: '500',
     color: '#0B1E36',
-    letterSpacing: -0.18,
+    letterSpacing: -0.23,
+    maxWidth: 262,
   },
-  verifiedRow: {
-    marginTop: 14,
+  heroVerifiedRow: {
+    marginTop: 12,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
   },
-  verifiedText: {
+  heroVerifiedText: {
     fontSize: 13,
-    lineHeight: 18,
+    lineHeight: 19.5,
     fontWeight: '500',
     color: '#64748B',
     letterSpacing: -0.08,
   },
   bannerWrap: {
-    marginBottom: 18,
+    paddingHorizontal: 0,
   },
   bannerCard: {
-    minHeight: 74,
-    borderRadius: 26,
+    minHeight: 72,
+    borderRadius: 24,
     borderWidth: 1,
-    borderColor: 'rgba(245,158,11,0.22)',
-    backgroundColor: 'rgba(255,248,234,0.92)',
-    paddingHorizontal: 16,
-    paddingVertical: 14,
+    borderColor: 'rgba(253,224,139,0.5)',
+    backgroundColor: 'rgba(255,248,234,0.8)',
+    paddingHorizontal: 14,
+    paddingVertical: 12,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 14,
     shadowColor: '#D97706',
     shadowOpacity: 0.05,
-    shadowRadius: 14,
-    shadowOffset: { width: 0, height: 6 },
+    shadowRadius: 24,
+    shadowOffset: { width: 0, height: 8 },
   },
-  bannerIconShell: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+  bannerIconWrap: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: '#FEF3C7',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#FFF5D7',
     borderWidth: 1,
-    borderColor: 'rgba(253,224,71,0.38)',
+    borderColor: 'rgba(253,230,138,0.6)',
   },
   bannerText: {
     flex: 1,
-    fontSize: 15,
-    lineHeight: 22,
+    fontSize: 14.5,
+    lineHeight: 20,
     fontWeight: '700',
+    color: '#92400E',
     letterSpacing: -0.2,
-    color: '#B45309',
   },
-  insightsWrap: {
-    marginBottom: 18,
+  insightsSection: {
+    gap: 16,
   },
-  sectionTitle: {
-    marginBottom: 14,
+  insightsTitle: {
     paddingHorizontal: 8,
     fontSize: 18,
-    lineHeight: 24,
-    fontWeight: '800',
+    lineHeight: 27,
+    fontWeight: '600',
     color: '#0B1E36',
-    letterSpacing: -0.45,
+    letterSpacing: -0.89,
   },
-  listCard: {
-    overflow: 'hidden',
+  insightsCard: {
     borderRadius: 32,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.74)',
-    backgroundColor: 'rgba(255,255,255,0.76)',
+    borderColor: 'rgba(255,255,255,0.6)',
+    backgroundColor: 'rgba(255,255,255,0.5)',
     shadowColor: '#0B1E36',
     shadowOpacity: 0.03,
-    shadowRadius: 18,
-    shadowOffset: { width: 0, height: 6 },
+    shadowRadius: 24,
+    shadowOffset: { width: 0, height: 4 },
+    overflow: 'hidden',
+    paddingHorizontal: 8,
+    paddingVertical: 8,
   },
   rowPressable: {
-    minHeight: 78,
+    minHeight: 70,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 14,
-    paddingHorizontal: 16,
-    paddingVertical: 16,
+    paddingHorizontal: 14,
+    paddingTop: 14,
+    paddingBottom: 14,
+    gap: 16,
+    borderRadius: 24,
   },
-  rowPressablePressed: {
-    opacity: 0.86,
+  rowBlockExpanded: {
+    overflow: 'hidden',
   },
-  rowIconShell: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
+  rowIconWrap: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.5)',
+    shadowColor: '#000000',
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    shadowOffset: { width: 0, height: 1 },
   },
-  rowCopyWrap: {
+  rowCopy: {
     flex: 1,
+    minHeight: 41,
+    justifyContent: 'center',
   },
   rowTitle: {
     fontSize: 15,
-    lineHeight: 22,
-    fontWeight: '650',
-    letterSpacing: -0.18,
+    lineHeight: 20.625,
+    fontWeight: '500',
     color: '#0B1E36',
+    letterSpacing: -0.23,
   },
   chevronWrap: {
+    width: 20,
+    height: 20,
     alignItems: 'center',
     justifyContent: 'center',
     transform: [{ rotate: '0deg' }],
+    marginTop: 1,
   },
   chevronWrapExpanded: {
     transform: [{ rotate: '180deg' }],
   },
   expandedWrap: {
-    paddingLeft: 76,
-    paddingRight: 18,
-    paddingBottom: 18,
-    gap: 12,
+    paddingLeft: 72,
+    paddingRight: 22,
+    paddingBottom: 12,
+    paddingTop: 10,
+    gap: 7.998,
   },
-  bulletRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 10,
-  },
-  bulletDot: {
-    width: 7,
-    height: 7,
-    borderRadius: 3.5,
-    marginTop: 7,
-  },
-  bulletText: {
-    flex: 1,
+  expandedLine: {
+    maxWidth: 182,
     fontSize: 14,
-    lineHeight: 20,
-    fontWeight: '500',
-    letterSpacing: -0.14,
+    lineHeight: 19.25,
+    fontWeight: '400',
     color: '#475569',
+    letterSpacing: -0.15,
   },
-  rowDivider: {
-    marginLeft: 76,
-    marginRight: 18,
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: 'rgba(11,30,54,0.08)',
+  divider: {
+    marginHorizontal: 28,
+    height: 1,
   },
 });
+
+export default AnalysisTopSectionRedesign;

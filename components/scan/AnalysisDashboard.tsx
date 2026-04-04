@@ -52,19 +52,13 @@ import { InteractiveScoreRing } from '@/components/ui/InteractiveScoreRing';
 import { ContentSection } from '@/components/ui/ScoreDetailCard';
 import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
 import { Config } from '@/constants/Config';
-import { useOnboarding } from '@/contexts/OnboardingContext';
-import { useSavedSupplements } from '@/contexts/SavedSupplementsContext';
 import { withAuthHeaders } from '@/lib/auth-token';
 import { useTranslation } from '@/lib/i18n';
 import { lookupFoundationForIngredient, summarizeFoundationHits } from '@/lib/knowledge/foundationLookup';
 import { getGoalDisplayLabel } from '@/lib/personalization/uiLabels';
 import { resolveDataCeilingSignal } from '@/lib/scan/dataCeiling';
 import { buildGapActionSentences } from '@/lib/scan/gapActionSentenceLibrary';
-import {
-    buildAnalysisTopSectionPresentation,
-    buildAnalysisTopSectionSyncKey,
-    resolveAnalysisTopSectionDefaultExpandedKey,
-} from '@/lib/scan/analysisTopSectionPresentation';
+import { buildAnalysisTopSectionPresentation } from '@/lib/scan/analysisTopSectionPresentation';
 import { isNutritionLabelLikeIngredient } from '@/lib/scan/isNutritionLabelLikeIngredient';
 import { enforceNeverBlank, isPlaceholderText, sanitizeCoverBullets, sanitizeCoverLine } from '@/lib/scan/neverBlank';
 import { buildRecordFactsViewModel } from '@/lib/scan/recordFactsViewModel';
@@ -82,8 +76,6 @@ import type {
 } from '@/shared/types/ingredientScience';
 import type { FactsDTO } from '@/shared/types/scan-insights';
 import type { GoalKey, ProductGoalMatchTier } from '@/types/personalization';
-import type { ProfileDraft } from '@/types/onboarding';
-import type { SavedSupplement } from '@/types/saved-supplements';
 import type {
     AnalysisBundle,
     AnalysisBundleV4,
@@ -483,31 +475,6 @@ export type AnalysisDashboardSaveItem = {
     imageUrl?: string | null;
 };
 
-type SavePillState = 'save' | 'saved' | 'disabled';
-type LocalDecisionSupportProfilePayload = {
-    ageRange?: string;
-    sex?: string;
-    supplementExperience?: string;
-    diets?: string[];
-    activity?: string;
-    preferredTypes?: string[];
-    adherenceBlocker?: string;
-    location?: {
-        country?: string;
-        city?: string;
-    };
-    goals?: string[];
-    allergyFlags?: string[];
-    ingredientRestrictions?: string[];
-};
-type LocalDecisionSupportSavedSupplementPayload = {
-    supplementId?: string | null;
-    barcode?: string | null;
-    productName: string;
-    brandName?: string | null;
-    dosageText?: string | null;
-};
-
 const FORCE_FULL_DASHBOARD_EFFECTS =
     process.env.EXPO_PUBLIC_FORCE_FULL_DASHBOARD_EFFECTS === 'true' ||
     process.env.EXPO_PUBLIC_FORCE_FULL_DASHBOARD_EFFECTS === '1';
@@ -541,97 +508,6 @@ const normalizeBarcodeForDecision = (value?: string | null): string | null => {
     const digits = String(value ?? '').replace(/\D/g, '');
     if (digits.length < 8) return null;
     return digits.length > 14 ? digits.slice(-14) : digits.padStart(14, '0');
-};
-const LOCAL_DECISION_SUPPORT_HEADER_PREFIX = 'uri:';
-const clampLocalDecisionHeaderText = (value?: string | null, maxLength = 120): string => {
-    const normalized = normalizeText(value);
-    if (!normalized) return '';
-    return normalized.length > maxLength ? normalized.slice(0, maxLength).trim() : normalized;
-};
-const toLocalDecisionSupportProfilePayload = (
-    draft: ProfileDraft | null,
-): LocalDecisionSupportProfilePayload | null => {
-    if (!draft) return null;
-
-    const payload: LocalDecisionSupportProfilePayload = {
-        ageRange: clampLocalDecisionHeaderText(draft.ageRange, 48),
-        sex: clampLocalDecisionHeaderText(draft.sex ?? draft.gender, 32),
-        supplementExperience: clampLocalDecisionHeaderText(draft.supplementExperience, 48),
-        diets: Array.isArray(draft.diets)
-            ? draft.diets.map((value) => clampLocalDecisionHeaderText(value, 48)).filter(Boolean) as string[]
-            : [],
-        activity: clampLocalDecisionHeaderText(draft.activity, 48),
-        preferredTypes: Array.isArray(draft.preferredTypes)
-            ? draft.preferredTypes.map((value) => clampLocalDecisionHeaderText(value, 48)).filter(Boolean) as string[]
-            : [],
-        adherenceBlocker: clampLocalDecisionHeaderText(draft.adherenceBlocker, 64),
-        location: {
-            country: clampLocalDecisionHeaderText(draft.location?.country, 56),
-            city: clampLocalDecisionHeaderText(draft.location?.city, 56),
-        },
-        goals: Array.isArray(draft.goals)
-            ? draft.goals.map((value) => clampLocalDecisionHeaderText(value, 48)).filter(Boolean) as string[]
-            : [],
-        allergyFlags: Array.isArray(draft.allergyFlags)
-            ? draft.allergyFlags.map((value) => clampLocalDecisionHeaderText(value, 48)).filter(Boolean) as string[]
-            : [],
-        ingredientRestrictions: Array.isArray(draft.ingredientRestrictions)
-            ? draft.ingredientRestrictions.map((value) => clampLocalDecisionHeaderText(value, 48)).filter(Boolean) as string[]
-            : [],
-    };
-
-    const hasMeaningfulValue =
-        Boolean(payload.ageRange)
-        || Boolean(payload.sex)
-        || Boolean(payload.supplementExperience)
-        || Boolean(payload.activity)
-        || Boolean(payload.adherenceBlocker)
-        || Boolean(payload.location?.country)
-        || Boolean(payload.location?.city)
-        || (payload.diets?.length ?? 0) > 0
-        || (payload.preferredTypes?.length ?? 0) > 0
-        || (payload.goals?.length ?? 0) > 0
-        || (payload.allergyFlags?.length ?? 0) > 0
-        || (payload.ingredientRestrictions?.length ?? 0) > 0;
-
-    return hasMeaningfulValue ? payload : null;
-};
-
-const toLocalDecisionSupportSavedSupplementPayload = (
-    items: SavedSupplement[],
-): LocalDecisionSupportSavedSupplementPayload[] =>
-    items
-        .slice(0, 6)
-        .map((item) => ({
-            supplementId: item.supplementId ?? null,
-            barcode: clampLocalDecisionHeaderText(item.barcode ?? null, 24),
-            productName: clampLocalDecisionHeaderText(item.productName, 120) || 'Unknown supplement',
-            brandName: clampLocalDecisionHeaderText(item.brandName, 80),
-            dosageText: clampLocalDecisionHeaderText(item.dosageText, 160),
-        }))
-        .filter((item) => Boolean(item.productName));
-
-const buildLocalDecisionSupportHeader = (input: {
-    profileDraft: ProfileDraft | null;
-    savedSupplements: SavedSupplement[];
-    includeLocalProfile: boolean;
-    includeLocalSavedSupplements: boolean;
-}): string | null => {
-    const profile = input.includeLocalProfile
-        ? toLocalDecisionSupportProfilePayload(input.profileDraft)
-        : null;
-    const savedSupplements = input.includeLocalSavedSupplements
-        ? toLocalDecisionSupportSavedSupplementPayload(input.savedSupplements)
-        : [];
-
-    if (!profile && savedSupplements.length === 0) return null;
-
-    const payload = JSON.stringify({
-        profile,
-        savedSupplements,
-    });
-
-    return `${LOCAL_DECISION_SUPPORT_HEADER_PREFIX}${encodeURIComponent(payload)}`;
 };
 const SIMPLE_TAXONOMY_WHITELIST = new Set(
     [
@@ -3236,9 +3112,6 @@ const AnalysisBundleDashboard: React.FC<{
     onMiniScoreMetaChange?: (meta: { overallScore: number; overallBand: string | null; muted: boolean }) => void;
     onCoreReadyChange?: (ready: boolean) => void;
     saveItem?: AnalysisDashboardSaveItem | null;
-    savePillState?: SavePillState;
-    onSavePress?: () => void;
-    onOpenSaved?: () => void;
 }> = ({
     bundle,
     analysis,
@@ -3254,8 +3127,6 @@ const AnalysisBundleDashboard: React.FC<{
     saveItem = null,
 }) => {
     const { t } = useTranslation();
-    const { draft: onboardingDraft, onbCompleted } = useOnboarding();
-    const { savedSupplements } = useSavedSupplements();
     const [selectedTileType, setSelectedTileType] = useState<TileType | null>(null);
     const [bundleState, setBundleState] = useState<AnalysisBundle>(bundle);
     const [detailLoading, setDetailLoading] = useState(false);
@@ -3297,29 +3168,6 @@ const AnalysisBundleDashboard: React.FC<{
         if (digits.length < 8) return null;
         return digits.length > 14 ? digits.slice(-14) : digits.padStart(14, '0');
     }, [analysisBarcodeRaw]);
-    const shouldAttachLocalProfileContext = useMemo(
-        () => Boolean(onbCompleted && onboardingDraft),
-        [onbCompleted, onboardingDraft],
-    );
-    const shouldAttachLocalSavedContext = useMemo(
-        () => (savedSupplements?.length ?? 0) > 0,
-        [savedSupplements],
-    );
-    const localDecisionSupportHeader = useMemo(
-        () =>
-            buildLocalDecisionSupportHeader({
-                profileDraft: onboardingDraft,
-                savedSupplements,
-                includeLocalProfile: shouldAttachLocalProfileContext,
-                includeLocalSavedSupplements: shouldAttachLocalSavedContext,
-            }),
-        [
-            onboardingDraft,
-            savedSupplements,
-            shouldAttachLocalProfileContext,
-            shouldAttachLocalSavedContext,
-        ],
-    );
     const foundationMetricLoggedRef = useRef<Set<string>>(new Set());
     const overlayConsumerMetricLoggedRef = useRef<Set<string>>(new Set());
     const currentRunKeyRef = useRef<string | null>(null);
@@ -3765,16 +3613,9 @@ const AnalysisBundleDashboard: React.FC<{
                 if (digestParam) params.set('digest', digestParam);
                 if (normalizedSessionIdRaw) params.set('scanSessionId', normalizedSessionIdRaw);
                 if (decisionInputsHashHint) params.set('decisionInputsHash', decisionInputsHashHint);
-                const requestHeaders = await withAuthHeaders(
-                    localDecisionSupportHeader
-                        ? {
-                            'X-Local-Personalization': localDecisionSupportHeader,
-                        }
-                        : {},
-                );
                 const res = await fetch(`${baseUrl}/api/decision-support/v1?${params.toString()}`, {
                     method: 'GET',
-                    headers: requestHeaders,
+                    headers: await withAuthHeaders(),
                 });
                 if (cancelled || requestSeq !== decisionSupportRequestSeqRef.current) return;
 
@@ -3905,7 +3746,6 @@ const AnalysisBundleDashboard: React.FC<{
         (bundleState.meta as { decisionSupportDigest?: string | null })?.decisionSupportDigest,
         (bundleState.meta as { decisionInputsHash?: string | null })?.decisionInputsHash,
         bundleState.meta.factsDigestHash,
-        localDecisionSupportHeader,
         scanSessionId,
     ]);
 
@@ -4611,31 +4451,6 @@ const AnalysisBundleDashboard: React.FC<{
     ]);
     const heroImageUri = saveItem?.imageUrl ?? productInfo?.image ?? null;
     const verifiedLabelText = normalizeText(sourceBadgeLabel) || 'Verified Label Data';
-    const topSectionSyncKey = useMemo(
-        () =>
-            buildAnalysisTopSectionSyncKey({
-                productIdentity:
-                    saveItem?.supplementId
-                    ?? saveItem?.barcode
-                    ?? productTitle
-                    ?? 'scan-result-top-section',
-                hero: topSectionPresentation.hero,
-                banner: topSectionPresentation.banner,
-                insights: topSectionPresentation.insights,
-            }),
-        [
-            productTitle,
-            saveItem?.barcode,
-            saveItem?.supplementId,
-            topSectionPresentation.banner,
-            topSectionPresentation.hero,
-            topSectionPresentation.insights,
-        ],
-    );
-    const topSectionDefaultExpandedKey = useMemo(
-        () => resolveAnalysisTopSectionDefaultExpandedKey(topSectionPresentation),
-        [topSectionPresentation],
-    );
 
     const overviewDataStatus = useMemo(() => {
         const missingReasons = new Set<MissingReason>();
@@ -7777,12 +7592,10 @@ const AnalysisBundleDashboard: React.FC<{
                         hero={topSectionPresentation.hero}
                         banner={topSectionPresentation.banner}
                         insights={topSectionPresentation.insights}
-                        title={productTitle}
-                        brand={productSubtitle}
-                        imageSource={heroImageUri ? { uri: heroImageUri } : null}
+                        productTitle={productTitle}
+                        productSubtitle={productSubtitle}
+                        heroImageUri={heroImageUri}
                         verifiedLabelText={verifiedLabelText}
-                        defaultExpandedKey={topSectionDefaultExpandedKey}
-                        syncKey={topSectionSyncKey}
                     />
                 ) : null}
 
@@ -7830,6 +7643,7 @@ const AnalysisBundleDashboard: React.FC<{
                     </View>
                 ) : null}
 
+                <>
                         {/* SCORE_SECTION_FROZEN_RENDER_START */}
                         <View style={styles.scoreSection}>
                             <View style={styles.scoreHeroCard}>
@@ -7889,6 +7703,7 @@ const AnalysisBundleDashboard: React.FC<{
                                 <Text style={styles.bisectNoticeText}>Set by `no_tiles` in `EXPO_PUBLIC_SCAN_DASHBOARD_BISECT`.</Text>
                             </View>
                         )}
+                    </>
             </ScrollContainer>
 
             {!disableModalPane ? (
@@ -7918,9 +7733,6 @@ type AnalysisDashboardProps = {
     onMiniScoreMetaChange?: (meta: { overallScore: number; overallBand: string | null; muted: boolean }) => void;
     onCoreReadyChange?: (ready: boolean) => void;
     saveItem?: AnalysisDashboardSaveItem | null;
-    savePillState?: SavePillState;
-    onSavePress?: () => void;
-    onOpenSaved?: () => void;
 };
 
 const ensureModernAnalysisBundle = (
@@ -7980,9 +7792,6 @@ export const AnalysisDashboard: React.FC<AnalysisDashboardProps> = ({
     onMiniScoreMetaChange,
     onCoreReadyChange,
     saveItem = null,
-    savePillState = 'disabled',
-    onSavePress,
-    onOpenSaved,
 }) => {
     const modernBundle = ensureModernAnalysisBundle(analysisBundle, analysis, scanSessionId);
     return (
@@ -7999,9 +7808,6 @@ export const AnalysisDashboard: React.FC<AnalysisDashboardProps> = ({
             onMiniScoreMetaChange={onMiniScoreMetaChange}
             onCoreReadyChange={onCoreReadyChange}
             saveItem={saveItem}
-            savePillState={savePillState}
-            onSavePress={onSavePress}
-            onOpenSaved={onOpenSaved}
         />
     );
 };
@@ -9175,6 +8981,278 @@ const styles = StyleSheet.create({
         fontSize: 12,
         fontWeight: '700',
         color: 'rgba(17,24,39,0.75)',
+    },
+
+    // ---------- Hero header ----------
+    heroHeader: {
+        marginTop: 8,
+        marginBottom: 14,
+        paddingHorizontal: 8,
+    },
+    heroCard: {
+        borderRadius: 32,
+        overflow: 'hidden',
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.78)',
+        paddingHorizontal: 20,
+        paddingVertical: 18,
+        backgroundColor: 'rgba(255,255,255,0.70)',
+        shadowColor: '#0B1E36',
+        shadowOpacity: 0.04,
+        shadowRadius: 22,
+        shadowOffset: { width: 0, height: 8 },
+    },
+    heroCardHeaderRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: 12,
+        marginBottom: 18,
+    },
+    heroSummaryChip: {
+        alignSelf: 'flex-start',
+        borderRadius: 999,
+        borderWidth: 1,
+        paddingHorizontal: 14,
+        paddingVertical: 9,
+    },
+    heroSummaryChipText: {
+        fontSize: 14,
+        fontWeight: '700',
+        letterSpacing: -0.2,
+    },
+    heroSavePill: {
+        minWidth: 78,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderRadius: 999,
+        borderWidth: 1,
+        borderColor: 'rgba(96,165,250,0.30)',
+        backgroundColor: 'rgba(219,234,254,0.74)',
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+        shadowColor: '#60A5FA',
+        shadowOpacity: 0.16,
+        shadowRadius: 12,
+        shadowOffset: { width: 0, height: 6 },
+    },
+    heroSavePillSaved: {
+        borderColor: 'rgba(30,123,85,0.18)',
+        backgroundColor: 'rgba(234,245,240,0.9)',
+        shadowColor: '#1E7B55',
+    },
+    heroSavePillDisabled: {
+        backgroundColor: 'rgba(226,232,240,0.56)',
+        borderColor: 'rgba(148,163,184,0.16)',
+        shadowOpacity: 0,
+    },
+    heroSavePillPressed: {
+        opacity: 0.85,
+    },
+    heroSavePillText: {
+        fontSize: 14,
+        fontWeight: '700',
+        color: '#2563EB',
+        letterSpacing: -0.2,
+    },
+    heroSavePillTextSaved: {
+        color: '#1E7B55',
+    },
+    heroSavePillTextDisabled: {
+        color: '#94A3B8',
+    },
+    heroProductRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 16,
+        minHeight: 72,
+    },
+    heroImage: {
+        width: 72,
+        height: 72,
+        borderRadius: 20,
+        backgroundColor: 'rgba(255,255,255,0.8)',
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.88)',
+    },
+    heroImagePlaceholder: {
+        width: 72,
+        height: 72,
+        borderRadius: 20,
+        backgroundColor: '#FFFFFF',
+        borderWidth: 1,
+        borderColor: 'rgba(226,232,240,0.9)',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    heroTextBlock: {
+        flex: 1,
+        justifyContent: 'center',
+    },
+    heroTitle: {
+        fontSize: 20,
+        fontWeight: '800',
+        color: '#0B1E36',
+        lineHeight: 25,
+        letterSpacing: -0.45,
+    },
+    heroSubtitle: {
+        marginTop: 4,
+        fontSize: 15,
+        color: '#64748B',
+        lineHeight: 21,
+        fontWeight: '500',
+        letterSpacing: -0.2,
+    },
+    heroDivider: {
+        marginTop: 18,
+        marginBottom: 18,
+        height: StyleSheet.hairlineWidth,
+        backgroundColor: 'rgba(11,30,54,0.08)',
+    },
+    heroSummaryLine: {
+        fontSize: 15,
+        lineHeight: 21,
+        fontWeight: '600',
+        color: '#0B1E36',
+        letterSpacing: -0.2,
+    },
+    heroVerifiedRow: {
+        marginTop: 14,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+    },
+    heroVerifiedText: {
+        fontSize: 13,
+        lineHeight: 18,
+        fontWeight: '500',
+        color: '#64748B',
+        letterSpacing: -0.08,
+    },
+
+    topBannerWrap: {
+        marginBottom: 18,
+        paddingHorizontal: 8,
+    },
+    topBannerCard: {
+        minHeight: 72,
+        borderRadius: 24,
+        borderWidth: 1,
+        borderColor: 'rgba(253,224,139,0.68)',
+        backgroundColor: 'rgba(255,248,234,0.88)',
+        paddingHorizontal: 16,
+        paddingVertical: 14,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 14,
+        shadowColor: '#D97706',
+        shadowOpacity: 0.06,
+        shadowRadius: 18,
+        shadowOffset: { width: 0, height: 8 },
+    },
+    topBannerIconWrap: {
+        width: 42,
+        height: 42,
+        borderRadius: 21,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#FEF3C7',
+        borderWidth: 1,
+        borderColor: 'rgba(253,230,138,0.78)',
+    },
+    topBannerText: {
+        flex: 1,
+        fontSize: 15,
+        lineHeight: 22,
+        fontWeight: '700',
+        color: '#B45309',
+        letterSpacing: -0.18,
+    },
+
+    personalizedSection: {
+        marginBottom: 18,
+        paddingHorizontal: 8,
+    },
+    personalizedSectionTitle: {
+        marginBottom: 14,
+        fontSize: 18,
+        fontWeight: '800',
+        color: '#0B1E36',
+        paddingHorizontal: 8,
+        letterSpacing: -0.45,
+    },
+    personalizedSectionCard: {
+        borderRadius: 32,
+        overflow: 'hidden',
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.72)',
+        backgroundColor: 'rgba(255,255,255,0.74)',
+        shadowColor: '#0B1E36',
+        shadowOpacity: 0.03,
+        shadowRadius: 20,
+        shadowOffset: { width: 0, height: 6 },
+    },
+    personalizedSectionInner: {
+        paddingHorizontal: 8,
+        paddingVertical: 8,
+    },
+    personalizedInsightRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+        borderRadius: 24,
+        paddingHorizontal: 14,
+        paddingVertical: 16,
+    },
+    personalizedInsightRowPressed: {
+        opacity: 0.85,
+    },
+    personalizedInsightIconWrap: {
+        width: 42,
+        height: 42,
+        borderRadius: 21,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 1,
+    },
+    personalizedInsightCopy: {
+        flex: 1,
+    },
+    personalizedInsightTitle: {
+        fontSize: 15,
+        lineHeight: 20,
+        fontWeight: '600',
+        color: '#0B1E36',
+        letterSpacing: -0.2,
+    },
+    personalizedInsightExpanded: {
+        paddingLeft: 56,
+        paddingRight: 14,
+        paddingBottom: 16,
+        gap: 10,
+    },
+    personalizedInsightBulletRow: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        gap: 10,
+    },
+    personalizedInsightBulletDot: {
+        width: 6,
+        height: 6,
+        borderRadius: 3,
+        marginTop: 7,
+    },
+    personalizedInsightBulletText: {
+        flex: 1,
+        fontSize: 13,
+        lineHeight: 18,
+        fontWeight: '600',
+    },
+    personalizedInsightDivider: {
+        marginHorizontal: 20,
+        height: StyleSheet.hairlineWidth,
+        backgroundColor: 'rgba(11,30,54,0.08)',
     },
 
     // ---------- Score hero + mini header ----------
