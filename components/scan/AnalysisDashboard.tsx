@@ -3935,8 +3935,8 @@ const AnalysisBundleDashboard: React.FC<{
         const selectedPayload = pickFreshDecisionPayloadForFacts(
             currentFactsDigestHash,
             currentDecisionDigest,
-            fetchedPayload,
             inlineDecisionTemplatePayload,
+            fetchedPayload,
         );
         if (!selectedPayload) return null;
         return selectedPayload as DecisionSupportTemplatePayload;
