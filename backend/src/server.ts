@@ -8566,11 +8566,13 @@ const buildDecisionSupportPersonalizationContext = (params: {
   allergyContext: DecisionSupportAttachedAllergyContext | null;
   remoteStackInputs: RemoteStackOverlapInputsResult | null;
   currentProductInput: StackOverlapSupplementInput | null;
+  fallbackSavedStackCount?: number;
 }): DecisionSupportAttachedPersonalizationContext | null => {
   const hasProfile = Boolean(params.userProfile);
   const hasRemoteStack = Boolean(params.remoteStackInputs);
   const hasAllergy = Boolean(params.allergyContext);
-  if (!hasProfile && !hasRemoteStack && !hasAllergy) return null;
+  const fallbackSavedStackCount = Math.max(0, params.fallbackSavedStackCount ?? 0);
+  if (!hasProfile && !hasRemoteStack && !hasAllergy && fallbackSavedStackCount === 0) return null;
 
   const declaredDiets = params.userProfile?.dietary_preferences?.length
     ? params.userProfile.dietary_preferences
@@ -8595,11 +8597,11 @@ const buildDecisionSupportPersonalizationContext = (params: {
         goals: params.userProfile.health_goals ?? undefined,
       },
       observed: {
-        savedStackCount: params.remoteStackInputs?.processedSupplements ?? 0,
+        savedStackCount: params.remoteStackInputs?.processedSupplements ?? fallbackSavedStackCount,
         duplicateRiskLevel:
-          (params.remoteStackInputs?.processedSupplements ?? 0) >= 8
+          (params.remoteStackInputs?.processedSupplements ?? fallbackSavedStackCount) >= 8
             ? "high"
-            : (params.remoteStackInputs?.processedSupplements ?? 0) >= 4
+            : (params.remoteStackInputs?.processedSupplements ?? fallbackSavedStackCount) >= 4
               ? "medium"
               : "none",
       },
@@ -10369,6 +10371,178 @@ type ProductAllergenFlagsLookupRow = {
   updated_at: string;
 };
 
+type LocalDecisionSupportProfilePayload = {
+  ageRange?: string;
+  sex?: string;
+  supplementExperience?: string;
+  diets?: string[];
+  activity?: string;
+  preferredTypes?: string[];
+  adherenceBlocker?: string;
+  location?: {
+    country?: string;
+    city?: string;
+  };
+  goals?: string[];
+  allergyFlags?: string[];
+  ingredientRestrictions?: string[];
+};
+
+type LocalDecisionSupportSavedSupplementPayload = {
+  supplementId?: string | null;
+  barcode?: string | null;
+  productName: string;
+  brandName?: string | null;
+  dosageText?: string | null;
+};
+
+type LocalDecisionSupportContext = {
+  profile: LocalDecisionSupportProfilePayload | null;
+  savedSupplements: LocalDecisionSupportSavedSupplementPayload[];
+};
+
+const localDecisionSupportProfileSchema = z.object({
+  ageRange: z.string().trim().max(64).optional(),
+  sex: z.string().trim().max(32).optional(),
+  supplementExperience: z.string().trim().max(64).optional(),
+  diets: z.array(z.string().trim().max(64)).max(12).optional(),
+  activity: z.string().trim().max(64).optional(),
+  preferredTypes: z.array(z.string().trim().max(64)).max(12).optional(),
+  adherenceBlocker: z.string().trim().max(96).optional(),
+  location: z.object({
+    country: z.string().trim().max(64).optional(),
+    city: z.string().trim().max(64).optional(),
+  }).optional(),
+  goals: z.array(z.string().trim().max(64)).max(12).optional(),
+  allergyFlags: z.array(z.string().trim().max(64)).max(24).optional(),
+  ingredientRestrictions: z.array(z.string().trim().max(64)).max(24).optional(),
+}).strict();
+
+const localDecisionSupportSavedSupplementSchema = z.object({
+  supplementId: z.string().trim().max(128).nullable().optional(),
+  barcode: z.string().trim().max(32).nullable().optional(),
+  productName: z.string().trim().min(1).max(160),
+  brandName: z.string().trim().max(96).nullable().optional(),
+  dosageText: z.string().trim().max(200).nullable().optional(),
+}).strict();
+
+const localDecisionSupportContextSchema = z.object({
+  profile: localDecisionSupportProfileSchema.nullable().optional(),
+  savedSupplements: z.array(localDecisionSupportSavedSupplementSchema).max(12).default([]),
+}).strict();
+
+const LOCAL_DECISION_SUPPORT_HEADER_PREFIX = "uri:";
+
+const sanitizeLocalDecisionSupportStrings = (values: string[] | undefined): string[] =>
+  (Array.isArray(values) ? values : [])
+    .map((value) => safeTrim(value))
+    .filter((value): value is string => Boolean(value));
+
+const parseLocalDecisionSupportHeaderJson = (value: string): unknown => JSON.parse(value);
+
+const decodeLocalDecisionSupportHeader = (value: string): unknown => {
+  try {
+    return parseLocalDecisionSupportHeaderJson(value);
+  } catch (rawError) {
+    const decodeCandidates: string[] = [];
+
+    if (value.startsWith(LOCAL_DECISION_SUPPORT_HEADER_PREFIX)) {
+      decodeCandidates.push(value.slice(LOCAL_DECISION_SUPPORT_HEADER_PREFIX.length));
+    } else if (/%[0-9A-Fa-f]{2}/.test(value)) {
+      decodeCandidates.push(value);
+    }
+
+    for (const candidate of decodeCandidates) {
+      try {
+        return parseLocalDecisionSupportHeaderJson(decodeURIComponent(candidate));
+      } catch {
+        // Try the next decode candidate below.
+      }
+    }
+
+    throw rawError;
+  }
+};
+
+const parseLocalDecisionSupportContext = (req: Request): LocalDecisionSupportContext | null => {
+  const rawHeader = req.headers["x-local-personalization"];
+  const rawValue = Array.isArray(rawHeader) ? rawHeader[0] : rawHeader;
+  const normalized = safeTrim(rawValue);
+  if (!normalized) return null;
+
+  try {
+    const parsed = decodeLocalDecisionSupportHeader(normalized);
+    const result = localDecisionSupportContextSchema.safeParse(parsed);
+    if (!result.success) {
+      console.warn(
+        "[decision-support] invalid local personalization header",
+        result.error.issues[0]?.message ?? "unknown_error",
+      );
+      return null;
+    }
+    return {
+      profile: result.data.profile ?? null,
+      savedSupplements: result.data.savedSupplements ?? [],
+    };
+  } catch (error) {
+    console.warn(
+      "[decision-support] failed to parse local personalization header",
+      error instanceof Error ? error.message : String(error),
+    );
+    return null;
+  }
+};
+
+const buildUserDecisionSupportProfileRowFromLocalProfile = (
+  profile: LocalDecisionSupportProfilePayload | null | undefined,
+): UserDecisionSupportProfileRow | null => {
+  if (!profile) return null;
+
+  const dietaryPreferences = sanitizeLocalDecisionSupportStrings(profile.diets);
+  const preferredTypes = sanitizeLocalDecisionSupportStrings(profile.preferredTypes);
+  const healthGoals = sanitizeLocalDecisionSupportStrings(profile.goals);
+  const allergyFlags = sanitizeLocalDecisionSupportStrings(profile.allergyFlags);
+  const ingredientRestrictions = sanitizeLocalDecisionSupportStrings(profile.ingredientRestrictions);
+  const locationCountry = safeTrim(profile.location?.country);
+  const locationCity = safeTrim(profile.location?.city);
+  const location = [locationCity, locationCountry].filter(Boolean).join(", ") || null;
+
+  const hasMeaningfulValue =
+    Boolean(safeTrim(profile.ageRange))
+    || Boolean(safeTrim(profile.sex))
+    || Boolean(safeTrim(profile.supplementExperience))
+    || Boolean(safeTrim(profile.activity))
+    || Boolean(safeTrim(profile.adherenceBlocker))
+    || Boolean(locationCountry)
+    || Boolean(locationCity)
+    || dietaryPreferences.length > 0
+    || preferredTypes.length > 0
+    || healthGoals.length > 0
+    || allergyFlags.length > 0
+    || ingredientRestrictions.length > 0;
+
+  if (!hasMeaningfulValue) return null;
+
+  return {
+    age: null,
+    age_range: safeTrim(profile.ageRange),
+    gender: null,
+    sex: safeTrim(profile.sex),
+    dietary_preference: dietaryPreferences[0] ?? null,
+    dietary_preferences: dietaryPreferences,
+    activity_level: safeTrim(profile.activity),
+    supplement_experience: safeTrim(profile.supplementExperience),
+    preferred_types: preferredTypes,
+    adherence_blocker: safeTrim(profile.adherenceBlocker),
+    location,
+    location_country: locationCountry,
+    location_city: locationCity,
+    health_goals: healthGoals,
+    allergy_flags: allergyFlags,
+    ingredient_restrictions: ingredientRestrictions,
+  };
+};
+
 const coverageStatusRank = (value: ProductAllergenFlagsLookupRow["coverage_status"]): number => {
   switch (value) {
     case "resolved":
@@ -10523,6 +10697,7 @@ app.get("/api/decision-support/v1", verifySupabaseToken, async (req: Request, re
   try {
     const authedReq = req as AuthenticatedRequest;
     const userId = authedReq.user?.id ?? null;
+    const localDecisionSupportContext = parseLocalDecisionSupportContext(req);
     const barcodeGtin14 = normalizedBarcode.code.padStart(14, "0");
     const fetchCount = recordDecisionSupportFetchForScanSession(scanSessionId, barcodeGtin14);
     const overlayClaims = await fetchIherbOverlayClaimsByBarcode(barcodeGtin14);
@@ -10553,18 +10728,21 @@ app.get("/api/decision-support/v1", verifySupabaseToken, async (req: Request, re
       fetchProductAllergenFlagsForDecisionSupport(patched.digest, barcodeGtin14),
       userId ? fetchRemoteStackOverlapInputs(userId) : Promise.resolve(null),
     ]);
+    const effectiveUserProfile =
+      userProfile ?? buildUserDecisionSupportProfileRowFromLocalProfile(localDecisionSupportContext?.profile);
     const allergyContext = buildDecisionSupportAllergyContext({
-      userProfile,
+      userProfile: effectiveUserProfile,
       productFlags,
     });
     const personalizationContext = buildDecisionSupportPersonalizationContext({
-      userProfile,
+      userProfile: effectiveUserProfile,
       allergyContext,
       remoteStackInputs,
       currentProductInput: buildDecisionSupportCurrentStackInput({
         digest: patched.digest,
         barcodeGtin14,
       }),
+      fallbackSavedStackCount: userId ? 0 : (localDecisionSupportContext?.savedSupplements.length ?? 0),
     });
 
     const decisionSupport = compileDecisionSupport({
