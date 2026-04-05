@@ -8410,100 +8410,6 @@ type RemoteStackOverlapInputsResult = {
   status: "ok" | "partial";
 };
 
-const buildStackOverlapInputFromBarcode = async (params: {
-  supplementId: string;
-  productName: string;
-  barcode: string;
-}): Promise<StackOverlapSupplementInput | null> => {
-  const normalized = normalizeBarcodeInput(params.barcode);
-  if (!normalized) return null;
-
-  const cacheKey = buildBarcodeCacheKey(normalized.code);
-  const cached = await getSnapshotCache(
-    { key: cacheKey, source: "barcode" },
-    { timeoutMs: STACK_OVERLAP_SNAPSHOT_TIMEOUT_MS },
-  ).catch(() => null);
-  const snapshot = cached?.snapshot ?? null;
-  if (!snapshot) return null;
-
-  const ingredientRows = (snapshot.label.actives ?? [])
-    .map((active) => {
-      const name = safeTrim(active.name);
-      if (!name) return null;
-      return {
-        name,
-        amount: active.amountUnknown ? null : active.amount ?? null,
-        unit: active.amountUnitNormalized ?? active.amountUnit ?? active.amountUnitRaw ?? null,
-        amountText:
-          !active.amountUnknown && active.amount != null && (active.amountUnitNormalized ?? active.amountUnit ?? active.amountUnitRaw)
-            ? `${active.amount} ${active.amountUnitNormalized ?? active.amountUnit ?? active.amountUnitRaw}`.trim()
-            : null,
-        chemicalForm: active.form ?? null,
-      };
-    })
-    .filter((row): row is NonNullable<typeof row> => Boolean(row))
-    .slice(0, 24);
-  if (ingredientRows.length === 0) return null;
-
-  const safetyBundle = buildSnapshotSafetyDigestBundle({
-    snapshot,
-    supplementId: params.supplementId,
-    barcodeGtin14: normalized.code.padStart(14, "0"),
-    brandName: snapshot.product.brand ?? "",
-    productName: params.productName,
-  });
-  const usableIngredientRows = ingredientRows.filter((row) => row.amount != null && Boolean(row.unit));
-  const dailyDoseContext = deriveDailyDoseBasis({
-    labelDirectionsRawText: safetyBundle.labelDirectionsRawText,
-    hasUsableActiveDose: usableIngredientRows.length > 0,
-    sourceContext: "snapshot_only",
-  });
-
-  return {
-    supplementId: params.supplementId,
-    productName: params.productName,
-    ingredientNames: ingredientRows.map((row) => row.name),
-    ingredientRows: usableIngredientRows,
-    dailyMultiplier: dailyDoseContext.dailyMultiplier,
-    dailyDoseBasis: dailyDoseContext.dailyDoseBasis,
-    dailyDoseBasisReason: dailyDoseContext.dailyDoseBasisReason,
-  };
-};
-
-const combineStackOverlapInputs = (
-  values: Array<RemoteStackOverlapInputsResult | null | undefined>,
-): RemoteStackOverlapInputsResult | null => {
-  const available = values.filter((value): value is RemoteStackOverlapInputsResult => Boolean(value));
-  if (available.length === 0) return null;
-
-  const dedupedInputs: StackOverlapSupplementInput[] = [];
-  const seen = new Set<string>();
-  available.forEach((value) => {
-    value.processedInputs.forEach((input) => {
-      const key = safeTrim(input.supplementId)?.toLowerCase()
-        || `${safeTrim(input.productName)?.toLowerCase() ?? "unknown"}:${safeTrim(input.ingredientNames[0] ?? "")?.toLowerCase() ?? ""}`;
-      if (seen.has(key)) return;
-      seen.add(key);
-      dedupedInputs.push(input);
-    });
-  });
-
-  const processedSupplements = dedupedInputs.length;
-  const skippedSupplements = available.reduce((sum, value) => sum + value.skippedSupplements, 0);
-  const truncated = available.some((value) => value.truncated);
-  const status = truncated || skippedSupplements > 0 || available.some((value) => value.status === "partial")
-    ? "partial"
-    : "ok";
-
-  return {
-    processedInputs: dedupedInputs,
-    processedSupplements,
-    skippedSupplements,
-    truncated,
-    status,
-  };
-};
-
 const fetchRemoteStackOverlapInputs = async (
   userId: string,
 ): Promise<RemoteStackOverlapInputsResult | null> => {
@@ -8553,16 +8459,62 @@ const fetchRemoteStackOverlapInputs = async (
 
       const barcode = safeTrim(linkedSupplement?.barcode ?? null);
       if (!barcode) return { type: "skipped" };
-      const processed = await buildStackOverlapInputFromBarcode({
+
+      const normalized = normalizeBarcodeInput(barcode);
+      if (!normalized) return { type: "skipped" };
+
+      const cacheKey = buildBarcodeCacheKey(normalized.code);
+      const cached = await getSnapshotCache(
+        { key: cacheKey, source: "barcode" },
+        { timeoutMs: STACK_OVERLAP_SNAPSHOT_TIMEOUT_MS },
+      ).catch(() => null);
+      const snapshot = cached?.snapshot ?? null;
+      if (!snapshot) return { type: "skipped" };
+
+      const ingredientRows = (snapshot.label.actives ?? [])
+        .map((active) => {
+          const name = safeTrim(active.name);
+          if (!name) return null;
+          return {
+            name,
+            amount: active.amountUnknown ? null : active.amount ?? null,
+            unit: active.amountUnitNormalized ?? active.amountUnit ?? active.amountUnitRaw ?? null,
+            amountText:
+              !active.amountUnknown && active.amount != null && (active.amountUnitNormalized ?? active.amountUnit ?? active.amountUnitRaw)
+                ? `${active.amount} ${active.amountUnitNormalized ?? active.amountUnit ?? active.amountUnitRaw}`.trim()
+                : null,
+            chemicalForm: active.form ?? null,
+          };
+        })
+        .filter((row): row is NonNullable<typeof row> => Boolean(row))
+        .slice(0, 24);
+      if (ingredientRows.length === 0) return { type: "skipped" };
+
+      const safetyBundle = buildSnapshotSafetyDigestBundle({
+        snapshot,
         supplementId,
+        barcodeGtin14: normalized.code.padStart(14, "0"),
+        brandName: snapshot.product.brand ?? "",
         productName,
-        barcode,
       });
-      if (!processed) return { type: "skipped" };
+      const usableIngredientRows = ingredientRows.filter((row) => row.amount != null && Boolean(row.unit));
+      const dailyDoseContext = deriveDailyDoseBasis({
+        labelDirectionsRawText: safetyBundle.labelDirectionsRawText,
+        hasUsableActiveDose: usableIngredientRows.length > 0,
+        sourceContext: "snapshot_only",
+      });
 
       return {
         type: "processed",
-        value: processed,
+        value: {
+          supplementId,
+          productName,
+          ingredientNames: ingredientRows.map((row) => row.name),
+          ingredientRows: usableIngredientRows,
+          dailyMultiplier: dailyDoseContext.dailyMultiplier,
+          dailyDoseBasis: dailyDoseContext.dailyDoseBasis,
+          dailyDoseBasisReason: dailyDoseContext.dailyDoseBasisReason,
+        },
       };
     },
   );
@@ -8571,53 +8523,6 @@ const fetchRemoteStackOverlapInputs = async (
     .filter((candidate): candidate is { type: "processed"; value: StackOverlapSupplementInput } => candidate.type === "processed")
     .map((candidate) => candidate.value);
   skippedSupplements += candidates.length - processedInputs.length;
-
-  return {
-    processedInputs,
-    processedSupplements: processedInputs.length,
-    skippedSupplements,
-    truncated,
-    status: truncated || skippedSupplements > 0 ? "partial" : "ok",
-  };
-};
-
-const fetchLocalStackOverlapInputs = async (
-  savedSupplements: LocalDecisionSupportSavedSupplement[] | undefined,
-): Promise<RemoteStackOverlapInputsResult | null> => {
-  const items = Array.isArray(savedSupplements) ? savedSupplements : [];
-  if (items.length === 0) return null;
-
-  const selectedItems = items.slice(0, STACK_OVERLAP_MAX_SUPPLEMENTS_PER_REQUEST);
-  const truncated = items.length > selectedItems.length;
-
-  type CandidateResult =
-    | { type: "processed"; value: StackOverlapSupplementInput }
-    | { type: "skipped" };
-
-  const candidates = await mapWithConcurrency(
-    selectedItems,
-    STACK_OVERLAP_SNAPSHOT_CONCURRENCY,
-    async (item): Promise<CandidateResult> => {
-      const supplementId = safeTrim(item.supplementId) ?? safeTrim(item.barcode) ?? safeTrim(item.productName);
-      const productName = safeTrim(item.productName) ?? "Unknown supplement";
-      const barcode = safeTrim(item.barcode);
-      if (!supplementId || !barcode) return { type: "skipped" };
-
-      const processed = await buildStackOverlapInputFromBarcode({
-        supplementId,
-        productName,
-        barcode,
-      });
-      if (!processed) return { type: "skipped" };
-      return { type: "processed", value: processed };
-    },
-  );
-
-  const processedInputs = candidates
-    .filter((candidate): candidate is { type: "processed"; value: StackOverlapSupplementInput } => candidate.type === "processed")
-    .map((candidate) => candidate.value);
-  const skippedSupplements =
-    Math.max(0, items.length - selectedItems.length) + (candidates.length - processedInputs.length);
 
   return {
     processedInputs,
@@ -10455,40 +10360,6 @@ type UserDecisionSupportProfileRow = {
   ingredient_restrictions: string[] | null;
 };
 
-const localDecisionSupportProfileSchema = z.object({
-  ageRange: z.string().trim().min(1).max(64).optional(),
-  sex: z.string().trim().min(1).max(64).optional(),
-  supplementExperience: z.string().trim().min(1).max(64).optional(),
-  diets: z.array(z.string().trim().min(1).max(64)).max(8).optional(),
-  activity: z.string().trim().min(1).max(64).optional(),
-  preferredTypes: z.array(z.string().trim().min(1).max(64)).max(8).optional(),
-  adherenceBlocker: z.string().trim().min(1).max(64).optional(),
-  location: z.object({
-    country: z.string().trim().min(1).max(128).optional(),
-    city: z.string().trim().min(1).max(128).optional(),
-  }).optional(),
-  goals: z.array(z.string().trim().min(1).max(64)).max(8).optional(),
-  allergyFlags: z.array(z.string().trim().min(1).max(64)).max(12).optional(),
-  ingredientRestrictions: z.array(z.string().trim().min(1).max(64)).max(12).optional(),
-});
-
-const localDecisionSupportSavedSupplementSchema = z.object({
-  supplementId: z.string().trim().min(1).max(128).nullable().optional(),
-  barcode: z.string().trim().min(1).max(32).nullable().optional(),
-  productName: z.string().trim().min(1).max(256),
-  brandName: z.string().trim().min(1).max(256).nullable().optional(),
-  dosageText: z.string().trim().min(1).max(256).nullable().optional(),
-});
-
-const localDecisionSupportContextSchema = z.object({
-  profile: localDecisionSupportProfileSchema.nullable().optional(),
-  savedSupplements: z.array(localDecisionSupportSavedSupplementSchema).max(8).optional(),
-});
-
-type LocalDecisionSupportContext = z.infer<typeof localDecisionSupportContextSchema>;
-type LocalDecisionSupportProfile = z.infer<typeof localDecisionSupportProfileSchema>;
-type LocalDecisionSupportSavedSupplement = z.infer<typeof localDecisionSupportSavedSupplementSchema>;
-
 type ProductAllergenFlagsLookupRow = {
   source: string;
   source_id: string;
@@ -10500,12 +10371,73 @@ type ProductAllergenFlagsLookupRow = {
   updated_at: string;
 };
 
+type LocalDecisionSupportProfilePayload = {
+  ageRange?: string;
+  sex?: string;
+  supplementExperience?: string;
+  diets?: string[];
+  activity?: string;
+  preferredTypes?: string[];
+  adherenceBlocker?: string;
+  location?: {
+    country?: string;
+    city?: string;
+  };
+  goals?: string[];
+  allergyFlags?: string[];
+  ingredientRestrictions?: string[];
+};
+
+type LocalDecisionSupportSavedSupplementPayload = {
+  supplementId?: string | null;
+  barcode?: string | null;
+  productName: string;
+  brandName?: string | null;
+  dosageText?: string | null;
+};
+
+type LocalDecisionSupportContext = {
+  profile: LocalDecisionSupportProfilePayload | null;
+  savedSupplements: LocalDecisionSupportSavedSupplementPayload[];
+};
+
+const localDecisionSupportProfileSchema = z.object({
+  ageRange: z.string().trim().max(64).optional(),
+  sex: z.string().trim().max(32).optional(),
+  supplementExperience: z.string().trim().max(64).optional(),
+  diets: z.array(z.string().trim().max(64)).max(12).optional(),
+  activity: z.string().trim().max(64).optional(),
+  preferredTypes: z.array(z.string().trim().max(64)).max(12).optional(),
+  adherenceBlocker: z.string().trim().max(96).optional(),
+  location: z.object({
+    country: z.string().trim().max(64).optional(),
+    city: z.string().trim().max(64).optional(),
+  }).optional(),
+  goals: z.array(z.string().trim().max(64)).max(12).optional(),
+  allergyFlags: z.array(z.string().trim().max(64)).max(24).optional(),
+  ingredientRestrictions: z.array(z.string().trim().max(64)).max(24).optional(),
+}).strict();
+
+const localDecisionSupportSavedSupplementSchema = z.object({
+  supplementId: z.string().trim().max(128).nullable().optional(),
+  barcode: z.string().trim().max(32).nullable().optional(),
+  productName: z.string().trim().min(1).max(160),
+  brandName: z.string().trim().max(96).nullable().optional(),
+  dosageText: z.string().trim().max(200).nullable().optional(),
+}).strict();
+
+const localDecisionSupportContextSchema = z.object({
+  profile: localDecisionSupportProfileSchema.nullable().optional(),
+  savedSupplements: z.array(localDecisionSupportSavedSupplementSchema).max(12).default([]),
+}).strict();
+
+const LOCAL_DECISION_SUPPORT_HEADER_PREFIXES = ["uri:", "local_v1:"] as const;
+
 const sanitizeLocalDecisionSupportStrings = (values: string[] | undefined): string[] =>
   (Array.isArray(values) ? values : [])
     .map((value) => safeTrim(value))
     .filter((value): value is string => Boolean(value));
 
-const LOCAL_DECISION_SUPPORT_HEADER_PREFIXES = ["uri:", "local_v1:"] as const;
 const parseLocalDecisionSupportHeaderJson = (value: string): unknown => JSON.parse(value);
 
 const decodeLocalDecisionSupportHeader = (value: string): unknown => {
@@ -10566,7 +10498,7 @@ const parseLocalDecisionSupportContext = (req: Request): LocalDecisionSupportCon
 };
 
 const buildUserDecisionSupportProfileRowFromLocalProfile = (
-  profile: LocalDecisionSupportProfile | null | undefined,
+  profile: LocalDecisionSupportProfilePayload | null | undefined,
 ): UserDecisionSupportProfileRow | null => {
   if (!profile) return null;
 
@@ -10769,7 +10701,7 @@ app.get("/api/decision-support/v1", verifySupabaseToken, async (req: Request, re
   try {
     const authedReq = req as AuthenticatedRequest;
     const userId = authedReq.user?.id ?? null;
-    const localContext = parseLocalDecisionSupportContext(req);
+    const localDecisionSupportContext = parseLocalDecisionSupportContext(req);
     const barcodeGtin14 = normalizedBarcode.code.padStart(14, "0");
     const fetchCount = recordDecisionSupportFetchForScanSession(scanSessionId, barcodeGtin14);
     const overlayClaims = await fetchIherbOverlayClaimsByBarcode(barcodeGtin14);
@@ -10795,18 +10727,13 @@ app.get("/api/decision-support/v1", verifySupabaseToken, async (req: Request, re
       barcodeGtin14,
       identityKeys: debugIdentityKeys,
     });
-    const [userProfile, productFlags, remoteStackInputs, localStackInputs] = await Promise.all([
+    const [userProfile, productFlags, remoteStackInputs] = await Promise.all([
       fetchUserDecisionSupportProfile(userId),
       fetchProductAllergenFlagsForDecisionSupport(patched.digest, barcodeGtin14),
       userId ? fetchRemoteStackOverlapInputs(userId) : Promise.resolve(null),
-      fetchLocalStackOverlapInputs(localContext?.savedSupplements),
     ]);
     const effectiveUserProfile =
-      userProfile ?? buildUserDecisionSupportProfileRowFromLocalProfile(localContext?.profile);
-    const effectiveStackInputs = combineStackOverlapInputs([
-      remoteStackInputs,
-      localStackInputs,
-    ]);
+      userProfile ?? buildUserDecisionSupportProfileRowFromLocalProfile(localDecisionSupportContext?.profile);
     const allergyContext = buildDecisionSupportAllergyContext({
       userProfile: effectiveUserProfile,
       productFlags,
@@ -10814,12 +10741,12 @@ app.get("/api/decision-support/v1", verifySupabaseToken, async (req: Request, re
     const personalizationContext = buildDecisionSupportPersonalizationContext({
       userProfile: effectiveUserProfile,
       allergyContext,
-      remoteStackInputs: effectiveStackInputs,
+      remoteStackInputs,
       currentProductInput: buildDecisionSupportCurrentStackInput({
         digest: patched.digest,
         barcodeGtin14,
       }),
-      fallbackSavedStackCount: userId ? 0 : (localContext?.savedSupplements.length ?? 0),
+      fallbackSavedStackCount: userId ? 0 : (localDecisionSupportContext?.savedSupplements.length ?? 0),
     });
 
     const decisionSupport = compileDecisionSupport({
