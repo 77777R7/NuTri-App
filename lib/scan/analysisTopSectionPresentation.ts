@@ -2,7 +2,10 @@ export type TopSectionTone = 'positive' | 'caution' | 'neutral';
 
 export type TopSectionHeroInput = {
   fitDecision?: 'fits' | 'mixed' | 'does_not_fit' | 'unknown' | null;
+  heroMode?: 'dominant_goal' | 'mixed_goals' | 'limited_goals' | 'single_goal' | 'insufficient_signal' | null;
   selectedGoalLabel?: string | null;
+  dominantGoalLabel?: string | null;
+  secondaryGoalLabel?: string | null;
   selectedGoalLabels?: string[];
   allSelectedGoalLabels?: string[];
   previewGoalLabel?: string | null;
@@ -21,7 +24,10 @@ export type TopSectionPersonalInsightInput = {
   supportLabels: string[];
   conflictSummary?: string | null;
   fitDecision?: 'fits' | 'mixed' | 'does_not_fit' | 'unknown' | null;
+  heroMode?: 'dominant_goal' | 'mixed_goals' | 'limited_goals' | 'single_goal' | 'insufficient_signal' | null;
   selectedGoalLabel?: string | null;
+  dominantGoalLabel?: string | null;
+  secondaryGoalLabel?: string | null;
   goalLensMode?: 'single_goal' | 'multi_goal_summary' | null;
   goalCoverage?: TopSectionGoalCoverageInput[];
   allGoalCoverage?: TopSectionGoalCoverageInput[];
@@ -37,6 +43,9 @@ export type TopSectionGoalCoverageInput = {
   tier: 'strong_match' | 'related' | 'weak_match' | 'no_match' | 'unknown';
   state: 'strong' | 'some' | 'limited' | 'none';
   source: 'selected_goal_evaluation' | 'goal_match_scoring_preview';
+  score?: number | null;
+  reasonCodes?: string[];
+  confidenceBucket?: 'high' | 'medium' | 'low';
 };
 
 export type TopSectionAllergyInput = {
@@ -82,10 +91,13 @@ export type TopSectionInsightPresentation = {
   tone: TopSectionTone;
   collapsedTitle: string;
   subtitle?: string;
+  expandedSubtitle?: string;
   expandedBullets: string[];
   goalCoverageItems?: TopSectionGoalCoveragePresentation[];
   visibleGoalCoverageItems?: TopSectionGoalCoveragePresentation[];
   hiddenGoalCoverageItems?: TopSectionGoalCoveragePresentation[];
+  goalCoveragePresentation?: 'primary' | 'secondary_inline';
+  inlineGoalCoverageTitle?: string;
   expandActionLabel?: string;
   collapseActionLabel?: string;
   canExpandAll?: boolean;
@@ -323,6 +335,24 @@ const isGoalCoverageMultiGoal = (
   goal.goalLensMode === 'multi_goal_summary'
   && getPrimaryGoalCoverage(goal).length > 1;
 
+const isDominantGoalMode = (
+  goal: TopSectionHeroInput | TopSectionPersonalInsightInput,
+): boolean =>
+  goal.heroMode === 'dominant_goal'
+  && isGoalCoverageMultiGoal(goal);
+
+const isMixedGoalMode = (
+  goal: TopSectionHeroInput | TopSectionPersonalInsightInput,
+): boolean =>
+  goal.heroMode === 'mixed_goals'
+  && isGoalCoverageMultiGoal(goal);
+
+const isLimitedGoalMode = (
+  goal: TopSectionHeroInput | TopSectionPersonalInsightInput,
+): boolean =>
+  goal.heroMode === 'limited_goals'
+  && isGoalCoverageMultiGoal(goal);
+
 const getSortedGoalCoverage = (coverage: TopSectionGoalCoverageInput[] = []): TopSectionGoalCoverageInput[] =>
   coverage.filter((entry) => normalizeText(entry.goalLabel).length > 0);
 
@@ -359,9 +389,28 @@ const getBestAndWeakestGoalCoverage = (coverage: TopSectionGoalCoverageInput[]) 
   return { best, weakest };
 };
 
+const getDominantGoalCoverage = (
+  goal: TopSectionHeroInput | TopSectionPersonalInsightInput,
+): TopSectionGoalCoverageInput | null => {
+  if (!isDominantGoalMode(goal)) return null;
+  const coverage = getSortedGoalCoverage(getPrimaryGoalCoverage(goal));
+  const dominantGoalLabel = normalizeText(goal.dominantGoalLabel);
+  const byDominantLabel = dominantGoalLabel
+    ? coverage.find((entry) => normalizeText(entry.goalLabel) === dominantGoalLabel)
+    : null;
+  const { best } = getBestAndWeakestGoalCoverage(coverage);
+  const resolved = byDominantLabel ?? best;
+  if (!resolved) return null;
+  if (resolved.state !== 'strong' && resolved.state !== 'some') return null;
+  return resolved;
+};
+
 const buildGoalCoverageHero = (goal: TopSectionHeroInput): TopSectionHeroPresentation | null => {
   const coverage = getSortedGoalCoverage(getPrimaryGoalCoverage(goal));
-  if (!isGoalCoverageMultiGoal(goal) || coverage.length < 2) return null;
+  const shouldUseMultiGoalHero =
+    (goal.heroMode !== 'single_goal' && goal.heroMode !== 'insufficient_signal')
+    && isGoalCoverageMultiGoal(goal);
+  if (!shouldUseMultiGoalHero || coverage.length < 2 || getDominantGoalCoverage(goal)) return null;
 
   const { best, weakest } = getBestAndWeakestGoalCoverage(coverage);
   const hasStrong = coverage.some((entry) => entry.state === 'strong');
@@ -373,7 +422,7 @@ const buildGoalCoverageHero = (goal: TopSectionHeroInput): TopSectionHeroPresent
     ? 'across the goals we checked'
     : 'for the goals checked in this view';
 
-  if (allPositive && hasStrong && best) {
+  if ((goal.heroMode === 'mixed_goals' || (!goal.heroMode && allPositive)) && allPositive && hasStrong && best) {
     return {
       tone: 'positive',
       chip: acrossGoals ? 'Strong fit across your selected goals' : 'Strong fit for the goals shown',
@@ -383,7 +432,7 @@ const buildGoalCoverageHero = (goal: TopSectionHeroInput): TopSectionHeroPresent
     };
   }
 
-  if (allLimited) {
+  if (allLimited && (isLimitedGoalMode(goal) || goal.heroMode === 'dominant_goal' || !goal.heroMode)) {
     return {
       tone: 'caution',
       chip: acrossGoals ? 'Limited fit across your selected goals' : 'Limited fit for the goals shown',
@@ -391,7 +440,7 @@ const buildGoalCoverageHero = (goal: TopSectionHeroInput): TopSectionHeroPresent
     };
   }
 
-  if (coverage.every((entry) => entry.state === 'some')) {
+  if ((isMixedGoalMode(goal) || !goal.heroMode) && coverage.every((entry) => entry.state === 'some')) {
     return {
       tone: 'neutral',
       chip: acrossGoals ? 'Mixed fit across your selected goals' : 'Mixed fit for the goals shown',
@@ -401,7 +450,7 @@ const buildGoalCoverageHero = (goal: TopSectionHeroInput): TopSectionHeroPresent
     };
   }
 
-  if (best && weakest && best.goalLabel === weakest.goalLabel) {
+  if ((isMixedGoalMode(goal) || !goal.heroMode) && best && weakest && best.goalLabel === weakest.goalLabel) {
     return {
       tone: 'neutral',
       chip: acrossGoals ? 'Mixed fit across your selected goals' : 'Mixed fit for the goals shown',
@@ -412,17 +461,43 @@ const buildGoalCoverageHero = (goal: TopSectionHeroInput): TopSectionHeroPresent
   }
 
   if (best && weakest) {
+    const secondaryGoalLabel = normalizeText(goal.secondaryGoalLabel);
+    const secondary = secondaryGoalLabel
+      ? coverage.find((entry) => normalizeText(entry.goalLabel) === secondaryGoalLabel)
+      : weakest;
     return {
       tone: 'neutral',
       chip: acrossGoals ? 'Mixed fit across your selected goals' : 'Mixed fit for the goals shown',
-      summary: `Looks stronger for ${best.goalLabel} than ${weakest.goalLabel}`,
+      summary: `Looks stronger for ${best.goalLabel} than ${(secondary ?? weakest).goalLabel}`,
     };
   }
 
   return null;
 };
 
+const buildDominantGoalHero = (goal: TopSectionHeroInput): TopSectionHeroPresentation | null => {
+  const dominantGoal = getDominantGoalCoverage(goal);
+  if (!dominantGoal) return null;
+
+  if (dominantGoal.state === 'strong') {
+    return {
+      tone: 'positive',
+      chip: 'Strong fit for you',
+      summary: `Best aligned with your ${dominantGoal.goalLabel} goal`,
+    };
+  }
+
+  return {
+    tone: 'neutral',
+    chip: 'Could work for you',
+    summary: `Looks strongest for your ${dominantGoal.goalLabel} goal`,
+  };
+};
+
 const buildHero = (goal: TopSectionHeroInput): TopSectionHeroPresentation => {
+  const dominantGoalHero = buildDominantGoalHero(goal);
+  if (dominantGoalHero) return dominantGoalHero;
+
   const multiGoalHero = buildGoalCoverageHero(goal);
   if (multiGoalHero) return multiGoalHero;
 
@@ -527,41 +602,123 @@ const getDefaultVisibleGoalCoverage = (
   return coverage.slice(0, desiredCount);
 };
 
+const buildGoalCoverageRowDetails = (
+  personalInsight: TopSectionPersonalInsightInput,
+) => {
+  const coverage = getSortedGoalCoverage(getPrimaryGoalCoverage(personalInsight));
+  const fullItems = coverage.map(toGoalCoveragePresentation);
+  const defaultVisibleCoverage = getDefaultVisibleGoalCoverage(
+    coverage,
+    personalInsight.defaultVisibleGoalLabels,
+    personalInsight.surfacedGoalCount,
+  );
+  const visibleItems = defaultVisibleCoverage.map(toGoalCoveragePresentation);
+  const hiddenByLabel = new Set(defaultVisibleCoverage.map((entry) => normalizeText(entry.goalLabel)));
+  const hiddenItems = fullItems.filter((entry) => !hiddenByLabel.has(normalizeText(entry.goalLabel)));
+  const analyzedCount = personalInsight.analyzedGoalCount ?? coverage.length;
+  const surfacedCount = Math.min(
+    personalInsight.surfacedGoalCount ?? visibleItems.length,
+    analyzedCount,
+  );
+  const allGoalsAnalyzed = personalInsight.allGoalsAnalyzed === true;
+  const subtitle = allGoalsAnalyzed
+    ? analyzedCount > surfacedCount
+      ? `Showing ${surfacedCount} of ${analyzedCount} analyzed goals`
+      : analyzedCount > 0
+        ? `Showing all ${analyzedCount} analyzed goals`
+        : undefined
+    : visibleItems.length > 0
+      ? `Showing ${visibleItems.length} goals checked in this view`
+      : undefined;
+  const expandedSubtitle = allGoalsAnalyzed
+    ? analyzedCount > 0
+      ? `Showing all ${analyzedCount} analyzed goals`
+      : undefined
+    : undefined;
+  const canExpandAll = allGoalsAnalyzed && analyzedCount > surfacedCount;
+
+  return {
+    coverage,
+    fullItems,
+    visibleItems,
+    hiddenItems,
+    analyzedCount,
+    canExpandAll,
+    subtitle,
+    expandedSubtitle,
+    expandActionLabel: canExpandAll ? `View all ${analyzedCount} goals` : undefined,
+    collapseActionLabel: canExpandAll ? 'Show fewer goals' : undefined,
+  };
+};
+
 const buildSupportInsight = (
   personalInsight: TopSectionPersonalInsightInput,
 ): TopSectionInsightPresentation | null => {
-  if (isGoalCoverageMultiGoal(personalInsight)) {
-    const coverage = getSortedGoalCoverage(getPrimaryGoalCoverage(personalInsight));
-    const fullItems = coverage.map(toGoalCoveragePresentation);
-    const defaultVisibleCoverage = getDefaultVisibleGoalCoverage(
-      coverage,
-      personalInsight.defaultVisibleGoalLabels,
-      personalInsight.surfacedGoalCount,
+  const dominantGoal = getDominantGoalCoverage(personalInsight);
+  if (dominantGoal) {
+    const {
+      fullItems,
+      analyzedCount,
+      expandedSubtitle,
+      canExpandAll,
+    } = buildGoalCoverageRowDetails(personalInsight);
+    const lowerGoal = lowerFirst(dominantGoal.goalLabel);
+    const collapsedTitle =
+      dominantGoal.state === 'strong'
+        ? buildSupportTitle(dominantGoal.goalLabel)
+        : `Looks most supportive of your ${lowerGoal} goal`;
+
+    return {
+      key: 'personal_support',
+      topic: 'support',
+      tone: dominantGoal.state === 'strong' ? 'positive' : 'neutral',
+      collapsedTitle,
+      expandedBullets:
+        dominantGoal.state === 'strong'
+          ? uniqueLines([
+              buildGoalSupportSummary(dominantGoal.goalLabel),
+              buildGoalSupportReason(dominantGoal.goalLabel),
+            ])
+          : uniqueLines([
+              `This product looks most supportive of ${lowerGoal}.`,
+              `The visible ingredients look more supportive of ${lowerGoal} than other goals we checked.`,
+            ]),
+      goalCoverageItems: fullItems,
+      goalCoveragePresentation: 'secondary_inline',
+      inlineGoalCoverageTitle: 'How it maps to your goals',
+      expandedSubtitle,
+      expandActionLabel: analyzedCount > 1 ? `See all ${analyzedCount} goals checked` : undefined,
+      collapseActionLabel: analyzedCount > 1 ? 'Show fewer goals' : undefined,
+      canExpandAll: canExpandAll || analyzedCount > 1,
+      isExpandable: true,
+    };
+  }
+
+  const shouldRenderPrimaryCoverageRow =
+    isGoalCoverageMultiGoal(personalInsight)
+    && (
+      personalInsight.heroMode === 'mixed_goals'
+      || personalInsight.heroMode === 'limited_goals'
+      || (personalInsight.heroMode === 'dominant_goal' && !dominantGoal)
+      || !personalInsight.heroMode
     );
-    const visibleItems = defaultVisibleCoverage.map(toGoalCoveragePresentation);
-    const hiddenByLabel = new Set(defaultVisibleCoverage.map((entry) => normalizeText(entry.goalLabel)));
-    const hiddenItems = fullItems.filter((entry) => !hiddenByLabel.has(normalizeText(entry.goalLabel)));
+  if (shouldRenderPrimaryCoverageRow) {
+    const {
+      coverage,
+      fullItems,
+      visibleItems,
+      hiddenItems,
+      subtitle,
+      expandedSubtitle,
+      canExpandAll,
+      expandActionLabel,
+      collapseActionLabel,
+    } = buildGoalCoverageRowDetails(personalInsight);
     const tone = coverage.every((entry) => entry.state === 'limited' || entry.state === 'none')
       ? 'caution'
       : coverage.some((entry) => entry.state === 'strong')
         ? 'positive'
         : 'neutral';
-    const analyzedCount = personalInsight.analyzedGoalCount ?? coverage.length;
-    const surfacedCount = Math.min(
-      personalInsight.surfacedGoalCount ?? visibleItems.length,
-      analyzedCount,
-    );
-    const allGoalsAnalyzed = personalInsight.allGoalsAnalyzed === true;
-    const subtitle = allGoalsAnalyzed
-      ? analyzedCount > surfacedCount
-        ? `Showing ${surfacedCount} of ${analyzedCount} analyzed goals`
-        : analyzedCount > 0
-          ? `Showing all ${analyzedCount} analyzed goals`
-          : undefined
-      : visibleItems.length > 0
-        ? `Showing ${visibleItems.length} goals checked in this view`
-        : undefined;
-    const canExpandAll = allGoalsAnalyzed && analyzedCount > surfacedCount;
 
     return {
       key: 'goal_coverage',
@@ -569,12 +726,14 @@ const buildSupportInsight = (
       tone,
       collapsedTitle: 'How it maps to your goals',
       subtitle,
+      expandedSubtitle,
       expandedBullets: fullItems.map((entry) => entry.description),
       goalCoverageItems: fullItems,
       visibleGoalCoverageItems: visibleItems,
       hiddenGoalCoverageItems: hiddenItems,
-      expandActionLabel: canExpandAll ? `View all ${analyzedCount} goals` : undefined,
-      collapseActionLabel: canExpandAll ? 'Show fewer goals' : undefined,
+      goalCoveragePresentation: 'primary',
+      expandActionLabel,
+      collapseActionLabel,
       canExpandAll,
       isExpandable: true,
     };
@@ -856,36 +1015,6 @@ const buildSafetyInsight = (safety: TopSectionSafetyInput): TopSectionInsightPre
   };
 };
 
-const buildSecondarySafetyNote = (
-  safety: TopSectionSafetyInput,
-  hero: TopSectionHeroPresentation,
-): TopSectionSecondaryNotePresentation | null => {
-  if (hero.tone === 'caution') return null;
-
-  const warning = normalizeText(safety.warningText);
-  const watchout = normalizeText(safety.watchoutText);
-  if (!warning && !watchout) return null;
-
-  const title = buildSafetyTitle(warning, watchout);
-  if (!/^If you /.test(title)) return null;
-
-  const combined = `${warning} ${watchout}`.toLowerCase();
-  if (/blood thinner|surgery|avoid|do not use|stop use|contraindicat|anticoagulant/.test(combined)) {
-    return null;
-  }
-
-  return {
-    topic: 'safety',
-    tone: 'caution',
-    title,
-    body: uniqueLines([
-      warning,
-      watchout,
-      'This reminder matters only if that situation applies to you.',
-    ], 1)[0],
-  };
-};
-
 export const buildAnalysisTopSectionPresentation = (input: {
   goal: TopSectionHeroInput;
   personalInsight: TopSectionPersonalInsightInput;
@@ -895,12 +1024,11 @@ export const buildAnalysisTopSectionPresentation = (input: {
 }): TopSectionPresentation => {
   const banner = buildBanner(input.allergy);
   const hero = buildHero(input.goal);
-  const secondaryNote = buildSecondarySafetyNote(input.safety, hero);
   const insights = [
     buildSupportInsight(input.personalInsight),
     buildAllergyInsight(input.allergy),
     buildDoseInsight(input.dose),
-    secondaryNote ? null : buildSafetyInsight(input.safety),
+    buildSafetyInsight(input.safety),
     buildOverlapInsight(input.personalInsight),
   ]
     .filter((row): row is TopSectionInsightPresentation => Boolean(row))
@@ -908,7 +1036,11 @@ export const buildAnalysisTopSectionPresentation = (input: {
 
   const preferredExpandedKey = banner?.kind === 'allergy'
     ? 'allergy_insight'
-    : input.goal.goalLensMode === 'multi_goal_summary'
+    : input.goal.heroMode === 'dominant_goal'
+      ? 'personal_support'
+      : input.goal.goalLensMode === 'multi_goal_summary'
+        || input.goal.heroMode === 'mixed_goals'
+        || input.goal.heroMode === 'limited_goals'
       ? 'goal_coverage'
       : 'personal_support';
   const fallbackExpandedKey = insights[0]?.key ?? null;
@@ -920,7 +1052,7 @@ export const buildAnalysisTopSectionPresentation = (input: {
   return {
     hero,
     banner,
-    secondaryNote,
+    secondaryNote: null,
     insights: insights.map((row) => ({
       ...row,
       defaultExpanded: row.key === resolvedExpandedKey,
