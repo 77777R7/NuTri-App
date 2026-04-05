@@ -39,6 +39,7 @@ import { PlanPreviewCornerGlow } from '@/components/onboarding/summary/PlanPrevi
 import { useOnboarding } from '@/contexts/OnboardingContext';
 import { useTransitionDir } from '@/contexts/TransitionContext';
 import {
+  buildAvoidItemsFromStructuredPreferences,
   buildSmartFilterConfig,
   GOAL_OPTIONS,
 } from '@/lib/onboarding-v2';
@@ -523,7 +524,16 @@ export function PlanPreviewScreenContent({
   }, [selectedGoals]);
 
   const selectedTypes = draft?.preferredTypes ?? [];
-  const selectedAvoid = useMemo(() => draft?.avoidItems ?? [], [draft?.avoidItems]);
+  const selectedAvoid = useMemo(
+    () =>
+      buildAvoidItemsFromStructuredPreferences({
+        avoidItems: draft?.avoidItems,
+        allergyFlags: draft?.allergyFlags,
+        ingredientRestrictions: draft?.ingredientRestrictions,
+        noKnownAllergies: draft?.noKnownAllergies,
+      }),
+    [draft?.allergyFlags, draft?.avoidItems, draft?.ingredientRestrictions, draft?.noKnownAllergies],
+  );
   const selectedAge = draft?.ageRange ?? '';
   const selectedSex = draft?.sex ?? draft?.gender ?? '';
   const selectedExperience = draft?.supplementExperience ?? '';

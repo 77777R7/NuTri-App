@@ -90,10 +90,18 @@ const uniqueStrings = (values: (string | null | undefined)[]) => {
   return result;
 };
 
-const formatSummary = (values?: string[] | null, maxItems = 2) => {
+const formatSummary = (
+  values?: string[] | null,
+  maxItems = 2,
+  options?: { showOverflowCount?: boolean },
+) => {
   const items = uniqueStrings(values ?? []);
   if (!items.length) return null;
-  return items.slice(0, maxItems).join(', ');
+  if (items.length <= maxItems) return items.join(', ');
+
+  const visible = items.slice(0, maxItems).join(', ');
+  if (!options?.showOverflowCount) return visible;
+  return `${visible} +${items.length - maxItems} more`;
 };
 
 const formatRegion = (draft: ProfileDraft | null) => {
@@ -180,7 +188,7 @@ export function buildProfileScreenModel({
       overviewState: user ? 'connected' : 'preview',
     },
     snapshot: [
-      { id: 'goals', value: formatSummary(draft?.goals, 2) },
+      { id: 'goals', value: formatSummary(draft?.goals, 3, { showOverflowCount: true }) },
       { id: 'experience', value: normalizeText(draft?.supplementExperience) },
       { id: 'diet', value: formatSummary(draft?.diets, 2) },
       { id: 'region', value: formatRegion(draft) },

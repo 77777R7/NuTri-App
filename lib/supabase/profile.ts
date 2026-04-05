@@ -1,6 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 
-import { buildSmartFilterConfig } from '@/lib/onboarding-v2';
+import { buildSmartFilterConfig, normalizeAvoidItemsSelection } from '@/lib/onboarding-v2';
 import type { ProfileDraft, TrialState } from '@/types/onboarding';
 import type { Database } from '@/types/supabase';
 
@@ -111,6 +111,15 @@ export const ensureUserProfileTable = async (client: PublicClient) => {
 };
 
 const mapProfileDraft = (draft: ProfileDraft | null) => {
+  const normalizedAvoid = normalizeAvoidItemsSelection(draft?.avoidItems);
+  const allergyFlags =
+    draft?.allergyFlags && draft.allergyFlags.length > 0
+      ? draft.allergyFlags
+      : normalizedAvoid.allergyFlags;
+  const ingredientRestrictions =
+    draft?.ingredientRestrictions && draft.ingredientRestrictions.length > 0
+      ? draft.ingredientRestrictions
+      : normalizedAvoid.ingredientRestrictions;
   const smartFilterConfig = buildSmartFilterConfig({
     goals: draft?.goals ?? null,
     preferredTypes: draft?.preferredTypes ?? null,
@@ -127,8 +136,8 @@ const mapProfileDraft = (draft: ProfileDraft | null) => {
     dietary_preferences: draft?.diets ?? null,
     activity_level: normalizedActivity,
     preferred_types: draft?.preferredTypes ?? null,
-    allergy_flags: draft?.allergyFlags ?? [],
-    ingredient_restrictions: draft?.ingredientRestrictions ?? [],
+    allergy_flags: allergyFlags,
+    ingredient_restrictions: ingredientRestrictions,
     adherence_blocker: draft?.adherenceBlocker ?? null,
     permission_preferences: draft?.permissionPreferences ?? null,
     smart_filter_config: draft?.smartFilterConfig ?? smartFilterConfig,
@@ -142,6 +151,15 @@ const mapProfileDraft = (draft: ProfileDraft | null) => {
 };
 
 const mapLiveCompatibleProfileDraft = (draft: ProfileDraft | null) => {
+  const normalizedAvoid = normalizeAvoidItemsSelection(draft?.avoidItems);
+  const allergyFlags =
+    draft?.allergyFlags && draft.allergyFlags.length > 0
+      ? draft.allergyFlags
+      : normalizedAvoid.allergyFlags;
+  const ingredientRestrictions =
+    draft?.ingredientRestrictions && draft.ingredientRestrictions.length > 0
+      ? draft.ingredientRestrictions
+      : normalizedAvoid.ingredientRestrictions;
   const country = draft?.location?.country?.trim();
   const city = draft?.location?.city?.trim();
   const location = [city, country].filter(Boolean).join(', ') || null;
@@ -154,8 +172,8 @@ const mapLiveCompatibleProfileDraft = (draft: ProfileDraft | null) => {
     dietary_preference: draft?.diets?.[0] ?? null,
     activity_level: normalizedActivity,
     location,
-    allergy_flags: draft?.allergyFlags ?? [],
-    ingredient_restrictions: draft?.ingredientRestrictions ?? [],
+    allergy_flags: allergyFlags,
+    ingredient_restrictions: ingredientRestrictions,
   };
 };
 
