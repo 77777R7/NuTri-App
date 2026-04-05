@@ -516,6 +516,15 @@ const normalizeBarcodeForDecision = (value?: string | null): string | null => {
     return digits.length > 14 ? digits.slice(-14) : digits.padStart(14, '0');
 };
 const LOCAL_DECISION_SUPPORT_HEADER_PREFIX = 'uri:';
+const hashDecisionSupportProfileKey = (value: string): string => {
+    let hash = 5381;
+
+    for (let index = 0; index < value.length; index += 1) {
+        hash = (hash * 33) ^ value.charCodeAt(index);
+    }
+
+    return (hash >>> 0).toString(36);
+};
 type LocalDecisionSupportProfilePayload = {
     ageRange?: string;
     sex?: string;
@@ -3310,6 +3319,10 @@ const AnalysisBundleDashboard: React.FC<{
         if (localDecisionSupportHeader) return `local_profile:${localDecisionSupportHeader}`;
         return 'local_profile:none';
     }, [localDecisionSupportHeader, onboardingLoading]);
+    const localDecisionSupportProfileKey = useMemo(() => {
+        if (!AUTH_DISABLED || !localDecisionSupportHeader) return null;
+        return hashDecisionSupportProfileKey(localDecisionSupportHeader);
+    }, [localDecisionSupportHeader]);
     const emitScanUxTimingOnce = useCallback((
         key: 'firstRenderableLogged' | 'scoreVisibleLogged' | 'coreCardsVisibleLogged',
         event:
@@ -3759,9 +3772,12 @@ const AnalysisBundleDashboard: React.FC<{
                 if (digestParam) params.set('digest', digestParam);
                 if (normalizedSessionIdRaw) params.set('scanSessionId', normalizedSessionIdRaw);
                 if (decisionInputsHashParam) params.set('decisionInputsHash', decisionInputsHashParam);
+                if (localDecisionSupportProfileKey) params.set('profileKey', localDecisionSupportProfileKey);
                 const headers = await withAuthHeaders();
                 if (AUTH_DISABLED && !headers.Authorization && localDecisionSupportHeader) {
                     headers['x-local-personalization'] = localDecisionSupportHeader;
+                    headers['Cache-Control'] = 'no-cache, no-store';
+                    headers.Pragma = 'no-cache';
                 }
                 const res = await fetch(`${baseUrl}/api/decision-support/v1?${params.toString()}`, {
                     method: 'GET',
@@ -3909,6 +3925,7 @@ const AnalysisBundleDashboard: React.FC<{
         bundleState.meta.factsDigestHash,
         onboardingLoading,
         localDecisionSupportHeader,
+        localDecisionSupportProfileKey,
         localDecisionSupportCacheScope,
         scanSessionId,
     ]);
