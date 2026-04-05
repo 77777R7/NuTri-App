@@ -3248,7 +3248,7 @@ const AnalysisBundleDashboard: React.FC<{
     saveItem = null,
 }) => {
     const { t } = useTranslation();
-    const { draft: onboardingDraft } = useOnboarding();
+    const { draft: onboardingDraft, loading: onboardingLoading } = useOnboarding();
     const { savedSupplements } = useSavedSupplements();
     const [selectedTileType, setSelectedTileType] = useState<TileType | null>(null);
     const [bundleState, setBundleState] = useState<AnalysisBundle>(bundle);
@@ -3304,6 +3304,12 @@ const AnalysisBundleDashboard: React.FC<{
                 : null,
         [onboardingDraft, savedSupplements],
     );
+    const localDecisionSupportCacheScope = useMemo(() => {
+        if (!AUTH_DISABLED) return 'auth_enabled';
+        if (onboardingLoading) return 'local_profile_loading';
+        if (localDecisionSupportHeader) return `local_profile:${localDecisionSupportHeader}`;
+        return 'local_profile:none';
+    }, [localDecisionSupportHeader, onboardingLoading]);
     const emitScanUxTimingOnce = useCallback((
         key: 'firstRenderableLogged' | 'scoreVisibleLogged' | 'coreCardsVisibleLogged',
         event:
@@ -3630,6 +3636,7 @@ const AnalysisBundleDashboard: React.FC<{
     ]);
 
     useEffect(() => {
+        if (AUTH_DISABLED && onboardingLoading) return;
         const resolvedBarcode = (() => {
             const identity = bundleState.meta.authoritativeIdentity;
             if (identity?.type === 'gtin14') {
@@ -3655,6 +3662,7 @@ const AnalysisBundleDashboard: React.FC<{
             `${bundleState.meta.authoritativeIdentity.type}:${bundleState.meta.authoritativeIdentity.value}`,
             digestHint ?? currentFactsDigestHash ?? 'no_digest',
             SCAN_UX_VIEW_MODE,
+            localDecisionSupportCacheScope,
         ].join('|');
         const normalizedSessionId = normalizeText(scanSessionId) || 'session_unknown';
         const normalizedSessionIdRaw = normalizeText(scanSessionId) || null;
@@ -3883,7 +3891,9 @@ const AnalysisBundleDashboard: React.FC<{
         (bundleState.meta as { decisionSupportDigest?: string | null })?.decisionSupportDigest,
         (bundleState.meta as { decisionInputsHash?: string | null })?.decisionInputsHash,
         bundleState.meta.factsDigestHash,
+        onboardingLoading,
         localDecisionSupportHeader,
+        localDecisionSupportCacheScope,
         scanSessionId,
     ]);
 
