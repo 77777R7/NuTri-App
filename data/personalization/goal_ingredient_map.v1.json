@@ -17,12 +17,12 @@
         {
           "ingredientKey": "magnesium",
           "tier": "related",
-          "evidenceGrade": "B",
+          "evidenceGrade": "A",
           "minEffectiveDose": 100,
           "unit": "mg",
-          "preferredForms": ["glycinate", "bisglycinate", "taurate"],
+          "preferredForms": ["glycinate", "bisglycinate", "taurate", "threonate"],
           "caps": [],
-          "rationale": "Magnesium can support sleep routines, especially in gentler forms."
+          "rationale": "Magnesium can support sleep routines more clearly when gentler forms and a disclosed dose are present."
         },
         {
           "ingredientKey": "l_theanine",
@@ -160,9 +160,19 @@
           "evidenceGrade": "A",
           "minEffectiveDose": 10,
           "unit": "mg",
-          "preferredForms": ["picolinate", "citrate", "gluconate"],
+          "preferredForms": ["picolinate", "citrate", "gluconate", "bisglycinate", "monomethionine"],
           "caps": [],
           "rationale": "Zinc is a high-signal ingredient for immunity review when dose is clear."
+        },
+        {
+          "ingredientKey": "omega_3",
+          "tier": "weak_match",
+          "evidenceGrade": "C",
+          "minEffectiveDose": 1000,
+          "unit": "mg",
+          "preferredForms": ["triglyceride", "reesterified triglyceride", "phospholipid"],
+          "caps": [],
+          "rationale": "Omega-3 can show a limited immunity-adjacent signal, but it should not lead this goal on its own."
         },
         {
           "ingredientKey": "vitamin_d",
@@ -232,12 +242,22 @@
         {
           "ingredientKey": "omega_3",
           "tier": "related",
-          "evidenceGrade": "B",
+          "evidenceGrade": "A",
           "minEffectiveDose": 1000,
           "unit": "mg",
-          "preferredForms": ["triglyceride", "reesterified triglyceride"],
+          "preferredForms": ["triglyceride", "reesterified triglyceride", "phospholipid"],
           "caps": [],
-          "rationale": "Omega-3s can support recovery but usually sit behind protein/creatine."
+          "rationale": "Omega-3s can support recovery with clearer confidence when omega-3 dose and preferred forms are disclosed."
+        },
+        {
+          "ingredientKey": "vitamin_c",
+          "tier": "weak_match",
+          "evidenceGrade": "C",
+          "minEffectiveDose": 500,
+          "unit": "mg",
+          "preferredForms": [],
+          "caps": [],
+          "rationale": "Vitamin C can play a lighter supporting role in recovery-oriented routines, but it should not lead this goal."
         },
         {
           "ingredientKey": "tart_cherry",
@@ -377,12 +397,22 @@
         {
           "ingredientKey": "magnesium",
           "tier": "related",
-          "evidenceGrade": "B",
+          "evidenceGrade": "A",
           "minEffectiveDose": 100,
           "unit": "mg",
-          "preferredForms": ["glycinate", "taurate"],
+          "preferredForms": ["glycinate", "bisglycinate", "taurate", "threonate"],
           "caps": [],
-          "rationale": "Magnesium supports calmer routines in gentler forms."
+          "rationale": "Magnesium supports calmer routines more clearly when gentler forms and a disclosed dose are present."
+        },
+        {
+          "ingredientKey": "vitamin_c",
+          "tier": "weak_match",
+          "evidenceGrade": "C",
+          "minEffectiveDose": 500,
+          "unit": "mg",
+          "preferredForms": [],
+          "caps": [],
+          "rationale": "Vitamin C can show a lighter stress-support signal in routine formulas, but it should stay below the strongest stress ingredients."
         },
         {
           "ingredientKey": "l_theanine",
@@ -434,7 +464,7 @@
   ],
   "goalIngredientMap": [
     { "goalKey": "sleep", "ingredientKey": "melatonin", "tier": "strong", "evidenceGrade": "A", "minEffectiveDose": 0.3, "unit": "mg", "preferredForms": [], "caps": [], "rationale": "Melatonin is a direct sleep-support ingredient with clear dose floors." },
-    { "goalKey": "sleep", "ingredientKey": "magnesium", "tier": "supporting", "evidenceGrade": "B", "minEffectiveDose": 100, "unit": "mg", "preferredForms": ["glycinate", "bisglycinate", "taurate"], "caps": [], "rationale": "Magnesium can support sleep routines, especially in gentler forms." },
+    { "goalKey": "sleep", "ingredientKey": "magnesium", "tier": "supporting", "evidenceGrade": "A", "minEffectiveDose": 100, "unit": "mg", "preferredForms": ["glycinate", "bisglycinate", "taurate", "threonate"], "caps": [], "rationale": "Magnesium can support sleep routines more clearly when gentler forms and a disclosed dose are present." },
     { "goalKey": "sleep", "ingredientKey": "l_theanine", "tier": "supporting", "evidenceGrade": "B", "minEffectiveDose": 100, "unit": "mg", "preferredForms": [], "caps": [], "rationale": "L-theanine is a supportive sleep-adjacent ingredient." },
     { "goalKey": "sleep", "ingredientKey": "glycine", "tier": "supporting", "evidenceGrade": "B", "minEffectiveDose": 3000, "unit": "mg", "preferredForms": [], "caps": [], "rationale": "Glycine is a calm, conservative sleep-support ingredient when the dose is clearly disclosed." },
     { "goalKey": "sleep", "ingredientKey": "valerian_root_extract", "tier": "supporting", "evidenceGrade": "B", "minEffectiveDose": 400, "unit": "mg", "preferredForms": ["extract"], "caps": [], "rationale": "Valerian root extract can support sleep-oriented products when the extract is explicit." },
@@ -447,14 +477,16 @@
     { "goalKey": "energy", "ingredientKey": "rhodiola_rosea", "tier": "supporting", "evidenceGrade": "B", "minEffectiveDose": 200, "unit": "mg", "preferredForms": ["extract"], "caps": [], "rationale": "Rhodiola rosea is a common energy-adjacent adaptogen when extract status is clear." },
     { "goalKey": "energy", "ingredientKey": "acetyl_l_carnitine", "tier": "supporting", "evidenceGrade": "B", "minEffectiveDose": 500, "unit": "mg", "preferredForms": [], "caps": [], "rationale": "Acetyl-L-carnitine is a conservative supporting ingredient for energy-focused reviews." },
     { "goalKey": "immunity", "ingredientKey": "vitamin_c", "tier": "strong", "evidenceGrade": "A", "minEffectiveDose": 200, "unit": "mg", "preferredForms": [], "caps": [], "rationale": "Vitamin C is a core immunity-support review ingredient." },
-    { "goalKey": "immunity", "ingredientKey": "zinc", "tier": "strong", "evidenceGrade": "A", "minEffectiveDose": 10, "unit": "mg", "preferredForms": ["picolinate", "citrate", "gluconate"], "caps": [], "rationale": "Zinc is a high-signal ingredient for immunity review when dose is clear." },
+    { "goalKey": "immunity", "ingredientKey": "zinc", "tier": "strong", "evidenceGrade": "A", "minEffectiveDose": 10, "unit": "mg", "preferredForms": ["picolinate", "citrate", "gluconate", "bisglycinate", "monomethionine"], "caps": [], "rationale": "Zinc is a high-signal ingredient for immunity review when dose is clear." },
+    { "goalKey": "immunity", "ingredientKey": "omega_3", "tier": "exploratory", "evidenceGrade": "C", "minEffectiveDose": 1000, "unit": "mg", "preferredForms": ["triglyceride", "reesterified triglyceride", "phospholipid"], "caps": [], "rationale": "Omega-3 can show a limited immunity-adjacent signal, but it should not lead this goal on its own." },
     { "goalKey": "immunity", "ingredientKey": "vitamin_d", "tier": "supporting", "evidenceGrade": "A", "minEffectiveDose": 25, "unit": "mcg", "preferredForms": ["d3", "cholecalciferol"], "caps": [], "rationale": "Vitamin D is supportive but not usually the sole driver of immunity relevance." },
     { "goalKey": "immunity", "ingredientKey": "elderberry", "tier": "supporting", "evidenceGrade": "B", "minEffectiveDose": 300, "unit": "mg", "preferredForms": ["extract"], "caps": [], "rationale": "Elderberry is a common immunity-support ingredient when the extract is clear." },
     { "goalKey": "immunity", "ingredientKey": "quercetin", "tier": "supporting", "evidenceGrade": "B", "minEffectiveDose": 250, "unit": "mg", "preferredForms": [], "caps": [], "rationale": "Quercetin is a conservative immunity-adjacent ingredient for review." },
     { "goalKey": "immunity", "ingredientKey": "beta_glucan", "tier": "supporting", "evidenceGrade": "B", "minEffectiveDose": 250, "unit": "mg", "preferredForms": ["yeast"], "caps": [], "rationale": "Beta-glucan is a structured immunity-support ingredient when the source is explicit." },
     { "goalKey": "recovery", "ingredientKey": "protein", "tier": "strong", "evidenceGrade": "A", "minEffectiveDose": 20, "unit": "g", "preferredForms": ["whey", "isolate", "plant blend"], "caps": [], "rationale": "Protein is a foundation ingredient for recovery-first products." },
     { "goalKey": "recovery", "ingredientKey": "creatine", "tier": "strong", "evidenceGrade": "A", "minEffectiveDose": 3, "unit": "g", "preferredForms": ["monohydrate"], "caps": [], "rationale": "Creatine is a direct recovery/performance ingredient when form is disclosed." },
-    { "goalKey": "recovery", "ingredientKey": "omega_3", "tier": "supporting", "evidenceGrade": "B", "minEffectiveDose": 1000, "unit": "mg", "preferredForms": ["triglyceride", "reesterified triglyceride"], "caps": [], "rationale": "Omega-3s can support recovery but usually sit behind protein/creatine." },
+    { "goalKey": "recovery", "ingredientKey": "omega_3", "tier": "supporting", "evidenceGrade": "A", "minEffectiveDose": 1000, "unit": "mg", "preferredForms": ["triglyceride", "reesterified triglyceride", "phospholipid"], "caps": [], "rationale": "Omega-3s can support recovery with clearer confidence when omega-3 dose and preferred forms are disclosed." },
+    { "goalKey": "recovery", "ingredientKey": "vitamin_c", "tier": "exploratory", "evidenceGrade": "C", "minEffectiveDose": 500, "unit": "mg", "preferredForms": [], "caps": [], "rationale": "Vitamin C can play a lighter supporting role in recovery-oriented routines, but it should not lead this goal." },
     { "goalKey": "recovery", "ingredientKey": "tart_cherry", "tier": "supporting", "evidenceGrade": "B", "minEffectiveDose": 480, "unit": "mg", "preferredForms": ["extract", "concentrate"], "caps": [], "rationale": "Tart cherry is a conservative recovery-adjacent ingredient for routine support." },
     { "goalKey": "recovery", "ingredientKey": "collagen_peptides", "tier": "supporting", "evidenceGrade": "B", "minEffectiveDose": 10000, "unit": "mg", "preferredForms": ["peptides"], "caps": [], "rationale": "Collagen peptides are common in recovery-oriented products when protein-style disclosure is clear." },
     { "goalKey": "recovery", "ingredientKey": "leucine", "tier": "supporting", "evidenceGrade": "B", "minEffectiveDose": 2500, "unit": "mg", "preferredForms": [], "caps": [], "rationale": "Leucine is a conservative recovery ingredient when the dose is clearly disclosed." },
@@ -467,7 +499,8 @@
     { "goalKey": "libido_enhancement", "ingredientKey": "maca", "tier": "supporting", "evidenceGrade": "B", "minEffectiveDose": 1500, "unit": "mg", "preferredForms": [], "caps": ["eligibility_requires_generic_safety_path"], "rationale": "Maca may be relevant here, but we keep this lane conservative." },
     { "goalKey": "libido_enhancement", "ingredientKey": "zinc", "tier": "supporting", "evidenceGrade": "A", "minEffectiveDose": 10, "unit": "mg", "preferredForms": ["picolinate", "citrate"], "caps": ["eligibility_requires_generic_safety_path"], "rationale": "Zinc can support this goal, but it stays on a generic safety path in V1." },
     { "goalKey": "stress_support", "ingredientKey": "ashwagandha", "tier": "strong", "evidenceGrade": "B", "minEffectiveDose": 300, "unit": "mg", "preferredForms": ["ksm_66", "sensoril"], "caps": [], "rationale": "Ashwagandha is the clearest stress-support ingredient in this V1 map." },
-    { "goalKey": "stress_support", "ingredientKey": "magnesium", "tier": "supporting", "evidenceGrade": "B", "minEffectiveDose": 100, "unit": "mg", "preferredForms": ["glycinate", "taurate"], "caps": [], "rationale": "Magnesium supports calmer routines in gentler forms." },
+    { "goalKey": "stress_support", "ingredientKey": "magnesium", "tier": "supporting", "evidenceGrade": "A", "minEffectiveDose": 100, "unit": "mg", "preferredForms": ["glycinate", "bisglycinate", "taurate", "threonate"], "caps": [], "rationale": "Magnesium supports calmer routines more clearly when gentler forms and a disclosed dose are present." },
+    { "goalKey": "stress_support", "ingredientKey": "vitamin_c", "tier": "exploratory", "evidenceGrade": "C", "minEffectiveDose": 500, "unit": "mg", "preferredForms": [], "caps": [], "rationale": "Vitamin C can show a lighter stress-support signal in routine formulas, but it should stay below the strongest stress ingredients." },
     { "goalKey": "stress_support", "ingredientKey": "l_theanine", "tier": "supporting", "evidenceGrade": "B", "minEffectiveDose": 100, "unit": "mg", "preferredForms": [], "caps": [], "rationale": "L-theanine is a supportive stress-management ingredient." },
     { "goalKey": "weight_management", "ingredientKey": "fiber", "tier": "supporting", "evidenceGrade": "A", "minEffectiveDose": 3, "unit": "g", "preferredForms": ["psyllium"], "caps": [], "rationale": "Fiber is a conservative support ingredient for weight-management products." },
     { "goalKey": "weight_management", "ingredientKey": "protein", "tier": "supporting", "evidenceGrade": "A", "minEffectiveDose": 20, "unit": "g", "preferredForms": [], "caps": [], "rationale": "Protein can be relevant for satiety and weight-management review." },

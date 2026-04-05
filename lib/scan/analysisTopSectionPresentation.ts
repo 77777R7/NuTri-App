@@ -41,7 +41,7 @@ export type TopSectionPersonalInsightInput = {
 export type TopSectionGoalCoverageInput = {
   goalLabel: string;
   tier: 'strong_match' | 'related' | 'weak_match' | 'no_match' | 'unknown';
-  state: 'strong' | 'some' | 'limited' | 'none';
+  state: 'strong' | 'some' | 'limited' | 'none' | 'unknown';
   source: 'selected_goal_evaluation' | 'goal_match_scoring_preview';
   score?: number | null;
   reasonCodes?: string[];
@@ -308,9 +308,10 @@ const buildSupportTitle = (goalLabel?: string | null) => {
 };
 
 const GOAL_COVERAGE_STATE_PRIORITY: Record<TopSectionGoalCoverageInput['state'], number> = {
-  strong: 4,
-  some: 3,
-  limited: 2,
+  strong: 5,
+  some: 4,
+  limited: 3,
+  unknown: 2,
   none: 1,
 };
 
@@ -318,6 +319,7 @@ const GOAL_COVERAGE_TONE_BY_STATE: Record<TopSectionGoalCoverageInput['state'], 
   strong: 'positive',
   some: 'neutral',
   limited: 'caution',
+  unknown: 'neutral',
   none: 'caution',
 };
 
@@ -364,6 +366,8 @@ const describeGoalCoverageState = (state: TopSectionGoalCoverageInput['state']) 
       return 'some support';
     case 'limited':
       return 'limited support';
+    case 'unknown':
+      return 'not enough label detail';
     case 'none':
     default:
       return 'no clear support';
@@ -415,7 +419,7 @@ const buildGoalCoverageHero = (goal: TopSectionHeroInput): TopSectionHeroPresent
   const { best, weakest } = getBestAndWeakestGoalCoverage(coverage);
   const hasStrong = coverage.some((entry) => entry.state === 'strong');
   const allPositive = coverage.every((entry) => entry.state === 'strong' || entry.state === 'some');
-  const allLimited = coverage.every((entry) => entry.state === 'limited' || entry.state === 'none');
+  const allLimited = coverage.every((entry) => entry.state === 'limited' || entry.state === 'none' || entry.state === 'unknown');
   const acrossGoals = goal.allGoalsAnalyzed === true;
 
   const scopeSummary = acrossGoals
@@ -714,8 +718,10 @@ const buildSupportInsight = (
       expandActionLabel,
       collapseActionLabel,
     } = buildGoalCoverageRowDetails(personalInsight);
-    const tone = coverage.every((entry) => entry.state === 'limited' || entry.state === 'none')
-      ? 'caution'
+    const tone = coverage.every((entry) => entry.state === 'limited' || entry.state === 'none' || entry.state === 'unknown')
+      ? coverage.some((entry) => entry.state === 'unknown')
+        ? 'neutral'
+        : 'caution'
       : coverage.some((entry) => entry.state === 'strong')
         ? 'positive'
         : 'neutral';

@@ -124,6 +124,52 @@ const buildMagnesiumTheanineDigest = (): FactsDigest => ({
   },
 });
 
+const buildVitaminCDigest = (): FactsDigest => ({
+  sourceType: 'dsld',
+  identity: {
+    type: 'dsldLabelId',
+    value: 'fixture-vitamin-c-1000',
+    regionTags: ['US'],
+  },
+  product: {
+    brandDisplay: 'Sports Research',
+    name: 'Vitamin C 1000 mg',
+    dosageForm: 'Capsule',
+    route: null,
+  },
+  actives: [
+    {
+      name: 'Vitamin C',
+      amount: 1000,
+      unit: 'mg',
+      amountText: '1000 mg',
+      source: 'dsld',
+      confidence: 1,
+    },
+  ],
+  inactives: [],
+  serving: {
+    servingSize: '1 capsule',
+    servingsPerContainer: 60,
+  },
+  labelDosing: [],
+  warnings: {
+    warnings: [],
+    consultDoctorIf: [],
+    redFlags: [],
+    missingFlag: false,
+  },
+  claims: {
+    labelPurposes: [],
+    webClaims: [],
+  },
+  quality: {
+    isComplete: true,
+    missingFields: [],
+    completenessScore: 100,
+  },
+});
+
 const buildPersonalizationContext = (
   overrides?: Partial<DecisionSupportAttachedPersonalizationContext>,
 ): DecisionSupportAttachedPersonalizationContext => ({
@@ -238,10 +284,10 @@ test('compileDecisionSupport preserves legacy top-3 fields while adding full mul
   assert.equal(typeof recoveryCoverage?.score, 'number');
   assert.ok((recoveryCoverage?.score ?? 0) > 0);
   assert.ok(recoveryCoverage?.reasonCodes?.includes('goal_supported_by_ingredient'));
-  assert.equal(recoveryCoverage?.confidenceBucket, 'low');
+  assert.equal(recoveryCoverage?.confidenceBucket, 'high');
 });
 
-test('compileDecisionSupport falls back to original order for visible goals when every analyzed goal is limited or none', () => {
+test('compileDecisionSupport falls back to original order for visible goals when every analyzed goal is limited, none, or unknown', () => {
   const compiled = compileDecisionSupport({
     digest: {
       ...buildOmegaDigest(),
@@ -262,10 +308,15 @@ test('compileDecisionSupport falls back to original order for visible goals when
   );
   assert.ok(
     (compiled.personalizedResultLane.goalFit.allGoalCoverage ?? []).every(
-      (entry) => entry.state === 'limited' || entry.state === 'none',
+      (entry) => entry.state === 'limited' || entry.state === 'none' || entry.state === 'unknown',
     ),
   );
-  assert.equal(compiled.personalizedResultLane.goalFit.heroMode, 'limited_goals');
+  assert.ok(
+    (compiled.personalizedResultLane.goalFit.goalCoverageSummary?.items ?? []).some(
+      (entry) => entry.fitLevel === 'unknown',
+    ),
+  );
+  assert.equal(compiled.personalizedResultLane.goalFit.heroMode, 'insufficient_signal');
   assert.equal(compiled.personalizedResultLane.goalFit.dominantGoalKey, null);
   assert.equal(compiled.personalizedResultLane.goalFit.secondaryGoalKey, null);
 });
@@ -298,6 +349,46 @@ test('compileDecisionSupport classifies mixed multi-goal coverage and exposes ra
     (compiled.personalizedResultLane.goalFit.allGoalCoverage ?? []).every(
       (entry) => ['high', 'medium', 'low'].includes(entry.confidenceBucket ?? 'low'),
     ),
+  );
+});
+
+test('compileDecisionSupport keeps vitamin C in dominant-goal mode when immunity is clearly strongest', () => {
+  const compiled = compileDecisionSupport({
+    digest: buildVitaminCDigest(),
+    factsDigestHash: 'fixture-vitamin-c-dominant-immunity',
+    viewMode: 'details',
+    personalizationContext: buildPersonalizationContext({
+      prioritizedGoals: ['energy', 'immunity', 'recovery', 'stress_support'],
+      selectedGoalKey: 'energy',
+      allergyContext: {
+        userAllergyFlags: [],
+        userIngredientRestrictions: [],
+        productAllergyFlags: [],
+        productIngredientRestrictions: [],
+        productCoverageStatus: 'resolved',
+        productMatchEvidence: {},
+      },
+    }),
+  });
+
+  assert.equal(compiled.personalizedResultLane.goalFit.heroMode, 'dominant_goal');
+  assert.equal(compiled.personalizedResultLane.goalFit.dominantGoalKey, 'immunity');
+  assert.equal(compiled.personalizedResultLane.goalFit.secondaryGoalKey, null);
+  assert.equal(
+    compiled.personalizedResultLane.goalFit.allGoalCoverage?.find((entry) => entry.goalKey === 'immunity')?.state,
+    'strong',
+  );
+  assert.equal(
+    compiled.personalizedResultLane.goalFit.allGoalCoverage?.find((entry) => entry.goalKey === 'recovery')?.state,
+    'limited',
+  );
+  assert.equal(
+    compiled.personalizedResultLane.goalFit.allGoalCoverage?.find((entry) => entry.goalKey === 'stress_support')?.state,
+    'limited',
+  );
+  assert.equal(
+    compiled.personalizedResultLane.goalFit.allGoalCoverage?.find((entry) => entry.goalKey === 'energy')?.state,
+    'none',
   );
 });
 

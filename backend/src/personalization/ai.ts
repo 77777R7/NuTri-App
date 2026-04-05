@@ -1,5 +1,5 @@
 import explanationTemplatesData from "../../../data/personalization/explanation_templates.v1.json" with { type: "json" };
-import goalIngredientMapData from "../../../data/personalization/goal_ingredient_map.v1.json" with { type: "json" };
+import { buildGoalIngredientPreviewLanes as buildGoalIngredientPreviewLanesFromOntology } from "../../../lib/personalization/core/goalMatchOntology";
 import type {
   DecisionReason,
   ExplanationFact,
@@ -23,25 +23,12 @@ type ExplanationTemplateFile = {
 };
 
 type ExplanationTemplate = ExplanationTemplateFile["templates"][number];
-type GoalIngredientMapFile = {
-  version: string;
-  mappings: {
-    goalKey: GoalKey;
-    ingredientMatches: {
-      ingredientKey: string;
-      tier: string;
-      evidenceGrade?: string;
-      caps?: string[];
-    }[];
-  }[];
-};
 type GoalIngredientLane = {
   goalLabel: string;
   ingredients: string[];
 };
 
 const EXPLANATION_TEMPLATE_FILE = explanationTemplatesData as ExplanationTemplateFile;
-const GOAL_INGREDIENT_MAP_FILE = goalIngredientMapData as GoalIngredientMapFile;
 
 const TEMPLATE_ALIASES: Record<string, string> = {
   duplicate_overlap_high: "duplicate_overlap_downgrade",
@@ -51,10 +38,6 @@ const TEMPLATE_ALIASES: Record<string, string> = {
 const TEMPLATES_BY_CODE = new Map<string, ExplanationTemplate>(
   EXPLANATION_TEMPLATE_FILE.templates.map((template) => [template.code, template]),
 );
-const GOAL_INGREDIENT_MATCHES = new Map(
-  GOAL_INGREDIENT_MAP_FILE.mappings.map((mapping) => [mapping.goalKey, mapping.ingredientMatches] as const),
-);
-const GENERIC_SAFETY_CAP = "eligibility_requires_generic_safety_path";
 const INGREDIENT_LABEL_OVERRIDES: Record<string, string> = {
   ashwagandha: "Ashwagandha",
   bacopa: "Bacopa",
@@ -85,19 +68,6 @@ const INGREDIENT_LABEL_OVERRIDES: Record<string, string> = {
   vitamin_c: "Vitamin C",
   vitamin_d: "Vitamin D",
   zinc: "Zinc",
-};
-const TIER_RANK: Record<string, number> = {
-  strong_match: 3,
-  related: 2,
-  supporting: 1,
-  weak_match: 1,
-  no_match: 0,
-};
-const EVIDENCE_RANK: Record<string, number> = {
-  A: 3,
-  B: 2,
-  C: 1,
-  D: 0,
 };
 
 const titleCase = (value: string): string =>
@@ -744,27 +714,15 @@ export const createPersonalizationExplanationService = (
 });
 
 const buildGoalIngredientLanes = (goals: readonly GoalKey[]): GoalIngredientLane[] =>
-  goals
-    .map((goalKey) => {
-      const ingredientMatches = GOAL_INGREDIENT_MATCHES.get(goalKey) ?? [];
-      const safeMatches = ingredientMatches.filter(
-        (match) => !match.caps?.includes(GENERIC_SAFETY_CAP),
-      );
-      const ranked = (safeMatches.length > 0 ? safeMatches : ingredientMatches)
-        .slice()
-        .sort((left, right) => {
-          const tierDiff = (TIER_RANK[right.tier] ?? 0) - (TIER_RANK[left.tier] ?? 0);
-          if (tierDiff !== 0) return tierDiff;
-
-          return (EVIDENCE_RANK[right.evidenceGrade ?? ""] ?? 0) - (EVIDENCE_RANK[left.evidenceGrade ?? ""] ?? 0);
-        });
-      const ingredients = Array.from(
-        new Set(ranked.map((match) => humanizeIngredient(match.ingredientKey))),
-      ).slice(0, 3);
+  buildGoalIngredientPreviewLanesFromOntology(goals)
+    .map((lane) => {
+      const ingredients = lane.ingredientKeys
+        .map((ingredientKey) => humanizeIngredient(ingredientKey))
+        .filter(Boolean);
 
       return ingredients.length > 0
         ? {
-            goalLabel: humanizeGoal(goalKey),
+            goalLabel: humanizeGoal(lane.goalKey),
             ingredients,
           }
         : null;

@@ -14,6 +14,7 @@ import explanationTemplates from '@/data/personalization/explanation_templates.v
 import featureFlags from '@/data/personalization/feature_flags.v1.json';
 import goalCatalog from '@/data/personalization/goal_catalog.v1.json';
 import goalIngredientMap from '@/data/personalization/goal_ingredient_map.v1.json';
+import goalIngredientMapV2 from '@/data/personalization/goal_ingredient_map.v2.json';
 import safetyRules from '@/data/personalization/safety_rules.v1.json';
 import activityGoalMapSchema from '@/data/personalization/schemas/activity_goal_map.schema.json';
 import blockerBehaviorRulesSchema from '@/data/personalization/schemas/blocker_behavior_rules.schema.json';
@@ -22,7 +23,9 @@ import explanationTemplatesSchema from '@/data/personalization/schemas/explanati
 import featureFlagsSchema from '@/data/personalization/schemas/feature_flags.schema.json';
 import goalCatalogSchema from '@/data/personalization/schemas/goal_catalog.schema.json';
 import goalIngredientMapSchema from '@/data/personalization/schemas/goal_ingredient_map.schema.json';
+import goalIngredientMapV2Schema from '@/data/personalization/schemas/goal_ingredient_map.v2.schema.json';
 import safetyRulesSchema from '@/data/personalization/schemas/safety_rules.schema.json';
+import { projectLegacyGoalIngredientMap } from '@/lib/personalization/core/goalMatchOntology';
 
 const GOAL_KEYS = [
   'sleep',
@@ -180,6 +183,7 @@ test('personalization phase 0 data files satisfy the checked-in JSON schemas', (
   const fixtures = [
     { name: 'goalCatalog', data: goalCatalog, schema: goalCatalogSchema },
     { name: 'goalIngredientMap', data: goalIngredientMap, schema: goalIngredientMapSchema },
+    { name: 'goalIngredientMapV2', data: goalIngredientMapV2, schema: goalIngredientMapV2Schema },
     { name: 'blockerBehaviorRules', data: blockerBehaviorRules, schema: blockerBehaviorRulesSchema },
     { name: 'dietReviewLanes', data: dietReviewLanes, schema: dietReviewLanesSchema },
     { name: 'activityGoalMap', data: activityGoalMap, schema: activityGoalMapSchema },
@@ -242,6 +246,27 @@ test('goal ingredient map grouped and compatibility projections stay in sync', (
         row.caps.includes('eligibility_requires_generic_safety_path'),
     ),
   );
+});
+
+test('goal ingredient map v2 can project a legacy-compatible view for overlapping rows', () => {
+  assert.equal(goalIngredientMapV2.version, 'v2');
+  assert.ok(goalIngredientMapV2.edges.length >= goalIngredientMap.goalIngredientMap.length);
+
+  const projected = projectLegacyGoalIngredientMap();
+  const projectedLookup = new Map(
+    projected.goalIngredientMap.map((row) => [`${row.goalKey}:${row.ingredientKey}`, row] as const),
+  );
+
+  goalIngredientMap.goalIngredientMap.forEach((row) => {
+    const projectedRow = projectedLookup.get(`${row.goalKey}:${row.ingredientKey}`);
+    assert.ok(projectedRow, `missing projected legacy row for ${row.goalKey}:${row.ingredientKey}`);
+    assert.equal(projectedRow?.tier, row.tier);
+    assert.equal(projectedRow?.evidenceGrade, row.evidenceGrade);
+    assert.equal(projectedRow?.minEffectiveDose, row.minEffectiveDose);
+    assert.equal(projectedRow?.unit, row.unit);
+    assert.deepEqual(projectedRow?.preferredForms, row.preferredForms);
+    assert.deepEqual(projectedRow?.caps, row.caps);
+  });
 });
 
 test('blocker strategies and experience modes cover the current onboarding options exactly', () => {
