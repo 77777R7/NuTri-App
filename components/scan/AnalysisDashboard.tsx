@@ -200,7 +200,7 @@ type DecisionSupportGoalHeroMode =
     | 'limited_goals'
     | 'single_goal'
     | 'insufficient_signal';
-type DecisionSupportPersonalizedGoalCoverageState = 'strong' | 'some' | 'limited' | 'none';
+type DecisionSupportPersonalizedGoalCoverageState = 'strong' | 'some' | 'limited' | 'none' | 'unknown';
 type DecisionSupportPersonalizedDoseAssessment = 'aligned' | 'low' | 'high' | 'unclear' | 'unknown';
 type DecisionSupportPersonalizedProductStanding = 'strong' | 'average' | 'weak' | 'unknown';
 type DecisionSupportPersonalizedGoalCoverage = {
@@ -211,6 +211,26 @@ type DecisionSupportPersonalizedGoalCoverage = {
     score?: number | null;
     reasonCodes?: string[];
     confidenceBucket?: 'high' | 'medium' | 'low';
+};
+type DecisionSupportGoalCoverageSummaryItem = {
+    goalKey: GoalKey;
+    goalLabel: string;
+    fitLevel: DecisionSupportPersonalizedGoalCoverageState;
+    rank: number;
+    reasonCodes: string[];
+    confidenceBucket: 'high' | 'medium' | 'low';
+    shortReason?: string;
+};
+type DecisionSupportGoalCoverageSummary = {
+    selectedGoalCount: number;
+    analyzedGoalCount: number;
+    surfacedGoalCount: number;
+    hiddenGoalsCount: number;
+    allGoalsAnalyzed: boolean;
+    sortedBy: 'decision_relevance' | 'fit_strength' | 'profile_order';
+    dominantGoalKey?: GoalKey | null;
+    secondaryGoalKey?: GoalKey | null;
+    items: DecisionSupportGoalCoverageSummaryItem[];
 };
 type DecisionSupportPersonalizedGoalFit = {
     status: DecisionSupportPersonalizedResultLaneSectionStatus;
@@ -235,6 +255,7 @@ type DecisionSupportPersonalizedGoalFit = {
     surfacedGoalCount?: number;
     allGoalsAnalyzed?: boolean;
     defaultVisibleGoalKeys?: GoalKey[];
+    goalCoverageSummary?: DecisionSupportGoalCoverageSummary;
 };
 type DecisionSupportPersonalizedSupportSignal = {
     goalKey: GoalKey;
@@ -3982,7 +4003,7 @@ const AnalysisBundleDashboard: React.FC<{
                                 goalCoverage?: Array<{
                                     goalKey?: string | null;
                                     tier?: ProductGoalMatchTier | 'unknown' | null;
-                                    state?: 'strong' | 'some' | 'limited' | 'none' | null;
+                                    state?: 'strong' | 'some' | 'limited' | 'none' | 'unknown' | null;
                                     source?: 'selected_goal_evaluation' | 'goal_match_scoring_preview' | null;
                                     score?: number | null;
                                     reasonCodes?: string[] | null;
@@ -3991,12 +4012,31 @@ const AnalysisBundleDashboard: React.FC<{
                                 allGoalCoverage?: Array<{
                                     goalKey?: string | null;
                                     tier?: ProductGoalMatchTier | 'unknown' | null;
-                                    state?: 'strong' | 'some' | 'limited' | 'none' | null;
+                                    state?: 'strong' | 'some' | 'limited' | 'none' | 'unknown' | null;
                                     source?: 'selected_goal_evaluation' | 'goal_match_scoring_preview' | null;
                                     score?: number | null;
                                     reasonCodes?: string[] | null;
                                     confidenceBucket?: 'high' | 'medium' | 'low' | null;
                                 }> | null;
+                                goalCoverageSummary?: {
+                                    selectedGoalCount?: number | null;
+                                    analyzedGoalCount?: number | null;
+                                    surfacedGoalCount?: number | null;
+                                    hiddenGoalsCount?: number | null;
+                                    allGoalsAnalyzed?: boolean | null;
+                                    sortedBy?: 'decision_relevance' | 'fit_strength' | 'profile_order' | null;
+                                    dominantGoalKey?: string | null;
+                                    secondaryGoalKey?: string | null;
+                                    items?: Array<{
+                                        goalKey?: string | null;
+                                        goalLabel?: string | null;
+                                        fitLevel?: 'strong' | 'some' | 'limited' | 'none' | 'unknown' | null;
+                                        rank?: number | null;
+                                        reasonCodes?: string[] | null;
+                                        confidenceBucket?: 'high' | 'medium' | 'low' | null;
+                                        shortReason?: string | null;
+                                    }> | null;
+                                } | null;
                                 selectedGoalCount?: number | null;
                                 analyzedGoalCount?: number | null;
                                 surfacedGoalCount?: number | null;
@@ -4053,6 +4093,39 @@ const AnalysisBundleDashboard: React.FC<{
                             : null,
                         allGoalsAnalyzed: typeof goalFitResponse?.allGoalsAnalyzed === 'boolean'
                             ? goalFitResponse.allGoalsAnalyzed
+                            : null,
+                        goalCoverageSummary: goalFitResponse?.goalCoverageSummary
+                            ? {
+                                selectedGoalCount: typeof goalFitResponse.goalCoverageSummary.selectedGoalCount === 'number'
+                                    ? goalFitResponse.goalCoverageSummary.selectedGoalCount
+                                    : null,
+                                analyzedGoalCount: typeof goalFitResponse.goalCoverageSummary.analyzedGoalCount === 'number'
+                                    ? goalFitResponse.goalCoverageSummary.analyzedGoalCount
+                                    : null,
+                                surfacedGoalCount: typeof goalFitResponse.goalCoverageSummary.surfacedGoalCount === 'number'
+                                    ? goalFitResponse.goalCoverageSummary.surfacedGoalCount
+                                    : null,
+                                hiddenGoalsCount: typeof goalFitResponse.goalCoverageSummary.hiddenGoalsCount === 'number'
+                                    ? goalFitResponse.goalCoverageSummary.hiddenGoalsCount
+                                    : null,
+                                allGoalsAnalyzed: typeof goalFitResponse.goalCoverageSummary.allGoalsAnalyzed === 'boolean'
+                                    ? goalFitResponse.goalCoverageSummary.allGoalsAnalyzed
+                                    : null,
+                                sortedBy: goalFitResponse.goalCoverageSummary.sortedBy ?? null,
+                                dominantGoalKey: goalFitResponse.goalCoverageSummary.dominantGoalKey ?? null,
+                                secondaryGoalKey: goalFitResponse.goalCoverageSummary.secondaryGoalKey ?? null,
+                                items: Array.isArray(goalFitResponse.goalCoverageSummary.items)
+                                    ? goalFitResponse.goalCoverageSummary.items.map((entry) => ({
+                                        goalKey: entry?.goalKey ?? null,
+                                        goalLabel: entry?.goalLabel ?? null,
+                                        fitLevel: entry?.fitLevel ?? null,
+                                        rank: typeof entry?.rank === 'number' ? entry.rank : null,
+                                        reasonCodes: Array.isArray(entry?.reasonCodes) ? entry.reasonCodes : [],
+                                        confidenceBucket: entry?.confidenceBucket ?? null,
+                                        shortReason: entry?.shortReason ?? null,
+                                    }))
+                                    : [],
+                            }
                             : null,
                         defaultVisibleGoalKeys: Array.isArray(goalFitResponse?.defaultVisibleGoalKeys)
                             ? goalFitResponse.defaultVisibleGoalKeys
@@ -4885,6 +4958,95 @@ const AnalysisBundleDashboard: React.FC<{
         const firstConflict = (personalInsight?.conflicts ?? [])
             .map((conflict) => normalizeText(conflict.summary))
             .find(Boolean);
+        const legacyAllCoverageByGoal = new Map(
+            (goalFit?.allGoalCoverage ?? []).map((entry) => [entry.goalKey, entry] as const),
+        );
+        const mappedGoalCoverage = (goalFit?.goalCoverageSummary?.items ?? []).map((entry) => {
+            const legacy = legacyAllCoverageByGoal.get(entry.goalKey);
+            return {
+                goalLabel: entry.goalLabel || getGoalLabel(entry.goalKey),
+                tier: legacy?.tier ?? 'unknown',
+                state: entry.fitLevel,
+                source: legacy?.source ?? 'goal_match_scoring_preview',
+                score: legacy?.score ?? null,
+                reasonCodes: entry.reasonCodes ?? legacy?.reasonCodes ?? [],
+                confidenceBucket: entry.confidenceBucket ?? legacy?.confidenceBucket ?? 'low',
+            };
+        }).filter((entry): entry is {
+            goalLabel: string;
+            tier: ProductGoalMatchTier | 'unknown';
+            state: 'strong' | 'some' | 'limited' | 'none' | 'unknown';
+            source: 'selected_goal_evaluation' | 'goal_match_scoring_preview';
+            score: number | null;
+            reasonCodes: string[];
+            confidenceBucket: 'high' | 'medium' | 'low';
+        } => Boolean(entry.goalLabel));
+        const fallbackCoverage = (goalFit?.allGoalCoverage ?? [])
+            .map((entry) => ({
+                goalLabel: getGoalLabel(entry.goalKey),
+                tier: entry.tier ?? 'unknown',
+                state: entry.state,
+                source: entry.source,
+                score: entry.score ?? null,
+                reasonCodes: entry.reasonCodes ?? [],
+                confidenceBucket: entry.confidenceBucket ?? 'low',
+            }))
+            .filter((entry): entry is {
+                goalLabel: string;
+                tier: ProductGoalMatchTier | 'unknown';
+                state: 'strong' | 'some' | 'limited' | 'none' | 'unknown';
+                source: 'selected_goal_evaluation' | 'goal_match_scoring_preview';
+                score: number | null;
+                reasonCodes: string[];
+                confidenceBucket: 'high' | 'medium' | 'low';
+            } => Boolean(entry.goalLabel));
+        const resolvedAllGoalCoverage = mappedGoalCoverage.length > 0 ? mappedGoalCoverage : fallbackCoverage;
+        const legacyVisibleCoverageByGoal = new Map(
+            (goalFit?.goalCoverage ?? []).map((entry) => [entry.goalKey, entry] as const),
+        );
+        const resolvedVisibleGoalCoverage = (goalFit?.defaultVisibleGoalKeys?.length ?? 0) > 0
+            ? (goalFit?.defaultVisibleGoalKeys ?? [])
+                .map((goalKey) => {
+                    const fromSummary = (goalFit?.goalCoverageSummary?.items ?? []).find((entry) => entry.goalKey === goalKey);
+                    const legacy = legacyVisibleCoverageByGoal.get(goalKey) ?? legacyAllCoverageByGoal.get(goalKey);
+                    return {
+                        goalLabel: fromSummary?.goalLabel || getGoalLabel(goalKey),
+                        tier: legacy?.tier ?? 'unknown',
+                        state: fromSummary?.fitLevel ?? legacy?.state ?? 'none',
+                        source: legacy?.source ?? 'goal_match_scoring_preview',
+                        score: legacy?.score ?? null,
+                        reasonCodes: fromSummary?.reasonCodes ?? legacy?.reasonCodes ?? [],
+                        confidenceBucket: fromSummary?.confidenceBucket ?? legacy?.confidenceBucket ?? 'low',
+                    };
+                })
+                .filter((entry): entry is {
+                    goalLabel: string;
+                    tier: ProductGoalMatchTier | 'unknown';
+                    state: 'strong' | 'some' | 'limited' | 'none' | 'unknown';
+                    source: 'selected_goal_evaluation' | 'goal_match_scoring_preview';
+                    score: number | null;
+                    reasonCodes: string[];
+                    confidenceBucket: 'high' | 'medium' | 'low';
+                } => Boolean(entry.goalLabel))
+            : (goalFit?.goalCoverage ?? [])
+                .map((entry) => ({
+                    goalLabel: getGoalLabel(entry.goalKey),
+                    tier: entry.tier ?? 'unknown',
+                    state: entry.state,
+                    source: entry.source,
+                    score: entry.score ?? null,
+                    reasonCodes: entry.reasonCodes ?? [],
+                    confidenceBucket: entry.confidenceBucket ?? 'low',
+                }))
+                .filter((entry): entry is {
+                    goalLabel: string;
+                    tier: ProductGoalMatchTier | 'unknown';
+                    state: 'strong' | 'some' | 'limited' | 'none' | 'unknown';
+                    source: 'selected_goal_evaluation' | 'goal_match_scoring_preview';
+                    score: number | null;
+                    reasonCodes: string[];
+                    confidenceBucket: 'high' | 'medium' | 'low';
+                } => Boolean(entry.goalLabel));
 
         return buildAnalysisTopSectionPresentation({
             goal: {
@@ -4902,48 +5064,12 @@ const AnalysisBundleDashboard: React.FC<{
                     .map((goalKey) => getGoalLabel(goalKey))
                     .filter((label): label is string => Boolean(label)),
                 goalLensMode: goalFit?.goalLensMode ?? null,
-                goalCoverage: (goalFit?.goalCoverage ?? [])
-                    .map((entry) => ({
-                        goalLabel: getGoalLabel(entry.goalKey),
-                        tier: entry.tier ?? 'unknown',
-                        state: entry.state,
-                        source: entry.source,
-                        score: entry.score ?? null,
-                        reasonCodes: entry.reasonCodes ?? [],
-                        confidenceBucket: entry.confidenceBucket ?? 'low',
-                    }))
-                    .filter((entry): entry is {
-                        goalLabel: string;
-                        tier: ProductGoalMatchTier | 'unknown';
-                        state: 'strong' | 'some' | 'limited' | 'none';
-                        source: 'selected_goal_evaluation' | 'goal_match_scoring_preview';
-                        score: number | null;
-                        reasonCodes: string[];
-                        confidenceBucket: 'high' | 'medium' | 'low';
-                    } => Boolean(entry.goalLabel)),
-                allGoalCoverage: (goalFit?.allGoalCoverage ?? [])
-                    .map((entry) => ({
-                        goalLabel: getGoalLabel(entry.goalKey),
-                        tier: entry.tier ?? 'unknown',
-                        state: entry.state,
-                        source: entry.source,
-                        score: entry.score ?? null,
-                        reasonCodes: entry.reasonCodes ?? [],
-                        confidenceBucket: entry.confidenceBucket ?? 'low',
-                    }))
-                    .filter((entry): entry is {
-                        goalLabel: string;
-                        tier: ProductGoalMatchTier | 'unknown';
-                        state: 'strong' | 'some' | 'limited' | 'none';
-                        source: 'selected_goal_evaluation' | 'goal_match_scoring_preview';
-                        score: number | null;
-                        reasonCodes: string[];
-                        confidenceBucket: 'high' | 'medium' | 'low';
-                    } => Boolean(entry.goalLabel)),
-                selectedGoalCount: goalFit?.selectedGoalCount ?? null,
-                analyzedGoalCount: goalFit?.analyzedGoalCount ?? null,
-                surfacedGoalCount: goalFit?.surfacedGoalCount ?? null,
-                allGoalsAnalyzed: goalFit?.allGoalsAnalyzed ?? false,
+                goalCoverage: resolvedVisibleGoalCoverage,
+                allGoalCoverage: resolvedAllGoalCoverage,
+                selectedGoalCount: goalFit?.goalCoverageSummary?.selectedGoalCount ?? goalFit?.selectedGoalCount ?? null,
+                analyzedGoalCount: goalFit?.goalCoverageSummary?.analyzedGoalCount ?? goalFit?.analyzedGoalCount ?? null,
+                surfacedGoalCount: goalFit?.goalCoverageSummary?.surfacedGoalCount ?? goalFit?.surfacedGoalCount ?? null,
+                allGoalsAnalyzed: goalFit?.goalCoverageSummary?.allGoalsAnalyzed ?? goalFit?.allGoalsAnalyzed ?? false,
                 defaultVisibleGoalLabels: (goalFit?.defaultVisibleGoalKeys ?? [])
                     .map((goalKey) => getGoalLabel(goalKey))
                     .filter((label): label is string => Boolean(label)),
@@ -4957,48 +5083,12 @@ const AnalysisBundleDashboard: React.FC<{
                 dominantGoalLabel: getGoalLabel(goalFit?.dominantGoalKey ?? null),
                 secondaryGoalLabel: getGoalLabel(goalFit?.secondaryGoalKey ?? null),
                 goalLensMode: goalFit?.goalLensMode ?? null,
-                goalCoverage: (goalFit?.goalCoverage ?? [])
-                    .map((entry) => ({
-                        goalLabel: getGoalLabel(entry.goalKey),
-                        tier: entry.tier ?? 'unknown',
-                        state: entry.state,
-                        source: entry.source,
-                        score: entry.score ?? null,
-                        reasonCodes: entry.reasonCodes ?? [],
-                        confidenceBucket: entry.confidenceBucket ?? 'low',
-                    }))
-                    .filter((entry): entry is {
-                        goalLabel: string;
-                        tier: ProductGoalMatchTier | 'unknown';
-                        state: 'strong' | 'some' | 'limited' | 'none';
-                        source: 'selected_goal_evaluation' | 'goal_match_scoring_preview';
-                        score: number | null;
-                        reasonCodes: string[];
-                        confidenceBucket: 'high' | 'medium' | 'low';
-                    } => Boolean(entry.goalLabel)),
-                allGoalCoverage: (goalFit?.allGoalCoverage ?? [])
-                    .map((entry) => ({
-                        goalLabel: getGoalLabel(entry.goalKey),
-                        tier: entry.tier ?? 'unknown',
-                        state: entry.state,
-                        source: entry.source,
-                        score: entry.score ?? null,
-                        reasonCodes: entry.reasonCodes ?? [],
-                        confidenceBucket: entry.confidenceBucket ?? 'low',
-                    }))
-                    .filter((entry): entry is {
-                        goalLabel: string;
-                        tier: ProductGoalMatchTier | 'unknown';
-                        state: 'strong' | 'some' | 'limited' | 'none';
-                        source: 'selected_goal_evaluation' | 'goal_match_scoring_preview';
-                        score: number | null;
-                        reasonCodes: string[];
-                        confidenceBucket: 'high' | 'medium' | 'low';
-                    } => Boolean(entry.goalLabel)),
-                selectedGoalCount: goalFit?.selectedGoalCount ?? null,
-                analyzedGoalCount: goalFit?.analyzedGoalCount ?? null,
-                surfacedGoalCount: goalFit?.surfacedGoalCount ?? null,
-                allGoalsAnalyzed: goalFit?.allGoalsAnalyzed ?? false,
+                goalCoverage: resolvedVisibleGoalCoverage,
+                allGoalCoverage: resolvedAllGoalCoverage,
+                selectedGoalCount: goalFit?.goalCoverageSummary?.selectedGoalCount ?? goalFit?.selectedGoalCount ?? null,
+                analyzedGoalCount: goalFit?.goalCoverageSummary?.analyzedGoalCount ?? goalFit?.analyzedGoalCount ?? null,
+                surfacedGoalCount: goalFit?.goalCoverageSummary?.surfacedGoalCount ?? goalFit?.surfacedGoalCount ?? null,
+                allGoalsAnalyzed: goalFit?.goalCoverageSummary?.allGoalsAnalyzed ?? goalFit?.allGoalsAnalyzed ?? false,
                 defaultVisibleGoalLabels: (goalFit?.defaultVisibleGoalKeys ?? [])
                     .map((goalKey) => getGoalLabel(goalKey))
                     .filter((label): label is string => Boolean(label)),

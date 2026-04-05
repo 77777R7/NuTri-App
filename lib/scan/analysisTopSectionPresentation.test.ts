@@ -204,6 +204,60 @@ test('multi-goal mixed coverage renders a mixed-fit hero and goal coverage row',
   assert.equal(result.insights[0]?.defaultExpanded, true);
 });
 
+test('goal coverage keeps unknown states separate from no-support copy', () => {
+  const result = buildAnalysisTopSectionPresentation({
+    goal: {
+      fitDecision: 'does_not_fit',
+      selectedGoalLabel: 'Sleep',
+      selectedGoalLabels: ['Immunity', 'Recovery', 'Sleep'],
+      goalLensMode: 'multi_goal_summary',
+      selectedGoalCount: 3,
+      analyzedGoalCount: 3,
+      surfacedGoalCount: 3,
+      allGoalsAnalyzed: true,
+      goalCoverage: [
+        { goalLabel: 'Immunity', tier: 'strong_match', state: 'strong', source: 'goal_match_scoring_preview' },
+        { goalLabel: 'Recovery', tier: 'weak_match', state: 'limited', source: 'goal_match_scoring_preview' },
+        { goalLabel: 'Sleep', tier: 'unknown', state: 'unknown', source: 'goal_match_scoring_preview' },
+      ],
+    },
+    personalInsight: {
+      supportLabels: [],
+      fitDecision: 'does_not_fit',
+      selectedGoalLabel: 'Sleep',
+      goalLensMode: 'multi_goal_summary',
+      selectedGoalCount: 3,
+      analyzedGoalCount: 3,
+      surfacedGoalCount: 3,
+      allGoalsAnalyzed: true,
+      goalCoverage: [
+        { goalLabel: 'Immunity', tier: 'strong_match', state: 'strong', source: 'goal_match_scoring_preview' },
+        { goalLabel: 'Recovery', tier: 'weak_match', state: 'limited', source: 'goal_match_scoring_preview' },
+        { goalLabel: 'Sleep', tier: 'unknown', state: 'unknown', source: 'goal_match_scoring_preview' },
+      ],
+    },
+    allergy: {
+      status: 'ready',
+      matchedLabels: [],
+      evidenceTexts: [],
+      summary: 'No allergy-related flags detected.',
+    },
+    dose: {
+      status: 'ready',
+      assessment: 'unclear',
+      productDoseText: '2 capsules daily',
+    },
+    safety: {},
+  });
+
+  assert.equal(result.insights[0]?.key, 'goal_coverage');
+  assert.deepEqual(result.insights[0]?.expandedBullets, [
+    'Immunity: strong support.',
+    'Recovery: limited support.',
+    'Sleep: not enough label detail.',
+  ]);
+});
+
 test('dominant-goal strong mode uses the strongest goal hero and keeps coverage inline on the support row', () => {
   const result = buildAnalysisTopSectionPresentation({
     goal: {

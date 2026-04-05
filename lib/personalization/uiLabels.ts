@@ -1,8 +1,8 @@
 import activityGoalMapData from "@/data/personalization/activity_goal_map.v1.json";
 import blockerBehaviorRulesData from "@/data/personalization/blocker_behavior_rules.v1.json";
 import dietLaneMapData from "@/data/personalization/diet_nutrient_lane_map.v1.json";
-import goalIngredientMapData from "@/data/personalization/goal_ingredient_map.v1.json";
 import { getGoalLabel } from "@/lib/personalization/core/goalCatalog";
+import { buildGoalIngredientPreviewLanes as buildGoalIngredientPreviewLanesFromOntology } from "@/lib/personalization/core/goalMatchOntology";
 import type {
   BlockerKey,
   BlockerStrategy,
@@ -36,19 +36,9 @@ type BlockerRulesFile = {
   }[];
 };
 
-type GoalIngredientMapFile = {
-  mappings: {
-    goalKey: GoalKey;
-    ingredientMatches: {
-      ingredientKey: string;
-    }[];
-  }[];
-};
-
 const DIET_LANE_MAP = dietLaneMapData as DietLaneMapFile;
 const ACTIVITY_GOAL_MAP = activityGoalMapData as ActivityGoalMapFile;
 const BLOCKER_RULES = blockerBehaviorRulesData as BlockerRulesFile;
-const GOAL_INGREDIENT_MAP = goalIngredientMapData as GoalIngredientMapFile;
 
 const TYPE_LABELS: Record<SupplementTypeKey, string> = {
   vitamin: "Vitamin",
@@ -149,19 +139,11 @@ export type GoalIngredientPreviewLane = {
 export const buildGoalIngredientPreviewLanes = (
   goals: readonly GoalKey[],
 ): GoalIngredientPreviewLane[] =>
-  goals.map((goalKey) => {
-    const ingredientMatches =
-      GOAL_INGREDIENT_MAP.mappings.find((mapping) => mapping.goalKey === goalKey)?.ingredientMatches ?? [];
-    const ingredients = Array.from(
-      new Set(ingredientMatches.map((match) => getIngredientDisplayLabel(match.ingredientKey)).filter(Boolean)),
-    ).slice(0, 3);
-
-    return {
-      goalKey,
-      goalLabel: getGoalDisplayLabel(goalKey),
-      ingredients,
-    };
-  });
+  buildGoalIngredientPreviewLanesFromOntology(goals).map((lane) => ({
+    goalKey: lane.goalKey,
+    goalLabel: getGoalDisplayLabel(lane.goalKey),
+    ingredients: lane.ingredientKeys.map((ingredientKey) => getIngredientDisplayLabel(ingredientKey)),
+  }));
 
 export const getAllGoalDisplayLabels = (): string[] =>
   Object.keys(GOAL_LABELS).map((goalKey) => getGoalDisplayLabel(goalKey as GoalKey));

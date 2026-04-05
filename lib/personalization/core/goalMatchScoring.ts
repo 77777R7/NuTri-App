@@ -4,46 +4,18 @@ import type {
   ProductGoalMatch,
   ProductGoalMatchTier,
 } from '../../../types/personalization';
-import goalIngredientMapData from '../../../data/personalization/goal_ingredient_map.v1.json';
+import {
+  getFormulaPatterns,
+  getIngredientGoalEdges,
+  type EvidenceTierV2,
+  type IngredientGoalEdgeV2,
+} from './goalMatchOntology';
 import {
   listActiveGoalCatalogEntries,
   normalizeGoalKeys,
 } from './goalCatalog';
 
-type EvidenceGrade = 'A' | 'B' | 'C';
 type DisclosureQuality = 'high' | 'medium' | 'low' | 'unknown';
-
-type GoalIngredientMatchRecord = {
-  ingredientKey: string;
-  tier: ProductGoalMatchTier;
-  evidenceGrade: EvidenceGrade;
-  minEffectiveDose: number;
-  unit: string;
-  preferredForms: string[];
-  caps: string[];
-  rationale: string;
-};
-
-type GoalIngredientMappingRecord = {
-  goalKey: GoalKey;
-  ingredientMatches: GoalIngredientMatchRecord[];
-};
-
-type GoalIngredientMapFile = {
-  version?: string;
-  mappings: GoalIngredientMappingRecord[];
-  goalIngredientMap: Array<{
-    goalKey: GoalKey;
-    ingredientKey: string;
-    tier: 'strong' | 'supporting' | 'exploratory';
-    evidenceGrade: EvidenceGrade;
-    minEffectiveDose: number;
-    unit: string;
-    preferredForms: string[];
-    caps: string[];
-    rationale: string;
-  }>;
-};
 
 export type GoalEvidenceLikeInput = {
   goalKey?: GoalKey | string | null;
@@ -77,15 +49,10 @@ export type ProductIngredientLikeInput = {
 };
 
 export type ProductGoalMatchScoringInput = {
-  goals?: Array<GoalKey | string | null | undefined> | null;
+  goals?: (GoalKey | string | null | undefined)[] | null;
   ingredients?: ProductIngredientLikeInput[] | null;
   disclosureQuality?: DisclosureQuality | null;
   proprietaryBlendWithoutClearActives?: boolean | null;
-};
-
-type GoalIngredientMapEntry = GoalIngredientMatchRecord & {
-  goalKey: GoalKey;
-  ingredientKey: string;
 };
 
 type ScoredCandidate = {
@@ -100,44 +67,70 @@ type ScoredCandidate = {
 
 type DoseEvaluation =
   | { status: 'not_applicable' }
-  | { status: 'meets' }
+  | { status: 'within' }
   | { status: 'below' }
-  | { status: 'unknown' };
-
-const GOAL_INGREDIENT_MAP = goalIngredientMapData as GoalIngredientMapFile;
+  | { status: 'uncertain' }
+  | { status: 'above_safe' };
 
 const TIER_ORDER: ProductGoalMatchTier[] = ['no_match', 'weak_match', 'related', 'strong_match'];
 
-const BASE_SCORE_BY_TIER: Record<ProductGoalMatchTier, number> = {
-  no_match: 0,
-  weak_match: 38,
-  related: 66,
-  strong_match: 88,
+const SCORE_TO_TIER_THRESHOLDS: [number, ProductGoalMatchTier][] = [
+  [85, 'strong_match'],
+  [60, 'related'],
+  [20, 'weak_match'],
+];
+
+const EVIDENCE_MULTIPLIER: Record<EvidenceTierV2, number> = {
+  A: 1.08,
+  B: 1,
+  C: 0.85,
+  D: 0.35,
 };
 
-const EVIDENCE_GRADE_BONUS: Record<EvidenceGrade, number> = {
-  A: 8,
-  B: 3,
-  C: -12,
+const DOSE_MULTIPLIER = {
+  below: 0.5,
+  within: 1,
+  above_safe: 0.9,
+  uncertain: 0.7,
+  not_applicable: 1,
+} as const;
+
+const FORM_MULTIPLIER = {
+  preferred: 1.08,
+  neutral: 1,
+} as const;
+
+const LABEL_CONFIDENCE_MULTIPLIER: Record<DisclosureQuality, number> = {
+  high: 1,
+  medium: 0.92,
+  low: 0.78,
+  unknown: 1,
 };
 
-const CONVERTIBLE_UNIT_TO_MG: Record<string, number> = {
-  mcg: 0.001,
-  mg: 1,
-  g: 1000,
-};
+const PATTERN_BONUS_MULTIPLIER = 25;
+const CORROBORATION_BONUS_PER_MATCH = 4;
+const CORROBORATION_BONUS_CAP = 8;
 
 const INGREDIENT_KEY_ALIASES: Record<string, string> = {
   coq10: 'coenzyme_q10',
   coenzymeq10: 'coenzyme_q10',
   vitaminb12: 'vitamin_b12',
   vitaminb_12: 'vitamin_b12',
+  vitamind: 'vitamin_d',
+  vitamind3: 'vitamin_d',
+  vitamin_d3: 'vitamin_d',
   fishoil: 'omega_3',
   omega3: 'omega_3',
   omega_3fattyacids: 'omega_3',
   proteinblend: 'protein',
   wheyprotein: 'protein',
   creatinemonohydrate: 'creatine',
+};
+
+const CONVERTIBLE_UNIT_TO_MG: Record<string, number> = {
+  mcg: 0.001,
+  mg: 1,
+  g: 1000,
 };
 
 const normalizeTextKey = (value: string): string =>
@@ -158,7 +151,39 @@ const canonicalizeIngredientKey = (value: string): string => {
   return INGREDIENT_KEY_ALIASES[freeform] ?? normalizeTextKey(value);
 };
 
-const clampScore = (score: number): number => Math.max(0, Math.min(100, Math.round(score)));
+const normalizeEvidenceTier = (value: string | null | undefined): EvidenceTierV2 | null => {
+  if (value === 'A' || value === 'B' || value === 'C' || value === 'D') return value;
+  return null;
+};
+
+const normalizeAuditStatus = (value: string | null | undefined): string | null => {
+  if (!value) return null;
+  const normalized = normalizeFreeformToken(value);
+  return normalized || null;
+};
+
+const isAuditedStatus = (value: string | null): boolean =>
+  value === 'approved' || value === 'verified' || value === 'reviewed' || value === 'captured';
+
+const normalizeDisclosureQuality = (
+  productDisclosure: DisclosureQuality | null | undefined,
+  ingredientDisclosure: DisclosureQuality | null | undefined,
+): DisclosureQuality => ingredientDisclosure ?? productDisclosure ?? 'unknown';
+
+const normalizeUnit = (value: string | null | undefined): 'mcg' | 'mg' | 'g' | null => {
+  if (!value) return null;
+  const normalized = normalizeFreeformToken(value);
+  if (normalized === 'mcg' || normalized === 'ug') return 'mcg';
+  if (normalized === 'mg' || normalized === 'milligram' || normalized === 'milligrams') return 'mg';
+  if (normalized === 'g' || normalized === 'gram' || normalized === 'grams') return 'g';
+  return null;
+};
+
+const convertDose = (amount: number, unit: 'mcg' | 'mg' | 'g'): number | null => {
+  const factor = CONVERTIBLE_UNIT_TO_MG[unit];
+  if (!factor) return null;
+  return amount * factor;
+};
 
 const compareTier = (left: ProductGoalMatchTier, right: ProductGoalMatchTier): number =>
   TIER_ORDER.indexOf(left) - TIER_ORDER.indexOf(right);
@@ -176,10 +201,12 @@ const applyTierCap = (
   capTier: ProductGoalMatchTier,
 ): ProductGoalMatchTier => minTier(tier, capTier);
 
+const clampScore = (score: number): number => Math.max(0, Math.min(100, Math.round(score)));
+
 const scoreToTier = (score: number): ProductGoalMatchTier => {
-  if (score >= 85) return 'strong_match';
-  if (score >= 60) return 'related';
-  if (score >= 30) return 'weak_match';
+  for (const [threshold, tier] of SCORE_TO_TIER_THRESHOLDS) {
+    if (score >= threshold) return tier;
+  }
   return 'no_match';
 };
 
@@ -195,70 +222,74 @@ const makeReason = (
   ...(params ? { params } : {}),
 });
 
-const normalizeEvidenceGrade = (value: string | null | undefined): EvidenceGrade | null => {
-  if (value === 'A' || value === 'B' || value === 'C') return value;
-  return null;
+const resolveEvidenceForGoal = (
+  ingredient: ProductIngredientLikeInput,
+  goalKey: GoalKey,
+): GoalEvidenceLikeInput | null =>
+  (ingredient.evidence ?? []).find(
+    (row) => normalizeGoalKeys([row.goalKey ?? row.goal ?? null])[0] === goalKey,
+  ) ?? null;
+
+const resolveIngredientAmount = (ingredient: ProductIngredientLikeInput): number | null => {
+  if (ingredient.amountUnknown) return null;
+  return typeof ingredient.amount === 'number' && ingredient.amount > 0 ? ingredient.amount : null;
 };
 
-const normalizeDisclosureQuality = (
-  productDisclosure: DisclosureQuality | null | undefined,
-  ingredientDisclosure: DisclosureQuality | null | undefined,
-): DisclosureQuality => ingredientDisclosure ?? productDisclosure ?? 'unknown';
+const resolveIngredientUnit = (ingredient: ProductIngredientLikeInput): 'mcg' | 'mg' | 'g' | null =>
+  normalizeUnit(ingredient.amountUnitNormalized ?? ingredient.unit ?? ingredient.amountUnit ?? null);
 
-const normalizeUnit = (value: string | null | undefined): string | null => {
-  if (!value) return null;
-  const normalized = normalizeFreeformToken(value);
-  if (normalized === 'mcg' || normalized === 'ug') return 'mcg';
-  if (normalized === 'mg' || normalized === 'milligram' || normalized === 'milligrams') return 'mg';
-  if (normalized === 'g' || normalized === 'gram' || normalized === 'grams') return 'g';
-  return normalized || null;
-};
+const resolveEvidenceTier = (
+  evidence: GoalEvidenceLikeInput | null,
+  edge: IngredientGoalEdgeV2,
+): EvidenceTierV2 => normalizeEvidenceTier(evidence?.evidenceGrade ?? evidence?.evidence_grade ?? null) ?? edge.evidenceTier;
 
-const convertDose = (amount: number, unit: string): number | null => {
-  const factor = CONVERTIBLE_UNIT_TO_MG[unit];
-  if (!factor) return null;
-  return amount * factor;
+const resolveDoseHint = (
+  evidence: GoalEvidenceLikeInput | null,
+  edge: IngredientGoalEdgeV2,
+): { minDoseHint: number | null; doseUnit: 'mcg' | 'mg' | 'g' | null } => {
+  const minDoseHint = evidence?.minEffectiveDose ?? evidence?.min_effective_dose ?? edge.minDoseHint ?? null;
+  const doseUnit = normalizeUnit(evidence?.unit ?? edge.doseUnit ?? null);
+  return {
+    minDoseHint: typeof minDoseHint === 'number' && minDoseHint > 0 ? minDoseHint : null,
+    doseUnit,
+  };
 };
 
 const evaluateDose = (
   amount: number | null | undefined,
-  unit: string | null | undefined,
-  floor: number | null,
-  floorUnit: string | null,
+  unit: 'mcg' | 'mg' | 'g' | null | undefined,
+  minDoseHint: number | null,
+  doseUnit: 'mcg' | 'mg' | 'g' | null,
+  maxUsefulDoseHint?: number | null,
 ): DoseEvaluation => {
-  if (floor == null || !floorUnit) {
+  if (minDoseHint == null || !doseUnit) {
     return { status: 'not_applicable' };
   }
 
-  if (typeof amount !== 'number' || amount <= 0) {
-    return { status: 'unknown' };
+  if (typeof amount !== 'number' || amount <= 0 || !unit) {
+    return { status: 'uncertain' };
   }
 
-  const normalizedUnit = normalizeUnit(unit);
-  const normalizedFloorUnit = normalizeUnit(floorUnit);
-  if (!normalizedUnit || !normalizedFloorUnit) {
-    return { status: 'unknown' };
-  }
+  const amountInMg = convertDose(amount, unit);
+  const floorInMg = convertDose(minDoseHint, doseUnit);
+  const maxInMg =
+    typeof maxUsefulDoseHint === 'number' && maxUsefulDoseHint > 0
+      ? convertDose(maxUsefulDoseHint, doseUnit)
+      : null;
 
-  if (normalizedUnit === normalizedFloorUnit) {
-    return amount >= floor ? { status: 'meets' } : { status: 'below' };
-  }
-
-  const amountInMg = convertDose(amount, normalizedUnit);
-  const floorInMg = convertDose(floor, normalizedFloorUnit);
   if (amountInMg == null || floorInMg == null) {
-    return { status: 'unknown' };
+    return { status: 'uncertain' };
   }
 
-  return amountInMg >= floorInMg ? { status: 'meets' } : { status: 'below' };
-};
+  if (amountInMg < floorInMg) {
+    return { status: 'below' };
+  }
 
-const normalizeIngredientKey = (ingredient: ProductIngredientLikeInput): string | null => {
-  const candidates = [ingredient.ingredientKey, ingredient.ingredientLabel, ingredient.name]
-    .filter((value): value is string => typeof value === 'string' && value.trim().length > 0)
-    .map((value) => canonicalizeIngredientKey(value));
+  if (maxInMg != null && amountInMg > maxInMg) {
+    return { status: 'above_safe' };
+  }
 
-  return candidates[0] ?? null;
+  return { status: 'within' };
 };
 
 const getIngredientLookupTokens = (ingredient: ProductIngredientLikeInput): string[] =>
@@ -276,260 +307,214 @@ const tokenMatchesIngredientKey = (token: string, ingredientKey: string): boolea
   token.endsWith(`_${ingredientKey}`) ||
   token.includes(`_${ingredientKey}_`);
 
-const normalizeAuditStatus = (value: string | null | undefined): string | null => {
-  if (!value) return null;
-  const normalized = normalizeFreeformToken(value);
-  return normalized || null;
-};
+const normalizeIngredientKey = (ingredient: ProductIngredientLikeInput): string | null =>
+  getIngredientLookupTokens(ingredient)[0] ?? null;
 
-const isAuditedStatus = (value: string | null): boolean =>
-  value === 'approved' || value === 'verified' || value === 'reviewed' || value === 'captured';
-
-const resolveEvidenceForGoal = (
-  ingredient: ProductIngredientLikeInput,
-  goalKey: GoalKey,
-): GoalEvidenceLikeInput | null =>
-  (ingredient.evidence ?? []).find(
-    (row) => normalizeGoalKeys([row.goalKey ?? row.goal ?? null])[0] === goalKey,
-  ) ?? null;
-
-const resolveEvidenceGrade = (
-  evidence: GoalEvidenceLikeInput | null,
-  row: GoalIngredientMapEntry,
-): EvidenceGrade | null =>
-  evidence
-    ? normalizeEvidenceGrade(evidence.evidenceGrade ?? evidence.evidence_grade ?? null) ??
-      row.evidenceGrade
-    : null;
-
-const resolveEvidenceFloor = (
-  evidence: GoalEvidenceLikeInput | null,
-  row: GoalIngredientMapEntry,
-): number | null => {
-  const value = evidence?.minEffectiveDose ?? evidence?.min_effective_dose ?? null;
-  if (typeof value === 'number' && value > 0) return value;
-  return typeof row.minEffectiveDose === 'number' && row.minEffectiveDose > 0
-    ? row.minEffectiveDose
-    : null;
-};
-
-const resolveEvidenceUnit = (
-  evidence: GoalEvidenceLikeInput | null,
-  row: GoalIngredientMapEntry,
-): string | null => normalizeUnit(evidence?.unit ?? row.unit ?? null);
-
-const resolveEvidenceAuditStatus = (evidence: GoalEvidenceLikeInput | null): string | null =>
-  normalizeAuditStatus(evidence?.auditStatus ?? evidence?.audit_status ?? null);
-
-const resolveIngredientAmount = (ingredient: ProductIngredientLikeInput): number | null => {
-  if (ingredient.amountUnknown) return null;
-  return typeof ingredient.amount === 'number' && ingredient.amount > 0 ? ingredient.amount : null;
-};
-
-const resolveIngredientUnit = (ingredient: ProductIngredientLikeInput): string | null =>
-  normalizeUnit(ingredient.amountUnitNormalized ?? ingredient.unit ?? ingredient.amountUnit ?? null);
-
-const buildGoalIngredientIndex = (): ReadonlyMap<GoalKey, GoalIngredientMapEntry[]> => {
-  const byGoalKey = new Map<GoalKey, GoalIngredientMapEntry[]>();
-
-  GOAL_INGREDIENT_MAP.mappings.forEach((mapping) => {
-    byGoalKey.set(
-      mapping.goalKey,
-      mapping.ingredientMatches.map((match) => ({
-        ...match,
-        goalKey: mapping.goalKey,
-        ingredientKey: canonicalizeIngredientKey(match.ingredientKey),
-      })),
-    );
-  });
-
-  return byGoalKey;
-};
-
-const GOAL_INGREDIENT_INDEX = buildGoalIngredientIndex();
-
-const findIngredientRows = (
+const findIngredientEdges = (
   goalKey: GoalKey,
   ingredient: ProductIngredientLikeInput,
-): GoalIngredientMapEntry[] => {
-  const goalRows = GOAL_INGREDIENT_INDEX.get(goalKey) ?? [];
+): IngredientGoalEdgeV2[] => {
+  const goalEdges = getIngredientGoalEdges(goalKey);
   const tokens = getIngredientLookupTokens(ingredient);
+  if (tokens.length === 0) return [];
 
-  if (tokens.length === 0) {
-    return [];
-  }
+  return goalEdges.filter((edge) =>
+    tokens.some((token) => tokenMatchesIngredientKey(token, canonicalizeIngredientKey(edge.ingredientKey))));
+};
 
-  return goalRows.filter((row) => tokens.some((token) => tokenMatchesIngredientKey(token, row.ingredientKey)));
+const resolveTierCapFromEdge = (
+  edge: IngredientGoalEdgeV2,
+  evidenceTier: EvidenceTierV2,
+): ProductGoalMatchTier => {
+  if (evidenceTier === 'D' || edge.baseWeight < 0.18) return 'no_match';
+  if (edge.baseWeight >= 0.8) return 'strong_match';
+  if (edge.baseWeight >= 0.45) return 'related';
+  return 'weak_match';
 };
 
 const scoreCandidate = (
   goalKey: GoalKey,
   ingredient: ProductIngredientLikeInput,
-  row: GoalIngredientMapEntry,
+  edge: IngredientGoalEdgeV2,
   productDisclosureQuality: DisclosureQuality | null | undefined,
   proprietaryBlendWithoutClearActives: boolean,
 ): ScoredCandidate => {
   const ingredientLabel =
     ingredient.ingredientLabel?.trim() ||
     ingredient.name?.trim() ||
-    row.ingredientKey.replace(/_/g, ' ');
+    edge.ingredientKey.replace(/_/g, ' ');
   const evidence = resolveEvidenceForGoal(ingredient, goalKey);
-  const evidenceGrade = resolveEvidenceGrade(evidence, row);
-  const evidenceFloor = resolveEvidenceFloor(evidence, row);
-  const evidenceUnit = resolveEvidenceUnit(evidence, row);
-  const evidenceAuditStatus = resolveEvidenceAuditStatus(evidence);
+  const evidenceTier = resolveEvidenceTier(evidence, edge);
+  const { minDoseHint, doseUnit } = resolveDoseHint(evidence, edge);
+  const evidenceAuditStatus = normalizeAuditStatus(evidence?.auditStatus ?? evidence?.audit_status ?? null);
   const amount = resolveIngredientAmount(ingredient);
   const amountUnit = resolveIngredientUnit(ingredient);
   const disclosureQuality = normalizeDisclosureQuality(
     productDisclosureQuality,
     ingredient.disclosureQuality,
   );
+  const normalizedForm = normalizeTextKey(ingredient.formKey ?? ingredient.formLabel ?? ingredient.form ?? '');
+  const hasPreferredForm =
+    Boolean(normalizedForm) &&
+    (edge.formConstraint ?? []).some((form) => canonicalizeIngredientKey(form) === normalizedForm);
+  const doseEvaluation = evaluateDose(amount, amountUnit, minDoseHint, doseUnit, edge.maxUsefulDoseHint);
+  const baseScore = edge.baseWeight * 100;
+  let score =
+    baseScore *
+    EVIDENCE_MULTIPLIER[evidenceTier] *
+    DOSE_MULTIPLIER[doseEvaluation.status] *
+    (hasPreferredForm ? FORM_MULTIPLIER.preferred : FORM_MULTIPLIER.neutral) *
+    LABEL_CONFIDENCE_MULTIPLIER[disclosureQuality];
 
-  let score = BASE_SCORE_BY_TIER[row.tier];
-  let maxTier = row.tier;
+  let maxTier = resolveTierCapFromEdge(edge, evidenceTier);
   const caps: string[] = [];
   const reasons: DecisionReason[] = [
-    makeReason('goal_supported_by_ingredient', 'goal_map_match', 'catalog', {
+    makeReason('goal_supported_by_ingredient', 'goal_map_match_v2', 'catalog', {
       goalKey,
-      ingredientKey: row.ingredientKey,
+      ingredientKey: edge.ingredientKey,
       ingredientLabel,
     }),
   ];
 
-  if (evidenceGrade) {
-    score += EVIDENCE_GRADE_BONUS[evidenceGrade];
+  reasons.push(
+    makeReason('goal_specific_evidence_present', 'goal_specific_evidence_v2', 'catalog', {
+      ingredientKey: edge.ingredientKey,
+      evidenceGrade: evidenceTier,
+      source: evidence ? 'ingredient_evidence' : 'goal_map',
+    }),
+  );
 
-    if (evidenceGrade === 'C') {
-      maxTier = applyTierCap(maxTier, downgradeTier(row.tier));
-      reasons.push(
-        makeReason('evidence_grade_limited', 'goal_specific_evidence', 'catalog', {
-          evidenceGrade,
-          ingredientKey: row.ingredientKey,
-        }),
-      );
-    } else {
-      reasons.push(
-        makeReason('goal_specific_evidence_present', 'goal_specific_evidence', 'catalog', {
-          evidenceGrade,
-          ingredientKey: row.ingredientKey,
-        }),
-      );
-    }
-  } else {
-    if (row.tier === 'strong_match') {
-      maxTier = applyTierCap(maxTier, 'related');
-    }
+  if (evidenceTier === 'C' || evidenceTier === 'D') {
     reasons.push(
-      makeReason('goal_specific_evidence_missing', 'goal_specific_evidence', 'catalog', {
-        ingredientKey: row.ingredientKey,
+      makeReason('evidence_grade_limited', 'goal_specific_evidence_v2', 'catalog', {
+        ingredientKey: edge.ingredientKey,
+        evidenceGrade: evidenceTier,
       }),
     );
   }
 
   if (evidenceAuditStatus && !isAuditedStatus(evidenceAuditStatus)) {
-    score -= 8;
+    score *= 0.9;
     maxTier = applyTierCap(maxTier, downgradeTier(maxTier));
     reasons.push(
-      makeReason('goal_specific_evidence_unreviewed', 'goal_specific_evidence', 'catalog', {
+      makeReason('goal_specific_evidence_unreviewed', 'goal_specific_evidence_v2', 'catalog', {
         auditStatus: evidenceAuditStatus,
-        ingredientKey: row.ingredientKey,
+        ingredientKey: edge.ingredientKey,
       }),
     );
   }
 
-  const doseEvaluation = evaluateDose(amount, amountUnit, evidenceFloor, evidenceUnit);
-  if (doseEvaluation.status === 'meets') {
-    score += 8;
-    reasons.push(
-      makeReason('dose_meets_effective_floor', 'dose_floor_check', 'derived', {
-        ingredientKey: row.ingredientKey,
-      }),
-    );
-  } else if (doseEvaluation.status === 'below') {
-    score -= 24;
-    maxTier = applyTierCap(maxTier, 'weak_match');
-    reasons.push(
-      makeReason('dose_below_effective_floor', 'dose_floor_check', 'derived', {
-        ingredientKey: row.ingredientKey,
-      }),
-    );
-  } else if (doseEvaluation.status === 'unknown') {
-    score -= 14;
-    maxTier = applyTierCap(maxTier, downgradeTier(maxTier));
-    reasons.push(
-      makeReason('dose_not_disclosed', 'dose_floor_check', 'observed', {
-        ingredientKey: row.ingredientKey,
-      }),
-    );
+  switch (doseEvaluation.status) {
+    case 'within':
+      reasons.push(
+        makeReason('dose_meets_effective_floor', 'dose_floor_check_v2', 'derived', {
+          ingredientKey: edge.ingredientKey,
+        }),
+      );
+      break;
+    case 'below':
+      maxTier = applyTierCap(maxTier, 'weak_match');
+      reasons.push(
+        makeReason('dose_below_effective_floor', 'dose_floor_check_v2', 'derived', {
+          ingredientKey: edge.ingredientKey,
+        }),
+      );
+      break;
+    case 'uncertain':
+      maxTier = applyTierCap(maxTier, downgradeTier(maxTier));
+      reasons.push(
+        makeReason('dose_not_disclosed', 'dose_floor_check_v2', 'observed', {
+          ingredientKey: edge.ingredientKey,
+        }),
+      );
+      reasons.push(
+        makeReason('goal_support_not_enough_label_detail', 'goal_uncertainty_v2', 'derived', {
+          ingredientKey: edge.ingredientKey,
+          goalKey,
+        }),
+      );
+      break;
+    case 'above_safe':
+      reasons.push(
+        makeReason('dose_above_reference_band', 'dose_floor_check_v2', 'derived', {
+          ingredientKey: edge.ingredientKey,
+        }),
+      );
+      break;
+    case 'not_applicable':
+    default:
+      break;
   }
 
-  const normalizedForm = normalizeTextKey(ingredient.formKey ?? ingredient.formLabel ?? ingredient.form ?? '');
-  if (
-    normalizedForm &&
-    row.preferredForms.some((form) => canonicalizeIngredientKey(form) === normalizedForm)
-  ) {
-    score += 3;
+  if (hasPreferredForm) {
     reasons.push(
-      makeReason('ingredient_form_preferred', 'ingredient_form_preference', 'catalog', {
-        ingredientKey: row.ingredientKey,
+      makeReason('ingredient_form_preferred', 'ingredient_form_preference_v2', 'catalog', {
+        ingredientKey: edge.ingredientKey,
         formKey: normalizedForm,
       }),
     );
   }
 
   if (disclosureQuality === 'low') {
-    score -= 18;
     maxTier = applyTierCap(maxTier, 'weak_match');
     caps.push('low_disclosure');
     reasons.push(
-      makeReason('low_disclosure_caps_strong_match', 'low_disclosure_caps_goal_match', 'observed', {
-        ingredientKey: row.ingredientKey,
+      makeReason('low_disclosure_caps_strong_match', 'low_disclosure_caps_goal_match_v2', 'observed', {
+        ingredientKey: edge.ingredientKey,
+      }),
+    );
+    reasons.push(
+      makeReason('goal_support_not_enough_label_detail', 'goal_uncertainty_v2', 'derived', {
+        ingredientKey: edge.ingredientKey,
+        goalKey,
       }),
     );
   }
 
   if (proprietaryBlendWithoutClearActives || ingredient.proprietaryBlend) {
-    score -= 20;
+    score *= 0.82;
     maxTier = applyTierCap(maxTier, 'weak_match');
     caps.push('proprietary_blend');
     reasons.push(
-      makeReason('proprietary_blend_caps_goal_match', 'proprietary_blend_caps_goal_match', 'observed', {
-        ingredientKey: row.ingredientKey,
+      makeReason('proprietary_blend_caps_goal_match', 'proprietary_blend_caps_goal_match_v2', 'observed', {
+        ingredientKey: edge.ingredientKey,
+      }),
+    );
+    reasons.push(
+      makeReason('goal_support_not_enough_label_detail', 'goal_uncertainty_v2', 'derived', {
+        ingredientKey: edge.ingredientKey,
+        goalKey,
       }),
     );
   }
 
   if (
-    row.caps.includes('eligibility_requires_generic_safety_path') ||
+    (edge.caps ?? []).includes('eligibility_requires_generic_safety_path') ||
     Boolean(evidence?.requiresGenericSafetyPath)
   ) {
     caps.push('generic_safety_path');
     reasons.push(
-      makeReason('ingredient_requires_generic_safety_path', 'generic_safety_path_guardrail', 'catalog', {
-        ingredientKey: row.ingredientKey,
+      makeReason('ingredient_requires_generic_safety_path', 'generic_safety_path_guardrail_v2', 'catalog', {
+        ingredientKey: edge.ingredientKey,
       }),
     );
   }
 
   const confidence: NonNullable<ProductGoalMatch['confidence']> = {
     evidence:
-      !evidenceGrade
-        ? row.tier === 'strong_match'
+      evidenceTier === 'A'
+        ? 'high'
+        : evidenceTier === 'B'
           ? 'medium'
-          : 'low'
-        : evidenceAuditStatus && !isAuditedStatus(evidenceAuditStatus)
-          ? 'medium'
-          : evidenceGrade === 'A'
-            ? 'high'
-            : evidenceGrade === 'B'
-              ? 'medium'
-              : 'low',
+          : 'low',
     dose:
-      doseEvaluation.status === 'meets' ||
-      doseEvaluation.status === 'below' ||
-      doseEvaluation.status === 'unknown'
-        ? doseEvaluation.status
-        : 'not_applicable',
+      doseEvaluation.status === 'within'
+        ? 'meets'
+        : doseEvaluation.status === 'below'
+          ? 'below'
+          : doseEvaluation.status === 'uncertain'
+            ? 'unknown'
+            : 'not_applicable',
     disclosure:
       disclosureQuality === 'high' && !proprietaryBlendWithoutClearActives && !ingredient.proprietaryBlend
         ? 'full'
@@ -538,11 +523,13 @@ const scoreCandidate = (
           : 'partial',
   };
 
+  const tier = applyTierCap(scoreToTier(clampScore(score)), maxTier);
+
   return {
-    ingredientKey: row.ingredientKey,
+    ingredientKey: edge.ingredientKey,
     ingredientLabel,
     score: clampScore(score),
-    tier: applyTierCap(scoreToTier(score), maxTier),
+    tier,
     reasons,
     caps: Array.from(new Set(caps)),
     confidence,
@@ -555,19 +542,22 @@ const sortCandidates = (left: ScoredCandidate, right: ScoredCandidate): number =
   return right.score - left.score;
 };
 
-const buildNoMatch = (goalKey: GoalKey): ProductGoalMatch => ({
+const buildNoMatch = (goalKey: GoalKey, missingDetail = false): ProductGoalMatch => ({
   goalKey,
   score: 0,
   tier: 'no_match',
   reasons: [
-    makeReason('no_goal_support_detected', 'goal_map_match', 'derived', {
-      goalKey,
-    }),
+    makeReason(
+      missingDetail ? 'goal_support_not_enough_label_detail' : 'no_goal_support_detected',
+      missingDetail ? 'goal_uncertainty_v2' : 'goal_map_match_v2',
+      'derived',
+      { goalKey },
+    ),
   ],
   confidence: {
     evidence: 'low',
     dose: 'not_applicable',
-    disclosure: 'weak',
+    disclosure: missingDetail ? 'partial' : 'weak',
   },
 });
 
@@ -580,20 +570,84 @@ const getTargetGoals = (inputGoals: ProductGoalMatchScoringInput['goals']): Goal
   return listActiveGoalCatalogEntries().map((goal) => goal.goalKey);
 };
 
+const getPresentIngredientKeySet = (
+  goals: GoalKey[],
+  ingredients: ProductIngredientLikeInput[],
+): Set<string> => {
+  const relevantOntologyKeys = new Set<string>();
+
+  for (const goalKey of goals) {
+    for (const edge of getIngredientGoalEdges(goalKey)) {
+      relevantOntologyKeys.add(canonicalizeIngredientKey(edge.ingredientKey));
+    }
+    for (const pattern of getFormulaPatterns(goalKey)) {
+      for (const ingredientKey of pattern.requiredIngredients) {
+        relevantOntologyKeys.add(canonicalizeIngredientKey(ingredientKey));
+      }
+      for (const ingredientKey of pattern.optionalIngredients ?? []) {
+        relevantOntologyKeys.add(canonicalizeIngredientKey(ingredientKey));
+      }
+    }
+  }
+
+  return new Set(
+    ingredients.flatMap((ingredient) => {
+      const tokens = getIngredientLookupTokens(ingredient);
+      const normalizedIngredientKey = normalizeIngredientKey(ingredient);
+      const matchedOntologyKeys = Array.from(relevantOntologyKeys).filter((ingredientKey) =>
+        tokens.some((token) => tokenMatchesIngredientKey(token, ingredientKey)),
+      );
+
+      if (matchedOntologyKeys.length > 0) {
+        return matchedOntologyKeys;
+      }
+
+      return normalizedIngredientKey ? [normalizedIngredientKey] : [];
+    }),
+  );
+};
+
+const computePatternBonus = (
+  goalKey: GoalKey,
+  presentIngredientKeys: Set<string>,
+): { bonus: number; reasons: DecisionReason[] } => {
+  const patterns = getFormulaPatterns(goalKey);
+  if (patterns.length === 0) return { bonus: 0, reasons: [] };
+
+  const matchedPatterns = patterns.filter((pattern) =>
+    pattern.requiredIngredients.every((ingredientKey) => presentIngredientKeys.has(canonicalizeIngredientKey(ingredientKey))),
+  );
+
+  if (matchedPatterns.length === 0) return { bonus: 0, reasons: [] };
+
+  return {
+    bonus: Math.min(
+      12,
+      matchedPatterns.reduce((total, pattern) => total + pattern.bonusWeight * PATTERN_BONUS_MULTIPLIER, 0),
+    ),
+    reasons: matchedPatterns.flatMap((pattern) =>
+      pattern.reasonCodes.map((reasonCode) =>
+        makeReason(reasonCode, 'formula_pattern_support_v2', 'catalog', { goalKey }),
+      ),
+    ),
+  };
+};
+
 export const scoreProductGoalMatches = (input: ProductGoalMatchScoringInput): ProductGoalMatch[] => {
   const goals = getTargetGoals(input.goals);
   const ingredients = (input.ingredients ?? []).filter(
     (ingredient): ingredient is ProductIngredientLikeInput =>
       getIngredientLookupTokens(ingredient).length > 0,
   );
+  const presentIngredientKeys = getPresentIngredientKeySet(goals, ingredients);
 
   return goals.map((goalKey) => {
     const candidates = ingredients.flatMap((ingredient) =>
-      findIngredientRows(goalKey, ingredient).map((row) =>
+      findIngredientEdges(goalKey, ingredient).map((edge) =>
         scoreCandidate(
           goalKey,
           ingredient,
-          row,
+          edge,
           input.disclosureQuality,
           Boolean(input.proprietaryBlendWithoutClearActives),
         ),
@@ -601,7 +655,7 @@ export const scoreProductGoalMatches = (input: ProductGoalMatchScoringInput): Pr
     );
 
     if (candidates.length === 0) {
-      return buildNoMatch(goalKey);
+      return buildNoMatch(goalKey, ingredients.some((ingredient) => resolveIngredientAmount(ingredient) == null));
     }
 
     const sortedCandidates = [...candidates].sort(sortCandidates);
@@ -609,13 +663,16 @@ export const scoreProductGoalMatches = (input: ProductGoalMatchScoringInput): Pr
     const corroboratingMatches = sortedCandidates.filter(
       (candidate, index) => index > 0 && candidate.tier !== 'no_match',
     );
-    const reasons = [...primary.reasons];
+    const { bonus: patternBonus, reasons: patternReasons } = computePatternBonus(goalKey, presentIngredientKeys);
+    const corroborationBonus = Math.min(CORROBORATION_BONUS_CAP, corroboratingMatches.length * CORROBORATION_BONUS_PER_MATCH);
+    const score = clampScore((primary?.score ?? 0) + corroborationBonus + patternBonus);
+    const tier = applyTierCap(scoreToTier(score), primary?.tier ?? 'no_match');
+    const reasons = [...(primary?.reasons ?? []), ...patternReasons];
     const caps = Array.from(new Set(sortedCandidates.flatMap((candidate) => candidate.caps)));
-    const corroborationBonus = Math.min(8, corroboratingMatches.length * 4);
 
     if (corroboratingMatches.length > 0) {
       reasons.push(
-        makeReason('multiple_supporting_ingredients', 'goal_corroboration', 'derived', {
+        makeReason('multiple_supporting_ingredients', 'goal_corroboration_v2', 'derived', {
           count: corroboratingMatches.length + 1,
         }),
       );
@@ -623,11 +680,15 @@ export const scoreProductGoalMatches = (input: ProductGoalMatchScoringInput): Pr
 
     return {
       goalKey,
-      score: clampScore(primary.score + corroborationBonus),
-      tier: primary.tier,
+      score,
+      tier,
       reasons,
       ...(caps.length > 0 ? { caps } : {}),
-      confidence: primary.confidence,
+      confidence: primary?.confidence ?? {
+        evidence: 'low',
+        dose: 'not_applicable',
+        disclosure: 'weak',
+      },
     };
   });
 };

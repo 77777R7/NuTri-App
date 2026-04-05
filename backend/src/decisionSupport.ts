@@ -369,7 +369,8 @@ export type DecisionSupportPersonalizedGoalCoverageState =
   | "strong"
   | "some"
   | "limited"
-  | "none";
+  | "none"
+  | "unknown";
 
 export type DecisionSupportPersonalizedGoalCoverage = {
   goalKey: GoalKey;
@@ -379,6 +380,28 @@ export type DecisionSupportPersonalizedGoalCoverage = {
   score?: number;
   reasonCodes?: string[];
   confidenceBucket?: "high" | "medium" | "low";
+};
+
+export type DecisionSupportGoalCoverageSummaryItem = {
+  goalKey: GoalKey;
+  goalLabel: string;
+  fitLevel: DecisionSupportPersonalizedGoalCoverageState;
+  rank: number;
+  reasonCodes: string[];
+  confidenceBucket: "high" | "medium" | "low";
+  shortReason?: string;
+};
+
+export type DecisionSupportGoalCoverageSummary = {
+  selectedGoalCount: number;
+  analyzedGoalCount: number;
+  surfacedGoalCount: number;
+  hiddenGoalsCount: number;
+  allGoalsAnalyzed: boolean;
+  sortedBy: "decision_relevance" | "fit_strength" | "profile_order";
+  dominantGoalKey?: GoalKey | null;
+  secondaryGoalKey?: GoalKey | null;
+  items: DecisionSupportGoalCoverageSummaryItem[];
 };
 
 export type DecisionSupportPersonalizedDoseAssessment =
@@ -417,6 +440,7 @@ export type DecisionSupportPersonalizedGoalFit = {
   surfacedGoalCount?: number;
   allGoalsAnalyzed?: boolean;
   defaultVisibleGoalKeys?: GoalKey[];
+  goalCoverageSummary?: DecisionSupportGoalCoverageSummary;
 };
 
 export type DecisionSupportPersonalizedSupportSignal = {
@@ -966,6 +990,8 @@ const toGoalCoverageState = (
       return "some";
     case "weak_match":
       return "limited";
+    case "unknown":
+      return "unknown";
     case "no_match":
     default:
       return "none";
@@ -995,6 +1021,32 @@ const dedupeGoalReasonCodes = (
   reasons: { code: string }[] | null | undefined,
 ): string[] => Array.from(new Set((reasons ?? []).map((reason) => reason.code).filter(Boolean)));
 
+const hasGoalCoverageUnknownSignal = (
+  reasonCodes: string[] | null | undefined,
+): boolean =>
+  (reasonCodes ?? []).some((code) =>
+    code === "goal_support_not_enough_label_detail"
+    || code === "personalization.product_evaluation.not_enough_structured_data",
+  );
+
+const buildGoalCoverageShortReason = (
+  fitLevel: DecisionSupportPersonalizedGoalCoverageState,
+): string => {
+  switch (fitLevel) {
+    case "strong":
+      return "Strong support on this label.";
+    case "some":
+      return "Some support on this label.";
+    case "limited":
+      return "Limited support from the visible ingredient and dose pattern.";
+    case "unknown":
+      return "Not enough label detail to judge this goal.";
+    case "none":
+    default:
+      return "No clear support on this label.";
+  }
+};
+
 const buildCoverageMetadataFromEvaluation = (
   evaluation: CatalogProductEvaluationResult | null,
   goalKey: GoalKey,
@@ -1019,6 +1071,28 @@ const buildCoverageMetadataFromEvaluation = (
     reasonCodes,
     confidenceBucket: toGoalCoverageConfidenceBucket(card?.confidence ?? match?.confidence),
   };
+};
+
+const resolveGoalCoverageState = (params: {
+  goalKey: GoalKey;
+  selectedGoalKey: GoalKey | null;
+  tier: ProductGoalMatchTier | "unknown";
+  source: "selected_goal_evaluation" | "goal_match_scoring_preview";
+  currentProductEvaluation: CatalogProductEvaluationResult | null;
+  reasonCodes: string[];
+}): DecisionSupportPersonalizedGoalCoverageState => {
+  if (
+    params.goalKey === params.selectedGoalKey
+    && params.currentProductEvaluation?.coverageStatus !== "coverage_ready"
+  ) {
+    return "unknown";
+  }
+
+  if (hasGoalCoverageUnknownSignal(params.reasonCodes)) {
+    return "unknown";
+  }
+
+  return toGoalCoverageState(params.tier);
 };
 
 const buildGoalCoverage = (params: {
@@ -1050,14 +1124,23 @@ const buildGoalCoverage = (params: {
       source === "selected_goal_evaluation"
         ? buildCoverageMetadataFromEvaluation(params.currentProductEvaluation, goalKey)
         : null;
+    const reasonCodes = evaluationMetadata?.reasonCodes ?? dedupeGoalReasonCodes(previewMatch?.reasons);
+    const state = resolveGoalCoverageState({
+      goalKey,
+      selectedGoalKey: params.selectedGoalKey,
+      tier,
+      source,
+      currentProductEvaluation: params.currentProductEvaluation,
+      reasonCodes,
+    });
 
     return {
       goalKey,
       tier,
-      state: toGoalCoverageState(tier),
+      state,
       source,
       score: evaluationMetadata?.score ?? previewMatch?.score ?? 0,
-      reasonCodes: evaluationMetadata?.reasonCodes ?? dedupeGoalReasonCodes(previewMatch?.reasons),
+      reasonCodes,
       confidenceBucket:
         evaluationMetadata?.confidenceBucket
         ?? toGoalCoverageConfidenceBucket(previewMatch?.confidence),
@@ -1066,9 +1149,10 @@ const buildGoalCoverage = (params: {
 };
 
 const GOAL_COVERAGE_STATE_PRIORITY: Record<DecisionSupportPersonalizedGoalCoverageState, number> = {
-  strong: 4,
-  some: 3,
-  limited: 2,
+  strong: 5,
+  some: 4,
+  limited: 3,
+  unknown: 2,
   none: 1,
 };
 
@@ -1135,6 +1219,56 @@ const rankGoalCoverage = (params: {
   });
 };
 
+const buildGoalCoverageSummary = (params: {
+  selectedGoalKeys: GoalKey[];
+  goalCoverage: DecisionSupportPersonalizedGoalCoverage[];
+  selectedGoalCount: number;
+  analyzedGoalCount: number;
+  surfacedGoalCount: number;
+  allGoalsAnalyzed: boolean;
+  dominantGoalKey: GoalKey | null;
+  secondaryGoalKey: GoalKey | null;
+}): DecisionSupportGoalCoverageSummary => {
+  const rankByGoal = new Map(
+    rankGoalCoverage({
+      goalCoverage: params.goalCoverage,
+      selectedGoalKeys: params.selectedGoalKeys,
+    }).map((entry, index) => [entry.goalKey, index + 1] as const),
+  );
+  const coverageByGoal = new Map(
+    params.goalCoverage.map((entry) => [entry.goalKey, entry] as const),
+  );
+
+  const items = params.selectedGoalKeys
+    .map((goalKey) => {
+      const coverage = coverageByGoal.get(goalKey);
+      if (!coverage) return null;
+
+      return {
+        goalKey,
+        goalLabel: humanizeGoalKey(goalKey),
+        fitLevel: coverage.state,
+        rank: rankByGoal.get(goalKey) ?? params.selectedGoalKeys.length,
+        reasonCodes: coverage.reasonCodes ?? [],
+        confidenceBucket: coverage.confidenceBucket ?? "low",
+        shortReason: buildGoalCoverageShortReason(coverage.state),
+      } satisfies DecisionSupportGoalCoverageSummaryItem;
+    })
+    .filter((item): item is DecisionSupportGoalCoverageSummaryItem => Boolean(item));
+
+  return {
+    selectedGoalCount: params.selectedGoalCount,
+    analyzedGoalCount: params.analyzedGoalCount,
+    surfacedGoalCount: params.surfacedGoalCount,
+    hiddenGoalsCount: Math.max(0, params.analyzedGoalCount - params.surfacedGoalCount),
+    allGoalsAnalyzed: params.allGoalsAnalyzed,
+    sortedBy: "profile_order",
+    dominantGoalKey: params.dominantGoalKey,
+    secondaryGoalKey: params.secondaryGoalKey,
+    items,
+  };
+};
+
 const DOMINANT_STRONG_SCORE_GAP = 18;
 const DOMINANT_MODERATE_SCORE_GAP = 15;
 
@@ -1166,8 +1300,21 @@ const classifyGoalHero = (params: {
 
   const ranked = rankGoalCoverage(params);
   const positiveEntries = ranked.filter((entry) => entry.state === "strong" || entry.state === "some");
+  const unknownEntries = ranked.filter((entry) => entry.state === "unknown");
+  const limitedEntries = ranked.filter((entry) => entry.state === "limited" || entry.state === "none");
 
   if (positiveEntries.length === 0) {
+    if (unknownEntries.length > 0 && unknownEntries.length + limitedEntries.length === ranked.length) {
+      const onlyUnknownOrNone = ranked.every((entry) => entry.state === "unknown" || entry.state === "none");
+      if (onlyUnknownOrNone) {
+        return {
+          heroMode: "insufficient_signal",
+          dominantGoalKey: null,
+          secondaryGoalKey: null,
+        };
+      }
+    }
+
     return {
       heroMode: "limited_goals",
       dominantGoalKey: null,
@@ -1683,6 +1830,16 @@ const buildPersonalizedResultLane = (params: {
     selectedGoalKey,
     allGoalsAnalyzed,
   });
+  const goalCoverageSummary = buildGoalCoverageSummary({
+    selectedGoalKeys: allSelectedGoalKeys,
+    goalCoverage: allGoalCoverage,
+    selectedGoalCount,
+    analyzedGoalCount,
+    surfacedGoalCount,
+    allGoalsAnalyzed,
+    dominantGoalKey,
+    secondaryGoalKey,
+  });
   const goalLensMode: DecisionSupportGoalLensMode =
     allSelectedGoalKeys.length > 1 && allGoalCoverage.length > 1
       ? "multi_goal_summary"
@@ -1743,6 +1900,7 @@ const buildPersonalizedResultLane = (params: {
         surfacedGoalCount,
         allGoalsAnalyzed,
         defaultVisibleGoalKeys,
+        goalCoverageSummary,
       }
       : {
         status: "pending",
@@ -1769,6 +1927,7 @@ const buildPersonalizedResultLane = (params: {
         surfacedGoalCount,
         allGoalsAnalyzed,
         defaultVisibleGoalKeys,
+        goalCoverageSummary,
       },
     personalInsight: attachedContext
       ? (() => {

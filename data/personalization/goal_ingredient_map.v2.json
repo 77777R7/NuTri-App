@@ -1,0 +1,75 @@
+{
+  "version": "v2",
+  "edges": [
+    { "ingredientKey": "melatonin", "goalKey": "sleep", "evidenceTier": "A", "baseWeight": 0.9, "minDoseHint": 0.3, "doseUnit": "mg", "notes": ["Melatonin is a direct sleep-support ingredient with clear dose floors."] },
+    { "ingredientKey": "magnesium", "goalKey": "sleep", "evidenceTier": "A", "baseWeight": 0.7, "minDoseHint": 100, "doseUnit": "mg", "formConstraint": ["glycinate", "bisglycinate", "taurate", "threonate"], "notes": ["Magnesium can support sleep routines more clearly when gentler forms and a disclosed dose are present."] },
+    { "ingredientKey": "l_theanine", "goalKey": "sleep", "evidenceTier": "B", "baseWeight": 0.58, "minDoseHint": 100, "doseUnit": "mg", "notes": ["L-theanine is a supportive sleep-adjacent ingredient."] },
+    { "ingredientKey": "glycine", "goalKey": "sleep", "evidenceTier": "B", "baseWeight": 0.7, "minDoseHint": 3000, "doseUnit": "mg", "notes": ["Glycine is a calm, conservative sleep-support ingredient when the dose is clearly disclosed."] },
+    { "ingredientKey": "valerian_root_extract", "goalKey": "sleep", "evidenceTier": "B", "baseWeight": 0.54, "minDoseHint": 400, "doseUnit": "mg", "formConstraint": ["extract"], "notes": ["Valerian root extract can support sleep-oriented products when the extract is explicit."] },
+    { "ingredientKey": "lemon_balm_extract", "goalKey": "sleep", "evidenceTier": "B", "baseWeight": 0.5, "minDoseHint": 300, "doseUnit": "mg", "formConstraint": ["extract"], "notes": ["Lemon balm extract is a gentle sleep-adjacent ingredient for calmer routines."] },
+
+    { "ingredientKey": "vitamin_b12", "goalKey": "energy", "evidenceTier": "A", "baseWeight": 0.9, "minDoseHint": 500, "doseUnit": "mcg", "formConstraint": ["methylcobalamin", "adenosylcobalamin"], "notes": ["B12 is a direct energy-support ingredient when dose and form are disclosed."] },
+    { "ingredientKey": "iron", "goalKey": "energy", "evidenceTier": "A", "baseWeight": 0.66, "minDoseHint": 8, "doseUnit": "mg", "formConstraint": ["bisglycinate", "ferrous bisglycinate"], "caps": ["eligibility_requires_generic_safety_path"], "notes": ["Iron can matter for energy, but it should stay on a conservative safety path."] },
+    { "ingredientKey": "coenzyme_q10", "goalKey": "energy", "evidenceTier": "B", "baseWeight": 0.58, "minDoseHint": 100, "doseUnit": "mg", "formConstraint": ["ubiquinol", "coenzyme q10"], "notes": ["CoQ10 is a common supporting ingredient for energy-oriented products."] },
+    { "ingredientKey": "caffeine", "goalKey": "energy", "evidenceTier": "A", "baseWeight": 0.9, "minDoseHint": 50, "doseUnit": "mg", "notes": ["Caffeine is a direct energy-support ingredient when the dose is disclosed."] },
+    { "ingredientKey": "l_tyrosine", "goalKey": "energy", "evidenceTier": "B", "baseWeight": 0.58, "minDoseHint": 500, "doseUnit": "mg", "notes": ["L-tyrosine can support energy-oriented formulas, especially when the dose is explicit."] },
+    { "ingredientKey": "rhodiola_rosea", "goalKey": "energy", "evidenceTier": "B", "baseWeight": 0.56, "minDoseHint": 200, "doseUnit": "mg", "formConstraint": ["extract"], "notes": ["Rhodiola rosea is a common energy-adjacent adaptogen when extract status is clear."] },
+    { "ingredientKey": "acetyl_l_carnitine", "goalKey": "energy", "evidenceTier": "B", "baseWeight": 0.54, "minDoseHint": 500, "doseUnit": "mg", "notes": ["Acetyl-L-carnitine is a conservative supporting ingredient for energy-focused reviews."] },
+    { "ingredientKey": "vitamin_c", "goalKey": "energy", "evidenceTier": "D", "baseWeight": 0.05, "minDoseHint": 200, "doseUnit": "mg", "notes": ["Vitamin C should not lead an energy narrative by default."] },
+    { "ingredientKey": "omega_3", "goalKey": "energy", "evidenceTier": "D", "baseWeight": 0.04, "minDoseHint": 1000, "doseUnit": "mg", "formConstraint": ["triglyceride", "reesterified triglyceride", "phospholipid"], "notes": ["Omega-3 should stay near-zero for energy unless stronger context exists."] },
+
+    { "ingredientKey": "vitamin_c", "goalKey": "immunity", "evidenceTier": "A", "baseWeight": 0.94, "minDoseHint": 200, "doseUnit": "mg", "notes": ["Vitamin C is a lead immunity-support ingredient with clear dose support."] },
+    { "ingredientKey": "zinc", "goalKey": "immunity", "evidenceTier": "A", "baseWeight": 0.9, "minDoseHint": 10, "doseUnit": "mg", "formConstraint": ["picolinate", "citrate", "gluconate", "bisglycinate", "monomethionine"], "notes": ["Zinc is a lead immunity-support ingredient when common absorbable forms are present."] },
+    { "ingredientKey": "omega_3", "goalKey": "immunity", "evidenceTier": "C", "baseWeight": 0.18, "minDoseHint": 1000, "doseUnit": "mg", "formConstraint": ["triglyceride", "reesterified triglyceride", "phospholipid"], "notes": ["Omega-3 can be context-dependent for immunity but should not lead the narrative by default."] },
+    { "ingredientKey": "vitamin_d", "goalKey": "immunity", "evidenceTier": "A", "baseWeight": 0.68, "minDoseHint": 25, "doseUnit": "mcg", "formConstraint": ["d3", "cholecalciferol"], "notes": ["Vitamin D is a strong immunity-adjacent ingredient."] },
+    { "ingredientKey": "elderberry", "goalKey": "immunity", "evidenceTier": "B", "baseWeight": 0.7, "minDoseHint": 300, "doseUnit": "mg", "formConstraint": ["extract"], "notes": ["Elderberry is a common immunity-supportive ingredient when extract status is clear."] },
+    { "ingredientKey": "quercetin", "goalKey": "immunity", "evidenceTier": "B", "baseWeight": 0.54, "minDoseHint": 250, "doseUnit": "mg", "notes": ["Quercetin is a conservative immunity-support ingredient."] },
+    { "ingredientKey": "beta_glucan", "goalKey": "immunity", "evidenceTier": "B", "baseWeight": 0.56, "minDoseHint": 250, "doseUnit": "mg", "formConstraint": ["yeast"], "notes": ["Beta-glucan can support immunity-focused reviews when the source is clear."] },
+
+    { "ingredientKey": "protein", "goalKey": "recovery", "evidenceTier": "A", "baseWeight": 0.9, "minDoseHint": 20, "doseUnit": "g", "formConstraint": ["whey", "isolate", "plant blend"], "notes": ["Protein is a direct recovery-support ingredient when the serving is disclosed."] },
+    { "ingredientKey": "creatine", "goalKey": "recovery", "evidenceTier": "A", "baseWeight": 0.88, "minDoseHint": 3, "doseUnit": "g", "formConstraint": ["monohydrate"], "notes": ["Creatine is a strong recovery/performance ingredient with a clear daily floor."] },
+    { "ingredientKey": "omega_3", "goalKey": "recovery", "evidenceTier": "A", "baseWeight": 0.69, "minDoseHint": 1000, "doseUnit": "mg", "formConstraint": ["triglyceride", "reesterified triglyceride", "phospholipid"], "notes": ["Omega-3 is more relevant to recovery than energy when dose and form are clear."] },
+    { "ingredientKey": "vitamin_c", "goalKey": "recovery", "evidenceTier": "C", "baseWeight": 0.36, "minDoseHint": 500, "doseUnit": "mg", "notes": ["Vitamin C can provide secondary recovery support, but it should not dominate the recovery narrative."] },
+    { "ingredientKey": "tart_cherry", "goalKey": "recovery", "evidenceTier": "B", "baseWeight": 0.7, "minDoseHint": 480, "doseUnit": "mg", "formConstraint": ["extract", "concentrate"], "notes": ["Tart cherry is a conservative supporting ingredient for recovery-oriented products."] },
+    { "ingredientKey": "collagen_peptides", "goalKey": "recovery", "evidenceTier": "B", "baseWeight": 0.54, "minDoseHint": 10000, "doseUnit": "mg", "formConstraint": ["peptides"], "notes": ["Collagen peptides can support recovery-oriented reviews when the peptide form is clear."] },
+    { "ingredientKey": "leucine", "goalKey": "recovery", "evidenceTier": "B", "baseWeight": 0.54, "minDoseHint": 2500, "doseUnit": "mg", "notes": ["Leucine is a conservative recovery-support ingredient when the dose is explicit."] },
+
+    { "ingredientKey": "caffeine", "goalKey": "focus", "evidenceTier": "A", "baseWeight": 0.88, "minDoseHint": 50, "doseUnit": "mg", "notes": ["Caffeine is a direct focus-support ingredient when the dose is disclosed."] },
+    { "ingredientKey": "l_theanine", "goalKey": "focus", "evidenceTier": "B", "baseWeight": 0.58, "minDoseHint": 100, "doseUnit": "mg", "notes": ["L-theanine is a conservative focus-support ingredient, especially in combinations."] },
+    { "ingredientKey": "bacopa", "goalKey": "focus", "evidenceTier": "B", "baseWeight": 0.28, "minDoseHint": 300, "doseUnit": "mg", "formConstraint": ["bacopa monnieri"], "notes": ["Bacopa can support focus but should stay conservative in default reviews."] },
+    { "ingredientKey": "citicoline", "goalKey": "focus", "evidenceTier": "A", "baseWeight": 0.7, "minDoseHint": 250, "doseUnit": "mg", "formConstraint": ["cdp_choline", "citicoline"], "notes": ["Citicoline is a strong focus-adjacent ingredient when the form is explicit."] },
+    { "ingredientKey": "l_tyrosine", "goalKey": "focus", "evidenceTier": "B", "baseWeight": 0.56, "minDoseHint": 500, "doseUnit": "mg", "notes": ["L-tyrosine can support focus-oriented formulas when the dose is explicit."] },
+    { "ingredientKey": "rhodiola_rosea", "goalKey": "focus", "evidenceTier": "B", "baseWeight": 0.52, "minDoseHint": 200, "doseUnit": "mg", "formConstraint": ["extract"], "notes": ["Rhodiola is a conservative focus-support ingredient when extract status is clear."] },
+
+    { "ingredientKey": "maca", "goalKey": "libido_enhancement", "evidenceTier": "B", "baseWeight": 0.56, "minDoseHint": 1500, "doseUnit": "mg", "caps": ["eligibility_requires_generic_safety_path"], "notes": ["Maca can matter for libido enhancement, but it should stay on a conservative safety path."] },
+    { "ingredientKey": "zinc", "goalKey": "libido_enhancement", "evidenceTier": "A", "baseWeight": 0.54, "minDoseHint": 10, "doseUnit": "mg", "formConstraint": ["picolinate", "citrate"], "caps": ["eligibility_requires_generic_safety_path"], "notes": ["Zinc can be relevant to libido enhancement, but it should stay on a conservative safety path."] },
+
+    { "ingredientKey": "ashwagandha", "goalKey": "stress_support", "evidenceTier": "B", "baseWeight": 0.82, "minDoseHint": 300, "doseUnit": "mg", "formConstraint": ["ksm_66", "sensoril"], "notes": ["Ashwagandha is a lead stress-support ingredient when the extract is explicit."] },
+    { "ingredientKey": "magnesium", "goalKey": "stress_support", "evidenceTier": "A", "baseWeight": 0.7, "minDoseHint": 100, "doseUnit": "mg", "formConstraint": ["glycinate", "bisglycinate", "taurate", "threonate"], "notes": ["Magnesium can support stress routines more clearly when gentler forms and a disclosed dose are present."] },
+    { "ingredientKey": "vitamin_c", "goalKey": "stress_support", "evidenceTier": "C", "baseWeight": 0.36, "minDoseHint": 500, "doseUnit": "mg", "notes": ["Vitamin C can offer a weak secondary stress-support lane, but it should not lead the narrative."] },
+    { "ingredientKey": "l_theanine", "goalKey": "stress_support", "evidenceTier": "B", "baseWeight": 0.58, "minDoseHint": 100, "doseUnit": "mg", "notes": ["L-theanine is a conservative stress-support ingredient."] },
+
+    { "ingredientKey": "fiber", "goalKey": "weight_management", "evidenceTier": "A", "baseWeight": 0.66, "minDoseHint": 3, "doseUnit": "g", "formConstraint": ["psyllium"], "notes": ["Fiber can support weight-management-oriented products when the serving is clear."] },
+    { "ingredientKey": "protein", "goalKey": "weight_management", "evidenceTier": "A", "baseWeight": 0.64, "minDoseHint": 20, "doseUnit": "g", "notes": ["Protein can support weight-management-oriented products when the serving is clear."] },
+    { "ingredientKey": "green_tea_extract", "goalKey": "weight_management", "evidenceTier": "B", "baseWeight": 0.32, "minDoseHint": 250, "doseUnit": "mg", "caps": ["eligibility_requires_generic_safety_path"], "notes": ["Green tea extract can be relevant, but it should stay on a conservative safety path."] }
+  ],
+  "formulaPatterns": [
+    { "goalKey": "immunity", "requiredIngredients": ["vitamin_c", "zinc"], "optionalIngredients": [], "bonusWeight": 0.08, "reasonCodes": ["formula_pattern_immunity_vitamin_c_zinc"] },
+    { "goalKey": "immunity", "requiredIngredients": ["vitamin_c", "vitamin_d"], "optionalIngredients": [], "bonusWeight": 0.06, "reasonCodes": ["formula_pattern_immunity_vitamin_c_d3"] },
+    { "goalKey": "immunity", "requiredIngredients": ["vitamin_c", "zinc", "vitamin_d"], "optionalIngredients": [], "bonusWeight": 0.1, "reasonCodes": ["formula_pattern_immunity_vitamin_c_zinc_d3"] },
+    { "goalKey": "sleep", "requiredIngredients": ["magnesium", "l_theanine"], "optionalIngredients": [], "bonusWeight": 0.08, "reasonCodes": ["formula_pattern_sleep_magnesium_theanine"] },
+    { "goalKey": "sleep", "requiredIngredients": ["magnesium", "glycine"], "optionalIngredients": [], "bonusWeight": 0.06, "reasonCodes": ["formula_pattern_sleep_magnesium_glycine"] },
+    { "goalKey": "sleep", "requiredIngredients": ["melatonin", "magnesium"], "optionalIngredients": [], "bonusWeight": 0.08, "reasonCodes": ["formula_pattern_sleep_melatonin_magnesium"] },
+    { "goalKey": "recovery", "requiredIngredients": ["omega_3", "protein"], "optionalIngredients": [], "bonusWeight": 0.08, "reasonCodes": ["formula_pattern_recovery_omega3_protein"] },
+    { "goalKey": "recovery", "requiredIngredients": ["omega_3", "tart_cherry"], "optionalIngredients": [], "bonusWeight": 0.06, "reasonCodes": ["formula_pattern_recovery_omega3_tart_cherry"] },
+    { "goalKey": "recovery", "requiredIngredients": ["creatine", "protein"], "optionalIngredients": [], "bonusWeight": 0.1, "reasonCodes": ["formula_pattern_recovery_creatine_protein"] },
+    { "goalKey": "recovery", "requiredIngredients": ["curcumin", "omega_3"], "optionalIngredients": [], "bonusWeight": 0.06, "reasonCodes": ["formula_pattern_recovery_curcumin_omega3"] },
+    { "goalKey": "stress_support", "requiredIngredients": ["magnesium", "l_theanine"], "optionalIngredients": [], "bonusWeight": 0.08, "reasonCodes": ["formula_pattern_stress_magnesium_theanine"] },
+    { "goalKey": "stress_support", "requiredIngredients": ["ashwagandha", "magnesium"], "optionalIngredients": [], "bonusWeight": 0.06, "reasonCodes": ["formula_pattern_stress_ashwagandha_magnesium"] },
+    { "goalKey": "focus", "requiredIngredients": ["caffeine", "l_theanine"], "optionalIngredients": [], "bonusWeight": 0.08, "reasonCodes": ["formula_pattern_focus_caffeine_theanine"] },
+    { "goalKey": "focus", "requiredIngredients": ["citicoline", "l_tyrosine"], "optionalIngredients": [], "bonusWeight": 0.06, "reasonCodes": ["formula_pattern_focus_citicoline_tyrosine"] },
+    { "goalKey": "energy", "requiredIngredients": ["caffeine", "l_tyrosine"], "optionalIngredients": [], "bonusWeight": 0.08, "reasonCodes": ["formula_pattern_energy_caffeine_tyrosine"] },
+    { "goalKey": "energy", "requiredIngredients": ["vitamin_b12", "coenzyme_q10"], "optionalIngredients": [], "bonusWeight": 0.06, "reasonCodes": ["formula_pattern_energy_b12_coq10"] },
+    { "goalKey": "weight_management", "requiredIngredients": ["fiber", "protein"], "optionalIngredients": [], "bonusWeight": 0.06, "reasonCodes": ["formula_pattern_weight_fiber_protein"] }
+  ]
+}

@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nutri.app/schemas/personalization/goal_ingredient_map.v2.schema.json",
+  "type": "object",
+  "required": ["version", "edges", "formulaPatterns"],
+  "properties": {
+    "version": { "type": "string", "const": "v2" },
+    "edges": {
+      "type": "array",
+      "minItems": 8,
+      "items": {
+        "type": "object",
+        "required": ["ingredientKey", "goalKey", "evidenceTier", "baseWeight", "minDoseHint", "doseUnit"],
+        "properties": {
+          "ingredientKey": { "type": "string", "minLength": 1 },
+          "goalKey": {
+            "type": "string",
+            "enum": ["sleep", "energy", "immunity", "recovery", "focus", "libido_enhancement", "stress_support", "weight_management"]
+          },
+          "evidenceTier": { "type": "string", "enum": ["A", "B", "C", "D"] },
+          "baseWeight": { "type": "number", "minimum": 0, "maximum": 1 },
+          "minDoseHint": { "type": "number", "minimum": 0 },
+          "doseUnit": { "type": "string", "enum": ["mcg", "mg", "g"] },
+          "maxUsefulDoseHint": { "type": ["number", "null"], "minimum": 0 },
+          "formConstraint": { "type": "array", "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
+          "notes": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+          "caps": { "type": "array", "uniqueItems": true, "items": { "type": "string", "enum": ["eligibility_requires_generic_safety_path"] } }
+        },
+        "additionalProperties": false
+      }
+    },
+    "formulaPatterns": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["goalKey", "requiredIngredients", "bonusWeight", "reasonCodes"],
+        "properties": {
+          "goalKey": {
+            "type": "string",
+            "enum": ["sleep", "energy", "immunity", "recovery", "focus", "libido_enhancement", "stress_support", "weight_management"]
+          },
+          "requiredIngredients": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": { "type": "string", "minLength": 1 }
+          },
+          "optionalIngredients": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": { "type": "string", "minLength": 1 }
+          },
+          "bonusWeight": { "type": "number", "minimum": 0, "maximum": 1 },
+          "reasonCodes": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": { "type": "string", "minLength": 1 }
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}
