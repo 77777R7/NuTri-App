@@ -70,6 +70,60 @@ const buildOmegaDigest = (): FactsDigest => ({
   },
 });
 
+const buildMagnesiumTheanineDigest = (): FactsDigest => ({
+  sourceType: 'dsld',
+  identity: {
+    type: 'dsldLabelId',
+    value: 'fixture-sleep-focus-support',
+    regionTags: ['US'],
+  },
+  product: {
+    brandDisplay: 'Calm Labs',
+    name: 'Magnesium L-Theanine Blend',
+    dosageForm: 'Capsule',
+    route: null,
+  },
+  actives: [
+    {
+      name: 'Magnesium',
+      amount: 200,
+      unit: 'mg',
+      amountText: '200 mg',
+      source: 'dsld',
+      confidence: 1,
+    },
+    {
+      name: 'L-Theanine',
+      amount: 200,
+      unit: 'mg',
+      amountText: '200 mg',
+      source: 'dsld',
+      confidence: 1,
+    },
+  ],
+  inactives: [],
+  serving: {
+    servingSize: '2 capsules',
+    servingsPerContainer: 30,
+  },
+  labelDosing: [],
+  warnings: {
+    warnings: [],
+    consultDoctorIf: [],
+    redFlags: [],
+    missingFlag: false,
+  },
+  claims: {
+    labelPurposes: [],
+    webClaims: [],
+  },
+  quality: {
+    isComplete: true,
+    missingFields: [],
+    completenessScore: 100,
+  },
+});
+
 const buildPersonalizationContext = (
   overrides?: Partial<DecisionSupportAttachedPersonalizationContext>,
 ): DecisionSupportAttachedPersonalizationContext => ({
@@ -107,6 +161,9 @@ test('compileDecisionSupport uses attached Recovery goal to return a non-pending
   assert.equal(compiled.personalizedResultLane.goalFit.status, 'ready');
   assert.equal(compiled.personalizedResultLane.goalFit.selectedGoalKey, 'recovery');
   assert.notEqual(compiled.personalizedResultLane.goalFit.fitTier, 'unknown');
+  assert.equal(compiled.personalizedResultLane.goalFit.heroMode, 'single_goal');
+  assert.equal(compiled.personalizedResultLane.goalFit.dominantGoalKey, 'recovery');
+  assert.equal(compiled.personalizedResultLane.goalFit.secondaryGoalKey, null);
   assert.notEqual(compiled.personalizedResultLane.personalInsight.status, 'pending');
   assert.ok(compiled.personalizedResultLane.personalInsight.supports.length > 0);
   assert.match(compiled.personalizedResultLane.goalFit.summary, /Recovery/i);
@@ -132,6 +189,9 @@ test('compileDecisionSupport returns multi-goal coverage in user-selected order 
   assert.equal(compiled.personalizedResultLane.goalFit.goalCoverage?.[0]?.state, 'none');
   assert.equal(compiled.personalizedResultLane.goalFit.goalCoverage?.[2]?.source, 'selected_goal_evaluation');
   assert.notEqual(compiled.personalizedResultLane.goalFit.goalCoverage?.[2]?.state, 'none');
+  assert.equal(compiled.personalizedResultLane.goalFit.heroMode, 'dominant_goal');
+  assert.equal(compiled.personalizedResultLane.goalFit.dominantGoalKey, 'recovery');
+  assert.equal(compiled.personalizedResultLane.goalFit.secondaryGoalKey, null);
 });
 
 test('compileDecisionSupport preserves legacy top-3 fields while adding full multi-goal coverage metadata', () => {
@@ -170,6 +230,15 @@ test('compileDecisionSupport preserves legacy top-3 fields while adding full mul
   assert.ok(compiled.personalizedResultLane.goalFit.allGoalCoverage?.some((entry) => entry.state === 'none'));
   assert.ok(compiled.personalizedResultLane.goalFit.defaultVisibleGoalKeys?.includes('recovery'));
   assert.equal(compiled.personalizedResultLane.goalFit.defaultVisibleGoalKeys?.length, 3);
+  const recoveryCoverage = compiled.personalizedResultLane.goalFit.allGoalCoverage?.find((entry) => entry.goalKey === 'recovery');
+  assert.equal(compiled.personalizedResultLane.goalFit.heroMode, 'dominant_goal');
+  assert.equal(compiled.personalizedResultLane.goalFit.dominantGoalKey, 'recovery');
+  assert.equal(compiled.personalizedResultLane.goalFit.secondaryGoalKey, null);
+  assert.equal(recoveryCoverage?.source, 'selected_goal_evaluation');
+  assert.equal(typeof recoveryCoverage?.score, 'number');
+  assert.ok((recoveryCoverage?.score ?? 0) > 0);
+  assert.ok(recoveryCoverage?.reasonCodes?.includes('goal_supported_by_ingredient'));
+  assert.equal(recoveryCoverage?.confidenceBucket, 'low');
 });
 
 test('compileDecisionSupport falls back to original order for visible goals when every analyzed goal is limited or none', () => {
@@ -194,6 +263,40 @@ test('compileDecisionSupport falls back to original order for visible goals when
   assert.ok(
     (compiled.personalizedResultLane.goalFit.allGoalCoverage ?? []).every(
       (entry) => entry.state === 'limited' || entry.state === 'none',
+    ),
+  );
+  assert.equal(compiled.personalizedResultLane.goalFit.heroMode, 'limited_goals');
+  assert.equal(compiled.personalizedResultLane.goalFit.dominantGoalKey, null);
+  assert.equal(compiled.personalizedResultLane.goalFit.secondaryGoalKey, null);
+});
+
+test('compileDecisionSupport classifies mixed multi-goal coverage and exposes ranked metadata', () => {
+  const compiled = compileDecisionSupport({
+    digest: buildMagnesiumTheanineDigest(),
+    factsDigestHash: 'fixture-sr-mixed-goal-coverage',
+    viewMode: 'details',
+    personalizationContext: buildPersonalizationContext({
+      prioritizedGoals: ['sleep', 'focus', 'stress_support'],
+      selectedGoalKey: 'sleep',
+    }),
+  });
+
+  assert.equal(compiled.personalizedResultLane.goalFit.goalLensMode, 'multi_goal_summary');
+  assert.equal(compiled.personalizedResultLane.goalFit.heroMode, 'mixed_goals');
+  assert.equal(compiled.personalizedResultLane.goalFit.dominantGoalKey, 'sleep');
+  assert.equal(compiled.personalizedResultLane.goalFit.secondaryGoalKey, 'stress_support');
+  assert.deepEqual(
+    compiled.personalizedResultLane.goalFit.allGoalCoverage?.map((entry) => entry.goalKey),
+    ['sleep', 'focus', 'stress_support'],
+  );
+  assert.ok(
+    (compiled.personalizedResultLane.goalFit.allGoalCoverage ?? []).every(
+      (entry) => typeof entry.score === 'number' && Array.isArray(entry.reasonCodes) && entry.reasonCodes.length > 0,
+    ),
+  );
+  assert.ok(
+    (compiled.personalizedResultLane.goalFit.allGoalCoverage ?? []).every(
+      (entry) => ['high', 'medium', 'low'].includes(entry.confidenceBucket ?? 'low'),
     ),
   );
 });

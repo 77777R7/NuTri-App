@@ -43,6 +43,13 @@ type AnalysisTopSectionRedesignProps = {
   verifiedLabelText: string;
 };
 
+type GoalCoverageRenderItem = {
+  key: string;
+  goalLabel: string;
+  state: 'strong' | 'some' | 'limited' | 'none';
+  description: string;
+};
+
 const resolveInsightIcon = (topic: TopSectionInsightTopic, tone: TopSectionHeroPresentation['tone']) => {
   switch (topic) {
     case 'support':
@@ -216,16 +223,44 @@ export const AnalysisTopSectionRedesign: React.FC<AnalysisTopSectionRedesignProp
               const isExpanded = expandedKey === row.key;
               const { Icon, iconBg, iconColor } = resolveInsightIcon(row.topic, row.tone);
               const isGoalCoverageRow = (row.goalCoverageItems?.length ?? 0) > 0;
+              const fullGoalCoverageItems: GoalCoverageRenderItem[] = (row.goalCoverageItems ?? []).map((item) => ({
+                key: item.key,
+                goalLabel: item.goalLabel,
+                state:
+                  item.tone === 'positive'
+                    ? 'strong'
+                    : item.tone === 'neutral'
+                      ? 'some'
+                      : 'limited',
+                description: item.description,
+              }));
               const showAllGoalCoverage = expandedCoverageRows[row.key] === true;
-              const visibleGoalCoverageItems =
-                row.visibleGoalCoverageItems && row.visibleGoalCoverageItems.length > 0
-                  ? row.visibleGoalCoverageItems
-                  : row.goalCoverageItems ?? [];
+              const fallbackVisibleGoalCoverageItems = row.visibleGoalCoverageItems && row.visibleGoalCoverageItems.length > 0
+                  ? row.visibleGoalCoverageItems.map((item) => ({
+                      key: item.key,
+                      goalLabel: item.goalLabel,
+                      state:
+                        item.tone === 'positive'
+                          ? 'strong'
+                          : item.tone === 'neutral'
+                            ? 'some'
+                            : 'limited',
+                      description: item.description,
+                    }))
+                  : fullGoalCoverageItems;
+              const useInlineSecondaryCoverage = row.goalCoveragePresentation === 'secondary_inline';
               const activeGoalCoverageItems = isGoalCoverageRow
-                ? (showAllGoalCoverage ? row.goalCoverageItems : visibleGoalCoverageItems) ?? []
+                ? useInlineSecondaryCoverage
+                  ? (showAllGoalCoverage ? fullGoalCoverageItems : [])
+                  : (showAllGoalCoverage ? fullGoalCoverageItems : fallbackVisibleGoalCoverageItems) ?? []
                 : [];
+              const rowSubtitle = isGoalCoverageRow && showAllGoalCoverage && row.expandedSubtitle
+                ? row.expandedSubtitle
+                : row.subtitle;
               const expandedFrameHeight = getExpandedFrameHeight(
-                isGoalCoverageRow ? activeGoalCoverageItems.length : row.expandedBullets.length,
+                isGoalCoverageRow
+                  ? activeGoalCoverageItems.length + row.expandedBullets.length + (useInlineSecondaryCoverage ? 2 : 0)
+                  : row.expandedBullets.length,
               );
 
               const handleToggle = () => {
@@ -252,8 +287,8 @@ export const AnalysisTopSectionRedesign: React.FC<AnalysisTopSectionRedesignProp
                     </View>
                     <View style={styles.rowCopy}>
                       <Text style={styles.rowTitle}>{row.collapsedTitle}</Text>
-                      {!!row.subtitle ? (
-                        <Text style={styles.rowSubtitle}>{row.subtitle}</Text>
+                      {!!rowSubtitle ? (
+                        <Text style={styles.rowSubtitle}>{rowSubtitle}</Text>
                       ) : null}
                     </View>
                     <View style={[styles.chevronWrap, isExpanded && styles.chevronWrapExpanded]}>
@@ -267,6 +302,21 @@ export const AnalysisTopSectionRedesign: React.FC<AnalysisTopSectionRedesignProp
                       exiting={FadeOutDown.duration(140)}
                       style={[styles.expandedWrap, { minHeight: Math.max(expandedFrameHeight - 58, 44) }]}
                     >
+                      {useInlineSecondaryCoverage
+                        ? row.expandedBullets.map((bullet, bulletIndex) => (
+                            <Text key={`${row.key}-dominant-${bulletIndex}`} style={styles.expandedLine}>
+                              {bullet}
+                            </Text>
+                          ))
+                        : null}
+                      {useInlineSecondaryCoverage ? (
+                        <View style={styles.inlineCoverageSection}>
+                          <Text style={styles.inlineCoverageLabel}>{row.inlineGoalCoverageTitle ?? 'How it maps to your goals'}</Text>
+                          {!!(showAllGoalCoverage ? row.expandedSubtitle : undefined) ? (
+                            <Text style={styles.inlineCoverageSubtitle}>{showAllGoalCoverage ? row.expandedSubtitle : undefined}</Text>
+                          ) : null}
+                        </View>
+                      ) : null}
                       {activeGoalCoverageItems.map((item) => (
                         <Text key={`${row.key}-${item.key}`} style={styles.goalCoverageLine}>
                           {item.description}
@@ -602,6 +652,25 @@ const styles = StyleSheet.create({
     fontWeight: '400',
     color: '#475569',
     letterSpacing: -0.15,
+  },
+  inlineCoverageSection: {
+    marginTop: 6,
+    marginBottom: 2,
+    gap: 4,
+  },
+  inlineCoverageLabel: {
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: '600',
+    color: '#0B1E36',
+    letterSpacing: -0.18,
+  },
+  inlineCoverageSubtitle: {
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: '500',
+    color: '#64748B',
+    letterSpacing: -0.1,
   },
   goalCoverageActionWrap: {
     marginTop: 12,

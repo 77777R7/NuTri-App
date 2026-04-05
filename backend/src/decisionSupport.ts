@@ -358,6 +358,13 @@ export type DecisionSupportGoalLensMode =
   | "single_goal"
   | "multi_goal_summary";
 
+export type DecisionSupportGoalHeroMode =
+  | "dominant_goal"
+  | "mixed_goals"
+  | "limited_goals"
+  | "single_goal"
+  | "insufficient_signal";
+
 export type DecisionSupportPersonalizedGoalCoverageState =
   | "strong"
   | "some"
@@ -369,6 +376,9 @@ export type DecisionSupportPersonalizedGoalCoverage = {
   tier: ProductGoalMatchTier | "unknown";
   state: DecisionSupportPersonalizedGoalCoverageState;
   source: "selected_goal_evaluation" | "goal_match_scoring_preview";
+  score?: number;
+  reasonCodes?: string[];
+  confidenceBucket?: "high" | "medium" | "low";
 };
 
 export type DecisionSupportPersonalizedDoseAssessment =
@@ -394,6 +404,9 @@ export type DecisionSupportPersonalizedGoalFit = {
   previewTopGoalKey: GoalKey | null;
   previewTopTier: ProductGoalMatchTier | "unknown";
   candidateGoalKeys: GoalKey[];
+  heroMode?: DecisionSupportGoalHeroMode;
+  dominantGoalKey?: GoalKey | null;
+  secondaryGoalKey?: GoalKey | null;
   selectedGoalKeys?: GoalKey[];
   allSelectedGoalKeys?: GoalKey[];
   goalLensMode?: DecisionSupportGoalLensMode;
@@ -961,6 +974,53 @@ const toGoalCoverageState = (
 
 const GOAL_COVERAGE_VISIBILITY_LIMIT = 3;
 
+const toGoalCoverageConfidenceBucket = (
+  value:
+    | ProductGoalMatch["confidence"]
+    | CatalogProductEvaluationResult["goalFitCard"]["confidence"]
+    | null
+    | undefined,
+): "high" | "medium" | "low" => {
+  switch (value?.evidence) {
+    case "high":
+      return "high";
+    case "medium":
+      return "medium";
+    default:
+      return "low";
+  }
+};
+
+const dedupeGoalReasonCodes = (
+  reasons: { code: string }[] | null | undefined,
+): string[] => Array.from(new Set((reasons ?? []).map((reason) => reason.code).filter(Boolean)));
+
+const buildCoverageMetadataFromEvaluation = (
+  evaluation: CatalogProductEvaluationResult | null,
+  goalKey: GoalKey,
+): {
+  score: number;
+  reasonCodes: string[];
+  confidenceBucket: "high" | "medium" | "low";
+} | null => {
+  if (!evaluation) return null;
+
+  const match = evaluation.savedProductEvaluation.productGoalMatches.find((entry) => entry.goalKey === goalKey) ?? null;
+  const card = evaluation.goalFitCard;
+  const reasonCodes = dedupeGoalReasonCodes([
+    ...(match?.reasons ?? []),
+    ...(card?.whyFit ?? []),
+    ...(card?.whyNotStronger ?? []),
+    ...(card?.holdbacks ?? []),
+  ]);
+
+  return {
+    score: match?.score ?? 0,
+    reasonCodes,
+    confidenceBucket: toGoalCoverageConfidenceBucket(card?.confidence ?? match?.confidence),
+  };
+};
+
 const buildGoalCoverage = (params: {
   digest: FactsDigest;
   selectedGoalKeys: GoalKey[];
@@ -975,7 +1035,8 @@ const buildGoalCoverage = (params: {
   );
 
   return selectedGoalKeys.map((goalKey) => {
-    const previewTier = normalizeGoalCoverageTier(previewMatchesByGoal.get(goalKey)?.tier ?? "unknown");
+    const previewMatch = previewMatchesByGoal.get(goalKey);
+    const previewTier = normalizeGoalCoverageTier(previewMatch?.tier ?? "unknown");
     const selectedEvaluationTier =
       goalKey === params.selectedGoalKey
         ? normalizeGoalCoverageTier(params.currentProductEvaluation?.goalFitCard?.tier ?? "unknown")
@@ -985,12 +1046,21 @@ const buildGoalCoverage = (params: {
       selectedEvaluationTier !== "unknown"
         ? "selected_goal_evaluation"
         : "goal_match_scoring_preview";
+    const evaluationMetadata =
+      source === "selected_goal_evaluation"
+        ? buildCoverageMetadataFromEvaluation(params.currentProductEvaluation, goalKey)
+        : null;
 
     return {
       goalKey,
       tier,
       state: toGoalCoverageState(tier),
       source,
+      score: evaluationMetadata?.score ?? previewMatch?.score ?? 0,
+      reasonCodes: evaluationMetadata?.reasonCodes ?? dedupeGoalReasonCodes(previewMatch?.reasons),
+      confidenceBucket:
+        evaluationMetadata?.confidenceBucket
+        ?? toGoalCoverageConfidenceBucket(previewMatch?.confidence),
     };
   });
 };
@@ -1040,6 +1110,114 @@ const buildDefaultVisibleGoalKeys = (params: {
     })
     .slice(0, GOAL_COVERAGE_VISIBILITY_LIMIT)
     .map((entry) => entry.goalKey);
+};
+
+const rankGoalCoverage = (params: {
+  goalCoverage: DecisionSupportPersonalizedGoalCoverage[];
+  selectedGoalKeys: GoalKey[];
+}): DecisionSupportPersonalizedGoalCoverage[] => {
+  const originalIndexByGoal = new Map(
+    params.selectedGoalKeys.map((goalKey, index) => [goalKey, index] as const),
+  );
+
+  return [...params.goalCoverage].sort((left, right) => {
+    const stateDelta = GOAL_COVERAGE_STATE_PRIORITY[right.state] - GOAL_COVERAGE_STATE_PRIORITY[left.state];
+    if (stateDelta !== 0) return stateDelta;
+
+    const sourceDelta =
+      Number(right.source === "selected_goal_evaluation") - Number(left.source === "selected_goal_evaluation");
+    if (sourceDelta !== 0) return sourceDelta;
+
+    const scoreDelta = (right.score ?? 0) - (left.score ?? 0);
+    if (scoreDelta !== 0) return scoreDelta;
+
+    return (originalIndexByGoal.get(left.goalKey) ?? 0) - (originalIndexByGoal.get(right.goalKey) ?? 0);
+  });
+};
+
+const DOMINANT_STRONG_SCORE_GAP = 18;
+const DOMINANT_MODERATE_SCORE_GAP = 15;
+
+const classifyGoalHero = (params: {
+  selectedGoalKeys: GoalKey[];
+  goalCoverage: DecisionSupportPersonalizedGoalCoverage[];
+  selectedGoalKey: GoalKey | null;
+  allGoalsAnalyzed: boolean;
+}): {
+  heroMode: DecisionSupportGoalHeroMode;
+  dominantGoalKey: GoalKey | null;
+  secondaryGoalKey: GoalKey | null;
+} => {
+  if (params.selectedGoalKeys.length === 0 || params.goalCoverage.length === 0) {
+    return {
+      heroMode: "insufficient_signal",
+      dominantGoalKey: null,
+      secondaryGoalKey: null,
+    };
+  }
+
+  if (params.goalCoverage.length === 1 || params.selectedGoalKeys.length === 1) {
+    return {
+      heroMode: "single_goal",
+      dominantGoalKey: params.selectedGoalKey ?? params.goalCoverage[0]?.goalKey ?? null,
+      secondaryGoalKey: null,
+    };
+  }
+
+  const ranked = rankGoalCoverage(params);
+  const positiveEntries = ranked.filter((entry) => entry.state === "strong" || entry.state === "some");
+
+  if (positiveEntries.length === 0) {
+    return {
+      heroMode: "limited_goals",
+      dominantGoalKey: null,
+      secondaryGoalKey: null,
+    };
+  }
+
+  const primary = ranked[0] ?? null;
+  const secondary = ranked[1] ?? null;
+
+  if (!params.allGoalsAnalyzed) {
+    return {
+      heroMode: "mixed_goals",
+      dominantGoalKey: primary?.goalKey ?? null,
+      secondaryGoalKey: secondary?.goalKey ?? null,
+    };
+  }
+
+  const primaryPositive = positiveEntries[0] ?? null;
+  const secondaryPositive = positiveEntries[1] ?? null;
+  if (positiveEntries.length === 1) {
+    return {
+      heroMode: "dominant_goal",
+      dominantGoalKey: primaryPositive?.goalKey ?? primary?.goalKey ?? null,
+      secondaryGoalKey: null,
+    };
+  }
+
+  const primaryScore = primaryPositive?.score ?? 0;
+  const secondaryScore = secondaryPositive?.score ?? 0;
+  const secondaryState = secondaryPositive?.state ?? null;
+  const isStrongDominant =
+    primaryPositive?.state === "strong"
+    && secondaryPositive?.state !== "strong"
+    && (
+      !secondaryPositive
+      || secondaryState === "limited"
+      || secondaryState === "none"
+      || primaryScore - secondaryScore >= DOMINANT_STRONG_SCORE_GAP
+    );
+  const isModerateDominant =
+    primaryPositive?.state === "some"
+    && secondaryPositive?.state !== "strong"
+    && primaryScore - secondaryScore >= DOMINANT_MODERATE_SCORE_GAP;
+
+  return {
+    heroMode: isStrongDominant || isModerateDominant ? "dominant_goal" : "mixed_goals",
+    dominantGoalKey: primary?.goalKey ?? null,
+    secondaryGoalKey: secondary?.goalKey ?? null,
+  };
 };
 
 const GENERIC_NUTRITION_ACTIVE_REGEX =
@@ -1166,7 +1344,7 @@ const resolveGoalFitDecision = (
 };
 
 const hasReasonCode = (
-  reasons: Array<{ code: string }> | null | undefined,
+  reasons: { code: string }[] | null | undefined,
   code: string,
 ): boolean => Array.isArray(reasons) && reasons.some((reason) => reason.code === code);
 
@@ -1499,6 +1677,12 @@ const buildPersonalizedResultLane = (params: {
     selectedGoalKeys: allSelectedGoalKeys,
     goalCoverage: allGoalCoverage,
   });
+  const { heroMode, dominantGoalKey, secondaryGoalKey } = classifyGoalHero({
+    selectedGoalKeys: allSelectedGoalKeys,
+    goalCoverage: allGoalCoverage,
+    selectedGoalKey,
+    allGoalsAnalyzed,
+  });
   const goalLensMode: DecisionSupportGoalLensMode =
     allSelectedGoalKeys.length > 1 && allGoalCoverage.length > 1
       ? "multi_goal_summary"
@@ -1546,6 +1730,9 @@ const buildPersonalizedResultLane = (params: {
         previewTopGoalKey: previewTopGoal?.goalKey ?? null,
         previewTopTier: previewTopGoal?.tier ?? "unknown",
         candidateGoalKeys,
+        heroMode,
+        dominantGoalKey,
+        secondaryGoalKey,
         selectedGoalKeys,
         allSelectedGoalKeys,
         goalLensMode,
@@ -1569,6 +1756,9 @@ const buildPersonalizedResultLane = (params: {
         previewTopGoalKey: previewTopGoal?.goalKey ?? null,
         previewTopTier: previewTopGoal?.tier ?? "unknown",
         candidateGoalKeys,
+        heroMode,
+        dominantGoalKey,
+        secondaryGoalKey,
         selectedGoalKeys,
         allSelectedGoalKeys,
         goalLensMode,
