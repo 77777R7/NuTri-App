@@ -1,12 +1,13 @@
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import {
-  AlertTriangle,
-  CheckCircle2,
+  Cross,
   ChevronDown,
   Info,
   Layers,
   Shield,
+  ShieldAlert,
+  ShieldCheck,
   Target,
 } from 'lucide-react-native';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
@@ -27,6 +28,7 @@ import type {
   TopSectionHeroPresentation,
   TopSectionInsightPresentation,
   TopSectionInsightTopic,
+  TopSectionSecondaryNotePresentation,
 } from '@/lib/scan/analysisTopSectionPresentation';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -37,6 +39,7 @@ type AnalysisTopSectionRedesignProps = {
   hero: TopSectionHeroPresentation;
   banner: TopSectionBannerPresentation | null;
   insights: TopSectionInsightPresentation[];
+  secondaryNote: TopSectionSecondaryNotePresentation | null;
   productTitle: string;
   productSubtitle?: string | null;
   heroImageUri?: string | null;
@@ -46,18 +49,28 @@ type AnalysisTopSectionRedesignProps = {
 const resolveInsightIcon = (topic: TopSectionInsightTopic, tone: TopSectionHeroPresentation['tone']) => {
   switch (topic) {
     case 'support':
-      return { Icon: Target, iconBg: '#EAF5F0', iconColor: '#1E7B55' };
+      if (tone === 'positive') {
+        return { Icon: Target, iconBg: '#EAF5F0', iconColor: '#1E7B55' };
+      }
+      if (tone === 'caution') {
+        return { Icon: Target, iconBg: '#FFF4E5', iconColor: '#D97706' };
+      }
+      return { Icon: Target, iconBg: '#EEF4FB', iconColor: '#4F6B8A' };
     case 'allergy':
-      return tone === 'positive'
-        ? { Icon: CheckCircle2, iconBg: '#EAF5F0', iconColor: '#1E7B55' }
-        : { Icon: Shield, iconBg: '#EEF4FB', iconColor: '#64748B' };
+      if (tone === 'positive') {
+        return { Icon: ShieldCheck, iconBg: '#EAF5F0', iconColor: '#1E7B55' };
+      }
+      if (tone === 'caution') {
+        return { Icon: ShieldAlert, iconBg: '#FFF4E5', iconColor: '#D97706' };
+      }
+      return { Icon: Shield, iconBg: '#EEF4FB', iconColor: '#64748B' };
     case 'dose':
       return { Icon: Info, iconBg: '#EBF3FF', iconColor: '#2563EB' };
     case 'overlap':
-      return { Icon: Layers, iconBg: '#F1F5F9', iconColor: '#475569' };
+      return { Icon: Layers, iconBg: '#F4EEFF', iconColor: '#7C3AED' };
     case 'safety':
     default:
-      return { Icon: AlertTriangle, iconBg: '#FFF4E5', iconColor: '#D97706' };
+      return { Icon: Cross, iconBg: '#FFF4E5', iconColor: '#D97706' };
   }
 };
 
@@ -93,6 +106,7 @@ export const AnalysisTopSectionRedesign: React.FC<AnalysisTopSectionRedesignProp
   hero,
   banner,
   insights,
+  secondaryNote,
   productTitle,
   productSubtitle,
   heroImageUri,
@@ -105,7 +119,7 @@ export const AnalysisTopSectionRedesign: React.FC<AnalysisTopSectionRedesignProp
         .join('|')}`,
     [banner?.title, hero.chip, hero.summary, insights],
   );
-  const defaultExpandedKey = insights[0]?.key ?? null;
+  const defaultExpandedKey = insights.find((row) => row.defaultExpanded)?.key ?? insights[0]?.key ?? null;
   const lastSyncKeyRef = useRef<string>(derivedSyncKey);
   const [expandedKey, setExpandedKey] = useState<string | null>(defaultExpandedKey);
 
@@ -193,7 +207,7 @@ export const AnalysisTopSectionRedesign: React.FC<AnalysisTopSectionRedesignProp
         <Animated.View entering={FadeInUp.duration(260).delay(60)} style={styles.bannerWrap}>
           <View style={styles.bannerCard}>
             <View style={styles.bannerIconWrap}>
-              <AlertTriangle size={18} color="#D97706" />
+              <ShieldAlert size={18} color="#D97706" />
             </View>
             <Text style={styles.bannerText}>{banner.title}</Text>
           </View>
@@ -257,6 +271,32 @@ export const AnalysisTopSectionRedesign: React.FC<AnalysisTopSectionRedesignProp
                 </View>
               );
             })}
+            {secondaryNote ? (
+              <>
+                {insights.length > 0 ? (
+                  <LinearGradient
+                    colors={['rgba(11,30,54,0)', 'rgba(11,30,54,0.05)', 'rgba(11,30,54,0)']}
+                    locations={[0, 0.5, 1]}
+                    start={{ x: 0, y: 0.5 }}
+                    end={{ x: 1, y: 0.5 }}
+                    style={styles.divider}
+                  />
+                ) : null}
+                <View style={styles.secondaryNoteInlineWrap}>
+                  <View style={styles.secondaryNoteCard}>
+                    <View style={styles.secondaryNoteIconWrap}>
+                      <Cross size={16} color="#D97706" />
+                    </View>
+                    <View style={styles.secondaryNoteCopy}>
+                      <Text style={styles.secondaryNoteTitle}>{secondaryNote.title}</Text>
+                      {!!secondaryNote.body ? (
+                        <Text style={styles.secondaryNoteBody}>{secondaryNote.body}</Text>
+                      ) : null}
+                    </View>
+                  </View>
+                </View>
+              </>
+            ) : null}
           </View>
         </Animated.View>
       ) : null}
@@ -471,6 +511,48 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     paddingHorizontal: 8,
     paddingVertical: 8,
+  },
+  secondaryNoteCard: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(217,119,6,0.14)',
+    backgroundColor: 'rgba(255,244,229,0.75)',
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  secondaryNoteInlineWrap: {
+    paddingHorizontal: 10,
+    paddingTop: 10,
+    paddingBottom: 6,
+  },
+  secondaryNoteIconWrap: {
+    width: 28,
+    height: 28,
+    borderRadius: 999,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.62)',
+  },
+  secondaryNoteCopy: {
+    flex: 1,
+    gap: 4,
+  },
+  secondaryNoteTitle: {
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: '700',
+    color: '#9A5B0A',
+    letterSpacing: -0.18,
+  },
+  secondaryNoteBody: {
+    fontSize: 12,
+    lineHeight: 17,
+    fontWeight: '500',
+    color: '#8A5A14',
+    letterSpacing: -0.15,
   },
   rowPressable: {
     minHeight: 70,

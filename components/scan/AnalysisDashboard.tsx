@@ -54,7 +54,6 @@ import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
 import { Config } from '@/constants/Config';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOnboarding } from '@/contexts/OnboardingContext';
-import { useSavedSupplements } from '@/contexts/SavedSupplementsContext';
 import { withAuthHeaders } from '@/lib/auth-token';
 import { useTranslation } from '@/lib/i18n';
 import { lookupFoundationForIngredient, summarizeFoundationHits } from '@/lib/knowledge/foundationLookup';
@@ -81,7 +80,6 @@ import type {
 import type { FactsDTO } from '@/shared/types/scan-insights';
 import type { ProfileDraft } from '@/types/onboarding';
 import type { GoalKey, ProductGoalMatchTier } from '@/types/personalization';
-import type { SavedSupplement } from '@/types/saved-supplements';
 import type {
     AnalysisBundle,
     AnalysisBundleV4,
@@ -195,8 +193,16 @@ type DecisionSupportPersonalizedResultLaneSectionKey =
     | 'dosage_context'
     | 'product_standing';
 type DecisionSupportPersonalizedGoalFitDecision = 'fits' | 'mixed' | 'does_not_fit' | 'unknown';
+type DecisionSupportGoalLensMode = 'single_goal' | 'multi_goal_summary';
+type DecisionSupportPersonalizedGoalCoverageState = 'strong' | 'some' | 'limited' | 'none';
 type DecisionSupportPersonalizedDoseAssessment = 'aligned' | 'low' | 'high' | 'unclear' | 'unknown';
 type DecisionSupportPersonalizedProductStanding = 'strong' | 'average' | 'weak' | 'unknown';
+type DecisionSupportPersonalizedGoalCoverage = {
+    goalKey: GoalKey;
+    tier: ProductGoalMatchTier | 'unknown';
+    state: DecisionSupportPersonalizedGoalCoverageState;
+    source: 'selected_goal_evaluation' | 'goal_match_scoring_preview';
+};
 type DecisionSupportPersonalizedGoalFit = {
     status: DecisionSupportPersonalizedResultLaneSectionStatus;
     reasonCode?: 'USER_GOAL_CONTEXT_NOT_ATTACHED' | 'NO_GOAL_SUPPORT_SIGNALS_DETECTED' | null;
@@ -207,6 +213,9 @@ type DecisionSupportPersonalizedGoalFit = {
     previewTopGoalKey: GoalKey | null;
     previewTopTier: ProductGoalMatchTier | 'unknown';
     candidateGoalKeys: GoalKey[];
+    selectedGoalKeys?: GoalKey[];
+    goalLensMode?: DecisionSupportGoalLensMode;
+    goalCoverage?: DecisionSupportPersonalizedGoalCoverage[];
 };
 type DecisionSupportPersonalizedSupportSignal = {
     goalKey: GoalKey;
@@ -515,7 +524,7 @@ const normalizeBarcodeForDecision = (value?: string | null): string | null => {
     if (digits.length < 8) return null;
     return digits.length > 14 ? digits.slice(-14) : digits.padStart(14, '0');
 };
-const LOCAL_DECISION_SUPPORT_HEADER_PREFIX = 'uri:';
+const LOCAL_DECISION_SUPPORT_HEADER_MAX_CHARS = 1400;
 const hashDecisionSupportProfileKey = (value: string): string => {
     let hash = 5381;
 
@@ -541,13 +550,10 @@ type LocalDecisionSupportProfilePayload = {
     allergyFlags?: string[];
     ingredientRestrictions?: string[];
 };
-type LocalDecisionSupportSavedSupplementPayload = {
-    supplementId?: string | null;
-    barcode?: string | null;
-    productName: string;
-    brandName?: string | null;
-    dosageText?: string | null;
-};
+type ScanDecisionSupportProfilePayload = Pick<
+    LocalDecisionSupportProfilePayload,
+    'goals' | 'allergyFlags' | 'ingredientRestrictions'
+>;
 const clampLocalDecisionHeaderText = (value?: string | null, maxLength = 120): string => {
     const normalized = normalizeText(value);
     if (!normalized) return '';
@@ -610,34 +616,33 @@ const toLocalDecisionSupportProfilePayload = (
 
     return hasMeaningfulValue ? payload : null;
 };
-const toLocalDecisionSupportSavedSupplementPayload = (
-    items: SavedSupplement[],
-): LocalDecisionSupportSavedSupplementPayload[] =>
-    items
-        .slice(0, 6)
-        .map((item) => ({
-            supplementId: item.supplementId ?? null,
-            barcode: clampLocalDecisionHeaderText(item.barcode ?? null, 24),
-            productName: clampLocalDecisionHeaderText(item.productName, 120) || 'Unknown supplement',
-            brandName: clampLocalDecisionHeaderText(item.brandName, 80),
-            dosageText: clampLocalDecisionHeaderText(item.dosageText, 160),
-        }))
-        .filter((item) => Boolean(item.productName));
-const buildLocalDecisionSupportHeader = (input: {
-    profileDraft: ProfileDraft | null;
-    savedSupplements: SavedSupplement[];
-}): string | null => {
-    const profile = toLocalDecisionSupportProfilePayload(input.profileDraft);
-    const savedSupplements = toLocalDecisionSupportSavedSupplementPayload(input.savedSupplements);
-
-    if (!profile && savedSupplements.length === 0) return null;
-
-    const payload = JSON.stringify({
+const serializeLocalDecisionSupportContext = (profile: LocalDecisionSupportProfilePayload): string =>
+    JSON.stringify({
         profile,
-        savedSupplements,
+        // Keep this empty for scan decision-support to avoid oversized header transport.
+        savedSupplements: [],
     });
+const buildScanDecisionSupportProfile = (
+    profile: LocalDecisionSupportProfilePayload | null,
+): ScanDecisionSupportProfilePayload | null => {
+    if (!profile) return null;
 
-    return `${LOCAL_DECISION_SUPPORT_HEADER_PREFIX}${encodeURIComponent(payload)}`;
+    const scanProfile: ScanDecisionSupportProfilePayload = {
+        goals: profile.goals?.slice(0, 8),
+        allergyFlags: profile.allergyFlags?.slice(0, 12),
+        ingredientRestrictions: profile.ingredientRestrictions?.slice(0, 12),
+    };
+    const hasPersonalSignals =
+        (scanProfile.goals?.length ?? 0) > 0
+        || (scanProfile.allergyFlags?.length ?? 0) > 0
+        || (scanProfile.ingredientRestrictions?.length ?? 0) > 0;
+
+    return hasPersonalSignals ? scanProfile : null;
+};
+const buildLocalDecisionSupportHeader = (profile: ScanDecisionSupportProfilePayload | null): string | null => {
+    if (!profile) return null;
+    const header = serializeLocalDecisionSupportContext(profile);
+    return header.length <= LOCAL_DECISION_SUPPORT_HEADER_MAX_CHARS ? header : null;
 };
 const SIMPLE_TAXONOMY_WHITELIST = new Set(
     [
@@ -1569,6 +1574,7 @@ const NutriScoreCardV2: React.FC<{
                     <Text style={[styles.scoreV2OverallBand, muted ? null : { color: overallBandTone.accent }]}>
                         {resolvedOverallBand}
                     </Text>
+                    <Text style={styles.scoreV2FitHint}>Overall product quality, not your personalized fit score.</Text>
                 </View>
                 <Pressable
                     style={styles.scoreV2LearnMoreButton}
@@ -3259,7 +3265,6 @@ const AnalysisBundleDashboard: React.FC<{
     const { t } = useTranslation();
     const { loading: authLoading, token: authToken } = useAuth();
     const { draft: onboardingDraft, loading: onboardingLoading } = useOnboarding();
-    const { savedSupplements } = useSavedSupplements();
     const [selectedTileType, setSelectedTileType] = useState<TileType | null>(null);
     const [bundleState, setBundleState] = useState<AnalysisBundle>(bundle);
     const [detailLoading, setDetailLoading] = useState(false);
@@ -3304,13 +3309,26 @@ const AnalysisBundleDashboard: React.FC<{
     const foundationMetricLoggedRef = useRef<Set<string>>(new Set());
     const overlayConsumerMetricLoggedRef = useRef<Set<string>>(new Set());
     const currentRunKeyRef = useRef<string | null>(null);
+    const localDecisionSupportProfile = useMemo(
+        () => toLocalDecisionSupportProfilePayload(onboardingDraft),
+        [onboardingDraft],
+    );
+    const localDecisionSupportRequestProfile = useMemo(
+        () => buildScanDecisionSupportProfile(localDecisionSupportProfile),
+        [localDecisionSupportProfile],
+    );
+    const localDecisionSupportSignals = useMemo(() => ({
+        hasDraft: Boolean(onboardingDraft),
+        goalCount: localDecisionSupportRequestProfile?.goals?.length ?? 0,
+        allergyCount: localDecisionSupportRequestProfile?.allergyFlags?.length ?? 0,
+        restrictionCount: localDecisionSupportRequestProfile?.ingredientRestrictions?.length ?? 0,
+        goalPreview: localDecisionSupportRequestProfile?.goals?.slice(0, 4) ?? [],
+        allergyPreview: localDecisionSupportRequestProfile?.allergyFlags?.slice(0, 4) ?? [],
+        restrictionPreview: localDecisionSupportRequestProfile?.ingredientRestrictions?.slice(0, 4) ?? [],
+    }), [localDecisionSupportRequestProfile, onboardingDraft]);
     const localDecisionSupportHeader = useMemo(
-        () =>
-            buildLocalDecisionSupportHeader({
-                profileDraft: onboardingDraft,
-                savedSupplements,
-            }),
-        [onboardingDraft, savedSupplements],
+        () => buildLocalDecisionSupportHeader(localDecisionSupportRequestProfile),
+        [localDecisionSupportRequestProfile],
     );
     const shouldUseLocalDecisionSupport = useMemo(
         () => !authLoading && !authToken && Boolean(localDecisionSupportHeader),
@@ -3334,6 +3352,41 @@ const AnalysisBundleDashboard: React.FC<{
         if (!localDecisionSupportHeader) return null;
         return hashDecisionSupportProfileKey(localDecisionSupportHeader);
     }, [localDecisionSupportHeader]);
+    const localDecisionSupportDebugSignatureRef = useRef<string>('');
+    useEffect(() => {
+        if (onboardingLoading) return;
+        const signature = JSON.stringify({
+            hasDraft: localDecisionSupportSignals.hasDraft,
+            goalCount: localDecisionSupportSignals.goalCount,
+            allergyCount: localDecisionSupportSignals.allergyCount,
+            restrictionCount: localDecisionSupportSignals.restrictionCount,
+            goalPreview: localDecisionSupportSignals.goalPreview,
+            allergyPreview: localDecisionSupportSignals.allergyPreview,
+            restrictionPreview: localDecisionSupportSignals.restrictionPreview,
+            hasHeader: Boolean(localDecisionSupportHeader),
+            headerChars: localDecisionSupportHeader?.length ?? 0,
+            shouldUseLocalDecisionSupport,
+        });
+        if (localDecisionSupportDebugSignatureRef.current === signature) return;
+        localDecisionSupportDebugSignatureRef.current = signature;
+        console.log(`[decision-support][local-profile] ${JSON.stringify({
+            hasDraft: localDecisionSupportSignals.hasDraft,
+            goalCount: localDecisionSupportSignals.goalCount,
+            allergyCount: localDecisionSupportSignals.allergyCount,
+            restrictionCount: localDecisionSupportSignals.restrictionCount,
+            goalPreview: localDecisionSupportSignals.goalPreview,
+            allergyPreview: localDecisionSupportSignals.allergyPreview,
+            restrictionPreview: localDecisionSupportSignals.restrictionPreview,
+            hasHeader: Boolean(localDecisionSupportHeader),
+            headerChars: localDecisionSupportHeader?.length ?? 0,
+            shouldUseLocalDecisionSupport,
+        })}`);
+    }, [
+        onboardingLoading,
+        localDecisionSupportSignals,
+        localDecisionSupportHeader,
+        shouldUseLocalDecisionSupport,
+    ]);
     const emitScanUxTimingOnce = useCallback((
         key: 'firstRenderableLogged' | 'scoreVisibleLogged' | 'coreCardsVisibleLogged',
         event:
@@ -3817,6 +3870,20 @@ const AnalysisBundleDashboard: React.FC<{
                     headers['Cache-Control'] = 'no-cache, no-store';
                     headers.Pragma = 'no-cache';
                 }
+                console.log(`[decision-support][request] ${JSON.stringify({
+                    barcode: resolvedBarcode,
+                    usingLocalDecisionSupport,
+                    hasAuthHeader: Boolean(headers.Authorization),
+                    hasLocalHeader: Boolean(headers['x-local-personalization']),
+                    profileKey: usingLocalDecisionSupport ? localDecisionSupportProfileKey : null,
+                    goalCount: localDecisionSupportSignals.goalCount,
+                    allergyCount: localDecisionSupportSignals.allergyCount,
+                    restrictionCount: localDecisionSupportSignals.restrictionCount,
+                    goalPreview: localDecisionSupportSignals.goalPreview,
+                    allergyPreview: localDecisionSupportSignals.allergyPreview,
+                    restrictionPreview: localDecisionSupportSignals.restrictionPreview,
+                    localHeaderChars: headers['x-local-personalization']?.length ?? 0,
+                })}`);
                 const res = await fetch(`${baseUrl}/api/decision-support/v1?${params.toString()}`, {
                     method: 'GET',
                     headers,
@@ -3882,6 +3949,62 @@ const AnalysisBundleDashboard: React.FC<{
                 if (cancelled || requestSeq !== decisionSupportRequestSeqRef.current) return;
                 if (payload && typeof payload === 'object') {
                     const objectPayload = payload as Record<string, unknown>;
+                    const goalFitResponse = (
+                        objectPayload.personalizedResultLane as {
+                            goalFit?: {
+                                status?: string | null;
+                                selectedGoalKey?: string | null;
+                                selectedGoalKeys?: string[] | null;
+                                goalLensMode?: 'single_goal' | 'multi_goal_summary' | null;
+                                goalCoverage?: Array<{
+                                    goalKey?: string | null;
+                                    tier?: ProductGoalMatchTier | 'unknown' | null;
+                                    state?: 'strong' | 'some' | 'limited' | 'none' | null;
+                                    source?: 'selected_goal_evaluation' | 'goal_match_scoring_preview' | null;
+                                }> | null;
+                            } | null;
+                        } | null | undefined
+                    )?.goalFit;
+                    console.log(`[decision-support][response] ${JSON.stringify({
+                        barcode: resolvedBarcode,
+                        profileKey: usingLocalDecisionSupport ? localDecisionSupportProfileKey : null,
+                        goalFitStatus: goalFitResponse?.status ?? null,
+                        selectedGoalKey: goalFitResponse?.selectedGoalKey ?? null,
+                        selectedGoalKeys: Array.isArray(goalFitResponse?.selectedGoalKeys)
+                            ? goalFitResponse.selectedGoalKeys
+                            : [],
+                        goalLensMode: goalFitResponse?.goalLensMode ?? null,
+                        goalCoverage: Array.isArray(goalFitResponse?.goalCoverage)
+                            ? goalFitResponse.goalCoverage.map((entry) => ({
+                                goalKey: entry?.goalKey ?? null,
+                                tier: entry?.tier ?? 'unknown',
+                                state: entry?.state ?? null,
+                                source: entry?.source ?? null,
+                            }))
+                            : [],
+                    })}`);
+                    const allergySummary = normalizeText(
+                        (
+                            (
+                                objectPayload.personalizedResultLane as {
+                                    allergyInsight?: { summary?: string | null } | null;
+                                } | null | undefined
+                            )?.allergyInsight?.summary
+                        ) ?? null,
+                    );
+                    if (
+                        usingLocalDecisionSupport
+                        && (localDecisionSupportSignals.allergyCount > 0 || localDecisionSupportSignals.restrictionCount > 0)
+                        && /no allergy or restriction settings saved yet/i.test(allergySummary)
+                    ) {
+                        console.warn(`[decision-support][local-profile-mismatch] ${JSON.stringify({
+                            barcode: resolvedBarcode,
+                            allergyCount: localDecisionSupportSignals.allergyCount,
+                            restrictionCount: localDecisionSupportSignals.restrictionCount,
+                            profileKey: localDecisionSupportProfileKey,
+                            allergySummary,
+                        })}`);
+                    }
                     decisionSupportCacheRef.current.set(decisionCacheKey, objectPayload);
                     upsertDecisionPayloadByBarcode(
                         decisionSupportByBarcodeRef.current,
@@ -3985,6 +4108,7 @@ const AnalysisBundleDashboard: React.FC<{
         onboardingLoading,
         localDecisionSupportHeader,
         localDecisionSupportProfileKey,
+        localDecisionSupportSignals,
         localDecisionSupportCacheScope,
         scanSessionId,
         shouldUseLocalDecisionSupport,
@@ -4693,15 +4817,50 @@ const AnalysisBundleDashboard: React.FC<{
                 selectedGoalLabel: getGoalLabel(goalFit?.selectedGoalKey ?? null),
                 previewGoalLabel: getGoalLabel(goalFit?.previewTopGoalKey ?? null),
                 previewTopTier: goalFit?.previewTopTier ?? null,
+                selectedGoalLabels: (goalFit?.selectedGoalKeys ?? [])
+                    .map((goalKey) => getGoalLabel(goalKey))
+                    .filter((label): label is string => Boolean(label)),
+                goalLensMode: goalFit?.goalLensMode ?? null,
+                goalCoverage: (goalFit?.goalCoverage ?? [])
+                    .map((entry) => ({
+                        goalLabel: getGoalLabel(entry.goalKey),
+                        tier: entry.tier ?? 'unknown',
+                        state: entry.state,
+                        source: entry.source,
+                    }))
+                    .filter((entry): entry is {
+                        goalLabel: string;
+                        tier: ProductGoalMatchTier | 'unknown';
+                        state: 'strong' | 'some' | 'limited' | 'none';
+                        source: 'selected_goal_evaluation' | 'goal_match_scoring_preview';
+                    } => Boolean(entry.goalLabel)),
             },
             personalInsight: {
                 supportLabels: (personalInsight?.supports ?? []).map((signal) => signal.label),
                 conflictSummary: firstConflict ?? null,
+                fitDecision: goalFit?.fitDecision ?? null,
+                selectedGoalLabel: getGoalLabel(goalFit?.selectedGoalKey ?? null),
+                goalLensMode: goalFit?.goalLensMode ?? null,
+                goalCoverage: (goalFit?.goalCoverage ?? [])
+                    .map((entry) => ({
+                        goalLabel: getGoalLabel(entry.goalKey),
+                        tier: entry.tier ?? 'unknown',
+                        state: entry.state,
+                        source: entry.source,
+                    }))
+                    .filter((entry): entry is {
+                        goalLabel: string;
+                        tier: ProductGoalMatchTier | 'unknown';
+                        state: 'strong' | 'some' | 'limited' | 'none';
+                        source: 'selected_goal_evaluation' | 'goal_match_scoring_preview';
+                    } => Boolean(entry.goalLabel)),
             },
             allergy: {
                 status: allergyInsight?.status ?? null,
                 reasonCode: allergyInsight?.reasonCode ?? null,
                 summary: allergyInsight?.summary ?? null,
+                hasSavedPreferences:
+                    localDecisionSupportSignals.allergyCount > 0 || localDecisionSupportSignals.restrictionCount > 0,
                 matchedLabels: [
                     ...(allergyInsight?.matchedAllergyFlags ?? []),
                     ...(allergyInsight?.matchedRestrictions ?? []),
@@ -4727,6 +4886,8 @@ const AnalysisBundleDashboard: React.FC<{
         decisionPersonalizedResultLane?.dosageContext,
         decisionPersonalizedResultLane?.goalFit,
         decisionPersonalizedResultLane?.personalInsight,
+        localDecisionSupportSignals.allergyCount,
+        localDecisionSupportSignals.restrictionCount,
         safetyTipCoverText,
         safetyWarningCoverText,
         topSectionDosePreviewText,
@@ -7874,6 +8035,7 @@ const AnalysisBundleDashboard: React.FC<{
                         hero={topSectionPresentation.hero}
                         banner={topSectionPresentation.banner}
                         insights={topSectionPresentation.insights}
+                        secondaryNote={topSectionPresentation.secondaryNote ?? null}
                         productTitle={productTitle}
                         productSubtitle={productSubtitle}
                         heroImageUri={heroImageUri}
@@ -9670,6 +9832,14 @@ const styles = StyleSheet.create({
         fontSize: 13,
         fontWeight: '800',
         color: 'rgba(17,24,39,0.72)',
+    },
+    scoreV2FitHint: {
+        marginTop: 2,
+        fontSize: 11,
+        lineHeight: 15,
+        color: 'rgba(17,24,39,0.62)',
+        fontWeight: '500',
+        maxWidth: 220,
     },
     scoreV2Confidence: {
         fontSize: 13,

@@ -354,6 +354,23 @@ export type DecisionSupportPersonalizedGoalFitDecision =
   | "does_not_fit"
   | "unknown";
 
+export type DecisionSupportGoalLensMode =
+  | "single_goal"
+  | "multi_goal_summary";
+
+export type DecisionSupportPersonalizedGoalCoverageState =
+  | "strong"
+  | "some"
+  | "limited"
+  | "none";
+
+export type DecisionSupportPersonalizedGoalCoverage = {
+  goalKey: GoalKey;
+  tier: ProductGoalMatchTier | "unknown";
+  state: DecisionSupportPersonalizedGoalCoverageState;
+  source: "selected_goal_evaluation" | "goal_match_scoring_preview";
+};
+
 export type DecisionSupportPersonalizedDoseAssessment =
   | "aligned"
   | "low"
@@ -377,6 +394,9 @@ export type DecisionSupportPersonalizedGoalFit = {
   previewTopGoalKey: GoalKey | null;
   previewTopTier: ProductGoalMatchTier | "unknown";
   candidateGoalKeys: GoalKey[];
+  selectedGoalKeys?: GoalKey[];
+  goalLensMode?: DecisionSupportGoalLensMode;
+  goalCoverage?: DecisionSupportPersonalizedGoalCoverage[];
 };
 
 export type DecisionSupportPersonalizedSupportSignal = {
@@ -849,6 +869,43 @@ const buildGoalPreviewMatches = (digest: FactsDigest): ProductGoalMatch[] => {
     .sort(compareGoalPreviewMatches);
 };
 
+const buildGoalCoverageMatches = (
+  digest: FactsDigest,
+  goalKeys: GoalKey[],
+): ProductGoalMatch[] => {
+  if (goalKeys.length === 0) return [];
+
+  const ingredients = buildGoalPreviewInputs(digest);
+  if (ingredients.length === 0) {
+    return goalKeys.map((goalKey) => ({
+      goalKey,
+      score: 0,
+      tier: "no_match",
+      reasons: [],
+      confidence: {
+        evidence: "low",
+        dose: "not_applicable",
+        disclosure: "weak",
+      },
+    }));
+  }
+
+  const hasDose = ingredients.some(
+    (ingredient) =>
+      typeof ingredient.amount === "number"
+      && ingredient.amount > 0
+      && typeof ingredient.unit === "string"
+      && ingredient.unit.length > 0,
+  );
+
+  return scoreProductGoalMatches({
+    goals: goalKeys,
+    ingredients,
+    disclosureQuality: hasDose ? "high" : "medium",
+    proprietaryBlendWithoutClearActives: false,
+  });
+};
+
 const resolveAttachedSelectedGoalKey = (params: {
   prioritizedGoals?: GoalKey[] | null;
   selectedGoalKey?: GoalKey | null;
@@ -863,6 +920,70 @@ const resolveAttachedSelectedGoalKey = (params: {
     ?? params.selectedGoalKey
     ?? prioritizedGoals[0]
     ?? null;
+};
+
+const normalizeGoalCoverageTier = (
+  tier: ProductGoalMatchTier | "not_enough_structured_data" | "unknown" | null | undefined,
+): ProductGoalMatchTier | "unknown" => {
+  switch (tier) {
+    case "strong_match":
+    case "related":
+    case "weak_match":
+    case "no_match":
+      return tier;
+    default:
+      return "unknown";
+  }
+};
+
+const toGoalCoverageState = (
+  tier: ProductGoalMatchTier | "unknown",
+): DecisionSupportPersonalizedGoalCoverageState => {
+  switch (tier) {
+    case "strong_match":
+      return "strong";
+    case "related":
+      return "some";
+    case "weak_match":
+      return "limited";
+    case "no_match":
+    default:
+      return "none";
+  }
+};
+
+const buildGoalCoverage = (params: {
+  digest: FactsDigest;
+  selectedGoalKeys: GoalKey[];
+  selectedGoalKey: GoalKey | null;
+  currentProductEvaluation: CatalogProductEvaluationResult | null;
+}): DecisionSupportPersonalizedGoalCoverage[] => {
+  const selectedGoalKeys = params.selectedGoalKeys.slice(0, 3);
+  if (selectedGoalKeys.length === 0) return [];
+
+  const previewMatchesByGoal = new Map(
+    buildGoalCoverageMatches(params.digest, selectedGoalKeys).map((match) => [match.goalKey, match] as const),
+  );
+
+  return selectedGoalKeys.map((goalKey) => {
+    const previewTier = normalizeGoalCoverageTier(previewMatchesByGoal.get(goalKey)?.tier ?? "unknown");
+    const selectedEvaluationTier =
+      goalKey === params.selectedGoalKey
+        ? normalizeGoalCoverageTier(params.currentProductEvaluation?.goalFitCard?.tier ?? "unknown")
+        : "unknown";
+    const tier = selectedEvaluationTier !== "unknown" ? selectedEvaluationTier : previewTier;
+    const source =
+      selectedEvaluationTier !== "unknown"
+        ? "selected_goal_evaluation"
+        : "goal_match_scoring_preview";
+
+    return {
+      goalKey,
+      tier,
+      state: toGoalCoverageState(tier),
+      source,
+    };
+  });
 };
 
 const GENERIC_NUTRITION_ACTIVE_REGEX =
@@ -1269,6 +1390,10 @@ const buildPersonalizedResultLane = (params: {
   const goalPreviewMatches = buildGoalPreviewMatches(params.digest);
   const previewTopGoal = goalPreviewMatches[0] ?? null;
   const attachedContext = params.personalizationContext ?? null;
+  const selectedGoalKeys =
+    (attachedContext?.prioritizedGoals?.length ?? 0) > 0
+      ? (attachedContext?.prioritizedGoals ?? []).slice(0, 3)
+      : [];
   const selectedGoalKey = resolveAttachedSelectedGoalKey({
     prioritizedGoals: attachedContext?.prioritizedGoals,
     selectedGoalKey: attachedContext?.selectedGoalKey,
@@ -1293,6 +1418,16 @@ const buildPersonalizedResultLane = (params: {
       selectedGoalKey,
     })
     : null;
+  const goalCoverage = buildGoalCoverage({
+    digest: params.digest,
+    selectedGoalKeys,
+    selectedGoalKey,
+    currentProductEvaluation,
+  });
+  const goalLensMode: DecisionSupportGoalLensMode =
+    selectedGoalKeys.length > 1 && goalCoverage.length > 1
+      ? "multi_goal_summary"
+      : "single_goal";
   const supportSignals =
     currentProductEvaluation && selectedGoalKey
       ? buildSupportSignalsFromEvaluation({
@@ -1336,6 +1471,9 @@ const buildPersonalizedResultLane = (params: {
         previewTopGoalKey: previewTopGoal?.goalKey ?? null,
         previewTopTier: previewTopGoal?.tier ?? "unknown",
         candidateGoalKeys,
+        selectedGoalKeys,
+        goalLensMode,
+        goalCoverage,
       }
       : {
         status: "pending",
@@ -1349,6 +1487,9 @@ const buildPersonalizedResultLane = (params: {
         previewTopGoalKey: previewTopGoal?.goalKey ?? null,
         previewTopTier: previewTopGoal?.tier ?? "unknown",
         candidateGoalKeys,
+        selectedGoalKeys,
+        goalLensMode,
+        goalCoverage,
       },
     personalInsight: attachedContext
       ? (() => {

@@ -112,6 +112,28 @@ test('compileDecisionSupport uses attached Recovery goal to return a non-pending
   assert.match(compiled.personalizedResultLane.goalFit.summary, /Recovery/i);
 });
 
+test('compileDecisionSupport returns multi-goal coverage in user-selected order with no-match states included', () => {
+  const compiled = compileDecisionSupport({
+    digest: buildOmegaDigest(),
+    factsDigestHash: 'fixture-sr-omega-multi-goal',
+    viewMode: 'details',
+    personalizationContext: buildPersonalizationContext({
+      prioritizedGoals: ['energy', 'immunity', 'recovery'],
+      selectedGoalKey: 'energy',
+    }),
+  });
+
+  assert.deepEqual(compiled.personalizedResultLane.goalFit.selectedGoalKeys, ['energy', 'immunity', 'recovery']);
+  assert.equal(compiled.personalizedResultLane.goalFit.goalLensMode, 'multi_goal_summary');
+  assert.deepEqual(
+    compiled.personalizedResultLane.goalFit.goalCoverage?.map((entry) => entry.goalKey),
+    ['energy', 'immunity', 'recovery'],
+  );
+  assert.equal(compiled.personalizedResultLane.goalFit.goalCoverage?.[0]?.state, 'none');
+  assert.equal(compiled.personalizedResultLane.goalFit.goalCoverage?.[2]?.source, 'selected_goal_evaluation');
+  assert.notEqual(compiled.personalizedResultLane.goalFit.goalCoverage?.[2]?.state, 'none');
+});
+
 test('compileDecisionSupport returns a neutral ready insight when saved supplements are attached but empty', () => {
   const compiled = compileDecisionSupport({
     digest: buildOmegaDigest(),

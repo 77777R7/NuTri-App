@@ -6,9 +6,15 @@ import { AUTH_DISABLED } from '@/lib/auth-mode';
 
 export default function AppIndex() {
   const { session, loading } = useAuth();
-  const { loading: onboardingLoading, onbCompleted } = useOnboarding();
+  const { loading: onboardingLoading, onbCompleted, draft } = useOnboarding();
 
   if (AUTH_DISABLED) {
+    if (onboardingLoading) {
+      return null;
+    }
+    if (!onbCompleted || !draft) {
+      return <Redirect href="/onboarding" />;
+    }
     return <Redirect href="/main" />;
   }
 

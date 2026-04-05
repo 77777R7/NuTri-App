@@ -125,7 +125,7 @@ export const buildVerificationPresentation = (
       blockedReasons,
       degraded,
       copyTokens: {
-        badgeLabel: 'Verified source',
+        badgeLabel: 'Label verified',
         sourceCopy: 'This analysis is based on verified record data. Scan Supplement Facts for richer product-level detail.',
         sourceBullets: [
           'Based on verified record data.',
