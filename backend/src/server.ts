@@ -207,21 +207,6 @@ import {
 import { sanitizeWebText } from "./webSanitizer.js";
 import { applyWebVerifyRevise } from "./webVerifyRevise.js";
 
-type ProfileResolverModuleShape = {
-  resolvePersonalizationProfile?: typeof import("../../lib/personalization/core/profileResolver.ts").resolvePersonalizationProfile;
-  default?: {
-    resolvePersonalizationProfile?: typeof import("../../lib/personalization/core/profileResolver.ts").resolvePersonalizationProfile;
-  };
-};
-
-const resolvePersonalizationProfile =
-  (profileResolverModule as ProfileResolverModuleShape).resolvePersonalizationProfile
-  ?? (profileResolverModule as ProfileResolverModuleShape).default?.resolvePersonalizationProfile;
-
-if (typeof resolvePersonalizationProfile !== "function") {
-  throw new Error("[personalization] profileResolver module did not expose resolvePersonalizationProfile");
-}
-
 dotenv.config();
 
 const resolvePersonalizationProfileCompat =
@@ -8676,11 +8661,13 @@ const buildDecisionSupportPersonalizationContext = (params: {
   allergyContext: DecisionSupportAttachedAllergyContext | null;
   remoteStackInputs: RemoteStackOverlapInputsResult | null;
   currentProductInput: StackOverlapSupplementInput | null;
+  fallbackSavedStackCount?: number;
 }): DecisionSupportAttachedPersonalizationContext | null => {
   const hasProfile = Boolean(params.userProfile);
   const hasRemoteStack = Boolean(params.remoteStackInputs);
   const hasAllergy = Boolean(params.allergyContext);
-  if (!hasProfile && !hasRemoteStack && !hasAllergy) return null;
+  const fallbackSavedStackCount = Math.max(0, params.fallbackSavedStackCount ?? 0);
+  if (!hasProfile && !hasRemoteStack && !hasAllergy && fallbackSavedStackCount === 0) return null;
 
   const declaredDiets = params.userProfile?.dietary_preferences?.length
     ? params.userProfile.dietary_preferences
@@ -8705,11 +8692,11 @@ const buildDecisionSupportPersonalizationContext = (params: {
         goals: params.userProfile.health_goals ?? undefined,
       },
       observed: {
-        savedStackCount: params.remoteStackInputs?.processedSupplements ?? 0,
+        savedStackCount: params.remoteStackInputs?.processedSupplements ?? fallbackSavedStackCount,
         duplicateRiskLevel:
-          (params.remoteStackInputs?.processedSupplements ?? 0) >= 8
+          (params.remoteStackInputs?.processedSupplements ?? fallbackSavedStackCount) >= 8
             ? "high"
-            : (params.remoteStackInputs?.processedSupplements ?? 0) >= 4
+            : (params.remoteStackInputs?.processedSupplements ?? fallbackSavedStackCount) >= 4
               ? "medium"
               : "none",
       },
@@ -10519,7 +10506,6 @@ const sanitizeLocalDecisionSupportStrings = (values: string[] | undefined): stri
     .filter((value): value is string => Boolean(value));
 
 const LOCAL_DECISION_SUPPORT_HEADER_PREFIX = "uri:";
-
 const parseLocalDecisionSupportHeaderJson = (value: string): unknown => JSON.parse(value);
 
 const decodeLocalDecisionSupportHeader = (value: string): unknown => {
@@ -10556,10 +10542,16 @@ const parseLocalDecisionSupportContext = (req: Request): LocalDecisionSupportCon
     const parsed = decodeLocalDecisionSupportHeader(normalized);
     const result = localDecisionSupportContextSchema.safeParse(parsed);
     if (!result.success) {
-      console.warn("[decision-support] invalid local personalization header", result.error.issues[0]?.message ?? "unknown_error");
+      console.warn(
+        "[decision-support] invalid local personalization header",
+        result.error.issues[0]?.message ?? "unknown_error",
+      );
       return null;
     }
-    return result.data;
+    return {
+      profile: result.data.profile ?? null,
+      savedSupplements: result.data.savedSupplements ?? [],
+    };
   } catch (error) {
     console.warn(
       "[decision-support] failed to parse local personalization header",
@@ -10823,6 +10815,7 @@ app.get("/api/decision-support/v1", verifySupabaseToken, async (req: Request, re
         digest: patched.digest,
         barcodeGtin14,
       }),
+      fallbackSavedStackCount: userId ? 0 : (localContext?.savedSupplements.length ?? 0),
     });
 
     const decisionSupport = compileDecisionSupport({
