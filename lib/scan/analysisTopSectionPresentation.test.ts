@@ -148,6 +148,10 @@ test('multi-goal mixed coverage renders a mixed-fit hero and goal coverage row',
       selectedGoalLabel: 'Recovery',
       selectedGoalLabels: ['Energy', 'Immunity', 'Recovery'],
       goalLensMode: 'multi_goal_summary',
+      selectedGoalCount: 3,
+      analyzedGoalCount: 3,
+      surfacedGoalCount: 3,
+      allGoalsAnalyzed: true,
       goalCoverage: [
         { goalLabel: 'Energy', tier: 'weak_match', state: 'limited', source: 'goal_match_scoring_preview' },
         { goalLabel: 'Immunity', tier: 'related', state: 'some', source: 'goal_match_scoring_preview' },
@@ -159,6 +163,10 @@ test('multi-goal mixed coverage renders a mixed-fit hero and goal coverage row',
       fitDecision: 'mixed',
       selectedGoalLabel: 'Recovery',
       goalLensMode: 'multi_goal_summary',
+      selectedGoalCount: 3,
+      analyzedGoalCount: 3,
+      surfacedGoalCount: 3,
+      allGoalsAnalyzed: true,
       goalCoverage: [
         { goalLabel: 'Energy', tier: 'weak_match', state: 'limited', source: 'goal_match_scoring_preview' },
         { goalLabel: 'Immunity', tier: 'related', state: 'some', source: 'goal_match_scoring_preview' },
@@ -179,10 +187,11 @@ test('multi-goal mixed coverage renders a mixed-fit hero and goal coverage row',
     safety: {},
   });
 
-  assert.equal(result.hero.chip, 'Mixed fit across your goals');
+  assert.equal(result.hero.chip, 'Mixed fit across your selected goals');
   assert.equal(result.hero.summary, 'Looks stronger for Recovery than Energy');
   assert.equal(result.insights[0]?.key, 'goal_coverage');
   assert.equal(result.insights[0]?.collapsedTitle, 'How it maps to your goals');
+  assert.equal(result.insights[0]?.subtitle, 'Showing all 3 analyzed goals');
   assert.deepEqual(result.insights[0]?.expandedBullets, [
     'Energy: limited support.',
     'Immunity: some support.',
@@ -198,6 +207,10 @@ test('multi-goal all-some coverage avoids comparing a goal against itself', () =
       selectedGoalLabel: 'Recovery',
       selectedGoalLabels: ['Energy', 'Immunity', 'Recovery'],
       goalLensMode: 'multi_goal_summary',
+      selectedGoalCount: 3,
+      analyzedGoalCount: 3,
+      surfacedGoalCount: 3,
+      allGoalsAnalyzed: true,
       goalCoverage: [
         { goalLabel: 'Energy', tier: 'related', state: 'some', source: 'goal_match_scoring_preview' },
         { goalLabel: 'Immunity', tier: 'related', state: 'some', source: 'goal_match_scoring_preview' },
@@ -209,6 +222,10 @@ test('multi-goal all-some coverage avoids comparing a goal against itself', () =
       fitDecision: 'mixed',
       selectedGoalLabel: 'Recovery',
       goalLensMode: 'multi_goal_summary',
+      selectedGoalCount: 3,
+      analyzedGoalCount: 3,
+      surfacedGoalCount: 3,
+      allGoalsAnalyzed: true,
       goalCoverage: [
         { goalLabel: 'Energy', tier: 'related', state: 'some', source: 'goal_match_scoring_preview' },
         { goalLabel: 'Immunity', tier: 'related', state: 'some', source: 'goal_match_scoring_preview' },
@@ -229,8 +246,134 @@ test('multi-goal all-some coverage avoids comparing a goal against itself', () =
     safety: {},
   });
 
-  assert.equal(result.hero.chip, 'Mixed fit across your goals');
-  assert.equal(result.hero.summary, 'Shows some support across your selected goals');
+  assert.equal(result.hero.chip, 'Mixed fit across your selected goals');
+  assert.equal(result.hero.summary, 'Shows some support across the goals we checked.');
+});
+
+test('multi-goal full analysis shows top 3 by relevance with expand metadata', () => {
+  const result = buildAnalysisTopSectionPresentation({
+    goal: {
+      fitDecision: 'mixed',
+      selectedGoalLabel: 'Recovery',
+      selectedGoalLabels: ['Energy', 'Immunity', 'Recovery'],
+      allSelectedGoalLabels: ['Energy', 'Immunity', 'Recovery', 'Sleep', 'Focus'],
+      goalLensMode: 'multi_goal_summary',
+      goalCoverage: [
+        { goalLabel: 'Energy', tier: 'weak_match', state: 'limited', source: 'goal_match_scoring_preview' },
+        { goalLabel: 'Immunity', tier: 'weak_match', state: 'limited', source: 'goal_match_scoring_preview' },
+        { goalLabel: 'Recovery', tier: 'strong_match', state: 'strong', source: 'selected_goal_evaluation' },
+      ],
+      allGoalCoverage: [
+        { goalLabel: 'Energy', tier: 'weak_match', state: 'limited', source: 'goal_match_scoring_preview' },
+        { goalLabel: 'Immunity', tier: 'weak_match', state: 'limited', source: 'goal_match_scoring_preview' },
+        { goalLabel: 'Recovery', tier: 'strong_match', state: 'strong', source: 'selected_goal_evaluation' },
+        { goalLabel: 'Sleep', tier: 'related', state: 'some', source: 'goal_match_scoring_preview' },
+        { goalLabel: 'Focus', tier: 'no_match', state: 'none', source: 'goal_match_scoring_preview' },
+      ],
+      selectedGoalCount: 5,
+      analyzedGoalCount: 5,
+      surfacedGoalCount: 3,
+      allGoalsAnalyzed: true,
+      defaultVisibleGoalLabels: ['Recovery', 'Sleep', 'Energy'],
+    },
+    personalInsight: {
+      supportLabels: [],
+      fitDecision: 'mixed',
+      selectedGoalLabel: 'Recovery',
+      goalLensMode: 'multi_goal_summary',
+      goalCoverage: [
+        { goalLabel: 'Energy', tier: 'weak_match', state: 'limited', source: 'goal_match_scoring_preview' },
+        { goalLabel: 'Immunity', tier: 'weak_match', state: 'limited', source: 'goal_match_scoring_preview' },
+        { goalLabel: 'Recovery', tier: 'strong_match', state: 'strong', source: 'selected_goal_evaluation' },
+      ],
+      allGoalCoverage: [
+        { goalLabel: 'Energy', tier: 'weak_match', state: 'limited', source: 'goal_match_scoring_preview' },
+        { goalLabel: 'Immunity', tier: 'weak_match', state: 'limited', source: 'goal_match_scoring_preview' },
+        { goalLabel: 'Recovery', tier: 'strong_match', state: 'strong', source: 'selected_goal_evaluation' },
+        { goalLabel: 'Sleep', tier: 'related', state: 'some', source: 'goal_match_scoring_preview' },
+        { goalLabel: 'Focus', tier: 'no_match', state: 'none', source: 'goal_match_scoring_preview' },
+      ],
+      selectedGoalCount: 5,
+      analyzedGoalCount: 5,
+      surfacedGoalCount: 3,
+      allGoalsAnalyzed: true,
+      defaultVisibleGoalLabels: ['Recovery', 'Sleep', 'Energy'],
+    },
+    allergy: {
+      status: 'ready',
+      matchedLabels: [],
+      evidenceTexts: [],
+      summary: 'No allergy-related flags detected.',
+    },
+    dose: {
+      status: 'ready',
+      assessment: 'aligned',
+      productDoseText: '1 softgel daily',
+    },
+    safety: {},
+  });
+
+  assert.equal(result.hero.chip, 'Mixed fit across your selected goals');
+  assert.equal(result.insights[0]?.subtitle, 'Showing 3 of 5 analyzed goals');
+  assert.deepEqual(
+    result.insights[0]?.visibleGoalCoverageItems?.map((item) => item.goalLabel),
+    ['Recovery', 'Sleep', 'Energy'],
+  );
+  assert.deepEqual(
+    result.insights[0]?.goalCoverageItems?.map((item) => item.goalLabel),
+    ['Energy', 'Immunity', 'Recovery', 'Sleep', 'Focus'],
+  );
+  assert.equal(result.insights[0]?.expandActionLabel, 'View all 5 goals');
+  assert.equal(result.insights[0]?.collapseActionLabel, 'Show fewer goals');
+  assert.equal(result.insights[0]?.canExpandAll, true);
+});
+
+test('partial multi-goal analysis uses conservative hero copy and does not expose view-all', () => {
+  const result = buildAnalysisTopSectionPresentation({
+    goal: {
+      fitDecision: 'mixed',
+      selectedGoalLabel: 'Recovery',
+      goalLensMode: 'multi_goal_summary',
+      goalCoverage: [
+        { goalLabel: 'Energy', tier: 'weak_match', state: 'limited', source: 'goal_match_scoring_preview' },
+        { goalLabel: 'Recovery', tier: 'strong_match', state: 'strong', source: 'selected_goal_evaluation' },
+      ],
+      analyzedGoalCount: 2,
+      surfacedGoalCount: 2,
+      allGoalsAnalyzed: false,
+    },
+    personalInsight: {
+      supportLabels: [],
+      fitDecision: 'mixed',
+      selectedGoalLabel: 'Recovery',
+      goalLensMode: 'multi_goal_summary',
+      goalCoverage: [
+        { goalLabel: 'Energy', tier: 'weak_match', state: 'limited', source: 'goal_match_scoring_preview' },
+        { goalLabel: 'Recovery', tier: 'strong_match', state: 'strong', source: 'selected_goal_evaluation' },
+      ],
+      analyzedGoalCount: 2,
+      surfacedGoalCount: 2,
+      allGoalsAnalyzed: false,
+    },
+    allergy: {
+      status: 'ready',
+      matchedLabels: [],
+      evidenceTexts: [],
+      summary: 'No allergy-related flags detected.',
+    },
+    dose: {
+      status: 'ready',
+      assessment: 'aligned',
+      productDoseText: '1 softgel daily',
+    },
+    safety: {},
+  });
+
+  assert.equal(result.hero.chip, 'Mixed fit for the goals shown');
+  assert.equal(result.hero.summary, 'Looks stronger for Recovery than Energy');
+  assert.equal(result.insights[0]?.subtitle, 'Showing 2 goals checked in this view');
+  assert.equal(result.insights[0]?.expandActionLabel, undefined);
+  assert.equal(result.insights[0]?.canExpandAll, false);
 });
 
 test('goal insight still renders when the selected goal does not match strongly', () => {

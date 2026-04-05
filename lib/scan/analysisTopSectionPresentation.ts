@@ -4,10 +4,17 @@ export type TopSectionHeroInput = {
   fitDecision?: 'fits' | 'mixed' | 'does_not_fit' | 'unknown' | null;
   selectedGoalLabel?: string | null;
   selectedGoalLabels?: string[];
+  allSelectedGoalLabels?: string[];
   previewGoalLabel?: string | null;
   previewTopTier?: 'strong_match' | 'related' | 'weak_match' | 'unknown' | null;
   goalLensMode?: 'single_goal' | 'multi_goal_summary' | null;
   goalCoverage?: TopSectionGoalCoverageInput[];
+  allGoalCoverage?: TopSectionGoalCoverageInput[];
+  selectedGoalCount?: number;
+  analyzedGoalCount?: number;
+  surfacedGoalCount?: number;
+  allGoalsAnalyzed?: boolean;
+  defaultVisibleGoalLabels?: string[];
 };
 
 export type TopSectionPersonalInsightInput = {
@@ -17,6 +24,12 @@ export type TopSectionPersonalInsightInput = {
   selectedGoalLabel?: string | null;
   goalLensMode?: 'single_goal' | 'multi_goal_summary' | null;
   goalCoverage?: TopSectionGoalCoverageInput[];
+  allGoalCoverage?: TopSectionGoalCoverageInput[];
+  selectedGoalCount?: number;
+  analyzedGoalCount?: number;
+  surfacedGoalCount?: number;
+  allGoalsAnalyzed?: boolean;
+  defaultVisibleGoalLabels?: string[];
 };
 
 export type TopSectionGoalCoverageInput = {
@@ -68,9 +81,23 @@ export type TopSectionInsightPresentation = {
   topic: TopSectionInsightTopic;
   tone: TopSectionTone;
   collapsedTitle: string;
+  subtitle?: string;
   expandedBullets: string[];
+  goalCoverageItems?: TopSectionGoalCoveragePresentation[];
+  visibleGoalCoverageItems?: TopSectionGoalCoveragePresentation[];
+  hiddenGoalCoverageItems?: TopSectionGoalCoveragePresentation[];
+  expandActionLabel?: string;
+  collapseActionLabel?: string;
+  canExpandAll?: boolean;
   isExpandable: boolean;
   defaultExpanded?: boolean;
+};
+
+export type TopSectionGoalCoveragePresentation = {
+  key: string;
+  goalLabel: string;
+  description: string;
+  tone: TopSectionTone;
 };
 
 export type TopSectionPresentation = {
@@ -275,11 +302,26 @@ const GOAL_COVERAGE_STATE_PRIORITY: Record<TopSectionGoalCoverageInput['state'],
   none: 1,
 };
 
+const GOAL_COVERAGE_TONE_BY_STATE: Record<TopSectionGoalCoverageInput['state'], TopSectionTone> = {
+  strong: 'positive',
+  some: 'neutral',
+  limited: 'caution',
+  none: 'caution',
+};
+
+const getPrimaryGoalCoverage = (
+  goal: TopSectionHeroInput | TopSectionPersonalInsightInput,
+): TopSectionGoalCoverageInput[] => {
+  const allCoverage = goal.allGoalCoverage ?? [];
+  if (allCoverage.length > 0) return allCoverage;
+  return goal.goalCoverage ?? [];
+};
+
 const isGoalCoverageMultiGoal = (
   goal: TopSectionHeroInput | TopSectionPersonalInsightInput,
 ): boolean =>
   goal.goalLensMode === 'multi_goal_summary'
-  && (goal.goalCoverage?.length ?? 0) > 1;
+  && getPrimaryGoalCoverage(goal).length > 1;
 
 const getSortedGoalCoverage = (coverage: TopSectionGoalCoverageInput[] = []): TopSectionGoalCoverageInput[] =>
   coverage.filter((entry) => normalizeText(entry.goalLabel).length > 0);
@@ -318,50 +360,61 @@ const getBestAndWeakestGoalCoverage = (coverage: TopSectionGoalCoverageInput[]) 
 };
 
 const buildGoalCoverageHero = (goal: TopSectionHeroInput): TopSectionHeroPresentation | null => {
-  const coverage = getSortedGoalCoverage(goal.goalCoverage);
+  const coverage = getSortedGoalCoverage(getPrimaryGoalCoverage(goal));
   if (!isGoalCoverageMultiGoal(goal) || coverage.length < 2) return null;
 
   const { best, weakest } = getBestAndWeakestGoalCoverage(coverage);
   const hasStrong = coverage.some((entry) => entry.state === 'strong');
   const allPositive = coverage.every((entry) => entry.state === 'strong' || entry.state === 'some');
   const allLimited = coverage.every((entry) => entry.state === 'limited' || entry.state === 'none');
+  const acrossGoals = goal.allGoalsAnalyzed === true;
+
+  const scopeSummary = acrossGoals
+    ? 'across the goals we checked'
+    : 'for the goals checked in this view';
 
   if (allPositive && hasStrong && best) {
     return {
       tone: 'positive',
-      chip: 'Strong fit across your goals',
-      summary: `Best aligned with ${best.goalLabel}, with support across your selected goals`,
+      chip: acrossGoals ? 'Strong fit across your selected goals' : 'Strong fit for the goals shown',
+      summary: acrossGoals
+        ? `Best aligned with ${best.goalLabel}, with support across your selected goals`
+        : 'This label looks well aligned with the goals we checked in this view.',
     };
   }
 
   if (allLimited) {
     return {
       tone: 'caution',
-      chip: 'Limited fit across your goals',
-      summary: 'Support looks limited across your selected goals',
+      chip: acrossGoals ? 'Limited fit across your selected goals' : 'Limited fit for the goals shown',
+      summary: `Support looks limited ${scopeSummary}`,
     };
   }
 
   if (coverage.every((entry) => entry.state === 'some')) {
     return {
       tone: 'neutral',
-      chip: 'Mixed fit across your goals',
-      summary: 'Shows some support across your selected goals',
+      chip: acrossGoals ? 'Mixed fit across your selected goals' : 'Mixed fit for the goals shown',
+      summary: acrossGoals
+        ? 'Shows some support across the goals we checked.'
+        : 'Shows some support for the goals checked in this view.',
     };
   }
 
   if (best && weakest && best.goalLabel === weakest.goalLabel) {
     return {
       tone: 'neutral',
-      chip: 'Mixed fit across your goals',
-      summary: 'Support varies across your selected goals',
+      chip: acrossGoals ? 'Mixed fit across your selected goals' : 'Mixed fit for the goals shown',
+      summary: acrossGoals
+        ? 'Support varies across the goals we checked.'
+        : 'Support varies across the goals checked in this view.',
     };
   }
 
   if (best && weakest) {
     return {
       tone: 'neutral',
-      chip: 'Mixed fit across your goals',
+      chip: acrossGoals ? 'Mixed fit across your selected goals' : 'Mixed fit for the goals shown',
       summary: `Looks stronger for ${best.goalLabel} than ${weakest.goalLabel}`,
     };
   }
@@ -441,23 +494,88 @@ const buildBanner = (allergy: TopSectionAllergyInput): TopSectionBannerPresentat
   };
 };
 
+const toGoalCoveragePresentation = (
+  entry: TopSectionGoalCoverageInput,
+): TopSectionGoalCoveragePresentation => ({
+  key: normalizeText(entry.goalLabel).toLowerCase().replace(/\s+/g, '_'),
+  goalLabel: entry.goalLabel,
+  description: `${entry.goalLabel}: ${describeGoalCoverageState(entry.state)}.`,
+  tone: GOAL_COVERAGE_TONE_BY_STATE[entry.state],
+});
+
+const getDefaultVisibleGoalCoverage = (
+  coverage: TopSectionGoalCoverageInput[],
+  defaultVisibleGoalLabels: string[] | undefined,
+  surfacedGoalCount: number | undefined,
+): TopSectionGoalCoverageInput[] => {
+  const desiredCount = Math.max(1, surfacedGoalCount ?? Math.min(3, coverage.length));
+  const normalizedVisibleLabels = (defaultVisibleGoalLabels ?? [])
+    .map((label) => normalizeText(label))
+    .filter(Boolean);
+
+  if (normalizedVisibleLabels.length === 0) return coverage.slice(0, desiredCount);
+
+  const byLabel = new Map(
+    coverage.map((entry) => [normalizeText(entry.goalLabel), entry] as const),
+  );
+
+  const ordered = normalizedVisibleLabels
+    .map((label) => byLabel.get(label))
+    .filter((entry): entry is TopSectionGoalCoverageInput => Boolean(entry));
+
+  if (ordered.length > 0) return ordered.slice(0, desiredCount);
+  return coverage.slice(0, desiredCount);
+};
+
 const buildSupportInsight = (
   personalInsight: TopSectionPersonalInsightInput,
 ): TopSectionInsightPresentation | null => {
   if (isGoalCoverageMultiGoal(personalInsight)) {
-    const coverage = getSortedGoalCoverage(personalInsight.goalCoverage);
+    const coverage = getSortedGoalCoverage(getPrimaryGoalCoverage(personalInsight));
+    const fullItems = coverage.map(toGoalCoveragePresentation);
+    const defaultVisibleCoverage = getDefaultVisibleGoalCoverage(
+      coverage,
+      personalInsight.defaultVisibleGoalLabels,
+      personalInsight.surfacedGoalCount,
+    );
+    const visibleItems = defaultVisibleCoverage.map(toGoalCoveragePresentation);
+    const hiddenByLabel = new Set(defaultVisibleCoverage.map((entry) => normalizeText(entry.goalLabel)));
+    const hiddenItems = fullItems.filter((entry) => !hiddenByLabel.has(normalizeText(entry.goalLabel)));
     const tone = coverage.every((entry) => entry.state === 'limited' || entry.state === 'none')
       ? 'caution'
       : coverage.some((entry) => entry.state === 'strong')
         ? 'positive'
         : 'neutral';
+    const analyzedCount = personalInsight.analyzedGoalCount ?? coverage.length;
+    const surfacedCount = Math.min(
+      personalInsight.surfacedGoalCount ?? visibleItems.length,
+      analyzedCount,
+    );
+    const allGoalsAnalyzed = personalInsight.allGoalsAnalyzed === true;
+    const subtitle = allGoalsAnalyzed
+      ? analyzedCount > surfacedCount
+        ? `Showing ${surfacedCount} of ${analyzedCount} analyzed goals`
+        : analyzedCount > 0
+          ? `Showing all ${analyzedCount} analyzed goals`
+          : undefined
+      : visibleItems.length > 0
+        ? `Showing ${visibleItems.length} goals checked in this view`
+        : undefined;
+    const canExpandAll = allGoalsAnalyzed && analyzedCount > surfacedCount;
 
     return {
       key: 'goal_coverage',
       topic: 'support',
       tone,
       collapsedTitle: 'How it maps to your goals',
-      expandedBullets: coverage.map((entry) => `${entry.goalLabel}: ${describeGoalCoverageState(entry.state)}.`),
+      subtitle,
+      expandedBullets: fullItems.map((entry) => entry.description),
+      goalCoverageItems: fullItems,
+      visibleGoalCoverageItems: visibleItems,
+      hiddenGoalCoverageItems: hiddenItems,
+      expandActionLabel: canExpandAll ? `View all ${analyzedCount} goals` : undefined,
+      collapseActionLabel: canExpandAll ? 'Show fewer goals' : undefined,
+      canExpandAll,
       isExpandable: true,
     };
   }
