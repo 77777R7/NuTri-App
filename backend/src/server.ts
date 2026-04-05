@@ -10431,7 +10431,7 @@ const localDecisionSupportContextSchema = z.object({
   savedSupplements: z.array(localDecisionSupportSavedSupplementSchema).max(12).default([]),
 }).strict();
 
-const LOCAL_DECISION_SUPPORT_HEADER_PREFIX = "uri:";
+const LOCAL_DECISION_SUPPORT_HEADER_PREFIXES = ["uri:", "local_v1:"] as const;
 
 const sanitizeLocalDecisionSupportStrings = (values: string[] | undefined): string[] =>
   (Array.isArray(values) ? values : [])
@@ -10446,9 +10446,13 @@ const decodeLocalDecisionSupportHeader = (value: string): unknown => {
   } catch (rawError) {
     const decodeCandidates: string[] = [];
 
-    if (value.startsWith(LOCAL_DECISION_SUPPORT_HEADER_PREFIX)) {
-      decodeCandidates.push(value.slice(LOCAL_DECISION_SUPPORT_HEADER_PREFIX.length));
-    } else if (/%[0-9A-Fa-f]{2}/.test(value)) {
+    const matchedPrefix = LOCAL_DECISION_SUPPORT_HEADER_PREFIXES.find((prefix) => value.startsWith(prefix));
+
+    if (matchedPrefix) {
+      decodeCandidates.push(value.slice(matchedPrefix.length));
+    }
+
+    if (/%[0-9A-Fa-f]{2}/.test(value)) {
       decodeCandidates.push(value);
     }
 
