@@ -34,7 +34,7 @@ test('hero chip stays goal-fit driven even when allergy banner is present', () =
   assert.equal(result.banner?.title, 'Ingredients may conflict with your allergies');
 });
 
-test('allergy conflict banner removes duplicate allergy row from insights', () => {
+test('allergy conflict banner keeps an allergy row inside insights', () => {
   const result = buildAnalysisTopSectionPresentation({
     goal: {
       previewTopTier: 'related',
@@ -58,11 +58,16 @@ test('allergy conflict banner removes duplicate allergy row from insights', () =
     safety: {},
   });
 
-  assert.equal(result.insights.some((row) => row.topic === 'allergy'), false);
+  assert.equal(result.banner?.title, 'Ingredients may conflict with your allergies');
   assert.deepEqual(
     result.insights.map((row) => row.topic),
-    ['support', 'dose', 'overlap'],
+    ['support', 'allergy', 'dose', 'overlap'],
   );
+  assert.equal(
+    result.insights.find((row) => row.topic === 'allergy')?.collapsedTitle,
+    'Fish found on the label',
+  );
+  assert.equal(result.insights.find((row) => row.topic === 'allergy')?.defaultExpanded, true);
 });
 
 test('no goal row is emitted and allergy can appear as a normal status row', () => {
@@ -133,4 +138,401 @@ test('insights are capped at four rows with safety allowed as the fourth item', 
     ['support', 'allergy', 'dose', 'overlap'],
   );
   assert.equal(result.insights.every((row) => row.isExpandable), true);
+  assert.equal(result.secondaryNote?.title, 'If you take medication, check first');
+});
+
+test('multi-goal mixed coverage renders a mixed-fit hero and goal coverage row', () => {
+  const result = buildAnalysisTopSectionPresentation({
+    goal: {
+      fitDecision: 'mixed',
+      selectedGoalLabel: 'Recovery',
+      selectedGoalLabels: ['Energy', 'Immunity', 'Recovery'],
+      goalLensMode: 'multi_goal_summary',
+      selectedGoalCount: 3,
+      analyzedGoalCount: 3,
+      surfacedGoalCount: 3,
+      allGoalsAnalyzed: true,
+      goalCoverage: [
+        { goalLabel: 'Energy', tier: 'weak_match', state: 'limited', source: 'goal_match_scoring_preview' },
+        { goalLabel: 'Immunity', tier: 'related', state: 'some', source: 'goal_match_scoring_preview' },
+        { goalLabel: 'Recovery', tier: 'strong_match', state: 'strong', source: 'selected_goal_evaluation' },
+      ],
+    },
+    personalInsight: {
+      supportLabels: [],
+      fitDecision: 'mixed',
+      selectedGoalLabel: 'Recovery',
+      goalLensMode: 'multi_goal_summary',
+      selectedGoalCount: 3,
+      analyzedGoalCount: 3,
+      surfacedGoalCount: 3,
+      allGoalsAnalyzed: true,
+      goalCoverage: [
+        { goalLabel: 'Energy', tier: 'weak_match', state: 'limited', source: 'goal_match_scoring_preview' },
+        { goalLabel: 'Immunity', tier: 'related', state: 'some', source: 'goal_match_scoring_preview' },
+        { goalLabel: 'Recovery', tier: 'strong_match', state: 'strong', source: 'selected_goal_evaluation' },
+      ],
+    },
+    allergy: {
+      status: 'ready',
+      matchedLabels: [],
+      evidenceTexts: [],
+      summary: 'No allergy-related flags detected.',
+    },
+    dose: {
+      status: 'ready',
+      assessment: 'aligned',
+      productDoseText: '1 softgel daily',
+    },
+    safety: {},
+  });
+
+  assert.equal(result.hero.chip, 'Mixed fit across your selected goals');
+  assert.equal(result.hero.summary, 'Looks stronger for Recovery than Energy');
+  assert.equal(result.insights[0]?.key, 'goal_coverage');
+  assert.equal(result.insights[0]?.collapsedTitle, 'How it maps to your goals');
+  assert.equal(result.insights[0]?.subtitle, 'Showing all 3 analyzed goals');
+  assert.deepEqual(result.insights[0]?.expandedBullets, [
+    'Energy: limited support.',
+    'Immunity: some support.',
+    'Recovery: strong support.',
+  ]);
+  assert.equal(result.insights[0]?.defaultExpanded, true);
+});
+
+test('multi-goal all-some coverage avoids comparing a goal against itself', () => {
+  const result = buildAnalysisTopSectionPresentation({
+    goal: {
+      fitDecision: 'mixed',
+      selectedGoalLabel: 'Recovery',
+      selectedGoalLabels: ['Energy', 'Immunity', 'Recovery'],
+      goalLensMode: 'multi_goal_summary',
+      selectedGoalCount: 3,
+      analyzedGoalCount: 3,
+      surfacedGoalCount: 3,
+      allGoalsAnalyzed: true,
+      goalCoverage: [
+        { goalLabel: 'Energy', tier: 'related', state: 'some', source: 'goal_match_scoring_preview' },
+        { goalLabel: 'Immunity', tier: 'related', state: 'some', source: 'goal_match_scoring_preview' },
+        { goalLabel: 'Recovery', tier: 'related', state: 'some', source: 'selected_goal_evaluation' },
+      ],
+    },
+    personalInsight: {
+      supportLabels: [],
+      fitDecision: 'mixed',
+      selectedGoalLabel: 'Recovery',
+      goalLensMode: 'multi_goal_summary',
+      selectedGoalCount: 3,
+      analyzedGoalCount: 3,
+      surfacedGoalCount: 3,
+      allGoalsAnalyzed: true,
+      goalCoverage: [
+        { goalLabel: 'Energy', tier: 'related', state: 'some', source: 'goal_match_scoring_preview' },
+        { goalLabel: 'Immunity', tier: 'related', state: 'some', source: 'goal_match_scoring_preview' },
+        { goalLabel: 'Recovery', tier: 'related', state: 'some', source: 'selected_goal_evaluation' },
+      ],
+    },
+    allergy: {
+      status: 'ready',
+      matchedLabels: [],
+      evidenceTexts: [],
+      summary: 'No allergy-related flags detected.',
+    },
+    dose: {
+      status: 'ready',
+      assessment: 'aligned',
+      productDoseText: '1 softgel daily',
+    },
+    safety: {},
+  });
+
+  assert.equal(result.hero.chip, 'Mixed fit across your selected goals');
+  assert.equal(result.hero.summary, 'Shows some support across the goals we checked.');
+});
+
+test('multi-goal full analysis shows top 3 by relevance with expand metadata', () => {
+  const result = buildAnalysisTopSectionPresentation({
+    goal: {
+      fitDecision: 'mixed',
+      selectedGoalLabel: 'Recovery',
+      selectedGoalLabels: ['Energy', 'Immunity', 'Recovery'],
+      allSelectedGoalLabels: ['Energy', 'Immunity', 'Recovery', 'Sleep', 'Focus'],
+      goalLensMode: 'multi_goal_summary',
+      goalCoverage: [
+        { goalLabel: 'Energy', tier: 'weak_match', state: 'limited', source: 'goal_match_scoring_preview' },
+        { goalLabel: 'Immunity', tier: 'weak_match', state: 'limited', source: 'goal_match_scoring_preview' },
+        { goalLabel: 'Recovery', tier: 'strong_match', state: 'strong', source: 'selected_goal_evaluation' },
+      ],
+      allGoalCoverage: [
+        { goalLabel: 'Energy', tier: 'weak_match', state: 'limited', source: 'goal_match_scoring_preview' },
+        { goalLabel: 'Immunity', tier: 'weak_match', state: 'limited', source: 'goal_match_scoring_preview' },
+        { goalLabel: 'Recovery', tier: 'strong_match', state: 'strong', source: 'selected_goal_evaluation' },
+        { goalLabel: 'Sleep', tier: 'related', state: 'some', source: 'goal_match_scoring_preview' },
+        { goalLabel: 'Focus', tier: 'no_match', state: 'none', source: 'goal_match_scoring_preview' },
+      ],
+      selectedGoalCount: 5,
+      analyzedGoalCount: 5,
+      surfacedGoalCount: 3,
+      allGoalsAnalyzed: true,
+      defaultVisibleGoalLabels: ['Recovery', 'Sleep', 'Energy'],
+    },
+    personalInsight: {
+      supportLabels: [],
+      fitDecision: 'mixed',
+      selectedGoalLabel: 'Recovery',
+      goalLensMode: 'multi_goal_summary',
+      goalCoverage: [
+        { goalLabel: 'Energy', tier: 'weak_match', state: 'limited', source: 'goal_match_scoring_preview' },
+        { goalLabel: 'Immunity', tier: 'weak_match', state: 'limited', source: 'goal_match_scoring_preview' },
+        { goalLabel: 'Recovery', tier: 'strong_match', state: 'strong', source: 'selected_goal_evaluation' },
+      ],
+      allGoalCoverage: [
+        { goalLabel: 'Energy', tier: 'weak_match', state: 'limited', source: 'goal_match_scoring_preview' },
+        { goalLabel: 'Immunity', tier: 'weak_match', state: 'limited', source: 'goal_match_scoring_preview' },
+        { goalLabel: 'Recovery', tier: 'strong_match', state: 'strong', source: 'selected_goal_evaluation' },
+        { goalLabel: 'Sleep', tier: 'related', state: 'some', source: 'goal_match_scoring_preview' },
+        { goalLabel: 'Focus', tier: 'no_match', state: 'none', source: 'goal_match_scoring_preview' },
+      ],
+      selectedGoalCount: 5,
+      analyzedGoalCount: 5,
+      surfacedGoalCount: 3,
+      allGoalsAnalyzed: true,
+      defaultVisibleGoalLabels: ['Recovery', 'Sleep', 'Energy'],
+    },
+    allergy: {
+      status: 'ready',
+      matchedLabels: [],
+      evidenceTexts: [],
+      summary: 'No allergy-related flags detected.',
+    },
+    dose: {
+      status: 'ready',
+      assessment: 'aligned',
+      productDoseText: '1 softgel daily',
+    },
+    safety: {},
+  });
+
+  assert.equal(result.hero.chip, 'Mixed fit across your selected goals');
+  assert.equal(result.insights[0]?.subtitle, 'Showing 3 of 5 analyzed goals');
+  assert.deepEqual(
+    result.insights[0]?.visibleGoalCoverageItems?.map((item) => item.goalLabel),
+    ['Recovery', 'Sleep', 'Energy'],
+  );
+  assert.deepEqual(
+    result.insights[0]?.goalCoverageItems?.map((item) => item.goalLabel),
+    ['Energy', 'Immunity', 'Recovery', 'Sleep', 'Focus'],
+  );
+  assert.equal(result.insights[0]?.expandActionLabel, 'View all 5 goals');
+  assert.equal(result.insights[0]?.collapseActionLabel, 'Show fewer goals');
+  assert.equal(result.insights[0]?.canExpandAll, true);
+});
+
+test('partial multi-goal analysis uses conservative hero copy and does not expose view-all', () => {
+  const result = buildAnalysisTopSectionPresentation({
+    goal: {
+      fitDecision: 'mixed',
+      selectedGoalLabel: 'Recovery',
+      goalLensMode: 'multi_goal_summary',
+      goalCoverage: [
+        { goalLabel: 'Energy', tier: 'weak_match', state: 'limited', source: 'goal_match_scoring_preview' },
+        { goalLabel: 'Recovery', tier: 'strong_match', state: 'strong', source: 'selected_goal_evaluation' },
+      ],
+      analyzedGoalCount: 2,
+      surfacedGoalCount: 2,
+      allGoalsAnalyzed: false,
+    },
+    personalInsight: {
+      supportLabels: [],
+      fitDecision: 'mixed',
+      selectedGoalLabel: 'Recovery',
+      goalLensMode: 'multi_goal_summary',
+      goalCoverage: [
+        { goalLabel: 'Energy', tier: 'weak_match', state: 'limited', source: 'goal_match_scoring_preview' },
+        { goalLabel: 'Recovery', tier: 'strong_match', state: 'strong', source: 'selected_goal_evaluation' },
+      ],
+      analyzedGoalCount: 2,
+      surfacedGoalCount: 2,
+      allGoalsAnalyzed: false,
+    },
+    allergy: {
+      status: 'ready',
+      matchedLabels: [],
+      evidenceTexts: [],
+      summary: 'No allergy-related flags detected.',
+    },
+    dose: {
+      status: 'ready',
+      assessment: 'aligned',
+      productDoseText: '1 softgel daily',
+    },
+    safety: {},
+  });
+
+  assert.equal(result.hero.chip, 'Mixed fit for the goals shown');
+  assert.equal(result.hero.summary, 'Looks stronger for Recovery than Energy');
+  assert.equal(result.insights[0]?.subtitle, 'Showing 2 goals checked in this view');
+  assert.equal(result.insights[0]?.expandActionLabel, undefined);
+  assert.equal(result.insights[0]?.canExpandAll, false);
+});
+
+test('goal insight still renders when the selected goal does not match strongly', () => {
+  const result = buildAnalysisTopSectionPresentation({
+    goal: {
+      fitDecision: 'does_not_fit',
+      selectedGoalLabel: 'Immunity',
+    },
+    personalInsight: {
+      supportLabels: [],
+      fitDecision: 'does_not_fit',
+      selectedGoalLabel: 'Immunity',
+    },
+    allergy: {
+      status: 'ready',
+      matchedLabels: [],
+      evidenceTexts: [],
+      summary: 'No allergy-related flags detected.',
+    },
+    dose: {
+      status: 'ready',
+      assessment: 'unclear',
+      productDoseText: '1 softgel daily',
+    },
+    safety: {},
+  });
+
+  assert.equal(result.hero.summary, "We don't see strong Immunity support on this label");
+  assert.equal(result.insights[0]?.topic, 'support');
+  assert.equal(result.insights[0]?.collapsedTitle, 'Immunity support looks limited');
+  assert.equal(result.insights[0]?.defaultExpanded, true);
+});
+
+test('allergy row does not tell the user to add preferences when local settings already exist', () => {
+  const result = buildAnalysisTopSectionPresentation({
+    goal: {
+      fitDecision: 'mixed',
+      selectedGoalLabel: 'Recovery',
+    },
+    personalInsight: {
+      supportLabels: ['Recovery'],
+    },
+    allergy: {
+      status: 'ready',
+      hasSavedPreferences: true,
+      matchedLabels: [],
+      evidenceTexts: [],
+      summary: 'No allergy or restriction settings saved yet.',
+    },
+    dose: {
+      status: 'ready',
+      assessment: 'aligned',
+      productDoseText: '2 capsules daily',
+    },
+    safety: {},
+  });
+
+  assert.equal(
+    result.insights.find((row) => row.topic === 'allergy')?.collapsedTitle,
+    'Saved allergy preferences did not attach to this scan',
+  );
+});
+
+test('allergy conflict details are more specific than the banner warning', () => {
+  const result = buildAnalysisTopSectionPresentation({
+    goal: {
+      fitDecision: 'does_not_fit',
+      selectedGoalLabel: 'Energy',
+    },
+    personalInsight: {
+      supportLabels: [],
+      fitDecision: 'does_not_fit',
+      selectedGoalLabel: 'Energy',
+    },
+    allergy: {
+      status: 'ready',
+      matchedLabels: ['fish'],
+      evidenceTexts: [
+        'Calories 15; Wild Alaska Pollock Fish Oil Concentrate 1250 mg and Fish Gelatin; Glycerin; Water.',
+      ],
+      summary: 'Matched your saved settings: Fish.',
+    },
+    dose: {
+      status: 'ready',
+      assessment: 'unclear',
+      productDoseText: '1 softgel daily',
+    },
+    safety: {
+      warningText: 'Consult a healthcare professional before use.',
+    },
+  });
+
+  const allergyRow = result.insights.find((row) => row.topic === 'allergy');
+  assert.equal(allergyRow?.collapsedTitle, 'Fish found on the label');
+  assert.deepEqual(allergyRow?.expandedBullets, [
+    'This product may conflict with your saved allergy settings.',
+    'Matched against: Fish.',
+    'Found on label: Wild Alaska Pollock Fish Oil Concentrate 1250 mg and Fish Gelatin.',
+    'Avoid it if you need to avoid fish ingredients.',
+  ]);
+});
+
+test('medication caution title reads like a conditional reminder', () => {
+  const result = buildAnalysisTopSectionPresentation({
+    goal: {
+      fitDecision: 'fits',
+      selectedGoalLabel: 'Immunity',
+    },
+    personalInsight: {
+      supportLabels: ['Immunity'],
+    },
+    allergy: {
+      status: 'ready',
+      matchedLabels: [],
+      evidenceTexts: [],
+      summary: 'No allergy-related flags detected.',
+    },
+    dose: {
+      status: 'ready',
+      assessment: 'aligned',
+      productDoseText: '1 capsule daily',
+    },
+    safety: {
+      warningText: 'Consult a clinician if you take prescription medication.',
+    },
+  });
+
+  assert.equal(result.insights.find((row) => row.topic === 'safety'), undefined);
+  assert.equal(result.secondaryNote?.title, 'If you take medication, check first');
+});
+
+test('strong safety triggers stay as a primary insight row', () => {
+  const result = buildAnalysisTopSectionPresentation({
+    goal: {
+      fitDecision: 'fits',
+      selectedGoalLabel: 'Immunity',
+    },
+    personalInsight: {
+      supportLabels: ['Immunity'],
+    },
+    allergy: {
+      status: 'ready',
+      matchedLabels: [],
+      evidenceTexts: [],
+      summary: 'No allergy-related flags detected.',
+    },
+    dose: {
+      status: 'ready',
+      assessment: 'aligned',
+      productDoseText: '1 capsule daily',
+    },
+    safety: {
+      warningText: 'Avoid use with blood thinners unless a clinician tells you otherwise.',
+    },
+  });
+
+  assert.equal(result.secondaryNote ?? null, null);
+  assert.equal(
+    result.insights.find((row) => row.topic === 'safety')?.collapsedTitle,
+    'Check before use',
+  );
 });

@@ -84,6 +84,8 @@ const getHeroChipColors = (tone: TopSectionHeroPresentation['tone']) => {
 };
 
 const getExpandedFrameHeight = (lineCount: number) => {
+  if (lineCount >= 6) return 244;
+  if (lineCount >= 4) return 204;
   if (lineCount >= 3) return 164;
   if (lineCount === 2) return 126;
   return 92;
@@ -101,18 +103,24 @@ export const AnalysisTopSectionRedesign: React.FC<AnalysisTopSectionRedesignProp
   const derivedSyncKey = useMemo(
     () =>
       `${hero.chip}::${hero.summary}::${banner?.title ?? 'no-banner'}::${insights
-        .map((row) => `${row.key}:${row.collapsedTitle}`)
+        .map((row) =>
+          `${row.key}:${row.collapsedTitle}:${row.subtitle ?? ''}:${row.expandActionLabel ?? ''}:${(row.goalCoverageItems ?? [])
+            .map((item) => item.key)
+            .join(',')}`,
+        )
         .join('|')}`,
     [banner?.title, hero.chip, hero.summary, insights],
   );
   const defaultExpandedKey = insights[0]?.key ?? null;
   const lastSyncKeyRef = useRef<string>(derivedSyncKey);
   const [expandedKey, setExpandedKey] = useState<string | null>(defaultExpandedKey);
+  const [expandedCoverageRows, setExpandedCoverageRows] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     if (lastSyncKeyRef.current === derivedSyncKey) return;
     lastSyncKeyRef.current = derivedSyncKey;
     setExpandedKey(defaultExpandedKey);
+    setExpandedCoverageRows({});
   }, [defaultExpandedKey, derivedSyncKey]);
 
   useEffect(() => {
@@ -207,11 +215,30 @@ export const AnalysisTopSectionRedesign: React.FC<AnalysisTopSectionRedesignProp
             {insights.map((row, index) => {
               const isExpanded = expandedKey === row.key;
               const { Icon, iconBg, iconColor } = resolveInsightIcon(row.topic, row.tone);
-              const expandedFrameHeight = getExpandedFrameHeight(row.expandedBullets.length);
+              const isGoalCoverageRow = (row.goalCoverageItems?.length ?? 0) > 0;
+              const showAllGoalCoverage = expandedCoverageRows[row.key] === true;
+              const visibleGoalCoverageItems =
+                row.visibleGoalCoverageItems && row.visibleGoalCoverageItems.length > 0
+                  ? row.visibleGoalCoverageItems
+                  : row.goalCoverageItems ?? [];
+              const activeGoalCoverageItems = isGoalCoverageRow
+                ? (showAllGoalCoverage ? row.goalCoverageItems : visibleGoalCoverageItems) ?? []
+                : [];
+              const expandedFrameHeight = getExpandedFrameHeight(
+                isGoalCoverageRow ? activeGoalCoverageItems.length : row.expandedBullets.length,
+              );
 
               const handleToggle = () => {
                 LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
                 setExpandedKey((current) => (current === row.key ? null : row.key));
+              };
+
+              const handleGoalCoverageToggle = () => {
+                LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+                setExpandedCoverageRows((current) => ({
+                  ...current,
+                  [row.key]: !current[row.key],
+                }));
               };
 
               return (
@@ -225,13 +252,37 @@ export const AnalysisTopSectionRedesign: React.FC<AnalysisTopSectionRedesignProp
                     </View>
                     <View style={styles.rowCopy}>
                       <Text style={styles.rowTitle}>{row.collapsedTitle}</Text>
+                      {!!row.subtitle ? (
+                        <Text style={styles.rowSubtitle}>{row.subtitle}</Text>
+                      ) : null}
                     </View>
                     <View style={[styles.chevronWrap, isExpanded && styles.chevronWrapExpanded]}>
                       <ChevronDown size={20} color="#64748B" strokeWidth={2.2} />
                     </View>
                   </Pressable>
 
-                  {isExpanded && row.expandedBullets.length > 0 ? (
+                  {isExpanded && isGoalCoverageRow ? (
+                    <Animated.View
+                      entering={FadeInUp.duration(200)}
+                      exiting={FadeOutDown.duration(140)}
+                      style={[styles.expandedWrap, { minHeight: Math.max(expandedFrameHeight - 58, 44) }]}
+                    >
+                      {activeGoalCoverageItems.map((item) => (
+                        <Text key={`${row.key}-${item.key}`} style={styles.goalCoverageLine}>
+                          {item.description}
+                        </Text>
+                      ))}
+                      {row.canExpandAll && row.expandActionLabel && row.collapseActionLabel ? (
+                        <Pressable onPress={handleGoalCoverageToggle} style={styles.goalCoverageActionWrap}>
+                          <Text style={styles.goalCoverageActionText}>
+                            {showAllGoalCoverage ? row.collapseActionLabel : row.expandActionLabel}
+                          </Text>
+                        </Pressable>
+                      ) : null}
+                    </Animated.View>
+                  ) : null}
+
+                  {isExpanded && !isGoalCoverageRow && row.expandedBullets.length > 0 ? (
                     <Animated.View
                       entering={FadeInUp.duration(200)}
                       exiting={FadeOutDown.duration(140)}
@@ -510,6 +561,14 @@ const styles = StyleSheet.create({
     color: '#0B1E36',
     letterSpacing: -0.23,
   },
+  rowSubtitle: {
+    marginTop: 4,
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: '500',
+    color: '#64748B',
+    letterSpacing: -0.1,
+  },
   chevronWrap: {
     width: 20,
     height: 20,
@@ -535,6 +594,29 @@ const styles = StyleSheet.create({
     fontWeight: '400',
     color: '#475569',
     letterSpacing: -0.15,
+  },
+  goalCoverageLine: {
+    maxWidth: 220,
+    fontSize: 14,
+    lineHeight: 19.25,
+    fontWeight: '400',
+    color: '#475569',
+    letterSpacing: -0.15,
+  },
+  goalCoverageActionWrap: {
+    marginTop: 12,
+    alignSelf: 'flex-start',
+    borderRadius: 999,
+    backgroundColor: 'rgba(37,99,235,0.08)',
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+  },
+  goalCoverageActionText: {
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: '600',
+    color: '#2563EB',
+    letterSpacing: -0.2,
   },
   divider: {
     marginHorizontal: 28,

@@ -112,6 +112,92 @@ test('compileDecisionSupport uses attached Recovery goal to return a non-pending
   assert.match(compiled.personalizedResultLane.goalFit.summary, /Recovery/i);
 });
 
+test('compileDecisionSupport returns multi-goal coverage in user-selected order with no-match states included', () => {
+  const compiled = compileDecisionSupport({
+    digest: buildOmegaDigest(),
+    factsDigestHash: 'fixture-sr-omega-multi-goal',
+    viewMode: 'details',
+    personalizationContext: buildPersonalizationContext({
+      prioritizedGoals: ['energy', 'immunity', 'recovery'],
+      selectedGoalKey: 'energy',
+    }),
+  });
+
+  assert.deepEqual(compiled.personalizedResultLane.goalFit.selectedGoalKeys, ['energy', 'immunity', 'recovery']);
+  assert.equal(compiled.personalizedResultLane.goalFit.goalLensMode, 'multi_goal_summary');
+  assert.deepEqual(
+    compiled.personalizedResultLane.goalFit.goalCoverage?.map((entry) => entry.goalKey),
+    ['energy', 'immunity', 'recovery'],
+  );
+  assert.equal(compiled.personalizedResultLane.goalFit.goalCoverage?.[0]?.state, 'none');
+  assert.equal(compiled.personalizedResultLane.goalFit.goalCoverage?.[2]?.source, 'selected_goal_evaluation');
+  assert.notEqual(compiled.personalizedResultLane.goalFit.goalCoverage?.[2]?.state, 'none');
+});
+
+test('compileDecisionSupport preserves legacy top-3 fields while adding full multi-goal coverage metadata', () => {
+  const prioritizedGoals = [
+    'energy',
+    'immunity',
+    'recovery',
+    'sleep',
+    'focus',
+    'stress_support',
+    'weight_management',
+    'libido_enhancement',
+  ] as const;
+  const compiled = compileDecisionSupport({
+    digest: buildOmegaDigest(),
+    factsDigestHash: 'fixture-sr-omega-all-goals',
+    viewMode: 'details',
+    personalizationContext: buildPersonalizationContext({
+      prioritizedGoals: [...prioritizedGoals],
+      selectedGoalKey: 'recovery',
+    }),
+  });
+
+  assert.deepEqual(compiled.personalizedResultLane.goalFit.selectedGoalKeys, ['energy', 'immunity', 'recovery']);
+  assert.deepEqual(compiled.personalizedResultLane.goalFit.allSelectedGoalKeys, prioritizedGoals);
+  assert.equal(compiled.personalizedResultLane.goalFit.selectedGoalCount, prioritizedGoals.length);
+  assert.equal(compiled.personalizedResultLane.goalFit.analyzedGoalCount, prioritizedGoals.length);
+  assert.equal(compiled.personalizedResultLane.goalFit.surfacedGoalCount, 3);
+  assert.equal(compiled.personalizedResultLane.goalFit.allGoalsAnalyzed, true);
+  assert.equal(compiled.personalizedResultLane.goalFit.allGoalCoverage?.length, prioritizedGoals.length);
+  assert.equal(compiled.personalizedResultLane.goalFit.goalCoverage?.length, 3);
+  assert.deepEqual(
+    compiled.personalizedResultLane.goalFit.allGoalCoverage?.map((entry) => entry.goalKey),
+    prioritizedGoals,
+  );
+  assert.ok(compiled.personalizedResultLane.goalFit.allGoalCoverage?.some((entry) => entry.state === 'none'));
+  assert.ok(compiled.personalizedResultLane.goalFit.defaultVisibleGoalKeys?.includes('recovery'));
+  assert.equal(compiled.personalizedResultLane.goalFit.defaultVisibleGoalKeys?.length, 3);
+});
+
+test('compileDecisionSupport falls back to original order for visible goals when every analyzed goal is limited or none', () => {
+  const compiled = compileDecisionSupport({
+    digest: {
+      ...buildOmegaDigest(),
+      actives: [],
+    },
+    factsDigestHash: 'fixture-sr-all-none-goals',
+    viewMode: 'details',
+    personalizationContext: buildPersonalizationContext({
+      prioritizedGoals: ['energy', 'immunity', 'sleep', 'stress_support'],
+      selectedGoalKey: 'energy',
+    }),
+  });
+
+  assert.deepEqual(compiled.personalizedResultLane.goalFit.allSelectedGoalKeys, ['energy', 'immunity', 'sleep', 'stress_support']);
+  assert.deepEqual(
+    compiled.personalizedResultLane.goalFit.defaultVisibleGoalKeys,
+    ['energy', 'immunity', 'sleep'],
+  );
+  assert.ok(
+    (compiled.personalizedResultLane.goalFit.allGoalCoverage ?? []).every(
+      (entry) => entry.state === 'limited' || entry.state === 'none',
+    ),
+  );
+});
+
 test('compileDecisionSupport returns a neutral ready insight when saved supplements are attached but empty', () => {
   const compiled = compileDecisionSupport({
     digest: buildOmegaDigest(),

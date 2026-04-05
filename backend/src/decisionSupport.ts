@@ -395,8 +395,15 @@ export type DecisionSupportPersonalizedGoalFit = {
   previewTopTier: ProductGoalMatchTier | "unknown";
   candidateGoalKeys: GoalKey[];
   selectedGoalKeys?: GoalKey[];
+  allSelectedGoalKeys?: GoalKey[];
   goalLensMode?: DecisionSupportGoalLensMode;
   goalCoverage?: DecisionSupportPersonalizedGoalCoverage[];
+  allGoalCoverage?: DecisionSupportPersonalizedGoalCoverage[];
+  selectedGoalCount?: number;
+  analyzedGoalCount?: number;
+  surfacedGoalCount?: number;
+  allGoalsAnalyzed?: boolean;
+  defaultVisibleGoalKeys?: GoalKey[];
 };
 
 export type DecisionSupportPersonalizedSupportSignal = {
@@ -952,13 +959,15 @@ const toGoalCoverageState = (
   }
 };
 
+const GOAL_COVERAGE_VISIBILITY_LIMIT = 3;
+
 const buildGoalCoverage = (params: {
   digest: FactsDigest;
   selectedGoalKeys: GoalKey[];
   selectedGoalKey: GoalKey | null;
   currentProductEvaluation: CatalogProductEvaluationResult | null;
 }): DecisionSupportPersonalizedGoalCoverage[] => {
-  const selectedGoalKeys = params.selectedGoalKeys.slice(0, 3);
+  const selectedGoalKeys = params.selectedGoalKeys;
   if (selectedGoalKeys.length === 0) return [];
 
   const previewMatchesByGoal = new Map(
@@ -984,6 +993,53 @@ const buildGoalCoverage = (params: {
       source,
     };
   });
+};
+
+const GOAL_COVERAGE_STATE_PRIORITY: Record<DecisionSupportPersonalizedGoalCoverageState, number> = {
+  strong: 4,
+  some: 3,
+  limited: 2,
+  none: 1,
+};
+
+const buildDefaultVisibleGoalKeys = (params: {
+  digest: FactsDigest;
+  selectedGoalKeys: GoalKey[];
+  goalCoverage: DecisionSupportPersonalizedGoalCoverage[];
+}): GoalKey[] => {
+  const coverage = params.goalCoverage.filter((entry) => params.selectedGoalKeys.includes(entry.goalKey));
+  if (coverage.length === 0) return [];
+
+  if (coverage.every((entry) => entry.state === "limited" || entry.state === "none")) {
+    return coverage.slice(0, GOAL_COVERAGE_VISIBILITY_LIMIT).map((entry) => entry.goalKey);
+  }
+
+  const previewScoreByGoal = new Map(
+    buildGoalCoverageMatches(params.digest, params.selectedGoalKeys).map((match) => [
+      match.goalKey,
+      match.score,
+    ] as const),
+  );
+  const originalIndexByGoal = new Map(
+    params.selectedGoalKeys.map((goalKey, index) => [goalKey, index] as const),
+  );
+
+  return [...coverage]
+    .sort((left, right) => {
+      const stateDelta = GOAL_COVERAGE_STATE_PRIORITY[right.state] - GOAL_COVERAGE_STATE_PRIORITY[left.state];
+      if (stateDelta !== 0) return stateDelta;
+
+      const sourceDelta =
+        Number(right.source === "selected_goal_evaluation") - Number(left.source === "selected_goal_evaluation");
+      if (sourceDelta !== 0) return sourceDelta;
+
+      const scoreDelta = (previewScoreByGoal.get(right.goalKey) ?? 0) - (previewScoreByGoal.get(left.goalKey) ?? 0);
+      if (scoreDelta !== 0) return scoreDelta;
+
+      return (originalIndexByGoal.get(left.goalKey) ?? 0) - (originalIndexByGoal.get(right.goalKey) ?? 0);
+    })
+    .slice(0, GOAL_COVERAGE_VISIBILITY_LIMIT)
+    .map((entry) => entry.goalKey);
 };
 
 const GENERIC_NUTRITION_ACTIVE_REGEX =
@@ -1390,21 +1446,25 @@ const buildPersonalizedResultLane = (params: {
   const goalPreviewMatches = buildGoalPreviewMatches(params.digest);
   const previewTopGoal = goalPreviewMatches[0] ?? null;
   const attachedContext = params.personalizationContext ?? null;
-  const selectedGoalKeys =
+  const allSelectedGoalKeys =
     (attachedContext?.prioritizedGoals?.length ?? 0) > 0
-      ? (attachedContext?.prioritizedGoals ?? []).slice(0, 3)
+      ? [...(attachedContext?.prioritizedGoals ?? [])]
+      : [];
+  const selectedGoalKeys =
+    allSelectedGoalKeys.length > 0
+      ? allSelectedGoalKeys.slice(0, GOAL_COVERAGE_VISIBILITY_LIMIT)
       : [];
   const selectedGoalKey = resolveAttachedSelectedGoalKey({
     prioritizedGoals: attachedContext?.prioritizedGoals,
-    selectedGoalKey: attachedContext?.selectedGoalKey,
-    previewMatches: goalPreviewMatches,
+      selectedGoalKey: attachedContext?.selectedGoalKey,
+      previewMatches: goalPreviewMatches,
   });
   const candidateGoalKeys =
     (attachedContext?.prioritizedGoals?.length ?? 0) > 0
-      ? (attachedContext?.prioritizedGoals ?? []).slice(0, 3)
-      : goalPreviewMatches.slice(0, 3).map((match) => match.goalKey);
+      ? (attachedContext?.prioritizedGoals ?? []).slice(0, GOAL_COVERAGE_VISIBILITY_LIMIT)
+      : goalPreviewMatches.slice(0, GOAL_COVERAGE_VISIBILITY_LIMIT).map((match) => match.goalKey);
   const previewSupportSignals: DecisionSupportPersonalizedSupportSignal[] = goalPreviewMatches
-    .slice(0, 3)
+    .slice(0, GOAL_COVERAGE_VISIBILITY_LIMIT)
     .map((match) => ({
       goalKey: match.goalKey,
       label: humanizeGoalKey(match.goalKey),
@@ -1424,8 +1484,23 @@ const buildPersonalizedResultLane = (params: {
     selectedGoalKey,
     currentProductEvaluation,
   });
+  const allGoalCoverage = buildGoalCoverage({
+    digest: params.digest,
+    selectedGoalKeys: allSelectedGoalKeys,
+    selectedGoalKey,
+    currentProductEvaluation,
+  });
+  const selectedGoalCount = allSelectedGoalKeys.length;
+  const analyzedGoalCount = allGoalCoverage.length;
+  const surfacedGoalCount = Math.min(GOAL_COVERAGE_VISIBILITY_LIMIT, analyzedGoalCount);
+  const allGoalsAnalyzed = selectedGoalCount > 0 && analyzedGoalCount === selectedGoalCount;
+  const defaultVisibleGoalKeys = buildDefaultVisibleGoalKeys({
+    digest: params.digest,
+    selectedGoalKeys: allSelectedGoalKeys,
+    goalCoverage: allGoalCoverage,
+  });
   const goalLensMode: DecisionSupportGoalLensMode =
-    selectedGoalKeys.length > 1 && goalCoverage.length > 1
+    allSelectedGoalKeys.length > 1 && allGoalCoverage.length > 1
       ? "multi_goal_summary"
       : "single_goal";
   const supportSignals =
@@ -1472,8 +1547,15 @@ const buildPersonalizedResultLane = (params: {
         previewTopTier: previewTopGoal?.tier ?? "unknown",
         candidateGoalKeys,
         selectedGoalKeys,
+        allSelectedGoalKeys,
         goalLensMode,
         goalCoverage,
+        allGoalCoverage,
+        selectedGoalCount,
+        analyzedGoalCount,
+        surfacedGoalCount,
+        allGoalsAnalyzed,
+        defaultVisibleGoalKeys,
       }
       : {
         status: "pending",
@@ -1488,8 +1570,15 @@ const buildPersonalizedResultLane = (params: {
         previewTopTier: previewTopGoal?.tier ?? "unknown",
         candidateGoalKeys,
         selectedGoalKeys,
+        allSelectedGoalKeys,
         goalLensMode,
         goalCoverage,
+        allGoalCoverage,
+        selectedGoalCount,
+        analyzedGoalCount,
+        surfacedGoalCount,
+        allGoalsAnalyzed,
+        defaultVisibleGoalKeys,
       },
     personalInsight: attachedContext
       ? (() => {

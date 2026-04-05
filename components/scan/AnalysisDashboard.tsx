@@ -52,10 +52,9 @@ import { InteractiveScoreRing } from '@/components/ui/InteractiveScoreRing';
 import { ContentSection } from '@/components/ui/ScoreDetailCard';
 import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
 import { Config } from '@/constants/Config';
+import { useAuth } from '@/contexts/AuthContext';
 import { useOnboarding } from '@/contexts/OnboardingContext';
-import { useSavedSupplements } from '@/contexts/SavedSupplementsContext';
 import { withAuthHeaders } from '@/lib/auth-token';
-import { AUTH_DISABLED } from '@/lib/auth-mode';
 import { useTranslation } from '@/lib/i18n';
 import { lookupFoundationForIngredient, summarizeFoundationHits } from '@/lib/knowledge/foundationLookup';
 import { normalizeAvoidItemsSelection } from '@/lib/onboarding-v2';
@@ -81,7 +80,6 @@ import type {
 import type { FactsDTO } from '@/shared/types/scan-insights';
 import type { ProfileDraft } from '@/types/onboarding';
 import type { GoalKey, ProductGoalMatchTier } from '@/types/personalization';
-import type { SavedSupplement } from '@/types/saved-supplements';
 import type {
     AnalysisBundle,
     AnalysisBundleV4,
@@ -195,8 +193,16 @@ type DecisionSupportPersonalizedResultLaneSectionKey =
     | 'dosage_context'
     | 'product_standing';
 type DecisionSupportPersonalizedGoalFitDecision = 'fits' | 'mixed' | 'does_not_fit' | 'unknown';
+type DecisionSupportGoalLensMode = 'single_goal' | 'multi_goal_summary';
+type DecisionSupportPersonalizedGoalCoverageState = 'strong' | 'some' | 'limited' | 'none';
 type DecisionSupportPersonalizedDoseAssessment = 'aligned' | 'low' | 'high' | 'unclear' | 'unknown';
 type DecisionSupportPersonalizedProductStanding = 'strong' | 'average' | 'weak' | 'unknown';
+type DecisionSupportPersonalizedGoalCoverage = {
+    goalKey: GoalKey;
+    tier: ProductGoalMatchTier | 'unknown';
+    state: DecisionSupportPersonalizedGoalCoverageState;
+    source: 'selected_goal_evaluation' | 'goal_match_scoring_preview';
+};
 type DecisionSupportPersonalizedGoalFit = {
     status: DecisionSupportPersonalizedResultLaneSectionStatus;
     reasonCode?: 'USER_GOAL_CONTEXT_NOT_ATTACHED' | 'NO_GOAL_SUPPORT_SIGNALS_DETECTED' | null;
@@ -207,6 +213,16 @@ type DecisionSupportPersonalizedGoalFit = {
     previewTopGoalKey: GoalKey | null;
     previewTopTier: ProductGoalMatchTier | 'unknown';
     candidateGoalKeys: GoalKey[];
+    selectedGoalKeys?: GoalKey[];
+    allSelectedGoalKeys?: GoalKey[];
+    goalLensMode?: DecisionSupportGoalLensMode;
+    goalCoverage?: DecisionSupportPersonalizedGoalCoverage[];
+    allGoalCoverage?: DecisionSupportPersonalizedGoalCoverage[];
+    selectedGoalCount?: number;
+    analyzedGoalCount?: number;
+    surfacedGoalCount?: number;
+    allGoalsAnalyzed?: boolean;
+    defaultVisibleGoalKeys?: GoalKey[];
 };
 type DecisionSupportPersonalizedSupportSignal = {
     goalKey: GoalKey;
@@ -515,7 +531,16 @@ const normalizeBarcodeForDecision = (value?: string | null): string | null => {
     if (digits.length < 8) return null;
     return digits.length > 14 ? digits.slice(-14) : digits.padStart(14, '0');
 };
-const LOCAL_DECISION_SUPPORT_HEADER_PREFIX = 'uri:';
+const LOCAL_DECISION_SUPPORT_HEADER_MAX_CHARS = 1400;
+const hashDecisionSupportProfileKey = (value: string): string => {
+    let hash = 5381;
+
+    for (let index = 0; index < value.length; index += 1) {
+        hash = (hash * 33) ^ value.charCodeAt(index);
+    }
+
+    return (hash >>> 0).toString(36);
+};
 type LocalDecisionSupportProfilePayload = {
     ageRange?: string;
     sex?: string;
@@ -532,13 +557,10 @@ type LocalDecisionSupportProfilePayload = {
     allergyFlags?: string[];
     ingredientRestrictions?: string[];
 };
-type LocalDecisionSupportSavedSupplementPayload = {
-    supplementId?: string | null;
-    barcode?: string | null;
-    productName: string;
-    brandName?: string | null;
-    dosageText?: string | null;
-};
+type ScanDecisionSupportProfilePayload = Pick<
+    LocalDecisionSupportProfilePayload,
+    'goals' | 'allergyFlags' | 'ingredientRestrictions'
+>;
 const clampLocalDecisionHeaderText = (value?: string | null, maxLength = 120): string => {
     const normalized = normalizeText(value);
     if (!normalized) return '';
@@ -601,34 +623,33 @@ const toLocalDecisionSupportProfilePayload = (
 
     return hasMeaningfulValue ? payload : null;
 };
-const toLocalDecisionSupportSavedSupplementPayload = (
-    items: SavedSupplement[],
-): LocalDecisionSupportSavedSupplementPayload[] =>
-    items
-        .slice(0, 6)
-        .map((item) => ({
-            supplementId: item.supplementId ?? null,
-            barcode: clampLocalDecisionHeaderText(item.barcode ?? null, 24),
-            productName: clampLocalDecisionHeaderText(item.productName, 120) || 'Unknown supplement',
-            brandName: clampLocalDecisionHeaderText(item.brandName, 80),
-            dosageText: clampLocalDecisionHeaderText(item.dosageText, 160),
-        }))
-        .filter((item) => Boolean(item.productName));
-const buildLocalDecisionSupportHeader = (input: {
-    profileDraft: ProfileDraft | null;
-    savedSupplements: SavedSupplement[];
-}): string | null => {
-    const profile = toLocalDecisionSupportProfilePayload(input.profileDraft);
-    const savedSupplements = toLocalDecisionSupportSavedSupplementPayload(input.savedSupplements);
-
-    if (!profile && savedSupplements.length === 0) return null;
-
-    const payload = JSON.stringify({
+const serializeLocalDecisionSupportContext = (profile: LocalDecisionSupportProfilePayload): string =>
+    JSON.stringify({
         profile,
-        savedSupplements,
+        // Keep this empty for scan decision-support to avoid oversized header transport.
+        savedSupplements: [],
     });
+const buildScanDecisionSupportProfile = (
+    profile: LocalDecisionSupportProfilePayload | null,
+): ScanDecisionSupportProfilePayload | null => {
+    if (!profile) return null;
 
-    return `${LOCAL_DECISION_SUPPORT_HEADER_PREFIX}${encodeURIComponent(payload)}`;
+    const scanProfile: ScanDecisionSupportProfilePayload = {
+        goals: profile.goals?.slice(0, 8),
+        allergyFlags: profile.allergyFlags?.slice(0, 12),
+        ingredientRestrictions: profile.ingredientRestrictions?.slice(0, 12),
+    };
+    const hasPersonalSignals =
+        (scanProfile.goals?.length ?? 0) > 0
+        || (scanProfile.allergyFlags?.length ?? 0) > 0
+        || (scanProfile.ingredientRestrictions?.length ?? 0) > 0;
+
+    return hasPersonalSignals ? scanProfile : null;
+};
+const buildLocalDecisionSupportHeader = (profile: ScanDecisionSupportProfilePayload | null): string | null => {
+    if (!profile) return null;
+    const header = serializeLocalDecisionSupportContext(profile);
+    return header.length <= LOCAL_DECISION_SUPPORT_HEADER_MAX_CHARS ? header : null;
 };
 const SIMPLE_TAXONOMY_WHITELIST = new Set(
     [
@@ -1560,6 +1581,7 @@ const NutriScoreCardV2: React.FC<{
                     <Text style={[styles.scoreV2OverallBand, muted ? null : { color: overallBandTone.accent }]}>
                         {resolvedOverallBand}
                     </Text>
+                    <Text style={styles.scoreV2FitHint}>Overall product quality, not your personalized fit score.</Text>
                 </View>
                 <Pressable
                     style={styles.scoreV2LearnMoreButton}
@@ -3248,8 +3270,8 @@ const AnalysisBundleDashboard: React.FC<{
     saveItem = null,
 }) => {
     const { t } = useTranslation();
-    const { draft: onboardingDraft } = useOnboarding();
-    const { savedSupplements } = useSavedSupplements();
+    const { loading: authLoading, token: authToken } = useAuth();
+    const { draft: onboardingDraft, loading: onboardingLoading } = useOnboarding();
     const [selectedTileType, setSelectedTileType] = useState<TileType | null>(null);
     const [bundleState, setBundleState] = useState<AnalysisBundle>(bundle);
     const [detailLoading, setDetailLoading] = useState(false);
@@ -3294,16 +3316,84 @@ const AnalysisBundleDashboard: React.FC<{
     const foundationMetricLoggedRef = useRef<Set<string>>(new Set());
     const overlayConsumerMetricLoggedRef = useRef<Set<string>>(new Set());
     const currentRunKeyRef = useRef<string | null>(null);
-    const localDecisionSupportHeader = useMemo(
-        () =>
-            AUTH_DISABLED
-                ? buildLocalDecisionSupportHeader({
-                    profileDraft: onboardingDraft,
-                    savedSupplements,
-                })
-                : null,
-        [onboardingDraft, savedSupplements],
+    const localDecisionSupportProfile = useMemo(
+        () => toLocalDecisionSupportProfilePayload(onboardingDraft),
+        [onboardingDraft],
     );
+    const localDecisionSupportRequestProfile = useMemo(
+        () => buildScanDecisionSupportProfile(localDecisionSupportProfile),
+        [localDecisionSupportProfile],
+    );
+    const localDecisionSupportSignals = useMemo(() => ({
+        hasDraft: Boolean(onboardingDraft),
+        goalCount: localDecisionSupportRequestProfile?.goals?.length ?? 0,
+        allergyCount: localDecisionSupportRequestProfile?.allergyFlags?.length ?? 0,
+        restrictionCount: localDecisionSupportRequestProfile?.ingredientRestrictions?.length ?? 0,
+        goalPreview: localDecisionSupportRequestProfile?.goals?.slice(0, 4) ?? [],
+        allergyPreview: localDecisionSupportRequestProfile?.allergyFlags?.slice(0, 4) ?? [],
+        restrictionPreview: localDecisionSupportRequestProfile?.ingredientRestrictions?.slice(0, 4) ?? [],
+    }), [localDecisionSupportRequestProfile, onboardingDraft]);
+    const localDecisionSupportHeader = useMemo(
+        () => buildLocalDecisionSupportHeader(localDecisionSupportRequestProfile),
+        [localDecisionSupportRequestProfile],
+    );
+    const shouldUseLocalDecisionSupport = useMemo(
+        () => !authLoading && !authToken && Boolean(localDecisionSupportHeader),
+        [authLoading, authToken, localDecisionSupportHeader],
+    );
+    const localDecisionSupportCacheScope = useMemo(() => {
+        if (authLoading || onboardingLoading) return 'local_profile_loading';
+        if (shouldUseLocalDecisionSupport && localDecisionSupportHeader) {
+            return `local_profile:${localDecisionSupportHeader}`;
+        }
+        if (authToken) return 'auth_session';
+        return 'local_profile:none';
+    }, [
+        authLoading,
+        authToken,
+        localDecisionSupportHeader,
+        onboardingLoading,
+        shouldUseLocalDecisionSupport,
+    ]);
+    const localDecisionSupportProfileKey = useMemo(() => {
+        if (!localDecisionSupportHeader) return null;
+        return hashDecisionSupportProfileKey(localDecisionSupportHeader);
+    }, [localDecisionSupportHeader]);
+    const localDecisionSupportDebugSignatureRef = useRef<string>('');
+    useEffect(() => {
+        if (onboardingLoading) return;
+        const signature = JSON.stringify({
+            hasDraft: localDecisionSupportSignals.hasDraft,
+            goalCount: localDecisionSupportSignals.goalCount,
+            allergyCount: localDecisionSupportSignals.allergyCount,
+            restrictionCount: localDecisionSupportSignals.restrictionCount,
+            goalPreview: localDecisionSupportSignals.goalPreview,
+            allergyPreview: localDecisionSupportSignals.allergyPreview,
+            restrictionPreview: localDecisionSupportSignals.restrictionPreview,
+            hasHeader: Boolean(localDecisionSupportHeader),
+            headerChars: localDecisionSupportHeader?.length ?? 0,
+            shouldUseLocalDecisionSupport,
+        });
+        if (localDecisionSupportDebugSignatureRef.current === signature) return;
+        localDecisionSupportDebugSignatureRef.current = signature;
+        console.log(`[decision-support][local-profile] ${JSON.stringify({
+            hasDraft: localDecisionSupportSignals.hasDraft,
+            goalCount: localDecisionSupportSignals.goalCount,
+            allergyCount: localDecisionSupportSignals.allergyCount,
+            restrictionCount: localDecisionSupportSignals.restrictionCount,
+            goalPreview: localDecisionSupportSignals.goalPreview,
+            allergyPreview: localDecisionSupportSignals.allergyPreview,
+            restrictionPreview: localDecisionSupportSignals.restrictionPreview,
+            hasHeader: Boolean(localDecisionSupportHeader),
+            headerChars: localDecisionSupportHeader?.length ?? 0,
+            shouldUseLocalDecisionSupport,
+        })}`);
+    }, [
+        onboardingLoading,
+        localDecisionSupportSignals,
+        localDecisionSupportHeader,
+        shouldUseLocalDecisionSupport,
+    ]);
     const emitScanUxTimingOnce = useCallback((
         key: 'firstRenderableLogged' | 'scoreVisibleLogged' | 'coreCardsVisibleLogged',
         event:
@@ -3465,11 +3555,30 @@ const AnalysisBundleDashboard: React.FC<{
             typeof (bundle.meta as { decisionSupportDigest?: unknown })?.decisionSupportDigest === 'string'
                 ? String((bundle.meta as { decisionSupportDigest?: string }).decisionSupportDigest)
                 : null;
+        const incomingDecisionCacheKey = incomingBarcode
+            ? [
+                incomingBarcode,
+                `${bundle.meta.authoritativeIdentity.type}:${bundle.meta.authoritativeIdentity.value}`,
+                incomingDecisionDigest ?? incomingFactsDigestHash ?? 'no_digest',
+                SCAN_UX_VIEW_MODE,
+                localDecisionSupportCacheScope,
+            ].join('|')
+            : null;
         const seededDecision = incomingBarcode
-            ? pickFreshDecisionPayloadForFacts(
-                incomingFactsDigestHash,
-                incomingDecisionDigest,
-                decisionSupportByBarcodeRef.current.get(incomingBarcode) ?? null,
+            ? (
+                shouldUseLocalDecisionSupport
+                    ? pickFreshDecisionPayloadForFacts(
+                        incomingFactsDigestHash,
+                        incomingDecisionDigest,
+                        incomingDecisionCacheKey
+                            ? decisionSupportCacheRef.current.get(incomingDecisionCacheKey) ?? null
+                            : null,
+                    )
+                    : pickFreshDecisionPayloadForFacts(
+                        incomingFactsDigestHash,
+                        incomingDecisionDigest,
+                        decisionSupportByBarcodeRef.current.get(incomingBarcode) ?? null,
+                    )
             )
             : null;
         setBundleState(bundle);
@@ -3491,7 +3600,7 @@ const AnalysisBundleDashboard: React.FC<{
         setDetailError(null);
         setDetailLoading(false);
         setSimpleSourcesOpen(false);
-    }, [analysis, bundle, incomingBundleRunKey]);
+    }, [analysis, bundle, incomingBundleRunKey, localDecisionSupportCacheScope, shouldUseLocalDecisionSupport]);
 
     useEffect(() => {
         // Never clobber on-demand detail fields (e.g. ingredients.detail) when a newer analysis_bundle
@@ -3630,6 +3739,7 @@ const AnalysisBundleDashboard: React.FC<{
     ]);
 
     useEffect(() => {
+        if (authLoading || onboardingLoading) return;
         const resolvedBarcode = (() => {
             const identity = bundleState.meta.authoritativeIdentity;
             if (identity?.type === 'gtin14') {
@@ -3655,6 +3765,7 @@ const AnalysisBundleDashboard: React.FC<{
             `${bundleState.meta.authoritativeIdentity.type}:${bundleState.meta.authoritativeIdentity.value}`,
             digestHint ?? currentFactsDigestHash ?? 'no_digest',
             SCAN_UX_VIEW_MODE,
+            localDecisionSupportCacheScope,
         ].join('|');
         const normalizedSessionId = normalizeText(scanSessionId) || 'session_unknown';
         const normalizedSessionIdRaw = normalizeText(scanSessionId) || null;
@@ -3662,6 +3773,9 @@ const AnalysisBundleDashboard: React.FC<{
             normalizeText(
                 ((bundleState.meta as { decisionInputsHash?: string | null }).decisionInputsHash) ?? null,
             ) || null;
+        const shouldBypassStaleDecisionHints = shouldUseLocalDecisionSupport;
+        const initialDecisionDigestHint = shouldBypassStaleDecisionHints ? null : digestHint;
+        const initialDecisionInputsHashHint = shouldBypassStaleDecisionHints ? null : decisionInputsHashHint;
         const fetchKey = `${normalizedSessionId}|${decisionCacheKey}`;
         if (decisionSupportFetchKeyRef.current === fetchKey) return;
         decisionSupportFetchKeyRef.current = fetchKey;
@@ -3697,13 +3811,19 @@ const AnalysisBundleDashboard: React.FC<{
                     ) || undefined,
                   }
                 : null;
-        const seededPayload = pickFreshDecisionPayloadForFacts(
-            currentFactsDigestHash,
-            digestHint,
-            decisionSupportByBarcodeRef.current.get(resolvedBarcode) ?? null,
-            inlineFallback ?? null,
-            cachedPayload,
-        );
+        const seededPayload = shouldUseLocalDecisionSupport
+            ? pickFreshDecisionPayloadForFacts(
+                currentFactsDigestHash,
+                digestHint,
+                cachedPayload,
+            )
+            : pickFreshDecisionPayloadForFacts(
+                currentFactsDigestHash,
+                digestHint,
+                decisionSupportByBarcodeRef.current.get(resolvedBarcode) ?? null,
+                inlineFallback ?? null,
+                cachedPayload,
+            );
         if (!cancelled && seededPayload) {
             upsertDecisionPayloadByBarcode(decisionSupportByBarcodeRef.current, resolvedBarcode, seededPayload);
             setDecisionSupportState((prev) => ({
@@ -3726,6 +3846,7 @@ const AnalysisBundleDashboard: React.FC<{
         }
         const run = async (
             digestParam: string | null,
+            decisionInputsHashParam: string | null,
             canDigestRetry: boolean,
             retryAttempt: number = 0,
         ): Promise<void> => {
@@ -3743,13 +3864,33 @@ const AnalysisBundleDashboard: React.FC<{
                     barcode: resolvedBarcode,
                     viewMode: SCAN_UX_VIEW_MODE,
                 });
+                const headers = await withAuthHeaders();
+                const usingLocalDecisionSupport = !headers.Authorization && Boolean(localDecisionSupportHeader);
                 if (digestParam) params.set('digest', digestParam);
                 if (normalizedSessionIdRaw) params.set('scanSessionId', normalizedSessionIdRaw);
-                if (decisionInputsHashHint) params.set('decisionInputsHash', decisionInputsHashHint);
-                const headers = await withAuthHeaders();
-                if (AUTH_DISABLED && !headers.Authorization && localDecisionSupportHeader) {
-                    headers['x-local-personalization'] = localDecisionSupportHeader;
+                if (decisionInputsHashParam) params.set('decisionInputsHash', decisionInputsHashParam);
+                if (usingLocalDecisionSupport && localDecisionSupportProfileKey) {
+                    params.set('profileKey', localDecisionSupportProfileKey);
                 }
+                if (usingLocalDecisionSupport && localDecisionSupportHeader) {
+                    headers['x-local-personalization'] = localDecisionSupportHeader;
+                    headers['Cache-Control'] = 'no-cache, no-store';
+                    headers.Pragma = 'no-cache';
+                }
+                console.log(`[decision-support][request] ${JSON.stringify({
+                    barcode: resolvedBarcode,
+                    usingLocalDecisionSupport,
+                    hasAuthHeader: Boolean(headers.Authorization),
+                    hasLocalHeader: Boolean(headers['x-local-personalization']),
+                    profileKey: usingLocalDecisionSupport ? localDecisionSupportProfileKey : null,
+                    goalCount: localDecisionSupportSignals.goalCount,
+                    allergyCount: localDecisionSupportSignals.allergyCount,
+                    restrictionCount: localDecisionSupportSignals.restrictionCount,
+                    goalPreview: localDecisionSupportSignals.goalPreview,
+                    allergyPreview: localDecisionSupportSignals.allergyPreview,
+                    restrictionPreview: localDecisionSupportSignals.restrictionPreview,
+                    localHeaderChars: headers['x-local-personalization']?.length ?? 0,
+                })}`);
                 const res = await fetch(`${baseUrl}/api/decision-support/v1?${params.toString()}`, {
                     method: 'GET',
                     headers,
@@ -3759,18 +3900,35 @@ const AnalysisBundleDashboard: React.FC<{
                 if (res.status === 409) {
                     const mismatchPayload = await res.json().catch(() => null);
                     const latestDigest = typeof mismatchPayload?.latestDigest === 'string' ? mismatchPayload.latestDigest : null;
-                    if (canDigestRetry && latestDigest && latestDigest !== digestParam) {
+                    const latestDecisionInputsHash =
+                        typeof mismatchPayload?.latestDecisionInputsHash === 'string'
+                            ? mismatchPayload.latestDecisionInputsHash
+                            : null;
+                    const nextDigest = latestDigest ?? digestParam;
+                    const nextDecisionInputsHash =
+                        latestDecisionInputsHash ?? latestDigest ?? decisionInputsHashParam;
+                    const digestChanged = Boolean(nextDigest && nextDigest !== digestParam);
+                    const decisionInputsHashChanged = Boolean(
+                        nextDecisionInputsHash && nextDecisionInputsHash !== decisionInputsHashParam,
+                    );
+                    if (canDigestRetry && (digestChanged || decisionInputsHashChanged)) {
                         autoRetryUsed = true;
-                        return run(latestDigest, false, retryAttempt);
+                        return run(nextDigest, nextDecisionInputsHash, false, retryAttempt);
                     }
                     if (!cancelled) {
-                        const fallbackData = pickFreshDecisionPayloadForFacts(
-                            currentFactsDigestHash,
-                            digestHint,
-                            decisionSupportByBarcodeRef.current.get(resolvedBarcode) ?? null,
-                            inlineFallback ?? null,
-                            cachedPayload,
-                        );
+                        const fallbackData = shouldUseLocalDecisionSupport
+                            ? pickFreshDecisionPayloadForFacts(
+                                currentFactsDigestHash,
+                                digestHint,
+                                cachedPayload,
+                            )
+                            : pickFreshDecisionPayloadForFacts(
+                                currentFactsDigestHash,
+                                digestHint,
+                                decisionSupportByBarcodeRef.current.get(resolvedBarcode) ?? null,
+                                inlineFallback ?? null,
+                                cachedPayload,
+                            );
                         if (fallbackData) {
                             upsertDecisionPayloadByBarcode(decisionSupportByBarcodeRef.current, resolvedBarcode, fallbackData);
                         }
@@ -3798,6 +3956,100 @@ const AnalysisBundleDashboard: React.FC<{
                 if (cancelled || requestSeq !== decisionSupportRequestSeqRef.current) return;
                 if (payload && typeof payload === 'object') {
                     const objectPayload = payload as Record<string, unknown>;
+                    const goalFitResponse = (
+                        objectPayload.personalizedResultLane as {
+                            goalFit?: {
+                                status?: string | null;
+                                selectedGoalKey?: string | null;
+                                selectedGoalKeys?: string[] | null;
+                                allSelectedGoalKeys?: string[] | null;
+                                goalLensMode?: 'single_goal' | 'multi_goal_summary' | null;
+                                goalCoverage?: Array<{
+                                    goalKey?: string | null;
+                                    tier?: ProductGoalMatchTier | 'unknown' | null;
+                                    state?: 'strong' | 'some' | 'limited' | 'none' | null;
+                                    source?: 'selected_goal_evaluation' | 'goal_match_scoring_preview' | null;
+                                }> | null;
+                                allGoalCoverage?: Array<{
+                                    goalKey?: string | null;
+                                    tier?: ProductGoalMatchTier | 'unknown' | null;
+                                    state?: 'strong' | 'some' | 'limited' | 'none' | null;
+                                    source?: 'selected_goal_evaluation' | 'goal_match_scoring_preview' | null;
+                                }> | null;
+                                selectedGoalCount?: number | null;
+                                analyzedGoalCount?: number | null;
+                                surfacedGoalCount?: number | null;
+                                allGoalsAnalyzed?: boolean | null;
+                                defaultVisibleGoalKeys?: string[] | null;
+                            } | null;
+                        } | null | undefined
+                    )?.goalFit;
+                    console.log(`[decision-support][response] ${JSON.stringify({
+                        barcode: resolvedBarcode,
+                        profileKey: usingLocalDecisionSupport ? localDecisionSupportProfileKey : null,
+                        goalFitStatus: goalFitResponse?.status ?? null,
+                        selectedGoalKey: goalFitResponse?.selectedGoalKey ?? null,
+                        selectedGoalKeys: Array.isArray(goalFitResponse?.selectedGoalKeys)
+                            ? goalFitResponse.selectedGoalKeys
+                            : [],
+                        allSelectedGoalKeys: Array.isArray(goalFitResponse?.allSelectedGoalKeys)
+                            ? goalFitResponse.allSelectedGoalKeys
+                            : [],
+                        goalLensMode: goalFitResponse?.goalLensMode ?? null,
+                        goalCoverage: Array.isArray(goalFitResponse?.goalCoverage)
+                            ? goalFitResponse.goalCoverage.map((entry) => ({
+                                goalKey: entry?.goalKey ?? null,
+                                tier: entry?.tier ?? 'unknown',
+                                state: entry?.state ?? null,
+                                source: entry?.source ?? null,
+                            }))
+                            : [],
+                        allGoalCoverage: Array.isArray(goalFitResponse?.allGoalCoverage)
+                            ? goalFitResponse.allGoalCoverage.map((entry) => ({
+                                goalKey: entry?.goalKey ?? null,
+                                tier: entry?.tier ?? 'unknown',
+                                state: entry?.state ?? null,
+                                source: entry?.source ?? null,
+                            }))
+                            : [],
+                        selectedGoalCount: typeof goalFitResponse?.selectedGoalCount === 'number'
+                            ? goalFitResponse.selectedGoalCount
+                            : null,
+                        analyzedGoalCount: typeof goalFitResponse?.analyzedGoalCount === 'number'
+                            ? goalFitResponse.analyzedGoalCount
+                            : null,
+                        surfacedGoalCount: typeof goalFitResponse?.surfacedGoalCount === 'number'
+                            ? goalFitResponse.surfacedGoalCount
+                            : null,
+                        allGoalsAnalyzed: typeof goalFitResponse?.allGoalsAnalyzed === 'boolean'
+                            ? goalFitResponse.allGoalsAnalyzed
+                            : null,
+                        defaultVisibleGoalKeys: Array.isArray(goalFitResponse?.defaultVisibleGoalKeys)
+                            ? goalFitResponse.defaultVisibleGoalKeys
+                            : [],
+                    })}`);
+                    const allergySummary = normalizeText(
+                        (
+                            (
+                                objectPayload.personalizedResultLane as {
+                                    allergyInsight?: { summary?: string | null } | null;
+                                } | null | undefined
+                            )?.allergyInsight?.summary
+                        ) ?? null,
+                    );
+                    if (
+                        usingLocalDecisionSupport
+                        && (localDecisionSupportSignals.allergyCount > 0 || localDecisionSupportSignals.restrictionCount > 0)
+                        && /no allergy or restriction settings saved yet/i.test(allergySummary)
+                    ) {
+                        console.warn(`[decision-support][local-profile-mismatch] ${JSON.stringify({
+                            barcode: resolvedBarcode,
+                            allergyCount: localDecisionSupportSignals.allergyCount,
+                            restrictionCount: localDecisionSupportSignals.restrictionCount,
+                            profileKey: localDecisionSupportProfileKey,
+                            allergySummary,
+                        })}`);
+                    }
                     decisionSupportCacheRef.current.set(decisionCacheKey, objectPayload);
                     upsertDecisionPayloadByBarcode(
                         decisionSupportByBarcodeRef.current,
@@ -3808,14 +4060,21 @@ const AnalysisBundleDashboard: React.FC<{
                         getDecisionPayloadDigest(objectPayload)
                         || normalizeText(digestParam)
                         || digestHint;
-                    const selectedPayload = pickFreshDecisionPayloadForFacts(
-                        currentFactsDigestHash,
-                        resolvedDecisionDigest,
-                        objectPayload,
-                        inlineFallback ?? null,
-                        decisionSupportByBarcodeRef.current.get(resolvedBarcode) ?? null,
-                        decisionSupportCacheRef.current.get(decisionCacheKey) ?? null,
-                    );
+                    const selectedPayload = shouldUseLocalDecisionSupport
+                        ? pickFreshDecisionPayloadForFacts(
+                            currentFactsDigestHash,
+                            resolvedDecisionDigest,
+                            objectPayload,
+                            decisionSupportCacheRef.current.get(decisionCacheKey) ?? null,
+                        )
+                        : pickFreshDecisionPayloadForFacts(
+                            currentFactsDigestHash,
+                            resolvedDecisionDigest,
+                            objectPayload,
+                            inlineFallback ?? null,
+                            decisionSupportByBarcodeRef.current.get(resolvedBarcode) ?? null,
+                            decisionSupportCacheRef.current.get(decisionCacheKey) ?? null,
+                        );
                     setDecisionSupportState({
                         status: selectedPayload ? 'ready' : 'error',
                         data: selectedPayload,
@@ -3850,15 +4109,21 @@ const AnalysisBundleDashboard: React.FC<{
                     }
                     await waitMs(delayMs);
                     if (cancelled || requestSeq !== decisionSupportRequestSeqRef.current) return;
-                    return run(digestParam, canDigestRetry, retryAttempt + 1);
+                    return run(digestParam, decisionInputsHashParam, canDigestRetry, retryAttempt + 1);
                 }
-                const fallbackData = pickFreshDecisionPayloadForFacts(
-                    currentFactsDigestHash,
-                    digestHint,
-                    decisionSupportByBarcodeRef.current.get(resolvedBarcode) ?? null,
-                    inlineFallback ?? null,
-                    cachedPayload,
-                );
+                const fallbackData = shouldUseLocalDecisionSupport
+                    ? pickFreshDecisionPayloadForFacts(
+                        currentFactsDigestHash,
+                        digestHint,
+                        cachedPayload,
+                    )
+                    : pickFreshDecisionPayloadForFacts(
+                        currentFactsDigestHash,
+                        digestHint,
+                        decisionSupportByBarcodeRef.current.get(resolvedBarcode) ?? null,
+                        inlineFallback ?? null,
+                        cachedPayload,
+                    );
                 if (fallbackData) {
                     upsertDecisionPayloadByBarcode(decisionSupportByBarcodeRef.current, resolvedBarcode, fallbackData);
                 }
@@ -3871,20 +4136,27 @@ const AnalysisBundleDashboard: React.FC<{
             }
         };
 
-        void run(digestHint, true);
+        void run(initialDecisionDigestHint, initialDecisionInputsHashHint, true);
 
         return () => {
             cancelled = true;
         };
     }, [
         analysisBarcodeDigits,
+        authLoading,
+        authToken,
         bundleState.meta.authoritativeIdentity.type,
         bundleState.meta.authoritativeIdentity.value,
         (bundleState.meta as { decisionSupportDigest?: string | null })?.decisionSupportDigest,
         (bundleState.meta as { decisionInputsHash?: string | null })?.decisionInputsHash,
         bundleState.meta.factsDigestHash,
+        onboardingLoading,
         localDecisionSupportHeader,
+        localDecisionSupportProfileKey,
+        localDecisionSupportSignals,
+        localDecisionSupportCacheScope,
         scanSessionId,
+        shouldUseLocalDecisionSupport,
     ]);
 
     const inlineDecisionTemplatePayload = useMemo<Record<string, unknown> | null>(() => {
@@ -3922,12 +4194,18 @@ const AnalysisBundleDashboard: React.FC<{
                     ? String((bundleState.meta as { decisionSupportDigest?: string }).decisionSupportDigest)
                     : null
             );
-        const selectedPayload = pickFreshDecisionPayloadForFacts(
-            currentFactsDigestHash,
-            currentDecisionDigest,
-            fetchedPayload,
-            inlineDecisionTemplatePayload,
-        );
+        const selectedPayload = shouldUseLocalDecisionSupport
+            ? pickFreshDecisionPayloadForFacts(
+                currentFactsDigestHash,
+                currentDecisionDigest,
+                fetchedPayload,
+            )
+            : pickFreshDecisionPayloadForFacts(
+                currentFactsDigestHash,
+                currentDecisionDigest,
+                inlineDecisionTemplatePayload,
+                fetchedPayload,
+            );
         if (!selectedPayload) return null;
         return selectedPayload as DecisionSupportTemplatePayload;
     }, [
@@ -3936,6 +4214,7 @@ const AnalysisBundleDashboard: React.FC<{
         decisionSupportState.data,
         decisionSupportState.status,
         inlineDecisionTemplatePayload,
+        shouldUseLocalDecisionSupport,
     ]);
     const decisionOverviewBlock = decisionTemplatePayload?.overviewBlock;
     const decisionScienceBlock = decisionTemplatePayload?.scienceBlock;
@@ -4583,15 +4862,93 @@ const AnalysisBundleDashboard: React.FC<{
                 selectedGoalLabel: getGoalLabel(goalFit?.selectedGoalKey ?? null),
                 previewGoalLabel: getGoalLabel(goalFit?.previewTopGoalKey ?? null),
                 previewTopTier: goalFit?.previewTopTier ?? null,
+                selectedGoalLabels: (goalFit?.selectedGoalKeys ?? [])
+                    .map((goalKey) => getGoalLabel(goalKey))
+                    .filter((label): label is string => Boolean(label)),
+                allSelectedGoalLabels: (goalFit?.allSelectedGoalKeys ?? [])
+                    .map((goalKey) => getGoalLabel(goalKey))
+                    .filter((label): label is string => Boolean(label)),
+                goalLensMode: goalFit?.goalLensMode ?? null,
+                goalCoverage: (goalFit?.goalCoverage ?? [])
+                    .map((entry) => ({
+                        goalLabel: getGoalLabel(entry.goalKey),
+                        tier: entry.tier ?? 'unknown',
+                        state: entry.state,
+                        source: entry.source,
+                    }))
+                    .filter((entry): entry is {
+                        goalLabel: string;
+                        tier: ProductGoalMatchTier | 'unknown';
+                        state: 'strong' | 'some' | 'limited' | 'none';
+                        source: 'selected_goal_evaluation' | 'goal_match_scoring_preview';
+                    } => Boolean(entry.goalLabel)),
+                allGoalCoverage: (goalFit?.allGoalCoverage ?? [])
+                    .map((entry) => ({
+                        goalLabel: getGoalLabel(entry.goalKey),
+                        tier: entry.tier ?? 'unknown',
+                        state: entry.state,
+                        source: entry.source,
+                    }))
+                    .filter((entry): entry is {
+                        goalLabel: string;
+                        tier: ProductGoalMatchTier | 'unknown';
+                        state: 'strong' | 'some' | 'limited' | 'none';
+                        source: 'selected_goal_evaluation' | 'goal_match_scoring_preview';
+                    } => Boolean(entry.goalLabel)),
+                selectedGoalCount: goalFit?.selectedGoalCount ?? null,
+                analyzedGoalCount: goalFit?.analyzedGoalCount ?? null,
+                surfacedGoalCount: goalFit?.surfacedGoalCount ?? null,
+                allGoalsAnalyzed: goalFit?.allGoalsAnalyzed ?? false,
+                defaultVisibleGoalLabels: (goalFit?.defaultVisibleGoalKeys ?? [])
+                    .map((goalKey) => getGoalLabel(goalKey))
+                    .filter((label): label is string => Boolean(label)),
             },
             personalInsight: {
                 supportLabels: (personalInsight?.supports ?? []).map((signal) => signal.label),
                 conflictSummary: firstConflict ?? null,
+                fitDecision: goalFit?.fitDecision ?? null,
+                selectedGoalLabel: getGoalLabel(goalFit?.selectedGoalKey ?? null),
+                goalLensMode: goalFit?.goalLensMode ?? null,
+                goalCoverage: (goalFit?.goalCoverage ?? [])
+                    .map((entry) => ({
+                        goalLabel: getGoalLabel(entry.goalKey),
+                        tier: entry.tier ?? 'unknown',
+                        state: entry.state,
+                        source: entry.source,
+                    }))
+                    .filter((entry): entry is {
+                        goalLabel: string;
+                        tier: ProductGoalMatchTier | 'unknown';
+                        state: 'strong' | 'some' | 'limited' | 'none';
+                        source: 'selected_goal_evaluation' | 'goal_match_scoring_preview';
+                    } => Boolean(entry.goalLabel)),
+                allGoalCoverage: (goalFit?.allGoalCoverage ?? [])
+                    .map((entry) => ({
+                        goalLabel: getGoalLabel(entry.goalKey),
+                        tier: entry.tier ?? 'unknown',
+                        state: entry.state,
+                        source: entry.source,
+                    }))
+                    .filter((entry): entry is {
+                        goalLabel: string;
+                        tier: ProductGoalMatchTier | 'unknown';
+                        state: 'strong' | 'some' | 'limited' | 'none';
+                        source: 'selected_goal_evaluation' | 'goal_match_scoring_preview';
+                    } => Boolean(entry.goalLabel)),
+                selectedGoalCount: goalFit?.selectedGoalCount ?? null,
+                analyzedGoalCount: goalFit?.analyzedGoalCount ?? null,
+                surfacedGoalCount: goalFit?.surfacedGoalCount ?? null,
+                allGoalsAnalyzed: goalFit?.allGoalsAnalyzed ?? false,
+                defaultVisibleGoalLabels: (goalFit?.defaultVisibleGoalKeys ?? [])
+                    .map((goalKey) => getGoalLabel(goalKey))
+                    .filter((label): label is string => Boolean(label)),
             },
             allergy: {
                 status: allergyInsight?.status ?? null,
                 reasonCode: allergyInsight?.reasonCode ?? null,
                 summary: allergyInsight?.summary ?? null,
+                hasSavedPreferences:
+                    localDecisionSupportSignals.allergyCount > 0 || localDecisionSupportSignals.restrictionCount > 0,
                 matchedLabels: [
                     ...(allergyInsight?.matchedAllergyFlags ?? []),
                     ...(allergyInsight?.matchedRestrictions ?? []),
@@ -4617,6 +4974,8 @@ const AnalysisBundleDashboard: React.FC<{
         decisionPersonalizedResultLane?.dosageContext,
         decisionPersonalizedResultLane?.goalFit,
         decisionPersonalizedResultLane?.personalInsight,
+        localDecisionSupportSignals.allergyCount,
+        localDecisionSupportSignals.restrictionCount,
         safetyTipCoverText,
         safetyWarningCoverText,
         topSectionDosePreviewText,
@@ -7764,6 +8123,7 @@ const AnalysisBundleDashboard: React.FC<{
                         hero={topSectionPresentation.hero}
                         banner={topSectionPresentation.banner}
                         insights={topSectionPresentation.insights}
+                        secondaryNote={topSectionPresentation.secondaryNote ?? null}
                         productTitle={productTitle}
                         productSubtitle={productSubtitle}
                         heroImageUri={heroImageUri}
@@ -9560,6 +9920,14 @@ const styles = StyleSheet.create({
         fontSize: 13,
         fontWeight: '800',
         color: 'rgba(17,24,39,0.72)',
+    },
+    scoreV2FitHint: {
+        marginTop: 2,
+        fontSize: 11,
+        lineHeight: 15,
+        color: 'rgba(17,24,39,0.62)',
+        fontWeight: '500',
+        maxWidth: 220,
     },
     scoreV2Confidence: {
         fontSize: 13,
