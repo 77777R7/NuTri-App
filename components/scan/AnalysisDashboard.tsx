@@ -52,10 +52,10 @@ import { InteractiveScoreRing } from '@/components/ui/InteractiveScoreRing';
 import { ContentSection } from '@/components/ui/ScoreDetailCard';
 import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
 import { Config } from '@/constants/Config';
+import { useAuth } from '@/contexts/AuthContext';
 import { useOnboarding } from '@/contexts/OnboardingContext';
 import { useSavedSupplements } from '@/contexts/SavedSupplementsContext';
 import { withAuthHeaders } from '@/lib/auth-token';
-import { AUTH_DISABLED } from '@/lib/auth-mode';
 import { useTranslation } from '@/lib/i18n';
 import { lookupFoundationForIngredient, summarizeFoundationHits } from '@/lib/knowledge/foundationLookup';
 import { normalizeAvoidItemsSelection } from '@/lib/onboarding-v2';
@@ -3257,6 +3257,7 @@ const AnalysisBundleDashboard: React.FC<{
     saveItem = null,
 }) => {
     const { t } = useTranslation();
+    const { loading: authLoading, token: authToken } = useAuth();
     const { draft: onboardingDraft, loading: onboardingLoading } = useOnboarding();
     const { savedSupplements } = useSavedSupplements();
     const [selectedTileType, setSelectedTileType] = useState<TileType | null>(null);
@@ -3305,22 +3306,32 @@ const AnalysisBundleDashboard: React.FC<{
     const currentRunKeyRef = useRef<string | null>(null);
     const localDecisionSupportHeader = useMemo(
         () =>
-            AUTH_DISABLED
-                ? buildLocalDecisionSupportHeader({
-                    profileDraft: onboardingDraft,
-                    savedSupplements,
-                })
-                : null,
+            buildLocalDecisionSupportHeader({
+                profileDraft: onboardingDraft,
+                savedSupplements,
+            }),
         [onboardingDraft, savedSupplements],
     );
+    const shouldUseLocalDecisionSupport = useMemo(
+        () => !authLoading && !authToken && Boolean(localDecisionSupportHeader),
+        [authLoading, authToken, localDecisionSupportHeader],
+    );
     const localDecisionSupportCacheScope = useMemo(() => {
-        if (!AUTH_DISABLED) return 'auth_enabled';
-        if (onboardingLoading) return 'local_profile_loading';
-        if (localDecisionSupportHeader) return `local_profile:${localDecisionSupportHeader}`;
+        if (authLoading || onboardingLoading) return 'local_profile_loading';
+        if (shouldUseLocalDecisionSupport && localDecisionSupportHeader) {
+            return `local_profile:${localDecisionSupportHeader}`;
+        }
+        if (authToken) return 'auth_session';
         return 'local_profile:none';
-    }, [localDecisionSupportHeader, onboardingLoading]);
+    }, [
+        authLoading,
+        authToken,
+        localDecisionSupportHeader,
+        onboardingLoading,
+        shouldUseLocalDecisionSupport,
+    ]);
     const localDecisionSupportProfileKey = useMemo(() => {
-        if (!AUTH_DISABLED || !localDecisionSupportHeader) return null;
+        if (!localDecisionSupportHeader) return null;
         return hashDecisionSupportProfileKey(localDecisionSupportHeader);
     }, [localDecisionSupportHeader]);
     const emitScanUxTimingOnce = useCallback((
@@ -3484,11 +3495,30 @@ const AnalysisBundleDashboard: React.FC<{
             typeof (bundle.meta as { decisionSupportDigest?: unknown })?.decisionSupportDigest === 'string'
                 ? String((bundle.meta as { decisionSupportDigest?: string }).decisionSupportDigest)
                 : null;
+        const incomingDecisionCacheKey = incomingBarcode
+            ? [
+                incomingBarcode,
+                `${bundle.meta.authoritativeIdentity.type}:${bundle.meta.authoritativeIdentity.value}`,
+                incomingDecisionDigest ?? incomingFactsDigestHash ?? 'no_digest',
+                SCAN_UX_VIEW_MODE,
+                localDecisionSupportCacheScope,
+            ].join('|')
+            : null;
         const seededDecision = incomingBarcode
-            ? pickFreshDecisionPayloadForFacts(
-                incomingFactsDigestHash,
-                incomingDecisionDigest,
-                decisionSupportByBarcodeRef.current.get(incomingBarcode) ?? null,
+            ? (
+                shouldUseLocalDecisionSupport
+                    ? pickFreshDecisionPayloadForFacts(
+                        incomingFactsDigestHash,
+                        incomingDecisionDigest,
+                        incomingDecisionCacheKey
+                            ? decisionSupportCacheRef.current.get(incomingDecisionCacheKey) ?? null
+                            : null,
+                    )
+                    : pickFreshDecisionPayloadForFacts(
+                        incomingFactsDigestHash,
+                        incomingDecisionDigest,
+                        decisionSupportByBarcodeRef.current.get(incomingBarcode) ?? null,
+                    )
             )
             : null;
         setBundleState(bundle);
@@ -3510,7 +3540,7 @@ const AnalysisBundleDashboard: React.FC<{
         setDetailError(null);
         setDetailLoading(false);
         setSimpleSourcesOpen(false);
-    }, [analysis, bundle, incomingBundleRunKey]);
+    }, [analysis, bundle, incomingBundleRunKey, localDecisionSupportCacheScope, shouldUseLocalDecisionSupport]);
 
     useEffect(() => {
         // Never clobber on-demand detail fields (e.g. ingredients.detail) when a newer analysis_bundle
@@ -3649,7 +3679,7 @@ const AnalysisBundleDashboard: React.FC<{
     ]);
 
     useEffect(() => {
-        if (AUTH_DISABLED && onboardingLoading) return;
+        if (authLoading || onboardingLoading) return;
         const resolvedBarcode = (() => {
             const identity = bundleState.meta.authoritativeIdentity;
             if (identity?.type === 'gtin14') {
@@ -3683,8 +3713,7 @@ const AnalysisBundleDashboard: React.FC<{
             normalizeText(
                 ((bundleState.meta as { decisionInputsHash?: string | null }).decisionInputsHash) ?? null,
             ) || null;
-        const shouldBypassStaleDecisionHints =
-            AUTH_DISABLED && Boolean(localDecisionSupportHeader);
+        const shouldBypassStaleDecisionHints = shouldUseLocalDecisionSupport;
         const initialDecisionDigestHint = shouldBypassStaleDecisionHints ? null : digestHint;
         const initialDecisionInputsHashHint = shouldBypassStaleDecisionHints ? null : decisionInputsHashHint;
         const fetchKey = `${normalizedSessionId}|${decisionCacheKey}`;
@@ -3722,13 +3751,19 @@ const AnalysisBundleDashboard: React.FC<{
                     ) || undefined,
                   }
                 : null;
-        const seededPayload = pickFreshDecisionPayloadForFacts(
-            currentFactsDigestHash,
-            digestHint,
-            decisionSupportByBarcodeRef.current.get(resolvedBarcode) ?? null,
-            inlineFallback ?? null,
-            cachedPayload,
-        );
+        const seededPayload = shouldUseLocalDecisionSupport
+            ? pickFreshDecisionPayloadForFacts(
+                currentFactsDigestHash,
+                digestHint,
+                cachedPayload,
+            )
+            : pickFreshDecisionPayloadForFacts(
+                currentFactsDigestHash,
+                digestHint,
+                decisionSupportByBarcodeRef.current.get(resolvedBarcode) ?? null,
+                inlineFallback ?? null,
+                cachedPayload,
+            );
         if (!cancelled && seededPayload) {
             upsertDecisionPayloadByBarcode(decisionSupportByBarcodeRef.current, resolvedBarcode, seededPayload);
             setDecisionSupportState((prev) => ({
@@ -3769,12 +3804,15 @@ const AnalysisBundleDashboard: React.FC<{
                     barcode: resolvedBarcode,
                     viewMode: SCAN_UX_VIEW_MODE,
                 });
+                const headers = await withAuthHeaders();
+                const usingLocalDecisionSupport = !headers.Authorization && Boolean(localDecisionSupportHeader);
                 if (digestParam) params.set('digest', digestParam);
                 if (normalizedSessionIdRaw) params.set('scanSessionId', normalizedSessionIdRaw);
                 if (decisionInputsHashParam) params.set('decisionInputsHash', decisionInputsHashParam);
-                if (localDecisionSupportProfileKey) params.set('profileKey', localDecisionSupportProfileKey);
-                const headers = await withAuthHeaders();
-                if (AUTH_DISABLED && !headers.Authorization && localDecisionSupportHeader) {
+                if (usingLocalDecisionSupport && localDecisionSupportProfileKey) {
+                    params.set('profileKey', localDecisionSupportProfileKey);
+                }
+                if (usingLocalDecisionSupport && localDecisionSupportHeader) {
                     headers['x-local-personalization'] = localDecisionSupportHeader;
                     headers['Cache-Control'] = 'no-cache, no-store';
                     headers.Pragma = 'no-cache';
@@ -3804,13 +3842,19 @@ const AnalysisBundleDashboard: React.FC<{
                         return run(nextDigest, nextDecisionInputsHash, false, retryAttempt);
                     }
                     if (!cancelled) {
-                        const fallbackData = pickFreshDecisionPayloadForFacts(
-                            currentFactsDigestHash,
-                            digestHint,
-                            decisionSupportByBarcodeRef.current.get(resolvedBarcode) ?? null,
-                            inlineFallback ?? null,
-                            cachedPayload,
-                        );
+                        const fallbackData = shouldUseLocalDecisionSupport
+                            ? pickFreshDecisionPayloadForFacts(
+                                currentFactsDigestHash,
+                                digestHint,
+                                cachedPayload,
+                            )
+                            : pickFreshDecisionPayloadForFacts(
+                                currentFactsDigestHash,
+                                digestHint,
+                                decisionSupportByBarcodeRef.current.get(resolvedBarcode) ?? null,
+                                inlineFallback ?? null,
+                                cachedPayload,
+                            );
                         if (fallbackData) {
                             upsertDecisionPayloadByBarcode(decisionSupportByBarcodeRef.current, resolvedBarcode, fallbackData);
                         }
@@ -3848,14 +3892,21 @@ const AnalysisBundleDashboard: React.FC<{
                         getDecisionPayloadDigest(objectPayload)
                         || normalizeText(digestParam)
                         || digestHint;
-                    const selectedPayload = pickFreshDecisionPayloadForFacts(
-                        currentFactsDigestHash,
-                        resolvedDecisionDigest,
-                        objectPayload,
-                        inlineFallback ?? null,
-                        decisionSupportByBarcodeRef.current.get(resolvedBarcode) ?? null,
-                        decisionSupportCacheRef.current.get(decisionCacheKey) ?? null,
-                    );
+                    const selectedPayload = shouldUseLocalDecisionSupport
+                        ? pickFreshDecisionPayloadForFacts(
+                            currentFactsDigestHash,
+                            resolvedDecisionDigest,
+                            objectPayload,
+                            decisionSupportCacheRef.current.get(decisionCacheKey) ?? null,
+                        )
+                        : pickFreshDecisionPayloadForFacts(
+                            currentFactsDigestHash,
+                            resolvedDecisionDigest,
+                            objectPayload,
+                            inlineFallback ?? null,
+                            decisionSupportByBarcodeRef.current.get(resolvedBarcode) ?? null,
+                            decisionSupportCacheRef.current.get(decisionCacheKey) ?? null,
+                        );
                     setDecisionSupportState({
                         status: selectedPayload ? 'ready' : 'error',
                         data: selectedPayload,
@@ -3892,13 +3943,19 @@ const AnalysisBundleDashboard: React.FC<{
                     if (cancelled || requestSeq !== decisionSupportRequestSeqRef.current) return;
                     return run(digestParam, decisionInputsHashParam, canDigestRetry, retryAttempt + 1);
                 }
-                const fallbackData = pickFreshDecisionPayloadForFacts(
-                    currentFactsDigestHash,
-                    digestHint,
-                    decisionSupportByBarcodeRef.current.get(resolvedBarcode) ?? null,
-                    inlineFallback ?? null,
-                    cachedPayload,
-                );
+                const fallbackData = shouldUseLocalDecisionSupport
+                    ? pickFreshDecisionPayloadForFacts(
+                        currentFactsDigestHash,
+                        digestHint,
+                        cachedPayload,
+                    )
+                    : pickFreshDecisionPayloadForFacts(
+                        currentFactsDigestHash,
+                        digestHint,
+                        decisionSupportByBarcodeRef.current.get(resolvedBarcode) ?? null,
+                        inlineFallback ?? null,
+                        cachedPayload,
+                    );
                 if (fallbackData) {
                     upsertDecisionPayloadByBarcode(decisionSupportByBarcodeRef.current, resolvedBarcode, fallbackData);
                 }
@@ -3918,6 +3975,8 @@ const AnalysisBundleDashboard: React.FC<{
         };
     }, [
         analysisBarcodeDigits,
+        authLoading,
+        authToken,
         bundleState.meta.authoritativeIdentity.type,
         bundleState.meta.authoritativeIdentity.value,
         (bundleState.meta as { decisionSupportDigest?: string | null })?.decisionSupportDigest,
@@ -3928,6 +3987,7 @@ const AnalysisBundleDashboard: React.FC<{
         localDecisionSupportProfileKey,
         localDecisionSupportCacheScope,
         scanSessionId,
+        shouldUseLocalDecisionSupport,
     ]);
 
     const inlineDecisionTemplatePayload = useMemo<Record<string, unknown> | null>(() => {
@@ -3965,12 +4025,18 @@ const AnalysisBundleDashboard: React.FC<{
                     ? String((bundleState.meta as { decisionSupportDigest?: string }).decisionSupportDigest)
                     : null
             );
-        const selectedPayload = pickFreshDecisionPayloadForFacts(
-            currentFactsDigestHash,
-            currentDecisionDigest,
-            inlineDecisionTemplatePayload,
-            fetchedPayload,
-        );
+        const selectedPayload = shouldUseLocalDecisionSupport
+            ? pickFreshDecisionPayloadForFacts(
+                currentFactsDigestHash,
+                currentDecisionDigest,
+                fetchedPayload,
+            )
+            : pickFreshDecisionPayloadForFacts(
+                currentFactsDigestHash,
+                currentDecisionDigest,
+                inlineDecisionTemplatePayload,
+                fetchedPayload,
+            );
         if (!selectedPayload) return null;
         return selectedPayload as DecisionSupportTemplatePayload;
     }, [
@@ -3979,6 +4045,7 @@ const AnalysisBundleDashboard: React.FC<{
         decisionSupportState.data,
         decisionSupportState.status,
         inlineDecisionTemplatePayload,
+        shouldUseLocalDecisionSupport,
     ]);
     const decisionOverviewBlock = decisionTemplatePayload?.overviewBlock;
     const decisionScienceBlock = decisionTemplatePayload?.scienceBlock;
