@@ -10505,7 +10505,7 @@ const sanitizeLocalDecisionSupportStrings = (values: string[] | undefined): stri
     .map((value) => safeTrim(value))
     .filter((value): value is string => Boolean(value));
 
-const LOCAL_DECISION_SUPPORT_HEADER_PREFIX = "uri:";
+const LOCAL_DECISION_SUPPORT_HEADER_PREFIXES = ["uri:", "local_v1:"] as const;
 const parseLocalDecisionSupportHeaderJson = (value: string): unknown => JSON.parse(value);
 
 const decodeLocalDecisionSupportHeader = (value: string): unknown => {
@@ -10514,9 +10514,13 @@ const decodeLocalDecisionSupportHeader = (value: string): unknown => {
   } catch (rawError) {
     const decodeCandidates: string[] = [];
 
-    if (value.startsWith(LOCAL_DECISION_SUPPORT_HEADER_PREFIX)) {
-      decodeCandidates.push(value.slice(LOCAL_DECISION_SUPPORT_HEADER_PREFIX.length));
-    } else if (/%[0-9A-Fa-f]{2}/.test(value)) {
+    const matchedPrefix = LOCAL_DECISION_SUPPORT_HEADER_PREFIXES.find((prefix) => value.startsWith(prefix));
+
+    if (matchedPrefix) {
+      decodeCandidates.push(value.slice(matchedPrefix.length));
+    }
+
+    if (/%[0-9A-Fa-f]{2}/.test(value)) {
       decodeCandidates.push(value);
     }
 
