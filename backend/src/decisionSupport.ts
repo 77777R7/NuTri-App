@@ -849,6 +849,22 @@ const buildGoalPreviewMatches = (digest: FactsDigest): ProductGoalMatch[] => {
     .sort(compareGoalPreviewMatches);
 };
 
+const resolveAttachedSelectedGoalKey = (params: {
+  prioritizedGoals?: GoalKey[] | null;
+  selectedGoalKey?: GoalKey | null;
+  previewMatches: ProductGoalMatch[];
+}): GoalKey | null => {
+  const prioritizedGoals = Array.isArray(params.prioritizedGoals) ? params.prioritizedGoals : [];
+  const strongestAttachedPreviewGoal = params.previewMatches.find((match) =>
+    prioritizedGoals.includes(match.goalKey),
+  )?.goalKey;
+
+  return strongestAttachedPreviewGoal
+    ?? params.selectedGoalKey
+    ?? prioritizedGoals[0]
+    ?? null;
+};
+
 const GENERIC_NUTRITION_ACTIVE_REGEX =
   /\bcalories?\b|\btotal fat\b|\bsaturated fat\b|\bcholesterol\b|\bsodium\b|\bcarbohydrate\b|\bprotein\b/;
 
@@ -1253,7 +1269,11 @@ const buildPersonalizedResultLane = (params: {
   const goalPreviewMatches = buildGoalPreviewMatches(params.digest);
   const previewTopGoal = goalPreviewMatches[0] ?? null;
   const attachedContext = params.personalizationContext ?? null;
-  const selectedGoalKey = attachedContext?.selectedGoalKey ?? null;
+  const selectedGoalKey = resolveAttachedSelectedGoalKey({
+    prioritizedGoals: attachedContext?.prioritizedGoals,
+    selectedGoalKey: attachedContext?.selectedGoalKey,
+    previewMatches: goalPreviewMatches,
+  });
   const candidateGoalKeys =
     (attachedContext?.prioritizedGoals?.length ?? 0) > 0
       ? (attachedContext?.prioritizedGoals ?? []).slice(0, 3)

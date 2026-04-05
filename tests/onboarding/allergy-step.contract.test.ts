@@ -66,7 +66,10 @@ test('allergy QA hero screen preserves route flow', () => {
 });
 
 test('allergy QA hero screen preserves saveDraft step and analytics contract', () => {
-  assert.match(allergySource, /saveDraft\(\{ avoidItems: selected \}, 8\)/);
+  assert.match(allergySource, /normalizeAvoidItemsSelection\(selected\)/);
+  assert.match(allergySource, /avoidItems:\s*normalized\.avoidItems/);
+  assert.match(allergySource, /allergyFlags:\s*normalized\.allergyFlags/);
+  assert.match(allergySource, /ingredientRestrictions:\s*normalized\.ingredientRestrictions/);
   assert.match(allergySource, /trackOnboardingEvent\('question_answered'/);
   assert.match(allergySource, /question:\s*'avoid_items'/);
   assert.match(allergySource, /answerCount:\s*selected\.length/);
@@ -77,7 +80,7 @@ test('allergy QA hero screen still uses canonical grouped option sources', () =>
   assert.match(allergySource, /PRIMARY_ALLERGY_UI_OPTIONS\.map/);
   assert.match(allergySource, /SECONDARY_ALLERGY_UI_OPTIONS\.map/);
   assert.match(allergySource, /RESTRICTION_UI_OPTIONS\.map/);
-  assert.match(allergySource, /No known allergies/);
+  assert.match(allergySource, /NO_KNOWN_ALLERGIES_LABEL/);
 });
 
 test('allergy QA hero screen preserves the no-known-allergies exclusivity branch', () => {

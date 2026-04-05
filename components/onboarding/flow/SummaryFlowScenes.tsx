@@ -34,6 +34,7 @@ import {
 } from '@/lib/analytics/evaluated-loop';
 import { trackOnboardingEvent } from '@/lib/analytics/onboarding';
 import {
+  buildAvoidItemsFromStructuredPreferences,
   buildSmartFilterConfig,
   GOAL_OPTIONS,
 } from '@/lib/onboarding-v2';
@@ -186,7 +187,16 @@ export function PlanPreviewFlowScene({
     });
   }, [scrollbarOpacity]);
 
-  const selectedAvoid = useMemo(() => draft?.avoidItems ?? [], [draft?.avoidItems]);
+  const selectedAvoid = useMemo(
+    () =>
+      buildAvoidItemsFromStructuredPreferences({
+        avoidItems: draft?.avoidItems,
+        allergyFlags: draft?.allergyFlags,
+        ingredientRestrictions: draft?.ingredientRestrictions,
+        noKnownAllergies: draft?.noKnownAllergies,
+      }),
+    [draft?.allergyFlags, draft?.avoidItems, draft?.ingredientRestrictions, draft?.noKnownAllergies],
+  );
   const selectedTypes = draft?.preferredTypes ?? [];
   const visibleSafeguard = useMemo(() => {
     if (!selectedAvoid.length || selectedAvoid.includes('No known allergies')) return null;

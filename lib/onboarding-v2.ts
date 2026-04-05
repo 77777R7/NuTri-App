@@ -87,6 +87,110 @@ export const RESTRICTION_UI_OPTIONS: readonly RestrictionUiOption[] = [
 export const AVOID_COMMON_OPTIONS = ['Fish', 'Shellfish', 'Dairy', 'Soy', 'Tree nuts', 'Peanuts'] as const;
 export const AVOID_MORE_OPTIONS = ['Egg', 'Sesame', 'Wheat'] as const;
 export const AVOID_RESTRICTION_OPTIONS = ['Gluten', 'Gelatin / animal-based', 'No known allergies'] as const;
+export const NO_KNOWN_ALLERGIES_LABEL = 'No known allergies' as const;
+
+const normalizeAvoidLabel = (value: string) =>
+  value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '')
+    .trim();
+
+const ALLERGY_LABEL_TO_FLAG = new Map<string, AllergyFlag>(
+  [...PRIMARY_ALLERGY_UI_OPTIONS, ...SECONDARY_ALLERGY_UI_OPTIONS].map((option) => [
+    normalizeAvoidLabel(option.label),
+    option.value,
+  ]),
+);
+
+const RESTRICTION_LABEL_TO_VALUE = new Map<string, IngredientRestriction>(
+  RESTRICTION_UI_OPTIONS.map((option) => [
+    normalizeAvoidLabel(option.label),
+    option.value,
+  ]),
+);
+
+const ALLERGY_FLAG_TO_LABEL = new Map<AllergyFlag, string>(
+  [...PRIMARY_ALLERGY_UI_OPTIONS, ...SECONDARY_ALLERGY_UI_OPTIONS].map((option) => [
+    option.value,
+    option.label,
+  ]),
+);
+
+const RESTRICTION_VALUE_TO_LABEL = new Map<IngredientRestriction, string>(
+  RESTRICTION_UI_OPTIONS.map((option) => [option.value, option.label]),
+);
+
+export type NormalizedAvoidSelection = {
+  avoidItems: string[];
+  allergyFlags: AllergyFlag[];
+  ingredientRestrictions: IngredientRestriction[];
+  noKnownAllergies: boolean;
+};
+
+const uniqueNormalizedStrings = <T extends string>(values: T[]): T[] => Array.from(new Set(values));
+
+export const normalizeAvoidItemsSelection = (selected: string[] | null | undefined): NormalizedAvoidSelection => {
+  const raw = Array.isArray(selected) ? selected : [];
+  const noKnownAllergies = raw.some((item) => normalizeAvoidLabel(item) === normalizeAvoidLabel(NO_KNOWN_ALLERGIES_LABEL));
+
+  if (noKnownAllergies) {
+    return {
+      avoidItems: [NO_KNOWN_ALLERGIES_LABEL],
+      allergyFlags: [],
+      ingredientRestrictions: [],
+      noKnownAllergies: true,
+    };
+  }
+
+  const allergyFlags = uniqueNormalizedStrings(
+    raw
+      .map((item) => ALLERGY_LABEL_TO_FLAG.get(normalizeAvoidLabel(item)))
+      .filter((value): value is AllergyFlag => Boolean(value)),
+  );
+
+  const ingredientRestrictions = uniqueNormalizedStrings(
+    raw
+      .map((item) => RESTRICTION_LABEL_TO_VALUE.get(normalizeAvoidLabel(item)))
+      .filter((value): value is IngredientRestriction => Boolean(value)),
+  );
+
+  const canonicalAvoidItems = uniqueNormalizedStrings([
+    ...allergyFlags
+      .map((value) => ALLERGY_FLAG_TO_LABEL.get(value))
+      .filter((value): value is string => Boolean(value)),
+    ...ingredientRestrictions
+      .map((value) => RESTRICTION_VALUE_TO_LABEL.get(value))
+      .filter((value): value is string => Boolean(value)),
+  ]);
+
+  return {
+    avoidItems: canonicalAvoidItems,
+    allergyFlags,
+    ingredientRestrictions,
+    noKnownAllergies: false,
+  };
+};
+
+export const buildAvoidItemsFromStructuredPreferences = (input: {
+  avoidItems?: string[] | null;
+  allergyFlags?: AllergyFlag[] | null;
+  ingredientRestrictions?: IngredientRestriction[] | null;
+  noKnownAllergies?: boolean | null;
+}): string[] => {
+  if (input.noKnownAllergies) return [NO_KNOWN_ALLERGIES_LABEL];
+
+  const structured = uniqueNormalizedStrings([
+    ...((input.allergyFlags ?? [])
+      .map((value) => ALLERGY_FLAG_TO_LABEL.get(value))
+      .filter((value): value is string => Boolean(value))),
+    ...((input.ingredientRestrictions ?? [])
+      .map((value) => RESTRICTION_VALUE_TO_LABEL.get(value))
+      .filter((value): value is string => Boolean(value))),
+  ]);
+
+  if (structured.length > 0) return structured;
+  return normalizeAvoidItemsSelection(input.avoidItems ?? []).avoidItems;
+};
 
 export const ADHERENCE_BLOCKER_OPTIONS = [
   'I forget when my day gets busy',

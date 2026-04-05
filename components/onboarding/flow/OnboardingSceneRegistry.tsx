@@ -55,6 +55,9 @@ import {
   ADHERENCE_BLOCKER_OPTIONS,
   AGE_RANGE_OPTIONS,
   GOAL_OPTIONS,
+  buildAvoidItemsFromStructuredPreferences,
+  NO_KNOWN_ALLERGIES_LABEL,
+  normalizeAvoidItemsSelection,
   PRIMARY_ALLERGY_UI_OPTIONS,
   RESTRICTION_UI_OPTIONS,
   SECONDARY_ALLERGY_UI_OPTIONS,
@@ -168,7 +171,6 @@ const TRUST_ROWS = [
   },
 ] as const;
 
-const NO_KNOWN_ALLERGIES_LABEL = 'No known allergies';
 const SCROLLBAR_HIDE_DELAY_MS = 1200;
 const SCROLLBAR_FADE_DURATION_MS = 720;
 
@@ -1080,7 +1082,14 @@ function AllergyFlowScene({
   setSharedShellConfig,
 }: OnboardingFlowSceneProps) {
   const { draft, commitDraft, flushDraft } = useOnboarding();
-  const [selected, setSelected] = useState<string[]>(draft?.avoidItems ?? []);
+  const [selected, setSelected] = useState<string[]>(
+    buildAvoidItemsFromStructuredPreferences({
+      avoidItems: draft?.avoidItems,
+      allergyFlags: draft?.allergyFlags,
+      ingredientRestrictions: draft?.ingredientRestrictions,
+      noKnownAllergies: draft?.noKnownAllergies,
+    }),
+  );
   const [showMore, setShowMore] = useState(false);
   const [moreOptionsHeight, setMoreOptionsHeight] = useState(0);
   const expandProgress = useSharedValue(0);
@@ -1104,8 +1113,15 @@ function AllergyFlowScene({
   );
 
   useEffect(() => {
-    setSelected(draft?.avoidItems ?? []);
-  }, [draft?.avoidItems]);
+    setSelected(
+      buildAvoidItemsFromStructuredPreferences({
+        avoidItems: draft?.avoidItems,
+        allergyFlags: draft?.allergyFlags,
+        ingredientRestrictions: draft?.ingredientRestrictions,
+        noKnownAllergies: draft?.noKnownAllergies,
+      }),
+    );
+  }, [draft?.allergyFlags, draft?.avoidItems, draft?.ingredientRestrictions, draft?.noKnownAllergies]);
 
   useEffect(() => {
     expandProgress.value = withTiming(showMore ? 1 : 0, {
@@ -1181,7 +1197,13 @@ function AllergyFlowScene({
   }, []);
 
   const persist = useCallback(() => {
-    commitDraft({ avoidItems: selected });
+    const normalized = normalizeAvoidItemsSelection(selected);
+    commitDraft({
+      avoidItems: normalized.avoidItems,
+      allergyFlags: normalized.allergyFlags,
+      ingredientRestrictions: normalized.ingredientRestrictions,
+      noKnownAllergies: normalized.noKnownAllergies,
+    });
     trackOnboardingEvent('question_answered', {
       question: 'avoid_items',
       answerCount: selected.length,

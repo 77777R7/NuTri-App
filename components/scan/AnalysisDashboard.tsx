@@ -58,6 +58,7 @@ import { withAuthHeaders } from '@/lib/auth-token';
 import { AUTH_DISABLED } from '@/lib/auth-mode';
 import { useTranslation } from '@/lib/i18n';
 import { lookupFoundationForIngredient, summarizeFoundationHits } from '@/lib/knowledge/foundationLookup';
+import { normalizeAvoidItemsSelection } from '@/lib/onboarding-v2';
 import { getGoalDisplayLabel } from '@/lib/personalization/uiLabels';
 import { resolveDataCeilingSignal } from '@/lib/scan/dataCeiling';
 import { buildGapActionSentences } from '@/lib/scan/gapActionSentenceLibrary';
@@ -547,6 +548,15 @@ const toLocalDecisionSupportProfilePayload = (
     draft: ProfileDraft | null,
 ): LocalDecisionSupportProfilePayload | null => {
     if (!draft) return null;
+    const normalizedAvoid = normalizeAvoidItemsSelection(draft.avoidItems);
+    const allergyFlags =
+        Array.isArray(draft.allergyFlags) && draft.allergyFlags.length > 0
+            ? draft.allergyFlags
+            : normalizedAvoid.allergyFlags;
+    const ingredientRestrictions =
+        Array.isArray(draft.ingredientRestrictions) && draft.ingredientRestrictions.length > 0
+            ? draft.ingredientRestrictions
+            : normalizedAvoid.ingredientRestrictions;
 
     const payload: LocalDecisionSupportProfilePayload = {
         ageRange: clampLocalDecisionHeaderText(draft.ageRange, 48),
@@ -567,11 +577,11 @@ const toLocalDecisionSupportProfilePayload = (
         goals: Array.isArray(draft.goals)
             ? draft.goals.map((value) => clampLocalDecisionHeaderText(value, 48)).filter(Boolean) as string[]
             : [],
-        allergyFlags: Array.isArray(draft.allergyFlags)
-            ? draft.allergyFlags.map((value) => clampLocalDecisionHeaderText(value, 48)).filter(Boolean) as string[]
+        allergyFlags: Array.isArray(allergyFlags)
+            ? allergyFlags.map((value) => clampLocalDecisionHeaderText(value, 48)).filter(Boolean) as string[]
             : [],
-        ingredientRestrictions: Array.isArray(draft.ingredientRestrictions)
-            ? draft.ingredientRestrictions.map((value) => clampLocalDecisionHeaderText(value, 48)).filter(Boolean) as string[]
+        ingredientRestrictions: Array.isArray(ingredientRestrictions)
+            ? ingredientRestrictions.map((value) => clampLocalDecisionHeaderText(value, 48)).filter(Boolean) as string[]
             : [],
     };
 
