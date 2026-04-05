@@ -3670,6 +3670,10 @@ const AnalysisBundleDashboard: React.FC<{
             normalizeText(
                 ((bundleState.meta as { decisionInputsHash?: string | null }).decisionInputsHash) ?? null,
             ) || null;
+        const shouldBypassStaleDecisionHints =
+            AUTH_DISABLED && Boolean(localDecisionSupportHeader);
+        const initialDecisionDigestHint = shouldBypassStaleDecisionHints ? null : digestHint;
+        const initialDecisionInputsHashHint = shouldBypassStaleDecisionHints ? null : decisionInputsHashHint;
         const fetchKey = `${normalizedSessionId}|${decisionCacheKey}`;
         if (decisionSupportFetchKeyRef.current === fetchKey) return;
         decisionSupportFetchKeyRef.current = fetchKey;
@@ -3734,6 +3738,7 @@ const AnalysisBundleDashboard: React.FC<{
         }
         const run = async (
             digestParam: string | null,
+            decisionInputsHashParam: string | null,
             canDigestRetry: boolean,
             retryAttempt: number = 0,
         ): Promise<void> => {
@@ -3753,7 +3758,7 @@ const AnalysisBundleDashboard: React.FC<{
                 });
                 if (digestParam) params.set('digest', digestParam);
                 if (normalizedSessionIdRaw) params.set('scanSessionId', normalizedSessionIdRaw);
-                if (decisionInputsHashHint) params.set('decisionInputsHash', decisionInputsHashHint);
+                if (decisionInputsHashParam) params.set('decisionInputsHash', decisionInputsHashParam);
                 const headers = await withAuthHeaders();
                 if (AUTH_DISABLED && !headers.Authorization && localDecisionSupportHeader) {
                     headers['x-local-personalization'] = localDecisionSupportHeader;
@@ -3767,9 +3772,20 @@ const AnalysisBundleDashboard: React.FC<{
                 if (res.status === 409) {
                     const mismatchPayload = await res.json().catch(() => null);
                     const latestDigest = typeof mismatchPayload?.latestDigest === 'string' ? mismatchPayload.latestDigest : null;
-                    if (canDigestRetry && latestDigest && latestDigest !== digestParam) {
+                    const latestDecisionInputsHash =
+                        typeof mismatchPayload?.latestDecisionInputsHash === 'string'
+                            ? mismatchPayload.latestDecisionInputsHash
+                            : null;
+                    const nextDigest = latestDigest ?? digestParam;
+                    const nextDecisionInputsHash =
+                        latestDecisionInputsHash ?? latestDigest ?? decisionInputsHashParam;
+                    const digestChanged = Boolean(nextDigest && nextDigest !== digestParam);
+                    const decisionInputsHashChanged = Boolean(
+                        nextDecisionInputsHash && nextDecisionInputsHash !== decisionInputsHashParam,
+                    );
+                    if (canDigestRetry && (digestChanged || decisionInputsHashChanged)) {
                         autoRetryUsed = true;
-                        return run(latestDigest, false, retryAttempt);
+                        return run(nextDigest, nextDecisionInputsHash, false, retryAttempt);
                     }
                     if (!cancelled) {
                         const fallbackData = pickFreshDecisionPayloadForFacts(
@@ -3858,7 +3874,7 @@ const AnalysisBundleDashboard: React.FC<{
                     }
                     await waitMs(delayMs);
                     if (cancelled || requestSeq !== decisionSupportRequestSeqRef.current) return;
-                    return run(digestParam, canDigestRetry, retryAttempt + 1);
+                    return run(digestParam, decisionInputsHashParam, canDigestRetry, retryAttempt + 1);
                 }
                 const fallbackData = pickFreshDecisionPayloadForFacts(
                     currentFactsDigestHash,
@@ -3879,7 +3895,7 @@ const AnalysisBundleDashboard: React.FC<{
             }
         };
 
-        void run(digestHint, true);
+        void run(initialDecisionDigestHint, initialDecisionInputsHashHint, true);
 
         return () => {
             cancelled = true;
