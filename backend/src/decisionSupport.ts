@@ -27,13 +27,10 @@ import type { UlGuidanceEntry } from "./safety/types.js";
 import { buildAllergyInsight } from "./allergy/allergyInsightBuilder.js";
 import * as goalMatchScoringModule from "../../lib/personalization/core/goalMatchScoring.ts";
 import * as catalogProductEvaluationModule from "../../lib/personalization/core/catalogProductEvaluation.ts";
+import * as goalMatchOntologyModule from "../../lib/personalization/core/goalMatchOntology.ts";
+import * as goalEvidenceGraphModule from "../../lib/personalization/core/goalEvidenceGraph.ts";
 import * as goalStackAdjustmentsModule from "../../lib/personalization/core/goalStackAdjustments.ts";
 import * as goalFitCopyModule from "../../lib/personalization/goalFitCopy.ts";
-import {
-  getFormulaPatternProvenance,
-  getFormulaPatterns,
-  getIngredientGoalProvenance,
-} from "../../lib/personalization/core/goalMatchOntology.ts";
 import type { EvidenceGraphProvenanceSourceType } from "../../lib/personalization/core/goalEvidenceGraph.ts";
 import explanationTemplatesData from "../../data/personalization/explanation_templates.v1.json" with { type: "json" };
 import type { ProductIngredientLikeInput } from "../../lib/personalization/core/goalMatchScoring.ts";
@@ -65,6 +62,15 @@ const mapNarrativeLabelCompleteness =
 const evaluateCatalogProduct =
   catalogProductEvaluationModule.evaluateCatalogProduct ??
   catalogProductEvaluationModule.default?.evaluateCatalogProduct;
+const getFormulaPatterns =
+  goalMatchOntologyModule.getFormulaPatterns ??
+  goalMatchOntologyModule.default?.getFormulaPatterns;
+const getIngredientGoalProvenance =
+  goalEvidenceGraphModule.getIngredientGoalProvenance ??
+  goalEvidenceGraphModule.default?.getIngredientGoalProvenance;
+const getFormulaPatternProvenance =
+  goalEvidenceGraphModule.getFormulaPatternProvenance ??
+  goalEvidenceGraphModule.default?.getFormulaPatternProvenance;
 const buildGoalStackAdjustments =
   goalStackAdjustmentsModule.buildGoalStackAdjustments ??
   goalStackAdjustmentsModule.default?.buildGoalStackAdjustments;
@@ -93,6 +99,15 @@ if (typeof mapNarrativeLabelCompleteness !== "function") {
 }
 if (typeof evaluateCatalogProduct !== "function") {
   throw new Error("[decisionSupport] Failed to load evaluateCatalogProduct");
+}
+if (typeof getFormulaPatterns !== "function") {
+  throw new Error("[decisionSupport] Failed to load getFormulaPatterns");
+}
+if (typeof getIngredientGoalProvenance !== "function") {
+  throw new Error("[decisionSupport] Failed to load getIngredientGoalProvenance");
+}
+if (typeof getFormulaPatternProvenance !== "function") {
+  throw new Error("[decisionSupport] Failed to load getFormulaPatternProvenance");
 }
 if (typeof buildGoalStackAdjustments !== "function") {
   throw new Error("[decisionSupport] Failed to load buildGoalStackAdjustments");
