@@ -62,69 +62,113 @@ export const describeGoalNarrativeFitLevel = (fitLevel: GoalNarrativeFitLevel): 
       return "not enough label detail";
     case "none":
     default:
-      return "no clear support from this label";
+      return "no clear support";
   }
 };
+
+export const describeGoalNarrativeFitLabel = (fitLevel: GoalNarrativeFitLevel): string => {
+  switch (fitLevel) {
+    case "strong":
+      return "Strong support";
+    case "some":
+      return "Some support";
+    case "limited":
+      return "Limited support";
+    case "unknown":
+      return "Not enough label detail";
+    case "none":
+    default:
+      return "No clear support";
+  }
+};
+
+export const describeGoalNarrativeCompactStatus = (fitLevel: GoalNarrativeFitLevel): string => {
+  switch (fitLevel) {
+    case "strong":
+      return "Strong";
+    case "some":
+      return "Some";
+    case "limited":
+      return "Limited";
+    case "unknown":
+      return "Need detail";
+    case "none":
+    default:
+      return "No clear";
+  }
+};
+
+export const buildGoalNarrativeRowCopy = (
+  goalLabel: string,
+  fitLevel: GoalNarrativeFitLevel,
+): string => `${normalizeText(goalLabel)} — ${describeGoalNarrativeFitLabel(fitLevel)}`;
 
 export const buildGoalNarrativeSummary = (goalLabel: string, fitLevel: GoalNarrativeFitLevel): string => {
   const loweredGoal = lowerFirst(goalLabel);
   switch (fitLevel) {
     case "strong":
-      return `The visible ingredients look strongly aligned with ${loweredGoal}.`;
+      return `This label shows its clearest signal for ${loweredGoal} support.`;
     case "some":
-      return `The label shows some support for ${loweredGoal}.`;
+      return `This label shows some support for ${loweredGoal}.`;
     case "limited":
-      return `The label shows limited support for ${loweredGoal}.`;
+      return `Support for ${loweredGoal} looks limited on this label.`;
     case "unknown":
       return `We need more label detail before we can judge ${loweredGoal} support.`;
     case "none":
     default:
-      return `We do not see clear ${loweredGoal} support from this label.`;
+      return `We do not see clear ${loweredGoal} support on this label.`;
   }
 };
 
-export const buildGoalNarrativeHeroCopy = (goalLabel: string, fitLevel: GoalNarrativeFitLevel) => {
+export const buildGoalNarrativeHeroCopy = (
+  goalLabel: string,
+  fitLevel: GoalNarrativeFitLevel,
+  goalCount = 1,
+) => {
   const normalizedGoal = normalizeText(goalLabel);
 
   switch (fitLevel) {
     case "strong":
       return {
         tone: "positive" as const,
-        chip: `Strong fit for your ${normalizedGoal} goal`,
-        summary: `Best aligned with your ${normalizedGoal} goal`,
+        chip: `Supports your ${normalizedGoal} goal`,
+        summary: goalCount > 1
+          ? `Strongest match among ${goalCount} goals checked`
+          : `Best aligned with your ${normalizedGoal} goal`,
       };
     case "some":
       return {
         tone: "neutral" as const,
-        chip: `Could work for your ${normalizedGoal} goal`,
-        summary: `This label shows some support for your ${normalizedGoal} goal`,
+        chip: `Most aligned with your ${normalizedGoal} goal`,
+        summary: goalCount > 1
+          ? `Best match among ${goalCount} goals checked`
+          : `Best aligned with your ${normalizedGoal} goal`,
       };
     case "limited":
       return {
         tone: "neutral" as const,
         chip: `Limited support for your ${normalizedGoal} goal`,
-        summary: `This label shows limited support for your ${normalizedGoal} goal.`,
+        summary: "No strong match on this label",
       };
     case "none":
       return {
         tone: "neutral" as const,
         chip: `No clear support for your ${normalizedGoal} goal`,
-        summary: `This label does not show clear ${normalizedGoal} support.`,
+        summary: "This label does not show a clear match.",
       };
     case "unknown":
     default:
       return {
         tone: "neutral" as const,
-        chip: `Not enough label detail for your ${normalizedGoal} goal`,
-        summary: `We need more label detail before we can judge ${normalizedGoal} support confidently.`,
+        chip: "Not enough label detail",
+        summary: "We need more label detail to judge this goal confidently.",
       };
   }
 };
 
-const buildSupportTitle = (goalLabel?: string | null) => {
-  const goal = lowerFirst(goalLabel);
+export const buildGoalSupportTitle = (goalLabel?: string | null) => {
+  const goal = normalizeText(goalLabel);
   if (!goal) return "Supports your health goals";
-  if (goal === "immunity") return "Supports your immunity health";
   return `Supports your ${goal} goal`;
 };
 
@@ -133,14 +177,14 @@ export const buildGoalSupportFallbackTitle = (
   fitLevel: GoalNarrativeFitLevel,
 ): string => {
   const normalizedGoal = normalizeText(goalLabel);
-  const loweredGoal = lowerFirst(normalizedGoal);
 
   switch (fitLevel) {
     case "strong":
-      return buildSupportTitle(normalizedGoal);
+      return buildGoalSupportTitle(normalizedGoal);
     case "some":
+      return `Most aligned with your ${normalizedGoal} goal`;
     case "limited":
-      return `Limited support for your ${loweredGoal} goal`;
+      return `Limited support for your ${normalizedGoal} goal`;
     case "none":
       return `No clear support for your ${normalizedGoal} goal`;
     case "unknown":
@@ -159,25 +203,32 @@ export const buildGoalSupportFallbackBullets = (
   switch (fitLevel) {
     case "strong":
       return uniqueLines([
-        `This label looks strongly aligned with your ${loweredGoal} goal.`,
+        `This label shows its clearest signal for ${loweredGoal} support.`,
         `The visible ingredients look more supportive of ${loweredGoal} than other goals we checked.`,
+        "Other goals look weaker on this label.",
       ]);
     case "some":
+      return uniqueLines([
+        `This label shows its clearest signal for ${loweredGoal} support.`,
+        "Support is present, but not strong.",
+        "Other goals look less supported on this label.",
+      ]);
     case "limited":
       return uniqueLines([
-        `This label shows limited support for ${loweredGoal}.`,
-        `Other goals may be supported more clearly than ${normalizedGoal}.`,
+        `Support for ${loweredGoal} looks limited on this label.`,
+        "Some ingredients may be relevant, but the signal is weak.",
       ]);
     case "none":
       return uniqueLines([
-        `This label does not show clear ${loweredGoal} support.`,
-        `Other goals may be supported more clearly than ${normalizedGoal}.`,
+        `We do not see clear ${loweredGoal} support on this label.`,
+        `This product does not look closely matched to ${loweredGoal}.`,
       ]);
     case "unknown":
     default:
       return uniqueLines([
-        `We need more label detail before we can judge ${loweredGoal} support confidently.`,
-        "This product may still be useful, but the current label does not show enough detail yet.",
+        "Key dose or ingredient details are missing.",
+        "That makes this label harder to judge confidently.",
+        "Some goals may still be relevant, but the label is incomplete.",
       ]);
   }
 };

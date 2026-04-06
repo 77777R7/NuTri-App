@@ -28,7 +28,7 @@ test('hero chip stays goal-fit driven even when allergy banner is present', () =
     },
   });
 
-  assert.equal(result.hero.chip, 'Strong fit for your Immunity goal');
+  assert.equal(result.hero.chip, 'Supports your Immunity goal');
   assert.equal(result.hero.summary, 'Best aligned with your Immunity goal');
   assert.equal(result.banner?.kind, 'allergy');
   assert.equal(result.banner?.title, 'Ingredients may conflict with your allergies');
@@ -194,12 +194,12 @@ test('multi-goal mixed coverage renders a mixed-fit hero and goal coverage row',
   assert.equal(result.hero.chip, 'Mixed support across your selected goals');
   assert.equal(result.hero.summary, 'Looks stronger for Recovery than Energy');
   assert.equal(result.insights[0]?.key, 'goal_coverage');
-  assert.equal(result.insights[0]?.collapsedTitle, 'How it maps to your goals');
-  assert.equal(result.insights[0]?.subtitle, 'Showing all 3 analyzed goals');
+  assert.equal(result.insights[0]?.collapsedTitle, 'Goal check');
+  assert.equal(result.insights[0]?.subtitle, '3 goals checked');
   assert.deepEqual(result.insights[0]?.expandedBullets, [
-    'Energy: limited support.',
-    'Immunity: some support.',
-    'Recovery: strong support.',
+    'Energy — Limited support',
+    'Immunity — Some support',
+    'Recovery — Strong support',
   ]);
   assert.equal(result.insights[0]?.defaultExpanded, true);
 });
@@ -252,9 +252,9 @@ test('goal coverage keeps unknown states separate from no-support copy', () => {
 
   assert.equal(result.insights[0]?.key, 'goal_coverage');
   assert.deepEqual(result.insights[0]?.expandedBullets, [
-    'Immunity: strong support.',
-    'Recovery: limited support.',
-    'Sleep: not enough label detail.',
+    'Immunity — Strong support',
+    'Recovery — Limited support',
+    'Sleep — Not enough label detail',
   ]);
 });
 
@@ -359,18 +359,19 @@ test('dominant-goal strong mode uses the strongest goal hero and keeps coverage 
     safety: {},
   });
 
-  assert.equal(result.hero.chip, 'Strong fit for your Recovery goal');
-  assert.equal(result.hero.summary, 'Best aligned with your Recovery goal');
+  assert.equal(result.hero.chip, 'Supports your Recovery goal');
+  assert.equal(result.hero.summary, 'Strongest match among 5 goals checked');
   assert.equal(result.insights[0]?.key, 'personal_support');
-  assert.equal(result.insights[0]?.collapsedTitle, 'Supports your recovery goal');
+  assert.equal(result.insights[0]?.collapsedTitle, 'Supports your Recovery goal');
   assert.equal(result.insights[0]?.subtitle, undefined);
   assert.equal(result.insights[0]?.goalCoveragePresentation, 'secondary_inline');
-  assert.equal(result.insights[0]?.inlineGoalCoverageTitle, 'How it maps to your goals');
-  assert.equal(result.insights[0]?.inlineGoalCoveragePreview, 'Recovery: strong support · Sleep: some support · 3 more checked');
-  assert.equal(result.insights[0]?.expandActionLabel, 'See all 5 goals checked');
-  assert.equal(result.insights.some((row) => row.collapsedTitle === 'How it maps to your goals'), false);
-  assert.ok(
+  assert.equal(result.insights[0]?.inlineGoalCoverageTitle, 'Goal check');
+  assert.equal(result.insights[0]?.inlineGoalCoveragePreview, 'Recovery: Strong · Sleep: Some · 3 more');
+  assert.equal(result.insights[0]?.expandActionLabel, 'See all goals');
+  assert.equal(result.insights.some((row) => row.collapsedTitle === 'Goal check'), false);
+  assert.equal(
     (result.insights[0]?.expandedBullets ?? []).some((line) => /Recovery Review Source/.test(line)),
+    false,
   );
   assert.deepEqual(
     result.insights[0]?.goalCoverageItems?.map((item) => item.goalLabel),
@@ -426,10 +427,10 @@ test('contract-driven dominant hero ignores conflicting legacy fitDecision and p
     safety: {},
   });
 
-  assert.equal(result.hero.chip, 'Strong fit for your Recovery goal');
-  assert.equal(result.hero.summary, 'Best aligned with your Recovery goal');
-  assert.equal(result.insights[0]?.collapsedTitle, 'Supports your recovery goal');
-  assert.equal(result.insights.some((row) => row.collapsedTitle === 'How it maps to your goals'), false);
+  assert.equal(result.hero.chip, 'Supports your Recovery goal');
+  assert.equal(result.hero.summary, 'Strongest match among 3 goals checked');
+  assert.equal(result.insights[0]?.collapsedTitle, 'Supports your Recovery goal');
+  assert.equal(result.insights.some((row) => row.collapsedTitle === 'Goal check'), false);
 });
 
 test('dominant-goal moderate mode uses strongest-goal wording without a top-level coverage row', () => {
@@ -479,12 +480,12 @@ test('dominant-goal moderate mode uses strongest-goal wording without a top-leve
     safety: {},
   });
 
-  assert.equal(result.hero.chip, 'Could work for your Recovery goal');
-  assert.equal(result.hero.summary, 'Looks strongest for your Recovery goal');
+  assert.equal(result.hero.chip, 'Most aligned with your Recovery goal');
+  assert.equal(result.hero.summary, 'Best match among 3 goals checked');
   assert.equal(result.insights[0]?.key, 'personal_support');
-  assert.equal(result.insights[0]?.collapsedTitle, 'Looks most supportive of your recovery goal');
+  assert.equal(result.insights[0]?.collapsedTitle, 'Most aligned with your Recovery goal');
   assert.equal(result.insights[0]?.goalCoveragePresentation, 'secondary_inline');
-  assert.equal(result.insights.some((row) => row.collapsedTitle === 'How it maps to your goals'), false);
+  assert.equal(result.insights.some((row) => row.collapsedTitle === 'Goal check'), false);
 });
 
 test('dominant-goal mode falls back to top-level coverage when the strongest goal is only limited', () => {
@@ -534,7 +535,7 @@ test('dominant-goal mode falls back to top-level coverage when the strongest goa
 
   assert.equal(result.hero.chip, 'Limited support across your selected goals');
   assert.equal(result.insights[0]?.key, 'goal_coverage');
-  assert.equal(result.insights[0]?.collapsedTitle, 'How it maps to your goals');
+  assert.equal(result.insights[0]?.collapsedTitle, 'Goal check');
 });
 
 test('multi-goal all-some coverage avoids comparing a goal against itself', () => {
@@ -651,7 +652,7 @@ test('multi-goal full analysis shows top 3 by relevance with expand metadata', (
   });
 
   assert.equal(result.hero.chip, 'Mixed support across your selected goals');
-  assert.equal(result.insights[0]?.subtitle, 'Showing 3 of 5 analyzed goals');
+  assert.equal(result.insights[0]?.subtitle, '3 of 5 goals shown');
   assert.deepEqual(
     result.insights[0]?.visibleGoalCoverageItems?.map((item) => item.goalLabel),
     ['Recovery', 'Sleep', 'Energy'],
@@ -660,8 +661,8 @@ test('multi-goal full analysis shows top 3 by relevance with expand metadata', (
     result.insights[0]?.goalCoverageItems?.map((item) => item.goalLabel),
     ['Energy', 'Immunity', 'Recovery', 'Sleep', 'Focus'],
   );
-  assert.equal(result.insights[0]?.expandActionLabel, 'View all 5 goals');
-  assert.equal(result.insights[0]?.collapseActionLabel, 'Show fewer goals');
+  assert.equal(result.insights[0]?.expandActionLabel, 'See all goals');
+  assert.equal(result.insights[0]?.collapseActionLabel, 'Hide goals');
   assert.equal(result.insights[0]?.canExpandAll, true);
 });
 
@@ -708,7 +709,7 @@ test('partial multi-goal analysis uses conservative hero copy and does not expos
 
   assert.equal(result.hero.chip, 'Mixed support for the goals shown');
   assert.equal(result.hero.summary, 'Looks stronger for Recovery than Energy');
-  assert.equal(result.insights[0]?.subtitle, 'Showing 2 goals checked in this view');
+  assert.equal(result.insights[0]?.subtitle, '2 goals checked');
   assert.equal(result.insights[0]?.expandActionLabel, undefined);
   assert.equal(result.insights[0]?.canExpandAll, false);
 });
@@ -739,7 +740,7 @@ test('single-goal does-not-fit copy stays conservative and avoids strong negativ
   });
 
   assert.equal(result.hero.chip, 'No clear support for your Sleep goal');
-  assert.equal(result.hero.summary, 'This label does not show clear Sleep support.');
+  assert.equal(result.hero.summary, 'This label does not show a clear match.');
   assert.equal(result.insights[0]?.collapsedTitle, 'No clear support for your Sleep goal');
   const flattened = `${result.hero.chip} ${result.hero.summary} ${result.insights.flatMap((row) => [row.collapsedTitle, ...row.expandedBullets]).join(' ')}`;
   assert.equal(/Not fit your goal|Not suitable for your|Not a strong fit for your/i.test(flattened), false);
@@ -824,9 +825,9 @@ test('insufficient-signal multi-goal copy prefers evidence limits over limited-s
   assert.equal(result.hero.summary, 'We need more label detail to judge this product well.');
   assert.equal(result.insights[0]?.key, 'goal_coverage');
   assert.deepEqual(result.insights[0]?.expandedBullets, [
-    'Sleep: not enough label detail.',
-    'Stress Support: not enough label detail.',
-    'Recovery: no clear support from this label.',
+    'Sleep — Not enough label detail',
+    'Stress Support — Not enough label detail',
+    'Recovery — No clear support',
   ]);
 });
 
@@ -855,7 +856,7 @@ test('goal insight still renders when the selected goal does not match strongly'
     safety: {},
   });
 
-  assert.equal(result.hero.summary, 'This label does not show clear Immunity support.');
+  assert.equal(result.hero.summary, 'This label does not show a clear match.');
   assert.equal(result.insights[0]?.topic, 'support');
   assert.equal(result.insights[0]?.collapsedTitle, 'No clear support for your Immunity goal');
   assert.equal(result.insights[0]?.defaultExpanded, true);

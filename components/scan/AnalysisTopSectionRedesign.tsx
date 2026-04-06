@@ -316,7 +316,7 @@ export const AnalysisTopSectionRedesign: React.FC<AnalysisTopSectionRedesignProp
                       ))}
                       {useInlineSecondaryCoverage ? (
                         <View style={styles.inlineCoverageSection}>
-                          <Text style={styles.inlineCoverageLabel}>{row.inlineGoalCoverageTitle ?? 'How it maps to your goals'}</Text>
+                          <Text style={styles.inlineCoverageLabel}>{row.inlineGoalCoverageTitle ?? 'Goal check'}</Text>
                           {!!(!showAllGoalCoverage ? row.inlineGoalCoveragePreview : undefined) ? (
                             <Text style={styles.inlineCoveragePreview}>{!showAllGoalCoverage ? row.inlineGoalCoveragePreview : undefined}</Text>
                           ) : null}
