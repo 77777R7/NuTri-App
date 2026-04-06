@@ -147,11 +147,13 @@ jobs:
           # Render's plain deploy hook deploys the service's latest known branch commit. When a
           # push lands immediately before this workflow starts, Render can still be one commit
           # behind and redeploy the previously known revision. Force the expected SHA explicitly.
-          DEPLOY_URL="$(node -e '
+          DEPLOY_URL="$(
+            RENDER_DEPLOY_HOOK_URL="$RENDER_DEPLOY_HOOK_URL" EXPECTED_COMMIT_SHA="$EXPECTED_COMMIT_SHA" node <<'NODE'
             const url = new URL(process.env.RENDER_DEPLOY_HOOK_URL);
-            url.searchParams.set(\"ref\", process.env.EXPECTED_COMMIT_SHA);
+            url.searchParams.set("ref", process.env.EXPECTED_COMMIT_SHA);
             process.stdout.write(url.toString());
-          ')"
+NODE
+          )"
 
           curl -fsS -X POST "$DEPLOY_URL"
           echo "Triggered Render deploy hook for commit ${EXPECTED_COMMIT_SHA}"
