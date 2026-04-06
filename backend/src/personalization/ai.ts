@@ -1,5 +1,5 @@
 import explanationTemplatesData from "../../../data/personalization/explanation_templates.v1.json" with { type: "json" };
-import { buildGoalIngredientPreviewLanes as buildGoalIngredientPreviewLanesFromOntology } from "../../../lib/personalization/core/goalMatchOntology";
+import * as goalMatchOntologyModule from "../../../lib/personalization/core/goalMatchOntology";
 import type {
   DecisionReason,
   ExplanationFact,
@@ -23,12 +23,37 @@ type ExplanationTemplateFile = {
 };
 
 type ExplanationTemplate = ExplanationTemplateFile["templates"][number];
+type GoalIngredientPreviewLaneFromOntology = {
+  goalKey: GoalKey;
+  goalLabel: string;
+  ingredientKeys: string[];
+};
 type GoalIngredientLane = {
   goalLabel: string;
   ingredients: string[];
 };
 
 const EXPLANATION_TEMPLATE_FILE = explanationTemplatesData as ExplanationTemplateFile;
+
+const resolveBuildGoalIngredientPreviewLanes = (): ((
+  goals: readonly GoalKey[],
+) => GoalIngredientPreviewLaneFromOntology[]) => {
+  const candidateModule = goalMatchOntologyModule as typeof goalMatchOntologyModule & {
+    default?: {
+      buildGoalIngredientPreviewLanes?: (
+        goals: readonly GoalKey[],
+      ) => GoalIngredientPreviewLaneFromOntology[];
+    };
+  };
+
+  return (
+    candidateModule.buildGoalIngredientPreviewLanes ??
+    candidateModule.default?.buildGoalIngredientPreviewLanes ??
+    (() => [])
+  );
+};
+
+const buildGoalIngredientPreviewLanesFromOntology = resolveBuildGoalIngredientPreviewLanes();
 
 const TEMPLATE_ALIASES: Record<string, string> = {
   duplicate_overlap_high: "duplicate_overlap_downgrade",
