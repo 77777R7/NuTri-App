@@ -2,7 +2,7 @@ import type { ConfigContext, ExpoConfig } from 'expo/config';
 import dotenv from 'dotenv';
 
 dotenv.config();
-dotenv.config({ path: '.env.local', override: true });
+dotenv.config({ path: '.env.local' });
 
 const NAME = 'NuTri';
 const SLUG = 'nutri-app';

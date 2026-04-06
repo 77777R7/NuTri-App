@@ -1,3 +1,13 @@
+import {
+  buildGoalNarrativeHeroCopy,
+  buildGoalSupportFallbackBullets,
+  buildGoalSupportFallbackTitle,
+  describeGoalNarrativeFitLevel,
+  mapLegacyFitDecisionToNarrativeFitLevel,
+  mapPreviewTierToNarrativeFitLevel,
+  type GoalNarrativeFitLevel,
+} from '../personalization/goalFitCopy';
+
 export type TopSectionTone = 'positive' | 'caution' | 'neutral';
 
 export type TopSectionHeroInput = {
@@ -16,7 +26,11 @@ export type TopSectionHeroInput = {
   selectedGoalCount?: number;
   analyzedGoalCount?: number;
   surfacedGoalCount?: number;
+  hiddenGoalsCount?: number | null;
   allGoalsAnalyzed?: boolean;
+  dominanceGap?: number | null;
+  goalNarrativeConfidence?: 'high' | 'medium' | 'low' | null;
+  labelCompleteness?: 'high' | 'medium' | 'low' | null;
   defaultVisibleGoalLabels?: string[];
 };
 
@@ -34,7 +48,11 @@ export type TopSectionPersonalInsightInput = {
   selectedGoalCount?: number;
   analyzedGoalCount?: number;
   surfacedGoalCount?: number;
+  hiddenGoalsCount?: number | null;
   allGoalsAnalyzed?: boolean;
+  dominanceGap?: number | null;
+  goalNarrativeConfidence?: 'high' | 'medium' | 'low' | null;
+  labelCompleteness?: 'high' | 'medium' | 'low' | null;
   defaultVisibleGoalLabels?: string[];
 };
 
@@ -46,6 +64,13 @@ export type TopSectionGoalCoverageInput = {
   score?: number | null;
   reasonCodes?: string[];
   confidenceBucket?: 'high' | 'medium' | 'low';
+  explanation?: {
+    summary?: string | null;
+    why?: string[];
+    evidence?: string[];
+    provenance?: string[];
+    action?: string[];
+  } | null;
 };
 
 export type TopSectionAllergyInput = {
@@ -98,6 +123,7 @@ export type TopSectionInsightPresentation = {
   hiddenGoalCoverageItems?: TopSectionGoalCoveragePresentation[];
   goalCoveragePresentation?: 'primary' | 'secondary_inline';
   inlineGoalCoverageTitle?: string;
+  inlineGoalCoveragePreview?: string;
   expandActionLabel?: string;
   collapseActionLabel?: string;
   canExpandAll?: boolean;
@@ -108,8 +134,10 @@ export type TopSectionInsightPresentation = {
 export type TopSectionGoalCoveragePresentation = {
   key: string;
   goalLabel: string;
+  state: TopSectionGoalCoverageInput['state'];
   description: string;
   tone: TopSectionTone;
+  explanation?: TopSectionGoalCoverageInput['explanation'];
 };
 
 export type TopSectionPresentation = {
@@ -229,53 +257,6 @@ const buildGoalSupportReason = (goalLabel: string) => {
   return `The visible ingredients look more supportive of ${goal} than other goals we checked.`;
 };
 
-const buildSupportFallbackTitle = (fitDecision: TopSectionPersonalInsightInput['fitDecision'], goalLabel: string) => {
-  const goal = normalizeText(goalLabel);
-  switch (fitDecision) {
-    case 'fits':
-      return buildSupportTitle(goal);
-    case 'mixed':
-      return `Some support for your ${lowerFirst(goal)} goal`;
-    case 'does_not_fit':
-      return `${goal} support looks limited`;
-    case 'unknown':
-    default:
-      return `No clear match for your ${goal} goal yet`;
-  }
-};
-
-const buildSupportFallbackBullets = (
-  fitDecision: TopSectionPersonalInsightInput['fitDecision'],
-  goalLabel: string,
-): string[] => {
-  const goal = normalizeText(goalLabel);
-  const lowerGoal = lowerFirst(goal);
-
-  switch (fitDecision) {
-    case 'fits':
-      return uniqueLines([
-        `This label looks strongly aligned with your ${lowerGoal} goal.`,
-        `The visible ingredients look more supportive of ${lowerGoal} than other goals we checked.`,
-      ]);
-    case 'mixed':
-      return uniqueLines([
-        `This label shows some support for ${lowerGoal}, but not enough to count as a strong match.`,
-        `It may support other goals more clearly than ${goal}.`,
-      ]);
-    case 'does_not_fit':
-      return uniqueLines([
-        `We don't see strong ${lowerGoal} support on this label.`,
-        `This product may be better suited to other goals than ${goal}.`,
-      ]);
-    case 'unknown':
-    default:
-      return uniqueLines([
-        `We can't tell from this label whether it clearly supports ${lowerGoal}.`,
-        'This product may still be useful, but the current label does not show a clear goal signal yet.',
-      ]);
-  }
-};
-
 const buildAllergyConflictTitle = (matchedLabels: string[]) => {
   const displayLabels = matchedLabels.map((label) => formatDisplayLabel(label)).filter(Boolean);
   if (displayLabels.length === 1) {
@@ -310,17 +291,17 @@ const buildSupportTitle = (goalLabel?: string | null) => {
 const GOAL_COVERAGE_STATE_PRIORITY: Record<TopSectionGoalCoverageInput['state'], number> = {
   strong: 5,
   some: 4,
-  limited: 3,
-  unknown: 2,
+  unknown: 3,
+  limited: 2,
   none: 1,
 };
 
 const GOAL_COVERAGE_TONE_BY_STATE: Record<TopSectionGoalCoverageInput['state'], TopSectionTone> = {
   strong: 'positive',
   some: 'neutral',
-  limited: 'caution',
+  limited: 'neutral',
   unknown: 'neutral',
-  none: 'caution',
+  none: 'neutral',
 };
 
 const getPrimaryGoalCoverage = (
@@ -349,30 +330,8 @@ const isMixedGoalMode = (
   goal.heroMode === 'mixed_goals'
   && isGoalCoverageMultiGoal(goal);
 
-const isLimitedGoalMode = (
-  goal: TopSectionHeroInput | TopSectionPersonalInsightInput,
-): boolean =>
-  goal.heroMode === 'limited_goals'
-  && isGoalCoverageMultiGoal(goal);
-
 const getSortedGoalCoverage = (coverage: TopSectionGoalCoverageInput[] = []): TopSectionGoalCoverageInput[] =>
   coverage.filter((entry) => normalizeText(entry.goalLabel).length > 0);
-
-const describeGoalCoverageState = (state: TopSectionGoalCoverageInput['state']) => {
-  switch (state) {
-    case 'strong':
-      return 'strong support';
-    case 'some':
-      return 'some support';
-    case 'limited':
-      return 'limited support';
-    case 'unknown':
-      return 'not enough label detail';
-    case 'none':
-    default:
-      return 'no clear support';
-  }
-};
 
 const getBestAndWeakestGoalCoverage = (coverage: TopSectionGoalCoverageInput[]) => {
   const ordered = getSortedGoalCoverage(coverage);
@@ -409,58 +368,100 @@ const getDominantGoalCoverage = (
   return resolved;
 };
 
+const getSingleGoalCoverage = (
+  goal: TopSectionHeroInput | TopSectionPersonalInsightInput,
+): TopSectionGoalCoverageInput | null => {
+  if (isGoalCoverageMultiGoal(goal)) return null;
+  const coverage = getSortedGoalCoverage(getPrimaryGoalCoverage(goal));
+  if (coverage.length === 0) return null;
+
+  const selectedGoalLabel = normalizeText(goal.selectedGoalLabel);
+  if (selectedGoalLabel) {
+    const bySelectedLabel = coverage.find((entry) => normalizeText(entry.goalLabel) === selectedGoalLabel);
+    if (bySelectedLabel) return bySelectedLabel;
+  }
+
+  return coverage[0] ?? null;
+};
+
+const getLegacyNarrativeFitLevel = (
+  goal: TopSectionHeroInput | TopSectionPersonalInsightInput,
+): GoalNarrativeFitLevel | null => {
+  if (goal.fitDecision) {
+    return mapLegacyFitDecisionToNarrativeFitLevel(goal.fitDecision);
+  }
+
+  if (goal.previewTopTier) {
+    return mapPreviewTierToNarrativeFitLevel(goal.previewTopTier);
+  }
+
+  return null;
+};
+
+const shouldUseLegacyNarrativeFallback = (
+  goal: TopSectionHeroInput | TopSectionPersonalInsightInput,
+): boolean => {
+  const coverage = getSortedGoalCoverage(getPrimaryGoalCoverage(goal));
+  const hasNarrativeContract =
+    Boolean(goal.heroMode)
+    || Boolean(goal.goalLensMode)
+    || coverage.length > 0
+    || goal.goalNarrativeConfidence != null
+    || goal.labelCompleteness != null
+    || goal.dominanceGap != null;
+
+  return !hasNarrativeContract;
+};
+
+const hasLowNarrativeConfidence = (
+  goal: TopSectionHeroInput | TopSectionPersonalInsightInput,
+) => goal.goalNarrativeConfidence === 'low' || goal.labelCompleteness === 'low';
+
 const buildGoalCoverageHero = (goal: TopSectionHeroInput): TopSectionHeroPresentation | null => {
   const coverage = getSortedGoalCoverage(getPrimaryGoalCoverage(goal));
   const shouldUseMultiGoalHero =
     (goal.heroMode !== 'single_goal' && goal.heroMode !== 'insufficient_signal')
     && isGoalCoverageMultiGoal(goal);
+  if (goal.heroMode === 'insufficient_signal' || hasLowNarrativeConfidence(goal)) {
+    return {
+      tone: 'neutral',
+      chip: goal.allGoalsAnalyzed === true
+        ? 'Not enough evidence to judge all your goals'
+        : 'Not enough evidence to judge the goals shown',
+      summary: 'We need more label detail to judge this product well.',
+    };
+  }
+
   if (!shouldUseMultiGoalHero || coverage.length < 2 || getDominantGoalCoverage(goal)) return null;
 
   const { best, weakest } = getBestAndWeakestGoalCoverage(coverage);
-  const hasStrong = coverage.some((entry) => entry.state === 'strong');
-  const allPositive = coverage.every((entry) => entry.state === 'strong' || entry.state === 'some');
-  const allLimited = coverage.every((entry) => entry.state === 'limited' || entry.state === 'none' || entry.state === 'unknown');
+  const hasMeaningfulSupport = coverage.some((entry) => entry.state === 'strong' || entry.state === 'some');
+  const allLimitedOrUnknown = coverage.every(
+    (entry) => entry.state === 'limited' || entry.state === 'none' || entry.state === 'unknown',
+  );
   const acrossGoals = goal.allGoalsAnalyzed === true;
 
-  const scopeSummary = acrossGoals
-    ? 'across the goals we checked'
-    : 'for the goals checked in this view';
-
-  if ((goal.heroMode === 'mixed_goals' || (!goal.heroMode && allPositive)) && allPositive && hasStrong && best) {
-    return {
-      tone: 'positive',
-      chip: acrossGoals ? 'Strong fit across your selected goals' : 'Strong fit for the goals shown',
-      summary: acrossGoals
-        ? `Best aligned with ${best.goalLabel}, with support across your selected goals`
-        : 'This label looks well aligned with the goals we checked in this view.',
-    };
-  }
-
-  if (allLimited && (isLimitedGoalMode(goal) || goal.heroMode === 'dominant_goal' || !goal.heroMode)) {
-    return {
-      tone: 'caution',
-      chip: acrossGoals ? 'Limited fit across your selected goals' : 'Limited fit for the goals shown',
-      summary: `Support looks limited ${scopeSummary}`,
-    };
-  }
-
-  if ((isMixedGoalMode(goal) || !goal.heroMode) && coverage.every((entry) => entry.state === 'some')) {
+  if (!hasMeaningfulSupport && allLimitedOrUnknown) {
     return {
       tone: 'neutral',
-      chip: acrossGoals ? 'Mixed fit across your selected goals' : 'Mixed fit for the goals shown',
-      summary: acrossGoals
-        ? 'Shows some support across the goals we checked.'
-        : 'Shows some support for the goals checked in this view.',
+      chip: acrossGoals ? 'Limited support across your selected goals' : 'Limited support for the goals shown',
+      summary: "We don't see clear goal-specific support across the goals we checked.",
     };
   }
 
-  if ((isMixedGoalMode(goal) || !goal.heroMode) && best && weakest && best.goalLabel === weakest.goalLabel) {
+  if (goal.heroMode === 'limited_goals') {
     return {
       tone: 'neutral',
-      chip: acrossGoals ? 'Mixed fit across your selected goals' : 'Mixed fit for the goals shown',
-      summary: acrossGoals
-        ? 'Support varies across the goals we checked.'
-        : 'Support varies across the goals checked in this view.',
+      chip: acrossGoals ? 'Limited support across your selected goals' : 'Limited support for the goals shown',
+      summary: "We don't see clear goal-specific support across the goals we checked.",
+    };
+  }
+
+  if ((goal.heroMode === 'mixed_goals' || isMixedGoalMode(goal) || !goal.heroMode) && best && weakest && best.goalLabel === weakest.goalLabel) {
+    return {
+      tone: 'neutral',
+      chip: acrossGoals ? 'Mixed support across your selected goals' : 'Mixed support for the goals shown',
+      summary: 'Supports some goals more than others.',
     };
   }
 
@@ -471,7 +472,7 @@ const buildGoalCoverageHero = (goal: TopSectionHeroInput): TopSectionHeroPresent
       : weakest;
     return {
       tone: 'neutral',
-      chip: acrossGoals ? 'Mixed fit across your selected goals' : 'Mixed fit for the goals shown',
+      chip: acrossGoals ? 'Mixed support across your selected goals' : 'Mixed support for the goals shown',
       summary: `Looks stronger for ${best.goalLabel} than ${(secondary ?? weakest).goalLabel}`,
     };
   }
@@ -481,21 +482,49 @@ const buildGoalCoverageHero = (goal: TopSectionHeroInput): TopSectionHeroPresent
 
 const buildDominantGoalHero = (goal: TopSectionHeroInput): TopSectionHeroPresentation | null => {
   const dominantGoal = getDominantGoalCoverage(goal);
-  if (!dominantGoal) return null;
+  if (!dominantGoal || hasLowNarrativeConfidence(goal)) return null;
 
   if (dominantGoal.state === 'strong') {
     return {
       tone: 'positive',
-      chip: 'Strong fit for you',
+      chip: `Strong fit for your ${dominantGoal.goalLabel} goal`,
       summary: `Best aligned with your ${dominantGoal.goalLabel} goal`,
     };
   }
 
   return {
     tone: 'neutral',
-    chip: 'Could work for you',
+    chip: `Could work for your ${dominantGoal.goalLabel} goal`,
     summary: `Looks strongest for your ${dominantGoal.goalLabel} goal`,
   };
+};
+
+const buildSingleGoalCoverageHero = (
+  goal: TopSectionHeroInput,
+): TopSectionHeroPresentation | null => {
+  const primaryCoverage = getSingleGoalCoverage(goal);
+  if (!primaryCoverage) return null;
+
+  const resolvedFitLevel: GoalNarrativeFitLevel =
+    goal.heroMode === 'insufficient_signal' || hasLowNarrativeConfidence(goal)
+      ? 'unknown'
+      : primaryCoverage.state;
+
+  return buildGoalNarrativeHeroCopy(primaryCoverage.goalLabel, resolvedFitLevel);
+};
+
+const buildLegacyHero = (goal: TopSectionHeroInput): TopSectionHeroPresentation | null => {
+  if (!shouldUseLegacyNarrativeFallback(goal)) return null;
+
+  const selectedGoalLabel = normalizeText(goal.selectedGoalLabel);
+  const previewGoalLabel = normalizeText(goal.previewGoalLabel);
+  const resolvedGoalLabel = selectedGoalLabel || previewGoalLabel;
+  if (!resolvedGoalLabel) return null;
+
+  const fitLevel = getLegacyNarrativeFitLevel(goal);
+  if (!fitLevel) return null;
+
+  return buildGoalNarrativeHeroCopy(resolvedGoalLabel, fitLevel);
 };
 
 const buildHero = (goal: TopSectionHeroInput): TopSectionHeroPresentation => {
@@ -505,62 +534,16 @@ const buildHero = (goal: TopSectionHeroInput): TopSectionHeroPresentation => {
   const multiGoalHero = buildGoalCoverageHero(goal);
   if (multiGoalHero) return multiGoalHero;
 
-  const selectedGoalLabel = normalizeText(goal.selectedGoalLabel);
-  const previewGoalLabel = normalizeText(goal.previewGoalLabel);
-  const resolvedGoalLabel = selectedGoalLabel || previewGoalLabel;
+  const singleGoalCoverageHero = buildSingleGoalCoverageHero(goal);
+  if (singleGoalCoverageHero) return singleGoalCoverageHero;
 
-  if (goal.fitDecision === 'fits' && selectedGoalLabel) {
-    return {
-      tone: 'positive',
-      chip: 'Strong fit for you',
-      summary: `Best aligned with your ${selectedGoalLabel} goal`,
-    };
-  }
-
-  if (goal.fitDecision === 'mixed' && selectedGoalLabel) {
-    return {
-      tone: 'neutral',
-      chip: 'Could work for you',
-      summary: `This label shows some support for your ${selectedGoalLabel} goal`,
-    };
-  }
-
-  if (goal.fitDecision === 'does_not_fit' && selectedGoalLabel) {
-    return {
-      tone: 'caution',
-      chip: `Not a strong fit for your ${selectedGoalLabel} goal`,
-      summary: `We don't see strong ${selectedGoalLabel} support on this label`,
-    };
-  }
-
-  if (goal.previewTopTier === 'strong_match' && resolvedGoalLabel) {
-    return {
-      tone: 'positive',
-      chip: 'Strong fit for you',
-      summary: `Best aligned with your ${resolvedGoalLabel} goal`,
-    };
-  }
-
-  if (goal.previewTopTier === 'related' && resolvedGoalLabel) {
-    return {
-      tone: 'neutral',
-      chip: 'Could work for you',
-      summary: `Most related to your ${resolvedGoalLabel} goal`,
-    };
-  }
-
-  if (goal.previewTopTier === 'weak_match' && resolvedGoalLabel) {
-    return {
-      tone: 'neutral',
-      chip: 'Need a bit more context',
-      summary: `Only light support for your ${resolvedGoalLabel} goal`,
-    };
-  }
+  const legacyHero = buildLegacyHero(goal);
+  if (legacyHero) return legacyHero;
 
   return {
     tone: 'neutral',
-    chip: 'Need a bit more context',
-    summary: 'We need a little more detail to judge this product',
+    chip: 'Not enough evidence to judge the goals shown',
+    summary: 'We need more label detail to judge this product well.',
   };
 };
 
@@ -573,14 +556,57 @@ const buildBanner = (allergy: TopSectionAllergyInput): TopSectionBannerPresentat
   };
 };
 
+const buildExplanationLines = (
+  explanation?: TopSectionGoalCoverageInput['explanation'],
+  limit = 4,
+): string[] => {
+  if (!explanation) return [];
+
+  return uniqueLines([
+    explanation.summary,
+    ...(explanation.why ?? []),
+    ...(explanation.evidence ?? []),
+    ...(explanation.provenance ?? []),
+    ...(explanation.action ?? []),
+  ], limit);
+};
+
 const toGoalCoveragePresentation = (
   entry: TopSectionGoalCoverageInput,
 ): TopSectionGoalCoveragePresentation => ({
   key: normalizeText(entry.goalLabel).toLowerCase().replace(/\s+/g, '_'),
   goalLabel: entry.goalLabel,
-  description: `${entry.goalLabel}: ${describeGoalCoverageState(entry.state)}.`,
+  state: entry.state,
+  description: `${entry.goalLabel}: ${describeGoalNarrativeFitLevel(entry.state)}.`,
   tone: GOAL_COVERAGE_TONE_BY_STATE[entry.state],
+  explanation: entry.explanation ?? null,
 });
+
+const buildInlineCoveragePreview = (
+  visibleItems: TopSectionGoalCoveragePresentation[],
+  analyzedCount: number,
+): string | undefined => {
+  if (visibleItems.length === 0) return undefined;
+
+  const previewItems = visibleItems.slice(0, 2);
+  const fragments = previewItems.map((item) => `${item.goalLabel}: ${describeGoalNarrativeFitLevel(item.state)}`);
+  const hiddenCount = Math.max(0, analyzedCount - previewItems.length);
+  if (hiddenCount > 0) {
+    fragments.push(`${hiddenCount} more checked`);
+  }
+  return fragments.join(' · ');
+};
+
+const buildCoverageExplanationBullets = (
+  items: TopSectionGoalCoveragePresentation[],
+  limit = 4,
+): string[] =>
+  uniqueLines(
+    items
+      .slice(0, 2)
+      .flatMap((item) => buildExplanationLines(item.explanation, 2)),
+    limit,
+  );
 
 const getDefaultVisibleGoalCoverage = (
   coverage: TopSectionGoalCoverageInput[],
@@ -652,6 +678,7 @@ const buildGoalCoverageRowDetails = (
     expandedSubtitle,
     expandActionLabel: canExpandAll ? `View all ${analyzedCount} goals` : undefined,
     collapseActionLabel: canExpandAll ? 'Show fewer goals' : undefined,
+    inlinePreview: buildInlineCoveragePreview(visibleItems, analyzedCount),
   };
 };
 
@@ -665,7 +692,9 @@ const buildSupportInsight = (
       analyzedCount,
       expandedSubtitle,
       canExpandAll,
+      inlinePreview,
     } = buildGoalCoverageRowDetails(personalInsight);
+    const dominantPresentation = toGoalCoveragePresentation(dominantGoal);
     const lowerGoal = lowerFirst(dominantGoal.goalLabel);
     const collapsedTitle =
       dominantGoal.state === 'strong'
@@ -677,8 +706,9 @@ const buildSupportInsight = (
       topic: 'support',
       tone: dominantGoal.state === 'strong' ? 'positive' : 'neutral',
       collapsedTitle,
-      expandedBullets:
-        dominantGoal.state === 'strong'
+      expandedBullets: buildExplanationLines(dominantPresentation.explanation, 4).length > 0
+        ? buildExplanationLines(dominantPresentation.explanation, 4)
+        : dominantGoal.state === 'strong'
           ? uniqueLines([
               buildGoalSupportSummary(dominantGoal.goalLabel),
               buildGoalSupportReason(dominantGoal.goalLabel),
@@ -690,6 +720,7 @@ const buildSupportInsight = (
       goalCoverageItems: fullItems,
       goalCoveragePresentation: 'secondary_inline',
       inlineGoalCoverageTitle: 'How it maps to your goals',
+      inlineGoalCoveragePreview: inlinePreview,
       expandedSubtitle,
       expandActionLabel: analyzedCount > 1 ? `See all ${analyzedCount} goals checked` : undefined,
       collapseActionLabel: analyzedCount > 1 ? 'Show fewer goals' : undefined,
@@ -703,6 +734,7 @@ const buildSupportInsight = (
     && (
       personalInsight.heroMode === 'mixed_goals'
       || personalInsight.heroMode === 'limited_goals'
+      || personalInsight.heroMode === 'insufficient_signal'
       || (personalInsight.heroMode === 'dominant_goal' && !dominantGoal)
       || !personalInsight.heroMode
     );
@@ -719,12 +751,11 @@ const buildSupportInsight = (
       collapseActionLabel,
     } = buildGoalCoverageRowDetails(personalInsight);
     const tone = coverage.every((entry) => entry.state === 'limited' || entry.state === 'none' || entry.state === 'unknown')
-      ? coverage.some((entry) => entry.state === 'unknown')
-        ? 'neutral'
-        : 'caution'
+      ? 'neutral'
       : coverage.some((entry) => entry.state === 'strong')
         ? 'positive'
         : 'neutral';
+    const explanationBullets = buildCoverageExplanationBullets(fullItems);
 
     return {
       key: 'goal_coverage',
@@ -733,7 +764,9 @@ const buildSupportInsight = (
       collapsedTitle: 'How it maps to your goals',
       subtitle,
       expandedSubtitle,
-      expandedBullets: fullItems.map((entry) => entry.description),
+      expandedBullets: explanationBullets.length > 0
+        ? explanationBullets
+        : fullItems.map((entry) => entry.description),
       goalCoverageItems: fullItems,
       visibleGoalCoverageItems: visibleItems,
       hiddenGoalCoverageItems: hiddenItems,
@@ -768,47 +801,37 @@ const buildSupportInsight = (
   }
 
   const goalLabel = normalizeText(personalInsight.selectedGoalLabel);
-  if (!goalLabel) return null;
+  const singleGoalCoverage = getSingleGoalCoverage(personalInsight);
+  if (singleGoalCoverage) {
+    const fitLevel: GoalNarrativeFitLevel =
+      personalInsight.heroMode === 'insufficient_signal' || hasLowNarrativeConfidence(personalInsight)
+        ? 'unknown'
+        : singleGoalCoverage.state;
 
-  switch (personalInsight.fitDecision) {
-    case 'fits':
-      return {
-        key: 'personal_support',
-        topic: 'support',
-        tone: 'positive',
-        collapsedTitle: buildSupportFallbackTitle(personalInsight.fitDecision, goalLabel),
-        expandedBullets: buildSupportFallbackBullets(personalInsight.fitDecision, goalLabel),
-        isExpandable: true,
-      };
-    case 'mixed':
-      return {
-        key: 'personal_support',
-        topic: 'support',
-        tone: 'neutral',
-        collapsedTitle: buildSupportFallbackTitle(personalInsight.fitDecision, goalLabel),
-        expandedBullets: buildSupportFallbackBullets(personalInsight.fitDecision, goalLabel),
-        isExpandable: true,
-      };
-    case 'does_not_fit':
-      return {
-        key: 'personal_support',
-        topic: 'support',
-        tone: 'caution',
-        collapsedTitle: buildSupportFallbackTitle(personalInsight.fitDecision, goalLabel),
-        expandedBullets: buildSupportFallbackBullets(personalInsight.fitDecision, goalLabel),
-        isExpandable: true,
-      };
-    case 'unknown':
-    default:
-      return {
-        key: 'personal_support',
-        topic: 'support',
-        tone: 'neutral',
-        collapsedTitle: buildSupportFallbackTitle(personalInsight.fitDecision, goalLabel),
-        expandedBullets: buildSupportFallbackBullets(personalInsight.fitDecision, goalLabel),
-        isExpandable: true,
-      };
+    return {
+      key: 'personal_support',
+      topic: 'support',
+      tone: fitLevel === 'strong' ? 'positive' : 'neutral',
+      collapsedTitle: buildGoalSupportFallbackTitle(singleGoalCoverage.goalLabel, fitLevel),
+      expandedBullets:
+        buildExplanationLines(singleGoalCoverage.explanation, 4).length > 0
+          ? buildExplanationLines(singleGoalCoverage.explanation, 4)
+          : buildGoalSupportFallbackBullets(singleGoalCoverage.goalLabel, fitLevel),
+      isExpandable: true,
+    };
   }
+
+  if (!goalLabel || !shouldUseLegacyNarrativeFallback(personalInsight)) return null;
+
+  const fitLevel = getLegacyNarrativeFitLevel(personalInsight) ?? 'unknown';
+  return {
+    key: 'personal_support',
+    topic: 'support',
+    tone: fitLevel === 'strong' ? 'positive' : 'neutral',
+    collapsedTitle: buildGoalSupportFallbackTitle(goalLabel, fitLevel),
+    expandedBullets: buildGoalSupportFallbackBullets(goalLabel, fitLevel),
+    isExpandable: true,
+  };
 };
 
 const buildAllergyInsight = (
@@ -1047,6 +1070,7 @@ export const buildAnalysisTopSectionPresentation = (input: {
       : input.goal.goalLensMode === 'multi_goal_summary'
         || input.goal.heroMode === 'mixed_goals'
         || input.goal.heroMode === 'limited_goals'
+        || input.goal.heroMode === 'insufficient_signal'
       ? 'goal_coverage'
       : 'personal_support';
   const fallbackExpandedKey = insights[0]?.key ?? null;

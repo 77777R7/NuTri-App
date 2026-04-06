@@ -203,6 +203,26 @@ type DecisionSupportGoalHeroMode =
 type DecisionSupportPersonalizedGoalCoverageState = 'strong' | 'some' | 'limited' | 'none' | 'unknown';
 type DecisionSupportPersonalizedDoseAssessment = 'aligned' | 'low' | 'high' | 'unclear' | 'unknown';
 type DecisionSupportPersonalizedProductStanding = 'strong' | 'average' | 'weak' | 'unknown';
+type DecisionSupportGoalCoverageGraphEvidence = {
+    relation: 'ingredient_edge' | 'formula_pattern';
+    sourceType: 'ontology_migration' | 'review_article' | 'systematic_review' | 'clinical_guideline' | 'internal_curation';
+    sourceKey: string;
+    title: string;
+    citation?: string;
+    url?: string;
+    note?: string;
+    ingredientKeys?: string[];
+};
+type DecisionSupportGoalCoverageStackAdjustment = {
+    adjustedScore: number;
+    stackContextImpact: 'positive' | 'neutral' | 'negative';
+    marginalValue: 'high' | 'medium' | 'low';
+    overlapIngredientKeys: string[];
+    overlapIngredientDisplays: string[];
+    reasonCodes: string[];
+    summary?: string;
+    action?: string[];
+};
 type DecisionSupportPersonalizedGoalCoverage = {
     goalKey: GoalKey;
     tier: ProductGoalMatchTier | 'unknown';
@@ -211,6 +231,15 @@ type DecisionSupportPersonalizedGoalCoverage = {
     score?: number | null;
     reasonCodes?: string[];
     confidenceBucket?: 'high' | 'medium' | 'low';
+    explanation?: {
+        summary?: string;
+        why?: string[];
+        evidence?: string[];
+        provenance?: string[];
+        action?: string[];
+    };
+    graphEvidence?: DecisionSupportGoalCoverageGraphEvidence[];
+    stackAdjustment?: DecisionSupportGoalCoverageStackAdjustment;
 };
 type DecisionSupportGoalCoverageSummaryItem = {
     goalKey: GoalKey;
@@ -220,6 +249,15 @@ type DecisionSupportGoalCoverageSummaryItem = {
     reasonCodes: string[];
     confidenceBucket: 'high' | 'medium' | 'low';
     shortReason?: string;
+    explanation?: {
+        summary?: string;
+        why?: string[];
+        evidence?: string[];
+        provenance?: string[];
+        action?: string[];
+    };
+    graphEvidence?: DecisionSupportGoalCoverageGraphEvidence[];
+    stackAdjustment?: DecisionSupportGoalCoverageStackAdjustment;
 };
 type DecisionSupportGoalCoverageSummary = {
     selectedGoalCount: number;
@@ -3997,6 +4035,9 @@ const AnalysisBundleDashboard: React.FC<{
                                 heroMode?: DecisionSupportGoalHeroMode | null;
                                 dominantGoalKey?: string | null;
                                 secondaryGoalKey?: string | null;
+                                dominanceGap?: number | null;
+                                goalNarrativeConfidence?: 'high' | 'medium' | 'low' | null;
+                                labelCompleteness?: 'high' | 'medium' | 'low' | null;
                                 selectedGoalKeys?: string[] | null;
                                 allSelectedGoalKeys?: string[] | null;
                                 goalLensMode?: 'single_goal' | 'multi_goal_summary' | null;
@@ -4008,6 +4049,33 @@ const AnalysisBundleDashboard: React.FC<{
                                     score?: number | null;
                                     reasonCodes?: string[] | null;
                                     confidenceBucket?: 'high' | 'medium' | 'low' | null;
+                                    explanation?: {
+                                        summary?: string | null;
+                                        why?: string[] | null;
+                                        evidence?: string[] | null;
+                                        provenance?: string[] | null;
+                                        action?: string[] | null;
+                                    } | null;
+                                    graphEvidence?: Array<{
+                                        relation?: 'ingredient_edge' | 'formula_pattern' | null;
+                                        sourceType?: 'ontology_migration' | 'review_article' | 'systematic_review' | 'clinical_guideline' | 'internal_curation' | null;
+                                        sourceKey?: string | null;
+                                        title?: string | null;
+                                        citation?: string | null;
+                                        url?: string | null;
+                                        note?: string | null;
+                                        ingredientKeys?: string[] | null;
+                                    }> | null;
+                                    stackAdjustment?: {
+                                        adjustedScore?: number | null;
+                                        stackContextImpact?: 'positive' | 'neutral' | 'negative' | null;
+                                        marginalValue?: 'high' | 'medium' | 'low' | null;
+                                        overlapIngredientKeys?: string[] | null;
+                                        overlapIngredientDisplays?: string[] | null;
+                                        reasonCodes?: string[] | null;
+                                        summary?: string | null;
+                                        action?: string[] | null;
+                                    } | null;
                                 }> | null;
                                 allGoalCoverage?: Array<{
                                     goalKey?: string | null;
@@ -4017,6 +4085,33 @@ const AnalysisBundleDashboard: React.FC<{
                                     score?: number | null;
                                     reasonCodes?: string[] | null;
                                     confidenceBucket?: 'high' | 'medium' | 'low' | null;
+                                    explanation?: {
+                                        summary?: string | null;
+                                        why?: string[] | null;
+                                        evidence?: string[] | null;
+                                        provenance?: string[] | null;
+                                        action?: string[] | null;
+                                    } | null;
+                                    graphEvidence?: Array<{
+                                        relation?: 'ingredient_edge' | 'formula_pattern' | null;
+                                        sourceType?: 'ontology_migration' | 'review_article' | 'systematic_review' | 'clinical_guideline' | 'internal_curation' | null;
+                                        sourceKey?: string | null;
+                                        title?: string | null;
+                                        citation?: string | null;
+                                        url?: string | null;
+                                        note?: string | null;
+                                        ingredientKeys?: string[] | null;
+                                    }> | null;
+                                    stackAdjustment?: {
+                                        adjustedScore?: number | null;
+                                        stackContextImpact?: 'positive' | 'neutral' | 'negative' | null;
+                                        marginalValue?: 'high' | 'medium' | 'low' | null;
+                                        overlapIngredientKeys?: string[] | null;
+                                        overlapIngredientDisplays?: string[] | null;
+                                        reasonCodes?: string[] | null;
+                                        summary?: string | null;
+                                        action?: string[] | null;
+                                    } | null;
                                 }> | null;
                                 goalCoverageSummary?: {
                                     selectedGoalCount?: number | null;
@@ -4035,6 +4130,33 @@ const AnalysisBundleDashboard: React.FC<{
                                         reasonCodes?: string[] | null;
                                         confidenceBucket?: 'high' | 'medium' | 'low' | null;
                                         shortReason?: string | null;
+                                        explanation?: {
+                                            summary?: string | null;
+                                            why?: string[] | null;
+                                            evidence?: string[] | null;
+                                            provenance?: string[] | null;
+                                            action?: string[] | null;
+                                        } | null;
+                                        graphEvidence?: Array<{
+                                            relation?: 'ingredient_edge' | 'formula_pattern' | null;
+                                            sourceType?: 'ontology_migration' | 'review_article' | 'systematic_review' | 'clinical_guideline' | 'internal_curation' | null;
+                                            sourceKey?: string | null;
+                                            title?: string | null;
+                                            citation?: string | null;
+                                            url?: string | null;
+                                            note?: string | null;
+                                            ingredientKeys?: string[] | null;
+                                        }> | null;
+                                        stackAdjustment?: {
+                                            adjustedScore?: number | null;
+                                            stackContextImpact?: 'positive' | 'neutral' | 'negative' | null;
+                                            marginalValue?: 'high' | 'medium' | 'low' | null;
+                                            overlapIngredientKeys?: string[] | null;
+                                            overlapIngredientDisplays?: string[] | null;
+                                            reasonCodes?: string[] | null;
+                                            summary?: string | null;
+                                            action?: string[] | null;
+                                        } | null;
                                     }> | null;
                                 } | null;
                                 selectedGoalCount?: number | null;
@@ -4053,6 +4175,9 @@ const AnalysisBundleDashboard: React.FC<{
                         heroMode: goalFitResponse?.heroMode ?? null,
                         dominantGoalKey: goalFitResponse?.dominantGoalKey ?? null,
                         secondaryGoalKey: goalFitResponse?.secondaryGoalKey ?? null,
+                        dominanceGap: typeof goalFitResponse?.dominanceGap === 'number' ? goalFitResponse.dominanceGap : null,
+                        goalNarrativeConfidence: goalFitResponse?.goalNarrativeConfidence ?? null,
+                        labelCompleteness: goalFitResponse?.labelCompleteness ?? null,
                         selectedGoalKeys: Array.isArray(goalFitResponse?.selectedGoalKeys)
                             ? goalFitResponse.selectedGoalKeys
                             : [],
@@ -4069,6 +4194,39 @@ const AnalysisBundleDashboard: React.FC<{
                                 score: typeof entry?.score === 'number' ? entry.score : null,
                                 reasonCodes: Array.isArray(entry?.reasonCodes) ? entry.reasonCodes : [],
                                 confidenceBucket: entry?.confidenceBucket ?? null,
+                                explanation: entry?.explanation
+                                    ? {
+                                        summary: entry.explanation.summary ?? null,
+                                        why: Array.isArray(entry.explanation.why) ? entry.explanation.why : [],
+                                        evidence: Array.isArray(entry.explanation.evidence) ? entry.explanation.evidence : [],
+                                        provenance: Array.isArray(entry.explanation.provenance) ? entry.explanation.provenance : [],
+                                        action: Array.isArray(entry.explanation.action) ? entry.explanation.action : [],
+                                    }
+                                    : null,
+                                graphEvidence: Array.isArray(entry?.graphEvidence)
+                                    ? entry.graphEvidence.map((evidence) => ({
+                                        relation: evidence?.relation ?? null,
+                                        sourceType: evidence?.sourceType ?? null,
+                                        sourceKey: evidence?.sourceKey ?? null,
+                                        title: evidence?.title ?? null,
+                                        citation: evidence?.citation ?? null,
+                                        url: evidence?.url ?? null,
+                                        note: evidence?.note ?? null,
+                                        ingredientKeys: Array.isArray(evidence?.ingredientKeys) ? evidence.ingredientKeys : [],
+                                    }))
+                                    : [],
+                                stackAdjustment: entry?.stackAdjustment
+                                    ? {
+                                        adjustedScore: typeof entry.stackAdjustment.adjustedScore === 'number' ? entry.stackAdjustment.adjustedScore : null,
+                                        stackContextImpact: entry.stackAdjustment.stackContextImpact ?? null,
+                                        marginalValue: entry.stackAdjustment.marginalValue ?? null,
+                                        overlapIngredientKeys: Array.isArray(entry.stackAdjustment.overlapIngredientKeys) ? entry.stackAdjustment.overlapIngredientKeys : [],
+                                        overlapIngredientDisplays: Array.isArray(entry.stackAdjustment.overlapIngredientDisplays) ? entry.stackAdjustment.overlapIngredientDisplays : [],
+                                        reasonCodes: Array.isArray(entry.stackAdjustment.reasonCodes) ? entry.stackAdjustment.reasonCodes : [],
+                                        summary: entry.stackAdjustment.summary ?? null,
+                                        action: Array.isArray(entry.stackAdjustment.action) ? entry.stackAdjustment.action : [],
+                                    }
+                                    : null,
                             }))
                             : [],
                         allGoalCoverage: Array.isArray(goalFitResponse?.allGoalCoverage)
@@ -4080,6 +4238,39 @@ const AnalysisBundleDashboard: React.FC<{
                                 score: typeof entry?.score === 'number' ? entry.score : null,
                                 reasonCodes: Array.isArray(entry?.reasonCodes) ? entry.reasonCodes : [],
                                 confidenceBucket: entry?.confidenceBucket ?? null,
+                                explanation: entry?.explanation
+                                    ? {
+                                        summary: entry.explanation.summary ?? null,
+                                        why: Array.isArray(entry.explanation.why) ? entry.explanation.why : [],
+                                        evidence: Array.isArray(entry.explanation.evidence) ? entry.explanation.evidence : [],
+                                        provenance: Array.isArray(entry.explanation.provenance) ? entry.explanation.provenance : [],
+                                        action: Array.isArray(entry.explanation.action) ? entry.explanation.action : [],
+                                    }
+                                    : null,
+                                graphEvidence: Array.isArray(entry?.graphEvidence)
+                                    ? entry.graphEvidence.map((evidence) => ({
+                                        relation: evidence?.relation ?? null,
+                                        sourceType: evidence?.sourceType ?? null,
+                                        sourceKey: evidence?.sourceKey ?? null,
+                                        title: evidence?.title ?? null,
+                                        citation: evidence?.citation ?? null,
+                                        url: evidence?.url ?? null,
+                                        note: evidence?.note ?? null,
+                                        ingredientKeys: Array.isArray(evidence?.ingredientKeys) ? evidence.ingredientKeys : [],
+                                    }))
+                                    : [],
+                                stackAdjustment: entry?.stackAdjustment
+                                    ? {
+                                        adjustedScore: typeof entry.stackAdjustment.adjustedScore === 'number' ? entry.stackAdjustment.adjustedScore : null,
+                                        stackContextImpact: entry.stackAdjustment.stackContextImpact ?? null,
+                                        marginalValue: entry.stackAdjustment.marginalValue ?? null,
+                                        overlapIngredientKeys: Array.isArray(entry.stackAdjustment.overlapIngredientKeys) ? entry.stackAdjustment.overlapIngredientKeys : [],
+                                        overlapIngredientDisplays: Array.isArray(entry.stackAdjustment.overlapIngredientDisplays) ? entry.stackAdjustment.overlapIngredientDisplays : [],
+                                        reasonCodes: Array.isArray(entry.stackAdjustment.reasonCodes) ? entry.stackAdjustment.reasonCodes : [],
+                                        summary: entry.stackAdjustment.summary ?? null,
+                                        action: Array.isArray(entry.stackAdjustment.action) ? entry.stackAdjustment.action : [],
+                                    }
+                                    : null,
                             }))
                             : [],
                         selectedGoalCount: typeof goalFitResponse?.selectedGoalCount === 'number'
@@ -4123,6 +4314,39 @@ const AnalysisBundleDashboard: React.FC<{
                                         reasonCodes: Array.isArray(entry?.reasonCodes) ? entry.reasonCodes : [],
                                         confidenceBucket: entry?.confidenceBucket ?? null,
                                         shortReason: entry?.shortReason ?? null,
+                                        explanation: entry?.explanation
+                                            ? {
+                                                summary: entry.explanation.summary ?? null,
+                                                why: Array.isArray(entry.explanation.why) ? entry.explanation.why : [],
+                                                evidence: Array.isArray(entry.explanation.evidence) ? entry.explanation.evidence : [],
+                                                provenance: Array.isArray(entry.explanation.provenance) ? entry.explanation.provenance : [],
+                                                action: Array.isArray(entry.explanation.action) ? entry.explanation.action : [],
+                                            }
+                                            : null,
+                                        graphEvidence: Array.isArray(entry?.graphEvidence)
+                                            ? entry.graphEvidence.map((evidence) => ({
+                                                relation: evidence?.relation ?? null,
+                                                sourceType: evidence?.sourceType ?? null,
+                                                sourceKey: evidence?.sourceKey ?? null,
+                                                title: evidence?.title ?? null,
+                                                citation: evidence?.citation ?? null,
+                                                url: evidence?.url ?? null,
+                                                note: evidence?.note ?? null,
+                                                ingredientKeys: Array.isArray(evidence?.ingredientKeys) ? evidence.ingredientKeys : [],
+                                            }))
+                                            : [],
+                                        stackAdjustment: entry?.stackAdjustment
+                                            ? {
+                                                adjustedScore: typeof entry.stackAdjustment.adjustedScore === 'number' ? entry.stackAdjustment.adjustedScore : null,
+                                                stackContextImpact: entry.stackAdjustment.stackContextImpact ?? null,
+                                                marginalValue: entry.stackAdjustment.marginalValue ?? null,
+                                                overlapIngredientKeys: Array.isArray(entry.stackAdjustment.overlapIngredientKeys) ? entry.stackAdjustment.overlapIngredientKeys : [],
+                                                overlapIngredientDisplays: Array.isArray(entry.stackAdjustment.overlapIngredientDisplays) ? entry.stackAdjustment.overlapIngredientDisplays : [],
+                                                reasonCodes: Array.isArray(entry.stackAdjustment.reasonCodes) ? entry.stackAdjustment.reasonCodes : [],
+                                                summary: entry.stackAdjustment.summary ?? null,
+                                                action: Array.isArray(entry.stackAdjustment.action) ? entry.stackAdjustment.action : [],
+                                            }
+                                            : null,
                                     }))
                                     : [],
                             }
@@ -4971,6 +5195,15 @@ const AnalysisBundleDashboard: React.FC<{
                 score: legacy?.score ?? null,
                 reasonCodes: entry.reasonCodes ?? legacy?.reasonCodes ?? [],
                 confidenceBucket: entry.confidenceBucket ?? legacy?.confidenceBucket ?? 'low',
+                explanation: entry.explanation
+                    ? {
+                        summary: entry.explanation.summary,
+                        why: entry.explanation.why ?? [],
+                        evidence: entry.explanation.evidence ?? [],
+                        provenance: entry.explanation.provenance ?? [],
+                        action: entry.explanation.action ?? [],
+                    }
+                    : legacy?.explanation ?? null,
             };
         }).filter((entry): entry is {
             goalLabel: string;
@@ -4980,6 +5213,13 @@ const AnalysisBundleDashboard: React.FC<{
             score: number | null;
             reasonCodes: string[];
             confidenceBucket: 'high' | 'medium' | 'low';
+            explanation: {
+                summary?: string;
+                why?: string[];
+                evidence?: string[];
+                provenance?: string[];
+                action?: string[];
+            } | null;
         } => Boolean(entry.goalLabel));
         const fallbackCoverage = (goalFit?.allGoalCoverage ?? [])
             .map((entry) => ({
@@ -4990,6 +5230,15 @@ const AnalysisBundleDashboard: React.FC<{
                 score: entry.score ?? null,
                 reasonCodes: entry.reasonCodes ?? [],
                 confidenceBucket: entry.confidenceBucket ?? 'low',
+                explanation: entry.explanation
+                    ? {
+                        summary: entry.explanation.summary,
+                        why: entry.explanation.why ?? [],
+                        evidence: entry.explanation.evidence ?? [],
+                        provenance: entry.explanation.provenance ?? [],
+                        action: entry.explanation.action ?? [],
+                    }
+                    : null,
             }))
             .filter((entry): entry is {
                 goalLabel: string;
@@ -4999,6 +5248,13 @@ const AnalysisBundleDashboard: React.FC<{
                 score: number | null;
                 reasonCodes: string[];
                 confidenceBucket: 'high' | 'medium' | 'low';
+                explanation: {
+                    summary?: string;
+                    why?: string[];
+                    evidence?: string[];
+                    provenance?: string[];
+                    action?: string[];
+                } | null;
             } => Boolean(entry.goalLabel));
         const resolvedAllGoalCoverage = mappedGoalCoverage.length > 0 ? mappedGoalCoverage : fallbackCoverage;
         const legacyVisibleCoverageByGoal = new Map(
@@ -5017,6 +5273,15 @@ const AnalysisBundleDashboard: React.FC<{
                         score: legacy?.score ?? null,
                         reasonCodes: fromSummary?.reasonCodes ?? legacy?.reasonCodes ?? [],
                         confidenceBucket: fromSummary?.confidenceBucket ?? legacy?.confidenceBucket ?? 'low',
+                        explanation: fromSummary?.explanation
+                            ? {
+                                summary: fromSummary.explanation.summary,
+                                why: fromSummary.explanation.why ?? [],
+                                evidence: fromSummary.explanation.evidence ?? [],
+                                provenance: fromSummary.explanation.provenance ?? [],
+                                action: fromSummary.explanation.action ?? [],
+                            }
+                            : legacy?.explanation ?? null,
                     };
                 })
                 .filter((entry): entry is {
@@ -5027,6 +5292,13 @@ const AnalysisBundleDashboard: React.FC<{
                     score: number | null;
                     reasonCodes: string[];
                     confidenceBucket: 'high' | 'medium' | 'low';
+                    explanation: {
+                        summary?: string;
+                        why?: string[];
+                        evidence?: string[];
+                        provenance?: string[];
+                        action?: string[];
+                    } | null;
                 } => Boolean(entry.goalLabel))
             : (goalFit?.goalCoverage ?? [])
                 .map((entry) => ({
@@ -5037,6 +5309,15 @@ const AnalysisBundleDashboard: React.FC<{
                     score: entry.score ?? null,
                     reasonCodes: entry.reasonCodes ?? [],
                     confidenceBucket: entry.confidenceBucket ?? 'low',
+                    explanation: entry.explanation
+                        ? {
+                            summary: entry.explanation.summary,
+                            why: entry.explanation.why ?? [],
+                            evidence: entry.explanation.evidence ?? [],
+                            provenance: entry.explanation.provenance ?? [],
+                            action: entry.explanation.action ?? [],
+                        }
+                        : null,
                 }))
                 .filter((entry): entry is {
                     goalLabel: string;
@@ -5046,6 +5327,13 @@ const AnalysisBundleDashboard: React.FC<{
                     score: number | null;
                     reasonCodes: string[];
                     confidenceBucket: 'high' | 'medium' | 'low';
+                    explanation: {
+                        summary?: string;
+                        why?: string[];
+                        evidence?: string[];
+                        provenance?: string[];
+                        action?: string[];
+                    } | null;
                 } => Boolean(entry.goalLabel));
 
         return buildAnalysisTopSectionPresentation({
@@ -5057,6 +5345,9 @@ const AnalysisBundleDashboard: React.FC<{
                 previewGoalLabel: getGoalLabel(goalFit?.previewTopGoalKey ?? null),
                 previewTopTier: goalFit?.previewTopTier ?? null,
                 heroMode: goalFit?.heroMode ?? null,
+                dominanceGap: goalFit?.dominanceGap ?? null,
+                goalNarrativeConfidence: goalFit?.goalNarrativeConfidence ?? null,
+                labelCompleteness: goalFit?.labelCompleteness ?? null,
                 selectedGoalLabels: (goalFit?.selectedGoalKeys ?? [])
                     .map((goalKey) => getGoalLabel(goalKey))
                     .filter((label): label is string => Boolean(label)),
@@ -5069,6 +5360,7 @@ const AnalysisBundleDashboard: React.FC<{
                 selectedGoalCount: goalFit?.goalCoverageSummary?.selectedGoalCount ?? goalFit?.selectedGoalCount ?? null,
                 analyzedGoalCount: goalFit?.goalCoverageSummary?.analyzedGoalCount ?? goalFit?.analyzedGoalCount ?? null,
                 surfacedGoalCount: goalFit?.goalCoverageSummary?.surfacedGoalCount ?? goalFit?.surfacedGoalCount ?? null,
+                hiddenGoalsCount: goalFit?.goalCoverageSummary?.hiddenGoalsCount ?? null,
                 allGoalsAnalyzed: goalFit?.goalCoverageSummary?.allGoalsAnalyzed ?? goalFit?.allGoalsAnalyzed ?? false,
                 defaultVisibleGoalLabels: (goalFit?.defaultVisibleGoalKeys ?? [])
                     .map((goalKey) => getGoalLabel(goalKey))
@@ -5082,12 +5374,16 @@ const AnalysisBundleDashboard: React.FC<{
                 selectedGoalLabel: getGoalLabel(goalFit?.selectedGoalKey ?? null),
                 dominantGoalLabel: getGoalLabel(goalFit?.dominantGoalKey ?? null),
                 secondaryGoalLabel: getGoalLabel(goalFit?.secondaryGoalKey ?? null),
+                dominanceGap: goalFit?.dominanceGap ?? null,
+                goalNarrativeConfidence: goalFit?.goalNarrativeConfidence ?? null,
+                labelCompleteness: goalFit?.labelCompleteness ?? null,
                 goalLensMode: goalFit?.goalLensMode ?? null,
                 goalCoverage: resolvedVisibleGoalCoverage,
                 allGoalCoverage: resolvedAllGoalCoverage,
                 selectedGoalCount: goalFit?.goalCoverageSummary?.selectedGoalCount ?? goalFit?.selectedGoalCount ?? null,
                 analyzedGoalCount: goalFit?.goalCoverageSummary?.analyzedGoalCount ?? goalFit?.analyzedGoalCount ?? null,
                 surfacedGoalCount: goalFit?.goalCoverageSummary?.surfacedGoalCount ?? goalFit?.surfacedGoalCount ?? null,
+                hiddenGoalsCount: goalFit?.goalCoverageSummary?.hiddenGoalsCount ?? null,
                 allGoalsAnalyzed: goalFit?.goalCoverageSummary?.allGoalsAnalyzed ?? goalFit?.allGoalsAnalyzed ?? false,
                 defaultVisibleGoalLabels: (goalFit?.defaultVisibleGoalKeys ?? [])
                     .map((goalKey) => getGoalLabel(goalKey))

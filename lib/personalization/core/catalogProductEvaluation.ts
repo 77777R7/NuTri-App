@@ -22,6 +22,7 @@ import * as savedProductEvaluationModule from "./savedProductEvaluation.ts";
 export type CatalogOverlayIngredientRow = {
   name: string;
   dose: string | null;
+  form?: string | null;
 };
 
 export type CatalogProductEvaluationInput = {
@@ -156,7 +157,7 @@ const parseAmountText = (value?: string | null): { amount: number | null; unit: 
   return { amount, unit };
 };
 
-const pickFirstText = (...values: Array<string | null | undefined>) => {
+const pickFirstText = (...values: (string | null | undefined)[]) => {
   for (const value of values) {
     if (typeof value === "string" && value.trim().length > 0) {
       return value.trim();
@@ -237,6 +238,8 @@ const buildIngredientInputs = (
       name,
       amount: parsedDose.amount,
       unit: parsedDose.unit,
+      form: row.form ?? null,
+      formLabel: row.form ?? null,
       disclosureQuality: parsedDose.amount != null ? "medium" : "low",
       proprietaryBlend: PROPRIETARY_BLEND_PATTERN.test(name),
     });

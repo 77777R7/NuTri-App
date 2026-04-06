@@ -1,4 +1,5 @@
 import type {
+  ConfidenceBreakdown,
   DecisionReason,
   GoalKey,
   ProductGoalMatch,
@@ -99,6 +100,8 @@ const FORM_MULTIPLIER = {
   preferred: 1.08,
   neutral: 1,
 } as const;
+
+export type GoalNarrativeFitLevel = 'strong' | 'some' | 'limited' | 'none' | 'unknown';
 
 const LABEL_CONFIDENCE_MULTIPLIER: Record<DisclosureQuality, number> = {
   high: 1,
@@ -208,6 +211,56 @@ const scoreToTier = (score: number): ProductGoalMatchTier => {
     if (score >= threshold) return tier;
   }
   return 'no_match';
+};
+
+const GOAL_UNCERTAINTY_REASON_CODES = new Set([
+  'goal_support_not_enough_label_detail',
+  'personalization.product_evaluation.not_enough_structured_data',
+  'dose_not_disclosed',
+  'low_disclosure_caps_strong_match',
+  'proprietary_blend_caps_goal_match',
+]);
+
+export const mapNarrativeLabelCompleteness = (
+  value: ConfidenceBreakdown['labelCompleteness'] | null | undefined,
+): 'high' | 'medium' | 'low' => {
+  switch (value) {
+    case 'full':
+      return 'high';
+    case 'partial':
+      return 'medium';
+    case 'weak':
+    default:
+      return 'low';
+  }
+};
+
+export const normalizeGoalNarrativeFitLevel = (params: {
+  tier: ProductGoalMatchTier | 'unknown';
+  reasonCodes?: string[] | null;
+  coverageStatus?: 'coverage_ready' | 'not_enough_structured_data' | null;
+  labelCompleteness?: ConfidenceBreakdown['labelCompleteness'] | null;
+}): GoalNarrativeFitLevel => {
+  const reasonCodes = params.reasonCodes ?? [];
+  const hasUnknownSignal =
+    params.coverageStatus === 'not_enough_structured_data'
+    || reasonCodes.some((code) => GOAL_UNCERTAINTY_REASON_CODES.has(code));
+
+  if (hasUnknownSignal || params.tier === 'unknown') {
+    return 'unknown';
+  }
+
+  switch (params.tier) {
+    case 'strong_match':
+      return 'strong';
+    case 'related':
+      return 'some';
+    case 'weak_match':
+      return 'limited';
+    case 'no_match':
+    default:
+      return 'none';
+  }
 };
 
 const makeReason = (
@@ -610,12 +663,26 @@ const getPresentIngredientKeySet = (
 const computePatternBonus = (
   goalKey: GoalKey,
   presentIngredientKeys: Set<string>,
+  candidates: ScoredCandidate[],
 ): { bonus: number; reasons: DecisionReason[] } => {
   const patterns = getFormulaPatterns(goalKey);
   if (patterns.length === 0) return { bonus: 0, reasons: [] };
 
+  const strongestTierByIngredient = new Map<string, ProductGoalMatchTier>();
+  candidates.forEach((candidate) => {
+    const ingredientKey = canonicalizeIngredientKey(candidate.ingredientKey);
+    const current = strongestTierByIngredient.get(ingredientKey);
+    if (!current || compareTier(candidate.tier, current) > 0) {
+      strongestTierByIngredient.set(ingredientKey, candidate.tier);
+    }
+  });
+
   const matchedPatterns = patterns.filter((pattern) =>
-    pattern.requiredIngredients.every((ingredientKey) => presentIngredientKeys.has(canonicalizeIngredientKey(ingredientKey))),
+    pattern.requiredIngredients.every((ingredientKey) => presentIngredientKeys.has(canonicalizeIngredientKey(ingredientKey)))
+    && pattern.requiredIngredients.some((ingredientKey) => {
+      const tier = strongestTierByIngredient.get(canonicalizeIngredientKey(ingredientKey));
+      return tier === 'related' || tier === 'strong_match';
+    }),
   );
 
   if (matchedPatterns.length === 0) return { bonus: 0, reasons: [] };
@@ -663,7 +730,11 @@ export const scoreProductGoalMatches = (input: ProductGoalMatchScoringInput): Pr
     const corroboratingMatches = sortedCandidates.filter(
       (candidate, index) => index > 0 && candidate.tier !== 'no_match',
     );
-    const { bonus: patternBonus, reasons: patternReasons } = computePatternBonus(goalKey, presentIngredientKeys);
+    const { bonus: patternBonus, reasons: patternReasons } = computePatternBonus(
+      goalKey,
+      presentIngredientKeys,
+      sortedCandidates,
+    );
     const corroborationBonus = Math.min(CORROBORATION_BONUS_CAP, corroboratingMatches.length * CORROBORATION_BONUS_PER_MATCH);
     const score = clampScore((primary?.score ?? 0) + corroborationBonus + patternBonus);
     const tier = applyTierCap(scoreToTier(score), primary?.tier ?? 'no_match');
@@ -699,5 +770,7 @@ export const goalMatchScoringInternals = {
   normalizeTextKey,
   normalizeUnit,
   evaluateDose,
+  mapNarrativeLabelCompleteness,
+  normalizeGoalNarrativeFitLevel,
   scoreToTier,
 };

@@ -7,6 +7,11 @@
       "placeholders": ["ingredientLabel", "goalLabel"]
     },
     {
+      "code": "goal_specific_evidence_present",
+      "template": "The current ingredient map gives this goal a usable evidence-backed signal.",
+      "placeholders": []
+    },
+    {
       "code": "dose_meets_effective_floor",
       "template": "The disclosed dose meets the current review floor we track for {ingredientLabel}.",
       "placeholders": ["ingredientLabel"]
@@ -19,6 +24,21 @@
     {
       "code": "dose_not_disclosed",
       "template": "The label does not disclose enough dose detail for a stronger review outcome.",
+      "placeholders": []
+    },
+    {
+      "code": "ingredient_form_preferred",
+      "template": "The disclosed form is one of the forms we treat as more supportive for this goal.",
+      "placeholders": []
+    },
+    {
+      "code": "multiple_supporting_ingredients",
+      "template": "More than one visible ingredient supports this goal, which makes the signal more credible.",
+      "placeholders": []
+    },
+    {
+      "code": "goal_support_not_enough_label_detail",
+      "template": "We still need more label detail before we can judge this goal cleanly.",
       "placeholders": []
     },
     {
@@ -59,6 +79,21 @@
     {
       "code": "activity_recovery_direction",
       "template": "Based on your activity pattern, recovery-support products should be reviewed before narrower goal claims.",
+      "placeholders": []
+    },
+    {
+      "code": "formula_pattern_immunity_vitamin_c_zinc",
+      "template": "Vitamin C and zinc together reinforce an immunity-oriented pattern on this label.",
+      "placeholders": []
+    },
+    {
+      "code": "formula_pattern_sleep_magnesium_theanine",
+      "template": "Magnesium and L-theanine together reinforce a sleep-support pattern.",
+      "placeholders": []
+    },
+    {
+      "code": "formula_pattern_recovery_omega3_protein",
+      "template": "Omega-3 and protein together reinforce a recovery-support pattern.",
       "placeholders": []
     }
   ]

@@ -28,7 +28,7 @@ test('hero chip stays goal-fit driven even when allergy banner is present', () =
     },
   });
 
-  assert.equal(result.hero.chip, 'Strong fit for you');
+  assert.equal(result.hero.chip, 'Strong fit for your Immunity goal');
   assert.equal(result.hero.summary, 'Best aligned with your Immunity goal');
   assert.equal(result.banner?.kind, 'allergy');
   assert.equal(result.banner?.title, 'Ingredients may conflict with your allergies');
@@ -191,7 +191,7 @@ test('multi-goal mixed coverage renders a mixed-fit hero and goal coverage row',
     safety: {},
   });
 
-  assert.equal(result.hero.chip, 'Mixed fit across your selected goals');
+  assert.equal(result.hero.chip, 'Mixed support across your selected goals');
   assert.equal(result.hero.summary, 'Looks stronger for Recovery than Energy');
   assert.equal(result.insights[0]?.key, 'goal_coverage');
   assert.equal(result.insights[0]?.collapsedTitle, 'How it maps to your goals');
@@ -268,14 +268,32 @@ test('dominant-goal strong mode uses the strongest goal hero and keeps coverage 
       allSelectedGoalLabels: ['Energy', 'Immunity', 'Recovery', 'Sleep', 'Focus'],
       goalLensMode: 'multi_goal_summary',
       goalCoverage: [
-        { goalLabel: 'Recovery', tier: 'strong_match', state: 'strong', source: 'selected_goal_evaluation' },
+        {
+          goalLabel: 'Recovery',
+          tier: 'strong_match',
+          state: 'strong',
+          source: 'selected_goal_evaluation',
+          explanation: {
+            summary: 'The visible ingredients look strongly aligned with recovery.',
+            provenance: ['Evidence note: Recovery Review Source is one source behind this recovery lane.'],
+          },
+        },
         { goalLabel: 'Sleep', tier: 'related', state: 'some', source: 'goal_match_scoring_preview' },
         { goalLabel: 'Energy', tier: 'weak_match', state: 'limited', source: 'goal_match_scoring_preview' },
       ],
       allGoalCoverage: [
         { goalLabel: 'Energy', tier: 'weak_match', state: 'limited', source: 'goal_match_scoring_preview' },
         { goalLabel: 'Immunity', tier: 'no_match', state: 'none', source: 'goal_match_scoring_preview' },
-        { goalLabel: 'Recovery', tier: 'strong_match', state: 'strong', source: 'selected_goal_evaluation' },
+        {
+          goalLabel: 'Recovery',
+          tier: 'strong_match',
+          state: 'strong',
+          source: 'selected_goal_evaluation',
+          explanation: {
+            summary: 'The visible ingredients look strongly aligned with recovery.',
+            provenance: ['Evidence note: Recovery Review Source is one source behind this recovery lane.'],
+          },
+        },
         { goalLabel: 'Sleep', tier: 'related', state: 'some', source: 'goal_match_scoring_preview' },
         { goalLabel: 'Focus', tier: 'no_match', state: 'none', source: 'goal_match_scoring_preview' },
       ],
@@ -292,14 +310,32 @@ test('dominant-goal strong mode uses the strongest goal hero and keeps coverage 
       selectedGoalLabel: 'Recovery',
       goalLensMode: 'multi_goal_summary',
       goalCoverage: [
-        { goalLabel: 'Recovery', tier: 'strong_match', state: 'strong', source: 'selected_goal_evaluation' },
+        {
+          goalLabel: 'Recovery',
+          tier: 'strong_match',
+          state: 'strong',
+          source: 'selected_goal_evaluation',
+          explanation: {
+            summary: 'The visible ingredients look strongly aligned with recovery.',
+            provenance: ['Evidence note: Recovery Review Source is one source behind this recovery lane.'],
+          },
+        },
         { goalLabel: 'Sleep', tier: 'related', state: 'some', source: 'goal_match_scoring_preview' },
         { goalLabel: 'Energy', tier: 'weak_match', state: 'limited', source: 'goal_match_scoring_preview' },
       ],
       allGoalCoverage: [
         { goalLabel: 'Energy', tier: 'weak_match', state: 'limited', source: 'goal_match_scoring_preview' },
         { goalLabel: 'Immunity', tier: 'no_match', state: 'none', source: 'goal_match_scoring_preview' },
-        { goalLabel: 'Recovery', tier: 'strong_match', state: 'strong', source: 'selected_goal_evaluation' },
+        {
+          goalLabel: 'Recovery',
+          tier: 'strong_match',
+          state: 'strong',
+          source: 'selected_goal_evaluation',
+          explanation: {
+            summary: 'The visible ingredients look strongly aligned with recovery.',
+            provenance: ['Evidence note: Recovery Review Source is one source behind this recovery lane.'],
+          },
+        },
         { goalLabel: 'Sleep', tier: 'related', state: 'some', source: 'goal_match_scoring_preview' },
         { goalLabel: 'Focus', tier: 'no_match', state: 'none', source: 'goal_match_scoring_preview' },
       ],
@@ -323,19 +359,77 @@ test('dominant-goal strong mode uses the strongest goal hero and keeps coverage 
     safety: {},
   });
 
-  assert.equal(result.hero.chip, 'Strong fit for you');
+  assert.equal(result.hero.chip, 'Strong fit for your Recovery goal');
   assert.equal(result.hero.summary, 'Best aligned with your Recovery goal');
   assert.equal(result.insights[0]?.key, 'personal_support');
   assert.equal(result.insights[0]?.collapsedTitle, 'Supports your recovery goal');
   assert.equal(result.insights[0]?.subtitle, undefined);
   assert.equal(result.insights[0]?.goalCoveragePresentation, 'secondary_inline');
   assert.equal(result.insights[0]?.inlineGoalCoverageTitle, 'How it maps to your goals');
+  assert.equal(result.insights[0]?.inlineGoalCoveragePreview, 'Recovery: strong support · Sleep: some support · 3 more checked');
   assert.equal(result.insights[0]?.expandActionLabel, 'See all 5 goals checked');
   assert.equal(result.insights.some((row) => row.collapsedTitle === 'How it maps to your goals'), false);
+  assert.ok(
+    (result.insights[0]?.expandedBullets ?? []).some((line) => /Recovery Review Source/.test(line)),
+  );
   assert.deepEqual(
     result.insights[0]?.goalCoverageItems?.map((item) => item.goalLabel),
     ['Energy', 'Immunity', 'Recovery', 'Sleep', 'Focus'],
   );
+});
+
+test('contract-driven dominant hero ignores conflicting legacy fitDecision and preview tier fields', () => {
+  const result = buildAnalysisTopSectionPresentation({
+    goal: {
+      heroMode: 'dominant_goal',
+      fitDecision: 'does_not_fit',
+      previewTopTier: 'weak_match',
+      selectedGoalLabel: 'Sleep',
+      dominantGoalLabel: 'Recovery',
+      goalLensMode: 'multi_goal_summary',
+      allGoalsAnalyzed: true,
+      analyzedGoalCount: 3,
+      surfacedGoalCount: 3,
+      allGoalCoverage: [
+        { goalLabel: 'Recovery', tier: 'strong_match', state: 'strong', source: 'selected_goal_evaluation' },
+        { goalLabel: 'Sleep', tier: 'no_match', state: 'none', source: 'goal_match_scoring_preview' },
+        { goalLabel: 'Energy', tier: 'weak_match', state: 'limited', source: 'goal_match_scoring_preview' },
+      ],
+    },
+    personalInsight: {
+      supportLabels: [],
+      heroMode: 'dominant_goal',
+      fitDecision: 'does_not_fit',
+      selectedGoalLabel: 'Sleep',
+      dominantGoalLabel: 'Recovery',
+      goalLensMode: 'multi_goal_summary',
+      allGoalsAnalyzed: true,
+      analyzedGoalCount: 3,
+      surfacedGoalCount: 3,
+      allGoalCoverage: [
+        { goalLabel: 'Recovery', tier: 'strong_match', state: 'strong', source: 'selected_goal_evaluation' },
+        { goalLabel: 'Sleep', tier: 'no_match', state: 'none', source: 'goal_match_scoring_preview' },
+        { goalLabel: 'Energy', tier: 'weak_match', state: 'limited', source: 'goal_match_scoring_preview' },
+      ],
+    },
+    allergy: {
+      status: 'ready',
+      matchedLabels: [],
+      evidenceTexts: [],
+      summary: 'No allergy-related flags detected.',
+    },
+    dose: {
+      status: 'ready',
+      assessment: 'aligned',
+      productDoseText: '1 softgel daily',
+    },
+    safety: {},
+  });
+
+  assert.equal(result.hero.chip, 'Strong fit for your Recovery goal');
+  assert.equal(result.hero.summary, 'Best aligned with your Recovery goal');
+  assert.equal(result.insights[0]?.collapsedTitle, 'Supports your recovery goal');
+  assert.equal(result.insights.some((row) => row.collapsedTitle === 'How it maps to your goals'), false);
 });
 
 test('dominant-goal moderate mode uses strongest-goal wording without a top-level coverage row', () => {
@@ -385,7 +479,7 @@ test('dominant-goal moderate mode uses strongest-goal wording without a top-leve
     safety: {},
   });
 
-  assert.equal(result.hero.chip, 'Could work for you');
+  assert.equal(result.hero.chip, 'Could work for your Recovery goal');
   assert.equal(result.hero.summary, 'Looks strongest for your Recovery goal');
   assert.equal(result.insights[0]?.key, 'personal_support');
   assert.equal(result.insights[0]?.collapsedTitle, 'Looks most supportive of your recovery goal');
@@ -438,7 +532,7 @@ test('dominant-goal mode falls back to top-level coverage when the strongest goa
     safety: {},
   });
 
-  assert.equal(result.hero.chip, 'Limited fit across your selected goals');
+  assert.equal(result.hero.chip, 'Limited support across your selected goals');
   assert.equal(result.insights[0]?.key, 'goal_coverage');
   assert.equal(result.insights[0]?.collapsedTitle, 'How it maps to your goals');
 });
@@ -489,8 +583,8 @@ test('multi-goal all-some coverage avoids comparing a goal against itself', () =
     safety: {},
   });
 
-  assert.equal(result.hero.chip, 'Mixed fit across your selected goals');
-  assert.equal(result.hero.summary, 'Shows some support across the goals we checked.');
+  assert.equal(result.hero.chip, 'Mixed support across your selected goals');
+  assert.equal(result.hero.summary, 'Supports some goals more than others.');
 });
 
 test('multi-goal full analysis shows top 3 by relevance with expand metadata', () => {
@@ -556,7 +650,7 @@ test('multi-goal full analysis shows top 3 by relevance with expand metadata', (
     safety: {},
   });
 
-  assert.equal(result.hero.chip, 'Mixed fit across your selected goals');
+  assert.equal(result.hero.chip, 'Mixed support across your selected goals');
   assert.equal(result.insights[0]?.subtitle, 'Showing 3 of 5 analyzed goals');
   assert.deepEqual(
     result.insights[0]?.visibleGoalCoverageItems?.map((item) => item.goalLabel),
@@ -612,11 +706,128 @@ test('partial multi-goal analysis uses conservative hero copy and does not expos
     safety: {},
   });
 
-  assert.equal(result.hero.chip, 'Mixed fit for the goals shown');
+  assert.equal(result.hero.chip, 'Mixed support for the goals shown');
   assert.equal(result.hero.summary, 'Looks stronger for Recovery than Energy');
   assert.equal(result.insights[0]?.subtitle, 'Showing 2 goals checked in this view');
   assert.equal(result.insights[0]?.expandActionLabel, undefined);
   assert.equal(result.insights[0]?.canExpandAll, false);
+});
+
+test('single-goal does-not-fit copy stays conservative and avoids strong negative phrasing', () => {
+  const result = buildAnalysisTopSectionPresentation({
+    goal: {
+      fitDecision: 'does_not_fit',
+      selectedGoalLabel: 'Sleep',
+    },
+    personalInsight: {
+      supportLabels: [],
+      fitDecision: 'does_not_fit',
+      selectedGoalLabel: 'Sleep',
+    },
+    allergy: {
+      status: 'ready',
+      matchedLabels: [],
+      evidenceTexts: [],
+      summary: 'No allergy-related flags detected.',
+    },
+    dose: {
+      status: 'ready',
+      assessment: 'unclear',
+      productDoseText: '1 softgel daily',
+    },
+    safety: {},
+  });
+
+  assert.equal(result.hero.chip, 'No clear support for your Sleep goal');
+  assert.equal(result.hero.summary, 'This label does not show clear Sleep support.');
+  assert.equal(result.insights[0]?.collapsedTitle, 'No clear support for your Sleep goal');
+  const flattened = `${result.hero.chip} ${result.hero.summary} ${result.insights.flatMap((row) => [row.collapsedTitle, ...row.expandedBullets]).join(' ')}`;
+  assert.equal(/Not fit your goal|Not suitable for your|Not a strong fit for your/i.test(flattened), false);
+});
+
+test('legacy single-goal payload still renders conservatively when contract metadata is absent', () => {
+  const result = buildAnalysisTopSectionPresentation({
+    goal: {
+      fitDecision: 'does_not_fit',
+      selectedGoalLabel: 'Sleep',
+      previewTopTier: 'weak_match',
+    },
+    personalInsight: {
+      supportLabels: [],
+      fitDecision: 'does_not_fit',
+      selectedGoalLabel: 'Sleep',
+    },
+    allergy: {
+      status: 'ready',
+      matchedLabels: [],
+      evidenceTexts: [],
+      summary: 'No allergy-related flags detected.',
+    },
+    dose: {
+      status: 'ready',
+      assessment: 'unclear',
+      productDoseText: '1 softgel daily',
+    },
+    safety: {},
+  });
+
+  assert.equal(result.hero.chip, 'No clear support for your Sleep goal');
+  assert.equal(result.insights[0]?.collapsedTitle, 'No clear support for your Sleep goal');
+});
+
+test('insufficient-signal multi-goal copy prefers evidence limits over limited-support copy', () => {
+  const result = buildAnalysisTopSectionPresentation({
+    goal: {
+      heroMode: 'insufficient_signal',
+      goalLensMode: 'multi_goal_summary',
+      allGoalsAnalyzed: true,
+      labelCompleteness: 'low',
+      goalNarrativeConfidence: 'low',
+      analyzedGoalCount: 3,
+      surfacedGoalCount: 3,
+      goalCoverage: [
+        { goalLabel: 'Sleep', tier: 'unknown', state: 'unknown', source: 'goal_match_scoring_preview' },
+        { goalLabel: 'Stress Support', tier: 'unknown', state: 'unknown', source: 'goal_match_scoring_preview' },
+        { goalLabel: 'Recovery', tier: 'no_match', state: 'none', source: 'goal_match_scoring_preview' },
+      ],
+    },
+    personalInsight: {
+      supportLabels: [],
+      heroMode: 'insufficient_signal',
+      goalLensMode: 'multi_goal_summary',
+      allGoalsAnalyzed: true,
+      labelCompleteness: 'low',
+      goalNarrativeConfidence: 'low',
+      analyzedGoalCount: 3,
+      surfacedGoalCount: 3,
+      goalCoverage: [
+        { goalLabel: 'Sleep', tier: 'unknown', state: 'unknown', source: 'goal_match_scoring_preview' },
+        { goalLabel: 'Stress Support', tier: 'unknown', state: 'unknown', source: 'goal_match_scoring_preview' },
+        { goalLabel: 'Recovery', tier: 'no_match', state: 'none', source: 'goal_match_scoring_preview' },
+      ],
+    },
+    allergy: {
+      status: 'ready',
+      matchedLabels: [],
+      evidenceTexts: [],
+      summary: 'No allergy-related flags detected.',
+    },
+    dose: {
+      status: 'ready',
+      assessment: 'unknown',
+      productDoseText: null,
+    },
+    safety: {},
+  });
+
+  assert.equal(result.hero.chip, 'Not enough evidence to judge all your goals');
+  assert.equal(result.hero.summary, 'We need more label detail to judge this product well.');
+  assert.equal(result.insights[0]?.key, 'goal_coverage');
+  assert.deepEqual(result.insights[0]?.expandedBullets, [
+    'Sleep: not enough label detail.',
+    'Stress Support: not enough label detail.',
+    'Recovery: no clear support from this label.',
+  ]);
 });
 
 test('goal insight still renders when the selected goal does not match strongly', () => {
@@ -644,9 +855,9 @@ test('goal insight still renders when the selected goal does not match strongly'
     safety: {},
   });
 
-  assert.equal(result.hero.summary, "We don't see strong Immunity support on this label");
+  assert.equal(result.hero.summary, 'This label does not show clear Immunity support.');
   assert.equal(result.insights[0]?.topic, 'support');
-  assert.equal(result.insights[0]?.collapsedTitle, 'Immunity support looks limited');
+  assert.equal(result.insights[0]?.collapsedTitle, 'No clear support for your Immunity goal');
   assert.equal(result.insights[0]?.defaultExpanded, true);
 });
 
