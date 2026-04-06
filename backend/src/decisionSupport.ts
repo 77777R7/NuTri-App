@@ -3049,6 +3049,7 @@ const hasFishOilBreakdown = (digest: FactsDigest): boolean => {
 type OverlayOmega3Facts = {
   hasAny: boolean;
   hasEpaDhaBreakdown: boolean;
+  hasOmega3Total: boolean;
   hasFishOilTotal: boolean;
   entries: Array<{ name: string; dose: string }>;
 };
@@ -3081,6 +3082,7 @@ const parseOverlayOmega3Facts = (overlayClaims: DecisionSupportOverlayClaims | n
   return {
     hasAny: entries.length > 0,
     hasEpaDhaBreakdown: Boolean(epa && dha),
+    hasOmega3Total: Boolean(totalOmega3),
     hasFishOilTotal: Boolean(fishOil),
     entries,
   };
@@ -5514,13 +5516,22 @@ export const compileDecisionSupport = (
   const digestSourceType = normalizeText(params.digest?.sourceType);
   const categoryId = detectCategoryId(params.digest);
   const categoryProfileVersion = CATEGORY_PROFILE_VERSION[categoryId];
+  const overlayOmega3Facts = parseOverlayOmega3Facts(params.overlayClaims);
+  const overlaySuggestedUseLine = parseOverlaySuggestedUseLine(params.overlayClaims);
 
   const missingWarnings = !hasWarningsData(params.digest);
   const missingWarningsAsFixable = missingWarnings && digestSourceType === "web";
   const missingWarningsAsCeiling = missingWarnings && (digestSourceType === "lnhpd" || digestSourceType === "dsld");
 
-  const missingDirectionsDsld = digestSourceType === "dsld" && !hasDirections(params.digest);
-  const missingActiveBreakdown = categoryId === "fish_oil_omega3" && !hasFishOilBreakdown(params.digest);
+  const missingDirectionsDsld =
+    digestSourceType === "dsld"
+    && !hasDirections(params.digest)
+    && !overlaySuggestedUseLine;
+  const missingActiveBreakdown =
+    categoryId === "fish_oil_omega3"
+    && !hasFishOilBreakdown(params.digest)
+    && !overlayOmega3Facts.hasEpaDhaBreakdown
+    && !overlayOmega3Facts.hasOmega3Total;
   const missingFormHighImpact = categoryId === "vitamin_d" && !hasExplicitForm(params.digest);
   const safeScienceSignals = lookupSafeScienceSignals({
     ingredientName: params.digest?.actives?.[0]?.name ?? params.digest?.product?.name ?? null,

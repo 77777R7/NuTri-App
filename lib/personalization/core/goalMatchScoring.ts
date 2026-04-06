@@ -151,6 +151,18 @@ const normalizeFreeformToken = (value: string): string =>
 
 const canonicalizeIngredientKey = (value: string): string => {
   const freeform = normalizeFreeformToken(value);
+  if (
+    freeform === 'epa'
+    || freeform === 'dha'
+    || freeform.includes('omega3')
+    || freeform.includes('fishoil')
+    || freeform.includes('krilloil')
+    || freeform.includes('algaeoil')
+    || freeform.includes('eicosapentaenoic')
+    || freeform.includes('docosahexaenoic')
+  ) {
+    return 'omega_3';
+  }
   return INGREDIENT_KEY_ALIASES[freeform] ?? normalizeTextKey(value);
 };
 

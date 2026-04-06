@@ -54,6 +54,7 @@ import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
 import { Config } from '@/constants/Config';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOnboarding } from '@/contexts/OnboardingContext';
+import { AUTH_DISABLED } from '@/lib/auth-mode';
 import { withAuthHeaders } from '@/lib/auth-token';
 import { useTranslation } from '@/lib/i18n';
 import { lookupFoundationForIngredient, summarizeFoundationHits } from '@/lib/knowledge/foundationLookup';
@@ -3409,7 +3410,7 @@ const AnalysisBundleDashboard: React.FC<{
         [localDecisionSupportRequestProfile],
     );
     const shouldUseLocalDecisionSupport = useMemo(
-        () => !authLoading && !authToken && Boolean(localDecisionSupportHeader),
+        () => !authLoading && Boolean(localDecisionSupportHeader) && (AUTH_DISABLED || !authToken),
         [authLoading, authToken, localDecisionSupportHeader],
     );
     const localDecisionSupportCacheScope = useMemo(() => {

@@ -70,6 +70,105 @@ const buildOmegaDigest = (): FactsDigest => ({
   },
 });
 
+const buildOmegaOfficialOnlyDigest = (): FactsDigest => ({
+  sourceType: 'dsld',
+  identity: {
+    type: 'dsldLabelId',
+    value: 'fixture-sr-omega-official-only',
+    regionTags: ['US'],
+  },
+  product: {
+    brandDisplay: 'Sports Research',
+    name: 'Omega-3 1040 mg Fish Oil 1250 mg',
+    dosageForm: 'Softgel',
+    route: null,
+  },
+  actives: [
+    {
+      name: 'Calories',
+      amount: 15,
+      unit: 'cal',
+      amountText: '15 cal',
+      source: 'dsld',
+      confidence: 1,
+    },
+    {
+      name: 'Total Fat',
+      amount: 1.5,
+      unit: 'g',
+      amountText: '1.5 g',
+      source: 'dsld',
+      confidence: 1,
+    },
+    {
+      name: 'Wild Alaska Pollock Fish Oil Concentrate',
+      amount: 1250,
+      unit: 'mg',
+      amountText: '1250 mg',
+      source: 'dsld',
+      confidence: 1,
+    },
+  ],
+  inactives: ['Fish Gelatin', 'Glycerin'],
+  serving: {
+    servingSize: '1 softgel',
+    servingsPerContainer: 90,
+  },
+  labelDosing: [],
+  warnings: {
+    warnings: [],
+    consultDoctorIf: [],
+    redFlags: [],
+    missingFlag: false,
+  },
+  claims: {
+    labelPurposes: [],
+    webClaims: [],
+  },
+  quality: {
+    isComplete: true,
+    missingFields: [],
+    completenessScore: 100,
+  },
+});
+
+const buildOmegaOverlayClaims = () => ({
+  provider: 'iherb' as const,
+  productId: 'fixture-iherb-sr-omega-3',
+  brandName: 'Sports Research',
+  title: 'Omega-3 1040 mg Fish Oil 1250 mg',
+  link: 'https://example.com/omega-3',
+  imageUrl: null,
+  categories: [],
+  description: null,
+  suggestedUse: 'Take 1 softgel daily with food.',
+  otherIngredients: null,
+  warnings: null,
+  disclaimer: null,
+  nutritionalFacts: [
+    {
+      substancy: 'Wild Alaska Pollock Fish Oil Concentrate',
+      amountPerServing: '1250 mg',
+      dailyValuePercent: null,
+    },
+    {
+      substancy: 'Total Omega-3 Fatty Acids as TG',
+      amountPerServing: '1040 mg',
+      dailyValuePercent: null,
+    },
+    {
+      substancy: 'EPA (Eicosapentaenoic Acid)',
+      amountPerServing: '690 mg',
+      dailyValuePercent: null,
+    },
+    {
+      substancy: 'DHA (Docosahexaenoic Acid)',
+      amountPerServing: '260 mg',
+      dailyValuePercent: null,
+    },
+  ],
+});
+
 const buildMagnesiumTheanineDigest = (): FactsDigest => ({
   sourceType: 'dsld',
   identity: {
@@ -213,6 +312,48 @@ test('compileDecisionSupport uses attached Recovery goal to return a non-pending
   assert.notEqual(compiled.personalizedResultLane.personalInsight.status, 'pending');
   assert.ok(compiled.personalizedResultLane.personalInsight.supports.length > 0);
   assert.match(compiled.personalizedResultLane.goalFit.summary, /Recovery/i);
+});
+
+test('compileDecisionSupport recognizes official fish oil concentrate as an omega-3 recovery signal', () => {
+  const compiled = compileDecisionSupport({
+    digest: buildOmegaOfficialOnlyDigest(),
+    factsDigestHash: 'fixture-sr-omega-official-only-goal-fit',
+    viewMode: 'details',
+    personalizationContext: buildPersonalizationContext(),
+  });
+
+  assert.equal(compiled.personalizedResultLane.goalFit.status, 'ready');
+  assert.equal(compiled.personalizedResultLane.goalFit.selectedGoalKey, 'recovery');
+  assert.notEqual(compiled.personalizedResultLane.goalFit.fitTier, 'unknown');
+  assert.notEqual(compiled.personalizedResultLane.goalFit.fitTier, 'no_match');
+  assert.equal(compiled.personalizedResultLane.goalFit.heroMode, 'single_goal');
+  assert.match(compiled.personalizedResultLane.goalFit.summary, /Recovery/i);
+});
+
+test('compileDecisionSupport clears omega-3 breakdown and directions blockers when overlay supplies them', () => {
+  const compiled = compileDecisionSupport({
+    digest: buildOmegaOfficialOnlyDigest(),
+    factsDigestHash: 'fixture-sr-omega-overlay-clears-blockers',
+    viewMode: 'details',
+    personalizationContext: buildPersonalizationContext({
+      prioritizedGoals: ['energy', 'immunity', 'recovery', 'focus'],
+      selectedGoalKey: 'recovery',
+    }),
+    overlayClaims: buildOmegaOverlayClaims(),
+  });
+
+  assert.equal(
+    compiled.blockers.some((item) => item.code === 'missing_active_breakdown'),
+    false,
+  );
+  assert.equal(
+    compiled.blockers.some((item) => item.code === 'missing_directions_dsld'),
+    false,
+  );
+  assert.equal(compiled.personalizedResultLane.goalFit.status, 'ready');
+  assert.equal(compiled.personalizedResultLane.goalFit.heroMode, 'dominant_goal');
+  assert.equal(compiled.personalizedResultLane.goalFit.dominantGoalKey, 'recovery');
+  assert.notEqual(compiled.personalizedResultLane.goalFit.goalCoverage?.find((entry) => entry.goalKey === 'recovery')?.state, 'none');
 });
 
 test('compileDecisionSupport returns multi-goal coverage in user-selected order with no-match states included', () => {
