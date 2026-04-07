@@ -3,6 +3,7 @@ import { test } from "node:test";
 
 import {
   normalizeIherbSupplementFactsRows,
+  normalizeIherbSupplementFactsRowsWithTitleFallback,
   selectScienceIngredientRows,
 } from "../dist/iherbOverlayIngredients.js";
 
@@ -105,6 +106,44 @@ test("normalizeIherbSupplementFactsRows splits concatenated proprietary blend me
     {
       name: "Oregano (Origanum vulgare) Leaf Extract",
       dose: null,
+    },
+  ]);
+});
+
+test("normalizeIherbSupplementFactsRows keeps non-blend actives when complex only appears in parentheses", () => {
+  const rows = normalizeIherbSupplementFactsRows([
+    {
+      substancy: "Grape Seed Phytosome † (Vitis vinifera extract / Phospholipid complex)",
+      amountPerServing: "100 mg",
+      dailyValuePercent: "*",
+    },
+  ]);
+
+  assert.deepEqual(rows, [
+    {
+      name: "Grape Seed Phytosome † (Vitis vinifera extract / Phospholipid complex)",
+      dose: "100 mg",
+    },
+  ]);
+});
+
+test("normalizeIherbSupplementFactsRowsWithTitleFallback recovers simple header-only supplement titles", () => {
+  const rows = normalizeIherbSupplementFactsRowsWithTitleFallback({
+    rows: [
+      {
+        substancy: "",
+        amountPerServing: "Amount Per Serving",
+        dailyValuePercent: "%Daily Value",
+      },
+    ],
+    title: "Bariatric Advantage, Biotin, 5,000 mcg, 90 Capsules",
+    brandName: "Bariatric Advantage",
+  });
+
+  assert.deepEqual(rows, [
+    {
+      name: "Biotin",
+      dose: "5,000 mcg",
     },
   ]);
 });

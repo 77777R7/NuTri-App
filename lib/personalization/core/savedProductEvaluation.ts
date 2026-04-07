@@ -163,6 +163,7 @@ const evaluateSavedProduct = (input: {
 }): SavedProductEvaluation => {
   const coverage = evaluateProductCoverageGate({
     factsStatus: input.savedProduct.factsStatus,
+    goalScoringBlockedReason: input.savedProduct.goalScoringBlockedReason ?? null,
   });
   const typeKeys = getTypeKeys(input.savedProduct);
 

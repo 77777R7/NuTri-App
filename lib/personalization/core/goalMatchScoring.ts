@@ -46,6 +46,7 @@ export type ProductIngredientLikeInput = {
   form?: string | null;
   disclosureQuality?: DisclosureQuality | null;
   proprietaryBlend?: boolean | null;
+  aggregateFormula?: boolean | null;
   evidence?: GoalEvidenceLikeInput[] | null;
 };
 
@@ -297,7 +298,7 @@ const resolveEvidenceForGoal = (
 
 const resolveIngredientAmount = (ingredient: ProductIngredientLikeInput): number | null => {
   if (ingredient.amountUnknown) return null;
-  return typeof ingredient.amount === 'number' && ingredient.amount > 0 ? ingredient.amount : null;
+  return typeof ingredient.amount === 'number' && ingredient.amount >= 0 ? ingredient.amount : null;
 };
 
 const resolveIngredientUnit = (ingredient: ProductIngredientLikeInput): 'mcg' | 'mg' | 'g' | null =>
@@ -331,7 +332,7 @@ const evaluateDose = (
     return { status: 'not_applicable' };
   }
 
-  if (typeof amount !== 'number' || amount <= 0 || !unit) {
+  if (typeof amount !== 'number' || amount < 0 || !unit) {
     return { status: 'uncertain' };
   }
 
@@ -386,6 +387,16 @@ const findIngredientEdges = (
   return goalEdges.filter((edge) =>
     tokens.some((token) => tokenMatchesIngredientKey(token, canonicalizeIngredientKey(edge.ingredientKey))));
 };
+
+const hasGoalRelevantMissingDetail = (
+  goalKey: GoalKey,
+  ingredients: ProductIngredientLikeInput[],
+): boolean =>
+  ingredients.some((ingredient) => {
+    if (resolveIngredientAmount(ingredient) != null) return false;
+    if (resolveEvidenceForGoal(ingredient, goalKey)) return true;
+    return findIngredientEdges(goalKey, ingredient).length > 0;
+  });
 
 const resolveTierCapFromEdge = (
   edge: IngredientGoalEdgeV2,
@@ -734,7 +745,7 @@ export const scoreProductGoalMatches = (input: ProductGoalMatchScoringInput): Pr
     );
 
     if (candidates.length === 0) {
-      return buildNoMatch(goalKey, ingredients.some((ingredient) => resolveIngredientAmount(ingredient) == null));
+      return buildNoMatch(goalKey, hasGoalRelevantMissingDetail(goalKey, ingredients));
     }
 
     const sortedCandidates = [...candidates].sort(sortCandidates);
@@ -782,6 +793,7 @@ export const goalMatchScoringInternals = {
   normalizeTextKey,
   normalizeUnit,
   evaluateDose,
+  hasGoalRelevantMissingDetail,
   mapNarrativeLabelCompleteness,
   normalizeGoalNarrativeFitLevel,
   scoreToTier,

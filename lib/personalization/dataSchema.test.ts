@@ -16,6 +16,7 @@ import featureFlags from '@/data/personalization/feature_flags.v1.json';
 import goalCatalog from '@/data/personalization/goal_catalog.v1.json';
 import goalIngredientMap from '@/data/personalization/goal_ingredient_map.v1.json';
 import goalIngredientMapV2 from '@/data/personalization/goal_ingredient_map.v2.json';
+import nonSupplementGoalGating from '@/data/personalization/non_supplement_goal_gating.v1.json';
 import safetyRules from '@/data/personalization/safety_rules.v1.json';
 import activityGoalMapSchema from '@/data/personalization/schemas/activity_goal_map.schema.json';
 import blockerBehaviorRulesSchema from '@/data/personalization/schemas/blocker_behavior_rules.schema.json';
@@ -26,6 +27,7 @@ import featureFlagsSchema from '@/data/personalization/schemas/feature_flags.sch
 import goalCatalogSchema from '@/data/personalization/schemas/goal_catalog.schema.json';
 import goalIngredientMapSchema from '@/data/personalization/schemas/goal_ingredient_map.schema.json';
 import goalIngredientMapV2Schema from '@/data/personalization/schemas/goal_ingredient_map.v2.schema.json';
+import nonSupplementGoalGatingSchema from '@/data/personalization/schemas/non_supplement_goal_gating.v1.schema.json';
 import safetyRulesSchema from '@/data/personalization/schemas/safety_rules.schema.json';
 import {
   getIngredientGoalProvenance,
@@ -100,7 +102,7 @@ type JsonSchema = {
   required?: string[];
   properties?: Record<string, JsonSchema>;
   items?: JsonSchema;
-  additionalProperties?: boolean;
+  additionalProperties?: boolean | JsonSchema;
   minItems?: number;
   uniqueItems?: boolean;
   minimum?: number;
@@ -177,6 +179,9 @@ const validateSchema = (schema: JsonSchema, value: unknown, path = '$'): void =>
         if (schema.additionalProperties === false) {
           assert.fail(`${path}.${key} is not allowed by schema`);
         }
+        if (isPlainObject(schema.additionalProperties)) {
+          validateSchema(schema.additionalProperties as JsonSchema, entry, `${path}.${key}`);
+        }
         return;
       }
 
@@ -191,6 +196,7 @@ test('personalization phase 0 data files satisfy the checked-in JSON schemas', (
     { name: 'goalIngredientMap', data: goalIngredientMap, schema: goalIngredientMapSchema },
     { name: 'goalIngredientMapV2', data: goalIngredientMapV2, schema: goalIngredientMapV2Schema },
     { name: 'evidenceGraph', data: evidenceGraph, schema: evidenceGraphSchema },
+    { name: 'nonSupplementGoalGating', data: nonSupplementGoalGating, schema: nonSupplementGoalGatingSchema },
     { name: 'blockerBehaviorRules', data: blockerBehaviorRules, schema: blockerBehaviorRulesSchema },
     { name: 'dietReviewLanes', data: dietReviewLanes, schema: dietReviewLanesSchema },
     { name: 'activityGoalMap', data: activityGoalMap, schema: activityGoalMapSchema },

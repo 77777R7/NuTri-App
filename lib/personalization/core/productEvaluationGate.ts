@@ -6,6 +6,7 @@ import { buildReason, REASON_CODES, RULE_IDS } from './reasonCodes';
 
 export type ProductEvaluationGateInput = {
   factsStatus?: SavedProductFactsStatus | null;
+  goalScoringBlockedReason?: 'out_of_scope_non_supplement' | null;
 };
 
 const normalizeFactsStatus = (
@@ -22,6 +23,24 @@ export const evaluateProductCoverageGate = (
   input: ProductEvaluationGateInput,
 ): ProductCoverageDecision => {
   const factsStatus = normalizeFactsStatus(input.factsStatus);
+
+  if (input.goalScoringBlockedReason === 'out_of_scope_non_supplement') {
+    return {
+      factsStatus,
+      status: 'not_enough_structured_data',
+      reasons: [
+        buildReason(
+          REASON_CODES.productOutOfScopeNonSupplement,
+          RULE_IDS.productOutOfScopeNonSupplement,
+          'derived',
+          {
+            factsStatus,
+            goalScoringBlockedReason: input.goalScoringBlockedReason,
+          },
+        ),
+      ],
+    };
+  }
 
   if (factsStatus === 'full') {
     return {

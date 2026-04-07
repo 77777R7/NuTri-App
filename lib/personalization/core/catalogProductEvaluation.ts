@@ -17,12 +17,15 @@ import * as eligibilityPolicyModule from "./eligibilityPolicy.ts";
 import * as goalMatchScoringModule from "./goalMatchScoring.ts";
 import type { ProductIngredientLikeInput } from "./goalMatchScoring.ts";
 import * as goalFitCardBuilderModule from "./goalFitCardBuilder.ts";
+import { assessNonSupplementGoalGate } from "./nonSupplementGoalGating.ts";
 import * as savedProductEvaluationModule from "./savedProductEvaluation.ts";
 
 export type CatalogOverlayIngredientRow = {
   name: string;
   dose: string | null;
   form?: string | null;
+  proprietaryBlendSource?: boolean;
+  aggregateFormula?: boolean;
 };
 
 export type CatalogProductEvaluationInput = {
@@ -32,6 +35,7 @@ export type CatalogProductEvaluationInput = {
   sourceProductId?: string | null;
   barcode?: string | null;
   externalUrl?: string | null;
+  sourceZipPath?: string | null;
   title?: string | null;
   brandName?: string | null;
   dosageText?: string | null;
@@ -58,6 +62,7 @@ export type CatalogPreparedProduct = {
   sourceProductId?: string | null;
   barcode?: string | null;
   externalUrl?: string | null;
+  sourceZipPath?: string | null;
   title?: string;
   brandName?: string;
   dosageText?: string;
@@ -69,6 +74,7 @@ export type CatalogPreparedProduct = {
   typeKeys: SupplementTypeKey[];
   ingredientInputs: ProductIngredientLikeInput[];
   savedProductSeed: SavedProductEvaluationInput;
+  goalScoringBlockedReason?: "out_of_scope_non_supplement" | null;
 };
 
 export type CatalogPreparedProductEvaluationInput = {
@@ -114,15 +120,48 @@ if (typeof evaluateSavedProducts !== "function") {
   throw new Error("[catalogProductEvaluation] Failed to load evaluateSavedProducts");
 }
 
-const PROPRIETARY_BLEND_PATTERN = /\b(blend|complex|matrix|formula)\b/i;
+const PROPRIETARY_BLEND_EXPLICIT_PATTERN = /\bproprietary\s+(blend|complex|matrix|formula)\b/i;
+const PROPRIETARY_BLEND_GENERIC_NAME_PATTERN =
+  /\b(probiotic|bacteriophage|digestive|enzyme|enzymes|herbal|botanical|flora|microbiome|female hormone|male performance|greens|reds|superfood|pre-?workout)\s+(blend|complex|matrix|formula)\b/i;
+
+const isLikelyProprietaryBlendName = (value: string): boolean => {
+  const normalized = value.trim().toLowerCase();
+  if (!normalized) return false;
+  if (PROPRIETARY_BLEND_EXPLICIT_PATTERN.test(normalized)) return true;
+  if (/^blend of\b/i.test(normalized)) return true;
+  if (PROPRIETARY_BLEND_GENERIC_NAME_PATTERN.test(normalized)) return true;
+  if (/^(blend|complex|matrix|formula)\b/i.test(normalized)) return true;
+  return false;
+};
 
 const normalizeParsedUnit = (value: string): string | null => {
-  const normalized = value.trim().toLowerCase();
+  const normalized = value.trim().toLowerCase().replace(/['’]/g, "");
   if (!normalized) return null;
   if (normalized === "μg" || normalized === "µg" || normalized === "ug") return "mcg";
   if (normalized === "iu" || normalized === "ui") return "iu";
   if (normalized === "cfu") return "cfu";
   if (normalized === "spu") return "spu";
+  if (normalized === "pfu" || normalized === "pfus") return "pfu";
+  if (normalized === "fu" || normalized === "fus") return "fu";
+  if (
+    normalized === "hut" ||
+    normalized === "pu" ||
+    normalized === "alu" ||
+    normalized === "fip" ||
+    normalized === "du" ||
+    normalized === "lu" ||
+    normalized === "cu" ||
+    normalized === "agu" ||
+    normalized === "hcu" ||
+    normalized === "pgu" ||
+    normalized === "sapu" ||
+    normalized === "fcc"
+  ) {
+    return normalized;
+  }
+  if (normalized === "pfu" || normalized === "fu") {
+    return normalized;
+  }
   if (normalized === "ml" || normalized === "milliliter" || normalized === "milliliters") return "ml";
   if (normalized === "mg" || normalized === "g" || normalized === "mcg") return normalized;
   return null;
@@ -145,7 +184,25 @@ const parseAmountText = (value?: string | null): { amount: number | null; unit: 
     };
   }
 
-  const match = trimmed.match(/(-?\d[\d,]*(?:\.\d+)?)\s*(mcg|μg|µg|ug|mg|g|iu|ui|cfu|spu|ml)\b/i);
+  const organismScaledMatch = trimmed.match(
+    /(-?\d[\d,]*(?:\.\d+)?)\s*(trillion|billion|million)\s*organisms?\b/i,
+  );
+  if (organismScaledMatch) {
+    const amount = Number.parseFloat(organismScaledMatch[1].replace(/,/g, ""));
+    if (!Number.isFinite(amount)) {
+      return { amount: null, unit: null };
+    }
+    const scale = organismScaledMatch[2]?.toLowerCase();
+    const multiplier = scale === "trillion" ? 1e12 : scale === "billion" ? 1e9 : 1e6;
+    return {
+      amount: amount * multiplier,
+      unit: "cfu",
+    };
+  }
+
+  const match = trimmed.match(
+    /(-?\d[\d,]*(?:\.\d+)?)\s*(mcg|μg|µg|ug|mg|g|iu|ui|cfu|spu|ml|pfu(?:['’]?s)?|fu(?:['’]?s)?|hut|pu|alu|fip|du|lu|cu|agu|hcu|pgu|sapu|fcc)\b/i,
+  );
   if (!match) return { amount: null, unit: null };
 
   const amount = Number.parseFloat(match[1].replace(/,/g, ""));
@@ -240,8 +297,10 @@ const buildIngredientInputs = (
       unit: parsedDose.unit,
       form: row.form ?? null,
       formLabel: row.form ?? null,
-      disclosureQuality: parsedDose.amount != null ? "medium" : "low",
-      proprietaryBlend: PROPRIETARY_BLEND_PATTERN.test(name),
+      disclosureQuality:
+        parsedDose.amount != null && !row.aggregateFormula && !row.proprietaryBlendSource ? "medium" : "low",
+      proprietaryBlend: Boolean(row.proprietaryBlendSource) || isLikelyProprietaryBlendName(name),
+      ...(row.aggregateFormula ? { aggregateFormula: true } : {}),
     });
   }
 
@@ -256,7 +315,7 @@ const deriveFactsStatus = (ingredients: ProductIngredientLikeInput[]): SavedProd
       ingredient.amount > 0 &&
       typeof ingredient.unit === "string" &&
       ingredient.unit.length > 0 &&
-      ingredient.proprietaryBlend !== true,
+      (ingredient.proprietaryBlend !== true || ingredient.aggregateFormula === true),
   );
   return hasStructuredDose ? "full" : "partial";
 };
@@ -268,6 +327,11 @@ export const prepareCatalogProduct = (input: CatalogPreparedProductInput): Catal
   );
   const ingredientInputs = buildIngredientInputs(overlayIngredients);
   const factsStatus = deriveFactsStatus(ingredientInputs);
+  const goalScoringGate = assessNonSupplementGoalGate({
+    title: input.title,
+    brandName: input.brandName,
+    sourceZipPath: input.sourceZipPath ?? null,
+  });
   const typeKeys = deriveTypeKeysFromContent({
     title: input.title,
     brandName: input.brandName,
@@ -287,6 +351,7 @@ export const prepareCatalogProduct = (input: CatalogPreparedProductInput): Catal
     sourceProductId: input.sourceProductId ?? null,
     barcode: input.barcode ?? null,
     externalUrl: input.externalUrl ?? null,
+    sourceZipPath: input.sourceZipPath ?? null,
     title: normalizeDisplayValue(input.title),
     brandName: normalizeDisplayValue(input.brandName),
     dosageText: normalizeDisplayValue(dosageText),
@@ -300,6 +365,7 @@ export const prepareCatalogProduct = (input: CatalogPreparedProductInput): Catal
     savedProductSeed: {
       productId: input.productId,
       factsStatus,
+      ...(goalScoringGate.reasonCode ? { goalScoringBlockedReason: goalScoringGate.reasonCode } : {}),
       ...(typeKeys.length > 0 ? { typeKeys } : {}),
       display: {
         ...(normalizeDisplayValue(input.title) ? { title: normalizeDisplayValue(input.title) } : {}),
@@ -310,6 +376,7 @@ export const prepareCatalogProduct = (input: CatalogPreparedProductInput): Catal
         ...(normalizeDisplayValue(input.imageUrl) ? { imageUrl: normalizeDisplayValue(input.imageUrl) } : {}),
       },
     },
+    ...(goalScoringGate.reasonCode ? { goalScoringBlockedReason: goalScoringGate.reasonCode } : {}),
   };
 };
 
@@ -331,9 +398,10 @@ const buildSavedProductInput = (input: {
   const ingredientInputs = preparedProduct.ingredientInputs;
   const factsStatus = preparedProduct.factsStatus;
   const typeKeys = preparedProduct.typeKeys;
+  const goalScoringBlockedReason = preparedProduct.goalScoringBlockedReason ?? null;
 
   const productGoalMatches =
-    factsStatus === "full"
+    factsStatus === "full" && !goalScoringBlockedReason
       ? scoreProductGoalMatches({
           goals: [input.goalKey],
           ingredients: ingredientInputs,
@@ -347,7 +415,7 @@ const buildSavedProductInput = (input: {
   );
 
   const eligibility =
-    factsStatus === "full"
+    factsStatus === "full" && !goalScoringBlockedReason
       ? evaluateEligibilityPolicy({
           productGoalMatches,
           duplicateRisk: input.duplicateRisk,
@@ -362,6 +430,7 @@ const buildSavedProductInput = (input: {
   return {
     savedProduct: {
       ...preparedProduct.savedProductSeed,
+      ...(goalScoringBlockedReason ? { goalScoringBlockedReason } : {}),
       ...(productGoalMatches.length > 0 ? { productGoalMatches } : {}),
       ...(eligibility ? { eligibility } : {}),
     },
@@ -406,7 +475,7 @@ export const evaluateCatalogProduct = (
 export const evaluatePreparedCatalogProduct = (
   input: CatalogPreparedProductEvaluationInput,
 ): CatalogProductEvaluationResult => {
-  const { savedProduct, factsStatus, typeKeys } = buildSavedProductInput({
+  const { savedProduct, typeKeys } = buildSavedProductInput({
     preparedProduct: input.preparedProduct,
     goalKey: input.goalKey,
     duplicateRisk: input.duplicateRisk,
@@ -453,7 +522,7 @@ export const evaluatePreparedCatalogProduct = (
       : undefined;
 
   return {
-    coverageStatus: factsStatus === "full" ? "coverage_ready" : "not_enough_structured_data",
+    coverageStatus: savedProductEvaluation.coverage.status,
     savedProductEvaluation,
     goalFitCard,
     ...(candidate ? { candidate } : {}),

@@ -26,3 +26,13 @@ test('evaluateProductCoverageGate only marks full factsStatus as coverage_ready'
     'not_enough_structured_data',
   );
 });
+
+test('evaluateProductCoverageGate blocks goal scoring for out-of-scope non-supplement products', () => {
+  const result = evaluateProductCoverageGate({
+    factsStatus: 'full',
+    goalScoringBlockedReason: 'out_of_scope_non_supplement',
+  });
+
+  assert.equal(result.status, 'not_enough_structured_data');
+  assert.equal(result.reasons[0]?.code, 'personalization.product_evaluation.out_of_scope_non_supplement');
+});

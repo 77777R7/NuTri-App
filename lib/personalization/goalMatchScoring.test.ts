@@ -93,6 +93,73 @@ test('scoreProductGoalMatches downgrades below-floor evidence conservatively', (
   assert.ok(matches[0]?.reasons.some((reason) => reason.code === 'dose_below_effective_floor'));
 });
 
+test('scoreProductGoalMatches treats explicit zero dose as below floor, not missing detail', () => {
+  const matches = scoreProductGoalMatches({
+    goals: ['energy'],
+    ingredients: [
+      {
+        ingredientLabel: 'Vitamin B12',
+        amount: 0,
+        unit: 'mcg',
+        evidence: [
+          {
+            goal: 'Energy',
+            evidence_grade: 'A',
+            min_effective_dose: 250,
+            unit: 'mcg',
+            audit_status: 'verified',
+          },
+        ],
+      },
+    ],
+  });
+
+  assert.equal(matches[0]?.tier, 'weak_match');
+  assert.ok(matches[0]?.reasons.some((reason) => reason.code === 'dose_below_effective_floor'));
+  assert.ok(!matches[0]?.reasons.some((reason) => reason.code === 'dose_not_disclosed'));
+  assert.ok(
+    !matches[0]?.reasons.some((reason) => reason.code === 'goal_support_not_enough_label_detail'),
+  );
+  assert.equal(
+    goalMatchScoringInternals.normalizeGoalNarrativeFitLevel({
+      tier: matches[0]?.tier ?? 'no_match',
+      reasonCodes: matches[0]?.reasons.map((reason) => reason.code) ?? [],
+      coverageStatus: 'coverage_ready',
+      labelCompleteness: 'full',
+    }),
+    'limited',
+  );
+});
+
+test('scoreProductGoalMatches does not turn unrelated missing doses into broad unknown lanes', () => {
+  const matches = scoreProductGoalMatches({
+    goals: ['focus'],
+    ingredients: [
+      {
+        ingredientLabel: 'Vitamin D3',
+        amount: null,
+        amountUnknown: true,
+        unit: 'mcg',
+      },
+    ],
+  });
+
+  assert.equal(matches[0]?.tier, 'no_match');
+  assert.ok(matches[0]?.reasons.some((reason) => reason.code === 'no_goal_support_detected'));
+  assert.ok(
+    !matches[0]?.reasons.some((reason) => reason.code === 'goal_support_not_enough_label_detail'),
+  );
+  assert.equal(
+    goalMatchScoringInternals.normalizeGoalNarrativeFitLevel({
+      tier: matches[0]?.tier ?? 'no_match',
+      reasonCodes: matches[0]?.reasons.map((reason) => reason.code) ?? [],
+      coverageStatus: 'coverage_ready',
+      labelCompleteness: 'partial',
+    }),
+    'none',
+  );
+});
+
 test('scoreProductGoalMatches caps strong matches when disclosure is low or proprietary blend detail is weak', () => {
   const matches = scoreProductGoalMatches({
     goals: ['focus'],
