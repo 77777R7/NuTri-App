@@ -2621,16 +2621,6 @@ const buildPersonalizedResultLane = (params: {
     dominantGoalKey,
     secondaryGoalKey,
   });
-  const goalCoverageSummary = buildGoalCoverageSummary({
-    selectedGoalKeys: allSelectedGoalKeys,
-    goalCoverage: allGoalCoverage,
-    selectedGoalCount,
-    analyzedGoalCount,
-    surfacedGoalCount,
-    allGoalsAnalyzed,
-    dominantGoalKey,
-    secondaryGoalKey,
-  });
   const goalLensMode: DecisionSupportGoalLensMode =
     allSelectedGoalKeys.length > 1 && allGoalCoverage.length > 1
       ? "multi_goal_summary"
