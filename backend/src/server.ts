@@ -10166,11 +10166,15 @@ const snapshotPayloadUsesIherbOverlaySupport = (
 const ingredientOverviewBodySchema = z.object({
   barcode: z.string().trim().min(1),
   decisionDigest: z.string().trim().min(1).nullable().optional(),
+  authoritativeIdentityType: z.string().trim().min(1).nullable().optional(),
+  authoritativeIdentityValue: z.string().trim().min(1).nullable().optional(),
 }).strict();
 
 const scientificBackgroundBodySchema = z.object({
   barcode: z.string().trim().min(1),
   decisionDigest: z.string().trim().min(1).nullable().optional(),
+  authoritativeIdentityType: z.string().trim().min(1).nullable().optional(),
+  authoritativeIdentityValue: z.string().trim().min(1).nullable().optional(),
   selectedIngredientName: z.string().trim().min(1),
 }).strict();
 
