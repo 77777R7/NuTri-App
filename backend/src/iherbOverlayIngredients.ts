@@ -726,6 +726,7 @@ const deriveSupplementalBlendRows = (
   const normalized = normalizePunctuationSpacing(String(name ?? ""));
   if (!normalized) return [];
   const liveCultureDose = extractLiveCultureDose(normalized) ?? extractLiveCultureDose(dose);
+  const cleanedPrimaryLabel = cleanOverlayIngredientName(normalized);
 
   const tail = extractBlendTail(normalized);
   if (!tail) {
@@ -754,12 +755,20 @@ const deriveSupplementalBlendRows = (
 
   const next: { name: string; dose: string | null }[] = [];
   const aggregateLabel = deriveBlendAggregateLabel(normalized);
+  const shouldSuppressExplicitProbioticBlendAggregate =
+    aggregateLabel === "Probiotics"
+    && Boolean(cleanedPrimaryLabel)
+    && /\bprobiotic(s)?\b/i.test(cleanedPrimaryLabel ?? "")
+    && BLEND_LABEL_PATTERN.test(cleanedPrimaryLabel ?? "")
+    && normalizeMatchKey(cleanedPrimaryLabel ?? "") !== "proprietaryblend";
 
   if (aggregateLabel) {
-    next.push({
-      name: aggregateLabel,
-      dose: aggregateLabel === "Probiotics" && liveCultureDose ? liveCultureDose : dose,
-    });
+    if (!shouldSuppressExplicitProbioticBlendAggregate) {
+      next.push({
+        name: aggregateLabel,
+        dose: aggregateLabel === "Probiotics" && liveCultureDose ? liveCultureDose : dose,
+      });
+    }
   } else if (liveCultureDose) {
     next.push({
       name: "Probiotics",
