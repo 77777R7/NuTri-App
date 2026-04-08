@@ -10,15 +10,17 @@ test('decision support prefers the fetched digest over a stale bundle digest bef
 
   assert.match(source, /const fetchedDecisionDigest =/);
   assert.match(source, /fetchedPayload && !isDecisionPayloadExplicitlyStale\(fetchedPayload\)/);
-  assert.match(source, /const currentDecisionDigest =\s*fetchedDecisionDigest/);
+  assert.match(source, /const bundleDecisionDigest =/);
+  assert.match(source, /const currentDecisionDigest =\s*bundleDecisionDigest \|\| fetchedDecisionDigest/);
   assert.match(source, /const resolvedDecisionDigest =/);
   assert.match(source, /getDecisionPayloadDigest\(objectPayload\)/);
   assert.match(source, /pickFreshDecisionPayloadForFacts\(\s*currentFactsDigestHash,\s*resolvedDecisionDigest,/s);
 });
 
-test('decision support keeps local personalization enabled in no-auth builds even if a stale auth token exists', async () => {
+test('decision support keeps local personalization enabled for scan requests whenever local profile signals exist', async () => {
   const source = await readFile(DASHBOARD_PATH, 'utf8');
 
-  assert.match(source, /AUTH_DISABLED/);
-  assert.match(source, /Boolean\(localDecisionSupportHeader\) && \(AUTH_DISABLED \|\| !authToken\)/);
+  assert.match(source, /Boolean\(localDecisionSupportHeader\)/);
+  assert.match(source, /const usingLocalDecisionSupport = Boolean\(localDecisionSupportHeader\)/);
+  assert.match(source, /headers\['x-local-personalization'\] = localDecisionSupportHeader/);
 });

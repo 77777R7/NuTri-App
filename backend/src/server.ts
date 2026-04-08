@@ -78,6 +78,10 @@ import {
   type DecisionSupportOverlayClaims,
   type DecisionSupportViewMode,
 } from "./decisionSupport.js";
+import {
+  mergeDecisionSupportProfileRows,
+  type DecisionSupportProfileRow,
+} from "./decisionSupportProfileMerge.js";
 import { applyPatchShadowToFactsDigest, getPatchShadowLookup, getPatchShadowStatus } from "./patchShadowOverlay.js";
 import { sanitizeFactsDTO } from "./insights/dto.js";
 import {
@@ -10341,24 +10345,7 @@ const buildDecisionSupportAuthorityBundle = async (
   };
 };
 
-type UserDecisionSupportProfileRow = {
-  age: number | null;
-  age_range: string | null;
-  gender: string | null;
-  sex: string | null;
-  dietary_preference: string | null;
-  dietary_preferences: string[] | null;
-  activity_level: string | null;
-  supplement_experience: string | null;
-  preferred_types: string[] | null;
-  adherence_blocker: string | null;
-  location: string | null;
-  location_country: string | null;
-  location_city: string | null;
-  health_goals: string[] | null;
-  allergy_flags: string[] | null;
-  ingredient_restrictions: string[] | null;
-};
+type UserDecisionSupportProfileRow = DecisionSupportProfileRow;
 
 type ProductAllergenFlagsLookupRow = {
   source: string;
@@ -10732,8 +10719,13 @@ app.get("/api/decision-support/v1", verifySupabaseToken, async (req: Request, re
       fetchProductAllergenFlagsForDecisionSupport(patched.digest, barcodeGtin14),
       userId ? fetchRemoteStackOverlapInputs(userId) : Promise.resolve(null),
     ]);
-    const effectiveUserProfile =
-      userProfile ?? buildUserDecisionSupportProfileRowFromLocalProfile(localDecisionSupportContext?.profile);
+    const localUserProfile = buildUserDecisionSupportProfileRowFromLocalProfile(
+      localDecisionSupportContext?.profile,
+    );
+    const effectiveUserProfile = mergeDecisionSupportProfileRows({
+      remoteProfile: userProfile,
+      localProfile: localUserProfile,
+    });
     const allergyContext = buildDecisionSupportAllergyContext({
       userProfile: effectiveUserProfile,
       productFlags,

@@ -54,7 +54,6 @@ import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
 import { Config } from '@/constants/Config';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOnboarding } from '@/contexts/OnboardingContext';
-import { AUTH_DISABLED } from '@/lib/auth-mode';
 import { withAuthHeaders } from '@/lib/auth-token';
 import { useTranslation } from '@/lib/i18n';
 import { lookupFoundationForIngredient, summarizeFoundationHits } from '@/lib/knowledge/foundationLookup';
@@ -3570,8 +3569,8 @@ const AnalysisBundleDashboard: React.FC<{
         [localDecisionSupportRequestProfile],
     );
     const shouldUseLocalDecisionSupport = useMemo(
-        () => !authLoading && Boolean(localDecisionSupportHeader) && (AUTH_DISABLED || !authToken),
-        [authLoading, authToken, localDecisionSupportHeader],
+        () => !authLoading && Boolean(localDecisionSupportHeader),
+        [authLoading, localDecisionSupportHeader],
     );
     const localDecisionSupportCacheScope = useMemo(() => {
         if (authLoading || onboardingLoading) return 'local_profile_loading';
@@ -4121,7 +4120,7 @@ const AnalysisBundleDashboard: React.FC<{
                     params.set('authoritativeIdentityValue', authoritativeIdentityValue);
                 }
                 const headers = await withAuthHeaders();
-                const usingLocalDecisionSupport = !headers.Authorization && Boolean(localDecisionSupportHeader);
+                const usingLocalDecisionSupport = Boolean(localDecisionSupportHeader);
                 if (digestParam) params.set('digest', digestParam);
                 if (normalizedSessionIdRaw) params.set('scanSessionId', normalizedSessionIdRaw);
                 if (decisionInputsHashParam) params.set('decisionInputsHash', decisionInputsHashParam);
