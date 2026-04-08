@@ -50,8 +50,10 @@ test('scan trust contract preserves the sectioned analysis shell and deep dive c
   assert.ok(dashboardSource.includes("comparisonStanding?.status === 'ready'"));
   assert.ok(dashboardSource.includes('canonicalIdentityConfidenceHigh'));
   assert.ok(dashboardSource.includes('resolveCanonicalBarcodeFromBundleMeta'));
-  assert.ok(dashboardSource.includes("authoritativeIdentityType: bundleState.meta.authoritativeIdentity?.type ?? null"));
-  assert.ok(dashboardSource.includes("authoritativeIdentityValue: bundleState.meta.authoritativeIdentity?.value ?? null"));
+  assert.ok(dashboardSource.includes('const authoritativeIdentityType ='));
+  assert.ok(dashboardSource.includes("typeof bundleState.meta.authoritativeIdentity?.type === 'string'"));
+  assert.ok(dashboardSource.includes('const authoritativeIdentityValue ='));
+  assert.ok(dashboardSource.includes("typeof bundleState.meta.authoritativeIdentity?.value === 'string'"));
   assert.ok(dashboardSource.includes('canonicalBarcodeGtin14'));
   assert.equal(dashboardSource.includes('styles.scoreV2Eyebrow'), false);
   assert.ok(dashboardSource.includes("params.set('productName', decisionSupportProductName)"));
@@ -59,12 +61,22 @@ test('scan trust contract preserves the sectioned analysis shell and deep dive c
   assert.ok(dashboardSource.includes('const bundleDecisionDigest ='));
   assert.ok(dashboardSource.includes('pickFreshDecisionPayloadForFacts('));
   assert.ok(dashboardSource.includes('pickStrongestDecisionPayloadForFacts('));
+  assert.ok(dashboardSource.includes('const pickCompatibleDecisionPayload ='));
+  assert.ok(dashboardSource.includes('pickAuthoritativeDecisionPayloadUpgrade('));
   assert.ok(dashboardSource.includes('mergeDecisionPayloadPersonalization(strongestPayload, fetchedPersonalizationPayload)'));
 });
 
 test('recent scan save chain contract still preserves dosageText and imageUrl assertions', () => {
-  assert.ok(recentScanSaveChainTestSource.includes("assert.match(source, /dosageText: item\\.dosageText \\?\\? '',/);"));
-  assert.ok(recentScanSaveChainTestSource.includes("assert.match(source, /imageUrl: item\\.imageUrl \\?\\? null,/);"));
+  assert.ok(
+    recentScanSaveChainTestSource.includes(
+      String.raw`assert.match(source, /dosageText: item\.dosageText \?\? '',/);`,
+    ),
+  );
+  assert.ok(
+    recentScanSaveChainTestSource.includes(
+      String.raw`assert.match(source, /imageUrl: item\.imageUrl \?\? null,/);`,
+    ),
+  );
 });
 
 test('mini score bubble trigger follows measured NuTri Score anchors instead of fixed scan shell thresholds', () => {
