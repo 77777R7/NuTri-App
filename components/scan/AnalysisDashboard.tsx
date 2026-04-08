@@ -5415,7 +5415,20 @@ const AnalysisBundleDashboard: React.FC<{
     const topSectionPresentation = useMemo(() => {
         const goalFit = decisionPersonalizedResultLane?.goalFit;
         const personalInsight = decisionPersonalizedResultLane?.personalInsight;
-        const allergyInsight = decisionPersonalizedResultLane?.allergyInsight;
+        const hasSavedAllergyPreferences =
+            localDecisionSupportSignals.allergyCount > 0 || localDecisionSupportSignals.restrictionCount > 0;
+        const allergyInsight =
+            decisionPersonalizedResultLane?.allergyInsight
+            ?? (hasSavedAllergyPreferences
+                ? {
+                    status: 'pending' as const,
+                    reasonCode: 'LOCAL_PROFILE_ALLERGY_CONTEXT_PENDING',
+                    summary: 'Saved allergy preferences are still attaching to this scan.',
+                    matchedAllergyFlags: [],
+                    matchedRestrictions: [],
+                    details: [],
+                  }
+                : null);
         const dosageContext = decisionPersonalizedResultLane?.dosageContext;
         const firstConflict = (personalInsight?.conflicts ?? [])
             .map((conflict) => normalizeText(conflict.summary))
@@ -5631,8 +5644,7 @@ const AnalysisBundleDashboard: React.FC<{
                 status: allergyInsight?.status ?? null,
                 reasonCode: allergyInsight?.reasonCode ?? null,
                 summary: allergyInsight?.summary ?? null,
-                hasSavedPreferences:
-                    localDecisionSupportSignals.allergyCount > 0 || localDecisionSupportSignals.restrictionCount > 0,
+                hasSavedPreferences: hasSavedAllergyPreferences,
                 matchedLabels: [
                     ...(allergyInsight?.matchedAllergyFlags ?? []),
                     ...(allergyInsight?.matchedRestrictions ?? []),
@@ -6990,6 +7002,31 @@ const AnalysisBundleDashboard: React.FC<{
     const scientificBackgroundState = scientificBackgroundRequestKey
         ? scientificBackgroundByRequestKey[scientificBackgroundRequestKey]
         : undefined;
+    const ingredientOverviewFallbackBlock = useMemo(
+        () => buildIngredientOverviewFallbackClient(decisionScienceIngredientRows),
+        [decisionScienceIngredientRows],
+    );
+    const resolvedIngredientOverviewBlock = useMemo(
+        () =>
+            ingredientOverviewState?.status === 'ok' && ingredientOverviewState.data
+                ? ingredientOverviewState.data
+                : decisionScienceIngredientRows.length > 0
+                    ? ingredientOverviewFallbackBlock
+                    : null,
+        [decisionScienceIngredientRows.length, ingredientOverviewFallbackBlock, ingredientOverviewState],
+    );
+    const resolvedScientificBackgroundBlock = useMemo(
+        () =>
+            scientificBackgroundState?.status === 'ok' && scientificBackgroundState.data
+                ? scientificBackgroundState.data
+                : activeScienceIngredientRow
+                    ? buildScientificBackgroundFallbackClient(
+                        activeScienceIngredientRow.name,
+                        decisionScienceIngredientRows,
+                    )
+                    : null,
+        [activeScienceIngredientRow, decisionScienceIngredientRows, scientificBackgroundState],
+    );
 
     useEffect(() => {
         setIngredientOverviewByRequestKey({});
@@ -7028,8 +7065,6 @@ const AnalysisBundleDashboard: React.FC<{
                     body: JSON.stringify({
                         barcode: decisionBarcodeForScience,
                         decisionDigest: digestParam,
-                        authoritativeIdentityType: bundleState.meta.authoritativeIdentity?.type ?? null,
-                        authoritativeIdentityValue: bundleState.meta.authoritativeIdentity?.value ?? null,
                     }),
                     signal: controller.signal,
                 });
@@ -7145,8 +7180,6 @@ const AnalysisBundleDashboard: React.FC<{
                         body: JSON.stringify({
                             barcode: decisionBarcodeForScience,
                             decisionDigest: digestParam,
-                            authoritativeIdentityType: bundleState.meta.authoritativeIdentity?.type ?? null,
-                            authoritativeIdentityValue: bundleState.meta.authoritativeIdentity?.value ?? null,
                             selectedIngredientName: row.name,
                         }),
                         signal: controller.signal,
@@ -7242,13 +7275,12 @@ const AnalysisBundleDashboard: React.FC<{
         });
     }, [bundleSourceType, bundleSourceTypeFinal, scientificBackgroundState, selectedTileType]);
 
-    const scientificBackgroundSections = scientificBackgroundState?.data?.sections ?? [];
-    const ingredientOverviewTitleLine = ingredientOverviewState?.data?.titleLine ?? null;
-    const ingredientOverviewParagraphOne = ingredientOverviewState?.data?.paragraph1 ?? null;
-    const ingredientOverviewParagraphTwo = ingredientOverviewState?.data?.paragraph2 ?? null;
-    const ingredientOverviewCompareHint = ingredientOverviewState?.data?.compareHint ?? null;
-    const scientificBackgroundIntroLine = scientificBackgroundState?.data?.introLine ?? activeIngredientLabelLine;
-    const scientificBackgroundClosingNote = scientificBackgroundState?.data?.closingNote ?? null;
+    const ingredientOverviewTitleLine = resolvedIngredientOverviewBlock?.titleLine ?? null;
+    const ingredientOverviewParagraphOne = resolvedIngredientOverviewBlock?.paragraph1 ?? null;
+    const ingredientOverviewParagraphTwo = resolvedIngredientOverviewBlock?.paragraph2 ?? null;
+    const ingredientOverviewCompareHint = resolvedIngredientOverviewBlock?.compareHint ?? null;
+    const scientificBackgroundIntroLine = resolvedScientificBackgroundBlock?.introLine ?? activeIngredientLabelLine;
+    const scientificBackgroundClosingNote = resolvedScientificBackgroundBlock?.closingNote ?? null;
     const ingredientsContent = (
         <View style={styles.detailStack}>
             <GlassCard
@@ -7306,13 +7338,14 @@ const AnalysisBundleDashboard: React.FC<{
                 accentColor="#D97706"
                 right={<GlassPill label={resolveSimpleTaxonomyLabel('AI summary')} />}
             >
-                {ingredientOverviewState?.status === 'loading' ? (
-                    <View style={styles.inlineLoadingRow}>
-                        <ActivityIndicator />
-                        <Text style={styles.inlineLoadingText}>Generating overview…</Text>
-                    </View>
-                ) : ingredientOverviewState?.status === 'ok' && ingredientOverviewState.data ? (
+                {resolvedIngredientOverviewBlock ? (
                     <View style={{ gap: 12 }}>
+                        {ingredientOverviewState?.status === 'loading' ? (
+                            <View style={styles.inlineLoadingRow}>
+                                <ActivityIndicator />
+                                <Text style={styles.inlineLoadingText}>Generating overview…</Text>
+                            </View>
+                        ) : null}
                         {ingredientOverviewTitleLine ? (
                             <Text style={styles.summarySectionTitle}>{ingredientOverviewTitleLine}</Text>
                         ) : null}
@@ -7370,17 +7403,18 @@ const AnalysisBundleDashboard: React.FC<{
                         </View>
                     ) : null}
 
-                    {scientificBackgroundState?.status === 'loading' ? (
-                        <View style={styles.inlineLoadingRow}>
-                            <ActivityIndicator />
-                            <Text style={styles.inlineLoadingText}>Generating scientific background…</Text>
-                        </View>
-                    ) : scientificBackgroundState?.status === 'ok' && scientificBackgroundState.data ? (
+                    {resolvedScientificBackgroundBlock ? (
                         <View style={{ gap: 16 }}>
+                            {scientificBackgroundState?.status === 'loading' ? (
+                                <View style={styles.inlineLoadingRow}>
+                                    <ActivityIndicator />
+                                    <Text style={styles.inlineLoadingText}>Generating scientific background…</Text>
+                                </View>
+                            ) : null}
                             {!showIngredientSelector ? (
                                 <Text style={styles.detailMetaText}>{scientificBackgroundIntroLine}</Text>
                             ) : null}
-                            {scientificBackgroundSections.map((section, idx) => (
+                            {(resolvedScientificBackgroundBlock.sections ?? []).map((section, idx) => (
                                 <View key={`scientific-background-section-${idx}`} style={{ gap: 8 }}>
                                     <Text style={styles.summarySectionTitle}>{section.heading}</Text>
                                     <Text style={styles.detailNarrativeText}>{section.summary}</Text>
