@@ -97,6 +97,15 @@ export const sanitizeCoverBullets = (
   return output;
 };
 
+export const sanitizeScanDisplayText = (
+  text: string | null | undefined,
+): string | null => {
+  if (!text || typeof text !== 'string') return null;
+  const trimmed = text.trim();
+  if (!trimmed || isPlaceholderOnly(trimmed)) return null;
+  return trimmed;
+};
+
 export const enforceNeverBlank = (params: {
   lines: Array<string | null | undefined>;
   fallback: string[];

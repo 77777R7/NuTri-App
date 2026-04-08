@@ -10,6 +10,7 @@ import type {
   ProductGoalMatch,
   SavedProductEvaluation,
 } from '@/types/personalization';
+import { flatMapCompat } from '@/lib/utils/arrayCompat';
 import { buildReason, dedupeReasons, REASON_CODES, RULE_IDS } from './reasonCodes';
 
 export type StackComposerInput = {
@@ -110,7 +111,7 @@ const buildCandidate = (input: {
 
   const capCount = new Set([
     ...eligibleDecision.caps,
-    ...input.matches.flatMap((match) => match.caps ?? []),
+    ...flatMapCompat(input.matches, (match) => match.caps ?? []),
   ]).size;
 
   const topGoalIndex =
@@ -390,7 +391,7 @@ export const composeFirstStackPlan = (input: StackComposerInput): FirstStackPlan
     scheduleTemplateKey,
     explanationFacts: dedupeReasons(
       explanationFacts,
-      selected.flatMap((item) => item.reasons),
+      flatMapCompat(selected, (item) => item.reasons),
     ),
   };
 };

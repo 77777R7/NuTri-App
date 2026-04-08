@@ -9,6 +9,7 @@ import type {
   SavedProductEvaluation,
   SavedProductEvaluationInput,
 } from '@/types/personalization';
+import { flatMapCompat } from '@/lib/utils/arrayCompat';
 
 import {
   buildProfileTrace,
@@ -130,7 +131,7 @@ const buildDefaultEvaluations = (input: {
 
   const goalFitCards = savedProductEvaluationSet?.savedProductEvaluations
     ? Object.fromEntries(
-        Object.values(savedProductEvaluationSet.savedProductEvaluations).flatMap((evaluation) => {
+        flatMapCompat(Object.values(savedProductEvaluationSet.savedProductEvaluations), (evaluation) => {
           const card = buildGoalFitCard({
             evaluation,
             goalKey: evaluation.smartFilterMembership.highlightedGoal,
@@ -156,19 +157,19 @@ const buildDefaultEvaluations = (input: {
 
 const collectEvaluationReasons = (evaluations: PersonalizationSnapshot['evaluations']) =>
   dedupeReasons(
-    Object.values(evaluations.productGoalMatches).flatMap((matches) =>
-      matches.flatMap((match) => match.reasons),
+    flatMapCompat(Object.values(evaluations.productGoalMatches), (matches) =>
+      flatMapCompat(matches, (match) => match.reasons),
     ),
-    Object.values(evaluations.eligibility ?? {}).flatMap((decision) => decision.reasons),
-    Object.values(evaluations.coverage ?? {}).flatMap((decision) => decision.reasons),
-    Object.values(evaluations.savedProductEvaluations ?? {}).flatMap((evaluation) => evaluation.reasons),
-    Object.values(evaluations.goalFitCards ?? {}).flatMap((card) => [
+    flatMapCompat(Object.values(evaluations.eligibility ?? {}), (decision) => decision.reasons),
+    flatMapCompat(Object.values(evaluations.coverage ?? {}), (decision) => decision.reasons),
+    flatMapCompat(Object.values(evaluations.savedProductEvaluations ?? {}), (evaluation) => evaluation.reasons),
+    flatMapCompat(Object.values(evaluations.goalFitCards ?? {}), (card) => [
       ...card.whyFit,
       ...card.whyNotStronger,
       ...card.holdbacks,
       ...(card.stackContext ?? []),
     ]),
-    evaluations.firstStackPlan?.items.flatMap((item) => item.reasons) ?? [],
+    evaluations.firstStackPlan ? flatMapCompat(evaluations.firstStackPlan.items, (item) => item.reasons) : [],
     evaluations.firstStackPlan?.explanationFacts ?? [],
   );
 
@@ -339,7 +340,7 @@ export const compilePersonalizationSnapshot = (
       buildProfileTrace(profile, input.profileInput),
       blockerStrategyResult.reasons,
       experienceModeResult.reasons,
-      dietLanes.flatMap((lane) => lane.reasons),
+      flatMapCompat(dietLanes, (lane) => lane.reasons),
       activityPlan.reasons,
       supportStateResult.reasons,
       preferenceVectorResult.reasons,

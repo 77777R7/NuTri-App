@@ -9,6 +9,7 @@ import {
   mapPreviewTierToNarrativeFitLevel,
   type GoalNarrativeFitLevel,
 } from '../personalization/goalFitCopy';
+import { flatMapCompat } from '../utils/arrayCompat';
 
 export type TopSectionTone = 'positive' | 'caution' | 'neutral';
 
@@ -224,16 +225,17 @@ const joinDisplayLabels = (values: string[], limit = 3): string =>
   joinLabels(values.map((value) => formatDisplayLabel(value)).filter(Boolean), limit);
 
 const compactEvidenceTexts = (values: string[], matchedLabels: string[], limit = 2): string[] => {
-  const keywords = matchedLabels
-    .map((label) => formatDisplayLabel(label).toLowerCase())
-    .flatMap((label) => label.split(/\s+/))
-    .filter((token) => token.length >= 3);
+  const keywords = flatMapCompat(
+    matchedLabels.map((label) => formatDisplayLabel(label).toLowerCase()),
+    (label) => label.split(/\s+/),
+  ).filter((token) => token.length >= 3);
 
   const fragments = Array.from(
     new Set(
-      values
-        .flatMap((value) => normalizeText(value).split(/[;•\n]+/))
-        .flatMap((value) => value.split(/\s+and\s+/i))
+      flatMapCompat(
+        flatMapCompat(values, (value) => normalizeText(value).split(/[;•\n]+/)),
+        (value) => value.split(/\s+and\s+/i),
+      )
         .map((value) => value.replace(/\s+/g, ' ').trim().replace(/[.,;:]+$/g, ''))
         .filter(Boolean),
     ),
