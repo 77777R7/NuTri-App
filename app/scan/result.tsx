@@ -27,6 +27,11 @@ type HeaderMiniScoreState = {
   muted: boolean;
 };
 
+type HeaderMiniScoreTriggerState = {
+  start: number;
+  range: number;
+};
+
 type RecentScanProductInfo = {
   name: string | null;
   brand: string | null;
@@ -43,8 +48,10 @@ const FORCE_FULL_DASHBOARD =
 const SHOW_SCAN_DEBUG =
   process.env.EXPO_PUBLIC_SHOW_SCAN_DEBUG === 'true' ||
   process.env.EXPO_PUBLIC_SHOW_SCAN_DEBUG === '1';
-const HEADER_MINI_SCORE_START = 210;
-const HEADER_MINI_SCORE_RANGE = 70;
+const DEFAULT_HEADER_MINI_SCORE_TRIGGER: HeaderMiniScoreTriggerState = {
+  start: 210,
+  range: 70,
+};
 
 const emitScanUxMetric = (event: string, payload: Record<string, unknown> = {}) => {
   console.info('[scan-ux-metric]', { event, ...payload });
@@ -153,6 +160,9 @@ export default function ScanResultScreen() {
   const dashboardRenderMode: 'full' = resolveDashboardRenderMode(isExpoGo);
   const analysisHeaderScrollY = useSharedValue(0);
   const [headerMiniScore, setHeaderMiniScore] = useState<HeaderMiniScoreState | null>(null);
+  const [headerMiniScoreTrigger, setHeaderMiniScoreTrigger] = useState<HeaderMiniScoreTriggerState>(
+    DEFAULT_HEADER_MINI_SCORE_TRIGGER,
+  );
   const [dashboardCoreReady, setDashboardCoreReady] = useState(false);
   const loadingBadgeTimingRef = useRef({
     startedAt: 0,
@@ -204,12 +214,21 @@ export default function ScanResultScreen() {
       return next;
     });
   }, []);
+  const handleHeaderMiniScoreTriggerChange = useCallback((next: HeaderMiniScoreTriggerState) => {
+    setHeaderMiniScoreTrigger((prev) => {
+      if (prev.start === next.start && prev.range === next.range) {
+        return prev;
+      }
+      return next;
+    });
+  }, []);
   const handleDashboardCoreReadyChange = useCallback((next: boolean) => {
     setDashboardCoreReady((prev) => (prev === next ? prev : next));
   }, []);
   useEffect(() => {
     analysisHeaderScrollY.value = 0;
     setHeaderMiniScore(null);
+    setHeaderMiniScoreTrigger(DEFAULT_HEADER_MINI_SCORE_TRIGGER);
     setDashboardCoreReady(false);
     loadingBadgeTimingRef.current = {
       startedAt: 0,
@@ -730,8 +749,8 @@ export default function ScanResultScreen() {
         savePillState={dashboardSaveItem ? (isDashboardItemSaved ? 'saved' : 'save') : 'disabled'}
         onSavePress={handleSaveFromDashboard}
         onOpenSaved={handleOpenSaved}
-        miniScoreThresholdStart={HEADER_MINI_SCORE_START}
-        miniScoreThresholdRange={HEADER_MINI_SCORE_RANGE}
+        miniScoreThresholdStart={headerMiniScoreTrigger.start}
+        miniScoreThresholdRange={headerMiniScoreTrigger.range}
       />
 
       {/* We render dashboard immediately. 
@@ -747,6 +766,7 @@ export default function ScanResultScreen() {
           externalScrollY={analysisHeaderScrollY}
           miniHeaderMode="header"
           onMiniScoreMetaChange={handleHeaderMiniScoreChange}
+          onMiniScoreTriggerChange={handleHeaderMiniScoreTriggerChange}
           onCoreReadyChange={handleDashboardCoreReadyChange}
           saveItem={dashboardSaveItem}
         />
