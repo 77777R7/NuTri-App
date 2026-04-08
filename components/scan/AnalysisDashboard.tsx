@@ -871,6 +871,54 @@ const pickStrongestDecisionPayloadForFacts = (
     return best;
 };
 
+const isProvisionalWebBundleSource = (
+    bundleSourceType: string | null | undefined,
+    bundleSourceTypeFinal: boolean | null | undefined,
+): boolean => normalizeText(bundleSourceType).toLowerCase() === 'web' && bundleSourceTypeFinal !== true;
+
+const isAuthoritativeDecisionPayloadSource = (
+    payload: Record<string, unknown> | null | undefined,
+): boolean => {
+    const sourceType = getPayloadSourceType(payload);
+    return sourceType === 'dsld' || sourceType === 'lnhpd';
+};
+
+const pickAuthoritativeDecisionPayloadUpgrade = (
+    ...payloads: Array<Record<string, unknown> | null | undefined>
+): Record<string, unknown> | null => {
+    let best: Record<string, unknown> | null = null;
+    payloads.forEach((payload) => {
+        if (!payload || typeof payload !== 'object') return;
+        if (isDecisionPayloadExplicitlyStale(payload)) return;
+        if (!isAuthoritativeDecisionPayloadSource(payload)) return;
+        if (!hasRenderableDecisionTemplate(payload)) return;
+        best = pickStrongerDecisionPayload(best, payload);
+    });
+    return best;
+};
+
+const pickCompatibleDecisionPayload = (params: {
+    factsDigestHash: string | null | undefined;
+    decisionDigest: string | null | undefined;
+    bundleSourceType: string | null | undefined;
+    bundleSourceTypeFinal: boolean | null | undefined;
+    payloads: Array<Record<string, unknown> | null | undefined>;
+}): Record<string, unknown> | null => {
+    const freshPayload = pickFreshDecisionPayloadForFacts(
+        params.factsDigestHash,
+        params.decisionDigest,
+        ...params.payloads,
+    );
+    if (freshPayload) return freshPayload;
+
+    if (isProvisionalWebBundleSource(params.bundleSourceType, params.bundleSourceTypeFinal)) {
+        const authoritativeUpgrade = pickAuthoritativeDecisionPayloadUpgrade(...params.payloads);
+        if (authoritativeUpgrade) return authoritativeUpgrade;
+    }
+
+    return pickStrongestDecisionPayloadForFacts(params.factsDigestHash, ...params.payloads);
+};
+
 const mergeDecisionPayloadPersonalization = (
     basePayload: Record<string, unknown> | null | undefined,
     personalizationPayload: Record<string, unknown> | null | undefined,
@@ -3799,19 +3847,21 @@ const AnalysisBundleDashboard: React.FC<{
             : null;
         const seededDecision = incomingBarcode
             ? (
-                shouldUseLocalDecisionSupport
-                    ? pickFreshDecisionPayloadForFacts(
-                        incomingFactsDigestHash,
-                        incomingDecisionDigest,
-                        incomingDecisionCacheKey
-                            ? decisionSupportCacheRef.current.get(incomingDecisionCacheKey) ?? null
-                            : null,
-                    )
-                    : pickFreshDecisionPayloadForFacts(
-                        incomingFactsDigestHash,
-                        incomingDecisionDigest,
-                        decisionSupportByBarcodeRef.current.get(incomingBarcode) ?? null,
-                    )
+                pickCompatibleDecisionPayload({
+                    factsDigestHash: incomingFactsDigestHash,
+                    decisionDigest: incomingDecisionDigest,
+                    bundleSourceType: normalizeText(bundle.meta.sourceType ?? null).toLowerCase() || null,
+                    bundleSourceTypeFinal: bundle.meta.sourceTypeFinal === true,
+                    payloads: shouldUseLocalDecisionSupport
+                        ? [
+                            incomingDecisionCacheKey
+                                ? decisionSupportCacheRef.current.get(incomingDecisionCacheKey) ?? null
+                                : null,
+                        ]
+                        : [
+                            decisionSupportByBarcodeRef.current.get(incomingBarcode) ?? null,
+                        ],
+                })
             )
             : null;
         setBundleState(bundle);
@@ -4061,18 +4111,24 @@ const AnalysisBundleDashboard: React.FC<{
                   }
                 : null;
         const seededPayload = shouldUseLocalDecisionSupport
-            ? pickFreshDecisionPayloadForFacts(
-                currentFactsDigestHash,
-                digestHint,
-                cachedPayload,
-            )
-            : pickFreshDecisionPayloadForFacts(
-                currentFactsDigestHash,
-                digestHint,
-                decisionSupportByBarcodeRef.current.get(resolvedBarcode) ?? null,
-                inlineFallback ?? null,
-                cachedPayload,
-            );
+            ? pickCompatibleDecisionPayload({
+                factsDigestHash: currentFactsDigestHash,
+                decisionDigest: digestHint,
+                bundleSourceType: sourceType,
+                bundleSourceTypeFinal: sourceTypeFinal,
+                payloads: [cachedPayload],
+            })
+            : pickCompatibleDecisionPayload({
+                factsDigestHash: currentFactsDigestHash,
+                decisionDigest: digestHint,
+                bundleSourceType: sourceType,
+                bundleSourceTypeFinal: sourceTypeFinal,
+                payloads: [
+                    decisionSupportByBarcodeRef.current.get(resolvedBarcode) ?? null,
+                    inlineFallback ?? null,
+                    cachedPayload,
+                ],
+            });
         if (!cancelled && seededPayload) {
             upsertDecisionPayloadByBarcode(decisionSupportByBarcodeRef.current, resolvedBarcode, seededPayload);
             setDecisionSupportState((prev) => ({
@@ -4576,20 +4632,28 @@ const AnalysisBundleDashboard: React.FC<{
                         || normalizeText(digestParam)
                         || digestHint;
                     const selectedPayload = shouldUseLocalDecisionSupport
-                        ? pickFreshDecisionPayloadForFacts(
-                            currentFactsDigestHash,
-                            resolvedDecisionDigest,
-                            objectPayload,
-                            decisionSupportCacheRef.current.get(decisionCacheKey) ?? null,
-                        )
-                        : pickFreshDecisionPayloadForFacts(
-                            currentFactsDigestHash,
-                            resolvedDecisionDigest,
-                            objectPayload,
-                            inlineFallback ?? null,
-                            decisionSupportByBarcodeRef.current.get(resolvedBarcode) ?? null,
-                            decisionSupportCacheRef.current.get(decisionCacheKey) ?? null,
-                        );
+                        ? pickCompatibleDecisionPayload({
+                            factsDigestHash: currentFactsDigestHash,
+                            decisionDigest: resolvedDecisionDigest,
+                            bundleSourceType: sourceType,
+                            bundleSourceTypeFinal: sourceTypeFinal,
+                            payloads: [
+                                objectPayload,
+                                decisionSupportCacheRef.current.get(decisionCacheKey) ?? null,
+                            ],
+                        })
+                        : pickCompatibleDecisionPayload({
+                            factsDigestHash: currentFactsDigestHash,
+                            decisionDigest: resolvedDecisionDigest,
+                            bundleSourceType: sourceType,
+                            bundleSourceTypeFinal: sourceTypeFinal,
+                            payloads: [
+                                objectPayload,
+                                inlineFallback ?? null,
+                                decisionSupportByBarcodeRef.current.get(resolvedBarcode) ?? null,
+                                decisionSupportCacheRef.current.get(decisionCacheKey) ?? null,
+                            ],
+                        });
                     setDecisionSupportState({
                         status: selectedPayload ? 'ready' : 'error',
                         data: selectedPayload,
@@ -4627,18 +4691,24 @@ const AnalysisBundleDashboard: React.FC<{
                     return run(digestParam, decisionInputsHashParam, canDigestRetry, retryAttempt + 1);
                 }
                 const fallbackData = shouldUseLocalDecisionSupport
-                    ? pickFreshDecisionPayloadForFacts(
-                        currentFactsDigestHash,
-                        digestHint,
-                        cachedPayload,
-                    )
-                    : pickFreshDecisionPayloadForFacts(
-                        currentFactsDigestHash,
-                        digestHint,
-                        decisionSupportByBarcodeRef.current.get(resolvedBarcode) ?? null,
-                        inlineFallback ?? null,
-                        cachedPayload,
-                    );
+                    ? pickCompatibleDecisionPayload({
+                        factsDigestHash: currentFactsDigestHash,
+                        decisionDigest: digestHint,
+                        bundleSourceType: sourceType,
+                        bundleSourceTypeFinal: sourceTypeFinal,
+                        payloads: [cachedPayload],
+                    })
+                    : pickCompatibleDecisionPayload({
+                        factsDigestHash: currentFactsDigestHash,
+                        decisionDigest: digestHint,
+                        bundleSourceType: sourceType,
+                        bundleSourceTypeFinal: sourceTypeFinal,
+                        payloads: [
+                            decisionSupportByBarcodeRef.current.get(resolvedBarcode) ?? null,
+                            inlineFallback ?? null,
+                            cachedPayload,
+                        ],
+                    });
                 if (fallbackData) {
                     upsertDecisionPayloadByBarcode(decisionSupportByBarcodeRef.current, resolvedBarcode, fallbackData);
                 }
@@ -4714,24 +4784,24 @@ const AnalysisBundleDashboard: React.FC<{
                 ? String((bundleState.meta as { decisionSupportDigest?: string }).decisionSupportDigest)
                 : null;
         const currentDecisionDigest = bundleDecisionDigest || fetchedDecisionDigest;
-        const strongestPayload =
-            pickFreshDecisionPayloadForFacts(
-                currentFactsDigestHash,
-                currentDecisionDigest,
+        const strongestPayload = pickCompatibleDecisionPayload({
+            factsDigestHash: currentFactsDigestHash,
+            decisionDigest: currentDecisionDigest,
+            bundleSourceType: normalizeText(bundleState.meta.sourceType ?? null).toLowerCase() || null,
+            bundleSourceTypeFinal: bundleState.meta.sourceTypeFinal === true,
+            payloads: [
                 inlineDecisionTemplatePayload,
                 fetchedPayload,
-            )
-            ?? pickStrongestDecisionPayloadForFacts(
-                currentFactsDigestHash,
-                inlineDecisionTemplatePayload,
-                fetchedPayload,
-            );
+            ],
+        });
         const fetchedPersonalizationPayload = shouldUseLocalDecisionSupport
-            ? pickFreshDecisionPayloadForFacts(
-                currentFactsDigestHash,
-                fetchedDecisionDigest,
-                fetchedPayload,
-            )
+            ? pickCompatibleDecisionPayload({
+                factsDigestHash: currentFactsDigestHash,
+                decisionDigest: fetchedDecisionDigest,
+                bundleSourceType: normalizeText(bundleState.meta.sourceType ?? null).toLowerCase() || null,
+                bundleSourceTypeFinal: bundleState.meta.sourceTypeFinal === true,
+                payloads: [fetchedPayload],
+            })
             : null;
         const selectedPayload =
             mergeDecisionPayloadPersonalization(strongestPayload, fetchedPersonalizationPayload)

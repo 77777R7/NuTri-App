@@ -14,7 +14,10 @@ test('decision support prefers the fetched digest over a stale bundle digest bef
   assert.match(source, /const currentDecisionDigest =\s*bundleDecisionDigest \|\| fetchedDecisionDigest/);
   assert.match(source, /const resolvedDecisionDigest =/);
   assert.match(source, /getDecisionPayloadDigest\(objectPayload\)/);
-  assert.match(source, /pickFreshDecisionPayloadForFacts\(\s*currentFactsDigestHash,\s*resolvedDecisionDigest,/s);
+  assert.match(source, /const pickCompatibleDecisionPayload =/);
+  assert.match(source, /isProvisionalWebBundleSource\(params\.bundleSourceType,\s*params\.bundleSourceTypeFinal\)/);
+  assert.match(source, /pickAuthoritativeDecisionPayloadUpgrade\(\.\.\.params\.payloads\)/);
+  assert.match(source, /pickCompatibleDecisionPayload\(\{\s*factsDigestHash:\s*currentFactsDigestHash,\s*decisionDigest:\s*resolvedDecisionDigest,/s);
 });
 
 test('decision support keeps local personalization enabled for scan requests whenever local profile signals exist', async () => {
