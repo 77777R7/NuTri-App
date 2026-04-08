@@ -1,5 +1,6 @@
 import { Buffer } from "node:buffer";
 import crypto from "node:crypto";
+import zlib from "node:zlib";
 
 import { supabase } from "../supabase.js";
 import {
@@ -37,7 +38,24 @@ export const buildGoalNavigatorArtifactStoragePath = (
   const generatedAt = sanitizePathSegment(artifact.generatedAt.replace(/:/g, "-"));
   const schemaVersion = sanitizePathSegment(artifact.schemaVersion);
   const rulesVersion = sanitizePathSegment(artifact.rulesVersion);
-  return `${GOAL_NAVIGATOR_ARTIFACT_STORAGE_PREFIX}/${generatedAt}__${schemaVersion}__${rulesVersion}.json`;
+  return `${GOAL_NAVIGATOR_ARTIFACT_STORAGE_PREFIX}/${generatedAt}__${schemaVersion}__${rulesVersion}.json.gz`;
+};
+
+const gzipGoalNavigatorCandidateBundleArtifact = (body: string) =>
+  zlib.gzipSync(Buffer.from(body, "utf8"), {
+    level: zlib.constants.Z_BEST_COMPRESSION,
+  });
+
+const inflateDownloadedArtifactBody = async (params: {
+  data: Blob;
+  path: string;
+}): Promise<string> => {
+  const buffer = Buffer.from(await params.data.arrayBuffer());
+  if (params.path.endsWith(".gz")) {
+    return zlib.gunzipSync(buffer).toString("utf8");
+  }
+
+  return typeof params.data.text === "function" ? await params.data.text() : buffer.toString("utf8");
 };
 
 export const uploadGoalNavigatorCandidateBundleArtifact = async (
@@ -45,11 +63,12 @@ export const uploadGoalNavigatorCandidateBundleArtifact = async (
 ): Promise<GoalNavigatorArtifactStorageLocation> => {
   await ensureGoalNavigatorArtifactStorageBucket();
   const body = serializeGoalNavigatorCandidateBundleArtifact(artifact);
+  const compressedBody = gzipGoalNavigatorCandidateBundleArtifact(body);
   const path = buildGoalNavigatorArtifactStoragePath(artifact);
   const { error } = await supabase.storage
     .from(GOAL_NAVIGATOR_ARTIFACT_STORAGE_BUCKET)
-    .upload(path, body, {
-      contentType: "application/json; charset=utf-8",
+    .upload(path, compressedBody, {
+      contentType: "application/gzip",
       upsert: true,
     });
 
@@ -60,7 +79,7 @@ export const uploadGoalNavigatorCandidateBundleArtifact = async (
   return {
     bucket: GOAL_NAVIGATOR_ARTIFACT_STORAGE_BUCKET,
     path,
-    byteSize: Buffer.byteLength(body, "utf8"),
+    byteSize: compressedBody.byteLength,
     checksum: computeGoalNavigatorCandidateBundleChecksum(body),
   };
 };
@@ -106,10 +125,10 @@ export const downloadGoalNavigatorCandidateBundleArtifact = async (
     };
   }
 
-  const body =
-    typeof data.text === "function"
-      ? await data.text()
-      : Buffer.from(await data.arrayBuffer()).toString("utf8");
+  const body = await inflateDownloadedArtifactBody({
+    data,
+    path: location.path,
+  });
   const artifact = parseGoalNavigatorCandidateBundleArtifact(JSON.parse(body));
 
   return {
@@ -123,5 +142,7 @@ export const goalNavigatorArtifactStorageInternals = {
   buildGoalNavigatorArtifactStoragePath,
   computeGoalNavigatorCandidateBundleChecksum,
   ensureGoalNavigatorArtifactStorageBucket,
+  gzipGoalNavigatorCandidateBundleArtifact,
+  inflateDownloadedArtifactBody,
   serializeGoalNavigatorCandidateBundleArtifact,
 };

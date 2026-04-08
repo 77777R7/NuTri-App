@@ -13,7 +13,7 @@
     "lint": "expo lint",
     "postinstall": "patch-package",
     "serve:backend": "cd backend && npx tsx src/server.ts",
-    "personalization:build-goal-bundle": "cd backend && npx tsx scripts/build-goal-navigator-candidate-bundle.ts",
+    "personalization:build-goal-bundle": "node --import tsx backend/scripts/build-goal-navigator-candidate-bundle.ts",
     "verify:db-contract": "node scripts/maintainer/verify-db-contract.mjs",
     "gates:stable": "node scripts/maintainer/run-backend-gates-stable.mjs --manage-backend",
     "gates:release-db": "node scripts/maintainer/run-release-db-gates.mjs",

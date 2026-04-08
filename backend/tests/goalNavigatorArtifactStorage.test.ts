@@ -19,7 +19,7 @@ test("goal navigator artifact storage builds a stable storage path and checksum"
   assert.equal(GOAL_NAVIGATOR_ARTIFACT_STORAGE_BUCKET, "personalization-artifacts");
   assert.equal(
     path,
-    "goal-navigator/2026-03-21T17-00-00.000Z__goal_navigator_candidate_bundle.v1__personalization-rules-v1-phase7.json",
+    "goal-navigator/2026-03-21T17-00-00.000Z__goal_navigator_candidate_bundle.v1__personalization-rules-v1-phase7.json.gz",
   );
   assert.equal(checksum.length, 64);
 });

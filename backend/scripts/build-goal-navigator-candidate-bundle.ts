@@ -37,7 +37,7 @@ const writeJson = async (filePath: string, payload: unknown) => {
 
 const run = async () => {
   const bundle = await goalNavigatorCatalogEvaluationServiceInternals.buildCatalogCandidateBundle(
-    goalNavigatorCatalogEvaluationServiceInternals.fetchOverlayCatalogRows,
+    goalNavigatorCatalogEvaluationServiceInternals.fetchAllOverlayCatalogRows,
   );
   const candidateGaps = bundle.preparedCandidates
     .map((candidate) => buildGoalNavigatorCandidateGapRecord(candidate.preparedProduct))
