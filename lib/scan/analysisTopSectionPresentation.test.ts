@@ -258,6 +258,65 @@ test('goal coverage keeps unknown states separate from no-support copy', () => {
   ]);
 });
 
+test('top section presentation does not depend on Array.flatMap at runtime', () => {
+  const originalFlatMap = Array.prototype.flatMap;
+  // Simulate older Hermes/JSC environments that do not expose Array.flatMap.
+  // @ts-expect-error runtime compatibility test
+  Array.prototype.flatMap = undefined;
+
+  try {
+    const result = buildAnalysisTopSectionPresentation({
+      goal: {
+        fitDecision: 'mixed',
+        selectedGoalLabel: 'Recovery',
+        selectedGoalLabels: ['Energy', 'Immunity', 'Recovery'],
+        goalLensMode: 'multi_goal_summary',
+        selectedGoalCount: 3,
+        analyzedGoalCount: 3,
+        surfacedGoalCount: 3,
+        allGoalsAnalyzed: true,
+        goalCoverage: [
+          { goalLabel: 'Energy', tier: 'weak_match', state: 'limited', source: 'goal_match_scoring_preview' },
+          { goalLabel: 'Immunity', tier: 'related', state: 'some', source: 'goal_match_scoring_preview' },
+          { goalLabel: 'Recovery', tier: 'strong_match', state: 'strong', source: 'selected_goal_evaluation' },
+        ],
+      },
+      personalInsight: {
+        supportLabels: [],
+        fitDecision: 'mixed',
+        selectedGoalLabel: 'Recovery',
+        goalLensMode: 'multi_goal_summary',
+        selectedGoalCount: 3,
+        analyzedGoalCount: 3,
+        surfacedGoalCount: 3,
+        allGoalsAnalyzed: true,
+        goalCoverage: [
+          { goalLabel: 'Energy', tier: 'weak_match', state: 'limited', source: 'goal_match_scoring_preview' },
+          { goalLabel: 'Immunity', tier: 'related', state: 'some', source: 'goal_match_scoring_preview' },
+          { goalLabel: 'Recovery', tier: 'strong_match', state: 'strong', source: 'selected_goal_evaluation' },
+        ],
+      },
+      allergy: {
+        status: 'ready',
+        matchedLabels: ['Fish'],
+        evidenceTexts: ['anchovy; fish oil and gelatin'],
+        summary: 'Matched your saved settings: Fish.',
+      },
+      dose: {
+        status: 'ready',
+        assessment: 'aligned',
+        productDoseText: '1 softgel daily',
+      },
+      safety: {},
+    });
+
+    assert.equal(result.banner?.title, 'Ingredients may conflict with your allergies');
+    assert.equal(result.insights[0]?.collapsedTitle, 'Goal check');
+  } finally {
+    Array.prototype.flatMap = originalFlatMap;
+  }
+});
+
 test('dominant-goal strong mode uses the strongest goal hero and keeps coverage inline on the support row', () => {
   const result = buildAnalysisTopSectionPresentation({
     goal: {

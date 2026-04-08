@@ -7,6 +7,7 @@ import type {
   PersonalizationProfile,
   SupplementTypeKey,
 } from '@/types/personalization';
+import { flatMapCompat } from '@/lib/utils/arrayCompat';
 import { REASON_CODES, RULE_IDS, buildReason } from './reasonCodes';
 
 type ActivityGoalMapFile = {
@@ -57,9 +58,9 @@ export const compileActivityPlan = (profile: PersonalizationProfile): ActivityPl
           decisionModifier: ACTIVITY_BUNDLE_BY_PLAN_KEY.get(plans[0].planKey)?.decisionModifier,
         }
       : {}),
-    suggestedGoals: uniqueValues(plans.flatMap((plan) => plan.suggestedGoals)),
-    suggestedTypes: uniqueValues(plans.flatMap((plan) => plan.suggestedTypes)),
-    suggestedTimingAnchors: uniqueValues(plans.flatMap((plan) => plan.suggestedTimingAnchors)),
+    suggestedGoals: uniqueValues(flatMapCompat(plans, (plan) => plan.suggestedGoals)),
+    suggestedTypes: uniqueValues(flatMapCompat(plans, (plan) => plan.suggestedTypes)),
+    suggestedTimingAnchors: uniqueValues(flatMapCompat(plans, (plan) => plan.suggestedTimingAnchors)),
     reasons: [
       buildReason(
         REASON_CODES.activityPlanStrategySelected,
@@ -67,7 +68,7 @@ export const compileActivityPlan = (profile: PersonalizationProfile): ActivityPl
         'derived',
         {
           activityPlanCount: plans.length,
-          anchorCount: uniqueValues(plans.flatMap((plan) => plan.suggestedTimingAnchors)).length,
+          anchorCount: uniqueValues(flatMapCompat(plans, (plan) => plan.suggestedTimingAnchors)).length,
         },
       ),
     ],

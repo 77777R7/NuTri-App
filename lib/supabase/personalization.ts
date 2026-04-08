@@ -6,6 +6,7 @@ import {
   toPersonalizationEventRecord,
 } from '@/lib/personalization/feedback/personalizationEventSummary';
 import { supabase } from '@/lib/supabase';
+import { flatMapCompat } from '@/lib/utils/arrayCompat';
 import type { FeedbackPersistenceAdapter } from '@/lib/personalization/feedback/feedbackStore';
 import type {
   FeedbackState,
@@ -58,7 +59,7 @@ const toJsonValue = (value: unknown): Json | undefined => {
 
   if (isRecord(value)) {
     return Object.fromEntries(
-      Object.entries(value).flatMap(([key, nested]) => {
+      flatMapCompat(Object.entries(value), ([key, nested]) => {
         const next = toJsonValue(nested);
         return next === undefined ? [] : [[key, next]];
       }),

@@ -8,6 +8,7 @@ import type {
 import type { DuplicateRiskLevel } from '../../../types/personalization';
 import safetyRulesData from '../../../data/personalization/safety_rules.v1.json';
 import safetyGuardrailsData from '../../../data/personalization/safety_guardrails.v2.json';
+import { flatMapCompat } from '@/lib/utils/arrayCompat';
 
 type SafetyEligibilityRule = {
   ruleId: string;
@@ -73,7 +74,7 @@ const getDuplicateRule = (level: DuplicateRiskLevel | null | undefined) =>
   ) ?? null;
 
 const collectMatchCaps = (matches: ProductGoalMatch[]): string[] =>
-  Array.from(new Set(matches.flatMap((match) => match.caps ?? [])));
+  Array.from(new Set(flatMapCompat(matches, (match) => match.caps ?? [])));
 
 const buildCapReasons = (caps: string[]): DecisionReason[] => {
   const reasons: DecisionReason[] = [];

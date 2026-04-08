@@ -92,12 +92,13 @@ const getSavedSupplementKeys = (item: {
 
 type DashboardErrorBoundaryProps = {
   children: React.ReactNode;
-  onError?: (message: string) => void;
+  onError?: (message: string, detail?: string | null) => void;
 };
 
 type DashboardErrorBoundaryState = {
   hasError: boolean;
   message: string | null;
+  detail: string | null;
 };
 
 class DashboardErrorBoundary extends React.Component<
@@ -107,19 +108,33 @@ class DashboardErrorBoundary extends React.Component<
   state: DashboardErrorBoundaryState = {
     hasError: false,
     message: null,
+    detail: null,
   };
 
   static getDerivedStateFromError(error: unknown): DashboardErrorBoundaryState {
     const message =
       error instanceof Error ? error.message : typeof error === 'string' ? error : 'Dashboard render failed';
-    return { hasError: true, message };
+    const detail =
+      error instanceof Error && typeof error.stack === 'string'
+        ? error.stack.split('\n').slice(0, 8).join('\n')
+        : null;
+    return { hasError: true, message, detail };
   }
 
-  componentDidCatch(error: unknown) {
+  componentDidCatch(error: unknown, info: React.ErrorInfo) {
     const message =
       error instanceof Error ? error.message : typeof error === 'string' ? error : 'Dashboard render failed';
-    console.error('[ScanResult][DashboardErrorBoundary]', error);
-    this.props.onError?.(message);
+    const errorStack =
+      error instanceof Error && typeof error.stack === 'string'
+        ? error.stack.split('\n').slice(0, 8).join('\n')
+        : null;
+    const componentStack = info.componentStack?.trim() || null;
+    const detail = [errorStack, componentStack].filter(Boolean).join('\n\n') || null;
+    console.error('[ScanResult][DashboardErrorBoundary]', error, info);
+    if (detail && this.state.detail !== detail) {
+      this.setState({ detail });
+    }
+    this.props.onError?.(message, detail);
   }
 
   render() {
@@ -131,6 +146,9 @@ class DashboardErrorBoundary extends React.Component<
           <Text style={styles.fallbackText}>
             {this.state.message || 'The dashboard failed to render.'}
           </Text>
+          {this.state.detail ? (
+            <Text style={styles.fallbackDebugText}>{this.state.detail}</Text>
+          ) : null}
         </View>
       );
     }
@@ -468,10 +486,10 @@ export default function ScanResultScreen() {
     };
   }, [params.devBarcode, params.sessionId]);
 
-  const handleDashboardRenderError = useCallback((message: string) => {
+  const handleDashboardRenderError = useCallback((message: string, detail?: string | null) => {
     // Keep users on the modern full dashboard path even if an error is captured.
     // We surface the error banner instead of switching to legacy Lite UI.
-    setDashboardRuntimeError(message);
+    setDashboardRuntimeError(detail ? `${message}\n${detail}` : message);
   }, []);
 
   useEffect(() => {
@@ -938,6 +956,14 @@ const styles = StyleSheet.create({
   fallbackContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 40 },
   fallbackTitle: { fontSize: 24, fontWeight: 'bold', color: '#000', marginTop: 20 },
   fallbackText: { fontSize: 16, color: '#52525b', marginTop: 10, textAlign: 'center' },
+  fallbackDebugText: {
+    fontSize: 11,
+    color: '#71717a',
+    marginTop: 14,
+    textAlign: 'left',
+    fontFamily: Platform.select({ ios: 'Menlo', android: 'monospace', default: 'monospace' }),
+    width: '100%',
+  },
   fallbackNote: { fontSize: 14, color: '#71717a', marginTop: 12, textAlign: 'center' },
   secondaryActionButton: {
     marginTop: 4,

@@ -5,6 +5,7 @@ import type {
   ProductGoalMatch,
   ProductGoalMatchTier,
 } from '../../../types/personalization';
+import { flatMapCompat } from '@/lib/utils/arrayCompat';
 import {
   getFormulaPatterns,
   getIngredientGoalEdges,
@@ -667,7 +668,7 @@ const getPresentIngredientKeySet = (
   }
 
   return new Set(
-    ingredients.flatMap((ingredient) => {
+    flatMapCompat(ingredients, (ingredient) => {
       const tokens = getIngredientLookupTokens(ingredient);
       const normalizedIngredientKey = normalizeIngredientKey(ingredient);
       const matchedOntologyKeys = Array.from(relevantOntologyKeys).filter((ingredientKey) =>
@@ -715,7 +716,7 @@ const computePatternBonus = (
       12,
       matchedPatterns.reduce((total, pattern) => total + pattern.bonusWeight * PATTERN_BONUS_MULTIPLIER, 0),
     ),
-    reasons: matchedPatterns.flatMap((pattern) =>
+    reasons: flatMapCompat(matchedPatterns, (pattern) =>
       pattern.reasonCodes.map((reasonCode) =>
         makeReason(reasonCode, 'formula_pattern_support_v2', 'catalog', { goalKey }),
       ),
@@ -732,7 +733,7 @@ export const scoreProductGoalMatches = (input: ProductGoalMatchScoringInput): Pr
   const presentIngredientKeys = getPresentIngredientKeySet(goals, ingredients);
 
   return goals.map((goalKey) => {
-    const candidates = ingredients.flatMap((ingredient) =>
+    const candidates = flatMapCompat(ingredients, (ingredient) =>
       findIngredientEdges(goalKey, ingredient).map((edge) =>
         scoreCandidate(
           goalKey,
@@ -762,7 +763,7 @@ export const scoreProductGoalMatches = (input: ProductGoalMatchScoringInput): Pr
     const score = clampScore((primary?.score ?? 0) + corroborationBonus + patternBonus);
     const tier = applyTierCap(scoreToTier(score), primary?.tier ?? 'no_match');
     const reasons = [...(primary?.reasons ?? []), ...patternReasons];
-    const caps = Array.from(new Set(sortedCandidates.flatMap((candidate) => candidate.caps)));
+    const caps = Array.from(new Set(flatMapCompat(sortedCandidates, (candidate) => candidate.caps)));
 
     if (corroboratingMatches.length > 0) {
       reasons.push(

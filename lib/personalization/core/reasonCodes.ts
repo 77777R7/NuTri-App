@@ -1,4 +1,5 @@
 import type { DecisionReason, DecisionReasonSource } from '../../../types/personalization';
+import { flatMapCompat } from '@/lib/utils/arrayCompat';
 
 export const PERSONALIZATION_PROFILE_VERSION = 'personalization-profile/v1-phase1';
 export const PERSONALIZATION_RULES_VERSION = 'personalization-rules/v1-phase7';
@@ -390,7 +391,7 @@ export const dedupeDecisionReasons = (reasons: readonly DecisionReason[]) => {
 };
 
 export const dedupeReasons = (...collections: Array<readonly DecisionReason[] | undefined>) =>
-  dedupeDecisionReasons(collections.flatMap((collection) => collection ?? []));
+  dedupeDecisionReasons(flatMapCompat(collections, (collection) => collection ?? []));
 
 export const mergeDecisionReasons = (...collections: Array<readonly DecisionReason[] | undefined>) =>
   dedupeReasons(...collections);

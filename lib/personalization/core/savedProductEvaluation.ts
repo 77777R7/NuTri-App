@@ -10,6 +10,7 @@ import type {
   SmartFilterProductMembership,
   SupplementTypeKey,
 } from '../../../types/personalization';
+import { flatMapCompat } from '@/lib/utils/arrayCompat';
 import { buildReason, dedupeReasons, REASON_CODES, RULE_IDS } from './reasonCodes';
 import { evaluateProductCoverageGate } from './productEvaluationGate';
 
@@ -139,7 +140,7 @@ const buildCoverageReadyMembership = (input: {
     ...(input.eligibility ? { eligibility: toEligibilitySummary(input.eligibility) } : {}),
     reasons: dedupeReasons(
       input.coverage.reasons,
-      input.productGoalMatches.flatMap((match) => match.reasons),
+      flatMapCompat(input.productGoalMatches, (match) => match.reasons),
       input.eligibility?.reasons ?? [],
       [
         buildReason(
@@ -227,7 +228,7 @@ const evaluateSavedProduct = (input: {
     ...(hasDisplayFields(input.savedProduct) ? { display: { ...input.savedProduct.display } } : {}),
     reasons: dedupeReasons(
       coverage.reasons,
-      productGoalMatches.flatMap((match) => match.reasons),
+      flatMapCompat(productGoalMatches, (match) => match.reasons),
       eligibility?.reasons ?? [],
       smartFilterMembership.reasons,
       [

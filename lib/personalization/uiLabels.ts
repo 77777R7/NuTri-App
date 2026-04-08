@@ -3,6 +3,7 @@ import blockerBehaviorRulesData from "@/data/personalization/blocker_behavior_ru
 import dietLaneMapData from "@/data/personalization/diet_nutrient_lane_map.v1.json";
 import { getGoalLabel } from "@/lib/personalization/core/goalCatalog";
 import { buildGoalIngredientPreviewLanes as buildGoalIngredientPreviewLanesFromOntology } from "@/lib/personalization/core/goalMatchOntology";
+import { flatMapCompat } from "@/lib/utils/arrayCompat";
 import type {
   BlockerKey,
   BlockerStrategy,
@@ -115,7 +116,7 @@ const dietLaneLabelByKey = new Map(
 );
 
 const activityAnchorSet = new Set(
-  ACTIVITY_GOAL_MAP.activityMappings.flatMap((mapping) => mapping.suggestedTimingAnchors),
+  flatMapCompat(ACTIVITY_GOAL_MAP.activityMappings, (mapping) => mapping.suggestedTimingAnchors),
 );
 
 const titleCaseFallback = (value: string) =>

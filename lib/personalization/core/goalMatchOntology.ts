@@ -1,6 +1,7 @@
 import goalIngredientMapV1Data from '../../../data/personalization/goal_ingredient_map.v1.json';
 import goalIngredientMapV2Data from '../../../data/personalization/goal_ingredient_map.v2.json';
 import type { GoalKey, ProductGoalMatchTier } from '../../../types/personalization';
+import { flatMapCompat } from '@/lib/utils/arrayCompat';
 import { listActiveGoalCatalogEntries, normalizeGoalKeys, getGoalLabel } from './goalCatalog';
 import {
   getFormulaPatternProvenance,
@@ -131,7 +132,7 @@ const normalizeEdge = (edge: IngredientGoalEdgeV2): IngredientGoalEdgeV2 => ({
 });
 
 const toV2EdgesFromV1 = (): IngredientGoalEdgeV2[] =>
-  GOAL_INGREDIENT_MAP_V1.mappings.flatMap((mapping) =>
+  flatMapCompat(GOAL_INGREDIENT_MAP_V1.mappings, (mapping) =>
     mapping.ingredientMatches.map((match) =>
       normalizeEdge({
         ingredientKey: match.ingredientKey,
@@ -298,7 +299,7 @@ export const projectLegacyGoalIngredientMap = (): GoalIngredientMapFileV1 => {
   return {
     version: 'v1',
     mappings: grouped,
-    goalIngredientMap: grouped.flatMap((mapping) =>
+    goalIngredientMap: flatMapCompat(grouped, (mapping) =>
       mapping.ingredientMatches.map((match) => ({
         goalKey: mapping.goalKey,
         ingredientKey: match.ingredientKey,
