@@ -54,6 +54,7 @@ import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
 import { Config } from '@/constants/Config';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOnboarding } from '@/contexts/OnboardingContext';
+import { AUTH_DISABLED } from '@/lib/auth-mode';
 import { withAuthHeaders } from '@/lib/auth-token';
 import { useTranslation } from '@/lib/i18n';
 import { lookupFoundationForIngredient, summarizeFoundationHits } from '@/lib/knowledge/foundationLookup';
@@ -184,6 +185,10 @@ type DecisionScoreCardV2Module = {
     band?: 'High' | 'Moderate' | 'Limited' | 'Low';
     checklist: DecisionScoreCardV2ChecklistItem[];
 };
+type MiniScoreTrigger = {
+    start: number;
+    range: number;
+};
 type DecisionSupportPersonalizedResultLaneSectionStatus = 'ready' | 'pending' | 'unavailable';
 type DecisionSupportPersonalizedResultLaneSectionKey =
     | 'safety'
@@ -203,6 +208,26 @@ type DecisionSupportGoalHeroMode =
 type DecisionSupportPersonalizedGoalCoverageState = 'strong' | 'some' | 'limited' | 'none' | 'unknown';
 type DecisionSupportPersonalizedDoseAssessment = 'aligned' | 'low' | 'high' | 'unclear' | 'unknown';
 type DecisionSupportPersonalizedProductStanding = 'strong' | 'average' | 'weak' | 'unknown';
+type DecisionSupportGoalCoverageGraphEvidence = {
+    relation: 'ingredient_edge' | 'formula_pattern';
+    sourceType: 'ontology_migration' | 'review_article' | 'systematic_review' | 'clinical_guideline' | 'internal_curation';
+    sourceKey: string;
+    title: string;
+    citation?: string;
+    url?: string;
+    note?: string;
+    ingredientKeys?: string[];
+};
+type DecisionSupportGoalCoverageStackAdjustment = {
+    adjustedScore: number;
+    stackContextImpact: 'positive' | 'neutral' | 'negative';
+    marginalValue: 'high' | 'medium' | 'low';
+    overlapIngredientKeys: string[];
+    overlapIngredientDisplays: string[];
+    reasonCodes: string[];
+    summary?: string;
+    action?: string[];
+};
 type DecisionSupportPersonalizedGoalCoverage = {
     goalKey: GoalKey;
     tier: ProductGoalMatchTier | 'unknown';
@@ -211,6 +236,44 @@ type DecisionSupportPersonalizedGoalCoverage = {
     score?: number | null;
     reasonCodes?: string[];
     confidenceBucket?: 'high' | 'medium' | 'low';
+    explanation?: {
+        summary?: string;
+        why?: string[];
+        evidence?: string[];
+        provenance?: string[];
+        action?: string[];
+    };
+    graphEvidence?: DecisionSupportGoalCoverageGraphEvidence[];
+    stackAdjustment?: DecisionSupportGoalCoverageStackAdjustment;
+};
+type DecisionSupportGoalCoverageSummaryItem = {
+    goalKey: GoalKey;
+    goalLabel: string;
+    fitLevel: DecisionSupportPersonalizedGoalCoverageState;
+    rank: number;
+    reasonCodes: string[];
+    confidenceBucket: 'high' | 'medium' | 'low';
+    shortReason?: string;
+    explanation?: {
+        summary?: string;
+        why?: string[];
+        evidence?: string[];
+        provenance?: string[];
+        action?: string[];
+    };
+    graphEvidence?: DecisionSupportGoalCoverageGraphEvidence[];
+    stackAdjustment?: DecisionSupportGoalCoverageStackAdjustment;
+};
+type DecisionSupportGoalCoverageSummary = {
+    selectedGoalCount: number;
+    analyzedGoalCount: number;
+    surfacedGoalCount: number;
+    hiddenGoalsCount: number;
+    allGoalsAnalyzed: boolean;
+    sortedBy: 'decision_relevance' | 'fit_strength' | 'profile_order';
+    dominantGoalKey?: GoalKey | null;
+    secondaryGoalKey?: GoalKey | null;
+    items: DecisionSupportGoalCoverageSummaryItem[];
 };
 type DecisionSupportGoalCoverageSummaryItem = {
     goalKey: GoalKey;
@@ -305,12 +368,17 @@ type DecisionSupportPersonalizedDosageContext = {
 type DecisionSupportPersonalizedStandingAlternative = {
     productId: string | null;
     title: string;
+    brand: string | null;
+    imageUrl: string | null;
+    nutriScore: number | null;
+    nutriScoreBand: 'Excellent' | 'Strong' | 'Good' | 'Fair' | 'Limited' | 'Weak' | null;
     reason: string | null;
 };
 type DecisionSupportPersonalizedProductStandingBlock = {
     status: DecisionSupportPersonalizedResultLaneSectionStatus;
     reasonCode?: 'PRODUCT_BENCHMARK_NOT_ATTACHED' | null;
     summary: string;
+    secondarySummary: string | null;
     standing: DecisionSupportPersonalizedProductStanding;
     standingLabel: string | null;
     benchmarkLabel: string | null;
@@ -802,6 +870,47 @@ const pickFreshDecisionPayloadForFacts = (
         best = pickStrongerDecisionPayload(best, payload);
     });
     return best;
+};
+
+const pickStrongestDecisionPayloadForFacts = (
+    factsDigestHash: string | null | undefined,
+    ...payloads: Array<Record<string, unknown> | null | undefined>
+): Record<string, unknown> | null => {
+    const normalizedFactsDigestHash = normalizeText(factsDigestHash);
+    let best: Record<string, unknown> | null = null;
+    payloads.forEach((payload) => {
+        if (!payload || typeof payload !== 'object') return;
+        if (isDecisionPayloadExplicitlyStale(payload)) return;
+        if (normalizedFactsDigestHash) {
+            const payloadFactsDigestHash = getDecisionPayloadFactsDigestHash(payload);
+            if (!payloadFactsDigestHash || payloadFactsDigestHash !== normalizedFactsDigestHash) {
+                return;
+            }
+        }
+        best = pickStrongerDecisionPayload(best, payload);
+    });
+    return best;
+};
+
+const mergeDecisionPayloadPersonalization = (
+    basePayload: Record<string, unknown> | null | undefined,
+    personalizationPayload: Record<string, unknown> | null | undefined,
+): Record<string, unknown> | null => {
+    if (!basePayload && !personalizationPayload) return null;
+    if (!basePayload) return personalizationPayload ?? null;
+    if (!personalizationPayload || typeof personalizationPayload !== 'object') return basePayload;
+
+    const personalizedResultLane =
+        typeof personalizationPayload.personalizedResultLane === 'object'
+            ? personalizationPayload.personalizedResultLane
+            : null;
+
+    if (!personalizedResultLane) return basePayload;
+
+    return {
+        ...basePayload,
+        personalizedResultLane,
+    };
 };
 
 const upsertDecisionPayloadByBarcode = (
@@ -1593,7 +1702,16 @@ const NutriScoreCardV2: React.FC<{
     overallBand?: string | null;
     modules: DecisionScoreCardV2Module[];
     muted: boolean;
-}> = ({ overallScore, overallBand, modules, muted }) => {
+    onModulesLayout?: (y: number) => void;
+    onIngredientSafetyLayout?: (y: number) => void;
+}> = ({
+    overallScore,
+    overallBand,
+    modules,
+    muted,
+    onModulesLayout,
+    onIngredientSafetyLayout,
+}) => {
     const { t } = useTranslation();
     const [expandedId, setExpandedId] = useState<DecisionScoreCardV2Module['id'] | null>(null);
     const [learnMoreVisible, setLearnMoreVisible] = useState(false);
@@ -1606,7 +1724,6 @@ const NutriScoreCardV2: React.FC<{
         <View style={styles.scoreV2Card}>
             <View style={styles.scoreV2Header}>
                 <View style={styles.scoreV2HeaderLeft}>
-                    <Text style={styles.scoreV2Eyebrow}>NUTRI SCORE</Text>
                     <Text style={styles.scoreV2OverallValue}>
                         {muted ? '--' : Math.round(overallScore)}
                         <Text style={styles.scoreV2OverallOutOf}>/100</Text>
@@ -1627,61 +1744,121 @@ const NutriScoreCardV2: React.FC<{
                 </Pressable>
             </View>
 
-            <View style={styles.scoreV2Modules}>
-                {safeModules.map((module) => {
+            <View
+                style={styles.scoreV2Modules}
+                onLayout={(event) => onModulesLayout?.(event.nativeEvent.layout.y)}
+            >
+                {safeModules.map((module, index) => {
                     const expanded = expandedId === module.id;
                     const stateColor = moduleStatusColor(module);
                     const bandLabel = moduleStatusLabel(module);
                     return (
-                        <View key={module.id} style={styles.scoreV2ModuleCard}>
-                            <Pressable
-                                onPress={() => setExpandedId(expanded ? null : module.id)}
-                                style={styles.scoreV2ModuleRow}
-                            >
-                                <View style={styles.scoreV2ModuleTitleWrap}>
-                                    <Text style={styles.scoreV2ModuleTitle}>{module.title}</Text>
-                                    <Text style={[styles.scoreV2ModuleStatus, { color: stateColor }]}>
-                                        {bandLabel}
-                                    </Text>
-                                </View>
-                                <View style={styles.scoreV2ModuleRight}>
-                                    <Text style={styles.scoreV2ModuleScore}>{Math.round(module.score)}/100</Text>
-                                    <ChevronRight
-                                        size={16}
-                                        color="#6B7280"
-                                        style={expanded ? styles.scoreV2ChevronExpanded : undefined}
-                                    />
-                                </View>
-                            </Pressable>
+                        <View
+                            key={module.id}
+                            onLayout={
+                                module.id === 'ingredient_safety'
+                                    ? (event) => onIngredientSafetyLayout?.(event.nativeEvent.layout.y)
+                                    : undefined
+                            }
+                        >
+                            <View style={styles.scoreV2ModuleCard}>
+                                <Pressable
+                                    onPress={() => setExpandedId(expanded ? null : module.id)}
+                                    style={styles.scoreV2ModuleRow}
+                                >
+                                    <View style={styles.scoreV2ModuleTitleWrap}>
+                                        <Text style={styles.scoreV2ModuleTitle}>{module.title}</Text>
+                                        <Text style={[styles.scoreV2ModuleStatus, { color: stateColor }]}>
+                                            {bandLabel}
+                                        </Text>
+                                    </View>
+                                    <View style={styles.scoreV2ModuleRight}>
+                                        <Text style={styles.scoreV2ModuleScore}>{Math.round(module.score)}/100</Text>
+                                        <ChevronRight
+                                            size={16}
+                                            color="#64748B"
+                                            style={expanded ? styles.scoreV2ChevronExpanded : undefined}
+                                        />
+                                    </View>
+                                </Pressable>
 
-                            {expanded ? (
-                                <View style={styles.scoreV2ChecklistBlock}>
-                                    {(module.checklist ?? []).map((item) => {
-                                        const chip = resolveChecklistChip(item);
-                                        return (
-                                            <View key={`${module.id}-${item.key}`} style={styles.scoreV2ChecklistRow}>
-                                                <Text style={styles.scoreV2ChecklistLine}>{item.label}</Text>
-                                                <View
-                                                    style={[
-                                                        styles.scoreV2ChecklistChip,
-                                                        chip === 'Verified' ? styles.scoreV2ChipVerified : null,
-                                                        chip === 'Detected' ? styles.scoreV2ChipDetected : null,
-                                                        chip === 'Not verified' ? styles.scoreV2ChipNotVerified : null,
-                                                        chip === 'Not shown' ? styles.scoreV2ChipNotShown : null,
-                                                    ]}
-                                                >
-                                                    <Text style={styles.scoreV2ChecklistChipText}>{chip}</Text>
+                                {expanded ? (
+                                    <View style={styles.scoreV2ChecklistBlock}>
+                                        {(module.checklist ?? []).map((item) => {
+                                            const chip = resolveChecklistChip(item);
+                                            return (
+                                                <View key={`${module.id}-${item.key}`} style={styles.scoreV2ChecklistRow}>
+                                                    <Text style={styles.scoreV2ChecklistLine}>{item.label}</Text>
+                                                    <View
+                                                        style={[
+                                                            styles.scoreV2ChecklistChip,
+                                                            chip === 'Verified' ? styles.scoreV2ChipVerified : null,
+                                                            chip === 'Detected' ? styles.scoreV2ChipDetected : null,
+                                                            chip === 'Not verified' ? styles.scoreV2ChipNotVerified : null,
+                                                            chip === 'Not shown' ? styles.scoreV2ChipNotShown : null,
+                                                        ]}
+                                                    >
+                                                        <Text style={styles.scoreV2ChecklistChipText}>{chip}</Text>
+                                                    </View>
                                                 </View>
-                                            </View>
-                                        );
-                                    })}
-                                </View>
-                            ) : null}
+                                            );
+                                        })}
+                                    </View>
+                                ) : null}
+                            </View>
+                            {index < safeModules.length - 1 ? <View style={styles.scoreV2ModuleDivider} /> : null}
                         </View>
                     );
                 })}
             </View>
             <ScoreLearnMoreModal visible={learnMoreVisible} onClose={() => setLearnMoreVisible(false)} />
+        </View>
+    );
+};
+
+const ComparisonAlternativeCard: React.FC<{
+    alternative: DecisionSupportPersonalizedStandingAlternative;
+    cardWidth: number;
+}> = ({ alternative, cardWidth }) => {
+    const { t } = useTranslation();
+    const scoreText = Number.isFinite(Number(alternative.nutriScore))
+        ? `${Math.round(Number(alternative.nutriScore))}/100`
+        : '--';
+
+    return (
+        <View style={[styles.comparisonCard, { width: cardWidth }]}>
+            <View style={styles.comparisonCardTopRow}>
+                <View style={styles.comparisonCardIdentity}>
+                    {alternative.imageUrl ? (
+                        <Image source={{ uri: alternative.imageUrl }} style={styles.comparisonCardImage} />
+                    ) : (
+                        <View style={styles.comparisonCardImagePlaceholder}>
+                            <Pill size={18} color="#64748B" />
+                        </View>
+                    )}
+                    <View style={styles.comparisonCardIdentityText}>
+                        <Text style={styles.comparisonCardTitle} numberOfLines={2}>
+                            {alternative.title}
+                        </Text>
+                        {alternative.brand ? (
+                            <Text style={styles.comparisonCardBrand} numberOfLines={1}>
+                                {alternative.brand}
+                            </Text>
+                        ) : null}
+                    </View>
+                </View>
+
+                <View style={styles.comparisonCardScoreBlock}>
+                    <Text style={styles.comparisonCardScore}>{scoreText}</Text>
+                    <Text style={styles.comparisonCardScoreLabel}>{t.analysisComparisonScoreLabel}</Text>
+                </View>
+            </View>
+
+            {alternative.reason ? (
+                <Text style={styles.comparisonCardReason} numberOfLines={2}>
+                    {alternative.reason}
+                </Text>
+            ) : null}
         </View>
     );
 };
@@ -2220,20 +2397,19 @@ const DashboardModal: React.FC<{
 }> = ({ visible, onClose, tile, sourceType, sourceTypeFinal }) => {
     const { t } = useTranslation();
     const [sourcesOpen, setSourcesOpen] = useState(false);
-    if (!tile) return null;
-
-    const accent = tile.backgroundColor || '#D1D5DB';
-    const ModalIcon = tile.icon;
-    const statusLine = tile.dataStatus
+    const tileType = tile?.type ?? 'unknown';
+    const accent = tile?.backgroundColor || '#D1D5DB';
+    const ModalIcon = tile?.icon ?? null;
+    const statusLine = tile?.dataStatus
         ? `Missing: ${formatMissingReasons(tile.dataStatus.missingReasons)}`
         : undefined;
-    const sourceLine = formatSourceRefs(tile.dataStatus?.sources);
-    const notesLine = tile.dataStatus?.notes?.length ? tile.dataStatus.notes.join(' • ') : null;
-    const shouldShowDataStatusCard = SCAN_UX_VIEW_MODE === 'details' && tile.showDataStatusCard !== false;
+    const sourceLine = formatSourceRefs(tile?.dataStatus?.sources);
+    const notesLine = tile?.dataStatus?.notes?.length ? tile.dataStatus.notes.join(' • ') : null;
+    const shouldShowDataStatusCard = SCAN_UX_VIEW_MODE === 'details' && tile?.showDataStatusCard !== false;
     const webEvidenceLabel =
-        tile.trustPanel?.webEvidence === 'used'
+        tile?.trustPanel?.webEvidence === 'used'
             ? 'used'
-            : tile.trustPanel?.webEvidence === 'not used'
+            : tile?.trustPanel?.webEvidence === 'not used'
                 ? 'not used'
                 : 'unknown';
     const openedAtRef = useRef<number>(0);
@@ -2247,7 +2423,7 @@ const DashboardModal: React.FC<{
         emitScanUxMetric('scan_sheet_closed', {
             viewMode: SCAN_UX_VIEW_MODE,
             variant: SCAN_UX_VARIANT,
-            sheetType: tile.type,
+            sheetType: tileType,
             sourceType,
             sourceTypeFinal,
             dwellMs,
@@ -2257,7 +2433,7 @@ const DashboardModal: React.FC<{
             fallbackUsed: null,
         });
         onClose();
-    }, [onClose, sourceType, sourceTypeFinal, tile.type]);
+    }, [onClose, sourceType, sourceTypeFinal, tileType]);
 
     const handleModalScroll = useCallback((event: any) => {
         const y = Number(event?.nativeEvent?.contentOffset?.y ?? 0);
@@ -2281,7 +2457,7 @@ const DashboardModal: React.FC<{
         emitScanUxMetric('scan_sheet_opened', {
             viewMode: SCAN_UX_VIEW_MODE,
             variant: SCAN_UX_VARIANT,
-            sheetType: tile.type,
+            sheetType: tileType,
             sourceType,
             sourceTypeFinal,
             dwellMs: 0,
@@ -2290,7 +2466,9 @@ const DashboardModal: React.FC<{
             guardApplied: null,
             fallbackUsed: null,
         });
-    }, [visible, sourceType, sourceTypeFinal, tile.type]);
+    }, [visible, sourceType, sourceTypeFinal, tileType]);
+
+    if (!tile) return null;
 
     return (
         <Modal
@@ -2578,9 +2756,30 @@ const toSentence = (value: string | null | undefined): string | null => {
     return /[.!?]$/.test(trimmed) ? trimmed : `${trimmed}.`;
 };
 
-const resolveFactsSourceFromIdentity = (
-    identity: AnalysisBundle['meta']['authoritativeIdentity'],
+const resolveCanonicalBarcodeFromBundleMeta = (
+    meta: AnalysisBundle['meta'] | null | undefined,
+    fallbackBarcode?: string | null,
+): string | null => {
+    const canonicalFromMeta = normalizeBarcodeForDecision(
+        (meta as { canonicalBarcodeGtin14?: string | null } | null | undefined)?.canonicalBarcodeGtin14 ?? null,
+    );
+    if (canonicalFromMeta) return canonicalFromMeta;
+    const identity = meta?.authoritativeIdentity;
+    if (identity?.type === 'gtin14') {
+        const normalizedIdentityBarcode = normalizeBarcodeForDecision(identity.value);
+        if (normalizedIdentityBarcode) return normalizedIdentityBarcode;
+    }
+    return normalizeBarcodeForDecision(fallbackBarcode);
+};
+
+const resolveFactsSourceFromBundleMeta = (
+    meta: AnalysisBundle['meta'] | null | undefined,
 ): { source: 'lnhpd' | 'dsld' | 'web'; sourceId: string } | null => {
+    const canonicalBarcode = resolveCanonicalBarcodeFromBundleMeta(meta);
+    if (canonicalBarcode) {
+        return { source: 'web', sourceId: canonicalBarcode };
+    }
+    const identity = meta?.authoritativeIdentity;
     if (!identity?.value) return null;
     if (identity.type === 'npn') return { source: 'lnhpd', sourceId: identity.value };
     if (identity.type === 'dsldLabelId') return { source: 'dsld', sourceId: identity.value };
@@ -3221,14 +3420,28 @@ const pickKeyIngredientsForBackground = (items: IngredientCoverItemLike[] | null
     return scored.map((row) => row.name);
 };
 
+const DEFAULT_MINI_SCORE_TRIGGER_START = 210;
+const DEFAULT_MINI_SCORE_TRIGGER_RANGE = 70;
+const MEASURED_MINI_SCORE_TRIGGER_RANGE = 36;
+const HEADER_MINI_SCORE_REVEAL_OFFSET = 72;
+
 const MiniScoreHeader: React.FC<{
     scrollY: SharedValue<number>;
     overallScore: number;
     overallBand?: string | null;
     muted?: boolean;
-}> = ({ scrollY, overallScore, overallBand, muted }) => {
+    thresholdStart?: number;
+    thresholdRange?: number;
+}> = ({
+    scrollY,
+    overallScore,
+    overallBand,
+    muted,
+    thresholdStart = DEFAULT_MINI_SCORE_TRIGGER_START,
+    thresholdRange = DEFAULT_MINI_SCORE_TRIGGER_RANGE,
+}) => {
     const animatedStyle = useAnimatedStyle(() => {
-        const progress = (scrollY.value - 210) / 70;
+        const progress = (scrollY.value - thresholdStart) / Math.max(thresholdRange, 1);
         const p = Math.max(0, Math.min(1, progress)); // appears after user scrolls a bit
         return {
             opacity: p,
@@ -3237,7 +3450,7 @@ const MiniScoreHeader: React.FC<{
                 { scale: 0.88 + p * 0.12 },
             ],
         };
-    }, []);
+    }, [scrollY, thresholdRange, thresholdStart]);
     const overallBandTone = getOverallBandTone(overallScore, overallBand);
 
     return (
@@ -3286,6 +3499,7 @@ const AnalysisBundleDashboard: React.FC<{
     externalScrollY?: SharedValue<number>;
     miniHeaderMode?: 'inline' | 'header';
     onMiniScoreMetaChange?: (meta: { overallScore: number; overallBand: string | null; muted: boolean }) => void;
+    onMiniScoreTriggerChange?: (trigger: { start: number; range: number }) => void;
     onCoreReadyChange?: (ready: boolean) => void;
     saveItem?: AnalysisDashboardSaveItem | null;
 }> = ({
@@ -3299,6 +3513,7 @@ const AnalysisBundleDashboard: React.FC<{
     externalScrollY,
     miniHeaderMode = 'inline',
     onMiniScoreMetaChange,
+    onMiniScoreTriggerChange,
     onCoreReadyChange,
     saveItem = null,
 }) => {
@@ -3309,6 +3524,10 @@ const AnalysisBundleDashboard: React.FC<{
     const [bundleState, setBundleState] = useState<AnalysisBundle>(bundle);
     const [detailLoading, setDetailLoading] = useState(false);
     const [detailError, setDetailError] = useState<string | null>(null);
+    const [scoreSectionLayoutY, setScoreSectionLayoutY] = useState<number | null>(null);
+    const [scoreHeroLayoutY, setScoreHeroLayoutY] = useState<number | null>(null);
+    const [scoreModulesLayoutY, setScoreModulesLayoutY] = useState<number | null>(null);
+    const [ingredientSafetyLayoutY, setIngredientSafetyLayoutY] = useState<number | null>(null);
     const [factsDtoState, setFactsDtoState] = useState<FactsDtoState>({
         status: 'idle',
         data: null,
@@ -3371,7 +3590,7 @@ const AnalysisBundleDashboard: React.FC<{
         [localDecisionSupportRequestProfile],
     );
     const shouldUseLocalDecisionSupport = useMemo(
-        () => !authLoading && !authToken && Boolean(localDecisionSupportHeader),
+        () => !authLoading && Boolean(localDecisionSupportHeader) && (AUTH_DISABLED || !authToken),
         [authLoading, authToken, localDecisionSupportHeader],
     );
     const localDecisionSupportCacheScope = useMemo(() => {
@@ -3534,10 +3753,12 @@ const AnalysisBundleDashboard: React.FC<{
     const scrollHandler = useAnimatedScrollHandler((event) => {
         scrollY.value = event.contentOffset.y;
     });
-    const { height: viewportHeight } = useWindowDimensions();
+    const { height: viewportHeight, width: viewportWidth } = useWindowDimensions();
     const [tilesContainerW, setTilesContainerW] = useState(0);
     const TILE_GAP = 12;
     const tileWidth: DimensionValue = tilesContainerW > 0 ? tilesContainerW : '100%';
+    const comparisonCardWidth = Math.min(Math.max(viewportWidth - 72, 280), 348);
+    const comparisonSnapInterval = comparisonCardWidth + 12;
     const TileRenderer = disableTileAnimation ? StaticTile : AnimatedTile;
     const ScrollContainer: any = disableReanimatedScroll ? ScrollView : Animated.ScrollView;
     const handlePlainScroll = useCallback((event: any) => {
@@ -3714,7 +3935,7 @@ const AnalysisBundleDashboard: React.FC<{
     }, [bundle]);
 
     useEffect(() => {
-        const sourceTarget = resolveFactsSourceFromIdentity(bundleState.meta.authoritativeIdentity);
+        const sourceTarget = resolveFactsSourceFromBundleMeta(bundleState.meta);
         if (!sourceTarget) {
             setFactsDtoState({ status: 'error', data: null, error: 'Missing authoritative identity' });
             return;
@@ -3769,18 +3990,12 @@ const AnalysisBundleDashboard: React.FC<{
     }, [
         bundleState.meta.authoritativeIdentity.type,
         bundleState.meta.authoritativeIdentity.value,
+        (bundleState.meta as { canonicalBarcodeGtin14?: string | null }).canonicalBarcodeGtin14,
     ]);
 
     useEffect(() => {
         if (authLoading || onboardingLoading) return;
-        const resolvedBarcode = (() => {
-            const identity = bundleState.meta.authoritativeIdentity;
-            if (identity?.type === 'gtin14') {
-                const digits = String(identity.value ?? '').replace(/\D/g, '');
-                if (digits.length >= 8) return digits.length > 14 ? digits.slice(-14) : digits.padStart(14, '0');
-            }
-            return analysisBarcodeDigits;
-        })();
+        const resolvedBarcode = canonicalDecisionBarcode;
         if (!resolvedBarcode) return;
         const digestHint =
             typeof (bundleState.meta as { decisionSupportDigest?: unknown })?.decisionSupportDigest === 'string'
@@ -3802,6 +4017,28 @@ const AnalysisBundleDashboard: React.FC<{
         ].join('|');
         const normalizedSessionId = normalizeText(scanSessionId) || 'session_unknown';
         const normalizedSessionIdRaw = normalizeText(scanSessionId) || null;
+        const decisionSupportProductName =
+            normalizeText(analysis?.productInfo?.name ?? null)
+            || normalizeText(
+                ((bundleState.meta as { productIdentity?: { name?: string | null } | null }).productIdentity?.name ?? null),
+            )
+            || normalizeText(factsDtoState.data?.product?.name ?? null)
+            || null;
+        const decisionSupportBrandName =
+            normalizeText(analysis?.productInfo?.brand ?? null)
+            || normalizeText(
+                ((bundleState.meta as { productIdentity?: { brand?: string | null } | null }).productIdentity?.brand ?? null),
+            )
+            || normalizeText(factsDtoState.data?.product?.brand ?? null)
+            || null;
+        const authoritativeIdentityType =
+            typeof bundleState.meta.authoritativeIdentity?.type === 'string'
+                ? bundleState.meta.authoritativeIdentity.type
+                : null;
+        const authoritativeIdentityValue =
+            typeof bundleState.meta.authoritativeIdentity?.value === 'string'
+                ? bundleState.meta.authoritativeIdentity.value
+                : null;
         const decisionInputsHashHint =
             normalizeText(
                 ((bundleState.meta as { decisionInputsHash?: string | null }).decisionInputsHash) ?? null,
@@ -3897,6 +4134,12 @@ const AnalysisBundleDashboard: React.FC<{
                     barcode: resolvedBarcode,
                     viewMode: SCAN_UX_VIEW_MODE,
                 });
+                if (decisionSupportProductName) params.set('productName', decisionSupportProductName);
+                if (decisionSupportBrandName) params.set('brandName', decisionSupportBrandName);
+                if (authoritativeIdentityType && authoritativeIdentityValue) {
+                    params.set('authoritativeIdentityType', authoritativeIdentityType);
+                    params.set('authoritativeIdentityValue', authoritativeIdentityValue);
+                }
                 const headers = await withAuthHeaders();
                 const usingLocalDecisionSupport = !headers.Authorization && Boolean(localDecisionSupportHeader);
                 if (digestParam) params.set('digest', digestParam);
@@ -3923,6 +4166,10 @@ const AnalysisBundleDashboard: React.FC<{
                     allergyPreview: localDecisionSupportSignals.allergyPreview,
                     restrictionPreview: localDecisionSupportSignals.restrictionPreview,
                     localHeaderChars: headers['x-local-personalization']?.length ?? 0,
+                    productName: decisionSupportProductName,
+                    brandName: decisionSupportBrandName,
+                    authoritativeIdentityType,
+                    authoritativeIdentityValue,
                 })}`);
                 const res = await fetch(`${baseUrl}/api/decision-support/v1?${params.toString()}`, {
                     method: 'GET',
@@ -3997,6 +4244,9 @@ const AnalysisBundleDashboard: React.FC<{
                                 heroMode?: DecisionSupportGoalHeroMode | null;
                                 dominantGoalKey?: string | null;
                                 secondaryGoalKey?: string | null;
+                                dominanceGap?: number | null;
+                                goalNarrativeConfidence?: 'high' | 'medium' | 'low' | null;
+                                labelCompleteness?: 'high' | 'medium' | 'low' | null;
                                 selectedGoalKeys?: string[] | null;
                                 allSelectedGoalKeys?: string[] | null;
                                 goalLensMode?: 'single_goal' | 'multi_goal_summary' | null;
@@ -4008,6 +4258,33 @@ const AnalysisBundleDashboard: React.FC<{
                                     score?: number | null;
                                     reasonCodes?: string[] | null;
                                     confidenceBucket?: 'high' | 'medium' | 'low' | null;
+                                    explanation?: {
+                                        summary?: string | null;
+                                        why?: string[] | null;
+                                        evidence?: string[] | null;
+                                        provenance?: string[] | null;
+                                        action?: string[] | null;
+                                    } | null;
+                                    graphEvidence?: Array<{
+                                        relation?: 'ingredient_edge' | 'formula_pattern' | null;
+                                        sourceType?: 'ontology_migration' | 'review_article' | 'systematic_review' | 'clinical_guideline' | 'internal_curation' | null;
+                                        sourceKey?: string | null;
+                                        title?: string | null;
+                                        citation?: string | null;
+                                        url?: string | null;
+                                        note?: string | null;
+                                        ingredientKeys?: string[] | null;
+                                    }> | null;
+                                    stackAdjustment?: {
+                                        adjustedScore?: number | null;
+                                        stackContextImpact?: 'positive' | 'neutral' | 'negative' | null;
+                                        marginalValue?: 'high' | 'medium' | 'low' | null;
+                                        overlapIngredientKeys?: string[] | null;
+                                        overlapIngredientDisplays?: string[] | null;
+                                        reasonCodes?: string[] | null;
+                                        summary?: string | null;
+                                        action?: string[] | null;
+                                    } | null;
                                 }> | null;
                                 allGoalCoverage?: Array<{
                                     goalKey?: string | null;
@@ -4017,6 +4294,33 @@ const AnalysisBundleDashboard: React.FC<{
                                     score?: number | null;
                                     reasonCodes?: string[] | null;
                                     confidenceBucket?: 'high' | 'medium' | 'low' | null;
+                                    explanation?: {
+                                        summary?: string | null;
+                                        why?: string[] | null;
+                                        evidence?: string[] | null;
+                                        provenance?: string[] | null;
+                                        action?: string[] | null;
+                                    } | null;
+                                    graphEvidence?: Array<{
+                                        relation?: 'ingredient_edge' | 'formula_pattern' | null;
+                                        sourceType?: 'ontology_migration' | 'review_article' | 'systematic_review' | 'clinical_guideline' | 'internal_curation' | null;
+                                        sourceKey?: string | null;
+                                        title?: string | null;
+                                        citation?: string | null;
+                                        url?: string | null;
+                                        note?: string | null;
+                                        ingredientKeys?: string[] | null;
+                                    }> | null;
+                                    stackAdjustment?: {
+                                        adjustedScore?: number | null;
+                                        stackContextImpact?: 'positive' | 'neutral' | 'negative' | null;
+                                        marginalValue?: 'high' | 'medium' | 'low' | null;
+                                        overlapIngredientKeys?: string[] | null;
+                                        overlapIngredientDisplays?: string[] | null;
+                                        reasonCodes?: string[] | null;
+                                        summary?: string | null;
+                                        action?: string[] | null;
+                                    } | null;
                                 }> | null;
                                 goalCoverageSummary?: {
                                     selectedGoalCount?: number | null;
@@ -4035,6 +4339,33 @@ const AnalysisBundleDashboard: React.FC<{
                                         reasonCodes?: string[] | null;
                                         confidenceBucket?: 'high' | 'medium' | 'low' | null;
                                         shortReason?: string | null;
+                                        explanation?: {
+                                            summary?: string | null;
+                                            why?: string[] | null;
+                                            evidence?: string[] | null;
+                                            provenance?: string[] | null;
+                                            action?: string[] | null;
+                                        } | null;
+                                        graphEvidence?: Array<{
+                                            relation?: 'ingredient_edge' | 'formula_pattern' | null;
+                                            sourceType?: 'ontology_migration' | 'review_article' | 'systematic_review' | 'clinical_guideline' | 'internal_curation' | null;
+                                            sourceKey?: string | null;
+                                            title?: string | null;
+                                            citation?: string | null;
+                                            url?: string | null;
+                                            note?: string | null;
+                                            ingredientKeys?: string[] | null;
+                                        }> | null;
+                                        stackAdjustment?: {
+                                            adjustedScore?: number | null;
+                                            stackContextImpact?: 'positive' | 'neutral' | 'negative' | null;
+                                            marginalValue?: 'high' | 'medium' | 'low' | null;
+                                            overlapIngredientKeys?: string[] | null;
+                                            overlapIngredientDisplays?: string[] | null;
+                                            reasonCodes?: string[] | null;
+                                            summary?: string | null;
+                                            action?: string[] | null;
+                                        } | null;
                                     }> | null;
                                 } | null;
                                 selectedGoalCount?: number | null;
@@ -4053,6 +4384,9 @@ const AnalysisBundleDashboard: React.FC<{
                         heroMode: goalFitResponse?.heroMode ?? null,
                         dominantGoalKey: goalFitResponse?.dominantGoalKey ?? null,
                         secondaryGoalKey: goalFitResponse?.secondaryGoalKey ?? null,
+                        dominanceGap: typeof goalFitResponse?.dominanceGap === 'number' ? goalFitResponse.dominanceGap : null,
+                        goalNarrativeConfidence: goalFitResponse?.goalNarrativeConfidence ?? null,
+                        labelCompleteness: goalFitResponse?.labelCompleteness ?? null,
                         selectedGoalKeys: Array.isArray(goalFitResponse?.selectedGoalKeys)
                             ? goalFitResponse.selectedGoalKeys
                             : [],
@@ -4069,6 +4403,39 @@ const AnalysisBundleDashboard: React.FC<{
                                 score: typeof entry?.score === 'number' ? entry.score : null,
                                 reasonCodes: Array.isArray(entry?.reasonCodes) ? entry.reasonCodes : [],
                                 confidenceBucket: entry?.confidenceBucket ?? null,
+                                explanation: entry?.explanation
+                                    ? {
+                                        summary: entry.explanation.summary ?? null,
+                                        why: Array.isArray(entry.explanation.why) ? entry.explanation.why : [],
+                                        evidence: Array.isArray(entry.explanation.evidence) ? entry.explanation.evidence : [],
+                                        provenance: Array.isArray(entry.explanation.provenance) ? entry.explanation.provenance : [],
+                                        action: Array.isArray(entry.explanation.action) ? entry.explanation.action : [],
+                                    }
+                                    : null,
+                                graphEvidence: Array.isArray(entry?.graphEvidence)
+                                    ? entry.graphEvidence.map((evidence) => ({
+                                        relation: evidence?.relation ?? null,
+                                        sourceType: evidence?.sourceType ?? null,
+                                        sourceKey: evidence?.sourceKey ?? null,
+                                        title: evidence?.title ?? null,
+                                        citation: evidence?.citation ?? null,
+                                        url: evidence?.url ?? null,
+                                        note: evidence?.note ?? null,
+                                        ingredientKeys: Array.isArray(evidence?.ingredientKeys) ? evidence.ingredientKeys : [],
+                                    }))
+                                    : [],
+                                stackAdjustment: entry?.stackAdjustment
+                                    ? {
+                                        adjustedScore: typeof entry.stackAdjustment.adjustedScore === 'number' ? entry.stackAdjustment.adjustedScore : null,
+                                        stackContextImpact: entry.stackAdjustment.stackContextImpact ?? null,
+                                        marginalValue: entry.stackAdjustment.marginalValue ?? null,
+                                        overlapIngredientKeys: Array.isArray(entry.stackAdjustment.overlapIngredientKeys) ? entry.stackAdjustment.overlapIngredientKeys : [],
+                                        overlapIngredientDisplays: Array.isArray(entry.stackAdjustment.overlapIngredientDisplays) ? entry.stackAdjustment.overlapIngredientDisplays : [],
+                                        reasonCodes: Array.isArray(entry.stackAdjustment.reasonCodes) ? entry.stackAdjustment.reasonCodes : [],
+                                        summary: entry.stackAdjustment.summary ?? null,
+                                        action: Array.isArray(entry.stackAdjustment.action) ? entry.stackAdjustment.action : [],
+                                    }
+                                    : null,
                             }))
                             : [],
                         allGoalCoverage: Array.isArray(goalFitResponse?.allGoalCoverage)
@@ -4080,6 +4447,39 @@ const AnalysisBundleDashboard: React.FC<{
                                 score: typeof entry?.score === 'number' ? entry.score : null,
                                 reasonCodes: Array.isArray(entry?.reasonCodes) ? entry.reasonCodes : [],
                                 confidenceBucket: entry?.confidenceBucket ?? null,
+                                explanation: entry?.explanation
+                                    ? {
+                                        summary: entry.explanation.summary ?? null,
+                                        why: Array.isArray(entry.explanation.why) ? entry.explanation.why : [],
+                                        evidence: Array.isArray(entry.explanation.evidence) ? entry.explanation.evidence : [],
+                                        provenance: Array.isArray(entry.explanation.provenance) ? entry.explanation.provenance : [],
+                                        action: Array.isArray(entry.explanation.action) ? entry.explanation.action : [],
+                                    }
+                                    : null,
+                                graphEvidence: Array.isArray(entry?.graphEvidence)
+                                    ? entry.graphEvidence.map((evidence) => ({
+                                        relation: evidence?.relation ?? null,
+                                        sourceType: evidence?.sourceType ?? null,
+                                        sourceKey: evidence?.sourceKey ?? null,
+                                        title: evidence?.title ?? null,
+                                        citation: evidence?.citation ?? null,
+                                        url: evidence?.url ?? null,
+                                        note: evidence?.note ?? null,
+                                        ingredientKeys: Array.isArray(evidence?.ingredientKeys) ? evidence.ingredientKeys : [],
+                                    }))
+                                    : [],
+                                stackAdjustment: entry?.stackAdjustment
+                                    ? {
+                                        adjustedScore: typeof entry.stackAdjustment.adjustedScore === 'number' ? entry.stackAdjustment.adjustedScore : null,
+                                        stackContextImpact: entry.stackAdjustment.stackContextImpact ?? null,
+                                        marginalValue: entry.stackAdjustment.marginalValue ?? null,
+                                        overlapIngredientKeys: Array.isArray(entry.stackAdjustment.overlapIngredientKeys) ? entry.stackAdjustment.overlapIngredientKeys : [],
+                                        overlapIngredientDisplays: Array.isArray(entry.stackAdjustment.overlapIngredientDisplays) ? entry.stackAdjustment.overlapIngredientDisplays : [],
+                                        reasonCodes: Array.isArray(entry.stackAdjustment.reasonCodes) ? entry.stackAdjustment.reasonCodes : [],
+                                        summary: entry.stackAdjustment.summary ?? null,
+                                        action: Array.isArray(entry.stackAdjustment.action) ? entry.stackAdjustment.action : [],
+                                    }
+                                    : null,
                             }))
                             : [],
                         selectedGoalCount: typeof goalFitResponse?.selectedGoalCount === 'number'
@@ -4123,6 +4523,39 @@ const AnalysisBundleDashboard: React.FC<{
                                         reasonCodes: Array.isArray(entry?.reasonCodes) ? entry.reasonCodes : [],
                                         confidenceBucket: entry?.confidenceBucket ?? null,
                                         shortReason: entry?.shortReason ?? null,
+                                        explanation: entry?.explanation
+                                            ? {
+                                                summary: entry.explanation.summary ?? null,
+                                                why: Array.isArray(entry.explanation.why) ? entry.explanation.why : [],
+                                                evidence: Array.isArray(entry.explanation.evidence) ? entry.explanation.evidence : [],
+                                                provenance: Array.isArray(entry.explanation.provenance) ? entry.explanation.provenance : [],
+                                                action: Array.isArray(entry.explanation.action) ? entry.explanation.action : [],
+                                            }
+                                            : null,
+                                        graphEvidence: Array.isArray(entry?.graphEvidence)
+                                            ? entry.graphEvidence.map((evidence) => ({
+                                                relation: evidence?.relation ?? null,
+                                                sourceType: evidence?.sourceType ?? null,
+                                                sourceKey: evidence?.sourceKey ?? null,
+                                                title: evidence?.title ?? null,
+                                                citation: evidence?.citation ?? null,
+                                                url: evidence?.url ?? null,
+                                                note: evidence?.note ?? null,
+                                                ingredientKeys: Array.isArray(evidence?.ingredientKeys) ? evidence.ingredientKeys : [],
+                                            }))
+                                            : [],
+                                        stackAdjustment: entry?.stackAdjustment
+                                            ? {
+                                                adjustedScore: typeof entry.stackAdjustment.adjustedScore === 'number' ? entry.stackAdjustment.adjustedScore : null,
+                                                stackContextImpact: entry.stackAdjustment.stackContextImpact ?? null,
+                                                marginalValue: entry.stackAdjustment.marginalValue ?? null,
+                                                overlapIngredientKeys: Array.isArray(entry.stackAdjustment.overlapIngredientKeys) ? entry.stackAdjustment.overlapIngredientKeys : [],
+                                                overlapIngredientDisplays: Array.isArray(entry.stackAdjustment.overlapIngredientDisplays) ? entry.stackAdjustment.overlapIngredientDisplays : [],
+                                                reasonCodes: Array.isArray(entry.stackAdjustment.reasonCodes) ? entry.stackAdjustment.reasonCodes : [],
+                                                summary: entry.stackAdjustment.summary ?? null,
+                                                action: Array.isArray(entry.stackAdjustment.action) ? entry.stackAdjustment.action : [],
+                                            }
+                                            : null,
                                     }))
                                     : [],
                             }
@@ -4245,11 +4678,14 @@ const AnalysisBundleDashboard: React.FC<{
             cancelled = true;
         };
     }, [
-        analysisBarcodeDigits,
         authLoading,
         authToken,
+        canonicalDecisionBarcode,
         bundleState.meta.authoritativeIdentity.type,
         bundleState.meta.authoritativeIdentity.value,
+        (bundleState.meta as { canonicalBarcodeGtin14?: string | null }).canonicalBarcodeGtin14,
+        ((bundleState.meta as { productIdentity?: { brand?: string | null } | null }).productIdentity?.brand ?? null),
+        ((bundleState.meta as { productIdentity?: { name?: string | null } | null }).productIdentity?.name ?? null),
         (bundleState.meta as { decisionSupportDigest?: string | null })?.decisionSupportDigest,
         (bundleState.meta as { decisionInputsHash?: string | null })?.decisionInputsHash,
         bundleState.meta.factsDigestHash,
@@ -4258,6 +4694,10 @@ const AnalysisBundleDashboard: React.FC<{
         localDecisionSupportProfileKey,
         localDecisionSupportSignals,
         localDecisionSupportCacheScope,
+        factsDtoState.data?.product?.brand,
+        factsDtoState.data?.product?.name,
+        analysis?.productInfo?.brand,
+        analysis?.productInfo?.name,
         scanSessionId,
         shouldUseLocalDecisionSupport,
     ]);
@@ -4290,25 +4730,34 @@ const AnalysisBundleDashboard: React.FC<{
             fetchedPayload && !isDecisionPayloadExplicitlyStale(fetchedPayload)
                 ? getDecisionPayloadDigest(fetchedPayload)
                 : null;
-        const currentDecisionDigest =
-            fetchedDecisionDigest
-            || (
-                typeof (bundleState.meta as { decisionSupportDigest?: unknown })?.decisionSupportDigest === 'string'
-                    ? String((bundleState.meta as { decisionSupportDigest?: string }).decisionSupportDigest)
-                    : null
-            );
-        const selectedPayload = shouldUseLocalDecisionSupport
-            ? pickFreshDecisionPayloadForFacts(
-                currentFactsDigestHash,
-                currentDecisionDigest,
-                fetchedPayload,
-            )
-            : pickFreshDecisionPayloadForFacts(
+        const bundleDecisionDigest =
+            typeof (bundleState.meta as { decisionSupportDigest?: unknown })?.decisionSupportDigest === 'string'
+                ? String((bundleState.meta as { decisionSupportDigest?: string }).decisionSupportDigest)
+                : null;
+        const currentDecisionDigest = bundleDecisionDigest || fetchedDecisionDigest;
+        const strongestPayload =
+            pickFreshDecisionPayloadForFacts(
                 currentFactsDigestHash,
                 currentDecisionDigest,
                 inlineDecisionTemplatePayload,
                 fetchedPayload,
+            )
+            ?? pickStrongestDecisionPayloadForFacts(
+                currentFactsDigestHash,
+                inlineDecisionTemplatePayload,
+                fetchedPayload,
             );
+        const fetchedPersonalizationPayload = shouldUseLocalDecisionSupport
+            ? pickFreshDecisionPayloadForFacts(
+                currentFactsDigestHash,
+                fetchedDecisionDigest,
+                fetchedPayload,
+            )
+            : null;
+        const selectedPayload =
+            mergeDecisionPayloadPersonalization(strongestPayload, fetchedPersonalizationPayload)
+            ?? strongestPayload
+            ?? fetchedPersonalizationPayload;
         if (!selectedPayload) return null;
         return selectedPayload as DecisionSupportTemplatePayload;
     }, [
@@ -4389,6 +4838,40 @@ const AnalysisBundleDashboard: React.FC<{
     );
     const productTitle = trustedDisplayIdentity.title;
     const productSubtitle = trustedDisplayIdentity.subtitle;
+    const canonicalDecisionBarcode = useMemo(
+        () => resolveCanonicalBarcodeFromBundleMeta(bundleState.meta, analysisBarcodeDigits),
+        [analysisBarcodeDigits, bundleState.meta],
+    );
+    const canonicalIdentityConfidenceHigh = useMemo(() => {
+        const productIdentity =
+            (bundleState.meta as { productIdentity?: { identityStable?: boolean | null; sourceAttribution?: string | null } | null })
+                .productIdentity ?? null;
+        const sourceAttribution = normalizeText(productIdentity?.sourceAttribution ?? trustedDisplayIdentity.sourceAttributionUsed).toLowerCase();
+        return Boolean(canonicalDecisionBarcode) && (
+            productIdentity?.identityStable === true
+            || trustedDisplayIdentity.displayIdentityMode === 'trusted'
+            || sourceAttribution === 'verified_regulatory'
+            || sourceAttribution === 'label_record'
+        );
+    }, [bundleState.meta, canonicalDecisionBarcode, trustedDisplayIdentity.displayIdentityMode, trustedDisplayIdentity.sourceAttributionUsed]);
+    const comparisonStanding = decisionPersonalizedResultLane?.productStanding ?? null;
+    const comparisonAlternatives = Array.isArray(comparisonStanding?.betterAlternatives)
+        ? comparisonStanding.betterAlternatives.filter((item) => Boolean(item?.title))
+        : [];
+    const comparisonSummary = normalizeText(comparisonStanding?.summary ?? null);
+    const comparisonSecondarySummary = normalizeText(comparisonStanding?.secondarySummary ?? null);
+    const showComparisonSection =
+        Boolean(comparisonStanding)
+        && canonicalIdentityConfidenceHigh
+        && comparisonStanding?.status === 'ready'
+        && (
+            Boolean(comparisonSummary)
+            || comparisonAlternatives.length > 0
+        );
+    const showComparisonEmptyState =
+        showComparisonSection
+        && comparisonAlternatives.length === 0
+        && comparisonStanding?.standing !== 'unknown';
     const bundleSourceTypeFinal = bundleState.meta.sourceTypeFinal !== false && Number(bundleState.meta.revision) >= 1;
     const bundleSourceType = typeof bundleState.meta.sourceType === 'string' ? bundleState.meta.sourceType : null;
     const verificationPresentation = useMemo(
@@ -4971,6 +5454,15 @@ const AnalysisBundleDashboard: React.FC<{
                 score: legacy?.score ?? null,
                 reasonCodes: entry.reasonCodes ?? legacy?.reasonCodes ?? [],
                 confidenceBucket: entry.confidenceBucket ?? legacy?.confidenceBucket ?? 'low',
+                explanation: entry.explanation
+                    ? {
+                        summary: entry.explanation.summary,
+                        why: entry.explanation.why ?? [],
+                        evidence: entry.explanation.evidence ?? [],
+                        provenance: entry.explanation.provenance ?? [],
+                        action: entry.explanation.action ?? [],
+                    }
+                    : legacy?.explanation ?? null,
             };
         }).filter((entry): entry is {
             goalLabel: string;
@@ -4980,6 +5472,13 @@ const AnalysisBundleDashboard: React.FC<{
             score: number | null;
             reasonCodes: string[];
             confidenceBucket: 'high' | 'medium' | 'low';
+            explanation: {
+                summary?: string;
+                why?: string[];
+                evidence?: string[];
+                provenance?: string[];
+                action?: string[];
+            } | null;
         } => Boolean(entry.goalLabel));
         const fallbackCoverage = (goalFit?.allGoalCoverage ?? [])
             .map((entry) => ({
@@ -4990,6 +5489,15 @@ const AnalysisBundleDashboard: React.FC<{
                 score: entry.score ?? null,
                 reasonCodes: entry.reasonCodes ?? [],
                 confidenceBucket: entry.confidenceBucket ?? 'low',
+                explanation: entry.explanation
+                    ? {
+                        summary: entry.explanation.summary,
+                        why: entry.explanation.why ?? [],
+                        evidence: entry.explanation.evidence ?? [],
+                        provenance: entry.explanation.provenance ?? [],
+                        action: entry.explanation.action ?? [],
+                    }
+                    : null,
             }))
             .filter((entry): entry is {
                 goalLabel: string;
@@ -4999,6 +5507,13 @@ const AnalysisBundleDashboard: React.FC<{
                 score: number | null;
                 reasonCodes: string[];
                 confidenceBucket: 'high' | 'medium' | 'low';
+                explanation: {
+                    summary?: string;
+                    why?: string[];
+                    evidence?: string[];
+                    provenance?: string[];
+                    action?: string[];
+                } | null;
             } => Boolean(entry.goalLabel));
         const resolvedAllGoalCoverage = mappedGoalCoverage.length > 0 ? mappedGoalCoverage : fallbackCoverage;
         const legacyVisibleCoverageByGoal = new Map(
@@ -5017,6 +5532,15 @@ const AnalysisBundleDashboard: React.FC<{
                         score: legacy?.score ?? null,
                         reasonCodes: fromSummary?.reasonCodes ?? legacy?.reasonCodes ?? [],
                         confidenceBucket: fromSummary?.confidenceBucket ?? legacy?.confidenceBucket ?? 'low',
+                        explanation: fromSummary?.explanation
+                            ? {
+                                summary: fromSummary.explanation.summary,
+                                why: fromSummary.explanation.why ?? [],
+                                evidence: fromSummary.explanation.evidence ?? [],
+                                provenance: fromSummary.explanation.provenance ?? [],
+                                action: fromSummary.explanation.action ?? [],
+                            }
+                            : legacy?.explanation ?? null,
                     };
                 })
                 .filter((entry): entry is {
@@ -5027,6 +5551,13 @@ const AnalysisBundleDashboard: React.FC<{
                     score: number | null;
                     reasonCodes: string[];
                     confidenceBucket: 'high' | 'medium' | 'low';
+                    explanation: {
+                        summary?: string;
+                        why?: string[];
+                        evidence?: string[];
+                        provenance?: string[];
+                        action?: string[];
+                    } | null;
                 } => Boolean(entry.goalLabel))
             : (goalFit?.goalCoverage ?? [])
                 .map((entry) => ({
@@ -5037,6 +5568,15 @@ const AnalysisBundleDashboard: React.FC<{
                     score: entry.score ?? null,
                     reasonCodes: entry.reasonCodes ?? [],
                     confidenceBucket: entry.confidenceBucket ?? 'low',
+                    explanation: entry.explanation
+                        ? {
+                            summary: entry.explanation.summary,
+                            why: entry.explanation.why ?? [],
+                            evidence: entry.explanation.evidence ?? [],
+                            provenance: entry.explanation.provenance ?? [],
+                            action: entry.explanation.action ?? [],
+                        }
+                        : null,
                 }))
                 .filter((entry): entry is {
                     goalLabel: string;
@@ -5046,6 +5586,13 @@ const AnalysisBundleDashboard: React.FC<{
                     score: number | null;
                     reasonCodes: string[];
                     confidenceBucket: 'high' | 'medium' | 'low';
+                    explanation: {
+                        summary?: string;
+                        why?: string[];
+                        evidence?: string[];
+                        provenance?: string[];
+                        action?: string[];
+                    } | null;
                 } => Boolean(entry.goalLabel));
 
         return buildAnalysisTopSectionPresentation({
@@ -5057,6 +5604,9 @@ const AnalysisBundleDashboard: React.FC<{
                 previewGoalLabel: getGoalLabel(goalFit?.previewTopGoalKey ?? null),
                 previewTopTier: goalFit?.previewTopTier ?? null,
                 heroMode: goalFit?.heroMode ?? null,
+                dominanceGap: goalFit?.dominanceGap ?? null,
+                goalNarrativeConfidence: goalFit?.goalNarrativeConfidence ?? null,
+                labelCompleteness: goalFit?.labelCompleteness ?? null,
                 selectedGoalLabels: (goalFit?.selectedGoalKeys ?? [])
                     .map((goalKey) => getGoalLabel(goalKey))
                     .filter((label): label is string => Boolean(label)),
@@ -5069,6 +5619,7 @@ const AnalysisBundleDashboard: React.FC<{
                 selectedGoalCount: goalFit?.goalCoverageSummary?.selectedGoalCount ?? goalFit?.selectedGoalCount ?? null,
                 analyzedGoalCount: goalFit?.goalCoverageSummary?.analyzedGoalCount ?? goalFit?.analyzedGoalCount ?? null,
                 surfacedGoalCount: goalFit?.goalCoverageSummary?.surfacedGoalCount ?? goalFit?.surfacedGoalCount ?? null,
+                hiddenGoalsCount: goalFit?.goalCoverageSummary?.hiddenGoalsCount ?? null,
                 allGoalsAnalyzed: goalFit?.goalCoverageSummary?.allGoalsAnalyzed ?? goalFit?.allGoalsAnalyzed ?? false,
                 defaultVisibleGoalLabels: (goalFit?.defaultVisibleGoalKeys ?? [])
                     .map((goalKey) => getGoalLabel(goalKey))
@@ -5082,12 +5633,16 @@ const AnalysisBundleDashboard: React.FC<{
                 selectedGoalLabel: getGoalLabel(goalFit?.selectedGoalKey ?? null),
                 dominantGoalLabel: getGoalLabel(goalFit?.dominantGoalKey ?? null),
                 secondaryGoalLabel: getGoalLabel(goalFit?.secondaryGoalKey ?? null),
+                dominanceGap: goalFit?.dominanceGap ?? null,
+                goalNarrativeConfidence: goalFit?.goalNarrativeConfidence ?? null,
+                labelCompleteness: goalFit?.labelCompleteness ?? null,
                 goalLensMode: goalFit?.goalLensMode ?? null,
                 goalCoverage: resolvedVisibleGoalCoverage,
                 allGoalCoverage: resolvedAllGoalCoverage,
                 selectedGoalCount: goalFit?.goalCoverageSummary?.selectedGoalCount ?? goalFit?.selectedGoalCount ?? null,
                 analyzedGoalCount: goalFit?.goalCoverageSummary?.analyzedGoalCount ?? goalFit?.analyzedGoalCount ?? null,
                 surfacedGoalCount: goalFit?.goalCoverageSummary?.surfacedGoalCount ?? goalFit?.surfacedGoalCount ?? null,
+                hiddenGoalsCount: goalFit?.goalCoverageSummary?.hiddenGoalsCount ?? null,
                 allGoalsAnalyzed: goalFit?.goalCoverageSummary?.allGoalsAnalyzed ?? goalFit?.allGoalsAnalyzed ?? false,
                 defaultVisibleGoalLabels: (goalFit?.defaultVisibleGoalKeys ?? [])
                     .map((goalKey) => getGoalLabel(goalKey))
@@ -6364,13 +6919,7 @@ const AnalysisBundleDashboard: React.FC<{
         </View>
     );
 
-    const decisionBarcodeForScience = useMemo(
-        () =>
-            normalizeBarcodeForDecision(analysisBarcodeDigits)
-            ?? normalizeBarcodeForDecision(String(bundleState.meta.authoritativeIdentity?.value ?? ''))
-            ?? null,
-        [analysisBarcodeDigits, bundleState.meta.authoritativeIdentity?.value],
-    );
+    const decisionBarcodeForScience = canonicalDecisionBarcode;
     const decisionDigestForScience = normalizeText(decisionTemplatePayload?.digest ?? '') || null;
     const shouldLoadScienceSidecars =
         selectedTileType === 'science'
@@ -6433,26 +6982,28 @@ const AnalysisBundleDashboard: React.FC<{
     }, [activeScienceIngredientRow?.dose, activeScienceIngredientRow?.name, isDataCeiling]);
     const chemicalFormDisplayText = normalizeText(decisionScienceBlock?.formMatters?.ingredientChemicalForm ?? '') || null;
     const deliveryTypeDisplayText = normalizeText(decisionScienceBlock?.formMatters?.dosageForm ?? '') || null;
+    const scienceAuthoritativeIdentityKey = `${bundleState.meta.authoritativeIdentity?.type ?? 'unknown'}:${bundleState.meta.authoritativeIdentity?.value ?? 'unknown'}`;
 
     const ingredientOverviewRequestKey = useMemo(
         () =>
             decisionBarcodeForScience && decisionDigestForScience
-                ? ['ingredient_overview', decisionBarcodeForScience, decisionDigestForScience, scienceSourceFinalKey].join('|')
+                ? ['ingredient_overview', scienceAuthoritativeIdentityKey, decisionBarcodeForScience, decisionDigestForScience, scienceSourceFinalKey].join('|')
                 : null,
-        [decisionBarcodeForScience, decisionDigestForScience, scienceSourceFinalKey],
+        [decisionBarcodeForScience, decisionDigestForScience, scienceAuthoritativeIdentityKey, scienceSourceFinalKey],
     );
     const scientificBackgroundRequestKey = useMemo(
         () =>
             decisionBarcodeForScience && decisionDigestForScience && activeIngredientKey
                 ? [
                     'scientific_background',
+                    scienceAuthoritativeIdentityKey,
                     decisionBarcodeForScience,
                     decisionDigestForScience,
                     activeIngredientKey,
                     scienceSourceFinalKey,
                 ].join('|')
                 : null,
-        [activeIngredientKey, decisionBarcodeForScience, decisionDigestForScience, scienceSourceFinalKey],
+        [activeIngredientKey, decisionBarcodeForScience, decisionDigestForScience, scienceAuthoritativeIdentityKey, scienceSourceFinalKey],
     );
     const ingredientOverviewState = ingredientOverviewRequestKey
         ? ingredientOverviewByRequestKey[ingredientOverviewRequestKey]
@@ -6498,6 +7049,8 @@ const AnalysisBundleDashboard: React.FC<{
                     body: JSON.stringify({
                         barcode: decisionBarcodeForScience,
                         decisionDigest: digestParam,
+                        authoritativeIdentityType: bundleState.meta.authoritativeIdentity?.type ?? null,
+                        authoritativeIdentityValue: bundleState.meta.authoritativeIdentity?.value ?? null,
                     }),
                     signal: controller.signal,
                 });
@@ -6613,6 +7166,8 @@ const AnalysisBundleDashboard: React.FC<{
                         body: JSON.stringify({
                             barcode: decisionBarcodeForScience,
                             decisionDigest: digestParam,
+                            authoritativeIdentityType: bundleState.meta.authoritativeIdentity?.type ?? null,
+                            authoritativeIdentityValue: bundleState.meta.authoritativeIdentity?.value ?? null,
                             selectedIngredientName: row.name,
                         }),
                         signal: controller.signal,
@@ -7933,7 +8488,7 @@ const AnalysisBundleDashboard: React.FC<{
         'View sources: (sources drawer)',
     ].filter((line): line is string => Boolean(line));
 
-    const factsSourceTarget = resolveFactsSourceFromIdentity(bundleState.meta.authoritativeIdentity);
+    const factsSourceTarget = resolveFactsSourceFromBundleMeta(bundleState.meta);
     const simpleOfficialRecordUrl = factsSourceTarget
         ? buildOfficialRecordUrl(factsSourceTarget.source, factsSourceTarget.sourceId)
         : null;
@@ -8223,6 +8778,27 @@ const AnalysisBundleDashboard: React.FC<{
         hasNumber(scoreCardV2Payload?.overallScore) || effectiveScoreUiMode === 'scored'
             ? normalizeText(scoreCardV2Payload?.overallBand ?? null) || getOverallBandLabel(displayedOverallScore)
             : null;
+    const miniScoreTrigger = useMemo<MiniScoreTrigger>(() => {
+        if (
+            scoreSectionLayoutY == null
+            || scoreHeroLayoutY == null
+            || scoreModulesLayoutY == null
+            || ingredientSafetyLayoutY == null
+        ) {
+            return {
+                start: DEFAULT_MINI_SCORE_TRIGGER_START,
+                range: DEFAULT_MINI_SCORE_TRIGGER_RANGE,
+            };
+        }
+
+        const ingredientSafetyAnchorY =
+            scoreSectionLayoutY + scoreHeroLayoutY + scoreModulesLayoutY + ingredientSafetyLayoutY;
+
+        return {
+            start: Math.max(0, ingredientSafetyAnchorY - HEADER_MINI_SCORE_REVEAL_OFFSET),
+            range: MEASURED_MINI_SCORE_TRIGGER_RANGE,
+        };
+    }, [ingredientSafetyLayoutY, scoreHeroLayoutY, scoreModulesLayoutY, scoreSectionLayoutY]);
     const shouldRenderInlineMiniHeader = !disableMiniHeader && miniHeaderMode !== 'header';
 
     useEffect(() => {
@@ -8249,6 +8825,9 @@ const AnalysisBundleDashboard: React.FC<{
             muted: ringMuted,
         });
     }, [displayedOverallBand, displayedOverallScore, onMiniScoreMetaChange, ringMuted]);
+    useEffect(() => {
+        onMiniScoreTriggerChange?.(miniScoreTrigger);
+    }, [miniScoreTrigger, onMiniScoreTriggerChange]);
 
     return (
         <View style={styles.root}>
@@ -8258,6 +8837,8 @@ const AnalysisBundleDashboard: React.FC<{
                     overallScore={displayedOverallScore}
                     overallBand={displayedOverallBand}
                     muted={ringMuted}
+                    thresholdStart={miniScoreTrigger.start}
+                    thresholdRange={miniScoreTrigger.range}
                 />
             ) : null}
 
@@ -8280,6 +8861,8 @@ const AnalysisBundleDashboard: React.FC<{
                         verifiedLabelText={verifiedLabelText}
                     />
                 ) : null}
+
+                {!disableHeroHeader ? <View style={styles.sectionDivider} /> : null}
 
                 {SHOW_SCAN_DEBUG ? (
                     <View style={styles.scanDebugCard}>
@@ -8326,8 +8909,19 @@ const AnalysisBundleDashboard: React.FC<{
                 ) : null}
 
                 <>
-                        {/* SCORE_SECTION_FROZEN_RENDER_START */}
-                        <View style={styles.scoreSection}>
+                    {/* SCORE_SECTION_FROZEN_RENDER_START */}
+                    <View
+                        style={styles.sectionBlock}
+                        onLayout={(event) => setScoreSectionLayoutY(event.nativeEvent.layout.y)}
+                    >
+                        <View style={styles.sectionHeader}>
+                            <Text style={styles.sectionTitle}>{t.analysisSectionNutriScoreTitle}</Text>
+                            <Text style={styles.sectionSubtitle}>{t.analysisSectionNutriScoreSubtitle}</Text>
+                        </View>
+                        <View
+                            style={styles.scoreSection}
+                            onLayout={(event) => setScoreHeroLayoutY(event.nativeEvent.layout.y)}
+                        >
                             <View style={styles.scoreHeroCard}>
                                 {!disableScoreRing ? (
                                     decisionSupportV2Available ? (
@@ -8336,10 +8930,11 @@ const AnalysisBundleDashboard: React.FC<{
                                             overallBand={displayedOverallBand}
                                             modules={scoreCardV2DisplayModules}
                                             muted={ringMuted}
+                                            onModulesLayout={setScoreModulesLayoutY}
+                                            onIngredientSafetyLayout={setIngredientSafetyLayoutY}
                                         />
                                     ) : (
                                         <View style={styles.scoreLoadingCard}>
-                                            <Text style={styles.scoreLoadingTitle}>Nutri Score</Text>
                                             <Text style={styles.scoreLoadingBody}>
                                                 {decisionTemplatePending
                                                     ? 'Calculating verified score details...'
@@ -8353,39 +8948,93 @@ const AnalysisBundleDashboard: React.FC<{
                                         <Text style={styles.bisectNoticeText}>{scoreRingDisableNotice}</Text>
                                     </View>
                                 )}
-
                             </View>
                         </View>
-                        {/* SCORE_SECTION_FROZEN_RENDER_END */}
+                    </View>
+                    {/* SCORE_SECTION_FROZEN_RENDER_END */}
 
-                        {!disableTilesGrid ? (
-                            <>
-                                <View style={styles.tilesHeader}>
-                                    <Text style={styles.tilesTitle}>{t.analysisDeepCategoriesTitle}</Text>
-                                    <Text style={styles.tilesSubtitle}>{t.analysisDeepCategoriesSubtitle}</Text>
-                                </View>
+                    <View style={styles.sectionDivider} />
 
-                                <View style={styles.tilesGrid} onLayout={onTilesGridLayout}>
-                                    {tiles.map((tile) => (
-                                        <TileRenderer
-                                            key={tile.id}
-                                            tile={tile}
-                                            onPress={() => setSelectedTileType(tile.type)}
-                                            scrollY={scrollY}
-                                            viewportHeight={viewportHeight}
-                                            tileWidth={tileWidth}
-                                            style={{ marginBottom: TILE_GAP }}
-                                        />
-                                    ))}
-                                </View>
-                            </>
-                        ) : (
-                            <View style={styles.bisectNoticeCard}>
-                                <Text style={styles.bisectNoticeTitle}>Tiles grid disabled</Text>
-                                <Text style={styles.bisectNoticeText}>Set by `no_tiles` in `EXPO_PUBLIC_SCAN_DASHBOARD_BISECT`.</Text>
+                    {!disableTilesGrid ? (
+                        <View style={styles.sectionBlock}>
+                            <View style={styles.sectionHeader}>
+                                <Text style={styles.sectionTitle}>{t.analysisSectionDeepDiveTitle}</Text>
+                                <Text style={styles.sectionSubtitle}>{t.analysisSectionDeepDiveSubtitle}</Text>
                             </View>
-                        )}
-                    </>
+
+                            <View style={styles.tilesGrid} onLayout={onTilesGridLayout}>
+                                {tiles.map((tile) => (
+                                    <TileRenderer
+                                        key={tile.id}
+                                        tile={tile}
+                                        onPress={() => setSelectedTileType(tile.type)}
+                                        scrollY={scrollY}
+                                        viewportHeight={viewportHeight}
+                                        tileWidth={tileWidth}
+                                        style={{ marginBottom: TILE_GAP }}
+                                    />
+                                ))}
+                            </View>
+                        </View>
+                    ) : (
+                        <View style={styles.bisectNoticeCard}>
+                            <Text style={styles.bisectNoticeTitle}>Tiles grid disabled</Text>
+                            <Text style={styles.bisectNoticeText}>Set by `no_tiles` in `EXPO_PUBLIC_SCAN_DASHBOARD_BISECT`.</Text>
+                        </View>
+                    )}
+
+                    {showComparisonSection ? <View style={styles.sectionDivider} /> : null}
+
+                    {showComparisonSection ? (
+                        <View style={styles.sectionBlock}>
+                            <View style={styles.sectionHeader}>
+                                <Text style={styles.sectionTitle}>{t.analysisSectionComparisonTitle}</Text>
+                                <Text style={styles.sectionSubtitle}>{t.analysisSectionComparisonSubtitle}</Text>
+                            </View>
+
+                            <View style={styles.comparisonStandingCard}>
+                                <Text style={styles.comparisonStandingSummary}>
+                                    {comparisonSummary || t.analysisComparisonNotEnoughPeers}
+                                </Text>
+                                {comparisonSecondarySummary ? (
+                                    <Text style={styles.comparisonStandingSecondary}>
+                                        {comparisonSecondarySummary}
+                                    </Text>
+                                ) : null}
+                            </View>
+
+                            {comparisonAlternatives.length > 0 ? (
+                                <>
+                                    <Text style={styles.comparisonAlternativesTitle}>
+                                        {t.analysisComparisonAlternativesTitle}
+                                    </Text>
+                                    <ScrollView
+                                        horizontal
+                                        showsHorizontalScrollIndicator={false}
+                                        decelerationRate="fast"
+                                        snapToAlignment="start"
+                                        snapToInterval={comparisonSnapInterval}
+                                        contentContainerStyle={styles.comparisonRailContent}
+                                    >
+                                        {comparisonAlternatives.map((alternative) => (
+                                            <ComparisonAlternativeCard
+                                                key={`${alternative.productId ?? alternative.title}`}
+                                                alternative={alternative}
+                                                cardWidth={comparisonCardWidth}
+                                            />
+                                        ))}
+                                    </ScrollView>
+                                </>
+                            ) : null}
+
+                            {showComparisonEmptyState ? (
+                                <Text style={styles.comparisonEmptyState}>
+                                    {t.analysisComparisonAlreadyScoresWell}
+                                </Text>
+                            ) : null}
+                        </View>
+                    ) : null}
+                </>
             </ScrollContainer>
 
             {!disableModalPane ? (
@@ -8413,6 +9062,7 @@ type AnalysisDashboardProps = {
     externalScrollY?: SharedValue<number>;
     miniHeaderMode?: 'inline' | 'header';
     onMiniScoreMetaChange?: (meta: { overallScore: number; overallBand: string | null; muted: boolean }) => void;
+    onMiniScoreTriggerChange?: (trigger: { start: number; range: number }) => void;
     onCoreReadyChange?: (ready: boolean) => void;
     saveItem?: AnalysisDashboardSaveItem | null;
 };
@@ -8472,6 +9122,7 @@ export const AnalysisDashboard: React.FC<AnalysisDashboardProps> = ({
     externalScrollY,
     miniHeaderMode = 'inline',
     onMiniScoreMetaChange,
+    onMiniScoreTriggerChange,
     onCoreReadyChange,
     saveItem = null,
 }) => {
@@ -8488,6 +9139,7 @@ export const AnalysisDashboard: React.FC<AnalysisDashboardProps> = ({
             externalScrollY={externalScrollY}
             miniHeaderMode={miniHeaderMode}
             onMiniScoreMetaChange={onMiniScoreMetaChange}
+            onMiniScoreTriggerChange={onMiniScoreTriggerChange}
             onCoreReadyChange={onCoreReadyChange}
             saveItem={saveItem}
         />
@@ -8515,6 +9167,159 @@ const styles = StyleSheet.create({
         paddingBottom: 40,
         paddingTop: 12,
     },
+    sectionBlock: {
+        width: '100%',
+        alignSelf: 'stretch',
+    },
+    sectionHeader: {
+        marginBottom: 10,
+        gap: 1,
+    },
+    sectionTitle: {
+        fontSize: 19,
+        lineHeight: 23,
+        fontWeight: '700',
+        color: '#111111',
+        letterSpacing: -0.2,
+    },
+    sectionSubtitle: {
+        fontSize: 12,
+        lineHeight: 16,
+        fontWeight: '500',
+        color: '#6B7280',
+    },
+    sectionDivider: {
+        height: 1,
+        backgroundColor: 'rgba(17,17,17,0.16)',
+        marginTop: 18,
+        marginBottom: 24,
+    },
+    comparisonStandingCard: {
+        borderRadius: 22,
+        borderWidth: 1,
+        borderColor: 'rgba(17,24,39,0.06)',
+        backgroundColor: 'rgba(255,255,255,0.88)',
+        paddingHorizontal: 16,
+        paddingVertical: 14,
+        shadowColor: '#0B1E36',
+        shadowOpacity: 0.035,
+        shadowRadius: 18,
+        shadowOffset: { width: 0, height: 6 },
+    },
+    comparisonStandingSummary: {
+        fontSize: 16,
+        lineHeight: 21,
+        fontWeight: '700',
+        color: '#111827',
+    },
+    comparisonStandingSecondary: {
+        marginTop: 4,
+        fontSize: 12,
+        lineHeight: 17,
+        fontWeight: '500',
+        color: '#6B7280',
+    },
+    comparisonAlternativesTitle: {
+        marginTop: 16,
+        marginBottom: 10,
+        fontSize: 13,
+        lineHeight: 18,
+        fontWeight: '700',
+        color: '#111827',
+    },
+    comparisonRailContent: {
+        paddingRight: 16,
+    },
+    comparisonCard: {
+        marginRight: 12,
+        borderRadius: 22,
+        borderWidth: 1,
+        borderColor: 'rgba(17,24,39,0.06)',
+        backgroundColor: 'rgba(255,255,255,0.92)',
+        paddingHorizontal: 16,
+        paddingVertical: 14,
+        shadowColor: '#0B1E36',
+        shadowOpacity: 0.04,
+        shadowRadius: 18,
+        shadowOffset: { width: 0, height: 6 },
+        minHeight: 102,
+        justifyContent: 'space-between',
+    },
+    comparisonCardTopRow: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        justifyContent: 'space-between',
+        gap: 12,
+    },
+    comparisonCardIdentity: {
+        flex: 1,
+        minWidth: 0,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+    },
+    comparisonCardImage: {
+        width: 52,
+        height: 52,
+        borderRadius: 14,
+        backgroundColor: '#E5E7EB',
+    },
+    comparisonCardImagePlaceholder: {
+        width: 52,
+        height: 52,
+        borderRadius: 14,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#F3F4F6',
+    },
+    comparisonCardIdentityText: {
+        flex: 1,
+        minWidth: 0,
+        gap: 4,
+    },
+    comparisonCardTitle: {
+        fontSize: 15,
+        lineHeight: 19,
+        fontWeight: '700',
+        color: '#111827',
+    },
+    comparisonCardBrand: {
+        fontSize: 13,
+        lineHeight: 17,
+        fontWeight: '500',
+        color: '#6B7280',
+    },
+    comparisonCardScoreBlock: {
+        alignItems: 'flex-end',
+        minWidth: 62,
+        gap: 2,
+    },
+    comparisonCardScore: {
+        fontSize: 16,
+        lineHeight: 20,
+        fontWeight: '800',
+        color: '#111827',
+    },
+    comparisonCardScoreLabel: {
+        fontSize: 11,
+        lineHeight: 14,
+        fontWeight: '600',
+        color: '#6B7280',
+    },
+    comparisonCardReason: {
+        marginTop: 12,
+        fontSize: 12,
+        lineHeight: 16,
+        fontWeight: '600',
+        color: '#334155',
+    },
+    comparisonEmptyState: {
+        marginTop: 14,
+        fontSize: 12,
+        lineHeight: 17,
+        fontWeight: '500',
+        color: '#6B7280',
+    },
     headerSection: {
         marginBottom: 20,
         paddingHorizontal: 0,
@@ -8539,7 +9344,7 @@ const styles = StyleSheet.create({
         fontWeight: '500',
     },
     scoreSection: {
-        marginBottom: 24,
+        marginBottom: 0,
     },
     scanDebugCard: {
         marginBottom: 16,
@@ -8595,20 +9400,6 @@ const styles = StyleSheet.create({
         fontSize: 12,
         lineHeight: 16,
         color: '#1d4ed8',
-    },
-    tilesHeader: {
-        marginBottom: 12,
-        paddingHorizontal: 0,
-    },
-    tilesTitle: {
-        fontSize: 18,
-        fontWeight: '700',
-        color: '#1C1C1E',
-    },
-    tilesSubtitle: {
-        fontSize: 13,
-        color: '#8E8E93',
-        marginTop: 2,
     },
     tilesGrid: {
         flexDirection: 'column',
@@ -8695,9 +9486,9 @@ const styles = StyleSheet.create({
         paddingTop: 2,
     },
     tileTitle: {
-        fontSize: 15,
-        fontWeight: '800',
-        lineHeight: 18,
+        fontSize: 16,
+        fontWeight: '700',
+        lineHeight: 20,
     },
     viewPillShadow: {
         borderRadius: 999,
@@ -8731,9 +9522,9 @@ const styles = StyleSheet.create({
         flexGrow: 1,
     },
     tileEyebrow: {
-        fontSize: 10,
+        fontSize: 9,
         fontWeight: '700',
-        letterSpacing: 1,
+        letterSpacing: 0.8,
         textTransform: 'uppercase',
         marginBottom: 2,
     },
@@ -9939,12 +10730,17 @@ const styles = StyleSheet.create({
 
     // ---------- Score hero + mini header ----------
     scoreHeroCard: {
-        borderRadius: 26,
+        borderRadius: 32,
         overflow: 'hidden',
         borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.26)',
-        backgroundColor: 'rgba(255,255,255,0.30)',
-        paddingVertical: 14,
+        borderColor: 'rgba(255,255,255,0.78)',
+        backgroundColor: 'rgba(255,255,255,0.56)',
+        paddingHorizontal: 10,
+        paddingVertical: 10,
+        shadowColor: '#0B1E36',
+        shadowOpacity: 0.035,
+        shadowRadius: 24,
+        shadowOffset: { width: 0, height: 8 },
     },
     scoreRetryButton: {
         marginTop: 8,
@@ -9993,28 +10789,19 @@ const styles = StyleSheet.create({
         gap: 6,
     },
     scoreV2Card: {
-        borderRadius: 18,
-        borderWidth: 1,
-        borderColor: 'rgba(148,163,184,0.28)',
-        backgroundColor: 'rgba(255,255,255,0.78)',
-        padding: 12,
+        borderRadius: 28,
+        backgroundColor: 'transparent',
+        paddingHorizontal: 8,
+        paddingVertical: 8,
         gap: 10,
     },
     scoreLoadingCard: {
-        borderRadius: 18,
+        borderRadius: 28,
         borderWidth: 1,
-        borderColor: 'rgba(148,163,184,0.20)',
+        borderColor: 'rgba(255,255,255,0.72)',
         backgroundColor: 'rgba(255,255,255,0.72)',
-        paddingHorizontal: 16,
-        paddingVertical: 18,
-        gap: 6,
-    },
-    scoreLoadingTitle: {
-        fontSize: 14,
-        fontWeight: '900',
-        color: '#111827',
-        letterSpacing: 0.4,
-        textTransform: 'uppercase',
+        paddingHorizontal: 18,
+        paddingVertical: 20,
     },
     scoreLoadingBody: {
         fontSize: 14,
@@ -10026,11 +10813,14 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'flex-start',
         justifyContent: 'space-between',
-        gap: 10,
+        gap: 12,
+        paddingHorizontal: 10,
+        paddingTop: 6,
+        paddingBottom: 10,
     },
     scoreV2HeaderLeft: {
         flex: 1,
-        gap: 3,
+        gap: 4,
     },
     scoreV2LearnMoreButton: {
         flexDirection: 'row',
@@ -10038,46 +10828,39 @@ const styles = StyleSheet.create({
         gap: 3,
         borderRadius: 999,
         borderWidth: 1,
-        borderColor: 'rgba(37,99,235,0.18)',
-        backgroundColor: 'rgba(37,99,235,0.08)',
-        paddingHorizontal: 10,
-        paddingVertical: 7,
+        borderColor: 'rgba(37,99,235,0.16)',
+        backgroundColor: 'rgba(219,234,254,0.82)',
+        paddingHorizontal: 13,
+        paddingVertical: 8,
     },
     scoreV2LearnMoreText: {
         fontSize: 12,
-        fontWeight: '800',
+        fontWeight: '700',
         color: '#1D4ED8',
     },
-    scoreV2Eyebrow: {
-        fontSize: 11,
-        letterSpacing: 0.6,
-        fontWeight: '800',
-        color: 'rgba(17,24,39,0.58)',
-    },
     scoreV2OverallValue: {
-        fontSize: 30,
-        lineHeight: 34,
+        fontSize: 32,
+        lineHeight: 36,
         fontWeight: '900',
-        color: '#111827',
+        color: '#0B1E36',
     },
     scoreV2OverallOutOf: {
         fontSize: 18,
         lineHeight: 22,
         fontWeight: '700',
-        color: 'rgba(17,24,39,0.5)',
+        color: 'rgba(11,30,54,0.45)',
     },
     scoreV2OverallBand: {
-        fontSize: 13,
-        fontWeight: '800',
-        color: 'rgba(17,24,39,0.72)',
+        fontSize: 14,
+        fontWeight: '700',
+        color: 'rgba(11,30,54,0.72)',
     },
     scoreV2FitHint: {
-        marginTop: 2,
-        fontSize: 11,
-        lineHeight: 15,
-        color: 'rgba(17,24,39,0.62)',
+        fontSize: 12,
+        lineHeight: 17,
+        color: '#64748B',
         fontWeight: '500',
-        maxWidth: 220,
+        maxWidth: 240,
     },
     scoreV2Confidence: {
         fontSize: 13,
@@ -10092,34 +10875,37 @@ const styles = StyleSheet.create({
         fontWeight: '500',
     },
     scoreV2Modules: {
-        gap: 8,
+        gap: 0,
     },
     scoreV2ModuleCard: {
-        borderRadius: 12,
-        borderWidth: 1,
-        borderColor: 'rgba(148,163,184,0.25)',
-        backgroundColor: 'rgba(255,255,255,0.82)',
+        borderRadius: 24,
+        backgroundColor: 'transparent',
         overflow: 'hidden',
     },
     scoreV2ModuleRow: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        paddingHorizontal: 10,
-        paddingVertical: 10,
-        gap: 10,
+        minHeight: 70,
+        paddingHorizontal: 15,
+        paddingVertical: 16,
+        gap: 12,
+        borderRadius: 24,
+        backgroundColor: 'rgba(255,255,255,0.28)',
     },
     scoreV2ModuleTitleWrap: {
         flex: 1,
-        gap: 2,
+        gap: 4,
     },
     scoreV2ModuleTitle: {
-        fontSize: 14,
-        fontWeight: '800',
-        color: '#111827',
+        fontSize: 15,
+        lineHeight: 20,
+        fontWeight: '600',
+        color: '#0B1E36',
+        letterSpacing: -0.2,
     },
     scoreV2ModuleStatus: {
-        fontSize: 11,
+        fontSize: 12,
         fontWeight: '700',
     },
     scoreV2ModuleRight: {
@@ -10129,19 +10915,26 @@ const styles = StyleSheet.create({
     },
     scoreV2ModuleScore: {
         fontSize: 13,
-        fontWeight: '800',
+        fontWeight: '700',
         color: '#1F2937',
     },
     scoreV2ChevronExpanded: {
         transform: [{ rotate: '90deg' }],
     },
+    scoreV2ModuleDivider: {
+        marginHorizontal: 22,
+        height: StyleSheet.hairlineWidth,
+        backgroundColor: 'rgba(11,30,54,0.07)',
+    },
     scoreV2ChecklistBlock: {
-        borderTopWidth: 1,
-        borderTopColor: 'rgba(148,163,184,0.2)',
-        paddingHorizontal: 10,
-        paddingVertical: 9,
-        gap: 6,
-        backgroundColor: 'rgba(248,250,252,0.72)',
+        borderTopWidth: StyleSheet.hairlineWidth,
+        borderTopColor: 'rgba(11,30,54,0.07)',
+        paddingLeft: 57,
+        paddingRight: 15,
+        paddingTop: 8,
+        paddingBottom: 16,
+        gap: 10,
+        backgroundColor: 'transparent',
     },
     scoreV2ChecklistRow: {
         flexDirection: 'row',
@@ -10151,7 +10944,7 @@ const styles = StyleSheet.create({
     },
     scoreV2ChecklistLine: {
         flex: 1,
-        fontSize: 12,
+        fontSize: 13,
         lineHeight: 18,
         color: '#374151',
         fontWeight: '600',

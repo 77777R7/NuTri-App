@@ -70,6 +70,105 @@ const buildOmegaDigest = (): FactsDigest => ({
   },
 });
 
+const buildOmegaOfficialOnlyDigest = (): FactsDigest => ({
+  sourceType: 'dsld',
+  identity: {
+    type: 'dsldLabelId',
+    value: 'fixture-sr-omega-official-only',
+    regionTags: ['US'],
+  },
+  product: {
+    brandDisplay: 'Sports Research',
+    name: 'Omega-3 1040 mg Fish Oil 1250 mg',
+    dosageForm: 'Softgel',
+    route: null,
+  },
+  actives: [
+    {
+      name: 'Calories',
+      amount: 15,
+      unit: 'cal',
+      amountText: '15 cal',
+      source: 'dsld',
+      confidence: 1,
+    },
+    {
+      name: 'Total Fat',
+      amount: 1.5,
+      unit: 'g',
+      amountText: '1.5 g',
+      source: 'dsld',
+      confidence: 1,
+    },
+    {
+      name: 'Wild Alaska Pollock Fish Oil Concentrate',
+      amount: 1250,
+      unit: 'mg',
+      amountText: '1250 mg',
+      source: 'dsld',
+      confidence: 1,
+    },
+  ],
+  inactives: ['Fish Gelatin', 'Glycerin'],
+  serving: {
+    servingSize: '1 softgel',
+    servingsPerContainer: 90,
+  },
+  labelDosing: [],
+  warnings: {
+    warnings: [],
+    consultDoctorIf: [],
+    redFlags: [],
+    missingFlag: false,
+  },
+  claims: {
+    labelPurposes: [],
+    webClaims: [],
+  },
+  quality: {
+    isComplete: true,
+    missingFields: [],
+    completenessScore: 100,
+  },
+});
+
+const buildOmegaOverlayClaims = () => ({
+  provider: 'iherb' as const,
+  productId: 'fixture-iherb-sr-omega-3',
+  brandName: 'Sports Research',
+  title: 'Omega-3 1040 mg Fish Oil 1250 mg',
+  link: 'https://example.com/omega-3',
+  imageUrl: null,
+  categories: [],
+  description: null,
+  suggestedUse: 'Take 1 softgel daily with food.',
+  otherIngredients: null,
+  warnings: null,
+  disclaimer: null,
+  nutritionalFacts: [
+    {
+      substancy: 'Wild Alaska Pollock Fish Oil Concentrate',
+      amountPerServing: '1250 mg',
+      dailyValuePercent: null,
+    },
+    {
+      substancy: 'Total Omega-3 Fatty Acids as TG',
+      amountPerServing: '1040 mg',
+      dailyValuePercent: null,
+    },
+    {
+      substancy: 'EPA (Eicosapentaenoic Acid)',
+      amountPerServing: '690 mg',
+      dailyValuePercent: null,
+    },
+    {
+      substancy: 'DHA (Docosahexaenoic Acid)',
+      amountPerServing: '260 mg',
+      dailyValuePercent: null,
+    },
+  ],
+});
+
 const buildMagnesiumTheanineDigest = (): FactsDigest => ({
   sourceType: 'dsld',
   identity: {
@@ -215,6 +314,48 @@ test('compileDecisionSupport uses attached Recovery goal to return a non-pending
   assert.match(compiled.personalizedResultLane.goalFit.summary, /Recovery/i);
 });
 
+test('compileDecisionSupport recognizes official fish oil concentrate as an omega-3 recovery signal', () => {
+  const compiled = compileDecisionSupport({
+    digest: buildOmegaOfficialOnlyDigest(),
+    factsDigestHash: 'fixture-sr-omega-official-only-goal-fit',
+    viewMode: 'details',
+    personalizationContext: buildPersonalizationContext(),
+  });
+
+  assert.equal(compiled.personalizedResultLane.goalFit.status, 'ready');
+  assert.equal(compiled.personalizedResultLane.goalFit.selectedGoalKey, 'recovery');
+  assert.notEqual(compiled.personalizedResultLane.goalFit.fitTier, 'unknown');
+  assert.notEqual(compiled.personalizedResultLane.goalFit.fitTier, 'no_match');
+  assert.equal(compiled.personalizedResultLane.goalFit.heroMode, 'single_goal');
+  assert.match(compiled.personalizedResultLane.goalFit.summary, /Recovery/i);
+});
+
+test('compileDecisionSupport clears omega-3 breakdown and directions blockers when overlay supplies them', () => {
+  const compiled = compileDecisionSupport({
+    digest: buildOmegaOfficialOnlyDigest(),
+    factsDigestHash: 'fixture-sr-omega-overlay-clears-blockers',
+    viewMode: 'details',
+    personalizationContext: buildPersonalizationContext({
+      prioritizedGoals: ['energy', 'immunity', 'recovery', 'focus'],
+      selectedGoalKey: 'recovery',
+    }),
+    overlayClaims: buildOmegaOverlayClaims(),
+  });
+
+  assert.equal(
+    compiled.blockers.some((item) => item.code === 'missing_active_breakdown'),
+    false,
+  );
+  assert.equal(
+    compiled.blockers.some((item) => item.code === 'missing_directions_dsld'),
+    false,
+  );
+  assert.equal(compiled.personalizedResultLane.goalFit.status, 'ready');
+  assert.equal(compiled.personalizedResultLane.goalFit.heroMode, 'dominant_goal');
+  assert.equal(compiled.personalizedResultLane.goalFit.dominantGoalKey, 'recovery');
+  assert.notEqual(compiled.personalizedResultLane.goalFit.goalCoverage?.find((entry) => entry.goalKey === 'recovery')?.state, 'none');
+});
+
 test('compileDecisionSupport returns multi-goal coverage in user-selected order with no-match states included', () => {
   const compiled = compileDecisionSupport({
     digest: buildOmegaDigest(),
@@ -237,7 +378,7 @@ test('compileDecisionSupport returns multi-goal coverage in user-selected order 
   assert.notEqual(compiled.personalizedResultLane.goalFit.goalCoverage?.[2]?.state, 'none');
   assert.equal(compiled.personalizedResultLane.goalFit.heroMode, 'dominant_goal');
   assert.equal(compiled.personalizedResultLane.goalFit.dominantGoalKey, 'recovery');
-  assert.equal(compiled.personalizedResultLane.goalFit.secondaryGoalKey, null);
+  assert.equal(compiled.personalizedResultLane.goalFit.secondaryGoalKey, 'immunity');
 });
 
 test('compileDecisionSupport preserves legacy top-3 fields while adding full multi-goal coverage metadata', () => {
@@ -279,7 +420,10 @@ test('compileDecisionSupport preserves legacy top-3 fields while adding full mul
   const recoveryCoverage = compiled.personalizedResultLane.goalFit.allGoalCoverage?.find((entry) => entry.goalKey === 'recovery');
   assert.equal(compiled.personalizedResultLane.goalFit.heroMode, 'dominant_goal');
   assert.equal(compiled.personalizedResultLane.goalFit.dominantGoalKey, 'recovery');
-  assert.equal(compiled.personalizedResultLane.goalFit.secondaryGoalKey, null);
+  assert.equal(compiled.personalizedResultLane.goalFit.secondaryGoalKey, 'immunity');
+  assert.ok((compiled.personalizedResultLane.goalFit.dominanceGap ?? 0) >= 18);
+  assert.notEqual(compiled.personalizedResultLane.goalFit.goalNarrativeConfidence, 'low');
+  assert.notEqual(compiled.personalizedResultLane.goalFit.labelCompleteness, 'low');
   assert.equal(recoveryCoverage?.source, 'selected_goal_evaluation');
   assert.equal(typeof recoveryCoverage?.score, 'number');
   assert.ok((recoveryCoverage?.score ?? 0) > 0);
@@ -319,6 +463,8 @@ test('compileDecisionSupport falls back to original order for visible goals when
   assert.equal(compiled.personalizedResultLane.goalFit.heroMode, 'insufficient_signal');
   assert.equal(compiled.personalizedResultLane.goalFit.dominantGoalKey, null);
   assert.equal(compiled.personalizedResultLane.goalFit.secondaryGoalKey, null);
+  assert.equal(compiled.personalizedResultLane.goalFit.goalNarrativeConfidence, 'low');
+  assert.equal(compiled.personalizedResultLane.goalFit.labelCompleteness, 'low');
 });
 
 test('compileDecisionSupport classifies mixed multi-goal coverage and exposes ranked metadata', () => {
@@ -336,6 +482,9 @@ test('compileDecisionSupport classifies mixed multi-goal coverage and exposes ra
   assert.equal(compiled.personalizedResultLane.goalFit.heroMode, 'mixed_goals');
   assert.equal(compiled.personalizedResultLane.goalFit.dominantGoalKey, 'sleep');
   assert.equal(compiled.personalizedResultLane.goalFit.secondaryGoalKey, 'stress_support');
+  assert.ok((compiled.personalizedResultLane.goalFit.dominanceGap ?? 0) >= 0);
+  assert.notEqual(compiled.personalizedResultLane.goalFit.goalNarrativeConfidence, undefined);
+  assert.notEqual(compiled.personalizedResultLane.goalFit.labelCompleteness, undefined);
   assert.deepEqual(
     compiled.personalizedResultLane.goalFit.allGoalCoverage?.map((entry) => entry.goalKey),
     ['sleep', 'focus', 'stress_support'],
@@ -373,7 +522,10 @@ test('compileDecisionSupport keeps vitamin C in dominant-goal mode when immunity
 
   assert.equal(compiled.personalizedResultLane.goalFit.heroMode, 'dominant_goal');
   assert.equal(compiled.personalizedResultLane.goalFit.dominantGoalKey, 'immunity');
-  assert.equal(compiled.personalizedResultLane.goalFit.secondaryGoalKey, null);
+  assert.equal(compiled.personalizedResultLane.goalFit.secondaryGoalKey, 'recovery');
+  assert.ok((compiled.personalizedResultLane.goalFit.dominanceGap ?? 0) >= 18);
+  assert.notEqual(compiled.personalizedResultLane.goalFit.goalNarrativeConfidence, 'low');
+  assert.notEqual(compiled.personalizedResultLane.goalFit.labelCompleteness, 'low');
   assert.equal(
     compiled.personalizedResultLane.goalFit.allGoalCoverage?.find((entry) => entry.goalKey === 'immunity')?.state,
     'strong',
@@ -389,6 +541,51 @@ test('compileDecisionSupport keeps vitamin C in dominant-goal mode when immunity
   assert.equal(
     compiled.personalizedResultLane.goalFit.allGoalCoverage?.find((entry) => entry.goalKey === 'energy')?.state,
     'none',
+  );
+  const immunityCoverage = compiled.personalizedResultLane.goalFit.allGoalCoverage?.find((entry) => entry.goalKey === 'immunity');
+  const immunitySummary = compiled.personalizedResultLane.goalFit.goalCoverageSummary?.items.find((entry) => entry.goalKey === 'immunity');
+  assert.ok((immunityCoverage?.graphEvidence?.length ?? 0) > 0);
+  assert.ok(
+    (immunityCoverage?.graphEvidence ?? []).some((entry) =>
+      entry.sourceType === 'review_article' && /Vitamin C and Immune Function/i.test(entry.title),
+    ),
+  );
+  assert.match(
+    immunityCoverage?.explanation?.provenance?.join(' ') ?? '',
+    /Evidence note: Vitamin C and Immune Function/i,
+  );
+  assert.ok((immunitySummary?.graphEvidence?.length ?? 0) > 0);
+  assert.match(
+    immunitySummary?.explanation?.provenance?.join(' ') ?? '',
+    /Evidence note: Vitamin C and Immune Function/i,
+  );
+});
+
+test('compileDecisionSupport does not collapse omega-3 into a negative sleep verdict when recovery remains stronger', () => {
+  const compiled = compileDecisionSupport({
+    digest: buildOmegaDigest(),
+    factsDigestHash: 'fixture-omega-recovery-sleep-calibrated',
+    viewMode: 'details',
+    personalizationContext: buildPersonalizationContext({
+      prioritizedGoals: ['recovery', 'sleep'],
+      selectedGoalKey: 'sleep',
+    }),
+  });
+
+  assert.equal(compiled.personalizedResultLane.goalFit.heroMode, 'dominant_goal');
+  assert.equal(compiled.personalizedResultLane.goalFit.dominantGoalKey, 'recovery');
+  assert.equal(
+    compiled.personalizedResultLane.goalFit.allGoalCoverage?.find((entry) => entry.goalKey === 'recovery')?.state,
+    'some',
+  );
+  assert.ok(
+    ['none', 'unknown'].includes(
+      compiled.personalizedResultLane.goalFit.allGoalCoverage?.find((entry) => entry.goalKey === 'sleep')?.state ?? 'none',
+    ),
+  );
+  assert.doesNotMatch(
+    compiled.personalizedResultLane.goalFit.summary,
+    /not fit your goal|not suitable for your|not a strong fit/i,
   );
 });
 
@@ -449,4 +646,82 @@ test('compileDecisionSupport turns remote omega-3 overlap into concrete personal
     /saved supplement/i,
   );
   assert.equal(compiled.personalizedResultLane.personalInsight.expandableDetailsReady, true);
+
+  const recoveryCoverage = compiled.personalizedResultLane.goalFit.allGoalCoverage?.find(
+    (entry) => entry.goalKey === 'recovery',
+  );
+  const recoverySummary = compiled.personalizedResultLane.goalFit.goalCoverageSummary?.items.find(
+    (entry) => entry.goalKey === 'recovery',
+  );
+  assert.equal(compiled.personalizedResultLane.goalFit.heroMode, 'single_goal');
+  assert.equal(compiled.personalizedResultLane.goalFit.dominantGoalKey, 'recovery');
+  assert.equal(recoveryCoverage?.stackAdjustment?.stackContextImpact, 'negative');
+  assert.equal(recoveryCoverage?.stackAdjustment?.marginalValue, 'medium');
+  assert.ok((recoveryCoverage?.stackAdjustment?.adjustedScore ?? 0) < (recoveryCoverage?.score ?? 0));
+  assert.match(
+    recoveryCoverage?.explanation?.action?.join(' ') ?? '',
+    /review overlap/i,
+  );
+  assert.equal(recoverySummary?.stackAdjustment?.stackContextImpact, 'negative');
+  assert.equal(recoverySummary?.stackAdjustment?.marginalValue, 'medium');
+});
+
+test('compileDecisionSupport keeps hero mode stable when stack overlap only changes marginal value', () => {
+  const withoutOverlap = compileDecisionSupport({
+    digest: buildOmegaDigest(),
+    factsDigestHash: 'fixture-sr-omega-no-overlap',
+    viewMode: 'details',
+    personalizationContext: buildPersonalizationContext({
+      prioritizedGoals: ['recovery'],
+      selectedGoalKey: 'recovery',
+      stackOverlap: {
+        status: 'ok',
+        savedStackCount: 0,
+        overlapCount: 0,
+        overlaps: [],
+      },
+    }),
+  });
+
+  const withOverlap = compileDecisionSupport({
+    digest: buildOmegaDigest(),
+    factsDigestHash: 'fixture-sr-omega-with-overlap',
+    viewMode: 'details',
+    personalizationContext: buildPersonalizationContext({
+      prioritizedGoals: ['recovery'],
+      selectedGoalKey: 'recovery',
+      stackOverlap: {
+        status: 'ok',
+        savedStackCount: 2,
+        overlapCount: 1,
+        overlaps: [
+          {
+            ingredientKey: 'omega-3',
+            ingredientDisplay: 'Omega-3',
+            count: 2,
+            supplements: [
+              { supplementId: 'current-omega', productName: 'Sports Research Omega-3 1040 mg' },
+              { supplementId: 'saved-omega', productName: 'Nordic Naturals Ultimate Omega' },
+            ],
+          },
+        ],
+      },
+    }),
+  });
+
+  assert.equal(withoutOverlap.personalizedResultLane.goalFit.heroMode, 'single_goal');
+  assert.equal(withOverlap.personalizedResultLane.goalFit.heroMode, 'single_goal');
+  assert.equal(withoutOverlap.personalizedResultLane.goalFit.dominantGoalKey, 'recovery');
+  assert.equal(withOverlap.personalizedResultLane.goalFit.dominantGoalKey, 'recovery');
+
+  const withoutOverlapRecovery = withoutOverlap.personalizedResultLane.goalFit.allGoalCoverage?.find(
+    (entry) => entry.goalKey === 'recovery',
+  );
+  const withOverlapRecovery = withOverlap.personalizedResultLane.goalFit.allGoalCoverage?.find(
+    (entry) => entry.goalKey === 'recovery',
+  );
+
+  assert.ok((withoutOverlapRecovery?.stackAdjustment?.adjustedScore ?? withoutOverlapRecovery?.score ?? 0)
+    >= (withOverlapRecovery?.stackAdjustment?.adjustedScore ?? withOverlapRecovery?.score ?? 0));
+  assert.equal(withOverlapRecovery?.stackAdjustment?.stackContextImpact, 'negative');
 });

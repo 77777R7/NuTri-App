@@ -28,6 +28,7 @@ import type {
   TopSectionInsightPresentation,
   TopSectionInsightTopic,
 } from '@/lib/scan/analysisTopSectionPresentation';
+import { sanitizeScanDisplayText } from '@/lib/scan/neverBlank';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -46,7 +47,7 @@ type AnalysisTopSectionRedesignProps = {
 type GoalCoverageRenderItem = {
   key: string;
   goalLabel: string;
-  state: 'strong' | 'some' | 'limited' | 'none';
+  state: 'strong' | 'some' | 'limited' | 'none' | 'unknown';
   description: string;
 };
 
@@ -148,13 +149,6 @@ export const AnalysisTopSectionRedesign: React.FC<AnalysisTopSectionRedesignProp
           style={styles.heroCard}
         >
           <BlurView intensity={18} tint="light" style={StyleSheet.absoluteFill} />
-          <LinearGradient
-            colors={['rgba(0,0,0,0)', 'rgba(255,255,255,0.85)', 'rgba(0,0,0,0)']}
-            locations={[0, 0.5, 1]}
-            start={{ x: 0, y: 0.5 }}
-            end={{ x: 1, y: 0.5 }}
-            style={styles.heroTopSheen}
-          />
           <View style={[styles.heroChip, { backgroundColor: heroChipColors.fill, borderColor: heroChipColors.border }]}>
             <Text style={[styles.heroChipText, { color: heroChipColors.text }]}>{hero.chip}</Text>
           </View>
@@ -210,7 +204,7 @@ export const AnalysisTopSectionRedesign: React.FC<AnalysisTopSectionRedesignProp
             <View style={styles.bannerIconWrap}>
               <AlertTriangle size={18} color="#D97706" />
             </View>
-            <Text style={styles.bannerText}>{banner.title}</Text>
+            <Text style={styles.bannerText}>{sanitizeScanDisplayText(banner.title) ?? banner.title}</Text>
           </View>
         </Animated.View>
       ) : null}
@@ -223,15 +217,12 @@ export const AnalysisTopSectionRedesign: React.FC<AnalysisTopSectionRedesignProp
               const isExpanded = expandedKey === row.key;
               const { Icon, iconBg, iconColor } = resolveInsightIcon(row.topic, row.tone);
               const isGoalCoverageRow = (row.goalCoverageItems?.length ?? 0) > 0;
+              const rowTitle = sanitizeScanDisplayText(row.collapsedTitle) ?? row.collapsedTitle;
+              const rawSubtitle = sanitizeScanDisplayText(row.subtitle ?? null);
               const fullGoalCoverageItems: GoalCoverageRenderItem[] = (row.goalCoverageItems ?? []).map((item) => ({
                 key: item.key,
                 goalLabel: item.goalLabel,
-                state:
-                  item.tone === 'positive'
-                    ? 'strong'
-                    : item.tone === 'neutral'
-                      ? 'some'
-                      : 'limited',
+                state: item.state,
                 description: item.description,
               }));
               const showAllGoalCoverage = expandedCoverageRows[row.key] === true;
@@ -239,12 +230,7 @@ export const AnalysisTopSectionRedesign: React.FC<AnalysisTopSectionRedesignProp
                   ? row.visibleGoalCoverageItems.map((item) => ({
                       key: item.key,
                       goalLabel: item.goalLabel,
-                      state:
-                        item.tone === 'positive'
-                          ? 'strong'
-                          : item.tone === 'neutral'
-                            ? 'some'
-                            : 'limited',
+                      state: item.state,
                       description: item.description,
                     }))
                   : fullGoalCoverageItems;
@@ -254,13 +240,16 @@ export const AnalysisTopSectionRedesign: React.FC<AnalysisTopSectionRedesignProp
                   ? (showAllGoalCoverage ? fullGoalCoverageItems : [])
                   : (showAllGoalCoverage ? fullGoalCoverageItems : fallbackVisibleGoalCoverageItems) ?? []
                 : [];
-              const rowSubtitle = isGoalCoverageRow && showAllGoalCoverage && row.expandedSubtitle
-                ? row.expandedSubtitle
-                : row.subtitle;
+              const rowSubtitle = isGoalCoverageRow && showAllGoalCoverage
+                ? sanitizeScanDisplayText(row.expandedSubtitle ?? null)
+                : rawSubtitle;
+              const expandedBullets = row.expandedBullets
+                .map((bullet) => sanitizeScanDisplayText(bullet))
+                .filter((bullet): bullet is string => Boolean(bullet));
               const expandedFrameHeight = getExpandedFrameHeight(
                 isGoalCoverageRow
-                  ? activeGoalCoverageItems.length + row.expandedBullets.length + (useInlineSecondaryCoverage ? 2 : 0)
-                  : row.expandedBullets.length,
+                  ? activeGoalCoverageItems.length + expandedBullets.length + (useInlineSecondaryCoverage ? 2 : 0)
+                  : expandedBullets.length,
               );
 
               const handleToggle = () => {
@@ -286,7 +275,7 @@ export const AnalysisTopSectionRedesign: React.FC<AnalysisTopSectionRedesignProp
                       <Icon size={18} color={iconColor} />
                     </View>
                     <View style={styles.rowCopy}>
-                      <Text style={styles.rowTitle}>{row.collapsedTitle}</Text>
+                      <Text style={styles.rowTitle}>{rowTitle}</Text>
                       {!!rowSubtitle ? (
                         <Text style={styles.rowSubtitle}>{rowSubtitle}</Text>
                       ) : null}
@@ -302,18 +291,24 @@ export const AnalysisTopSectionRedesign: React.FC<AnalysisTopSectionRedesignProp
                       exiting={FadeOutDown.duration(140)}
                       style={[styles.expandedWrap, { minHeight: Math.max(expandedFrameHeight - 58, 44) }]}
                     >
-                      {useInlineSecondaryCoverage
-                        ? row.expandedBullets.map((bullet, bulletIndex) => (
-                            <Text key={`${row.key}-dominant-${bulletIndex}`} style={styles.expandedLine}>
-                              {bullet}
-                            </Text>
-                          ))
-                        : null}
+                      {expandedBullets.map((bullet, bulletIndex) => (
+                        <Text
+                          key={`${row.key}-${useInlineSecondaryCoverage ? 'dominant' : 'coverage'}-${bulletIndex}`}
+                          style={styles.expandedLine}
+                        >
+                          {bullet}
+                        </Text>
+                      ))}
                       {useInlineSecondaryCoverage ? (
                         <View style={styles.inlineCoverageSection}>
-                          <Text style={styles.inlineCoverageLabel}>{row.inlineGoalCoverageTitle ?? 'How it maps to your goals'}</Text>
+                          <Text style={styles.inlineCoverageLabel}>{row.inlineGoalCoverageTitle ?? 'Goal check'}</Text>
+                          {!!(!showAllGoalCoverage ? row.inlineGoalCoveragePreview : undefined) ? (
+                            <Text style={styles.inlineCoveragePreview}>{!showAllGoalCoverage ? row.inlineGoalCoveragePreview : undefined}</Text>
+                          ) : null}
                           {!!(showAllGoalCoverage ? row.expandedSubtitle : undefined) ? (
-                            <Text style={styles.inlineCoverageSubtitle}>{showAllGoalCoverage ? row.expandedSubtitle : undefined}</Text>
+                            <Text style={styles.inlineCoverageSubtitle}>
+                              {showAllGoalCoverage ? sanitizeScanDisplayText(row.expandedSubtitle ?? null) ?? undefined : undefined}
+                            </Text>
                           ) : null}
                         </View>
                       ) : null}
@@ -332,13 +327,13 @@ export const AnalysisTopSectionRedesign: React.FC<AnalysisTopSectionRedesignProp
                     </Animated.View>
                   ) : null}
 
-                  {isExpanded && !isGoalCoverageRow && row.expandedBullets.length > 0 ? (
+                  {isExpanded && !isGoalCoverageRow && expandedBullets.length > 0 ? (
                     <Animated.View
                       entering={FadeInUp.duration(200)}
                       exiting={FadeOutDown.duration(140)}
                       style={[styles.expandedWrap, { minHeight: Math.max(expandedFrameHeight - 58, 44) }]}
                     >
-                      {row.expandedBullets.map((bullet, bulletIndex) => (
+                      {expandedBullets.map((bullet, bulletIndex) => (
                         <Text key={`${row.key}-${bulletIndex}`} style={styles.expandedLine}>
                           {bullet}
                         </Text>
@@ -358,6 +353,32 @@ export const AnalysisTopSectionRedesign: React.FC<AnalysisTopSectionRedesignProp
                 </View>
               );
             })}
+            {secondaryNote ? (
+              <>
+                {insights.length > 0 ? (
+                  <LinearGradient
+                    colors={['rgba(11,30,54,0)', 'rgba(11,30,54,0.05)', 'rgba(11,30,54,0)']}
+                    locations={[0, 0.5, 1]}
+                    start={{ x: 0, y: 0.5 }}
+                    end={{ x: 1, y: 0.5 }}
+                    style={styles.divider}
+                  />
+                ) : null}
+                <View style={styles.secondaryNoteInlineWrap}>
+                  <View style={styles.secondaryNoteCard}>
+                    <View style={styles.secondaryNoteIconWrap}>
+                      <Cross size={16} color="#D97706" />
+                    </View>
+                    <View style={styles.secondaryNoteCopy}>
+                      <Text style={styles.secondaryNoteTitle}>{secondaryNote.title}</Text>
+                      {!!sanitizeScanDisplayText(secondaryNote.body ?? null) ? (
+                        <Text style={styles.secondaryNoteBody}>{sanitizeScanDisplayText(secondaryNote.body ?? null)}</Text>
+                      ) : null}
+                    </View>
+                  </View>
+                </View>
+              </>
+            ) : null}
           </View>
         </Animated.View>
       ) : null}
@@ -387,14 +408,6 @@ const styles = StyleSheet.create({
     shadowRadius: 32,
     shadowOffset: { width: 0, height: 8 },
     backgroundColor: 'rgba(255,255,255,0.72)',
-  },
-  heroTopSheen: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 1,
-    opacity: 0.8,
   },
   heroChip: {
     alignSelf: 'flex-start',
@@ -664,6 +677,13 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#0B1E36',
     letterSpacing: -0.18,
+  },
+  inlineCoveragePreview: {
+    fontSize: 12.5,
+    lineHeight: 17,
+    fontWeight: '500',
+    color: '#64748B',
+    letterSpacing: -0.12,
   },
   inlineCoverageSubtitle: {
     fontSize: 12,

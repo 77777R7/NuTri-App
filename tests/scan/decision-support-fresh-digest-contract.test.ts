@@ -15,3 +15,10 @@ test('decision support prefers the fetched digest over a stale bundle digest bef
   assert.match(source, /getDecisionPayloadDigest\(objectPayload\)/);
   assert.match(source, /pickFreshDecisionPayloadForFacts\(\s*currentFactsDigestHash,\s*resolvedDecisionDigest,/s);
 });
+
+test('decision support keeps local personalization enabled in no-auth builds even if a stale auth token exists', async () => {
+  const source = await readFile(DASHBOARD_PATH, 'utf8');
+
+  assert.match(source, /AUTH_DISABLED/);
+  assert.match(source, /Boolean\(localDecisionSupportHeader\) && \(AUTH_DISABLED \|\| !authToken\)/);
+});

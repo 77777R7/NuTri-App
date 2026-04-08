@@ -10,22 +10,30 @@ import {
 import activityGoalMap from '@/data/personalization/activity_goal_map.v1.json';
 import blockerBehaviorRules from '@/data/personalization/blocker_behavior_rules.v1.json';
 import dietReviewLanes from '@/data/personalization/diet_nutrient_lane_map.v1.json';
+import evidenceGraph from '@/data/personalization/evidence_graph.v1.json';
 import explanationTemplates from '@/data/personalization/explanation_templates.v1.json';
 import featureFlags from '@/data/personalization/feature_flags.v1.json';
 import goalCatalog from '@/data/personalization/goal_catalog.v1.json';
 import goalIngredientMap from '@/data/personalization/goal_ingredient_map.v1.json';
 import goalIngredientMapV2 from '@/data/personalization/goal_ingredient_map.v2.json';
+import nonSupplementGoalGating from '@/data/personalization/non_supplement_goal_gating.v1.json';
 import safetyRules from '@/data/personalization/safety_rules.v1.json';
 import activityGoalMapSchema from '@/data/personalization/schemas/activity_goal_map.schema.json';
 import blockerBehaviorRulesSchema from '@/data/personalization/schemas/blocker_behavior_rules.schema.json';
 import dietReviewLanesSchema from '@/data/personalization/schemas/diet_nutrient_lane_map.schema.json';
+import evidenceGraphSchema from '@/data/personalization/schemas/evidence_graph.v1.schema.json';
 import explanationTemplatesSchema from '@/data/personalization/schemas/explanation_templates.schema.json';
 import featureFlagsSchema from '@/data/personalization/schemas/feature_flags.schema.json';
 import goalCatalogSchema from '@/data/personalization/schemas/goal_catalog.schema.json';
 import goalIngredientMapSchema from '@/data/personalization/schemas/goal_ingredient_map.schema.json';
 import goalIngredientMapV2Schema from '@/data/personalization/schemas/goal_ingredient_map.v2.schema.json';
+import nonSupplementGoalGatingSchema from '@/data/personalization/schemas/non_supplement_goal_gating.v1.schema.json';
 import safetyRulesSchema from '@/data/personalization/schemas/safety_rules.schema.json';
-import { projectLegacyGoalIngredientMap } from '@/lib/personalization/core/goalMatchOntology';
+import {
+  getIngredientGoalProvenance,
+  projectGoalIngredientMapV2FromEvidenceGraph,
+  projectLegacyGoalIngredientMap,
+} from '@/lib/personalization/core/goalMatchOntology';
 
 const GOAL_KEYS = [
   'sleep',
@@ -94,7 +102,7 @@ type JsonSchema = {
   required?: string[];
   properties?: Record<string, JsonSchema>;
   items?: JsonSchema;
-  additionalProperties?: boolean;
+  additionalProperties?: boolean | JsonSchema;
   minItems?: number;
   uniqueItems?: boolean;
   minimum?: number;
@@ -171,6 +179,9 @@ const validateSchema = (schema: JsonSchema, value: unknown, path = '$'): void =>
         if (schema.additionalProperties === false) {
           assert.fail(`${path}.${key} is not allowed by schema`);
         }
+        if (isPlainObject(schema.additionalProperties)) {
+          validateSchema(schema.additionalProperties as JsonSchema, entry, `${path}.${key}`);
+        }
         return;
       }
 
@@ -184,6 +195,8 @@ test('personalization phase 0 data files satisfy the checked-in JSON schemas', (
     { name: 'goalCatalog', data: goalCatalog, schema: goalCatalogSchema },
     { name: 'goalIngredientMap', data: goalIngredientMap, schema: goalIngredientMapSchema },
     { name: 'goalIngredientMapV2', data: goalIngredientMapV2, schema: goalIngredientMapV2Schema },
+    { name: 'evidenceGraph', data: evidenceGraph, schema: evidenceGraphSchema },
+    { name: 'nonSupplementGoalGating', data: nonSupplementGoalGating, schema: nonSupplementGoalGatingSchema },
     { name: 'blockerBehaviorRules', data: blockerBehaviorRules, schema: blockerBehaviorRulesSchema },
     { name: 'dietReviewLanes', data: dietReviewLanes, schema: dietReviewLanesSchema },
     { name: 'activityGoalMap', data: activityGoalMap, schema: activityGoalMapSchema },
@@ -267,6 +280,58 @@ test('goal ingredient map v2 can project a legacy-compatible view for overlappin
     assert.deepEqual(projectedRow?.preferredForms, row.preferredForms);
     assert.deepEqual(projectedRow?.caps, row.caps);
   });
+});
+
+test('evidence graph projects a v2-compatible view without changing overlapping edge semantics', () => {
+  const projected = projectGoalIngredientMapV2FromEvidenceGraph();
+  assert.equal(projected.version, 'v2');
+  assert.equal(projected.edges.length, goalIngredientMapV2.edges.length);
+  assert.equal(projected.formulaPatterns.length, goalIngredientMapV2.formulaPatterns.length);
+
+  const projectedEdgeLookup = new Map(
+    projected.edges.map((edge) => [`${edge.goalKey}:${edge.ingredientKey}`, edge] as const),
+  );
+  goalIngredientMapV2.edges.forEach((edge) => {
+    const projectedEdge = projectedEdgeLookup.get(`${edge.goalKey}:${edge.ingredientKey}`);
+    assert.ok(projectedEdge, `missing projected edge for ${edge.goalKey}:${edge.ingredientKey}`);
+    assert.equal(projectedEdge?.evidenceTier, edge.evidenceTier);
+    assert.equal(projectedEdge?.baseWeight, edge.baseWeight);
+    assert.equal(projectedEdge?.minDoseHint, edge.minDoseHint);
+    assert.equal(projectedEdge?.doseUnit, edge.doseUnit);
+    assert.equal(projectedEdge?.maxUsefulDoseHint ?? null, edge.maxUsefulDoseHint ?? null);
+    assert.deepEqual(projectedEdge?.formConstraint ?? [], edge.formConstraint ?? []);
+    assert.deepEqual(projectedEdge?.notes ?? [], edge.notes ?? []);
+    assert.deepEqual(projectedEdge?.caps ?? [], edge.caps ?? []);
+  });
+
+  const projectedPatternLookup = new Map(
+    projected.formulaPatterns.map((pattern) => [
+      `${pattern.goalKey}:${pattern.requiredIngredients.join('|')}`,
+      pattern,
+    ] as const),
+  );
+  goalIngredientMapV2.formulaPatterns.forEach((pattern) => {
+    const projectedPattern = projectedPatternLookup.get(
+      `${pattern.goalKey}:${pattern.requiredIngredients.join('|')}`,
+    );
+    assert.ok(projectedPattern, `missing projected formula pattern for ${pattern.goalKey}:${pattern.requiredIngredients.join('|')}`);
+    assert.equal(projectedPattern?.bonusWeight, pattern.bonusWeight);
+    assert.deepEqual(projectedPattern?.requiredIngredients, pattern.requiredIngredients);
+    assert.deepEqual(projectedPattern?.optionalIngredients ?? [], pattern.optionalIngredients ?? []);
+    assert.deepEqual(projectedPattern?.reasonCodes, pattern.reasonCodes);
+  });
+});
+
+test('evidence graph exposes provenance for ingredient-goal lanes', () => {
+  const vitaminCImmunity = getIngredientGoalProvenance('immunity', 'vitamin_c');
+  assert.ok(vitaminCImmunity.length >= 2);
+  assert.ok(vitaminCImmunity.some((entry) => entry.sourceKey === 'goal_ingredient_map.v2'));
+  assert.ok(vitaminCImmunity.some((entry) => entry.sourceKey === 'carr-maggini-2017-vitamin-c-immune-function'));
+
+  const omega3Recovery = getIngredientGoalProvenance('recovery', 'omega_3');
+  assert.ok(omega3Recovery.length >= 2);
+  assert.ok(omega3Recovery.some((entry) => entry.sourceKey === 'goal_ingredient_map.v2'));
+  assert.ok(omega3Recovery.some((entry) => entry.sourceKey === 'fernandez-lazaro-2024-omega3-recovery'));
 });
 
 test('blocker strategies and experience modes cover the current onboarding options exactly', () => {

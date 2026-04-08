@@ -37,7 +37,7 @@ const writeJson = async (filePath: string, payload: unknown) => {
 
 const run = async () => {
   const bundle = await goalNavigatorCatalogEvaluationServiceInternals.buildCatalogCandidateBundle(
-    goalNavigatorCatalogEvaluationServiceInternals.fetchOverlayCatalogRows,
+    goalNavigatorCatalogEvaluationServiceInternals.fetchAllOverlayCatalogRows,
   );
   const candidateGaps = bundle.preparedCandidates
     .map((candidate) => buildGoalNavigatorCandidateGapRecord(candidate.preparedProduct))
@@ -48,8 +48,9 @@ const run = async () => {
     rulesVersion: PERSONALIZATION_RULES_VERSION,
     generatedAt: bundle.preparedAt,
     sourceTable: "iherb_overlay_products",
-    sourceRowCount: bundle.preparedCandidates.length,
+    sourceRowCount: bundle.sourceRowCount,
     notEnoughStructuredDataCount: bundle.notEnoughStructuredDataCount,
+    gatedOutOfScopeNonSupplementCount: bundle.gatedOutOfScopeNonSupplementCount,
     preparedCandidates: bundle.preparedCandidates,
   };
 
@@ -88,6 +89,7 @@ const run = async () => {
       buildMeta: {
         persistedFrom: "build-goal-navigator-candidate-bundle",
         storageUploadSkipped: skipStorageUpload,
+        gatedOutOfScopeNonSupplementCount: bundle.gatedOutOfScopeNonSupplementCount,
       },
       candidateGaps,
     });
@@ -109,6 +111,7 @@ const run = async () => {
         generatedAt: artifact.generatedAt,
         preparedCandidateCount: artifact.preparedCandidates.length,
         notEnoughStructuredDataCount: artifact.notEnoughStructuredDataCount,
+        gatedOutOfScopeNonSupplementCount: bundle.gatedOutOfScopeNonSupplementCount,
         candidateGapCount: candidateGaps.length,
         bundleRunId,
       },

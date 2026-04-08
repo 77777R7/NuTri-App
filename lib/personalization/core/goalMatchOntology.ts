@@ -2,6 +2,12 @@ import goalIngredientMapV1Data from '../../../data/personalization/goal_ingredie
 import goalIngredientMapV2Data from '../../../data/personalization/goal_ingredient_map.v2.json';
 import type { GoalKey, ProductGoalMatchTier } from '../../../types/personalization';
 import { listActiveGoalCatalogEntries, normalizeGoalKeys, getGoalLabel } from './goalCatalog';
+import {
+  getFormulaPatternProvenance,
+  getIngredientGoalProvenance,
+  projectGoalIngredientMapV2FromEvidenceGraph,
+} from './goalEvidenceGraph';
+import type { EvidenceGraphProvenance } from './goalEvidenceGraph';
 
 export type EvidenceTierV2 = 'A' | 'B' | 'C' | 'D';
 
@@ -16,6 +22,7 @@ export type IngredientGoalEdgeV2 = {
   formConstraint?: string[];
   notes?: string[];
   caps?: string[];
+  provenance?: EvidenceGraphProvenance[];
 };
 
 export type FormulaPatternV2 = {
@@ -24,6 +31,7 @@ export type FormulaPatternV2 = {
   optionalIngredients?: string[];
   bonusWeight: number;
   reasonCodes: string[];
+  provenance?: EvidenceGraphProvenance[];
 };
 
 type GoalIngredientMatchRecordV1 = {
@@ -69,7 +77,7 @@ export type GoalIngredientPreviewLane = {
 };
 
 type GoalMatchOntology = {
-  version: 'v1' | 'v2';
+  version: 'v1' | 'v2' | 'graph_v1';
   edges: IngredientGoalEdgeV2[];
   formulaPatterns: FormulaPatternV2[];
   edgesByGoal: ReadonlyMap<GoalKey, IngredientGoalEdgeV2[]>;
@@ -100,6 +108,12 @@ const LEGACY_TIER_TO_V1_GROUPED: Record<ProductGoalMatchTier, 'strong' | 'suppor
   no_match: 'exploratory',
 };
 
+const V1_GROUPED_TO_LEGACY_TIER: Record<'strong' | 'supporting' | 'exploratory', ProductGoalMatchTier> = {
+  strong: 'strong_match',
+  supporting: 'related',
+  exploratory: 'weak_match',
+};
+
 let cachedOntology: GoalMatchOntology | null = null;
 
 const normalizeEdge = (edge: IngredientGoalEdgeV2): IngredientGoalEdgeV2 => ({
@@ -113,6 +127,7 @@ const normalizeEdge = (edge: IngredientGoalEdgeV2): IngredientGoalEdgeV2 => ({
   ...(edge.formConstraint?.length ? { formConstraint: [...new Set(edge.formConstraint)] } : {}),
   ...(edge.notes?.length ? { notes: [...new Set(edge.notes)] } : {}),
   ...(edge.caps?.length ? { caps: [...new Set(edge.caps)] } : {}),
+  ...(edge.provenance?.length ? { provenance: edge.provenance } : {}),
 });
 
 const toV2EdgesFromV1 = (): IngredientGoalEdgeV2[] =>
@@ -133,11 +148,15 @@ const toV2EdgesFromV1 = (): IngredientGoalEdgeV2[] =>
   );
 
 const buildOntology = (): GoalMatchOntology => {
+  const graphProjection = projectGoalIngredientMapV2FromEvidenceGraph();
+  const graphEdges = Array.isArray(graphProjection.edges) ? graphProjection.edges : [];
+  const graphFormulaPatterns = Array.isArray(graphProjection.formulaPatterns)
+    ? graphProjection.formulaPatterns
+    : [];
   const candidateEdges = Array.isArray(GOAL_INGREDIENT_MAP_V2.edges)
     ? GOAL_INGREDIENT_MAP_V2.edges
     : [];
-  const edges = candidateEdges.length > 0 ? candidateEdges.map(normalizeEdge) : toV2EdgesFromV1();
-  const formulaPatterns = Array.isArray(GOAL_INGREDIENT_MAP_V2.formulaPatterns)
+  const v2FormulaPatterns = Array.isArray(GOAL_INGREDIENT_MAP_V2.formulaPatterns)
     ? GOAL_INGREDIENT_MAP_V2.formulaPatterns.map((pattern) => ({
       goalKey: pattern.goalKey,
       requiredIngredients: [...new Set(pattern.requiredIngredients)],
@@ -146,8 +165,20 @@ const buildOntology = (): GoalMatchOntology => {
         : {}),
       bonusWeight: pattern.bonusWeight,
       reasonCodes: [...new Set(pattern.reasonCodes)],
+      ...(pattern.provenance?.length ? { provenance: pattern.provenance } : {}),
     }))
     : [];
+  const sourceVersion = graphEdges.length > 0
+    ? 'graph_v1'
+    : candidateEdges.length > 0
+      ? 'v2'
+      : 'v1';
+  const edges = sourceVersion === 'graph_v1'
+    ? graphEdges.map(normalizeEdge)
+    : candidateEdges.length > 0
+      ? candidateEdges.map(normalizeEdge)
+      : toV2EdgesFromV1();
+  const formulaPatterns = sourceVersion === 'graph_v1' ? graphFormulaPatterns : v2FormulaPatterns;
   const edgesByGoal = new Map<GoalKey, IngredientGoalEdgeV2[]>();
   const formulaPatternsByGoal = new Map<GoalKey, FormulaPatternV2[]>();
 
@@ -160,7 +191,7 @@ const buildOntology = (): GoalMatchOntology => {
   });
 
   return {
-    version: candidateEdges.length > 0 ? 'v2' : 'v1',
+    version: sourceVersion,
     edges,
     formulaPatterns,
     edgesByGoal,
@@ -200,6 +231,8 @@ export const getIngredientGoalEdges = (goalKey: GoalKey): IngredientGoalEdgeV2[]
 export const getFormulaPatterns = (goalKey: GoalKey): FormulaPatternV2[] =>
   [...(getOntology().formulaPatternsByGoal.get(goalKey) ?? [])];
 
+export { getIngredientGoalProvenance, getFormulaPatternProvenance, projectGoalIngredientMapV2FromEvidenceGraph };
+
 export const buildGoalIngredientPreviewLanes = (
   goals: readonly GoalKey[],
 ): GoalIngredientPreviewLane[] =>
@@ -223,19 +256,38 @@ export const buildGoalIngredientPreviewLanes = (
 
 export const projectLegacyGoalIngredientMap = (): GoalIngredientMapFileV1 => {
   const ontology = getOntology();
+  const legacyFlatRowByKey = new Map(
+    GOAL_INGREDIENT_MAP_V1.goalIngredientMap.map((row) => [`${row.goalKey}:${row.ingredientKey}`, row] as const),
+  );
   const grouped = listActiveGoalCatalogEntries().map((goal) => {
     const ingredientMatches = (ontology.edgesByGoal.get(goal.goalKey) ?? [])
       .filter((edge) => edge.evidenceTier !== 'D' && toLegacyTier(edge) !== 'no_match')
-      .map((edge) => ({
-        ingredientKey: edge.ingredientKey,
-        tier: toLegacyTier(edge),
-        evidenceGrade: edge.evidenceTier === 'D' ? 'C' : edge.evidenceTier,
-        minEffectiveDose: edge.minDoseHint,
-        unit: edge.doseUnit,
-        preferredForms: [...(edge.formConstraint ?? [])],
-        caps: [...(edge.caps ?? [])],
-        rationale: edge.notes?.[0] ?? `${getGoalLabel(edge.goalKey) ?? edge.goalKey} support mapping`,
-      }));
+      .map((edge) => {
+        const legacyFlatRow = legacyFlatRowByKey.get(`${edge.goalKey}:${edge.ingredientKey}`);
+        if (legacyFlatRow) {
+          return {
+            ingredientKey: edge.ingredientKey,
+            tier: V1_GROUPED_TO_LEGACY_TIER[legacyFlatRow.tier],
+            evidenceGrade: legacyFlatRow.evidenceGrade,
+            minEffectiveDose: legacyFlatRow.minEffectiveDose,
+            unit: legacyFlatRow.unit,
+            preferredForms: [...legacyFlatRow.preferredForms],
+            caps: [...legacyFlatRow.caps],
+            rationale: legacyFlatRow.rationale,
+          };
+        }
+
+        return {
+          ingredientKey: edge.ingredientKey,
+          tier: toLegacyTier(edge),
+          evidenceGrade: edge.evidenceTier === 'D' ? 'C' : edge.evidenceTier,
+          minEffectiveDose: edge.minDoseHint,
+          unit: edge.doseUnit,
+          preferredForms: [...(edge.formConstraint ?? [])],
+          caps: [...(edge.caps ?? [])],
+          rationale: edge.notes?.[0] ?? `${getGoalLabel(edge.goalKey) ?? edge.goalKey} support mapping`,
+        };
+      });
 
     return {
       goalKey: goal.goalKey,

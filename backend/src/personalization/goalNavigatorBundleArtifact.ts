@@ -23,6 +23,7 @@ export type GoalNavigatorCatalogBundleArtifact = {
   sourceTable: string;
   sourceRowCount: number;
   notEnoughStructuredDataCount: number;
+  gatedOutOfScopeNonSupplementCount?: number;
   preparedCandidates: GoalNavigatorCatalogBundleEntry[];
 };
 
@@ -88,6 +89,9 @@ export const parseGoalNavigatorCandidateBundleArtifact = (
     sourceTable: value.sourceTable,
     sourceRowCount: value.sourceRowCount,
     notEnoughStructuredDataCount: value.notEnoughStructuredDataCount,
+    ...(typeof value.gatedOutOfScopeNonSupplementCount === "number"
+      ? { gatedOutOfScopeNonSupplementCount: value.gatedOutOfScopeNonSupplementCount }
+      : {}),
     preparedCandidates: value.preparedCandidates,
     };
 };

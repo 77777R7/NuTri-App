@@ -27,7 +27,12 @@ import type { UlGuidanceEntry } from "./safety/types.js";
 import { buildAllergyInsight } from "./allergy/allergyInsightBuilder.js";
 import * as goalMatchScoringModule from "../../lib/personalization/core/goalMatchScoring.ts";
 import * as catalogProductEvaluationModule from "../../lib/personalization/core/catalogProductEvaluation.ts";
+import * as goalMatchOntologyModule from "../../lib/personalization/core/goalMatchOntology.ts";
+import * as goalEvidenceGraphModule from "../../lib/personalization/core/goalEvidenceGraph.ts";
+import * as goalStackAdjustmentsModule from "../../lib/personalization/core/goalStackAdjustments.ts";
 import * as goalFitCopyModule from "../../lib/personalization/goalFitCopy.ts";
+import type { EvidenceGraphProvenanceSourceType } from "../../lib/personalization/core/goalEvidenceGraph.ts";
+import explanationTemplatesData from "../../data/personalization/explanation_templates.v1.json" with { type: "json" };
 import type { ProductIngredientLikeInput } from "../../lib/personalization/core/goalMatchScoring.ts";
 import type {
   CatalogOverlayIngredientRow,
@@ -35,6 +40,7 @@ import type {
 } from "../../lib/personalization/core/catalogProductEvaluation.ts";
 import type {
   BlockerKey,
+  DecisionReason,
   ExperienceLevel,
   GoalKey,
   PersonalizationProfile,
@@ -46,10 +52,28 @@ import type {
 const scoreProductGoalMatches =
   goalMatchScoringModule.scoreProductGoalMatches ??
   goalMatchScoringModule.default?.scoreProductGoalMatches;
+const normalizeGoalNarrativeFitLevel =
+  goalMatchScoringModule.normalizeGoalNarrativeFitLevel ??
+  goalMatchScoringModule.default?.normalizeGoalNarrativeFitLevel;
+const mapNarrativeLabelCompleteness =
+  goalMatchScoringModule.mapNarrativeLabelCompleteness ??
+  goalMatchScoringModule.default?.mapNarrativeLabelCompleteness;
 
 const evaluateCatalogProduct =
   catalogProductEvaluationModule.evaluateCatalogProduct ??
   catalogProductEvaluationModule.default?.evaluateCatalogProduct;
+const getFormulaPatterns =
+  goalMatchOntologyModule.getFormulaPatterns ??
+  goalMatchOntologyModule.default?.getFormulaPatterns;
+const getIngredientGoalProvenance =
+  goalEvidenceGraphModule.getIngredientGoalProvenance ??
+  goalEvidenceGraphModule.default?.getIngredientGoalProvenance;
+const getFormulaPatternProvenance =
+  goalEvidenceGraphModule.getFormulaPatternProvenance ??
+  goalEvidenceGraphModule.default?.getFormulaPatternProvenance;
+const buildGoalStackAdjustments =
+  goalStackAdjustmentsModule.buildGoalStackAdjustments ??
+  goalStackAdjustmentsModule.default?.buildGoalStackAdjustments;
 
 const formatGoalFitReason =
   goalFitCopyModule.formatGoalFitReason ??
@@ -57,12 +81,36 @@ const formatGoalFitReason =
 const summarizeGoalFitReasons =
   goalFitCopyModule.summarizeGoalFitReasons ??
   goalFitCopyModule.default?.summarizeGoalFitReasons;
+const describeGoalNarrativeFitLevel =
+  goalFitCopyModule.describeGoalNarrativeFitLevel ??
+  goalFitCopyModule.default?.describeGoalNarrativeFitLevel;
+const buildGoalNarrativeSummary =
+  goalFitCopyModule.buildGoalNarrativeSummary ??
+  goalFitCopyModule.default?.buildGoalNarrativeSummary;
 
 if (typeof scoreProductGoalMatches !== "function") {
   throw new Error("[decisionSupport] Failed to load scoreProductGoalMatches");
 }
+if (typeof normalizeGoalNarrativeFitLevel !== "function") {
+  throw new Error("[decisionSupport] Failed to load normalizeGoalNarrativeFitLevel");
+}
+if (typeof mapNarrativeLabelCompleteness !== "function") {
+  throw new Error("[decisionSupport] Failed to load mapNarrativeLabelCompleteness");
+}
 if (typeof evaluateCatalogProduct !== "function") {
   throw new Error("[decisionSupport] Failed to load evaluateCatalogProduct");
+}
+if (typeof getFormulaPatterns !== "function") {
+  throw new Error("[decisionSupport] Failed to load getFormulaPatterns");
+}
+if (typeof getIngredientGoalProvenance !== "function") {
+  throw new Error("[decisionSupport] Failed to load getIngredientGoalProvenance");
+}
+if (typeof getFormulaPatternProvenance !== "function") {
+  throw new Error("[decisionSupport] Failed to load getFormulaPatternProvenance");
+}
+if (typeof buildGoalStackAdjustments !== "function") {
+  throw new Error("[decisionSupport] Failed to load buildGoalStackAdjustments");
 }
 if (typeof formatGoalFitReason !== "function") {
   throw new Error("[decisionSupport] Failed to load formatGoalFitReason");
@@ -70,6 +118,25 @@ if (typeof formatGoalFitReason !== "function") {
 if (typeof summarizeGoalFitReasons !== "function") {
   throw new Error("[decisionSupport] Failed to load summarizeGoalFitReasons");
 }
+if (typeof describeGoalNarrativeFitLevel !== "function") {
+  throw new Error("[decisionSupport] Failed to load describeGoalNarrativeFitLevel");
+}
+if (typeof buildGoalNarrativeSummary !== "function") {
+  throw new Error("[decisionSupport] Failed to load buildGoalNarrativeSummary");
+}
+
+type ExplanationTemplateEntry = {
+  code: string;
+  template: string;
+  placeholders: string[];
+};
+
+const EXPLANATION_TEMPLATE_MAP = new Map<string, ExplanationTemplateEntry>(
+  (((explanationTemplatesData as { templates?: ExplanationTemplateEntry[] }).templates) ?? []).map((entry) => [
+    entry.code,
+    entry,
+  ]),
+);
 
 export type DecisionSupportViewMode = "details";
 
@@ -372,6 +439,28 @@ export type DecisionSupportPersonalizedGoalCoverageState =
   | "none"
   | "unknown";
 
+export type DecisionSupportGoalCoverageStackAdjustment = {
+  adjustedScore: number;
+  stackContextImpact: "positive" | "neutral" | "negative";
+  marginalValue: "high" | "medium" | "low";
+  overlapIngredientKeys: string[];
+  overlapIngredientDisplays: string[];
+  reasonCodes: string[];
+  summary?: string;
+  action?: string[];
+};
+
+export type DecisionSupportGoalCoverageGraphEvidence = {
+  relation: "ingredient_edge" | "formula_pattern";
+  sourceType: EvidenceGraphProvenanceSourceType;
+  sourceKey: string;
+  title: string;
+  citation?: string;
+  url?: string;
+  note?: string;
+  ingredientKeys?: string[];
+};
+
 export type DecisionSupportPersonalizedGoalCoverage = {
   goalKey: GoalKey;
   tier: ProductGoalMatchTier | "unknown";
@@ -379,7 +468,44 @@ export type DecisionSupportPersonalizedGoalCoverage = {
   source: "selected_goal_evaluation" | "goal_match_scoring_preview";
   score?: number;
   reasonCodes?: string[];
+  reasons?: DecisionReason[];
   confidenceBucket?: "high" | "medium" | "low";
+  explanation?: DecisionSupportGoalCoverageExplanation;
+  graphEvidence?: DecisionSupportGoalCoverageGraphEvidence[];
+  stackAdjustment?: DecisionSupportGoalCoverageStackAdjustment;
+};
+
+export type DecisionSupportGoalCoverageExplanation = {
+  summary?: string;
+  why?: string[];
+  evidence?: string[];
+  provenance?: string[];
+  action?: string[];
+};
+
+export type DecisionSupportGoalCoverageSummaryItem = {
+  goalKey: GoalKey;
+  goalLabel: string;
+  fitLevel: DecisionSupportPersonalizedGoalCoverageState;
+  rank: number;
+  reasonCodes: string[];
+  confidenceBucket: "high" | "medium" | "low";
+  shortReason?: string;
+  explanation?: DecisionSupportGoalCoverageExplanation;
+  graphEvidence?: DecisionSupportGoalCoverageGraphEvidence[];
+  stackAdjustment?: DecisionSupportGoalCoverageStackAdjustment;
+};
+
+export type DecisionSupportGoalCoverageSummary = {
+  selectedGoalCount: number;
+  analyzedGoalCount: number;
+  surfacedGoalCount: number;
+  hiddenGoalsCount: number;
+  allGoalsAnalyzed: boolean;
+  sortedBy: "decision_relevance" | "fit_strength" | "profile_order";
+  dominantGoalKey?: GoalKey | null;
+  secondaryGoalKey?: GoalKey | null;
+  items: DecisionSupportGoalCoverageSummaryItem[];
 };
 
 export type DecisionSupportGoalCoverageSummaryItem = {
@@ -430,6 +556,9 @@ export type DecisionSupportPersonalizedGoalFit = {
   heroMode?: DecisionSupportGoalHeroMode;
   dominantGoalKey?: GoalKey | null;
   secondaryGoalKey?: GoalKey | null;
+  dominanceGap?: number | null;
+  goalNarrativeConfidence?: "high" | "medium" | "low";
+  labelCompleteness?: "high" | "medium" | "low";
   selectedGoalKeys?: GoalKey[];
   allSelectedGoalKeys?: GoalKey[];
   goalLensMode?: DecisionSupportGoalLensMode;
@@ -1034,17 +1163,343 @@ const buildGoalCoverageShortReason = (
 ): string => {
   switch (fitLevel) {
     case "strong":
-      return "Strong support on this label.";
+      return "Strong support.";
     case "some":
-      return "Some support on this label.";
+      return "Some support.";
     case "limited":
-      return "Limited support from the visible ingredient and dose pattern.";
+      return "Limited support.";
     case "unknown":
-      return "Not enough label detail to judge this goal.";
+      return "Not enough label detail to judge.";
     case "none":
     default:
-      return "No clear support on this label.";
+      return "No clear support from this label.";
   }
+};
+
+const GOAL_EXPLANATION_WHY_CODES = new Set([
+  "goal_supported_by_ingredient",
+  "goal_specific_evidence_present",
+  "dose_meets_effective_floor",
+  "ingredient_form_preferred",
+  "multiple_supporting_ingredients",
+  "goal_fit_summary_available",
+  "formula_pattern_immunity_vitamin_c_zinc",
+  "formula_pattern_immunity_vitamin_c_d3",
+  "formula_pattern_immunity_vitamin_c_zinc_d3",
+  "formula_pattern_sleep_magnesium_theanine",
+  "formula_pattern_sleep_magnesium_glycine",
+  "formula_pattern_sleep_melatonin_magnesium",
+  "formula_pattern_recovery_omega3_protein",
+  "formula_pattern_recovery_omega3_tart_cherry",
+  "formula_pattern_recovery_creatine_protein",
+  "formula_pattern_recovery_curcumin_omega3",
+  "formula_pattern_stress_magnesium_theanine",
+  "formula_pattern_stress_ashwagandha_magnesium",
+  "formula_pattern_focus_caffeine_theanine",
+  "formula_pattern_focus_citicoline_tyrosine",
+  "formula_pattern_energy_caffeine_tyrosine",
+  "formula_pattern_energy_b12_coq10",
+  "formula_pattern_weight_fiber_protein",
+]);
+
+const GOAL_EXPLANATION_EVIDENCE_CODES = new Set([
+  "goal_specific_evidence_missing",
+  "dose_below_effective_floor",
+  "evidence_grade_limited",
+  "low_disclosure_caps_strong_match",
+  "proprietary_blend_caps_goal_match",
+  "dose_above_reference_band",
+  "goal_fit_no_major_strength_caps",
+  "goal_fit_no_major_holdbacks",
+  "no_goal_support_detected",
+]);
+
+const GOAL_EXPLANATION_ACTION_CODES = new Set([
+  "goal_support_not_enough_label_detail",
+  "dose_not_disclosed",
+  "ingredient_requires_generic_safety_path",
+  "duplicate_overlap_high",
+  "goal_fit_stack_context_watchouts",
+  "goal_fit_waiting_for_more_structured_data",
+  "personalization.product_evaluation.not_enough_structured_data",
+]);
+
+const normalizeExplanationLine = (value?: string | null): string | null => {
+  const normalized = typeof value === "string" ? value.replace(/\s+/g, " ").trim() : "";
+  if (!normalized) return null;
+  return /[.!?]$/.test(normalized) ? normalized : `${normalized}.`;
+};
+
+const lowerGoalLabel = (goalLabel: string): string =>
+  goalLabel.trim().toLowerCase();
+
+const formatReasonParam = (
+  reason: DecisionReason,
+  placeholder: string,
+): string | null => {
+  const raw = reason.params?.[placeholder];
+  if (typeof raw === "string" && raw.trim().length > 0) {
+    return raw.trim();
+  }
+
+  if (placeholder === "goalLabel") {
+    const goalKey = reason.params?.goalKey;
+    if (typeof goalKey === "string" && goalKey.trim().length > 0) {
+      return humanizeGoalKey(goalKey as GoalKey);
+    }
+  }
+
+  if (placeholder === "ingredientLabel") {
+    const ingredientKey = reason.params?.ingredientKey;
+    if (typeof ingredientKey === "string" && ingredientKey.trim().length > 0) {
+      return ingredientKey.replace(/_/g, " ");
+    }
+  }
+
+  return null;
+};
+
+const formatReasonWithTemplate = (reason: DecisionReason): string => {
+  const template = EXPLANATION_TEMPLATE_MAP.get(reason.code);
+  if (!template) {
+    return formatGoalFitReason(reason);
+  }
+
+  let rendered = template.template;
+  for (const placeholder of template.placeholders) {
+    const replacement = formatReasonParam(reason, placeholder);
+    if (!replacement) {
+      return formatGoalFitReason(reason);
+    }
+    rendered = rendered.replaceAll(`{${placeholder}}`, replacement);
+  }
+
+  return rendered;
+};
+
+const dedupeExplanationLines = (
+  reasons: DecisionReason[],
+  limit = 2,
+): string[] =>
+  Array.from(
+    new Set(
+      reasons
+        .map((reason) => normalizeExplanationLine(formatReasonWithTemplate(reason)))
+        .filter((value): value is string => Boolean(value)),
+      ),
+  ).slice(0, limit);
+
+const dedupeExplanationTextLines = (
+  values: Array<string | null | undefined>,
+  limit = 2,
+): string[] =>
+  Array.from(
+    new Set(
+      values
+        .map((value) => normalizeExplanationLine(value))
+        .filter((value): value is string => Boolean(value)),
+    ),
+  ).slice(0, limit);
+
+const buildGoalCoverageExplanationSummary = (
+  goalLabel: string,
+  fitLevel: DecisionSupportPersonalizedGoalCoverageState,
+): string => buildGoalNarrativeSummary(goalLabel, fitLevel);
+
+const buildGoalCoverageExplanation = (params: {
+  goalLabel: string;
+  fitLevel: DecisionSupportPersonalizedGoalCoverageState;
+  whyReasons: DecisionReason[];
+  evidenceReasons: DecisionReason[];
+  actionReasons: DecisionReason[];
+}): DecisionSupportGoalCoverageExplanation | undefined => {
+  const summary = normalizeExplanationLine(buildGoalCoverageExplanationSummary(params.goalLabel, params.fitLevel));
+  const why = dedupeExplanationLines(params.whyReasons);
+  const evidence = dedupeExplanationLines(params.evidenceReasons);
+  const action = dedupeExplanationLines(params.actionReasons, 1);
+
+  if (!summary && why.length === 0 && evidence.length === 0 && action.length === 0) {
+    return undefined;
+  }
+
+  return {
+    ...(summary ? { summary } : {}),
+    ...(why.length > 0 ? { why } : {}),
+    ...(evidence.length > 0 ? { evidence } : {}),
+    ...(action.length > 0 ? { action } : {}),
+  };
+};
+
+const humanizeIngredientKey = (ingredientKey: string): string =>
+  ingredientKey
+    .split("_")
+    .map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1))
+    .join(" ");
+
+const getReasonIngredientKeys = (reasons: DecisionReason[]): string[] =>
+  Array.from(
+    new Set(
+      reasons.flatMap((reason) => {
+        const values: string[] = [];
+        if (typeof reason.params?.ingredientKey === "string" && reason.params.ingredientKey.trim().length > 0) {
+          values.push(reason.params.ingredientKey.trim());
+        }
+        if (typeof reason.params?.ingredientKeys === "string" && reason.params.ingredientKeys.trim().length > 0) {
+          values.push(
+            ...reason.params.ingredientKeys
+              .split(",")
+              .map((value) => value.trim())
+              .filter(Boolean),
+          );
+        }
+        return values;
+      }),
+    ),
+  );
+
+const GRAPH_EVIDENCE_SOURCE_PRIORITY: Record<EvidenceGraphProvenanceSourceType, number> = {
+  clinical_guideline: 5,
+  systematic_review: 4,
+  review_article: 3,
+  internal_curation: 2,
+  ontology_migration: 1,
+};
+
+const buildGoalCoverageGraphEvidence = (params: {
+  goalKey: GoalKey;
+  reasons: DecisionReason[];
+  reasonCodes: string[];
+}): DecisionSupportGoalCoverageGraphEvidence[] => {
+  const ingredientEvidence = getReasonIngredientKeys(params.reasons).flatMap((ingredientKey) =>
+    getIngredientGoalProvenance(params.goalKey, ingredientKey).map((provenance) => ({
+      relation: "ingredient_edge" as const,
+      sourceType: provenance.sourceType,
+      sourceKey: provenance.sourceKey,
+      title: provenance.title,
+      ...(provenance.citation ? { citation: provenance.citation } : {}),
+      ...(provenance.url ? { url: provenance.url } : {}),
+      ...(provenance.note ? { note: provenance.note } : {}),
+      ingredientKeys: [ingredientKey],
+    })),
+  );
+
+  const patternEvidence = getFormulaPatterns(params.goalKey)
+    .filter((pattern) => pattern.reasonCodes.some((reasonCode) => params.reasonCodes.includes(reasonCode)))
+    .flatMap((pattern) =>
+      getFormulaPatternProvenance(params.goalKey, pattern.requiredIngredients).map((provenance) => ({
+        relation: "formula_pattern" as const,
+        sourceType: provenance.sourceType,
+        sourceKey: provenance.sourceKey,
+        title: provenance.title,
+        ...(provenance.citation ? { citation: provenance.citation } : {}),
+        ...(provenance.url ? { url: provenance.url } : {}),
+        ...(provenance.note ? { note: provenance.note } : {}),
+        ingredientKeys: [...pattern.requiredIngredients],
+      })),
+    );
+
+  return [...ingredientEvidence, ...patternEvidence]
+    .filter((entry, index, array) => {
+      const key = [
+        entry.relation,
+        entry.sourceType,
+        entry.sourceKey,
+        entry.title,
+        [...(entry.ingredientKeys ?? [])].sort().join("|"),
+      ].join("::");
+      return array.findIndex((candidate) => [
+        candidate.relation,
+        candidate.sourceType,
+        candidate.sourceKey,
+        candidate.title,
+        [...(candidate.ingredientKeys ?? [])].sort().join("|"),
+      ].join("::") === key) === index;
+    })
+    .sort((left, right) => {
+      const sourceDelta = GRAPH_EVIDENCE_SOURCE_PRIORITY[right.sourceType] - GRAPH_EVIDENCE_SOURCE_PRIORITY[left.sourceType];
+      if (sourceDelta !== 0) return sourceDelta;
+      return left.title.localeCompare(right.title);
+    });
+};
+
+const buildGoalCoverageProvenanceLines = (params: {
+  goalLabel: string;
+  graphEvidence: DecisionSupportGoalCoverageGraphEvidence[];
+}): string[] =>
+  dedupeExplanationTextLines(
+    params.graphEvidence
+      .filter((entry) =>
+        entry.sourceType === "clinical_guideline"
+        || entry.sourceType === "systematic_review"
+        || entry.sourceType === "review_article",
+      )
+      .map((entry) => {
+        const loweredGoal = lowerGoalLabel(params.goalLabel);
+        if (entry.relation === "formula_pattern") {
+          const ingredientSummary = (entry.ingredientKeys ?? [])
+            .slice(0, 2)
+            .map((ingredientKey) => humanizeIngredientKey(ingredientKey))
+            .join(" + ");
+          return ingredientSummary
+            ? `Evidence note: ${entry.title} helps inform the ${ingredientSummary} pattern for ${loweredGoal}.`
+            : `Evidence note: ${entry.title} helps inform this ${loweredGoal} pattern.`;
+        }
+        return `Evidence note: ${entry.title} is one source behind this ${loweredGoal} lane.`;
+      }),
+    2,
+  );
+
+const mergeGoalCoverageGraphEvidence = (params: {
+  base?: DecisionSupportGoalCoverageExplanation;
+  goalLabel: string;
+  graphEvidence: DecisionSupportGoalCoverageGraphEvidence[];
+}): DecisionSupportGoalCoverageExplanation | undefined => {
+  const provenance = dedupeExplanationTextLines([
+    ...(params.base?.provenance ?? []),
+    ...buildGoalCoverageProvenanceLines({
+      goalLabel: params.goalLabel,
+      graphEvidence: params.graphEvidence,
+    }),
+  ], 2);
+
+  if (!params.base && provenance.length === 0) {
+    return undefined;
+  }
+
+  return {
+    ...(params.base ?? {}),
+    ...(provenance.length > 0 ? { provenance } : {}),
+  };
+};
+
+const mergeGoalCoverageExplanation = (params: {
+  base?: DecisionSupportGoalCoverageExplanation;
+  stackAdjustment?: DecisionSupportGoalCoverageStackAdjustment;
+}): DecisionSupportGoalCoverageExplanation | undefined => {
+  const base = params.base;
+  const stackAdjustment = params.stackAdjustment;
+
+  const summary = normalizeExplanationLine(base?.summary ?? stackAdjustment?.summary);
+  const why = dedupeExplanationTextLines(base?.why ?? []);
+  const evidence = dedupeExplanationTextLines(base?.evidence ?? []);
+  const provenance = dedupeExplanationTextLines(base?.provenance ?? []);
+  const action = dedupeExplanationTextLines([
+    ...(base?.action ?? []),
+    ...(stackAdjustment?.summary ? [stackAdjustment.summary] : []),
+    ...(stackAdjustment?.action ?? []),
+  ], 3);
+
+  if (!summary && why.length === 0 && evidence.length === 0 && provenance.length === 0 && action.length === 0) {
+    return undefined;
+  }
+
+  return {
+    ...(summary ? { summary } : {}),
+    ...(why.length > 0 ? { why } : {}),
+    ...(evidence.length > 0 ? { evidence } : {}),
+    ...(provenance.length > 0 ? { provenance } : {}),
+    ...(action.length > 0 ? { action } : {}),
+  };
 };
 
 const buildCoverageMetadataFromEvaluation = (
@@ -1053,23 +1508,29 @@ const buildCoverageMetadataFromEvaluation = (
 ): {
   score: number;
   reasonCodes: string[];
+  reasons: DecisionReason[];
   confidenceBucket: "high" | "medium" | "low";
+  labelCompleteness: "high" | "medium" | "low";
 } | null => {
   if (!evaluation) return null;
 
   const match = evaluation.savedProductEvaluation.productGoalMatches.find((entry) => entry.goalKey === goalKey) ?? null;
   const card = evaluation.goalFitCard;
-  const reasonCodes = dedupeGoalReasonCodes([
+  const reasons = [
     ...(match?.reasons ?? []),
     ...(card?.whyFit ?? []),
     ...(card?.whyNotStronger ?? []),
     ...(card?.holdbacks ?? []),
-  ]);
+    ...(card?.stackContext ?? []),
+  ];
+  const reasonCodes = dedupeGoalReasonCodes(reasons);
 
   return {
     score: match?.score ?? 0,
     reasonCodes,
+    reasons,
     confidenceBucket: toGoalCoverageConfidenceBucket(card?.confidence ?? match?.confidence),
+    labelCompleteness: mapNarrativeLabelCompleteness(card?.confidence?.labelCompleteness),
   };
 };
 
@@ -1081,19 +1542,64 @@ const resolveGoalCoverageState = (params: {
   currentProductEvaluation: CatalogProductEvaluationResult | null;
   reasonCodes: string[];
 }): DecisionSupportPersonalizedGoalCoverageState => {
-  if (
+  const labelCompleteness =
     params.goalKey === params.selectedGoalKey
-    && params.currentProductEvaluation?.coverageStatus !== "coverage_ready"
-  ) {
-    return "unknown";
-  }
+      ? params.currentProductEvaluation?.goalFitCard?.confidence.labelCompleteness
+      : null;
 
-  if (hasGoalCoverageUnknownSignal(params.reasonCodes)) {
-    return "unknown";
-  }
-
-  return toGoalCoverageState(params.tier);
+  return normalizeGoalNarrativeFitLevel({
+    tier: params.tier,
+    reasonCodes: params.reasonCodes,
+    coverageStatus:
+      params.goalKey === params.selectedGoalKey
+        ? params.currentProductEvaluation?.coverageStatus ?? null
+        : "coverage_ready",
+    labelCompleteness,
+  });
 };
+
+const splitGoalExplanationReasons = (reasons: DecisionReason[]) => {
+  const whyReasons = reasons.filter((reason) => GOAL_EXPLANATION_WHY_CODES.has(reason.code));
+  const evidenceReasons = reasons.filter((reason) => GOAL_EXPLANATION_EVIDENCE_CODES.has(reason.code));
+  const actionReasons = reasons.filter((reason) => GOAL_EXPLANATION_ACTION_CODES.has(reason.code));
+
+  return {
+    whyReasons,
+    evidenceReasons,
+    actionReasons,
+  };
+};
+
+const buildGoalCoverageExplanationFromReasons = (params: {
+  goalKey: GoalKey;
+  fitLevel: DecisionSupportPersonalizedGoalCoverageState;
+  reasons: DecisionReason[];
+}): DecisionSupportGoalCoverageExplanation | undefined => {
+  const { whyReasons, evidenceReasons, actionReasons } = splitGoalExplanationReasons(params.reasons);
+  return buildGoalCoverageExplanation({
+    goalLabel: humanizeGoalKey(params.goalKey),
+    fitLevel: params.fitLevel,
+    whyReasons,
+    evidenceReasons,
+    actionReasons,
+  });
+};
+
+const buildGoalCoverageExplanationFromEvaluation = (params: {
+  goalKey: GoalKey;
+  fitLevel: DecisionSupportPersonalizedGoalCoverageState;
+  evaluation: CatalogProductEvaluationResult;
+}): DecisionSupportGoalCoverageExplanation | undefined =>
+  buildGoalCoverageExplanation({
+    goalLabel: humanizeGoalKey(params.goalKey),
+    fitLevel: params.fitLevel,
+    whyReasons: params.evaluation.goalFitCard?.whyFit ?? [],
+    evidenceReasons: [
+      ...(params.evaluation.goalFitCard?.whyNotStronger ?? []),
+      ...(params.evaluation.goalFitCard?.holdbacks ?? []),
+    ],
+    actionReasons: params.evaluation.goalFitCard?.stackContext ?? [],
+  });
 
 const buildGoalCoverage = (params: {
   digest: FactsDigest;
@@ -1125,6 +1631,7 @@ const buildGoalCoverage = (params: {
         ? buildCoverageMetadataFromEvaluation(params.currentProductEvaluation, goalKey)
         : null;
     const reasonCodes = evaluationMetadata?.reasonCodes ?? dedupeGoalReasonCodes(previewMatch?.reasons);
+    const reasons = evaluationMetadata?.reasons ?? (previewMatch?.reasons ?? []);
     const state = resolveGoalCoverageState({
       goalKey,
       selectedGoalKey: params.selectedGoalKey,
@@ -1132,6 +1639,28 @@ const buildGoalCoverage = (params: {
       source,
       currentProductEvaluation: params.currentProductEvaluation,
       reasonCodes,
+    });
+    const explanation =
+      source === "selected_goal_evaluation" && params.currentProductEvaluation
+        ? buildGoalCoverageExplanationFromEvaluation({
+          goalKey,
+          fitLevel: state,
+          evaluation: params.currentProductEvaluation,
+        })
+        : buildGoalCoverageExplanationFromReasons({
+          goalKey,
+          fitLevel: state,
+          reasons,
+        });
+    const graphEvidence = buildGoalCoverageGraphEvidence({
+      goalKey,
+      reasons,
+      reasonCodes,
+    });
+    const explanationWithGraphEvidence = mergeGoalCoverageGraphEvidence({
+      base: explanation,
+      goalLabel: humanizeGoalKey(goalKey),
+      graphEvidence,
     });
 
     return {
@@ -1141,9 +1670,72 @@ const buildGoalCoverage = (params: {
       source,
       score: evaluationMetadata?.score ?? previewMatch?.score ?? 0,
       reasonCodes,
+      reasons,
       confidenceBucket:
         evaluationMetadata?.confidenceBucket
         ?? toGoalCoverageConfidenceBucket(previewMatch?.confidence),
+      explanation: explanationWithGraphEvidence,
+      ...(graphEvidence.length > 0 ? { graphEvidence } : {}),
+    };
+  });
+};
+
+const applyGoalCoverageStackAdjustments = (params: {
+  goalCoverage: DecisionSupportPersonalizedGoalCoverage[];
+  overlapContext: DecisionSupportAttachedStackOverlapContext | null | undefined;
+}): DecisionSupportPersonalizedGoalCoverage[] => {
+  if (params.goalCoverage.length === 0) return params.goalCoverage;
+
+  const stackAdjustments = new Map(
+    buildGoalStackAdjustments({
+      goalCoverage: params.goalCoverage.map((entry) => ({
+        goalKey: entry.goalKey,
+        state: entry.state,
+        score: entry.score ?? 0,
+      })),
+      overlapContext: params.overlapContext
+        ? {
+          savedStackCount: params.overlapContext.savedStackCount,
+          overlapCount: params.overlapContext.overlapCount,
+          overlaps: params.overlapContext.overlaps.map((item) => ({
+            ingredientKey: item.ingredientKey,
+            ingredientDisplay: item.ingredientDisplay,
+            count: item.count,
+          })),
+        }
+        : null,
+    }).map((entry) => [entry.goalKey, entry] as const),
+  );
+
+  return params.goalCoverage.map((entry) => {
+    const stackAdjustment = stackAdjustments.get(entry.goalKey);
+    if (!stackAdjustment) return entry;
+
+    return {
+      ...entry,
+      explanation: mergeGoalCoverageExplanation({
+        base: entry.explanation,
+        stackAdjustment: {
+          adjustedScore: stackAdjustment.adjustedScore,
+          stackContextImpact: stackAdjustment.stackContextImpact,
+          marginalValue: stackAdjustment.marginalValue,
+          overlapIngredientKeys: stackAdjustment.overlapIngredientKeys,
+          overlapIngredientDisplays: stackAdjustment.overlapIngredientDisplays,
+          reasonCodes: stackAdjustment.reasonCodes,
+          ...(stackAdjustment.summary ? { summary: stackAdjustment.summary } : {}),
+          ...(stackAdjustment.action?.length ? { action: stackAdjustment.action } : {}),
+        },
+      }),
+      stackAdjustment: {
+        adjustedScore: stackAdjustment.adjustedScore,
+        stackContextImpact: stackAdjustment.stackContextImpact,
+        marginalValue: stackAdjustment.marginalValue,
+        overlapIngredientKeys: stackAdjustment.overlapIngredientKeys,
+        overlapIngredientDisplays: stackAdjustment.overlapIngredientDisplays,
+        reasonCodes: stackAdjustment.reasonCodes,
+        ...(stackAdjustment.summary ? { summary: stackAdjustment.summary } : {}),
+        ...(stackAdjustment.action?.length ? { action: stackAdjustment.action } : {}),
+      },
     };
   });
 };
@@ -1151,10 +1743,18 @@ const buildGoalCoverage = (params: {
 const GOAL_COVERAGE_STATE_PRIORITY: Record<DecisionSupportPersonalizedGoalCoverageState, number> = {
   strong: 5,
   some: 4,
-  limited: 3,
-  unknown: 2,
+  unknown: 3,
+  limited: 2,
   none: 1,
 };
+
+const getGoalCoverageRankingScore = (
+  entry: DecisionSupportPersonalizedGoalCoverage,
+  mode: "base" | "adjusted",
+): number =>
+  mode === "adjusted"
+    ? entry.stackAdjustment?.adjustedScore ?? entry.score ?? 0
+    : entry.score ?? 0;
 
 const buildDefaultVisibleGoalKeys = (params: {
   digest: FactsDigest;
@@ -1164,7 +1764,7 @@ const buildDefaultVisibleGoalKeys = (params: {
   const coverage = params.goalCoverage.filter((entry) => params.selectedGoalKeys.includes(entry.goalKey));
   if (coverage.length === 0) return [];
 
-  if (coverage.every((entry) => entry.state === "limited" || entry.state === "none")) {
+  if (coverage.every((entry) => entry.state === "limited" || entry.state === "none" || entry.state === "unknown")) {
     return coverage.slice(0, GOAL_COVERAGE_VISIBILITY_LIMIT).map((entry) => entry.goalKey);
   }
 
@@ -1187,8 +1787,13 @@ const buildDefaultVisibleGoalKeys = (params: {
         Number(right.source === "selected_goal_evaluation") - Number(left.source === "selected_goal_evaluation");
       if (sourceDelta !== 0) return sourceDelta;
 
-      const scoreDelta = (previewScoreByGoal.get(right.goalKey) ?? 0) - (previewScoreByGoal.get(left.goalKey) ?? 0);
+      const scoreDelta =
+        getGoalCoverageRankingScore(right, "adjusted") - getGoalCoverageRankingScore(left, "adjusted");
       if (scoreDelta !== 0) return scoreDelta;
+
+      const previewScoreDelta =
+        (previewScoreByGoal.get(right.goalKey) ?? 0) - (previewScoreByGoal.get(left.goalKey) ?? 0);
+      if (previewScoreDelta !== 0) return previewScoreDelta;
 
       return (originalIndexByGoal.get(left.goalKey) ?? 0) - (originalIndexByGoal.get(right.goalKey) ?? 0);
     })
@@ -1199,7 +1804,9 @@ const buildDefaultVisibleGoalKeys = (params: {
 const rankGoalCoverage = (params: {
   goalCoverage: DecisionSupportPersonalizedGoalCoverage[];
   selectedGoalKeys: GoalKey[];
+  rankingMode?: "base" | "adjusted";
 }): DecisionSupportPersonalizedGoalCoverage[] => {
+  const rankingMode = params.rankingMode ?? "adjusted";
   const originalIndexByGoal = new Map(
     params.selectedGoalKeys.map((goalKey, index) => [goalKey, index] as const),
   );
@@ -1212,7 +1819,8 @@ const rankGoalCoverage = (params: {
       Number(right.source === "selected_goal_evaluation") - Number(left.source === "selected_goal_evaluation");
     if (sourceDelta !== 0) return sourceDelta;
 
-    const scoreDelta = (right.score ?? 0) - (left.score ?? 0);
+    const scoreDelta =
+      getGoalCoverageRankingScore(right, rankingMode) - getGoalCoverageRankingScore(left, rankingMode);
     if (scoreDelta !== 0) return scoreDelta;
 
     return (originalIndexByGoal.get(left.goalKey) ?? 0) - (originalIndexByGoal.get(right.goalKey) ?? 0);
@@ -1252,6 +1860,9 @@ const buildGoalCoverageSummary = (params: {
         reasonCodes: coverage.reasonCodes ?? [],
         confidenceBucket: coverage.confidenceBucket ?? "low",
         shortReason: buildGoalCoverageShortReason(coverage.state),
+        explanation: coverage.explanation,
+        ...(coverage.graphEvidence ? { graphEvidence: coverage.graphEvidence } : {}),
+        ...(coverage.stackAdjustment ? { stackAdjustment: coverage.stackAdjustment } : {}),
       } satisfies DecisionSupportGoalCoverageSummaryItem;
     })
     .filter((item): item is DecisionSupportGoalCoverageSummaryItem => Boolean(item));
@@ -1269,24 +1880,111 @@ const buildGoalCoverageSummary = (params: {
   };
 };
 
+const CONFIDENCE_BUCKET_SCORE: Record<"high" | "medium" | "low", number> = {
+  high: 3,
+  medium: 2,
+  low: 1,
+};
+
+const deriveLabelCompleteness = (params: {
+  goalCoverage: DecisionSupportPersonalizedGoalCoverage[];
+  allGoalsAnalyzed: boolean;
+  currentProductEvaluation: CatalogProductEvaluationResult | null;
+}): "high" | "medium" | "low" => {
+  if (params.goalCoverage.length === 0) return "low";
+  const evaluationLabelCompleteness = mapNarrativeLabelCompleteness(
+    params.currentProductEvaluation?.goalFitCard?.confidence.labelCompleteness,
+  );
+  if (
+    params.currentProductEvaluation
+    && params.currentProductEvaluation.coverageStatus !== "coverage_ready"
+  ) {
+    return "low";
+  }
+
+  const unknownCount = params.goalCoverage.filter((entry) => entry.state === "unknown").length;
+  const lowConfidenceCount = params.goalCoverage.filter(
+    (entry) => (entry.confidenceBucket ?? "low") === "low",
+  ).length;
+  const hasMediumConfidence = params.goalCoverage.some(
+    (entry) => (entry.confidenceBucket ?? "low") === "medium",
+  );
+
+  if (evaluationLabelCompleteness === "low") return "low";
+  if (!params.allGoalsAnalyzed && unknownCount > 0) return "low";
+  if (unknownCount > Math.floor(params.goalCoverage.length / 2)) return "low";
+  if (
+    evaluationLabelCompleteness === "medium"
+    || unknownCount > 0
+    || lowConfidenceCount > 0
+    || !params.allGoalsAnalyzed
+  ) {
+    return "medium";
+  }
+  if (hasMediumConfidence) return "medium";
+  return "high";
+};
+
+const deriveGoalNarrativeConfidence = (params: {
+  primary: DecisionSupportPersonalizedGoalCoverage | null;
+  secondary: DecisionSupportPersonalizedGoalCoverage | null;
+  dominanceGap: number | null;
+  labelCompleteness: "high" | "medium" | "low";
+}): "high" | "medium" | "low" => {
+  if (!params.primary) return "low";
+
+  const primaryBucket = params.primary.confidenceBucket ?? "low";
+  if (params.labelCompleteness === "low" || primaryBucket === "low") {
+    return "low";
+  }
+
+  const secondaryBucket = params.secondary?.confidenceBucket ?? "low";
+  if (
+    params.primary.state === "strong"
+    && primaryBucket === "high"
+    && params.labelCompleteness === "high"
+    && (params.dominanceGap ?? 0) >= DOMINANT_STRONG_SCORE_GAP
+  ) {
+    return "high";
+  }
+
+  if (
+    CONFIDENCE_BUCKET_SCORE[primaryBucket] >= CONFIDENCE_BUCKET_SCORE[secondaryBucket]
+    && params.labelCompleteness !== "low"
+  ) {
+    return "medium";
+  }
+
+  return "low";
+};
+
 const DOMINANT_STRONG_SCORE_GAP = 18;
-const DOMINANT_MODERATE_SCORE_GAP = 15;
+const DOMINANT_MODERATE_SCORE_GAP = 12;
+const DOMINANT_STRONG_SCORE_MIN = 72;
+const DOMINANT_MODERATE_SCORE_MIN = 58;
 
 const classifyGoalHero = (params: {
   selectedGoalKeys: GoalKey[];
   goalCoverage: DecisionSupportPersonalizedGoalCoverage[];
   selectedGoalKey: GoalKey | null;
   allGoalsAnalyzed: boolean;
+  currentProductEvaluation: CatalogProductEvaluationResult | null;
 }): {
   heroMode: DecisionSupportGoalHeroMode;
   dominantGoalKey: GoalKey | null;
   secondaryGoalKey: GoalKey | null;
+  dominanceGap: number | null;
+  goalNarrativeConfidence: "high" | "medium" | "low";
+  labelCompleteness: "high" | "medium" | "low";
 } => {
   if (params.selectedGoalKeys.length === 0 || params.goalCoverage.length === 0) {
     return {
       heroMode: "insufficient_signal",
       dominantGoalKey: null,
       secondaryGoalKey: null,
+      dominanceGap: null,
+      goalNarrativeConfidence: "low",
+      labelCompleteness: "low",
     };
   }
 
@@ -1295,75 +1993,114 @@ const classifyGoalHero = (params: {
       heroMode: "single_goal",
       dominantGoalKey: params.selectedGoalKey ?? params.goalCoverage[0]?.goalKey ?? null,
       secondaryGoalKey: null,
+      dominanceGap: null,
+      goalNarrativeConfidence: (params.goalCoverage[0]?.confidenceBucket ?? "low"),
+      labelCompleteness: deriveLabelCompleteness({
+        goalCoverage: params.goalCoverage,
+        allGoalsAnalyzed: params.allGoalsAnalyzed,
+        currentProductEvaluation: params.currentProductEvaluation,
+      }),
     };
   }
 
-  const ranked = rankGoalCoverage(params);
+  const ranked = rankGoalCoverage({
+    goalCoverage: params.goalCoverage,
+    selectedGoalKeys: params.selectedGoalKeys,
+    rankingMode: "base",
+  });
+  const primary = ranked[0] ?? null;
+  const secondary = ranked[1] ?? null;
+  const dominanceGap =
+    primary && secondary
+      ? Math.max(0, (primary.score ?? 0) - (secondary.score ?? 0))
+      : null;
+  const labelCompleteness = deriveLabelCompleteness({
+    goalCoverage: ranked,
+    allGoalsAnalyzed: params.allGoalsAnalyzed,
+    currentProductEvaluation: params.currentProductEvaluation,
+  });
+  const goalNarrativeConfidence = deriveGoalNarrativeConfidence({
+    primary,
+    secondary,
+    dominanceGap,
+    labelCompleteness,
+  });
   const positiveEntries = ranked.filter((entry) => entry.state === "strong" || entry.state === "some");
   const unknownEntries = ranked.filter((entry) => entry.state === "unknown");
   const limitedEntries = ranked.filter((entry) => entry.state === "limited" || entry.state === "none");
 
   if (positiveEntries.length === 0) {
-    if (unknownEntries.length > 0 && unknownEntries.length + limitedEntries.length === ranked.length) {
+    if (
+      labelCompleteness === "low"
+      || (unknownEntries.length > 0 && unknownEntries.length + limitedEntries.length === ranked.length)
+    ) {
       const onlyUnknownOrNone = ranked.every((entry) => entry.state === "unknown" || entry.state === "none");
       if (onlyUnknownOrNone) {
         return {
           heroMode: "insufficient_signal",
           dominantGoalKey: null,
           secondaryGoalKey: null,
+          dominanceGap,
+          goalNarrativeConfidence,
+          labelCompleteness,
         };
       }
     }
 
     return {
-      heroMode: "limited_goals",
+      heroMode: labelCompleteness === "low" ? "insufficient_signal" : "limited_goals",
       dominantGoalKey: null,
       secondaryGoalKey: null,
+      dominanceGap,
+      goalNarrativeConfidence,
+      labelCompleteness,
     };
   }
-
-  const primary = ranked[0] ?? null;
-  const secondary = ranked[1] ?? null;
 
   if (!params.allGoalsAnalyzed) {
     return {
       heroMode: "mixed_goals",
       dominantGoalKey: primary?.goalKey ?? null,
       secondaryGoalKey: secondary?.goalKey ?? null,
+      dominanceGap,
+      goalNarrativeConfidence,
+      labelCompleteness,
     };
   }
 
   const primaryPositive = positiveEntries[0] ?? null;
-  const secondaryPositive = positiveEntries[1] ?? null;
-  if (positiveEntries.length === 1) {
+  if (positiveEntries.length > 1) {
     return {
-      heroMode: "dominant_goal",
-      dominantGoalKey: primaryPositive?.goalKey ?? primary?.goalKey ?? null,
-      secondaryGoalKey: null,
+      heroMode: "mixed_goals",
+      dominantGoalKey: primary?.goalKey ?? null,
+      secondaryGoalKey: secondary?.goalKey ?? null,
+      dominanceGap,
+      goalNarrativeConfidence,
+      labelCompleteness,
     };
   }
 
   const primaryScore = primaryPositive?.score ?? 0;
-  const secondaryScore = secondaryPositive?.score ?? 0;
-  const secondaryState = secondaryPositive?.state ?? null;
   const isStrongDominant =
     primaryPositive?.state === "strong"
-    && secondaryPositive?.state !== "strong"
-    && (
-      !secondaryPositive
-      || secondaryState === "limited"
-      || secondaryState === "none"
-      || primaryScore - secondaryScore >= DOMINANT_STRONG_SCORE_GAP
-    );
+    && primaryScore >= DOMINANT_STRONG_SCORE_MIN
+    && (dominanceGap ?? 0) >= DOMINANT_STRONG_SCORE_GAP
+    && goalNarrativeConfidence !== "low"
+    && labelCompleteness !== "low";
   const isModerateDominant =
     primaryPositive?.state === "some"
-    && secondaryPositive?.state !== "strong"
-    && primaryScore - secondaryScore >= DOMINANT_MODERATE_SCORE_GAP;
+    && primaryScore >= DOMINANT_MODERATE_SCORE_MIN
+    && (dominanceGap ?? 0) >= DOMINANT_MODERATE_SCORE_GAP
+    && goalNarrativeConfidence !== "low"
+    && labelCompleteness !== "low";
 
   return {
     heroMode: isStrongDominant || isModerateDominant ? "dominant_goal" : "mixed_goals",
     dominantGoalKey: primary?.goalKey ?? null,
     secondaryGoalKey: secondary?.goalKey ?? null,
+    dominanceGap,
+    goalNarrativeConfidence,
+    labelCompleteness,
   };
 };
 
@@ -1452,7 +2189,11 @@ const buildCatalogIngredientRowsFromDigest = (digest: FactsDigest): CatalogOverl
 
       const amountText = normalizeDisplayText(active?.amountText);
       if (amountText) {
-        return { name, dose: amountText };
+        return {
+          name,
+          dose: amountText,
+          form: normalizeDisplayText(active?.chemicalForm) || null,
+        };
       }
 
       if (
@@ -1464,10 +2205,11 @@ const buildCatalogIngredientRowsFromDigest = (digest: FactsDigest): CatalogOverl
         return {
           name,
           dose: formatDoseText(active.amount, normalizeDisplayText(active.unit)),
+          form: normalizeDisplayText(active?.chemicalForm) || null,
         };
       }
 
-      return { name, dose: null };
+      return { name, dose: null, form: normalizeDisplayText(active?.chemicalForm) || null };
     })
     .filter((row): row is CatalogOverlayIngredientRow => Boolean(row));
 
@@ -1550,19 +2292,42 @@ const buildGoalFitSummaryFromEvaluation = (params: {
 }): string => {
   const goalLabel = humanizeGoalKey(params.goalKey);
   const card = params.evaluation.goalFitCard;
-  const tier = card?.tier ?? "not_enough_structured_data";
+  const fitLevel = normalizeGoalNarrativeFitLevel({
+    tier:
+      card?.tier === "not_enough_structured_data"
+        ? "unknown"
+        : (card?.tier ?? "unknown"),
+    reasonCodes: dedupeGoalReasonCodes([
+      ...(card?.whyFit ?? []),
+      ...(card?.whyNotStronger ?? []),
+      ...(card?.holdbacks ?? []),
+    ]),
+    coverageStatus: params.evaluation.coverageStatus ?? null,
+    labelCompleteness: params.evaluation.goalFitCard?.confidence.labelCompleteness ?? null,
+  });
+  const fitDescription = describeGoalNarrativeFitLevel(fitLevel);
+  const summaryPrefix = fitLevel === "strong"
+    ? `Strong support for your ${goalLabel} goal.`
+    : fitLevel === "some"
+      ? `This label shows some support for your ${goalLabel} goal.`
+      : fitLevel === "limited"
+        ? `This label shows limited support for your ${goalLabel} goal.`
+        : fitLevel === "none"
+          ? `This label does not show clear ${goalLabel} support right now.`
+          : `We need more label detail before we can judge ${goalLabel} support confidently.`;
 
-  switch (tier) {
-    case "strong_match":
-      return `Strong support for your ${goalLabel} goal. ${summarizeGoalFitReasons(card?.whyFit ?? [], `The current label shows a strong fit for ${goalLabel}.`)}`;
-    case "related":
-      return `This looks aligned with your ${goalLabel} goal. ${summarizeGoalFitReasons(card?.whyFit ?? [], `The current label shows a useful fit for ${goalLabel}.`)}`;
-    case "weak_match":
-      return `This may help with your ${goalLabel} goal, but the signal is still limited. ${summarizeGoalFitReasons(card?.whyNotStronger ?? [], `The current label shows only a limited fit for ${goalLabel}.`)}`;
-    case "no_match":
-      return `This is not a strong fit for your ${goalLabel} goal right now. ${summarizeGoalFitReasons(card?.whyNotStronger ?? [], `We are not seeing enough goal-specific support for ${goalLabel}.`)}`;
+  switch (fitLevel) {
+    case "strong":
+      return `${summaryPrefix} ${summarizeGoalFitReasons(card?.whyFit ?? [], `The current label shows ${fitDescription} for ${goalLabel}.`)}`;
+    case "some":
+      return `${summaryPrefix} ${summarizeGoalFitReasons(card?.whyFit ?? [], `The current label shows ${fitDescription} for ${goalLabel}.`)}`;
+    case "limited":
+      return `${summaryPrefix} ${summarizeGoalFitReasons(card?.whyNotStronger ?? [], buildGoalNarrativeSummary(goalLabel, fitLevel))}`;
+    case "none":
+      return `${summaryPrefix} ${summarizeGoalFitReasons(card?.whyNotStronger ?? [], buildGoalNarrativeSummary(goalLabel, fitLevel))}`;
+    case "unknown":
     default:
-      return `We need more structured data before we can score this confidently for ${goalLabel}.`;
+      return summaryPrefix;
   }
 };
 
@@ -1599,8 +2364,8 @@ const buildPersonalInsightSummary = (params: {
       ? `Supports your ${goalLabel} goal.`
       : `Detected a usable support signal from the current label.`
     : goalLabel
-      ? `Not a strong fit for your ${goalLabel} goal right now.`
-      : `No strong personalized support signal surfaced from the current label.`;
+      ? `No clear support for your ${goalLabel} goal from the current label.`
+      : `No clear personalized support signal surfaced from the current label.`;
 
   const conflictSummary = params.conflictSignals.length > 0
     ? params.conflictSignals[0]?.summary ?? "May overlap with your saved supplements."
@@ -1803,17 +2568,25 @@ const buildPersonalizedResultLane = (params: {
       selectedGoalKey,
     })
     : null;
-  const goalCoverage = buildGoalCoverage({
+  const goalCoverageBase = buildGoalCoverage({
     digest: params.digest,
     selectedGoalKeys,
     selectedGoalKey,
     currentProductEvaluation,
   });
-  const allGoalCoverage = buildGoalCoverage({
+  const allGoalCoverageBase = buildGoalCoverage({
     digest: params.digest,
     selectedGoalKeys: allSelectedGoalKeys,
     selectedGoalKey,
     currentProductEvaluation,
+  });
+  const goalCoverage = applyGoalCoverageStackAdjustments({
+    goalCoverage: goalCoverageBase,
+    overlapContext: attachedContext?.stackOverlap,
+  });
+  const allGoalCoverage = applyGoalCoverageStackAdjustments({
+    goalCoverage: allGoalCoverageBase,
+    overlapContext: attachedContext?.stackOverlap,
   });
   const selectedGoalCount = allSelectedGoalKeys.length;
   const analyzedGoalCount = allGoalCoverage.length;
@@ -1824,11 +2597,29 @@ const buildPersonalizedResultLane = (params: {
     selectedGoalKeys: allSelectedGoalKeys,
     goalCoverage: allGoalCoverage,
   });
-  const { heroMode, dominantGoalKey, secondaryGoalKey } = classifyGoalHero({
+  const {
+    heroMode,
+    dominantGoalKey,
+    secondaryGoalKey,
+    dominanceGap,
+    goalNarrativeConfidence,
+    labelCompleteness,
+  } = classifyGoalHero({
     selectedGoalKeys: allSelectedGoalKeys,
     goalCoverage: allGoalCoverage,
     selectedGoalKey,
     allGoalsAnalyzed,
+    currentProductEvaluation,
+  });
+  const goalCoverageSummary = buildGoalCoverageSummary({
+    selectedGoalKeys: allSelectedGoalKeys,
+    goalCoverage: allGoalCoverage,
+    selectedGoalCount,
+    analyzedGoalCount,
+    surfacedGoalCount,
+    allGoalsAnalyzed,
+    dominantGoalKey,
+    secondaryGoalKey,
   });
   const goalCoverageSummary = buildGoalCoverageSummary({
     selectedGoalKeys: allSelectedGoalKeys,
@@ -1890,6 +2681,9 @@ const buildPersonalizedResultLane = (params: {
         heroMode,
         dominantGoalKey,
         secondaryGoalKey,
+        dominanceGap,
+        goalNarrativeConfidence,
+        labelCompleteness,
         selectedGoalKeys,
         allSelectedGoalKeys,
         goalLensMode,
@@ -1917,6 +2711,9 @@ const buildPersonalizedResultLane = (params: {
         heroMode,
         dominantGoalKey,
         secondaryGoalKey,
+        dominanceGap,
+        goalNarrativeConfidence,
+        labelCompleteness,
         selectedGoalKeys,
         allSelectedGoalKeys,
         goalLensMode,
@@ -2284,6 +3081,7 @@ const hasFishOilBreakdown = (digest: FactsDigest): boolean => {
 type OverlayOmega3Facts = {
   hasAny: boolean;
   hasEpaDhaBreakdown: boolean;
+  hasOmega3Total: boolean;
   hasFishOilTotal: boolean;
   entries: Array<{ name: string; dose: string }>;
 };
@@ -2316,6 +3114,7 @@ const parseOverlayOmega3Facts = (overlayClaims: DecisionSupportOverlayClaims | n
   return {
     hasAny: entries.length > 0,
     hasEpaDhaBreakdown: Boolean(epa && dha),
+    hasOmega3Total: Boolean(totalOmega3),
     hasFishOilTotal: Boolean(fishOil),
     entries,
   };
@@ -4749,13 +5548,22 @@ export const compileDecisionSupport = (
   const digestSourceType = normalizeText(params.digest?.sourceType);
   const categoryId = detectCategoryId(params.digest);
   const categoryProfileVersion = CATEGORY_PROFILE_VERSION[categoryId];
+  const overlayOmega3Facts = parseOverlayOmega3Facts(params.overlayClaims);
+  const overlaySuggestedUseLine = parseOverlaySuggestedUseLine(params.overlayClaims);
 
   const missingWarnings = !hasWarningsData(params.digest);
   const missingWarningsAsFixable = missingWarnings && digestSourceType === "web";
   const missingWarningsAsCeiling = missingWarnings && (digestSourceType === "lnhpd" || digestSourceType === "dsld");
 
-  const missingDirectionsDsld = digestSourceType === "dsld" && !hasDirections(params.digest);
-  const missingActiveBreakdown = categoryId === "fish_oil_omega3" && !hasFishOilBreakdown(params.digest);
+  const missingDirectionsDsld =
+    digestSourceType === "dsld"
+    && !hasDirections(params.digest)
+    && !overlaySuggestedUseLine;
+  const missingActiveBreakdown =
+    categoryId === "fish_oil_omega3"
+    && !hasFishOilBreakdown(params.digest)
+    && !overlayOmega3Facts.hasEpaDhaBreakdown
+    && !overlayOmega3Facts.hasOmega3Total;
   const missingFormHighImpact = categoryId === "vitamin_d" && !hasExplicitForm(params.digest);
   const safeScienceSignals = lookupSafeScienceSignals({
     ingredientName: params.digest?.actives?.[0]?.name ?? params.digest?.product?.name ?? null,

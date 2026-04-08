@@ -23,17 +23,19 @@ import {
 } from "./goalNavigatorBundleObservability.js";
 import { readActiveGoalNavigatorBundleRun } from "./goalNavigatorBundleRepository.js";
 import { supabase } from "../supabase.js";
-import { normalizeIherbSupplementFactsRows } from "../iherbOverlayIngredients.js";
+import { normalizeIherbSupplementFactsRowsWithTitleFallback } from "../iherbOverlayIngredients.js";
 
 const { evaluatePreparedCatalogProduct, prepareCatalogProduct } = catalogProductEvaluationModule;
 const { buildGoalNavigatorResponse } = goalNavigatorModule;
 const { PERSONALIZATION_RULES_VERSION } = reasonCodesModule;
 
 type GoalNavigatorOverlayRow = {
+  id?: number | null;
   product_id?: string | null;
   barcode_gtin14?: string | null;
   brand_name?: string | null;
   title?: string | null;
+  source_zip_path?: string | null;
   link?: string | null;
   product_catalog_image?: string | null;
   product_images?: unknown;
@@ -56,13 +58,16 @@ type OverlayFactRow = {
 };
 
 const DEFAULT_GOAL_NAVIGATOR_LIMIT = 6;
-const OVERLAY_FETCH_LIMIT = 180;
+const RUNTIME_LIVE_OVERLAY_FETCH_LIMIT = 180;
+const BUNDLE_BUILD_OVERLAY_PAGE_SIZE = 1_000;
 const DEFAULT_CATALOG_BUNDLE_TTL_MS = 5 * 60 * 1000;
 
 export type GoalNavigatorCatalogBundle = {
   preparedAt: string;
+  sourceRowCount: number;
   preparedCandidates: GoalNavigatorCatalogBundleEntry[];
   notEnoughStructuredDataCount: number;
+  gatedOutOfScopeNonSupplementCount: number;
   source: GoalNavigatorBundleSource;
   activeRunId?: string | null;
   artifactPath?: string | null;
@@ -141,14 +146,15 @@ const readOverlayImageUrl = (row: Record<string, unknown>): string | null => {
 
 const extractOverlayIngredients = (row: GoalNavigatorOverlayRow) => {
   const supplementFacts = toObjectRecord(row.supplement_facts);
+  const descriptionSections = toObjectRecord(row.description_sections);
   const nutritionalFactsRaw = Array.isArray(supplementFacts.nutritionalFacts)
     ? (supplementFacts.nutritionalFacts as OverlayFactRow[])
     : Array.isArray(supplementFacts.nutritional_facts)
       ? (supplementFacts.nutritional_facts as OverlayFactRow[])
       : [];
 
-  return normalizeIherbSupplementFactsRows(
-    nutritionalFactsRaw
+  return normalizeIherbSupplementFactsRowsWithTitleFallback({
+    rows: nutritionalFactsRaw
       .map((item) => ({
         substancy: String(
           item?.substancy ?? item?.substance ?? item?.substance_name ?? item?.name ?? "",
@@ -161,7 +167,23 @@ const extractOverlayIngredients = (row: GoalNavigatorOverlayRow) => {
           null,
       }))
       .filter((item) => item.substancy || item.amountPerServing || item.dailyValuePercent),
-  );
+    title: row.title,
+    brandName: row.brand_name,
+    sourceZipPath: row.source_zip_path,
+    servingSize:
+      typeof supplementFacts.servingSize === "string"
+        ? supplementFacts.servingSize
+        : typeof supplementFacts.serving_size === "string"
+          ? supplementFacts.serving_size
+          : null,
+    servingsPerContainer:
+      typeof supplementFacts.servingsPerContainer === "string"
+        ? supplementFacts.servingsPerContainer
+        : typeof supplementFacts.servings_per_container === "string"
+          ? supplementFacts.servings_per_container
+          : null,
+    descriptionText: readSectionText(descriptionSections, ["description"]),
+  });
 };
 
 const buildProductId = (row: GoalNavigatorOverlayRow, index: number) =>
@@ -173,10 +195,10 @@ const fetchOverlayCatalogRows = async (): Promise<GoalNavigatorOverlayRow[]> => 
   const { data, error } = await supabase
     .from("iherb_overlay_products")
     .select(
-      "product_id,barcode_gtin14,brand_name,title,link,product_catalog_image,product_images,supplement_facts,description_sections,updated_at",
+      "product_id,barcode_gtin14,brand_name,title,source_zip_path,link,product_catalog_image,product_images,supplement_facts,description_sections,updated_at",
     )
     .order("updated_at", { ascending: false })
-    .limit(OVERLAY_FETCH_LIMIT);
+    .limit(RUNTIME_LIVE_OVERLAY_FETCH_LIMIT);
 
   if (error) {
     if (/relation .*iherb_overlay_products.* does not exist/i.test(String(error.message ?? ""))) {
@@ -187,6 +209,49 @@ const fetchOverlayCatalogRows = async (): Promise<GoalNavigatorOverlayRow[]> => 
   }
 
   return Array.isArray(data) ? (data as GoalNavigatorOverlayRow[]) : [];
+};
+
+const fetchAllOverlayCatalogRows = async (): Promise<GoalNavigatorOverlayRow[]> => {
+  const rows: GoalNavigatorOverlayRow[] = [];
+  let lastSeenId = 0;
+
+  while (true) {
+    let query = supabase
+      .from("iherb_overlay_products")
+      .select(
+        "id,product_id,barcode_gtin14,brand_name,title,source_zip_path,link,product_catalog_image,product_images,supplement_facts,description_sections,updated_at",
+      )
+      .order("id", { ascending: true })
+      .limit(BUNDLE_BUILD_OVERLAY_PAGE_SIZE);
+
+    if (lastSeenId > 0) {
+      query = query.gt("id", lastSeenId);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      if (/relation .*iherb_overlay_products.* does not exist/i.test(String(error.message ?? ""))) {
+        console.warn("[goal-navigator] overlay table unavailable");
+        return [];
+      }
+      throw error;
+    }
+
+    const batch = Array.isArray(data) ? (data as GoalNavigatorOverlayRow[]) : [];
+    if (batch.length === 0) {
+      break;
+    }
+
+    rows.push(...batch);
+    const lastRowId = Number(batch[batch.length - 1]?.id ?? 0);
+    if (!Number.isFinite(lastRowId) || lastRowId <= lastSeenId) {
+      break;
+    }
+    lastSeenId = lastRowId;
+  }
+
+  return rows;
 };
 
 const buildCatalogBundleEntry = (
@@ -206,6 +271,7 @@ const buildCatalogBundleEntry = (
       productId: buildProductId(row, index),
       sourceProductId: safeTrim(row.product_id),
       barcode: safeTrim(row.barcode_gtin14),
+      sourceZipPath: safeTrim(row.source_zip_path),
       externalUrl: safeTrim(row.link),
       title: safeTrim(row.title),
       brandName: safeTrim(row.brand_name),
@@ -222,14 +288,20 @@ const buildCatalogCandidateBundle = async (
   fetchRows: () => Promise<GoalNavigatorOverlayRow[]>,
 ): Promise<GoalNavigatorCatalogBundle> => {
   const overlayRows = await fetchRows();
-  const preparedCandidates = overlayRows.map(buildCatalogBundleEntry);
+  const allPreparedCandidates = overlayRows.map(buildCatalogBundleEntry);
+  const preparedCandidates = allPreparedCandidates.filter(
+    (candidate) => candidate.preparedProduct.goalScoringBlockedReason !== "out_of_scope_non_supplement",
+  );
+  const gatedOutOfScopeNonSupplementCount = allPreparedCandidates.length - preparedCandidates.length;
 
   return {
     preparedAt: new Date().toISOString(),
+    sourceRowCount: overlayRows.length,
     preparedCandidates,
     notEnoughStructuredDataCount: preparedCandidates.filter(
       (candidate) => candidate.preparedProduct.factsStatus !== "full",
     ).length,
+    gatedOutOfScopeNonSupplementCount,
     source: "live",
   };
 };
@@ -252,8 +324,13 @@ const loadPrecomputedCatalogBundle = async (): Promise<GoalNavigatorCatalogBundl
       });
       return {
         preparedAt: storedArtifact.artifact.generatedAt,
+        sourceRowCount: storedArtifact.artifact.sourceRowCount,
         preparedCandidates: storedArtifact.artifact.preparedCandidates,
         notEnoughStructuredDataCount: storedArtifact.artifact.notEnoughStructuredDataCount,
+        gatedOutOfScopeNonSupplementCount:
+          typeof storedArtifact.artifact.gatedOutOfScopeNonSupplementCount === "number"
+            ? storedArtifact.artifact.gatedOutOfScopeNonSupplementCount
+            : 0,
         source: "storage",
         activeRunId: activeRun.id,
         storageBucket: activeRun.storageBucket,
@@ -275,8 +352,13 @@ const loadPrecomputedCatalogBundle = async (): Promise<GoalNavigatorCatalogBundl
 
   return {
     preparedAt: diskArtifact.artifact.generatedAt,
+    sourceRowCount: diskArtifact.artifact.sourceRowCount,
     preparedCandidates: diskArtifact.artifact.preparedCandidates,
     notEnoughStructuredDataCount: diskArtifact.artifact.notEnoughStructuredDataCount,
+    gatedOutOfScopeNonSupplementCount:
+      typeof diskArtifact.artifact.gatedOutOfScopeNonSupplementCount === "number"
+        ? diskArtifact.artifact.gatedOutOfScopeNonSupplementCount
+        : 0,
     source: "disk",
     artifactPath: diskArtifact.path,
   };
@@ -430,6 +512,7 @@ export const goalNavigatorCatalogEvaluationServiceInternals = {
   buildProductId,
   DEFAULT_CATALOG_BUNDLE_TTL_MS,
   extractOverlayIngredients,
+  fetchAllOverlayCatalogRows,
   fetchOverlayCatalogRows,
   getGoalNavigatorBundleObservabilitySnapshot,
   goalNavigatorBundleObservabilityInternals,

@@ -164,6 +164,7 @@ export type EvaluatedProductDisplay = {
 export type SavedProductEvaluationInput = {
   productId: string;
   factsStatus: SavedProductFactsStatus;
+  goalScoringBlockedReason?: 'out_of_scope_non_supplement' | null;
   typeKeys?: SupplementTypeKey[];
   productGoalMatches?: ProductGoalMatch[];
   eligibility?: EligibilityDecision;
