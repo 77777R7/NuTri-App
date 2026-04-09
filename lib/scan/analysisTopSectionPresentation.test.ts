@@ -951,6 +951,42 @@ test('allergy row does not tell the user to add preferences when local settings 
   );
 });
 
+test('pending allergy state does not surface a loading message to the user', () => {
+  const result = buildAnalysisTopSectionPresentation({
+    goal: {
+      fitDecision: 'fits',
+      selectedGoalLabel: 'Immunity',
+    },
+    personalInsight: {
+      supportLabels: ['Immunity'],
+    },
+    allergy: {
+      status: 'pending',
+      hasSavedPreferences: true,
+      matchedLabels: [],
+      evidenceTexts: [],
+      summary: 'Saved allergy preferences are still attaching to this scan.',
+    },
+    dose: {
+      status: 'ready',
+      assessment: 'aligned',
+      productDoseText: '1 capsule daily',
+    },
+    safety: {},
+  });
+
+  const allergyRow = result.insights.find((row) => row.topic === 'allergy');
+  assert.equal(allergyRow?.collapsedTitle, 'Allergy check unavailable for this scan');
+  assert.equal(
+    allergyRow?.expandedBullets.some((line) => /still loading/i.test(line)),
+    false,
+  );
+  assert.equal(
+    allergyRow?.expandedBullets.some((line) => /still attaching/i.test(line)),
+    false,
+  );
+});
+
 test('allergy conflict details are more specific than the banner warning', () => {
   const result = buildAnalysisTopSectionPresentation({
     goal: {
@@ -987,6 +1023,42 @@ test('allergy conflict details are more specific than the banner warning', () =>
     'Matched against: Fish.',
     'Found on label: Wild Alaska Pollock Fish Oil Concentrate 1250 mg and Fish Gelatin.',
     'Avoid it if you need to avoid fish ingredients.',
+  ]);
+});
+
+test('insufficient signal with analyzed goals still keeps a conservative goal row', () => {
+  const result = buildAnalysisTopSectionPresentation({
+    goal: {
+      heroMode: 'insufficient_signal',
+      analyzedGoalCount: 2,
+      allGoalsAnalyzed: false,
+    },
+    personalInsight: {
+      supportLabels: [],
+      heroMode: 'insufficient_signal',
+      analyzedGoalCount: 2,
+      allGoalsAnalyzed: false,
+    },
+    allergy: {
+      status: 'ready',
+      matchedLabels: [],
+      evidenceTexts: [],
+      summary: 'No allergy-related flags detected.',
+    },
+    dose: {
+      status: 'ready',
+      assessment: 'unclear',
+      productDoseText: null,
+    },
+    safety: {},
+  });
+
+  assert.equal(result.hero.chip, 'Not enough evidence to judge the goals shown');
+  assert.equal(result.insights[0]?.topic, 'support');
+  assert.equal(result.insights[0]?.collapsedTitle, 'Goal check');
+  assert.deepEqual(result.insights[0]?.expandedBullets, [
+    'We need more label detail before we can judge these goals confidently.',
+    '2 goals were checked, but the label is still incomplete.',
   ]);
 });
 

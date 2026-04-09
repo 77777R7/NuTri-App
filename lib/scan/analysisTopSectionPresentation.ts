@@ -666,6 +666,73 @@ const buildGoalCoverageRowDetails = (
   };
 };
 
+const buildConservativeGoalInsight = (
+  personalInsight: TopSectionPersonalInsightInput,
+): TopSectionInsightPresentation | null => {
+  const analyzedGoalCount = personalInsight.analyzedGoalCount ?? 0;
+  if (analyzedGoalCount <= 0) return null;
+
+  const coverage = getSortedGoalCoverage(getPrimaryGoalCoverage(personalInsight));
+  const goalLabel = normalizeText(personalInsight.selectedGoalLabel);
+
+  if (coverage.length > 0) {
+    const {
+      fullItems,
+      visibleItems,
+      hiddenItems,
+      subtitle,
+      expandedSubtitle,
+      canExpandAll,
+      expandActionLabel,
+      collapseActionLabel,
+    } = buildGoalCoverageRowDetails(personalInsight);
+
+    return {
+      key: 'goal_coverage',
+      topic: 'support',
+      tone: 'neutral',
+      collapsedTitle: 'Goal check',
+      subtitle,
+      expandedSubtitle,
+      expandedBullets: fullItems.map((entry) => entry.description),
+      goalCoverageItems: fullItems,
+      visibleGoalCoverageItems: visibleItems,
+      hiddenGoalCoverageItems: hiddenItems,
+      goalCoveragePresentation: 'primary',
+      expandActionLabel,
+      collapseActionLabel,
+      canExpandAll,
+      isExpandable: true,
+    };
+  }
+
+  if (goalLabel) {
+    return {
+      key: 'personal_support',
+      topic: 'support',
+      tone: 'neutral',
+      collapsedTitle: buildGoalSupportFallbackTitle(goalLabel, 'unknown'),
+      expandedBullets: buildGoalSupportFallbackBullets(goalLabel, 'unknown'),
+      isExpandable: true,
+    };
+  }
+
+  return {
+    key: 'goal_coverage',
+    topic: 'support',
+    tone: 'neutral',
+    collapsedTitle: 'Goal check',
+    subtitle: `${analyzedGoalCount} goals checked`,
+    expandedBullets: uniqueLines([
+      'We need more label detail before we can judge these goals confidently.',
+      analyzedGoalCount > 1
+        ? `${analyzedGoalCount} goals were checked, but the label is still incomplete.`
+        : 'This goal was checked, but the label is still incomplete.',
+    ]),
+    isExpandable: true,
+  };
+};
+
 const buildSupportInsight = (
   personalInsight: TopSectionPersonalInsightInput,
 ): TopSectionInsightPresentation | null => {
@@ -804,6 +871,10 @@ const buildSupportInsight = (
     };
   }
 
+  if (personalInsight.heroMode === 'insufficient_signal' && (personalInsight.analyzedGoalCount ?? 0) > 0) {
+    return buildConservativeGoalInsight(personalInsight);
+  }
+
   if (!goalLabel || !shouldUseLegacyNarrativeFallback(personalInsight)) return null;
 
   const fitLevel = getLegacyNarrativeFitLevel(personalInsight) ?? 'unknown';
@@ -871,15 +942,21 @@ const buildAllergyInsight = (
   if (
     allergy.status === 'pending' ||
     reasonCode === 'NORMALIZED_PRODUCT_ALLERGY_FLAGS_NOT_ATTACHED' ||
-    /still attaching allergen coverage/i.test(summary)
+    /still attaching|still loading/i.test(summary)
   ) {
+    if (!allergy.hasSavedPreferences) {
+      return null;
+    }
+
     return {
       key: 'allergy_insight',
       topic: 'allergy',
       tone: 'neutral',
-      collapsedTitle: 'Allergy check is still loading',
+      collapsedTitle: 'Allergy check unavailable for this scan',
       expandedBullets: uniqueLines([
-        summary || 'We are still attaching allergen coverage for this product.',
+        'We could not attach your saved allergy settings to this scan result.',
+        'Retrying the scan may attach them automatically.',
+        /still attaching|still loading/i.test(summary) ? null : summary || null,
       ]),
       isExpandable: true,
     };
@@ -1036,15 +1113,21 @@ export const buildAnalysisTopSectionPresentation = (input: {
 }): TopSectionPresentation => {
   const banner = buildBanner(input.allergy);
   const hero = buildHero(input.goal);
-  const insights = [
-    buildSupportInsight(input.personalInsight),
-    buildAllergyInsight(input.allergy),
-    buildDoseInsight(input.dose),
-    buildSafetyInsight(input.safety),
-    buildOverlapInsight(input.personalInsight),
-  ]
-    .filter((row): row is TopSectionInsightPresentation => Boolean(row))
-    .slice(0, 4);
+  const supportInsight = buildSupportInsight(input.personalInsight);
+  const allergyInsight = buildAllergyInsight(input.allergy);
+  const doseInsight = buildDoseInsight(input.dose);
+  const safetyInsight = buildSafetyInsight(input.safety);
+  const overlapInsight = buildOverlapInsight(input.personalInsight);
+
+  const insights: TopSectionInsightPresentation[] = [];
+  [supportInsight, allergyInsight, doseInsight, safetyInsight].forEach((row) => {
+    if (row) {
+      insights.push(row);
+    }
+  });
+  if (insights.length < 4 && overlapInsight) {
+    insights.push(overlapInsight);
+  }
 
   const preferredExpandedKey = banner?.kind === 'allergy'
     ? 'allergy_insight'

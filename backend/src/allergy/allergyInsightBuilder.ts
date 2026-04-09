@@ -45,10 +45,10 @@ export const buildAllergyInsight = (
     !input.productCoverageStatus
   ) {
     return {
-      status: "pending",
+      status: "unavailable",
       reasonCode: "NORMALIZED_PRODUCT_ALLERGY_FLAGS_NOT_ATTACHED",
       summary:
-        "Allergy-aware reasoning is reserved here, but normalized product allergen flags are not attached yet.",
+        "Allergy check is unavailable for this scan because normalized product allergen flags are not attached.",
       matchedAllergyFlags: [],
       matchedRestrictions: [],
       details: [],
