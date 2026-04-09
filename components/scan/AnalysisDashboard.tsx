@@ -4903,24 +4903,30 @@ const AnalysisBundleDashboard: React.FC<{
             || sourceAttribution === 'label_record'
         );
     }, [bundleState.meta, canonicalDecisionBarcode, trustedDisplayIdentity.displayIdentityMode, trustedDisplayIdentity.sourceAttributionUsed]);
-    const comparisonStanding = decisionPersonalizedResultLane?.productStanding ?? null;
-    const comparisonAlternatives = Array.isArray(comparisonStanding?.betterAlternatives)
-        ? comparisonStanding.betterAlternatives.filter((item) => Boolean(item?.title))
-        : [];
-    const comparisonSummary = normalizeText(comparisonStanding?.summary ?? null);
-    const comparisonSecondarySummary = normalizeText(comparisonStanding?.secondarySummary ?? null);
-    const showComparisonSection =
-        Boolean(comparisonStanding)
-        && canonicalIdentityConfidenceHigh
-        && comparisonStanding?.status === 'ready'
-        && (
-            Boolean(comparisonSummary)
-            || comparisonAlternatives.length > 0
-        );
-    const showComparisonEmptyState =
-        showComparisonSection
-        && comparisonAlternatives.length === 0
-        && comparisonStanding?.standing !== 'unknown';
+    const normalizedComparisonSection = useMemo(() => {
+        const standing = decisionPersonalizedResultLane?.productStanding ?? null;
+        if (!standing || standing.status !== 'ready' || !canonicalIdentityConfidenceHigh) {
+            return null;
+        }
+
+        const alternatives = Array.isArray(standing.betterAlternatives)
+            ? standing.betterAlternatives.filter((item) => Boolean(item?.title))
+            : [];
+        const summary = normalizeText(standing.summary ?? null);
+        const secondarySummary = normalizeText(standing.secondarySummary ?? null);
+
+        if (!summary && alternatives.length === 0) {
+            return null;
+        }
+
+        return {
+            standing,
+            alternatives,
+            summary,
+            secondarySummary,
+            showEmptyState: alternatives.length === 0 && standing.standing !== 'unknown',
+        };
+    }, [canonicalIdentityConfidenceHigh, decisionPersonalizedResultLane?.productStanding]);
     const bundleSourceTypeFinal = bundleState.meta.sourceTypeFinal !== false && Number(bundleState.meta.revision) >= 1;
     const bundleSourceType = typeof bundleState.meta.sourceType === 'string' ? bundleState.meta.sourceType : null;
     const verificationPresentation = useMemo(
@@ -5483,23 +5489,84 @@ const AnalysisBundleDashboard: React.FC<{
         scienceIngredientsAll,
     ]);
     const topSectionPresentation = useMemo(() => {
-        const goalFit = decisionPersonalizedResultLane?.goalFit;
-        const personalInsight = decisionPersonalizedResultLane?.personalInsight;
+        const rawGoalFit = decisionPersonalizedResultLane?.goalFit;
+        const rawPersonalInsight = decisionPersonalizedResultLane?.personalInsight;
+        const rawAllergyInsight = decisionPersonalizedResultLane?.allergyInsight;
+        const rawDosageContext = decisionPersonalizedResultLane?.dosageContext;
         const hasSavedAllergyPreferences =
             localDecisionSupportSignals.allergyCount > 0 || localDecisionSupportSignals.restrictionCount > 0;
-        const allergyInsight =
-            decisionPersonalizedResultLane?.allergyInsight
-            ?? (hasSavedAllergyPreferences
+        const goalCoverageSummary = rawGoalFit?.goalCoverageSummary ?? null;
+        const analyzedGoalCount = goalCoverageSummary?.analyzedGoalCount ?? rawGoalFit?.analyzedGoalCount ?? 0;
+        const hasGoalCoverage =
+            analyzedGoalCount > 0
+            || (rawGoalFit?.goalCoverageSummary?.items?.length ?? 0) > 0
+            || (rawGoalFit?.goalCoverage?.length ?? 0) > 0
+            || (rawGoalFit?.allGoalCoverage?.length ?? 0) > 0;
+        const goalFit =
+            rawGoalFit?.status === 'pending' && !hasGoalCoverage
                 ? {
-                    status: 'pending' as const,
-                    reasonCode: 'LOCAL_PROFILE_ALLERGY_CONTEXT_PENDING',
-                    summary: 'Saved allergy preferences are still attaching to this scan.',
-                    matchedAllergyFlags: [],
-                    matchedRestrictions: [],
-                    details: [],
-                  }
-                : null);
-        const dosageContext = decisionPersonalizedResultLane?.dosageContext;
+                    ...rawGoalFit,
+                    selectedGoalKey: null,
+                    previewTopGoalKey: null,
+                    dominantGoalKey: null,
+                    secondaryGoalKey: null,
+                    selectedGoalKeys: [],
+                    allSelectedGoalKeys: [],
+                    candidateGoalKeys: [],
+                    defaultVisibleGoalKeys: [],
+                    goalCoverage: [],
+                    allGoalCoverage: [],
+                    goalCoverageSummary: rawGoalFit.goalCoverageSummary
+                        ? {
+                            ...rawGoalFit.goalCoverageSummary,
+                            analyzedGoalCount: 0,
+                            surfacedGoalCount: 0,
+                            hiddenGoalsCount: 0,
+                            allGoalsAnalyzed: false,
+                            items: [],
+                          }
+                        : undefined,
+                    selectedGoalCount: 0,
+                    analyzedGoalCount: 0,
+                    surfacedGoalCount: 0,
+                    allGoalsAnalyzed: false,
+                    fitDecision: 'unknown' as const,
+                    fitTier: 'unknown' as const,
+                    previewTopTier: 'unknown' as const,
+                    heroMode: undefined,
+                }
+                : rawGoalFit;
+        const personalInsight = rawPersonalInsight?.status === 'ready' ? rawPersonalInsight : null;
+        const allergyInsight = (() => {
+            if (rawAllergyInsight?.status === 'ready' || rawAllergyInsight?.status === 'unavailable') {
+                return rawAllergyInsight;
+            }
+
+            if (hasSavedAllergyPreferences) {
+                return {
+                    status: 'unavailable' as const,
+                    reasonCode: rawAllergyInsight?.reasonCode ?? 'ALLERGY_PROFILE_NOT_ATTACHED',
+                    summary: normalizeText(rawAllergyInsight?.summary ?? null) || 'Allergy check unavailable for this scan.',
+                    matchedAllergyFlags: rawAllergyInsight?.matchedAllergyFlags ?? [],
+                    matchedRestrictions: rawAllergyInsight?.matchedRestrictions ?? [],
+                    details: rawAllergyInsight?.details ?? [],
+                };
+            }
+
+            return null;
+        })();
+        const dosageContext =
+            rawDosageContext?.status === 'pending'
+                ? {
+                    ...rawDosageContext,
+                    status: 'unavailable' as const,
+                    reasonCode: rawDosageContext.reasonCode ?? 'RECOMMENDED_DOSE_COMPARISON_NOT_ATTACHED',
+                    summary: normalizeText(rawDosageContext.summary ?? null) || 'Dose guidance unavailable for this scan.',
+                    comparisonMode: rawDosageContext.comparisonMode === 'not_attached'
+                        ? rawDosageContext.comparisonMode
+                        : 'not_attached',
+                }
+                : rawDosageContext;
         const firstConflict = (personalInsight?.conflicts ?? [])
             .map((conflict) => normalizeText(conflict.summary))
             .find(Boolean);
@@ -5736,10 +5803,10 @@ const AnalysisBundleDashboard: React.FC<{
             },
         });
     }, [
-        decisionPersonalizedResultLane?.allergyInsight,
-        decisionPersonalizedResultLane?.dosageContext,
         decisionPersonalizedResultLane?.goalFit,
         decisionPersonalizedResultLane?.personalInsight,
+        decisionPersonalizedResultLane?.allergyInsight,
+        decisionPersonalizedResultLane?.dosageContext,
         localDecisionSupportSignals.allergyCount,
         localDecisionSupportSignals.restrictionCount,
         safetyTipCoverText,
@@ -9036,6 +9103,58 @@ const AnalysisBundleDashboard: React.FC<{
                     </View>
                     {/* SCORE_SECTION_FROZEN_RENDER_END */}
 
+                    {normalizedComparisonSection ? <View style={styles.sectionDivider} /> : null}
+
+                    {normalizedComparisonSection ? (
+                        <View style={styles.sectionBlock}>
+                            <View style={styles.sectionHeader}>
+                                <Text style={styles.sectionTitle}>{t.analysisSectionComparisonTitle}</Text>
+                                <Text style={styles.sectionSubtitle}>{t.analysisSectionComparisonSubtitle}</Text>
+                            </View>
+
+                            <View style={styles.comparisonStandingCard}>
+                                <Text style={styles.comparisonStandingSummary}>
+                                    {normalizedComparisonSection.summary || t.analysisComparisonNotEnoughPeers}
+                                </Text>
+                                {normalizedComparisonSection.secondarySummary ? (
+                                    <Text style={styles.comparisonStandingSecondary}>
+                                        {normalizedComparisonSection.secondarySummary}
+                                    </Text>
+                                ) : null}
+                            </View>
+
+                            {normalizedComparisonSection.alternatives.length > 0 ? (
+                                <>
+                                    <Text style={styles.comparisonAlternativesTitle}>
+                                        {t.analysisComparisonAlternativesTitle}
+                                    </Text>
+                                    <ScrollView
+                                        horizontal
+                                        showsHorizontalScrollIndicator={false}
+                                        decelerationRate="fast"
+                                        snapToAlignment="start"
+                                        snapToInterval={comparisonSnapInterval}
+                                        contentContainerStyle={styles.comparisonRailContent}
+                                    >
+                                        {normalizedComparisonSection.alternatives.map((alternative) => (
+                                            <ComparisonAlternativeCard
+                                                key={`${alternative.productId ?? alternative.title}`}
+                                                alternative={alternative}
+                                                cardWidth={comparisonCardWidth}
+                                            />
+                                        ))}
+                                    </ScrollView>
+                                </>
+                            ) : null}
+
+                            {normalizedComparisonSection.showEmptyState ? (
+                                <Text style={styles.comparisonEmptyState}>
+                                    {t.analysisComparisonAlreadyScoresWell}
+                                </Text>
+                            ) : null}
+                        </View>
+                    ) : null}
+
                     <View style={styles.sectionDivider} />
 
                     {!disableTilesGrid ? (
@@ -9066,57 +9185,6 @@ const AnalysisBundleDashboard: React.FC<{
                         </View>
                     )}
 
-                    {showComparisonSection ? <View style={styles.sectionDivider} /> : null}
-
-                    {showComparisonSection ? (
-                        <View style={styles.sectionBlock}>
-                            <View style={styles.sectionHeader}>
-                                <Text style={styles.sectionTitle}>{t.analysisSectionComparisonTitle}</Text>
-                                <Text style={styles.sectionSubtitle}>{t.analysisSectionComparisonSubtitle}</Text>
-                            </View>
-
-                            <View style={styles.comparisonStandingCard}>
-                                <Text style={styles.comparisonStandingSummary}>
-                                    {comparisonSummary || t.analysisComparisonNotEnoughPeers}
-                                </Text>
-                                {comparisonSecondarySummary ? (
-                                    <Text style={styles.comparisonStandingSecondary}>
-                                        {comparisonSecondarySummary}
-                                    </Text>
-                                ) : null}
-                            </View>
-
-                            {comparisonAlternatives.length > 0 ? (
-                                <>
-                                    <Text style={styles.comparisonAlternativesTitle}>
-                                        {t.analysisComparisonAlternativesTitle}
-                                    </Text>
-                                    <ScrollView
-                                        horizontal
-                                        showsHorizontalScrollIndicator={false}
-                                        decelerationRate="fast"
-                                        snapToAlignment="start"
-                                        snapToInterval={comparisonSnapInterval}
-                                        contentContainerStyle={styles.comparisonRailContent}
-                                    >
-                                        {comparisonAlternatives.map((alternative) => (
-                                            <ComparisonAlternativeCard
-                                                key={`${alternative.productId ?? alternative.title}`}
-                                                alternative={alternative}
-                                                cardWidth={comparisonCardWidth}
-                                            />
-                                        ))}
-                                    </ScrollView>
-                                </>
-                            ) : null}
-
-                            {showComparisonEmptyState ? (
-                                <Text style={styles.comparisonEmptyState}>
-                                    {t.analysisComparisonAlreadyScoresWell}
-                                </Text>
-                            ) : null}
-                        </View>
-                    ) : null}
                 </>
             </ScrollContainer>
 

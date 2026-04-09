@@ -2388,9 +2388,9 @@ const buildDosageContextFromEvaluation = (params: {
 
   if (!params.selectedGoalKey || !params.evaluation) {
     return {
-      status: "pending",
+      status: "unavailable",
       reasonCode: "RECOMMENDED_DOSE_COMPARISON_NOT_ATTACHED",
-      summary: "Product dose is visible, but selected-goal dose comparison is not attached yet.",
+      summary: "Product dose is visible, but selected-goal dose comparison is unavailable for this scan.",
       assessment: "unclear",
       comparisonMode: "not_attached",
       previewGoalKey: null,
@@ -2670,11 +2670,11 @@ const buildPersonalizedResultLane = (params: {
         goalCoverageSummary,
       }
       : {
-        status: "pending",
+        status: "unavailable",
         reasonCode: previewTopGoal ? "USER_GOAL_CONTEXT_NOT_ATTACHED" : "NO_GOAL_SUPPORT_SIGNALS_DETECTED",
         summary: previewTopGoal
-          ? `Detected strongest goal-fit preview for ${humanizeGoalKey(previewTopGoal.goalKey)}, but user goal selection is not attached to this decision support payload yet.`
-          : "Goal-fit contract is reserved here, but user goal selection is not attached and the current label does not yield a strong preview signal yet.",
+          ? `Detected the clearest goal-fit preview for ${humanizeGoalKey(previewTopGoal.goalKey)}, but personalized goal context is unavailable for this scan.`
+          : "Goal-fit comparison is unavailable for this scan because personalized goal context is missing and the current label does not yield a strong preview signal.",
         selectedGoalKey: null,
         fitDecision: "unknown",
         fitTier: "unknown",
@@ -2720,15 +2720,15 @@ const buildPersonalizedResultLane = (params: {
         };
       })()
       : {
-        status: "pending",
+        status: "unavailable",
         reasonCode: "SAVED_SUPPLEMENTS_NOT_ATTACHED",
         summary: supportLabels.length > 0
-          ? `Detected product-level support signals for ${joinDisplayLabels(supportLabels)}, but saved supplement conflict matching is not attached yet.`
-          : "Personal insight contract is reserved here, but saved supplement conflict matching is not attached yet.",
+          ? `Detected product-level support signals for ${joinDisplayLabels(supportLabels)}, but saved supplement conflict matching is unavailable for this scan.`
+          : "Saved supplement conflict matching is unavailable for this scan.",
         supportSummary: supportLabels.length > 0
           ? `Detected product-level support signals for ${joinDisplayLabels(supportLabels)}.`
           : "No clear product-level support signal was strong enough to surface from the current label.",
-        conflictSummary: "Saved supplement conflict matching is not attached to this decision support payload yet.",
+        conflictSummary: "Saved supplement conflict matching is unavailable for this scan.",
         supports: supportSignals,
         conflicts: [],
         expandableDetailsReady: false,
@@ -2743,10 +2743,10 @@ const buildPersonalizedResultLane = (params: {
         productDetails: parseAttachedAllergyDetails((attachedContext?.allergyContext ?? params.allergyContext)?.productMatchEvidence),
       })
       : {
-        status: "pending",
+        status: "unavailable",
         reasonCode: "ALLERGY_PROFILE_NOT_ATTACHED",
         summary:
-          "Allergy-aware reasoning is reserved here, but user allergy settings and normalized product allergen flags are not attached yet.",
+          "Allergy check is unavailable for this scan because saved allergy settings are not attached.",
         matchedAllergyFlags: [],
         matchedRestrictions: [],
         details: [],
@@ -2759,13 +2759,13 @@ const buildPersonalizedResultLane = (params: {
         usageBlock: params.usageBlock,
       })
       : {
-        status: hasVisibleProductDose ? "pending" : "unavailable",
+        status: "unavailable",
         reasonCode: hasVisibleProductDose ? "RECOMMENDED_DOSE_COMPARISON_NOT_ATTACHED" : "NO_PRODUCT_DOSE_VISIBLE",
         summary: !hasVisibleProductDose
           ? "Recommended-dose comparison is reserved here, and this label does not expose enough dose or directions detail yet."
           : previewTopGoal
-            ? `Product dose is visible. The best detected goal preview points to ${humanizeGoalKey(previewTopGoal.goalKey)}, but selected-goal dosage comparison is not attached yet.`
-            : "Product dose is visible, but recommended-dose comparison is not attached yet.",
+            ? `Product dose is visible. The clearest detected goal preview points to ${humanizeGoalKey(previewTopGoal.goalKey)}, but selected-goal dosage comparison is unavailable for this scan.`
+            : "Product dose is visible, but recommended-dose comparison is unavailable for this scan.",
         assessment: dosageAssessment,
         comparisonMode: previewTopGoal && hasVisibleProductDose ? "best_detected_goal_preview" : "not_attached",
         previewGoalKey: previewTopGoal?.goalKey ?? null,
@@ -2773,9 +2773,9 @@ const buildPersonalizedResultLane = (params: {
         productDirectionsText,
       },
     productStanding: {
-      status: "pending",
+      status: "unavailable",
       reasonCode: "PRODUCT_BENCHMARK_NOT_ATTACHED",
-      summary: "Product standing and better alternatives are reserved here, but benchmark logic is not attached to decision support yet.",
+      summary: "Product standing and better alternatives are unavailable for this scan because benchmark logic is not attached.",
       secondarySummary: null,
       standing: "unknown",
       standingLabel: null,
