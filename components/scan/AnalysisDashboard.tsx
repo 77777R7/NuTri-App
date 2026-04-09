@@ -131,6 +131,8 @@ type DecisionSupportState = {
     autoRetryUsed: boolean;
 };
 
+type DecisionSupportAuthorityGate = 'waiting' | 'ready';
+
 type DecisionChecklistStatus = 'verified' | 'missing' | 'unknown';
 type DecisionChecklistRow = {
     key: string;
@@ -759,6 +761,9 @@ const getDecisionPayloadDigest = (payload: Record<string, unknown> | null | unde
 const isDecisionPayloadExplicitlyStale = (payload: Record<string, unknown> | null | undefined): boolean =>
     Boolean(payload && typeof payload === 'object' && payload.staleDigest === true);
 
+const hasPersonalizedResultLane = (payload: Record<string, unknown> | null | undefined): boolean =>
+    Boolean(payload && typeof payload.personalizedResultLane === 'object' && payload.personalizedResultLane !== null);
+
 const getV2ModulesFromPayload = (payload: Record<string, unknown> | null | undefined): Record<string, unknown>[] => {
     const card = payload?.nutriScoreCardV2;
     if (!card || typeof card !== 'object') return [];
@@ -876,11 +881,51 @@ const isProvisionalWebBundleSource = (
     bundleSourceTypeFinal: boolean | null | undefined,
 ): boolean => normalizeText(bundleSourceType).toLowerCase() === 'web' && bundleSourceTypeFinal !== true;
 
+const hasAuthoritativeDecisionIdentityHint = (
+    identityType: string | null | undefined,
+): boolean => {
+    const normalized = normalizeText(identityType);
+    return normalized === 'dsldLabelId' || normalized === 'npn';
+};
+
+const shouldDeferProvisionalWebDecisionSupport = (params: {
+    bundleSourceType: string | null | undefined;
+    bundleSourceTypeFinal: boolean | null | undefined;
+    phase: string | null | undefined;
+    isStreaming: boolean | null | undefined;
+    authoritativeIdentityType: string | null | undefined;
+}): boolean => {
+    const isSkeletonPhase =
+        normalizeText(params.phase).toLowerCase() === 'skeleton' || params.isStreaming === true;
+    return (
+        isProvisionalWebBundleSource(params.bundleSourceType, params.bundleSourceTypeFinal)
+        && isSkeletonPhase
+        && !hasAuthoritativeDecisionIdentityHint(params.authoritativeIdentityType)
+    );
+};
+
 const isAuthoritativeDecisionPayloadSource = (
     payload: Record<string, unknown> | null | undefined,
 ): boolean => {
     const sourceType = getPayloadSourceType(payload);
     return sourceType === 'dsld' || sourceType === 'lnhpd';
+};
+
+const isAuthoritativePersonalizedDecisionPayload = (
+    payload: Record<string, unknown> | null | undefined,
+): boolean => isAuthoritativeDecisionPayloadSource(payload) && hasPersonalizedResultLane(payload);
+
+const shouldUseDecisionPayloadForBundle = (params: {
+    payload: Record<string, unknown> | null | undefined;
+    bundleSourceType: string | null | undefined;
+    bundleSourceTypeFinal: boolean | null | undefined;
+    phase: string | null | undefined;
+    isStreaming: boolean | null | undefined;
+    authoritativeIdentityType: string | null | undefined;
+}): boolean => {
+    if (!params.payload) return false;
+    if (!shouldDeferProvisionalWebDecisionSupport(params)) return true;
+    return isAuthoritativeDecisionPayloadSource(params.payload);
 };
 
 const pickAuthoritativeDecisionPayloadUpgrade = (
@@ -1881,11 +1926,96 @@ const ComparisonAlternativeCard: React.FC<{
                 </View>
             </View>
 
-            {alternative.reason ? (
-                <Text style={styles.comparisonCardReason} numberOfLines={2}>
-                    {alternative.reason}
-                </Text>
-            ) : null}
+            {alternative.reason ? <Text style={styles.comparisonCardReason}>{alternative.reason}</Text> : null}
+        </View>
+    );
+};
+
+const DecisionSupportAuthorityPlaceholder: React.FC = () => {
+    return (
+        <View style={styles.authorityPlaceholderWrap}>
+            <View style={styles.authorityPlaceholderHeroCard}>
+                <SkeletonLoader width={168} height={32} borderRadius={999} style={{ borderCurve: 'continuous' }} />
+                <View style={styles.authorityPlaceholderProductRow}>
+                    <SkeletonLoader width={72} height={72} borderRadius={20} style={{ borderCurve: 'continuous' }} />
+                    <View style={styles.authorityPlaceholderProductCopy}>
+                        <SkeletonLoader width="82%" height={22} style={{ marginBottom: 6, borderCurve: 'continuous' }} />
+                        <SkeletonLoader width="52%" height={16} style={{ marginBottom: 8, borderCurve: 'continuous' }} />
+                    </View>
+                </View>
+                <SkeletonLoader width="74%" height={18} style={{ marginTop: 18, marginBottom: 8, borderCurve: 'continuous' }} />
+                <SkeletonLoader width="58%" height={14} style={{ borderCurve: 'continuous' }} />
+            </View>
+
+            <View style={styles.authorityPlaceholderInsightsBlock}>
+                <Text style={styles.insightsTitle}>Personalized Insights</Text>
+                <View style={styles.authorityPlaceholderInsightsCard}>
+                    {Array.from({ length: 4 }).map((_, index) => (
+                        <View key={`authority-row-${index}`} style={styles.authorityPlaceholderInsightRow}>
+                            <SkeletonLoader width={40} height={40} borderRadius={20} style={{ borderCurve: 'continuous' }} />
+                            <View style={styles.authorityPlaceholderInsightCopy}>
+                                <SkeletonLoader width={index === 0 ? '72%' : '64%'} height={16} style={{ marginBottom: 6, borderCurve: 'continuous' }} />
+                                <SkeletonLoader width={index === 0 ? '48%' : '36%'} height={12} style={{ borderCurve: 'continuous' }} />
+                            </View>
+                        </View>
+                    ))}
+                </View>
+            </View>
+        </View>
+    );
+};
+
+const ComparisonAuthorityPlaceholder: React.FC = () => {
+    return (
+        <View style={styles.sectionBlock}>
+            <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Comparison</Text>
+                <Text style={styles.sectionSubtitle}>Checking similar products and better alternatives.</Text>
+            </View>
+
+            <View style={styles.comparisonStandingCard}>
+                <View style={styles.comparisonLeadRow}>
+                    <View style={styles.comparisonLeadIconWrap}>
+                        <BarChart3 size={18} color="#94A3B8" />
+                    </View>
+                    <View style={styles.comparisonLeadCopy}>
+                        <SkeletonLoader width="68%" height={16} style={{ marginBottom: 6, borderCurve: 'continuous' }} />
+                        <SkeletonLoader width="44%" height={12} style={{ borderCurve: 'continuous' }} />
+                    </View>
+                </View>
+                <View style={styles.comparisonSectionDivider} />
+                <Text style={styles.comparisonAlternativesTitle}>Alternatives</Text>
+                <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    decelerationRate="fast"
+                    contentContainerStyle={styles.comparisonRailContent}
+                    scrollEnabled={false}
+                >
+                    {Array.from({ length: 2 }).map((_, index) => (
+                        <View
+                            key={`comparison-placeholder-${index}`}
+                            style={[styles.comparisonCard, styles.comparisonPlaceholderCard]}
+                        >
+                            <View style={styles.comparisonCardTopRow}>
+                                <View style={styles.comparisonCardIdentity}>
+                                    <SkeletonLoader width={42} height={42} borderRadius={14} style={{ borderCurve: 'continuous' }} />
+                                    <View style={styles.comparisonCardIdentityText}>
+                                        <SkeletonLoader width="84%" height={15} style={{ marginBottom: 6, borderCurve: 'continuous' }} />
+                                        <SkeletonLoader width="48%" height={12} style={{ borderCurve: 'continuous' }} />
+                                    </View>
+                                </View>
+                                <View style={styles.comparisonCardScoreBlock}>
+                                    <SkeletonLoader width={42} height={14} style={{ marginBottom: 4, borderCurve: 'continuous' }} />
+                                    <SkeletonLoader width={34} height={10} style={{ borderCurve: 'continuous' }} />
+                                </View>
+                            </View>
+                            <SkeletonLoader width="88%" height={12} style={{ marginTop: 12, borderCurve: 'continuous' }} />
+                            <SkeletonLoader width="72%" height={12} style={{ marginTop: 6, borderCurve: 'continuous' }} />
+                        </View>
+                    ))}
+                </ScrollView>
+            </View>
         </View>
     );
 };
@@ -3566,6 +3696,7 @@ const AnalysisBundleDashboard: React.FC<{
         error: null,
         autoRetryUsed: false,
     });
+    const [authoritativeDecisionPayload, setAuthoritativeDecisionPayload] = useState<Record<string, unknown> | null>(null);
     const [productOverviewAiByDigest, setProductOverviewAiByDigest] = useState<Record<string, ProductOverviewAiState>>({});
     const [ingredientOverviewByRequestKey, setIngredientOverviewByRequestKey] = useState<Record<string, IngredientOverviewSidecarState>>({});
     const [scientificBackgroundByRequestKey, setScientificBackgroundByRequestKey] = useState<Record<string, ScientificBackgroundSidecarState>>({});
@@ -3595,6 +3726,13 @@ const AnalysisBundleDashboard: React.FC<{
     const foundationMetricLoggedRef = useRef<Set<string>>(new Set());
     const overlayConsumerMetricLoggedRef = useRef<Set<string>>(new Set());
     const currentRunKeyRef = useRef<string | null>(null);
+    const decisionSupportAuthorityScopeKey = useMemo(
+        () => [
+            normalizeText(scanSessionId) || 'session_unknown',
+            normalizeText((bundle.meta as { bundleId?: string | null }).bundleId ?? null) || 'bundle_unknown',
+        ].join('|'),
+        [bundle.meta, scanSessionId],
+    );
     const localDecisionSupportProfile = useMemo(
         () => toLocalDecisionSupportProfilePayload(onboardingDraft),
         [onboardingDraft],
@@ -3673,6 +3811,9 @@ const AnalysisBundleDashboard: React.FC<{
         localDecisionSupportHeader,
         shouldUseLocalDecisionSupport,
     ]);
+    useEffect(() => {
+        setAuthoritativeDecisionPayload(null);
+    }, [decisionSupportAuthorityScopeKey]);
     const emitScanUxTimingOnce = useCallback((
         key: 'firstRenderableLogged' | 'scoreVisibleLogged' | 'coreCardsVisibleLogged',
         event:
@@ -3784,7 +3925,7 @@ const AnalysisBundleDashboard: React.FC<{
     const [tilesContainerW, setTilesContainerW] = useState(0);
     const TILE_GAP = 12;
     const tileWidth: DimensionValue = tilesContainerW > 0 ? tilesContainerW : '100%';
-    const comparisonCardWidth = Math.min(Math.max(viewportWidth - 72, 280), 348);
+    const comparisonCardWidth = Math.min(Math.max(viewportWidth - 92, 268), 336);
     const comparisonSnapInterval = comparisonCardWidth + 12;
     const TileRenderer = disableTileAnimation ? StaticTile : AnimatedTile;
     const ScrollContainer: any = disableReanimatedScroll ? ScrollView : Animated.ScrollView;
@@ -3864,9 +4005,23 @@ const AnalysisBundleDashboard: React.FC<{
                 })
             )
             : null;
+        const allowSeededDecision = shouldUseDecisionPayloadForBundle({
+            payload: seededDecision,
+            bundleSourceType: normalizeText(bundle.meta.sourceType ?? null).toLowerCase() || null,
+            bundleSourceTypeFinal: bundle.meta.sourceTypeFinal === true,
+            phase: typeof bundle.meta.phase === 'string' ? bundle.meta.phase : null,
+            isStreaming: false,
+            authoritativeIdentityType:
+                typeof bundle.meta.authoritativeIdentity?.type === 'string'
+                    ? bundle.meta.authoritativeIdentity.type
+                    : null,
+        });
+        if (seededDecision && allowSeededDecision && isAuthoritativePersonalizedDecisionPayload(seededDecision)) {
+            setAuthoritativeDecisionPayload((prev) => pickStrongerDecisionPayload(prev, seededDecision) ?? seededDecision);
+        }
         setBundleState(bundle);
         setDecisionSupportState(
-            seededDecision
+            seededDecision && allowSeededDecision
                 ? {
                     status: 'ready',
                     data: seededDecision,
@@ -4037,6 +4192,16 @@ const AnalysisBundleDashboard: React.FC<{
             sourceType === 'web'
             && !sourceTypeFinal
             && (bundleState.meta.phase === 'skeleton' || isStreaming);
+        const shouldDeferProvisionalDecisionSupport = shouldDeferProvisionalWebDecisionSupport({
+            bundleSourceType: sourceType,
+            bundleSourceTypeFinal: sourceTypeFinal,
+            phase: typeof bundleState.meta.phase === 'string' ? bundleState.meta.phase : null,
+            isStreaming,
+            authoritativeIdentityType:
+                typeof bundleState.meta.authoritativeIdentity?.type === 'string'
+                    ? bundleState.meta.authoritativeIdentity.type
+                    : null,
+        });
         const decisionCacheKey = [
             resolvedBarcode,
             `${bundleState.meta.authoritativeIdentity.type}:${bundleState.meta.authoritativeIdentity.value}`,
@@ -4129,7 +4294,15 @@ const AnalysisBundleDashboard: React.FC<{
                     cachedPayload,
                 ],
             });
-        if (!cancelled && seededPayload) {
+        const allowSeededPayload = shouldUseDecisionPayloadForBundle({
+            payload: seededPayload,
+            bundleSourceType: sourceType,
+            bundleSourceTypeFinal: sourceTypeFinal,
+            phase: typeof bundleState.meta.phase === 'string' ? bundleState.meta.phase : null,
+            isStreaming,
+            authoritativeIdentityType,
+        });
+        if (!cancelled && seededPayload && allowSeededPayload) {
             upsertDecisionPayloadByBarcode(decisionSupportByBarcodeRef.current, resolvedBarcode, seededPayload);
             setDecisionSupportState((prev) => ({
                 status: 'ready',
@@ -4137,6 +4310,25 @@ const AnalysisBundleDashboard: React.FC<{
                 error: null,
                 autoRetryUsed: prev.autoRetryUsed,
             }));
+        }
+        if (shouldDeferProvisionalDecisionSupport && !allowSeededPayload) {
+            decisionSupportFetchKeyRef.current = null;
+            console.log(`[decision-support][defer-web-skeleton] ${JSON.stringify({
+                barcode: resolvedBarcode,
+                sourceType,
+                sourceTypeFinal,
+                phase: typeof bundleState.meta.phase === 'string' ? bundleState.meta.phase : null,
+                authoritativeIdentityType,
+            })}`);
+            setDecisionSupportState((prev) => ({
+                status: prev.data ? 'ready' : 'loading',
+                data: prev.data,
+                error: null,
+                autoRetryUsed: prev.autoRetryUsed,
+            }));
+            return () => {
+                cancelled = true;
+            };
         }
         if (isWebSkeletonPhase) {
             setDecisionSupportState((prev) => ({
@@ -4627,33 +4819,49 @@ const AnalysisBundleDashboard: React.FC<{
                         resolvedBarcode,
                         objectPayload,
                     );
+                    const authoritativeFetchedPayload = isAuthoritativePersonalizedDecisionPayload(objectPayload)
+                        ? objectPayload
+                        : null;
+                    if (authoritativeFetchedPayload) {
+                        console.log(`[decision-support][authority-upgrade] ${JSON.stringify({
+                            barcode: resolvedBarcode,
+                            sourceType: getPayloadSourceType(authoritativeFetchedPayload),
+                            factsDigestHash: getDecisionPayloadFactsDigestHash(authoritativeFetchedPayload) || null,
+                            decisionDigest: getDecisionPayloadDigest(authoritativeFetchedPayload) || null,
+                        })}`);
+                        setAuthoritativeDecisionPayload((prev) =>
+                            pickStrongerDecisionPayload(prev, authoritativeFetchedPayload) ?? authoritativeFetchedPayload,
+                        );
+                    }
                     const resolvedDecisionDigest =
                         getDecisionPayloadDigest(objectPayload)
                         || normalizeText(digestParam)
                         || digestHint;
-                    const selectedPayload = shouldUseLocalDecisionSupport
-                        ? pickCompatibleDecisionPayload({
-                            factsDigestHash: currentFactsDigestHash,
-                            decisionDigest: resolvedDecisionDigest,
-                            bundleSourceType: sourceType,
-                            bundleSourceTypeFinal: sourceTypeFinal,
-                            payloads: [
-                                objectPayload,
-                                decisionSupportCacheRef.current.get(decisionCacheKey) ?? null,
-                            ],
-                        })
-                        : pickCompatibleDecisionPayload({
-                            factsDigestHash: currentFactsDigestHash,
-                            decisionDigest: resolvedDecisionDigest,
-                            bundleSourceType: sourceType,
-                            bundleSourceTypeFinal: sourceTypeFinal,
-                            payloads: [
-                                objectPayload,
-                                inlineFallback ?? null,
-                                decisionSupportByBarcodeRef.current.get(resolvedBarcode) ?? null,
-                                decisionSupportCacheRef.current.get(decisionCacheKey) ?? null,
-                            ],
-                        });
+                    const selectedPayload = authoritativeFetchedPayload ?? (
+                        shouldUseLocalDecisionSupport
+                            ? pickCompatibleDecisionPayload({
+                                factsDigestHash: currentFactsDigestHash,
+                                decisionDigest: resolvedDecisionDigest,
+                                bundleSourceType: sourceType,
+                                bundleSourceTypeFinal: sourceTypeFinal,
+                                payloads: [
+                                    objectPayload,
+                                    decisionSupportCacheRef.current.get(decisionCacheKey) ?? null,
+                                ],
+                            })
+                            : pickCompatibleDecisionPayload({
+                                factsDigestHash: currentFactsDigestHash,
+                                decisionDigest: resolvedDecisionDigest,
+                                bundleSourceType: sourceType,
+                                bundleSourceTypeFinal: sourceTypeFinal,
+                                payloads: [
+                                    objectPayload,
+                                    inlineFallback ?? null,
+                                    decisionSupportByBarcodeRef.current.get(resolvedBarcode) ?? null,
+                                    decisionSupportCacheRef.current.get(decisionCacheKey) ?? null,
+                                ],
+                            })
+                    );
                     setDecisionSupportState({
                         status: selectedPayload ? 'ready' : 'error',
                         data: selectedPayload,
@@ -4760,7 +4968,7 @@ const AnalysisBundleDashboard: React.FC<{
             typeof (bundleState.meta as { decisionSupportDigest?: unknown })?.decisionSupportDigest === 'string'
                 ? String((bundleState.meta as { decisionSupportDigest?: string }).decisionSupportDigest)
                 : null;
-        return {
+        const normalizedInline = {
             ...inline,
             factsDigestHash: currentFactsDigestHash ?? getDecisionPayloadFactsDigestHash(inline),
             digest: normalizeText(typeof inline.digest === 'string' ? inline.digest : digestHint) || undefined,
@@ -4768,8 +4976,37 @@ const AnalysisBundleDashboard: React.FC<{
                 typeof inline.sourceType === 'string' ? inline.sourceType : bundleState.meta.sourceType,
             ) || undefined,
         };
-    }, [bundleState.meta]);
+        return shouldUseDecisionPayloadForBundle({
+            payload: normalizedInline,
+            bundleSourceType: normalizeText(bundleState.meta.sourceType ?? null).toLowerCase() || null,
+            bundleSourceTypeFinal: bundleState.meta.sourceTypeFinal === true,
+            phase: typeof bundleState.meta.phase === 'string' ? bundleState.meta.phase : null,
+            isStreaming,
+            authoritativeIdentityType:
+                typeof bundleState.meta.authoritativeIdentity?.type === 'string'
+                    ? bundleState.meta.authoritativeIdentity.type
+                    : null,
+        })
+            ? normalizedInline
+            : null;
+    }, [bundleState.meta, isStreaming]);
+    const authoritativeDecisionTemplatePayload = useMemo<DecisionSupportTemplatePayload | null>(() => {
+        if (authoritativeDecisionPayload && typeof authoritativeDecisionPayload === 'object') {
+            return authoritativeDecisionPayload as DecisionSupportTemplatePayload;
+        }
+        const fetchedPayload =
+            decisionSupportState.status === 'ready' && decisionSupportState.data && typeof decisionSupportState.data === 'object'
+                ? decisionSupportState.data
+                : null;
+        if (isAuthoritativePersonalizedDecisionPayload(fetchedPayload)) {
+            return fetchedPayload as DecisionSupportTemplatePayload;
+        }
+        return null;
+    }, [authoritativeDecisionPayload, decisionSupportState.data, decisionSupportState.status]);
     const decisionTemplatePayload = useMemo<DecisionSupportTemplatePayload | null>(() => {
+        if (authoritativeDecisionTemplatePayload) {
+            return authoritativeDecisionTemplatePayload;
+        }
         const currentFactsDigestHash = normalizeText(bundleState.meta.factsDigestHash ?? null) || null;
         const fetchedPayload =
             decisionSupportState.status === 'ready' && decisionSupportState.data && typeof decisionSupportState.data === 'object'
@@ -4810,6 +5047,7 @@ const AnalysisBundleDashboard: React.FC<{
         if (!selectedPayload) return null;
         return selectedPayload as DecisionSupportTemplatePayload;
     }, [
+        authoritativeDecisionTemplatePayload,
         (bundleState.meta as { decisionSupportDigest?: string | null })?.decisionSupportDigest,
         bundleState.meta.factsDigestHash,
         decisionSupportState.data,
@@ -4822,7 +5060,12 @@ const AnalysisBundleDashboard: React.FC<{
     const decisionUsageBlock = decisionTemplatePayload?.usageBlock;
     const decisionSafetyBlock = decisionTemplatePayload?.safetyBlock;
     const decisionQualityMark = decisionTemplatePayload?.qualityMark;
-    const decisionPersonalizedResultLane = decisionTemplatePayload?.personalizedResultLane ?? null;
+    const decisionSupportAuthorityGate: DecisionSupportAuthorityGate =
+        authoritativeDecisionTemplatePayload ? 'ready' : 'waiting';
+    const decisionPersonalizedResultLane =
+        decisionSupportAuthorityGate === 'ready'
+            ? authoritativeDecisionTemplatePayload?.personalizedResultLane ?? decisionTemplatePayload?.personalizedResultLane ?? null
+            : null;
     const currentDecisionDigest =
         normalizeText(
             decisionTemplatePayload?.digest
@@ -4904,6 +5147,9 @@ const AnalysisBundleDashboard: React.FC<{
         );
     }, [bundleState.meta, canonicalDecisionBarcode, trustedDisplayIdentity.displayIdentityMode, trustedDisplayIdentity.sourceAttributionUsed]);
     const normalizedComparisonSection = useMemo(() => {
+        if (decisionSupportAuthorityGate !== 'ready') {
+            return null;
+        }
         const standing = decisionPersonalizedResultLane?.productStanding ?? null;
         if (!standing || standing.status !== 'ready' || !canonicalIdentityConfidenceHigh) {
             return null;
@@ -4926,7 +5172,8 @@ const AnalysisBundleDashboard: React.FC<{
             secondarySummary,
             showEmptyState: alternatives.length === 0 && standing.standing !== 'unknown',
         };
-    }, [canonicalIdentityConfidenceHigh, decisionPersonalizedResultLane?.productStanding]);
+    }, [canonicalIdentityConfidenceHigh, decisionPersonalizedResultLane?.productStanding, decisionSupportAuthorityGate]);
+    const shouldShowComparisonPlaceholder = decisionSupportAuthorityGate === 'waiting';
     const bundleSourceTypeFinal = bundleState.meta.sourceTypeFinal !== false && Number(bundleState.meta.revision) >= 1;
     const bundleSourceType = typeof bundleState.meta.sourceType === 'string' ? bundleState.meta.sourceType : null;
     const verificationPresentation = useMemo(
@@ -5489,6 +5736,9 @@ const AnalysisBundleDashboard: React.FC<{
         scienceIngredientsAll,
     ]);
     const topSectionPresentation = useMemo(() => {
+        if (decisionSupportAuthorityGate !== 'ready' || !decisionPersonalizedResultLane) {
+            return null;
+        }
         const rawGoalFit = decisionPersonalizedResultLane?.goalFit;
         const rawPersonalInsight = decisionPersonalizedResultLane?.personalInsight;
         const rawAllergyInsight = decisionPersonalizedResultLane?.allergyInsight;
@@ -5803,6 +6053,7 @@ const AnalysisBundleDashboard: React.FC<{
             },
         });
     }, [
+        decisionSupportAuthorityGate,
         decisionPersonalizedResultLane?.goalFit,
         decisionPersonalizedResultLane?.personalInsight,
         decisionPersonalizedResultLane?.allergyInsight,
@@ -9000,16 +9251,20 @@ const AnalysisBundleDashboard: React.FC<{
                 {...scrollProps}
             >
                 {!disableHeroHeader ? (
-                    <AnalysisTopSectionRedesign
-                        hero={topSectionPresentation.hero}
-                        banner={topSectionPresentation.banner}
-                        insights={topSectionPresentation.insights}
-                        secondaryNote={topSectionPresentation.secondaryNote ?? null}
-                        productTitle={productTitle}
-                        productSubtitle={productSubtitle}
-                        heroImageUri={heroImageUri}
-                        verifiedLabelText={verifiedLabelText}
-                    />
+                    decisionSupportAuthorityGate === 'ready' && topSectionPresentation ? (
+                        <AnalysisTopSectionRedesign
+                            hero={topSectionPresentation.hero}
+                            banner={topSectionPresentation.banner}
+                            insights={topSectionPresentation.insights}
+                            secondaryNote={topSectionPresentation.secondaryNote ?? null}
+                            productTitle={productTitle}
+                            productSubtitle={productSubtitle}
+                            heroImageUri={heroImageUri}
+                            verifiedLabelText={verifiedLabelText}
+                        />
+                    ) : (
+                        <DecisionSupportAuthorityPlaceholder />
+                    )
                 ) : null}
 
                 {!disableHeroHeader ? <View style={styles.sectionDivider} /> : null}
@@ -9103,58 +9358,6 @@ const AnalysisBundleDashboard: React.FC<{
                     </View>
                     {/* SCORE_SECTION_FROZEN_RENDER_END */}
 
-                    {normalizedComparisonSection ? <View style={styles.sectionDivider} /> : null}
-
-                    {normalizedComparisonSection ? (
-                        <View style={styles.sectionBlock}>
-                            <View style={styles.sectionHeader}>
-                                <Text style={styles.sectionTitle}>{t.analysisSectionComparisonTitle}</Text>
-                                <Text style={styles.sectionSubtitle}>{t.analysisSectionComparisonSubtitle}</Text>
-                            </View>
-
-                            <View style={styles.comparisonStandingCard}>
-                                <Text style={styles.comparisonStandingSummary}>
-                                    {normalizedComparisonSection.summary || t.analysisComparisonNotEnoughPeers}
-                                </Text>
-                                {normalizedComparisonSection.secondarySummary ? (
-                                    <Text style={styles.comparisonStandingSecondary}>
-                                        {normalizedComparisonSection.secondarySummary}
-                                    </Text>
-                                ) : null}
-                            </View>
-
-                            {normalizedComparisonSection.alternatives.length > 0 ? (
-                                <>
-                                    <Text style={styles.comparisonAlternativesTitle}>
-                                        {t.analysisComparisonAlternativesTitle}
-                                    </Text>
-                                    <ScrollView
-                                        horizontal
-                                        showsHorizontalScrollIndicator={false}
-                                        decelerationRate="fast"
-                                        snapToAlignment="start"
-                                        snapToInterval={comparisonSnapInterval}
-                                        contentContainerStyle={styles.comparisonRailContent}
-                                    >
-                                        {normalizedComparisonSection.alternatives.map((alternative) => (
-                                            <ComparisonAlternativeCard
-                                                key={`${alternative.productId ?? alternative.title}`}
-                                                alternative={alternative}
-                                                cardWidth={comparisonCardWidth}
-                                            />
-                                        ))}
-                                    </ScrollView>
-                                </>
-                            ) : null}
-
-                            {normalizedComparisonSection.showEmptyState ? (
-                                <Text style={styles.comparisonEmptyState}>
-                                    {t.analysisComparisonAlreadyScoresWell}
-                                </Text>
-                            ) : null}
-                        </View>
-                    ) : null}
-
                     <View style={styles.sectionDivider} />
 
                     {!disableTilesGrid ? (
@@ -9184,6 +9387,76 @@ const AnalysisBundleDashboard: React.FC<{
                             <Text style={styles.bisectNoticeText}>Set by `no_tiles` in `EXPO_PUBLIC_SCAN_DASHBOARD_BISECT`.</Text>
                         </View>
                     )}
+
+                    {normalizedComparisonSection || shouldShowComparisonPlaceholder ? <View style={styles.sectionDivider} /> : null}
+
+                    {normalizedComparisonSection ? (
+                        <View style={styles.sectionBlock}>
+                            <View style={styles.sectionHeader}>
+                                <Text style={styles.sectionTitle}>{t.analysisSectionComparisonTitle}</Text>
+                                <Text style={styles.sectionSubtitle}>{t.analysisSectionComparisonSubtitle}</Text>
+                            </View>
+
+                            <View style={styles.comparisonStandingCard}>
+                                <View style={styles.comparisonLeadRow}>
+                                    <View style={styles.comparisonLeadIconWrap}>
+                                        <BarChart3 size={18} color="#4F6B8A" />
+                                    </View>
+                                    <View style={styles.comparisonLeadCopy}>
+                                        <Text style={styles.comparisonStandingSummary}>
+                                            {normalizedComparisonSection.summary || t.analysisComparisonNotEnoughPeers}
+                                        </Text>
+                                        {normalizedComparisonSection.secondarySummary ? (
+                                            <Text style={styles.comparisonStandingSecondary}>
+                                                {normalizedComparisonSection.secondarySummary}
+                                            </Text>
+                                        ) : null}
+                                    </View>
+                                </View>
+
+                                {normalizedComparisonSection.alternatives.length > 0 ? (
+                                    <>
+                                        <View style={styles.comparisonSectionDivider} />
+                                        <Text style={styles.comparisonAlternativesTitle}>
+                                            {t.analysisComparisonAlternativesTitle}
+                                        </Text>
+                                        <ScrollView
+                                            horizontal
+                                            showsHorizontalScrollIndicator={false}
+                                            decelerationRate="fast"
+                                            snapToAlignment="start"
+                                            snapToInterval={comparisonSnapInterval}
+                                            contentContainerStyle={styles.comparisonRailContent}
+                                        >
+                                            {normalizedComparisonSection.alternatives.map((alternative) => (
+                                                <ComparisonAlternativeCard
+                                                    key={`${alternative.productId ?? alternative.title}`}
+                                                    alternative={alternative}
+                                                    cardWidth={comparisonCardWidth}
+                                                />
+                                            ))}
+                                        </ScrollView>
+                                    </>
+                                ) : null}
+
+                                {normalizedComparisonSection.showEmptyState ? (
+                                    <>
+                                        <View style={styles.comparisonSectionDivider} />
+                                        <View style={styles.comparisonEmptyStateCard}>
+                                            <View style={styles.comparisonEmptyStateIconWrap}>
+                                                <CheckCircle2 size={16} color="#1E7B55" />
+                                            </View>
+                                            <Text style={styles.comparisonEmptyState}>
+                                                {t.analysisComparisonAlreadyScoresWell}
+                                            </Text>
+                                        </View>
+                                    </>
+                                ) : null}
+                            </View>
+                        </View>
+                    ) : shouldShowComparisonPlaceholder ? (
+                        <ComparisonAuthorityPlaceholder />
+                    ) : null}
 
                 </>
             </ScrollContainer>
@@ -9345,56 +9618,146 @@ const styles = StyleSheet.create({
         marginTop: 18,
         marginBottom: 24,
     },
-    comparisonStandingCard: {
-        borderRadius: 22,
+    authorityPlaceholderWrap: {
+        width: '100%',
+        alignSelf: 'stretch',
+        gap: 24,
+    },
+    authorityPlaceholderHeroCard: {
+        borderRadius: 28,
         borderWidth: 1,
-        borderColor: 'rgba(17,24,39,0.06)',
-        backgroundColor: 'rgba(255,255,255,0.88)',
-        paddingHorizontal: 16,
-        paddingVertical: 14,
+        borderColor: 'rgba(255,255,255,0.68)',
+        backgroundColor: 'rgba(255,255,255,0.72)',
+        paddingHorizontal: 18,
+        paddingVertical: 18,
         shadowColor: '#0B1E36',
-        shadowOpacity: 0.035,
-        shadowRadius: 18,
-        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.03,
+        shadowRadius: 22,
+        shadowOffset: { width: 0, height: 4 },
+    },
+    authorityPlaceholderProductRow: {
+        marginTop: 18,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 14,
+    },
+    authorityPlaceholderProductCopy: {
+        flex: 1,
+        minWidth: 0,
+    },
+    authorityPlaceholderInsightsBlock: {
+        width: '100%',
+        alignSelf: 'stretch',
+        gap: 12,
+    },
+    authorityPlaceholderInsightsCard: {
+        borderRadius: 28,
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.68)',
+        backgroundColor: 'rgba(255,255,255,0.72)',
+        paddingHorizontal: 14,
+        paddingVertical: 12,
+        shadowColor: '#0B1E36',
+        shadowOpacity: 0.03,
+        shadowRadius: 22,
+        shadowOffset: { width: 0, height: 4 },
+    },
+    authorityPlaceholderInsightRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+        paddingHorizontal: 6,
+        paddingVertical: 12,
+    },
+    authorityPlaceholderInsightCopy: {
+        flex: 1,
+        minWidth: 0,
+    },
+    comparisonStandingCard: {
+        borderRadius: 32,
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.60)',
+        backgroundColor: 'rgba(255,255,255,0.50)',
+        paddingHorizontal: 8,
+        paddingVertical: 8,
+        shadowColor: '#0B1E36',
+        shadowOpacity: 0.03,
+        shadowRadius: 24,
+        shadowOffset: { width: 0, height: 4 },
+        overflow: 'hidden',
+    },
+    comparisonLeadRow: {
+        minHeight: 76,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 16,
+        paddingHorizontal: 14,
+        paddingTop: 14,
+        paddingBottom: 14,
+    },
+    comparisonLeadIconWrap: {
+        width: 42,
+        height: 42,
+        borderRadius: 21,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#EEF4FB',
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.5)',
+        shadowColor: '#000000',
+        shadowOpacity: 0.1,
+        shadowRadius: 3,
+        shadowOffset: { width: 0, height: 1 },
+    },
+    comparisonLeadCopy: {
+        flex: 1,
+        minWidth: 0,
     },
     comparisonStandingSummary: {
-        fontSize: 16,
-        lineHeight: 21,
-        fontWeight: '700',
-        color: '#111827',
+        fontSize: 15,
+        lineHeight: 20.625,
+        fontWeight: '500',
+        color: '#0B1E36',
+        letterSpacing: -0.23,
     },
     comparisonStandingSecondary: {
         marginTop: 4,
         fontSize: 12,
-        lineHeight: 17,
+        lineHeight: 16,
         fontWeight: '500',
-        color: '#6B7280',
+        color: '#64748B',
+        letterSpacing: -0.1,
     },
     comparisonAlternativesTitle: {
-        marginTop: 16,
-        marginBottom: 10,
+        paddingHorizontal: 22,
+        paddingTop: 12,
+        paddingBottom: 10,
         fontSize: 13,
         lineHeight: 18,
-        fontWeight: '700',
-        color: '#111827',
+        fontWeight: '600',
+        color: '#0B1E36',
+        letterSpacing: -0.18,
     },
     comparisonRailContent: {
-        paddingRight: 16,
+        paddingLeft: 10,
+        paddingRight: 18,
+        paddingBottom: 6,
+    },
+    comparisonSectionDivider: {
+        height: 1,
+        marginHorizontal: 10,
+        backgroundColor: 'rgba(11,30,54,0.06)',
     },
     comparisonCard: {
         marginRight: 12,
-        borderRadius: 22,
+        minHeight: 120,
+        borderRadius: 24,
         borderWidth: 1,
-        borderColor: 'rgba(17,24,39,0.06)',
-        backgroundColor: 'rgba(255,255,255,0.92)',
-        paddingHorizontal: 16,
-        paddingVertical: 14,
-        shadowColor: '#0B1E36',
-        shadowOpacity: 0.04,
-        shadowRadius: 18,
-        shadowOffset: { width: 0, height: 6 },
-        minHeight: 102,
-        justifyContent: 'space-between',
+        borderColor: 'rgba(255,255,255,0.68)',
+        backgroundColor: 'rgba(255,255,255,0.66)',
+        paddingHorizontal: 14,
+        paddingTop: 14,
+        paddingBottom: 14,
     },
     comparisonCardTopRow: {
         flexDirection: 'row',
@@ -9410,18 +9773,18 @@ const styles = StyleSheet.create({
         gap: 12,
     },
     comparisonCardImage: {
-        width: 52,
-        height: 52,
+        width: 42,
+        height: 42,
         borderRadius: 14,
         backgroundColor: '#E5E7EB',
     },
     comparisonCardImagePlaceholder: {
-        width: 52,
-        height: 52,
+        width: 42,
+        height: 42,
         borderRadius: 14,
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: '#F3F4F6',
+        backgroundColor: '#F8FAFC',
     },
     comparisonCardIdentityText: {
         flex: 1,
@@ -9430,46 +9793,81 @@ const styles = StyleSheet.create({
     },
     comparisonCardTitle: {
         fontSize: 15,
-        lineHeight: 19,
-        fontWeight: '700',
-        color: '#111827',
+        lineHeight: 20,
+        fontWeight: '600',
+        color: '#0B1E36',
+        letterSpacing: -0.2,
     },
     comparisonCardBrand: {
-        fontSize: 13,
-        lineHeight: 17,
+        fontSize: 12,
+        lineHeight: 16,
         fontWeight: '500',
-        color: '#6B7280',
+        color: '#64748B',
+        letterSpacing: -0.1,
     },
     comparisonCardScoreBlock: {
         alignItems: 'flex-end',
-        minWidth: 62,
-        gap: 2,
+        justifyContent: 'center',
+        minWidth: 66,
+        gap: 1,
+        paddingHorizontal: 10,
+        paddingVertical: 8,
+        borderRadius: 16,
+        backgroundColor: 'rgba(238,244,251,0.88)',
     },
     comparisonCardScore: {
-        fontSize: 16,
-        lineHeight: 20,
+        fontSize: 15,
+        lineHeight: 18,
         fontWeight: '800',
-        color: '#111827',
+        color: '#0B1E36',
     },
     comparisonCardScoreLabel: {
         fontSize: 11,
         lineHeight: 14,
         fontWeight: '600',
-        color: '#6B7280',
+        color: '#64748B',
     },
     comparisonCardReason: {
-        marginTop: 12,
-        fontSize: 12,
-        lineHeight: 16,
-        fontWeight: '600',
-        color: '#334155',
-    },
-    comparisonEmptyState: {
-        marginTop: 14,
+        marginTop: 10,
         fontSize: 12,
         lineHeight: 17,
         fontWeight: '500',
-        color: '#6B7280',
+        color: '#475569',
+        letterSpacing: -0.12,
+    },
+    comparisonEmptyStateCard: {
+        marginHorizontal: 10,
+        marginTop: 12,
+        marginBottom: 6,
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        gap: 10,
+        borderRadius: 20,
+        borderWidth: 1,
+        borderColor: 'rgba(30,123,85,0.12)',
+        backgroundColor: 'rgba(234,245,240,0.68)',
+        paddingHorizontal: 14,
+        paddingVertical: 12,
+    },
+    comparisonEmptyStateIconWrap: {
+        width: 28,
+        height: 28,
+        borderRadius: 14,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: 'rgba(255,255,255,0.62)',
+    },
+    comparisonEmptyState: {
+        flex: 1,
+        fontSize: 12,
+        lineHeight: 17,
+        fontWeight: '500',
+        color: '#1E7B55',
+        letterSpacing: -0.12,
+    },
+    comparisonPlaceholderCard: {
+        width: 248,
+        opacity: 0.88,
     },
     headerSection: {
         marginBottom: 20,

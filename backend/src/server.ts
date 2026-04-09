@@ -72,7 +72,6 @@ import {
   DECISION_SUPPORT_OVERLAY_AUGMENTATION_VERSION,
   DECISION_SUPPORT_PATCH_VERSION,
   DECISION_SUPPORT_RUBRIC_VERSION,
-  toDecisionSupportInline,
   type DecisionSupportAttachedAllergyContext,
   type DecisionSupportAttachedPersonalizationContext,
   type DecisionSupportOverlayClaims,
@@ -2855,7 +2854,6 @@ const buildAnalysisBundleSkeleton = (params: {
           decisionDebug: decisionSupport.decisionDebug,
         }
         : {}),
-      decisionSupportInline: toDecisionSupportInline(decisionSupport),
       serverCommitSha: SERVER_COMMIT_SHA,
     },
     sections: {
@@ -3238,7 +3236,6 @@ const mergeFastAnalysisBundle = (params: {
           decisionDebug: decisionSupport.decisionDebug,
         }
         : {}),
-      decisionSupportInline: toDecisionSupportInline(decisionSupport),
     },
     sections: {
       overview: {
