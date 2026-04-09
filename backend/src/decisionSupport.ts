@@ -645,6 +645,10 @@ export type DecisionSupportPersonalizedDosageContext = {
 export type DecisionSupportPersonalizedStandingAlternative = {
   productId: string | null;
   title: string;
+  brand: string | null;
+  imageUrl: string | null;
+  nutriScore: number | null;
+  nutriScoreBand: DecisionSupportOverallBand | null;
   reason: string | null;
 };
 
@@ -652,6 +656,7 @@ export type DecisionSupportPersonalizedProductStandingBlock = {
   status: DecisionSupportPersonalizedResultLaneSectionStatus;
   reasonCode: "PRODUCT_BENCHMARK_NOT_ATTACHED" | null;
   summary: string;
+  secondarySummary: string | null;
   standing: DecisionSupportPersonalizedProductStanding;
   standingLabel: string | null;
   benchmarkLabel: string | null;
@@ -2771,6 +2776,7 @@ const buildPersonalizedResultLane = (params: {
       status: "pending",
       reasonCode: "PRODUCT_BENCHMARK_NOT_ATTACHED",
       summary: "Product standing and better alternatives are reserved here, but benchmark logic is not attached to decision support yet.",
+      secondarySummary: null,
       standing: "unknown",
       standingLabel: null,
       benchmarkLabel: "similar products",
