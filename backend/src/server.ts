@@ -72,6 +72,7 @@ import {
   DECISION_SUPPORT_OVERLAY_AUGMENTATION_VERSION,
   DECISION_SUPPORT_PATCH_VERSION,
   DECISION_SUPPORT_RUBRIC_VERSION,
+  toDecisionSupportInline,
   type DecisionSupportAttachedAllergyContext,
   type DecisionSupportAttachedPersonalizationContext,
   type DecisionSupportOverlayClaims,
@@ -81,7 +82,6 @@ import {
   mergeDecisionSupportProfileRows,
   type DecisionSupportProfileRow,
 } from "./decisionSupportProfileMerge.js";
-import { buildDecisionSupportComparisonStanding } from "./decisionSupportComparison.js";
 import { applyPatchShadowToFactsDigest, getPatchShadowLookup, getPatchShadowStatus } from "./patchShadowOverlay.js";
 import { sanitizeFactsDTO } from "./insights/dto.js";
 import {
@@ -2854,6 +2854,7 @@ const buildAnalysisBundleSkeleton = (params: {
           decisionDebug: decisionSupport.decisionDebug,
         }
         : {}),
+      decisionSupportInline: toDecisionSupportInline(decisionSupport),
       serverCommitSha: SERVER_COMMIT_SHA,
     },
     sections: {
@@ -3236,6 +3237,7 @@ const mergeFastAnalysisBundle = (params: {
           decisionDebug: decisionSupport.decisionDebug,
         }
         : {}),
+      decisionSupportInline: toDecisionSupportInline(decisionSupport),
     },
     sections: {
       overview: {
@@ -10789,22 +10791,6 @@ app.get("/api/decision-support/v1", verifySupabaseToken, async (req: Request, re
       return res.status(409).json(mismatchPayload);
     }
 
-    const comparisonStanding = await buildDecisionSupportComparisonStanding({
-      barcodeGtin14,
-      overlayClaims,
-      digest: patched.digest,
-      decisionSupport,
-    });
-    const decisionSupportWithComparison = comparisonStanding
-      ? {
-        ...decisionSupport,
-        personalizedResultLane: {
-          ...decisionSupport.personalizedResultLane,
-          productStanding: comparisonStanding,
-        },
-      }
-      : decisionSupport;
-
     const allowPatchDebug = authDisabled || authedReq.regressionAuth === true;
     const allowDecisionDebug = allowPatchDebug && debugDecisionRequested;
     return res.json({
@@ -10812,37 +10798,37 @@ app.get("/api/decision-support/v1", verifySupabaseToken, async (req: Request, re
       barcode: barcodeGtin14,
       sourceType: patched.digest.sourceType,
       factsDigestHash: quickDigest.factsDigestHash,
-      digest: decisionSupportWithComparison.digest,
-      decisionSupportDigest: decisionSupportWithComparison.digest,
-      decisionInputsHash: decisionSupportWithComparison.decisionInputsHash,
-      decisionContractVersion: decisionSupportWithComparison.decisionContractVersion,
-      overlayClaimsHash: decisionSupportWithComparison.overlayClaimsHash,
-      overlayAugmentationVersion: decisionSupportWithComparison.overlayAugmentationVersion,
-      overlayAugmentationSource: decisionSupportWithComparison.overlayAugmentationSource,
-      patchActivationCanonical: decisionSupportWithComparison.patchActivationCanonical,
-      rubricVersion: decisionSupportWithComparison.rubricVersion,
-      categoryId: decisionSupportWithComparison.categoryId,
-      categoryProfileVersion: decisionSupportWithComparison.categoryProfileVersion,
-      viewMode: decisionSupportWithComparison.viewMode,
-      verdict: decisionSupportWithComparison.verdict,
-      verdictReason: decisionSupportWithComparison.verdictReason,
-      subscores: decisionSupportWithComparison.subscores,
-      checklist: decisionSupportWithComparison.checklist,
-      blockers: decisionSupportWithComparison.blockers,
-      topBlockers: decisionSupportWithComparison.topBlockers,
-      extraTrustSignals: decisionSupportWithComparison.extraTrustSignals,
-      sourceTiers: decisionSupportWithComparison.sourceTiers,
-      nutriScoreCardV2: decisionSupportWithComparison.nutriScoreCardV2,
-      overviewBlock: decisionSupportWithComparison.overviewBlock,
-      scienceBlock: decisionSupportWithComparison.scienceBlock,
-      usageBlock: decisionSupportWithComparison.usageBlock,
-      safetyBlock: decisionSupportWithComparison.safetyBlock,
-      personalizedResultLane: decisionSupportWithComparison.personalizedResultLane,
-      qualityMark: decisionSupportWithComparison.qualityMark,
+      digest: decisionSupport.digest,
+      decisionSupportDigest: decisionSupport.digest,
+      decisionInputsHash: decisionSupport.decisionInputsHash,
+      decisionContractVersion: decisionSupport.decisionContractVersion,
+      overlayClaimsHash: decisionSupport.overlayClaimsHash,
+      overlayAugmentationVersion: decisionSupport.overlayAugmentationVersion,
+      overlayAugmentationSource: decisionSupport.overlayAugmentationSource,
+      patchActivationCanonical: decisionSupport.patchActivationCanonical,
+      rubricVersion: decisionSupport.rubricVersion,
+      categoryId: decisionSupport.categoryId,
+      categoryProfileVersion: decisionSupport.categoryProfileVersion,
+      viewMode: decisionSupport.viewMode,
+      verdict: decisionSupport.verdict,
+      verdictReason: decisionSupport.verdictReason,
+      subscores: decisionSupport.subscores,
+      checklist: decisionSupport.checklist,
+      blockers: decisionSupport.blockers,
+      topBlockers: decisionSupport.topBlockers,
+      extraTrustSignals: decisionSupport.extraTrustSignals,
+      sourceTiers: decisionSupport.sourceTiers,
+      nutriScoreCardV2: decisionSupport.nutriScoreCardV2,
+      overviewBlock: decisionSupport.overviewBlock,
+      scienceBlock: decisionSupport.scienceBlock,
+      usageBlock: decisionSupport.usageBlock,
+      safetyBlock: decisionSupport.safetyBlock,
+      personalizedResultLane: decisionSupport.personalizedResultLane,
+      qualityMark: decisionSupport.qualityMark,
       ...(typeof fetchCount === "number" ? { decisionSupportFetchCount: fetchCount } : {}),
-      ...(allowDecisionDebug && decisionSupportWithComparison.decisionDebug
+      ...(allowDecisionDebug && decisionSupport.decisionDebug
         ? {
-          decisionDebug: decisionSupportWithComparison.decisionDebug,
+          decisionDebug: decisionSupport.decisionDebug,
         }
         : {}),
       ...(debugPatchRequested && allowPatchDebug

@@ -85,10 +85,10 @@ export const buildAllergyInsightPresentation = (
     };
   }
 
-  if (insight.status === 'pending' || insight.status === 'unavailable' || insight.reasonCode === 'NORMALIZED_PRODUCT_ALLERGY_FLAGS_NOT_ATTACHED') {
+  if (insight.status === 'pending' || insight.reasonCode === 'NORMALIZED_PRODUCT_ALLERGY_FLAGS_NOT_ATTACHED') {
     return {
-      title: 'Allergy check unavailable',
-      body: normalizeText(insight.summary) || 'We could not attach allergy coverage for this product.',
+      title: 'Allergy check pending',
+      body: normalizeText(insight.summary) || 'We are still attaching allergen coverage for this product.',
       tone: 'neutral',
     };
   }

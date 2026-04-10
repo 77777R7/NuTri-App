@@ -94,7 +94,7 @@ test('compileDecisionSupport surfaces attached allergy insight when profile and 
   assert.equal(compiled.personalizedResultLane.allergyInsight.details.length, 2);
 });
 
-test('compileDecisionSupport keeps allergy insight unavailable when only user settings are attached', () => {
+test('compileDecisionSupport keeps allergy insight pending when only user settings are attached', () => {
   const compiled = compileDecisionSupport({
     digest: buildDigest(),
     factsDigestHash: 'fixture-allergy-hash-pending',
@@ -105,7 +105,7 @@ test('compileDecisionSupport keeps allergy insight unavailable when only user se
     },
   });
 
-  assert.equal(compiled.personalizedResultLane.allergyInsight.status, 'unavailable');
+  assert.equal(compiled.personalizedResultLane.allergyInsight.status, 'pending');
   assert.equal(
     compiled.personalizedResultLane.allergyInsight.reasonCode,
     'NORMALIZED_PRODUCT_ALLERGY_FLAGS_NOT_ATTACHED',

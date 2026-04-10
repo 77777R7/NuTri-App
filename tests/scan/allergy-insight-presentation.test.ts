@@ -47,16 +47,16 @@ test('buildAllergyInsightPresentation prompts for saved preferences when user ha
   assert.equal(result.tone, 'neutral');
 });
 
-test('buildAllergyInsightPresentation stays neutral when product flags are unavailable', () => {
+test('buildAllergyInsightPresentation stays neutral when product flags are still pending', () => {
   const result = buildAllergyInsightPresentation({
-    status: 'unavailable',
+    status: 'pending',
     reasonCode: 'NORMALIZED_PRODUCT_ALLERGY_FLAGS_NOT_ATTACHED',
-    summary: 'Allergy check is unavailable for this scan because normalized product allergen flags are not attached.',
+    summary: 'Allergy-aware reasoning is reserved here, but normalized product allergen flags are not attached yet.',
     matchedAllergyFlags: [],
     matchedRestrictions: [],
     details: [],
   });
 
-  assert.equal(result.title, 'Allergy check unavailable');
+  assert.equal(result.title, 'Allergy check pending');
   assert.equal(result.tone, 'neutral');
 });

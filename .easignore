@@ -29,8 +29,6 @@ tmp/
 
 artifacts/
 output/
-build/
-build-*.ipa
 build-preview*.ipa
 build-production*.ipa
 .codex/
