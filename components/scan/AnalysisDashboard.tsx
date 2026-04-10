@@ -131,7 +131,15 @@ type DecisionSupportState = {
     autoRetryUsed: boolean;
 };
 
-type DecisionSupportAuthorityGate = 'waiting' | 'ready';
+type DecisionAuthorityStatus = 'pending' | 'ready' | 'terminal_no_authority';
+type DecisionAuthorityOrigin = 'fetch' | 'seed';
+type DecisionAuthorityState = {
+    status: DecisionAuthorityStatus;
+    scopeKey: string;
+    origin: DecisionAuthorityOrigin;
+    payload: Record<string, unknown> | null;
+};
+type DecisionSupportAuthorityGate = 'waiting' | 'ready' | 'terminal_no_authority';
 
 type DecisionChecklistStatus = 'verified' | 'missing' | 'unknown';
 type DecisionChecklistRow = {
@@ -380,6 +388,9 @@ type DecisionSupportPersonalizedResultLane = {
 type DecisionSupportTemplatePayload = {
     digest?: string;
     decisionInputsHash?: string;
+    authoritativePersonalizationReady?: boolean;
+    personalizationAttachmentStatus?: 'attached' | 'partial' | 'none';
+    personalizationScopeHash?: string;
     decisionContractVersion?: string;
     overlayClaimsHash?: string | null;
     overlayAugmentationVersion?: string | null;
@@ -758,11 +769,35 @@ const getDecisionPayloadFactsDigestHash = (payload: Record<string, unknown> | nu
 const getDecisionPayloadDigest = (payload: Record<string, unknown> | null | undefined): string =>
     normalizeText(payload && typeof payload.digest === 'string' ? payload.digest : null);
 
+const getDecisionPayloadDecisionInputsHash = (payload: Record<string, unknown> | null | undefined): string =>
+    normalizeText(payload && typeof payload.decisionInputsHash === 'string' ? payload.decisionInputsHash : null);
+
+const getDecisionPayloadPersonalizationScopeHash = (payload: Record<string, unknown> | null | undefined): string =>
+    normalizeText(payload && typeof payload.personalizationScopeHash === 'string' ? payload.personalizationScopeHash : null);
+
 const isDecisionPayloadExplicitlyStale = (payload: Record<string, unknown> | null | undefined): boolean =>
     Boolean(payload && typeof payload === 'object' && payload.staleDigest === true);
 
 const hasPersonalizedResultLane = (payload: Record<string, unknown> | null | undefined): boolean =>
     Boolean(payload && typeof payload.personalizedResultLane === 'object' && payload.personalizedResultLane !== null);
+
+const stripDecisionPayloadPersonalization = (
+    payload: Record<string, unknown> | null | undefined,
+): Record<string, unknown> | null => {
+    if (!payload || typeof payload !== 'object') return null;
+    const {
+        personalizedResultLane,
+        authoritativePersonalizationReady,
+        personalizationAttachmentStatus,
+        personalizationScopeHash,
+        ...basePayload
+    } = payload as Record<string, unknown>;
+    void personalizedResultLane;
+    void authoritativePersonalizationReady;
+    void personalizationAttachmentStatus;
+    void personalizationScopeHash;
+    return basePayload;
+};
 
 const getV2ModulesFromPayload = (payload: Record<string, unknown> | null | undefined): Record<string, unknown>[] => {
     const card = payload?.nutriScoreCardV2;
@@ -913,7 +948,12 @@ const isAuthoritativeDecisionPayloadSource = (
 
 const isAuthoritativePersonalizedDecisionPayload = (
     payload: Record<string, unknown> | null | undefined,
-): boolean => isAuthoritativeDecisionPayloadSource(payload) && hasPersonalizedResultLane(payload);
+): boolean => (
+    Boolean(payload && typeof payload === 'object' && payload.authoritativePersonalizationReady === true)
+    && hasPersonalizedResultLane(payload)
+    && !isDecisionPayloadExplicitlyStale(payload)
+    && getDecisionPayloadPersonalizationScopeHash(payload).length > 0
+);
 
 const shouldUseDecisionPayloadForBundle = (params: {
     payload: Record<string, unknown> | null | undefined;
@@ -964,39 +1004,35 @@ const pickCompatibleDecisionPayload = (params: {
     return pickStrongestDecisionPayloadForFacts(params.factsDigestHash, ...params.payloads);
 };
 
-const mergeDecisionPayloadPersonalization = (
-    basePayload: Record<string, unknown> | null | undefined,
-    personalizationPayload: Record<string, unknown> | null | undefined,
-): Record<string, unknown> | null => {
-    if (!basePayload && !personalizationPayload) return null;
-    if (!basePayload) return personalizationPayload ?? null;
-    if (!personalizationPayload || typeof personalizationPayload !== 'object') return basePayload;
-
-    const personalizedResultLane =
-        typeof personalizationPayload.personalizedResultLane === 'object'
-            ? personalizationPayload.personalizedResultLane
-            : null;
-
-    if (!personalizedResultLane) return basePayload;
-
-    return {
-        ...basePayload,
-        personalizedResultLane,
-    };
-};
-
 const upsertDecisionPayloadByBarcode = (
     cache: Map<string, Record<string, unknown>>,
     barcode: string,
     payload: Record<string, unknown>,
 ): Record<string, unknown> => {
+    const strippedPayload = stripDecisionPayloadPersonalization(payload) ?? payload;
     const existing = cache.get(barcode) ?? null;
-    const selected = pickStrongerDecisionPayload(existing, payload);
+    const selected = pickStrongerDecisionPayload(existing, strippedPayload);
     if (selected) {
         cache.set(barcode, selected);
         return selected;
     }
-    return payload;
+    return strippedPayload;
+};
+
+const buildPendingDecisionAuthorityState = (scopeKey: string): DecisionAuthorityState => ({
+    status: 'pending',
+    scopeKey,
+    origin: 'seed',
+    payload: null,
+});
+
+const getCachedBaseDecisionPayload = (
+    cache: Map<string, Record<string, unknown>>,
+    key: string | null | undefined,
+): Record<string, unknown> | null => {
+    if (!key) return null;
+    const cached = cache.get(key) ?? null;
+    return stripDecisionPayloadPersonalization(cached) ?? cached;
 };
 
 if (__DEV__) {
@@ -1960,6 +1996,19 @@ const DecisionSupportAuthorityPlaceholder: React.FC = () => {
                         </View>
                     ))}
                 </View>
+            </View>
+        </View>
+    );
+};
+
+const DecisionSupportAuthorityUnavailable: React.FC = () => {
+    return (
+        <View style={styles.authorityUnavailableWrap}>
+            <View style={styles.authorityUnavailableCard}>
+                <Text style={styles.authorityUnavailableTitle}>Personalized insights unavailable</Text>
+                <Text style={styles.authorityUnavailableBody}>
+                    Verified personalized guidance could not be prepared for this scan. Product details below are still available.
+                </Text>
             </View>
         </View>
     );
@@ -3696,7 +3745,9 @@ const AnalysisBundleDashboard: React.FC<{
         error: null,
         autoRetryUsed: false,
     });
-    const [authoritativeDecisionPayload, setAuthoritativeDecisionPayload] = useState<Record<string, unknown> | null>(null);
+    const [decisionAuthorityState, setDecisionAuthorityState] = useState<DecisionAuthorityState>(() =>
+        buildPendingDecisionAuthorityState('scope_pending'),
+    );
     const [productOverviewAiByDigest, setProductOverviewAiByDigest] = useState<Record<string, ProductOverviewAiState>>({});
     const [ingredientOverviewByRequestKey, setIngredientOverviewByRequestKey] = useState<Record<string, IngredientOverviewSidecarState>>({});
     const [scientificBackgroundByRequestKey, setScientificBackgroundByRequestKey] = useState<Record<string, ScientificBackgroundSidecarState>>({});
@@ -3704,7 +3755,12 @@ const AnalysisBundleDashboard: React.FC<{
     const ingredientOverviewStateRef = useRef<Record<string, IngredientOverviewSidecarState>>({});
     const scientificBackgroundStateRef = useRef<Record<string, ScientificBackgroundSidecarState>>({});
     const decisionSupportCacheRef = useRef<Map<string, Record<string, unknown>>>(new Map());
+    const decisionSupportFullCacheRef = useRef<Map<string, Record<string, unknown>>>(new Map());
     const decisionSupportByBarcodeRef = useRef<Map<string, Record<string, unknown>>>(decisionSupportWarmCache);
+    const decisionAuthorityStateRef = useRef<DecisionAuthorityState>(buildPendingDecisionAuthorityState('scope_pending'));
+    const decisionSupportAuthorityScopeKeyRef = useRef<string>('scope_pending');
+    const ingredientOverviewRevalidateCooldownRef = useRef<Record<string, number>>({});
+    const scientificBackgroundRevalidateCooldownRef = useRef<Record<string, number>>({});
     const [simpleSourcesOpen, setSimpleSourcesOpen] = useState(false);
     const detailLoadingRef = useRef(false);
     const detailInFlightKeyRef = useRef<string | null>(null);
@@ -3723,16 +3779,13 @@ const AnalysisBundleDashboard: React.FC<{
         if (digits.length < 8) return null;
         return digits.length > 14 ? digits.slice(-14) : digits.padStart(14, '0');
     }, [analysisBarcodeRaw]);
+    const authorityScopeBarcode = useMemo(
+        () => resolveCanonicalBarcodeFromBundleMeta(bundle.meta, analysisBarcodeDigits),
+        [analysisBarcodeDigits, bundle.meta],
+    );
     const foundationMetricLoggedRef = useRef<Set<string>>(new Set());
     const overlayConsumerMetricLoggedRef = useRef<Set<string>>(new Set());
     const currentRunKeyRef = useRef<string | null>(null);
-    const decisionSupportAuthorityScopeKey = useMemo(
-        () => [
-            normalizeText(scanSessionId) || 'session_unknown',
-            normalizeText((bundle.meta as { bundleId?: string | null }).bundleId ?? null) || 'bundle_unknown',
-        ].join('|'),
-        [bundle.meta, scanSessionId],
-    );
     const localDecisionSupportProfile = useMemo(
         () => toLocalDecisionSupportProfilePayload(onboardingDraft),
         [onboardingDraft],
@@ -3758,24 +3811,30 @@ const AnalysisBundleDashboard: React.FC<{
         () => !authLoading && Boolean(localDecisionSupportHeader),
         [authLoading, localDecisionSupportHeader],
     );
-    const localDecisionSupportCacheScope = useMemo(() => {
-        if (authLoading || onboardingLoading) return 'local_profile_loading';
-        if (shouldUseLocalDecisionSupport && localDecisionSupportHeader) {
-            return `local_profile:${localDecisionSupportHeader}`;
-        }
-        if (authToken) return 'auth_session';
-        return 'local_profile:none';
-    }, [
-        authLoading,
-        authToken,
-        localDecisionSupportHeader,
-        onboardingLoading,
-        shouldUseLocalDecisionSupport,
-    ]);
     const localDecisionSupportProfileKey = useMemo(() => {
         if (!localDecisionSupportHeader) return null;
         return hashDecisionSupportProfileKey(localDecisionSupportHeader);
     }, [localDecisionSupportHeader]);
+    const decisionSupportBaseCacheScopeKey = useMemo(
+        () => normalizeText(localDecisionSupportProfileKey ?? null) || (authToken ? 'auth_session' : 'anon'),
+        [authToken, localDecisionSupportProfileKey],
+    );
+    const decisionSupportAuthorityScopeSeedKey = useMemo(
+        () => [
+            authorityScopeBarcode ?? 'barcode_unknown',
+            `${bundle.meta.authoritativeIdentity.type}:${bundle.meta.authoritativeIdentity.value}`,
+            normalizeText(bundle.meta.factsDigestHash ?? null) || 'facts_unknown',
+            SCAN_UX_VIEW_MODE,
+            decisionSupportBaseCacheScopeKey || 'scope_unknown',
+        ].join('|'),
+        [
+            authorityScopeBarcode,
+            bundle.meta.authoritativeIdentity.type,
+            bundle.meta.authoritativeIdentity.value,
+            bundle.meta.factsDigestHash,
+            decisionSupportBaseCacheScopeKey,
+        ],
+    );
     const localDecisionSupportDebugSignatureRef = useRef<string>('');
     useEffect(() => {
         if (onboardingLoading) return;
@@ -3812,8 +3871,12 @@ const AnalysisBundleDashboard: React.FC<{
         shouldUseLocalDecisionSupport,
     ]);
     useEffect(() => {
-        setAuthoritativeDecisionPayload(null);
-    }, [decisionSupportAuthorityScopeKey]);
+        decisionAuthorityStateRef.current = decisionAuthorityState;
+    }, [decisionAuthorityState]);
+    useEffect(() => {
+        decisionSupportAuthorityScopeKeyRef.current = decisionSupportAuthorityScopeSeedKey;
+        setDecisionAuthorityState(buildPendingDecisionAuthorityState(decisionSupportAuthorityScopeSeedKey));
+    }, [decisionSupportAuthorityScopeSeedKey]);
     const emitScanUxTimingOnce = useCallback((
         key: 'firstRenderableLogged' | 'scoreVisibleLogged' | 'coreCardsVisibleLogged',
         event:
@@ -3983,7 +4046,7 @@ const AnalysisBundleDashboard: React.FC<{
                 `${bundle.meta.authoritativeIdentity.type}:${bundle.meta.authoritativeIdentity.value}`,
                 incomingDecisionDigest ?? incomingFactsDigestHash ?? 'no_digest',
                 SCAN_UX_VIEW_MODE,
-                localDecisionSupportCacheScope,
+                decisionSupportBaseCacheScopeKey,
             ].join('|')
             : null;
         const seededDecision = incomingBarcode
@@ -3995,12 +4058,10 @@ const AnalysisBundleDashboard: React.FC<{
                     bundleSourceTypeFinal: bundle.meta.sourceTypeFinal === true,
                     payloads: shouldUseLocalDecisionSupport
                         ? [
-                            incomingDecisionCacheKey
-                                ? decisionSupportCacheRef.current.get(incomingDecisionCacheKey) ?? null
-                                : null,
+                            getCachedBaseDecisionPayload(decisionSupportCacheRef.current, incomingDecisionCacheKey),
                         ]
                         : [
-                            decisionSupportByBarcodeRef.current.get(incomingBarcode) ?? null,
+                            getCachedBaseDecisionPayload(decisionSupportByBarcodeRef.current, incomingBarcode),
                         ],
                 })
             )
@@ -4016,9 +4077,6 @@ const AnalysisBundleDashboard: React.FC<{
                     ? bundle.meta.authoritativeIdentity.type
                     : null,
         });
-        if (seededDecision && allowSeededDecision && isAuthoritativePersonalizedDecisionPayload(seededDecision)) {
-            setAuthoritativeDecisionPayload((prev) => pickStrongerDecisionPayload(prev, seededDecision) ?? seededDecision);
-        }
         setBundleState(bundle);
         setDecisionSupportState(
             seededDecision && allowSeededDecision
@@ -4038,7 +4096,7 @@ const AnalysisBundleDashboard: React.FC<{
         setDetailError(null);
         setDetailLoading(false);
         setSimpleSourcesOpen(false);
-    }, [analysis, bundle, incomingBundleRunKey, localDecisionSupportCacheScope, shouldUseLocalDecisionSupport]);
+    }, [analysis, bundle, incomingBundleRunKey, decisionSupportBaseCacheScopeKey, shouldUseLocalDecisionSupport]);
 
     useEffect(() => {
         // Never clobber on-demand detail fields (e.g. ingredients.detail) when a newer analysis_bundle
@@ -4202,12 +4260,13 @@ const AnalysisBundleDashboard: React.FC<{
                     ? bundleState.meta.authoritativeIdentity.type
                     : null,
         });
-        const decisionCacheKey = [
+        const authorityScopeKeyForRequest = decisionSupportAuthorityScopeSeedKey;
+        const decisionBaseCacheKey = [
             resolvedBarcode,
             `${bundleState.meta.authoritativeIdentity.type}:${bundleState.meta.authoritativeIdentity.value}`,
             digestHint ?? currentFactsDigestHash ?? 'no_digest',
             SCAN_UX_VIEW_MODE,
-            localDecisionSupportCacheScope,
+            decisionSupportBaseCacheScopeKey,
         ].join('|');
         const normalizedSessionId = normalizeText(scanSessionId) || 'session_unknown';
         const normalizedSessionIdRaw = normalizeText(scanSessionId) || null;
@@ -4240,7 +4299,7 @@ const AnalysisBundleDashboard: React.FC<{
         const shouldBypassStaleDecisionHints = shouldUseLocalDecisionSupport;
         const initialDecisionDigestHint = shouldBypassStaleDecisionHints ? null : digestHint;
         const initialDecisionInputsHashHint = shouldBypassStaleDecisionHints ? null : decisionInputsHashHint;
-        const fetchKey = `${normalizedSessionId}|${decisionCacheKey}`;
+        const fetchKey = `${normalizedSessionId}|${authorityScopeKeyForRequest}|${decisionBaseCacheKey}`;
         if (decisionSupportFetchKeyRef.current === fetchKey) return;
         decisionSupportFetchKeyRef.current = fetchKey;
         const requestSeq = ++decisionSupportRequestSeqRef.current;
@@ -4255,12 +4314,12 @@ const AnalysisBundleDashboard: React.FC<{
 
         let cancelled = false;
         let autoRetryUsed = false;
-        const cachedPayload = decisionSupportCacheRef.current.get(decisionCacheKey) ?? null;
+        const cachedPayload = getCachedBaseDecisionPayload(decisionSupportCacheRef.current, decisionBaseCacheKey);
         const inlinePayloadRaw =
             (bundleState.meta as { decisionSupportInline?: Record<string, unknown> | null }).decisionSupportInline ?? null;
         const inlineFallback =
             inlinePayloadRaw && typeof inlinePayloadRaw === 'object'
-                ? {
+                ? (stripDecisionPayloadPersonalization({
                     ...inlinePayloadRaw,
                     factsDigestHash: currentFactsDigestHash ?? getDecisionPayloadFactsDigestHash(inlinePayloadRaw),
                     digest: normalizeText(
@@ -4273,7 +4332,20 @@ const AnalysisBundleDashboard: React.FC<{
                             ? inlinePayloadRaw.sourceType
                             : bundleState.meta.sourceType,
                     ) || undefined,
-                  }
+                  }) ?? {
+                    ...inlinePayloadRaw,
+                    factsDigestHash: currentFactsDigestHash ?? getDecisionPayloadFactsDigestHash(inlinePayloadRaw),
+                    digest: normalizeText(
+                        typeof inlinePayloadRaw.digest === 'string'
+                            ? inlinePayloadRaw.digest
+                            : digestHint,
+                    ) || undefined,
+                    sourceType: normalizeText(
+                        typeof inlinePayloadRaw.sourceType === 'string'
+                            ? inlinePayloadRaw.sourceType
+                            : bundleState.meta.sourceType,
+                    ) || undefined,
+                  })
                 : null;
         const seededPayload = shouldUseLocalDecisionSupport
             ? pickCompatibleDecisionPayload({
@@ -4286,13 +4358,13 @@ const AnalysisBundleDashboard: React.FC<{
             : pickCompatibleDecisionPayload({
                 factsDigestHash: currentFactsDigestHash,
                 decisionDigest: digestHint,
-                bundleSourceType: sourceType,
-                bundleSourceTypeFinal: sourceTypeFinal,
-                payloads: [
-                    decisionSupportByBarcodeRef.current.get(resolvedBarcode) ?? null,
-                    inlineFallback ?? null,
-                    cachedPayload,
-                ],
+                    bundleSourceType: sourceType,
+                    bundleSourceTypeFinal: sourceTypeFinal,
+                    payloads: [
+                        getCachedBaseDecisionPayload(decisionSupportByBarcodeRef.current, resolvedBarcode),
+                        inlineFallback ?? null,
+                        cachedPayload,
+                    ],
             });
         const allowSeededPayload = shouldUseDecisionPayloadForBundle({
             payload: seededPayload,
@@ -4813,11 +4885,23 @@ const AnalysisBundleDashboard: React.FC<{
                             allergySummary,
                         })}`);
                     }
-                    decisionSupportCacheRef.current.set(decisionCacheKey, objectPayload);
+                    const basePayload = stripDecisionPayloadPersonalization(objectPayload) ?? objectPayload;
+                    const fetchedPersonalizationScopeHash =
+                        getDecisionPayloadPersonalizationScopeHash(objectPayload) || 'scope_missing';
+                    const decisionFullCacheKey = [
+                        resolvedBarcode,
+                        `${bundleState.meta.authoritativeIdentity.type}:${bundleState.meta.authoritativeIdentity.value}`,
+                        getDecisionPayloadFactsDigestHash(objectPayload) || currentFactsDigestHash || 'no_digest',
+                        SCAN_UX_VIEW_MODE,
+                        fetchedPersonalizationScopeHash,
+                        getDecisionPayloadDecisionInputsHash(objectPayload) || 'no_inputs',
+                    ].join('|');
+                    decisionSupportCacheRef.current.set(decisionBaseCacheKey, basePayload);
+                    decisionSupportFullCacheRef.current.set(decisionFullCacheKey, objectPayload);
                     upsertDecisionPayloadByBarcode(
                         decisionSupportByBarcodeRef.current,
                         resolvedBarcode,
-                        objectPayload,
+                        basePayload,
                     );
                     const authoritativeFetchedPayload = isAuthoritativePersonalizedDecisionPayload(objectPayload)
                         ? objectPayload
@@ -4828,40 +4912,58 @@ const AnalysisBundleDashboard: React.FC<{
                             sourceType: getPayloadSourceType(authoritativeFetchedPayload),
                             factsDigestHash: getDecisionPayloadFactsDigestHash(authoritativeFetchedPayload) || null,
                             decisionDigest: getDecisionPayloadDigest(authoritativeFetchedPayload) || null,
+                            personalizationScopeHash: fetchedPersonalizationScopeHash,
                         })}`);
-                        setAuthoritativeDecisionPayload((prev) =>
-                            pickStrongerDecisionPayload(prev, authoritativeFetchedPayload) ?? authoritativeFetchedPayload,
-                        );
+                        if (
+                            requestSeq === decisionSupportRequestSeqRef.current
+                            && decisionSupportAuthorityScopeKeyRef.current === authorityScopeKeyForRequest
+                        ) {
+                            setDecisionAuthorityState({
+                                status: 'ready',
+                                scopeKey: `${authorityScopeKeyForRequest}|${fetchedPersonalizationScopeHash}`,
+                                origin: 'fetch',
+                                payload: authoritativeFetchedPayload,
+                            });
+                        }
+                    } else if (
+                        requestSeq === decisionSupportRequestSeqRef.current
+                        && decisionSupportAuthorityScopeKeyRef.current === authorityScopeKeyForRequest
+                        && decisionAuthorityStateRef.current.status !== 'ready'
+                    ) {
+                        setDecisionAuthorityState({
+                            status: 'terminal_no_authority',
+                            scopeKey: authorityScopeKeyForRequest,
+                            origin: 'fetch',
+                            payload: null,
+                        });
                     }
                     const resolvedDecisionDigest =
                         getDecisionPayloadDigest(objectPayload)
                         || normalizeText(digestParam)
                         || digestHint;
-                    const selectedPayload = authoritativeFetchedPayload ?? (
-                        shouldUseLocalDecisionSupport
-                            ? pickCompatibleDecisionPayload({
-                                factsDigestHash: currentFactsDigestHash,
-                                decisionDigest: resolvedDecisionDigest,
-                                bundleSourceType: sourceType,
-                                bundleSourceTypeFinal: sourceTypeFinal,
-                                payloads: [
-                                    objectPayload,
-                                    decisionSupportCacheRef.current.get(decisionCacheKey) ?? null,
-                                ],
-                            })
-                            : pickCompatibleDecisionPayload({
-                                factsDigestHash: currentFactsDigestHash,
-                                decisionDigest: resolvedDecisionDigest,
-                                bundleSourceType: sourceType,
-                                bundleSourceTypeFinal: sourceTypeFinal,
-                                payloads: [
-                                    objectPayload,
-                                    inlineFallback ?? null,
-                                    decisionSupportByBarcodeRef.current.get(resolvedBarcode) ?? null,
-                                    decisionSupportCacheRef.current.get(decisionCacheKey) ?? null,
-                                ],
-                            })
-                    );
+                    const selectedPayload = shouldUseLocalDecisionSupport
+                        ? pickCompatibleDecisionPayload({
+                            factsDigestHash: currentFactsDigestHash,
+                            decisionDigest: resolvedDecisionDigest,
+                            bundleSourceType: sourceType,
+                            bundleSourceTypeFinal: sourceTypeFinal,
+                            payloads: [
+                                basePayload,
+                                getCachedBaseDecisionPayload(decisionSupportCacheRef.current, decisionBaseCacheKey),
+                            ],
+                        })
+                        : pickCompatibleDecisionPayload({
+                            factsDigestHash: currentFactsDigestHash,
+                            decisionDigest: resolvedDecisionDigest,
+                            bundleSourceType: sourceType,
+                            bundleSourceTypeFinal: sourceTypeFinal,
+                            payloads: [
+                                basePayload,
+                                inlineFallback ?? null,
+                                getCachedBaseDecisionPayload(decisionSupportByBarcodeRef.current, resolvedBarcode),
+                                getCachedBaseDecisionPayload(decisionSupportCacheRef.current, decisionBaseCacheKey),
+                            ],
+                        });
                     setDecisionSupportState({
                         status: selectedPayload ? 'ready' : 'error',
                         data: selectedPayload,
@@ -4912,13 +5014,25 @@ const AnalysisBundleDashboard: React.FC<{
                         bundleSourceType: sourceType,
                         bundleSourceTypeFinal: sourceTypeFinal,
                         payloads: [
-                            decisionSupportByBarcodeRef.current.get(resolvedBarcode) ?? null,
+                            getCachedBaseDecisionPayload(decisionSupportByBarcodeRef.current, resolvedBarcode),
                             inlineFallback ?? null,
                             cachedPayload,
                         ],
                     });
                 if (fallbackData) {
                     upsertDecisionPayloadByBarcode(decisionSupportByBarcodeRef.current, resolvedBarcode, fallbackData);
+                }
+                if (
+                    requestSeq === decisionSupportRequestSeqRef.current
+                    && decisionSupportAuthorityScopeKeyRef.current === authorityScopeKeyForRequest
+                    && decisionAuthorityStateRef.current.status !== 'ready'
+                ) {
+                    setDecisionAuthorityState({
+                        status: 'terminal_no_authority',
+                        scopeKey: authorityScopeKeyForRequest,
+                        origin: 'fetch',
+                        payload: null,
+                    });
                 }
                 setDecisionSupportState({
                     status: fallbackData ? 'ready' : 'error',
@@ -4950,7 +5064,8 @@ const AnalysisBundleDashboard: React.FC<{
         localDecisionSupportHeader,
         localDecisionSupportProfileKey,
         localDecisionSupportSignals,
-        localDecisionSupportCacheScope,
+        decisionSupportAuthorityScopeSeedKey,
+        decisionSupportBaseCacheScopeKey,
         factsDtoState.data?.product?.brand,
         factsDtoState.data?.product?.name,
         analysis?.productInfo?.brand,
@@ -4976,8 +5091,9 @@ const AnalysisBundleDashboard: React.FC<{
                 typeof inline.sourceType === 'string' ? inline.sourceType : bundleState.meta.sourceType,
             ) || undefined,
         };
+        const strippedInline = stripDecisionPayloadPersonalization(normalizedInline) ?? normalizedInline;
         return shouldUseDecisionPayloadForBundle({
-            payload: normalizedInline,
+            payload: strippedInline,
             bundleSourceType: normalizeText(bundleState.meta.sourceType ?? null).toLowerCase() || null,
             bundleSourceTypeFinal: bundleState.meta.sourceTypeFinal === true,
             phase: typeof bundleState.meta.phase === 'string' ? bundleState.meta.phase : null,
@@ -4987,26 +5103,16 @@ const AnalysisBundleDashboard: React.FC<{
                     ? bundleState.meta.authoritativeIdentity.type
                     : null,
         })
-            ? normalizedInline
+            ? strippedInline
             : null;
     }, [bundleState.meta, isStreaming]);
     const authoritativeDecisionTemplatePayload = useMemo<DecisionSupportTemplatePayload | null>(() => {
-        if (authoritativeDecisionPayload && typeof authoritativeDecisionPayload === 'object') {
-            return authoritativeDecisionPayload as DecisionSupportTemplatePayload;
-        }
-        const fetchedPayload =
-            decisionSupportState.status === 'ready' && decisionSupportState.data && typeof decisionSupportState.data === 'object'
-                ? decisionSupportState.data
-                : null;
-        if (isAuthoritativePersonalizedDecisionPayload(fetchedPayload)) {
-            return fetchedPayload as DecisionSupportTemplatePayload;
+        if (decisionAuthorityState.status === 'ready' && decisionAuthorityState.payload && typeof decisionAuthorityState.payload === 'object') {
+            return decisionAuthorityState.payload as DecisionSupportTemplatePayload;
         }
         return null;
-    }, [authoritativeDecisionPayload, decisionSupportState.data, decisionSupportState.status]);
+    }, [decisionAuthorityState]);
     const decisionTemplatePayload = useMemo<DecisionSupportTemplatePayload | null>(() => {
-        if (authoritativeDecisionTemplatePayload) {
-            return authoritativeDecisionTemplatePayload;
-        }
         const currentFactsDigestHash = normalizeText(bundleState.meta.factsDigestHash ?? null) || null;
         const fetchedPayload =
             decisionSupportState.status === 'ready' && decisionSupportState.data && typeof decisionSupportState.data === 'object'
@@ -5031,40 +5137,28 @@ const AnalysisBundleDashboard: React.FC<{
                 fetchedPayload,
             ],
         });
-        const fetchedPersonalizationPayload = shouldUseLocalDecisionSupport
-            ? pickCompatibleDecisionPayload({
-                factsDigestHash: currentFactsDigestHash,
-                decisionDigest: fetchedDecisionDigest,
-                bundleSourceType: normalizeText(bundleState.meta.sourceType ?? null).toLowerCase() || null,
-                bundleSourceTypeFinal: bundleState.meta.sourceTypeFinal === true,
-                payloads: [fetchedPayload],
-            })
-            : null;
-        const selectedPayload =
-            mergeDecisionPayloadPersonalization(strongestPayload, fetchedPersonalizationPayload)
-            ?? strongestPayload
-            ?? fetchedPersonalizationPayload;
-        if (!selectedPayload) return null;
-        return selectedPayload as DecisionSupportTemplatePayload;
+        return strongestPayload ? (strongestPayload as DecisionSupportTemplatePayload) : null;
     }, [
-        authoritativeDecisionTemplatePayload,
         (bundleState.meta as { decisionSupportDigest?: string | null })?.decisionSupportDigest,
         bundleState.meta.factsDigestHash,
         decisionSupportState.data,
         decisionSupportState.status,
         inlineDecisionTemplatePayload,
-        shouldUseLocalDecisionSupport,
     ]);
     const decisionOverviewBlock = decisionTemplatePayload?.overviewBlock;
-    const decisionScienceBlock = decisionTemplatePayload?.scienceBlock;
     const decisionUsageBlock = decisionTemplatePayload?.usageBlock;
     const decisionSafetyBlock = decisionTemplatePayload?.safetyBlock;
     const decisionQualityMark = decisionTemplatePayload?.qualityMark;
+    const authoritativeDecisionScienceBlock = authoritativeDecisionTemplatePayload?.scienceBlock ?? null;
     const decisionSupportAuthorityGate: DecisionSupportAuthorityGate =
-        authoritativeDecisionTemplatePayload ? 'ready' : 'waiting';
+        decisionAuthorityState.status === 'pending'
+            ? 'waiting'
+            : decisionAuthorityState.status === 'ready'
+                ? 'ready'
+                : 'terminal_no_authority';
     const decisionPersonalizedResultLane =
         decisionSupportAuthorityGate === 'ready'
-            ? authoritativeDecisionTemplatePayload?.personalizedResultLane ?? decisionTemplatePayload?.personalizedResultLane ?? null
+            ? authoritativeDecisionTemplatePayload?.personalizedResultLane ?? null
             : null;
     const currentDecisionDigest =
         normalizeText(
@@ -5130,10 +5224,7 @@ const AnalysisBundleDashboard: React.FC<{
     );
     const productTitle = trustedDisplayIdentity.title;
     const productSubtitle = trustedDisplayIdentity.subtitle;
-    const canonicalDecisionBarcode = useMemo(
-        () => resolveCanonicalBarcodeFromBundleMeta(bundleState.meta, analysisBarcodeDigits),
-        [analysisBarcodeDigits, bundleState.meta],
-    );
+    const canonicalDecisionBarcode = authorityScopeBarcode;
     const canonicalIdentityConfidenceHigh = useMemo(() => {
         const productIdentity =
             (bundleState.meta as { productIdentity?: { identityStable?: boolean | null; sourceAttribution?: string | null } | null })
@@ -5412,34 +5503,34 @@ const AnalysisBundleDashboard: React.FC<{
     const safetyBullet1Text = normalizeText(legacySafetyTipCoverText);
     const showGeneralWatchOuts = !bundleState.sections.safety.detail?.warnings?.length && keyIngredientsForSafety.length > 0;
     const hasAnyProductSpecificSignal = useMemo(() => {
-        const hasScienceRows = (decisionScienceBlock?.ingredientRows ?? []).some((row) => {
+        const hasScienceRows = (authoritativeDecisionScienceBlock?.ingredientRows ?? []).some((row) => {
             const name = String(row?.name ?? '').trim();
             const dose = String(row?.dose ?? '').trim();
             return name.length > 0 && !isNutritionLabelLikeIngredient(name) && (dose.length > 0 || name.length > 0);
         });
-        const hasSnapshotNames = (decisionScienceBlock?.ingredientSnapshotNames ?? []).some((name) => {
+        const hasSnapshotNames = (authoritativeDecisionScienceBlock?.ingredientSnapshotNames ?? []).some((name) => {
             const normalized = String(name ?? '').trim();
             return normalized.length > 0 && !isNutritionLabelLikeIngredient(normalized);
         });
-        const hasFormSignal = normalizeText(decisionScienceBlock?.formMatters?.ingredientChemicalForm ?? '').length > 0;
+        const hasFormSignal = normalizeText(authoritativeDecisionScienceBlock?.formMatters?.ingredientChemicalForm ?? '').length > 0;
         return hasScienceRows || hasSnapshotNames || hasFormSignal;
     }, [
-        decisionScienceBlock?.formMatters?.ingredientChemicalForm,
-        decisionScienceBlock?.ingredientRows,
-        decisionScienceBlock?.ingredientSnapshotNames,
+        authoritativeDecisionScienceBlock?.formMatters?.ingredientChemicalForm,
+        authoritativeDecisionScienceBlock?.ingredientRows,
+        authoritativeDecisionScienceBlock?.ingredientSnapshotNames,
     ]);
     const ingredientsNotes = hasAnyProductSpecificSignal
         ? undefined
         : ['Product-specific signals are limited for current evidence set.'];
     const sourceLockedScienceRows = useMemo(
         () =>
-            (decisionScienceBlock?.ingredientRows ?? [])
+            (authoritativeDecisionScienceBlock?.ingredientRows ?? [])
                 .map((row) => ({
                     name: String(row?.name ?? '').trim(),
                     dose: String(row?.dose ?? '').trim(),
                 }))
                 .filter((row) => row.name.length > 0 && !isNutritionLabelLikeIngredient(row.name)),
-        [decisionScienceBlock?.ingredientRows],
+        [authoritativeDecisionScienceBlock?.ingredientRows],
     );
     const scienceIngredientsMerged = useMemo(() => {
         if (sourceLockedScienceRows.length > 0) {
@@ -5454,7 +5545,7 @@ const AnalysisBundleDashboard: React.FC<{
         }
 
         const candidates = [
-            ...(decisionScienceBlock?.ingredientSnapshotNames ?? [])
+            ...(authoritativeDecisionScienceBlock?.ingredientSnapshotNames ?? [])
                 .map((name) => ({
                     name: String(name ?? '').trim(),
                     dose: '',
@@ -5484,7 +5575,7 @@ const AnalysisBundleDashboard: React.FC<{
         return mergeScienceIngredientCandidates({ candidates, maxCoverItems: 3 });
     }, [
         decisionOverviewBlock?.providesVerified?.keyIngredients,
-        decisionScienceBlock?.ingredientSnapshotNames,
+        authoritativeDecisionScienceBlock?.ingredientSnapshotNames,
         ingredientsItemsFiltered,
         recordFacts.ingredientRows,
         sourceLockedScienceRows,
@@ -6103,11 +6194,11 @@ const AnalysisBundleDashboard: React.FC<{
 
         const hasEvidenceMapping =
             sourceLockedScienceRows.length > 0
-            || (decisionScienceBlock?.ingredientSnapshotNames ?? []).some((name) => {
+            || (authoritativeDecisionScienceBlock?.ingredientSnapshotNames ?? []).some((name) => {
                 const normalized = String(name ?? '').trim();
                 return normalized.length > 0 && !isNutritionLabelLikeIngredient(normalized);
             });
-        const hasFormQuality = normalizeText(decisionScienceBlock?.formMatters?.ingredientChemicalForm ?? '').length > 0;
+        const hasFormQuality = normalizeText(authoritativeDecisionScienceBlock?.formMatters?.ingredientChemicalForm ?? '').length > 0;
 
         if (!hasPrimary) missingReasons.add('MISSING_PRIMARY_ACTIVE');
         if (!hasDoseRange) missingReasons.add('MISSING_DOSE_RANGE');
@@ -6129,8 +6220,8 @@ const AnalysisBundleDashboard: React.FC<{
         bundleSourceType,
         bundleSourceTypeFinal,
         decisionOverlayUsed,
-        decisionScienceBlock?.formMatters?.ingredientChemicalForm,
-        decisionScienceBlock?.ingredientSnapshotNames,
+        authoritativeDecisionScienceBlock?.formMatters?.ingredientChemicalForm,
+        authoritativeDecisionScienceBlock?.ingredientSnapshotNames,
         ingredientsItems,
         ingredientsNotes,
         sourceLockedScienceRows,
@@ -6761,7 +6852,7 @@ const AnalysisBundleDashboard: React.FC<{
                 },
             ];
         }
-        const rows = (decisionScienceBlock?.ingredientRows ?? [])
+        const rows = (authoritativeDecisionScienceBlock?.ingredientRows ?? [])
             .map((row, index) => ({
                 name: normalizeText(row?.name ?? ''),
                 amount: normalizeText(row?.dose ?? '') || 'Dose not disclosed',
@@ -6783,7 +6874,7 @@ const AnalysisBundleDashboard: React.FC<{
         ];
     }, [
         authoritativeTilePayloadReady,
-        decisionScienceBlock?.ingredientRows,
+        authoritativeDecisionScienceBlock?.ingredientRows,
         decisionTemplateUnavailable,
         ingredientMechanisms,
     ]);
@@ -7298,25 +7389,35 @@ const AnalysisBundleDashboard: React.FC<{
         </View>
     );
 
+    const scienceAuthorityWaiting = decisionAuthorityState.status === 'pending';
     const decisionBarcodeForScience = canonicalDecisionBarcode;
-    const decisionDigestForScience = normalizeText(decisionTemplatePayload?.digest ?? '') || null;
+    const decisionDigestForScience = normalizeText(authoritativeDecisionTemplatePayload?.digest ?? '') || null;
+    const decisionInputsHashForScience =
+        normalizeText(authoritativeDecisionTemplatePayload?.decisionInputsHash ?? '') || null;
+    const personalizationScopeHashForScience =
+        normalizeText(authoritativeDecisionTemplatePayload?.personalizationScopeHash ?? '') || null;
+    const decisionAuthorityScopeKey = decisionAuthorityState.status === 'ready'
+        ? decisionAuthorityState.scopeKey
+        : decisionSupportAuthorityScopeSeedKey;
     const shouldLoadScienceSidecars =
         selectedTileType === 'science'
-        && decisionSupportState.status === 'ready'
-        && decisionTemplatePayload != null
+        && decisionSupportAuthorityGate === 'ready'
+        && authoritativeDecisionTemplatePayload != null
         && Boolean(decisionBarcodeForScience)
-        && Boolean(decisionDigestForScience);
+        && Boolean(decisionDigestForScience)
+        && Boolean(decisionInputsHashForScience)
+        && Boolean(personalizationScopeHashForScience);
     const scienceSourceFinalKey = bundleSourceTypeFinal ? 'final' : 'nonfinal';
     const decisionScienceIngredientRows = useMemo<ScienceSidecarIngredientRow[]>(
         () =>
-            (decisionScienceBlock?.ingredientRows ?? [])
+            (authoritativeDecisionScienceBlock?.ingredientRows ?? [])
                 .map((row) => ({
                     key: normalizeIngredientNameForBackground(row?.name),
                     name: normalizeText(row?.name ?? ''),
                     dose: normalizeText(row?.dose ?? '') || null,
                 }))
                 .filter((row) => row.key.length > 0 && row.name.length > 0 && !isNutritionLabelLikeIngredient(row.name)),
-        [decisionScienceBlock?.ingredientRows],
+        [authoritativeDecisionScienceBlock?.ingredientRows],
     );
     const scientificBackgroundIngredientRows = useMemo(
         () => {
@@ -7359,30 +7460,55 @@ const AnalysisBundleDashboard: React.FC<{
         }
         return `${selectedName} • ${isDataCeiling ? 'Scan Supplement Facts to continue' : 'Dose not disclosed on label'}`;
     }, [activeScienceIngredientRow?.dose, activeScienceIngredientRow?.name, isDataCeiling]);
-    const chemicalFormDisplayText = normalizeText(decisionScienceBlock?.formMatters?.ingredientChemicalForm ?? '') || null;
-    const deliveryTypeDisplayText = normalizeText(decisionScienceBlock?.formMatters?.dosageForm ?? '') || null;
+    const chemicalFormDisplayText = normalizeText(authoritativeDecisionScienceBlock?.formMatters?.ingredientChemicalForm ?? '') || null;
+    const deliveryTypeDisplayText = normalizeText(authoritativeDecisionScienceBlock?.formMatters?.dosageForm ?? '') || null;
     const scienceAuthoritativeIdentityKey = `${bundleState.meta.authoritativeIdentity?.type ?? 'unknown'}:${bundleState.meta.authoritativeIdentity?.value ?? 'unknown'}`;
 
     const ingredientOverviewRequestKey = useMemo(
         () =>
-            decisionBarcodeForScience && decisionDigestForScience
-                ? ['ingredient_overview', scienceAuthoritativeIdentityKey, decisionBarcodeForScience, decisionDigestForScience, scienceSourceFinalKey].join('|')
-                : null,
-        [decisionBarcodeForScience, decisionDigestForScience, scienceAuthoritativeIdentityKey, scienceSourceFinalKey],
-    );
-    const scientificBackgroundRequestKey = useMemo(
-        () =>
-            decisionBarcodeForScience && decisionDigestForScience && activeIngredientKey
+            decisionBarcodeForScience && decisionDigestForScience && decisionInputsHashForScience
                 ? [
-                    'scientific_background',
+                    'ingredient_overview',
+                    decisionAuthorityScopeKey,
                     scienceAuthoritativeIdentityKey,
                     decisionBarcodeForScience,
                     decisionDigestForScience,
+                    decisionInputsHashForScience,
+                    scienceSourceFinalKey,
+                ].join('|')
+                : null,
+        [
+            decisionAuthorityScopeKey,
+            decisionBarcodeForScience,
+            decisionDigestForScience,
+            decisionInputsHashForScience,
+            scienceAuthoritativeIdentityKey,
+            scienceSourceFinalKey,
+        ],
+    );
+    const scientificBackgroundRequestKey = useMemo(
+        () =>
+            decisionBarcodeForScience && decisionDigestForScience && decisionInputsHashForScience && activeIngredientKey
+                ? [
+                    'scientific_background',
+                    decisionAuthorityScopeKey,
+                    scienceAuthoritativeIdentityKey,
+                    decisionBarcodeForScience,
+                    decisionDigestForScience,
+                    decisionInputsHashForScience,
                     activeIngredientKey,
                     scienceSourceFinalKey,
                 ].join('|')
                 : null,
-        [activeIngredientKey, decisionBarcodeForScience, decisionDigestForScience, scienceAuthoritativeIdentityKey, scienceSourceFinalKey],
+        [
+            activeIngredientKey,
+            decisionAuthorityScopeKey,
+            decisionBarcodeForScience,
+            decisionDigestForScience,
+            decisionInputsHashForScience,
+            scienceAuthoritativeIdentityKey,
+            scienceSourceFinalKey,
+        ],
     );
     const ingredientOverviewState = ingredientOverviewRequestKey
         ? ingredientOverviewByRequestKey[ingredientOverviewRequestKey]
@@ -7390,46 +7516,67 @@ const AnalysisBundleDashboard: React.FC<{
     const scientificBackgroundState = scientificBackgroundRequestKey
         ? scientificBackgroundByRequestKey[scientificBackgroundRequestKey]
         : undefined;
-    const ingredientOverviewFallbackBlock = useMemo(
-        () => buildIngredientOverviewFallbackClient(decisionScienceIngredientRows),
-        [decisionScienceIngredientRows],
-    );
     const resolvedIngredientOverviewBlock = useMemo(
-        () =>
-            ingredientOverviewState?.status === 'ok' && ingredientOverviewState.data
+        () => {
+            if (scienceAuthorityWaiting) return null;
+            return ingredientOverviewState?.status === 'ok' && ingredientOverviewState.data
                 ? ingredientOverviewState.data
-                : decisionScienceIngredientRows.length > 0
-                    ? ingredientOverviewFallbackBlock
-                    : null,
-        [decisionScienceIngredientRows.length, ingredientOverviewFallbackBlock, ingredientOverviewState],
+                : null;
+        },
+        [ingredientOverviewState, scienceAuthorityWaiting],
     );
     const resolvedScientificBackgroundBlock = useMemo(
-        () =>
-            scientificBackgroundState?.status === 'ok' && scientificBackgroundState.data
+        () => {
+            if (scienceAuthorityWaiting) return null;
+            return scientificBackgroundState?.status === 'ok' && scientificBackgroundState.data
                 ? scientificBackgroundState.data
-                : activeScienceIngredientRow
-                    ? buildScientificBackgroundFallbackClient(
-                        activeScienceIngredientRow.name,
-                        decisionScienceIngredientRows,
-                    )
-                    : null,
-        [activeScienceIngredientRow, decisionScienceIngredientRows, scientificBackgroundState],
+                : null;
+        },
+        [scienceAuthorityWaiting, scientificBackgroundState],
     );
+    const showIngredientOverviewLoading =
+        selectedTileType === 'science'
+        && (
+            scienceAuthorityWaiting
+            || (shouldLoadScienceSidecars && !resolvedIngredientOverviewBlock)
+        );
+    const showScientificBackgroundLoading =
+        selectedTileType === 'science'
+        && Boolean(activeScienceIngredientRow)
+        && (
+            scienceAuthorityWaiting
+            || (shouldLoadScienceSidecars && !resolvedScientificBackgroundBlock)
+        );
 
     useEffect(() => {
         setIngredientOverviewByRequestKey({});
         setScientificBackgroundByRequestKey({});
         ingredientOverviewStateRef.current = {};
         scientificBackgroundStateRef.current = {};
+        ingredientOverviewRevalidateCooldownRef.current = {};
+        scientificBackgroundRevalidateCooldownRef.current = {};
         setActiveIngredientName(keyIngredientsForDetail[0] ?? null);
         setActiveSafetyIngredientName(keyIngredientsForSafety[0] ?? null);
-    }, [incomingBundleRunKey, keyIngredientsForDetail, keyIngredientsForSafety]);
+    }, [decisionAuthorityScopeKey, keyIngredientsForDetail, keyIngredientsForSafety]);
 
     useEffect(() => {
         if (!shouldLoadScienceSidecars) return;
-        if (!ingredientOverviewRequestKey || !decisionBarcodeForScience || !decisionDigestForScience) return;
+        if (
+            !ingredientOverviewRequestKey
+            || !decisionBarcodeForScience
+            || !decisionDigestForScience
+            || !decisionInputsHashForScience
+            || !personalizationScopeHashForScience
+        ) {
+            return;
+        }
         const current = ingredientOverviewStateRef.current[ingredientOverviewRequestKey];
-        if (current && (current.status === 'loading' || current.status === 'ok')) return;
+        const lastRevalidateAt = ingredientOverviewRevalidateCooldownRef.current[ingredientOverviewRequestKey] ?? 0;
+        const allowFallbackRevalidate =
+            current?.status === 'ok'
+            && current.source === 'fallback'
+            && Date.now() - lastRevalidateAt >= 20_000;
+        if (current && (current.status === 'loading' || (current.status === 'ok' && !allowFallbackRevalidate))) return;
 
         let cancelled = false;
         let settled = false;
@@ -7438,21 +7585,35 @@ const AnalysisBundleDashboard: React.FC<{
 
         const run = async (
             digestParam: string,
+            decisionInputsHashParam: string,
+            personalizationScopeHashParam: string,
             canRetry: boolean,
+            revalidateFallback: boolean,
         ): Promise<void> => {
             try {
+                if (revalidateFallback) {
+                    ingredientOverviewRevalidateCooldownRef.current[ingredientOverviewRequestKey] = Date.now();
+                }
                 setIngredientOverviewSidecarState(ingredientOverviewRequestKey, { status: 'loading' });
                 const baseUrl = String(Config.searchApiBaseUrl).replace(/\/$/, '');
+                const headers = await withAuthHeaders({
+                    'Content-Type': 'application/json',
+                });
+                if (shouldUseLocalDecisionSupport && localDecisionSupportHeader) {
+                    headers['x-local-personalization'] = localDecisionSupportHeader;
+                    headers['Cache-Control'] = 'no-cache, no-store';
+                    headers.Pragma = 'no-cache';
+                }
                 const response = await fetch(`${baseUrl}/api/ingredient-overview/v1`, {
                     method: 'POST',
-                    headers: {
-                        ...(await withAuthHeaders({
-                            'Content-Type': 'application/json',
-                        })),
-                    },
+                    headers,
                     body: JSON.stringify({
                         barcode: decisionBarcodeForScience,
                         decisionDigest: digestParam,
+                        decisionInputsHash: decisionInputsHashParam,
+                        personalizationScopeHash: personalizationScopeHashParam,
+                        revalidateFallback,
+                        viewMode: SCAN_UX_VIEW_MODE,
                     }),
                     signal: controller.signal,
                 });
@@ -7462,8 +7623,32 @@ const AnalysisBundleDashboard: React.FC<{
                 if (response.status === 409) {
                     const mismatchPayload = await response.json().catch(() => null);
                     const latestDigest = typeof mismatchPayload?.latestDigest === 'string' ? mismatchPayload.latestDigest : null;
-                    if (canRetry && latestDigest && latestDigest !== digestParam) {
-                        return run(latestDigest, false);
+                    const latestDecisionInputsHash =
+                        typeof mismatchPayload?.latestDecisionInputsHash === 'string'
+                            ? mismatchPayload.latestDecisionInputsHash
+                            : null;
+                    const latestPersonalizationScopeHash =
+                        typeof mismatchPayload?.latestPersonalizationScopeHash === 'string'
+                            ? mismatchPayload.latestPersonalizationScopeHash
+                            : null;
+                    if (
+                        canRetry
+                        && latestDigest
+                        && latestDecisionInputsHash
+                        && latestPersonalizationScopeHash
+                        && (
+                            latestDigest !== digestParam
+                            || latestDecisionInputsHash !== decisionInputsHashParam
+                            || latestPersonalizationScopeHash !== personalizationScopeHashParam
+                        )
+                    ) {
+                        return run(
+                            latestDigest,
+                            latestDecisionInputsHash,
+                            latestPersonalizationScopeHash,
+                            false,
+                            revalidateFallback,
+                        );
                     }
                 }
 
@@ -7508,7 +7693,13 @@ const AnalysisBundleDashboard: React.FC<{
         };
 
         const interactionTask = InteractionManager.runAfterInteractions(() => {
-            void run(decisionDigestForScience, true);
+            void run(
+                decisionDigestForScience,
+                decisionInputsHashForScience,
+                personalizationScopeHashForScience,
+                true,
+                allowFallbackRevalidate,
+            );
         });
         return () => {
             cancelled = true;
@@ -7524,14 +7715,25 @@ const AnalysisBundleDashboard: React.FC<{
         shouldLoadScienceSidecars,
         decisionBarcodeForScience,
         decisionDigestForScience,
+        decisionInputsHashForScience,
+        personalizationScopeHashForScience,
         decisionScienceIngredientRows,
         ingredientOverviewRequestKey,
+        localDecisionSupportHeader,
+        shouldUseLocalDecisionSupport,
         setIngredientOverviewSidecarState,
     ]);
 
     useEffect(() => {
         if (!shouldLoadScienceSidecars) return;
-        if (!decisionBarcodeForScience || !decisionDigestForScience) return;
+        if (
+            !decisionBarcodeForScience
+            || !decisionDigestForScience
+            || !decisionInputsHashForScience
+            || !personalizationScopeHashForScience
+        ) {
+            return;
+        }
         if (!activeScienceIngredientRow || !scientificBackgroundRequestKey) return;
 
         let cancelled = false;
@@ -7544,7 +7746,12 @@ const AnalysisBundleDashboard: React.FC<{
             const requestKey = scientificBackgroundRequestKey;
             const row = activeScienceIngredientRow;
             const current = scientificBackgroundStateRef.current[requestKey];
-            if (current && (current.status === 'loading' || current.status === 'ok')) return;
+            const lastRevalidateAt = scientificBackgroundRevalidateCooldownRef.current[requestKey] ?? 0;
+            const allowFallbackRevalidate =
+                current?.status === 'ok'
+                && current.source === 'fallback'
+                && Date.now() - lastRevalidateAt >= 20_000;
+            if (current && (current.status === 'loading' || (current.status === 'ok' && !allowFallbackRevalidate))) return;
 
             startedRequestKey = requestKey;
             const fallbackBlock = buildScientificBackgroundFallbackClient(
@@ -7554,20 +7761,34 @@ const AnalysisBundleDashboard: React.FC<{
 
             const run = async (
                 digestParam: string,
+                decisionInputsHashParam: string,
+                personalizationScopeHashParam: string,
                 canRetry: boolean,
+                revalidateFallback: boolean,
             ): Promise<void> => {
                 try {
+                    if (revalidateFallback) {
+                        scientificBackgroundRevalidateCooldownRef.current[requestKey] = Date.now();
+                    }
                     setScientificBackgroundSidecarState(requestKey, { status: 'loading' });
+                    const headers = await withAuthHeaders({
+                        'Content-Type': 'application/json',
+                    });
+                    if (shouldUseLocalDecisionSupport && localDecisionSupportHeader) {
+                        headers['x-local-personalization'] = localDecisionSupportHeader;
+                        headers['Cache-Control'] = 'no-cache, no-store';
+                        headers.Pragma = 'no-cache';
+                    }
                     const response = await fetch(`${baseUrl}/api/scientific-background/v1`, {
                         method: 'POST',
-                        headers: {
-                            ...(await withAuthHeaders({
-                                'Content-Type': 'application/json',
-                            })),
-                        },
+                        headers,
                         body: JSON.stringify({
                             barcode: decisionBarcodeForScience,
                             decisionDigest: digestParam,
+                            decisionInputsHash: decisionInputsHashParam,
+                            personalizationScopeHash: personalizationScopeHashParam,
+                            revalidateFallback,
+                            viewMode: SCAN_UX_VIEW_MODE,
                             selectedIngredientName: row.name,
                         }),
                         signal: controller.signal,
@@ -7578,8 +7799,32 @@ const AnalysisBundleDashboard: React.FC<{
                     if (response.status === 409) {
                         const mismatchPayload = await response.json().catch(() => null);
                         const latestDigest = typeof mismatchPayload?.latestDigest === 'string' ? mismatchPayload.latestDigest : null;
-                        if (canRetry && latestDigest && latestDigest !== digestParam) {
-                            return run(latestDigest, false);
+                        const latestDecisionInputsHash =
+                            typeof mismatchPayload?.latestDecisionInputsHash === 'string'
+                                ? mismatchPayload.latestDecisionInputsHash
+                                : null;
+                        const latestPersonalizationScopeHash =
+                            typeof mismatchPayload?.latestPersonalizationScopeHash === 'string'
+                                ? mismatchPayload.latestPersonalizationScopeHash
+                                : null;
+                        if (
+                            canRetry
+                            && latestDigest
+                            && latestDecisionInputsHash
+                            && latestPersonalizationScopeHash
+                            && (
+                                latestDigest !== digestParam
+                                || latestDecisionInputsHash !== decisionInputsHashParam
+                                || latestPersonalizationScopeHash !== personalizationScopeHashParam
+                            )
+                        ) {
+                            return run(
+                                latestDigest,
+                                latestDecisionInputsHash,
+                                latestPersonalizationScopeHash,
+                                false,
+                                revalidateFallback,
+                            );
                         }
                     }
 
@@ -7623,7 +7868,13 @@ const AnalysisBundleDashboard: React.FC<{
                 }
             };
 
-            void run(decisionDigestForScience, true);
+            void run(
+                decisionDigestForScience,
+                decisionInputsHashForScience,
+                personalizationScopeHashForScience,
+                true,
+                allowFallbackRevalidate,
+            );
         });
         return () => {
             cancelled = true;
@@ -7640,7 +7891,11 @@ const AnalysisBundleDashboard: React.FC<{
         shouldLoadScienceSidecars,
         decisionBarcodeForScience,
         decisionDigestForScience,
+        decisionInputsHashForScience,
+        personalizationScopeHashForScience,
         decisionScienceIngredientRows,
+        localDecisionSupportHeader,
+        shouldUseLocalDecisionSupport,
         scientificBackgroundRequestKey,
         scienceSourceFinalKey,
         setScientificBackgroundSidecarState,
@@ -7694,7 +7949,9 @@ const AnalysisBundleDashboard: React.FC<{
                             ))
                         ) : (
                             <Text style={styles.detailPlaceholderText}>
-                                {isDataCeiling && dataCeilingScienceLead && dataCeilingScienceAction
+                                {scienceAuthorityWaiting
+                                    ? 'Waiting for verified ingredient context before loading product details.'
+                                    : isDataCeiling && dataCeilingScienceLead && dataCeilingScienceAction
                                     ? `${dataCeilingScienceLead} ${dataCeilingScienceAction}`
                                     : 'Verified ingredient rows are still loading.'}
                             </Text>
@@ -7728,10 +7985,10 @@ const AnalysisBundleDashboard: React.FC<{
             >
                 {resolvedIngredientOverviewBlock ? (
                     <View style={{ gap: 12 }}>
-                        {ingredientOverviewState?.status === 'loading' ? (
+                        {showIngredientOverviewLoading ? (
                             <View style={styles.inlineLoadingRow}>
                                 <ActivityIndicator />
-                                <Text style={styles.inlineLoadingText}>Generating overview…</Text>
+                                <Text style={styles.inlineLoadingText}>Preparing verified ingredient overview…</Text>
                             </View>
                         ) : null}
                         {ingredientOverviewTitleLine ? (
@@ -7748,7 +8005,11 @@ const AnalysisBundleDashboard: React.FC<{
                         ) : null}
                     </View>
                 ) : (
-                    <Text style={styles.detailPlaceholderText}>Ingredient overview is pending.</Text>
+                    <Text style={styles.detailPlaceholderText}>
+                        {scienceAuthorityWaiting
+                            ? 'Waiting for verified ingredient context before loading the overview.'
+                            : 'Ingredient overview is unavailable for this scan.'}
+                    </Text>
                 )}
             </GlassCard>
 
@@ -7793,10 +8054,10 @@ const AnalysisBundleDashboard: React.FC<{
 
                     {resolvedScientificBackgroundBlock ? (
                         <View style={{ gap: 16 }}>
-                            {scientificBackgroundState?.status === 'loading' ? (
+                            {showScientificBackgroundLoading ? (
                                 <View style={styles.inlineLoadingRow}>
                                     <ActivityIndicator />
-                                    <Text style={styles.inlineLoadingText}>Generating scientific background…</Text>
+                                    <Text style={styles.inlineLoadingText}>Preparing verified scientific background…</Text>
                                 </View>
                             ) : null}
                             {!showIngredientSelector ? (
@@ -7823,7 +8084,11 @@ const AnalysisBundleDashboard: React.FC<{
                             ) : null}
                         </View>
                     ) : (
-                        <Text style={styles.detailPlaceholderText}>Scientific background is pending.</Text>
+                        <Text style={styles.detailPlaceholderText}>
+                            {scienceAuthorityWaiting
+                                ? 'Waiting for verified ingredient context before loading scientific background.'
+                                : 'Scientific background is unavailable for this scan.'}
+                        </Text>
                     )}
                 </View>
             </GlassCard>
@@ -8583,7 +8848,7 @@ const AnalysisBundleDashboard: React.FC<{
             });
         });
         addByTier(decisionUsageBlock?.directions?.sourceTier ?? null);
-        (decisionScienceBlock?.odsGeneralScienceBullets ?? []).forEach(() => {
+        (authoritativeDecisionScienceBlock?.odsGeneralScienceBullets ?? []).forEach(() => {
             counts.generalScience += 1;
         });
         (decisionSafetyBlock?.ulGuidance ?? []).forEach(() => {
@@ -8594,9 +8859,9 @@ const AnalysisBundleDashboard: React.FC<{
         });
         return counts;
     }, [
+        authoritativeDecisionScienceBlock?.odsGeneralScienceBullets,
         decisionSafetyBlock?.generalWatchouts,
         decisionSafetyBlock?.ulGuidance,
-        decisionScienceBlock?.odsGeneralScienceBullets,
         decisionUsageBlock?.directions?.sourceTier,
         scoreCardV2DisplayModules,
     ]);
@@ -8722,7 +8987,7 @@ const AnalysisBundleDashboard: React.FC<{
     }, [bundleSourceType, coreCoverCardsReady, emitScanUxTimingOnce]);
     // SCORE_SECTION_FROZEN_STATE_START
     const overviewBlock = decisionOverviewBlock;
-    const scienceBlock = decisionScienceBlock;
+    const scienceBlock = authoritativeDecisionScienceBlock;
     const usageBlock = decisionUsageBlock;
     const safetyBlock = decisionSafetyBlock;
     const qualityMark = decisionQualityMark;
@@ -9262,6 +9527,8 @@ const AnalysisBundleDashboard: React.FC<{
                             heroImageUri={heroImageUri}
                             verifiedLabelText={verifiedLabelText}
                         />
+                    ) : decisionSupportAuthorityGate === 'terminal_no_authority' ? (
+                        <DecisionSupportAuthorityUnavailable />
                     ) : (
                         <DecisionSupportAuthorityPlaceholder />
                     )
@@ -9672,6 +9939,34 @@ const styles = StyleSheet.create({
     authorityPlaceholderInsightCopy: {
         flex: 1,
         minWidth: 0,
+    },
+    authorityUnavailableWrap: {
+        width: '100%',
+        alignSelf: 'stretch',
+    },
+    authorityUnavailableCard: {
+        borderRadius: 28,
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.68)',
+        backgroundColor: 'rgba(255,255,255,0.72)',
+        paddingHorizontal: 18,
+        paddingVertical: 18,
+        shadowColor: '#0B1E36',
+        shadowOpacity: 0.03,
+        shadowRadius: 22,
+        shadowOffset: { width: 0, height: 4 },
+        gap: 8,
+    },
+    authorityUnavailableTitle: {
+        fontSize: 20,
+        lineHeight: 24,
+        fontWeight: '700',
+        color: '#111827',
+    },
+    authorityUnavailableBody: {
+        fontSize: 14,
+        lineHeight: 20,
+        color: '#4B5563',
     },
     comparisonStandingCard: {
         borderRadius: 32,

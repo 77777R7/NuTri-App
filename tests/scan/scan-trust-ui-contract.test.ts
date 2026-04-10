@@ -47,7 +47,7 @@ test('scan trust contract preserves the sectioned analysis shell and deep dive c
   assert.ok(dashboardSource.includes('t.analysisComparisonAlternativesTitle'));
   assert.ok(dashboardSource.includes('comparisonStandingCard'));
   assert.ok(dashboardSource.includes('ComparisonAlternativeCard'));
-  assert.ok(dashboardSource.includes("comparisonStanding?.status === 'ready'"));
+  assert.ok(dashboardSource.includes("standing.status !== 'ready'"));
   assert.ok(dashboardSource.includes('canonicalIdentityConfidenceHigh'));
   assert.ok(dashboardSource.includes('resolveCanonicalBarcodeFromBundleMeta'));
   assert.ok(dashboardSource.includes('const authoritativeIdentityType ='));
@@ -63,7 +63,10 @@ test('scan trust contract preserves the sectioned analysis shell and deep dive c
   assert.ok(dashboardSource.includes('pickStrongestDecisionPayloadForFacts('));
   assert.ok(dashboardSource.includes('const pickCompatibleDecisionPayload ='));
   assert.ok(dashboardSource.includes('pickAuthoritativeDecisionPayloadUpgrade('));
-  assert.ok(dashboardSource.includes('mergeDecisionPayloadPersonalization(strongestPayload, fetchedPersonalizationPayload)'));
+  assert.match(dashboardSource, /stripDecisionPayloadPersonalization/);
+  assert.match(dashboardSource, /const buildPendingDecisionAuthorityState = \(scopeKey: string\): DecisionAuthorityState => \(\{/);
+  assert.match(dashboardSource, /authoritativePersonalizationReady === true/);
+  assert.match(dashboardSource, /status: 'terminal_no_authority'/);
 });
 
 test('recent scan save chain contract still preserves dosageText and imageUrl assertions', () => {

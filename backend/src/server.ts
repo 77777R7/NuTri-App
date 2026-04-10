@@ -10164,6 +10164,10 @@ const snapshotPayloadUsesIherbOverlaySupport = (
 const ingredientOverviewBodySchema = z.object({
   barcode: z.string().trim().min(1),
   decisionDigest: z.string().trim().min(1).nullable().optional(),
+  decisionInputsHash: z.string().trim().min(1).nullable().optional(),
+  personalizationScopeHash: z.string().trim().min(1).nullable().optional(),
+  revalidateFallback: z.boolean().optional(),
+  viewMode: z.string().trim().min(1).nullable().optional(),
   authoritativeIdentityType: z.string().trim().min(1).nullable().optional(),
   authoritativeIdentityValue: z.string().trim().min(1).nullable().optional(),
 }).strict();
@@ -10171,6 +10175,10 @@ const ingredientOverviewBodySchema = z.object({
 const scientificBackgroundBodySchema = z.object({
   barcode: z.string().trim().min(1),
   decisionDigest: z.string().trim().min(1).nullable().optional(),
+  decisionInputsHash: z.string().trim().min(1).nullable().optional(),
+  personalizationScopeHash: z.string().trim().min(1).nullable().optional(),
+  revalidateFallback: z.boolean().optional(),
+  viewMode: z.string().trim().min(1).nullable().optional(),
   authoritativeIdentityType: z.string().trim().min(1).nullable().optional(),
   authoritativeIdentityValue: z.string().trim().min(1).nullable().optional(),
   selectedIngredientName: z.string().trim().min(1),
@@ -10185,6 +10193,8 @@ const SCIENTIFIC_BACKGROUND_BACKGROUND_REFRESH_TIMEOUT_MS = 24_000;
 type ScientificBackgroundSidecarResponse = {
   status: "ok";
   digest: string;
+  decisionInputsHash?: string;
+  personalizationScopeHash?: string;
   scientificBackground: Awaited<ReturnType<typeof compileScientificBackgroundAsync>>["scientificBackground"];
   source: Awaited<ReturnType<typeof compileScientificBackgroundAsync>>["source"];
   fallbackUsed: boolean;
@@ -10239,11 +10249,87 @@ const resolveScientificBackgroundCacheTtlMs = (
   return executionProfile.cacheTtlMs;
 };
 
-const buildDecisionSupportDigestMismatchPayload = (latestDigest: string) => ({
+type DecisionSupportPersonalizationAttachmentStatus = "attached" | "partial" | "none";
+
+const stableStringifyForScopeHash = (value: unknown): string => {
+  if (value === null) return "null";
+  if (typeof value === "boolean") return value ? "true" : "false";
+  if (typeof value === "number") return Number.isFinite(value) ? String(value) : "null";
+  if (typeof value === "string") return JSON.stringify(value);
+  if (Array.isArray(value)) {
+    return `[${value.map((item) => stableStringifyForScopeHash(item)).join(",")}]`;
+  }
+  if (typeof value === "object") {
+    const entries = Object.entries(value as Record<string, unknown>)
+      .filter(([key]) => typeof key === "string")
+      .sort(([left], [right]) => left.localeCompare(right));
+    return `{${entries.map(([key, itemValue]) => `${JSON.stringify(key)}:${stableStringifyForScopeHash(itemValue)}`).join(",")}}`;
+  }
+  return "null";
+};
+
+const hashPersonalizationScope = (params: {
+  userId: string | null | undefined;
+  localDecisionSupportContext: LocalDecisionSupportContext | null;
+  effectiveUserProfile: UserDecisionSupportProfileRow | null;
+  allergyContext: DecisionSupportAttachedAllergyContext | null;
+  personalizationContext: DecisionSupportAttachedPersonalizationContext | null;
+  remoteStackInputs: RemoteStackOverlapInputsResult | null;
+}): string => createHash("sha256")
+  .update(
+    stableStringifyForScopeHash({
+      userId: safeTrim(params.userId ?? null) ?? "anon",
+      localDecisionSupportContext: params.localDecisionSupportContext,
+      effectiveUserProfile: params.effectiveUserProfile,
+      allergyContext: params.allergyContext,
+      personalizationContext: params.personalizationContext,
+      remoteStackInputs: params.remoteStackInputs,
+    }),
+  )
+  .digest("hex");
+
+const resolvePersonalizationAttachmentStatus = (params: {
+  userId: string | null | undefined;
+  localDecisionSupportContext: LocalDecisionSupportContext | null;
+  effectiveUserProfile: UserDecisionSupportProfileRow | null;
+  allergyContext: DecisionSupportAttachedAllergyContext | null;
+  personalizationContext: DecisionSupportAttachedPersonalizationContext | null;
+  remoteStackInputs: RemoteStackOverlapInputsResult | null;
+}): DecisionSupportPersonalizationAttachmentStatus => {
+  if (params.personalizationContext) return "attached";
+
+  const hasLocalProfile = Boolean(params.localDecisionSupportContext?.profile);
+  const hasLocalSavedSupplements = (params.localDecisionSupportContext?.savedSupplements.length ?? 0) > 0;
+  const hasAuthedUser = Boolean(safeTrim(params.userId ?? null));
+  const hasEffectiveProfile = Boolean(params.effectiveUserProfile);
+  const hasRemoteStack = Boolean(params.remoteStackInputs);
+  const hasAllergyContext = Boolean(params.allergyContext);
+
+  if (
+    hasLocalProfile
+    || hasLocalSavedSupplements
+    || hasAuthedUser
+    || hasEffectiveProfile
+    || hasRemoteStack
+    || hasAllergyContext
+  ) {
+    return "partial";
+  }
+
+  return "none";
+};
+
+const buildDecisionSupportDigestMismatchPayload = (params: {
+  latestDigest: string;
+  latestDecisionInputsHash?: string | null;
+  latestPersonalizationScopeHash?: string | null;
+}) => ({
   error: "DECISION_SUPPORT_DIGEST_MISMATCH",
   reasonCode: "DECISION_SUPPORT_DIGEST_MISMATCH",
   message: "Decision support content has updated. Refresh with latest digest.",
-  latestDigest,
+  latestDigest: params.latestDigest,
+  latestDecisionInputsHash: params.latestDecisionInputsHash ?? null,
+  latestPersonalizationScopeHash: params.latestPersonalizationScopeHash ?? null,
 });
 
 const buildDeepseekJsonLlmFn = (params: {
@@ -10300,8 +10386,82 @@ const buildDeepseekJsonLlmFn = (params: {
   };
 };
 
+const buildDecisionSupportAttachedContexts = async (params: {
+  req?: Request;
+  userId?: string | null | undefined;
+  digest: FactsDigest;
+  barcodeGtin14: string;
+}): Promise<{
+  localDecisionSupportContext: LocalDecisionSupportContext | null;
+  effectiveUserProfile: UserDecisionSupportProfileRow | null;
+  allergyContext: DecisionSupportAttachedAllergyContext | null;
+  personalizationContext: DecisionSupportAttachedPersonalizationContext | null;
+  remoteStackInputs: RemoteStackOverlapInputsResult | null;
+  personalizationAttachmentStatus: DecisionSupportPersonalizationAttachmentStatus;
+  personalizationScopeHash: string;
+}> => {
+  const localDecisionSupportContext = params.req ? parseLocalDecisionSupportContext(params.req) : null;
+  const [userProfile, productFlags, remoteStackInputs] = await Promise.all([
+    fetchUserDecisionSupportProfile(params.userId),
+    fetchProductAllergenFlagsForDecisionSupport(params.digest, params.barcodeGtin14),
+    params.userId ? fetchRemoteStackOverlapInputs(params.userId) : Promise.resolve(null),
+  ]);
+  const localUserProfile = buildUserDecisionSupportProfileRowFromLocalProfile(
+    localDecisionSupportContext?.profile,
+  );
+  const effectiveUserProfile = mergeDecisionSupportProfileRows({
+    remoteProfile: userProfile,
+    localProfile: localUserProfile,
+  });
+  const allergyContext = buildDecisionSupportAllergyContext({
+    userProfile: effectiveUserProfile,
+    productFlags,
+  });
+  const personalizationContext = buildDecisionSupportPersonalizationContext({
+    userProfile: effectiveUserProfile,
+    allergyContext,
+    remoteStackInputs,
+    currentProductInput: buildDecisionSupportCurrentStackInput({
+      digest: params.digest,
+      barcodeGtin14: params.barcodeGtin14,
+    }),
+    fallbackSavedStackCount: params.userId ? 0 : (localDecisionSupportContext?.savedSupplements.length ?? 0),
+  });
+  const personalizationAttachmentStatus = resolvePersonalizationAttachmentStatus({
+    userId: params.userId,
+    localDecisionSupportContext,
+    effectiveUserProfile,
+    allergyContext,
+    personalizationContext,
+    remoteStackInputs,
+  });
+  const personalizationScopeHash = hashPersonalizationScope({
+    userId: params.userId,
+    localDecisionSupportContext,
+    effectiveUserProfile,
+    allergyContext,
+    personalizationContext,
+    remoteStackInputs,
+  });
+
+  return {
+    localDecisionSupportContext,
+    effectiveUserProfile,
+    allergyContext,
+    personalizationContext,
+    remoteStackInputs,
+    personalizationAttachmentStatus,
+    personalizationScopeHash,
+  };
+};
+
 const buildDecisionSupportAuthorityBundle = async (
   normalizedBarcode: NormalizedBarcode,
+  params: {
+    req?: Request;
+    userId?: string | null | undefined;
+    viewMode?: DecisionSupportViewMode | null | undefined;
+  } = {},
 ): Promise<{
   barcodeGtin14: string;
   overlayClaims: DecisionSupportOverlayClaims | null;
@@ -10309,6 +10469,9 @@ const buildDecisionSupportAuthorityBundle = async (
   patched: ReturnType<typeof applyPatchShadowToFactsDigest>;
   decisionSupport: ReturnType<typeof compileDecisionSupport>;
   ingredientScienceContext: ReturnType<typeof buildIngredientScienceContext>;
+  authoritativePersonalizationReady: boolean;
+  personalizationAttachmentStatus: DecisionSupportPersonalizationAttachmentStatus;
+  personalizationScopeHash: string;
 }> => {
   const barcodeGtin14 = normalizedBarcode.code.padStart(14, "0");
   const overlayClaims = await fetchIherbOverlayClaimsByBarcode(barcodeGtin14);
@@ -10323,14 +10486,22 @@ const buildDecisionSupportAuthorityBundle = async (
     digest: quickDigest.digest,
     barcodeGtin14,
   });
+  const attachedContexts = await buildDecisionSupportAttachedContexts({
+    req: params.req,
+    userId: params.userId,
+    digest: patched.digest,
+    barcodeGtin14,
+  });
   const decisionSupport = compileDecisionSupport({
     digest: patched.digest,
     factsDigestHash: quickDigest.factsDigestHash,
-    viewMode: DECISION_SUPPORT_DEFAULT_VIEW_MODE,
+    viewMode: params.viewMode ?? DECISION_SUPPORT_DEFAULT_VIEW_MODE,
     locale: "en",
     flagsSnapshot: collectDecisionSupportFlagsSnapshot(),
     patchActivation: patched.activation,
     overlayClaims,
+    allergyContext: attachedContexts.allergyContext,
+    personalizationContext: attachedContexts.personalizationContext,
   });
   const ingredientScienceContext = buildIngredientScienceContext({
     digest: patched.digest,
@@ -10344,6 +10515,9 @@ const buildDecisionSupportAuthorityBundle = async (
     patched,
     decisionSupport,
     ingredientScienceContext,
+    authoritativePersonalizationReady: true,
+    personalizationAttachmentStatus: attachedContexts.personalizationAttachmentStatus,
+    personalizationScopeHash: attachedContexts.personalizationScopeHash,
   };
 };
 
@@ -10690,7 +10864,6 @@ app.get("/api/decision-support/v1", verifySupabaseToken, async (req: Request, re
   try {
     const authedReq = req as AuthenticatedRequest;
     const userId = authedReq.user?.id ?? null;
-    const localDecisionSupportContext = parseLocalDecisionSupportContext(req);
     const barcodeGtin14 = normalizedBarcode.code.padStart(14, "0");
     const fetchCount = recordDecisionSupportFetchForScanSession(scanSessionId, barcodeGtin14);
     const overlayClaims = await fetchIherbOverlayClaimsByBarcode(barcodeGtin14);
@@ -10716,31 +10889,11 @@ app.get("/api/decision-support/v1", verifySupabaseToken, async (req: Request, re
       barcodeGtin14,
       identityKeys: debugIdentityKeys,
     });
-    const [userProfile, productFlags, remoteStackInputs] = await Promise.all([
-      fetchUserDecisionSupportProfile(userId),
-      fetchProductAllergenFlagsForDecisionSupport(patched.digest, barcodeGtin14),
-      userId ? fetchRemoteStackOverlapInputs(userId) : Promise.resolve(null),
-    ]);
-    const localUserProfile = buildUserDecisionSupportProfileRowFromLocalProfile(
-      localDecisionSupportContext?.profile,
-    );
-    const effectiveUserProfile = mergeDecisionSupportProfileRows({
-      remoteProfile: userProfile,
-      localProfile: localUserProfile,
-    });
-    const allergyContext = buildDecisionSupportAllergyContext({
-      userProfile: effectiveUserProfile,
-      productFlags,
-    });
-    const personalizationContext = buildDecisionSupportPersonalizationContext({
-      userProfile: effectiveUserProfile,
-      allergyContext,
-      remoteStackInputs,
-      currentProductInput: buildDecisionSupportCurrentStackInput({
-        digest: patched.digest,
-        barcodeGtin14,
-      }),
-      fallbackSavedStackCount: userId ? 0 : (localDecisionSupportContext?.savedSupplements.length ?? 0),
+    const attachedContexts = await buildDecisionSupportAttachedContexts({
+      req,
+      userId,
+      digest: patched.digest,
+      barcodeGtin14,
     });
 
     const decisionSupport = compileDecisionSupport({
@@ -10751,8 +10904,8 @@ app.get("/api/decision-support/v1", verifySupabaseToken, async (req: Request, re
       flagsSnapshot: collectDecisionSupportFlagsSnapshot(),
       patchActivation: patched.activation,
       overlayClaims,
-      allergyContext,
-      personalizationContext,
+      allergyContext: attachedContexts.allergyContext,
+      personalizationContext: attachedContexts.personalizationContext,
     });
 
     if (
@@ -10779,13 +10932,11 @@ app.get("/api/decision-support/v1", verifySupabaseToken, async (req: Request, re
         requestedDecisionInputsHash,
         latestDecisionInputsHash: decisionSupport.decisionInputsHash,
       });
-      const mismatchPayload = {
-        error: "DECISION_SUPPORT_DIGEST_MISMATCH",
-        reasonCode: "DECISION_SUPPORT_DIGEST_MISMATCH",
-        message: "Decision support content has updated. Refresh with latest digest.",
+      const mismatchPayload = buildDecisionSupportDigestMismatchPayload({
         latestDigest: decisionSupport.digest,
         latestDecisionInputsHash: decisionSupport.decisionInputsHash,
-      };
+        latestPersonalizationScopeHash: attachedContexts.personalizationScopeHash,
+      });
       return res.status(409).json(mismatchPayload);
     }
 
@@ -10815,6 +10966,9 @@ app.get("/api/decision-support/v1", verifySupabaseToken, async (req: Request, re
       digest: decisionSupportWithComparison.digest,
       decisionSupportDigest: decisionSupportWithComparison.digest,
       decisionInputsHash: decisionSupportWithComparison.decisionInputsHash,
+      authoritativePersonalizationReady: true,
+      personalizationAttachmentStatus: attachedContexts.personalizationAttachmentStatus,
+      personalizationScopeHash: attachedContexts.personalizationScopeHash,
       decisionContractVersion: decisionSupportWithComparison.decisionContractVersion,
       overlayClaimsHash: decisionSupportWithComparison.overlayClaimsHash,
       overlayAugmentationVersion: decisionSupportWithComparison.overlayAugmentationVersion,
@@ -10874,13 +11028,47 @@ app.post("/api/ingredient-overview/v1", verifySupabaseToken, async (req: Request
   }
 
   try {
-    const authority = await buildDecisionSupportAuthorityBundle(normalizedBarcode);
+    const authedReq = req as AuthenticatedRequest;
+    const viewMode = parseDecisionSupportViewMode(parsedBody.viewMode ?? null);
+    const authority = await buildDecisionSupportAuthorityBundle(normalizedBarcode, {
+      req,
+      userId: authedReq.user?.id ?? null,
+      viewMode,
+    });
     if (
       parsedBody.decisionDigest &&
       parsedBody.decisionDigest !== authority.decisionSupport.digest
     ) {
       return res.status(409).json(
-        buildDecisionSupportDigestMismatchPayload(authority.decisionSupport.digest),
+        buildDecisionSupportDigestMismatchPayload({
+          latestDigest: authority.decisionSupport.digest,
+          latestDecisionInputsHash: authority.decisionSupport.decisionInputsHash,
+          latestPersonalizationScopeHash: authority.personalizationScopeHash,
+        }),
+      );
+    }
+    if (
+      parsedBody.decisionInputsHash &&
+      parsedBody.decisionInputsHash !== authority.decisionSupport.decisionInputsHash
+    ) {
+      return res.status(409).json(
+        buildDecisionSupportDigestMismatchPayload({
+          latestDigest: authority.decisionSupport.digest,
+          latestDecisionInputsHash: authority.decisionSupport.decisionInputsHash,
+          latestPersonalizationScopeHash: authority.personalizationScopeHash,
+        }),
+      );
+    }
+    if (
+      parsedBody.personalizationScopeHash &&
+      parsedBody.personalizationScopeHash !== authority.personalizationScopeHash
+    ) {
+      return res.status(409).json(
+        buildDecisionSupportDigestMismatchPayload({
+          latestDigest: authority.decisionSupport.digest,
+          latestDecisionInputsHash: authority.decisionSupport.decisionInputsHash,
+          latestPersonalizationScopeHash: authority.personalizationScopeHash,
+        }),
       );
     }
 
@@ -10901,6 +11089,8 @@ app.post("/api/ingredient-overview/v1", verifySupabaseToken, async (req: Request
     return res.json({
       status: "ok",
       digest: authority.decisionSupport.digest,
+      decisionInputsHash: authority.decisionSupport.decisionInputsHash,
+      personalizationScopeHash: authority.personalizationScopeHash,
       ingredientOverview: compiled.ingredientOverview,
       source: compiled.source,
       fallbackUsed: compiled.fallbackUsed,
@@ -10925,13 +11115,47 @@ app.post("/api/scientific-background/v1", verifySupabaseToken, async (req: Reque
   }
 
   try {
-    const authority = await buildDecisionSupportAuthorityBundle(normalizedBarcode);
+    const authedReq = req as AuthenticatedRequest;
+    const viewMode = parseDecisionSupportViewMode(parsedBody.viewMode ?? null);
+    const authority = await buildDecisionSupportAuthorityBundle(normalizedBarcode, {
+      req,
+      userId: authedReq.user?.id ?? null,
+      viewMode,
+    });
     if (
       parsedBody.decisionDigest &&
       parsedBody.decisionDigest !== authority.decisionSupport.digest
     ) {
       return res.status(409).json(
-        buildDecisionSupportDigestMismatchPayload(authority.decisionSupport.digest),
+        buildDecisionSupportDigestMismatchPayload({
+          latestDigest: authority.decisionSupport.digest,
+          latestDecisionInputsHash: authority.decisionSupport.decisionInputsHash,
+          latestPersonalizationScopeHash: authority.personalizationScopeHash,
+        }),
+      );
+    }
+    if (
+      parsedBody.decisionInputsHash &&
+      parsedBody.decisionInputsHash !== authority.decisionSupport.decisionInputsHash
+    ) {
+      return res.status(409).json(
+        buildDecisionSupportDigestMismatchPayload({
+          latestDigest: authority.decisionSupport.digest,
+          latestDecisionInputsHash: authority.decisionSupport.decisionInputsHash,
+          latestPersonalizationScopeHash: authority.personalizationScopeHash,
+        }),
+      );
+    }
+    if (
+      parsedBody.personalizationScopeHash &&
+      parsedBody.personalizationScopeHash !== authority.personalizationScopeHash
+    ) {
+      return res.status(409).json(
+        buildDecisionSupportDigestMismatchPayload({
+          latestDigest: authority.decisionSupport.digest,
+          latestDecisionInputsHash: authority.decisionSupport.decisionInputsHash,
+          latestPersonalizationScopeHash: authority.personalizationScopeHash,
+        }),
       );
     }
 
@@ -10954,13 +11178,18 @@ app.post("/api/scientific-background/v1", verifySupabaseToken, async (req: Reque
     const executionProfile = resolveScientificBackgroundExecutionProfile(plan);
     const cacheKey = [
       authority.decisionSupport.digest,
+      authority.decisionSupport.decisionInputsHash,
+      authority.personalizationScopeHash,
       selectedDescriptor.key,
       plan.mode,
       SCIENTIFIC_BACKGROUND_PROMPT_VERSION,
     ].join("|");
     const cached = readScientificBackgroundSidecarCache(cacheKey);
     if (cached) {
-      return res.json(cached);
+      const shouldBypassFallbackCache = parsedBody.revalidateFallback === true && cached.source === "fallback";
+      if (!shouldBypassFallbackCache) {
+        return res.json(cached);
+      }
     }
 
     const existingInflight = scientificBackgroundSidecarInflight.get(cacheKey);
@@ -10993,6 +11222,8 @@ app.post("/api/scientific-background/v1", verifySupabaseToken, async (req: Reque
       const payload: ScientificBackgroundSidecarResponse = {
         status: "ok",
         digest: authority.decisionSupport.digest,
+        decisionInputsHash: authority.decisionSupport.decisionInputsHash,
+        personalizationScopeHash: authority.personalizationScopeHash,
         scientificBackground: compiled.scientificBackground,
         source: compiled.source,
         fallbackUsed: compiled.fallbackUsed,
@@ -11035,6 +11266,8 @@ app.post("/api/scientific-background/v1", verifySupabaseToken, async (req: Reque
           const refreshedPayload: ScientificBackgroundSidecarResponse = {
             status: "ok",
             digest: authority.decisionSupport.digest,
+            decisionInputsHash: authority.decisionSupport.decisionInputsHash,
+            personalizationScopeHash: authority.personalizationScopeHash,
             scientificBackground: refreshed.scientificBackground,
             source: refreshed.source,
             fallbackUsed: refreshed.fallbackUsed,
