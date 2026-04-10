@@ -61,6 +61,10 @@ test('scan trust contract preserves the sectioned analysis shell and deep dive c
   assert.match(dashboardSource, /const buildPendingDecisionAuthorityState = \(scopeKey: string\): DecisionAuthorityState => \(\{/);
   assert.match(dashboardSource, /authoritativePersonalizationReady === true/);
   assert.match(dashboardSource, /status: 'terminal_no_authority'/);
+  assert.match(dashboardSource, /const authoritativeDecisionTemplatePayload = useMemo<DecisionSupportTemplatePayload \| null>/);
+  assert.match(dashboardSource, /const decisionPersonalizedResultLane = authoritativeDecisionTemplatePayload\?\.personalizedResultLane \?\? null;/);
+  assert.match(dashboardSource, /if \(!decisionPersonalizedResultLane\) \{\s*return null;\s*\}/);
+  assert.match(dashboardSource, /shouldShowTopSectionAuthorityPlaceholder \? \(\s*<TopSectionAuthorityPlaceholder \/>/);
 });
 
 test('recent scan save chain contract still preserves dosageText and imageUrl assertions', () => {

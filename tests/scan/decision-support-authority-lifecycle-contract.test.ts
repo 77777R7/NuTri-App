@@ -21,6 +21,10 @@ test('authority lifecycle is an explicit state machine and seeded payloads canno
   assert.match(source, /setDecisionAuthorityState\(\{\s*status: 'terminal_no_authority'/);
   assert.match(source, /requestSeq === decisionSupportRequestSeqRef\.current/);
   assert.match(source, /decisionSupportAuthorityScopeKeyRef\.current === authorityScopeKeyForRequest/);
+  assert.match(source, /const authoritativeDecisionTemplatePayload = useMemo<DecisionSupportTemplatePayload \| null>/);
+  assert.match(source, /const decisionPersonalizedResultLane = authoritativeDecisionTemplatePayload\?\.personalizedResultLane \?\? null;/);
+  assert.match(source, /const shouldShowTopSectionAuthorityPlaceholder = decisionAuthorityState\.status === 'pending';/);
+  assert.match(source, /const shouldRenderTopSection =\s*shouldShowTopSectionAuthorityPlaceholder \|\| Boolean\(topSectionPresentation\);/);
 });
 
 test('authority reset scope follows a stable scan key instead of drifting bundle facts metadata', async () => {

@@ -2347,6 +2347,41 @@ const WidgetTile: React.FC<WidgetTileProps> = ({ tile, onPress }) => {
     );
 };
 
+const TopSectionAuthorityPlaceholder: React.FC = () => (
+    <View style={styles.authorityPlaceholderWrap}>
+        <View style={styles.authorityPlaceholderHeroCard}>
+            <SkeletonLoader width="42%" height={16} borderRadius={999} />
+            <View style={styles.authorityPlaceholderProductRow}>
+                <SkeletonLoader width={72} height={72} borderRadius={24} />
+                <View style={styles.authorityPlaceholderProductCopy}>
+                    <SkeletonLoader width="78%" height={18} style={{ borderCurve: 'continuous' }} />
+                    <SkeletonLoader width="54%" height={14} style={{ borderCurve: 'continuous' }} />
+                </View>
+            </View>
+            <View style={{ marginTop: 18, gap: 10 }}>
+                <SkeletonLoader width="92%" height={16} style={{ borderCurve: 'continuous' }} />
+                <SkeletonLoader width="68%" height={16} style={{ borderCurve: 'continuous' }} />
+                <SkeletonLoader width="30%" height={14} style={{ borderCurve: 'continuous' }} />
+            </View>
+        </View>
+
+        <View style={styles.authorityPlaceholderInsightsBlock}>
+            <Text style={styles.sectionTitle}>Personalized Insights</Text>
+            <View style={styles.authorityPlaceholderInsightsCard}>
+            {Array.from({ length: 4 }).map((_, index) => (
+                <View key={`top-section-placeholder-${index}`} style={styles.authorityPlaceholderInsightRow}>
+                    <SkeletonLoader width={40} height={40} borderRadius={999} />
+                    <View style={styles.authorityPlaceholderInsightCopy}>
+                        <SkeletonLoader width="76%" height={14} style={{ borderCurve: 'continuous' }} />
+                        <SkeletonLoader width="48%" height={12} style={{ borderCurve: 'continuous' }} />
+                    </View>
+                </View>
+            ))}
+            </View>
+        </View>
+    </View>
+);
+
 // ---------- Glass UI primitives (iOS-like, frosted) ----------
 type PillarStatus = 'good' | 'ok' | 'warn' | 'unknown';
 
@@ -5002,12 +5037,22 @@ const AnalysisBundleDashboard: React.FC<{
         decisionSupportState.status,
         inlineDecisionTemplatePayload,
     ]);
+    const authoritativeDecisionTemplatePayload = useMemo<DecisionSupportTemplatePayload | null>(
+        () => (
+            decisionAuthorityState.status === 'ready'
+            && decisionAuthorityState.payload
+            && typeof decisionAuthorityState.payload === 'object'
+                ? (decisionAuthorityState.payload as DecisionSupportTemplatePayload)
+                : null
+        ),
+        [decisionAuthorityState],
+    );
     const decisionOverviewBlock = decisionTemplatePayload?.overviewBlock;
     const decisionUsageBlock = decisionTemplatePayload?.usageBlock;
     const decisionSafetyBlock = decisionTemplatePayload?.safetyBlock;
     const decisionScienceBlock = decisionTemplatePayload?.scienceBlock ?? null;
     const decisionQualityMark = decisionTemplatePayload?.qualityMark;
-    const decisionPersonalizedResultLane = decisionTemplatePayload?.personalizedResultLane ?? null;
+    const decisionPersonalizedResultLane = authoritativeDecisionTemplatePayload?.personalizedResultLane ?? null;
     const currentDecisionDigest =
         normalizeText(
             decisionTemplatePayload?.digest
@@ -5634,7 +5679,11 @@ const AnalysisBundleDashboard: React.FC<{
         omegaCoverSignals.total?.dose,
         scienceIngredientsAll,
     ]);
+    const shouldShowTopSectionAuthorityPlaceholder = decisionAuthorityState.status === 'pending';
     const topSectionPresentation = useMemo(() => {
+        if (!decisionPersonalizedResultLane) {
+            return null;
+        }
         const goalFit = decisionPersonalizedResultLane?.goalFit;
         const personalInsight = decisionPersonalizedResultLane?.personalInsight;
         const hasSavedAllergyPreferences =
@@ -5888,16 +5937,15 @@ const AnalysisBundleDashboard: React.FC<{
             },
         });
     }, [
-        decisionPersonalizedResultLane?.allergyInsight,
-        decisionPersonalizedResultLane?.dosageContext,
-        decisionPersonalizedResultLane?.goalFit,
-        decisionPersonalizedResultLane?.personalInsight,
+        decisionPersonalizedResultLane,
         localDecisionSupportSignals.allergyCount,
         localDecisionSupportSignals.restrictionCount,
         safetyTipCoverText,
         safetyWarningCoverText,
         topSectionDosePreviewText,
     ]);
+    const shouldRenderTopSection =
+        shouldShowTopSectionAuthorityPlaceholder || Boolean(topSectionPresentation);
     const heroImageUri = saveItem?.imageUrl ?? productInfo?.image ?? null;
     const verifiedLabelText = normalizeText(sourceBadgeLabel) || 'Verified Label Data';
 
@@ -9230,19 +9278,23 @@ const AnalysisBundleDashboard: React.FC<{
                 {...scrollProps}
             >
                 {!disableHeroHeader ? (
-                    <AnalysisTopSectionRedesign
-                        hero={topSectionPresentation.hero}
-                        banner={topSectionPresentation.banner}
-                        insights={topSectionPresentation.insights}
-                        secondaryNote={topSectionPresentation.secondaryNote ?? null}
-                        productTitle={productTitle}
-                        productSubtitle={productSubtitle}
-                        heroImageUri={heroImageUri}
-                        verifiedLabelText={verifiedLabelText}
-                    />
+                    shouldShowTopSectionAuthorityPlaceholder ? (
+                        <TopSectionAuthorityPlaceholder />
+                    ) : topSectionPresentation ? (
+                        <AnalysisTopSectionRedesign
+                            hero={topSectionPresentation.hero}
+                            banner={topSectionPresentation.banner}
+                            insights={topSectionPresentation.insights}
+                            secondaryNote={topSectionPresentation.secondaryNote ?? null}
+                            productTitle={productTitle}
+                            productSubtitle={productSubtitle}
+                            heroImageUri={heroImageUri}
+                            verifiedLabelText={verifiedLabelText}
+                        />
+                    ) : null
                 ) : null}
 
-                {!disableHeroHeader ? <View style={styles.sectionDivider} /> : null}
+                {!disableHeroHeader && shouldRenderTopSection ? <View style={styles.sectionDivider} /> : null}
 
                 {SHOW_SCAN_DEBUG ? (
                     <View style={styles.scanDebugCard}>
