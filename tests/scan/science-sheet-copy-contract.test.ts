@@ -18,7 +18,7 @@ test("science sheet uses fixed factual card plus B/C card titles", () => {
 
 test("science factual card stays grounded to decision-support ingredient rows", () => {
   assert.ok(source.includes("const decisionScienceIngredientRows = useMemo<ScienceSidecarIngredientRow[]>("));
-  assert.ok(source.includes("authoritativeDecisionScienceBlock?.ingredientRows ?? []"));
+  assert.ok(source.includes("decisionScienceBlock?.ingredientRows ?? []"));
   assert.ok(source.includes("decisionScienceIngredientRows.map((item, idx) => ("));
   assert.ok(source.includes("<Text style={styles.kvLabel}>Chemical Form</Text>"));
   assert.ok(source.includes("<Text style={styles.kvLabel}>Delivery Type</Text>"));

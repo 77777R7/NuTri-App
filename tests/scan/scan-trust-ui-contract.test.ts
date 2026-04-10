@@ -34,15 +34,21 @@ test('scan trust contract preserves the sectioned analysis shell and deep dive c
   assert.ok(i18nSource.includes("analysisSectionNutriScoreSubtitle: 'Tap to view detailed analysis'"));
   assert.ok(i18nSource.includes("analysisSectionDeepDiveTitle: 'Deep Dive'"));
   assert.ok(i18nSource.includes("analysisSectionDeepDiveSubtitle: 'Tap to view detailed analysis'"));
+  assert.ok(i18nSource.includes("analysisSectionComparisonTitle: 'Comparison with similar products'"));
+  assert.ok(i18nSource.includes("analysisSectionComparisonSubtitle: 'See how this product stands and explore higher-scoring options'"));
+  assert.ok(i18nSource.includes("analysisComparisonAlternativesTitle: 'Higher-scoring alternatives'"));
   assert.equal(dashboardSource.includes('t.analysisSectionPersonalInsightTitle'), false);
   assert.ok(dashboardSource.includes('t.analysisSectionNutriScoreTitle'));
   assert.ok(dashboardSource.includes('t.analysisSectionNutriScoreSubtitle'));
   assert.ok(dashboardSource.includes('t.analysisSectionDeepDiveTitle'));
   assert.ok(dashboardSource.includes('t.analysisSectionDeepDiveSubtitle'));
-  assert.equal(dashboardSource.includes('t.analysisSectionComparisonTitle'), false);
-  assert.equal(dashboardSource.includes('t.analysisSectionComparisonSubtitle'), false);
-  assert.equal(dashboardSource.includes('t.analysisComparisonAlternativesTitle'), false);
-  assert.equal(dashboardSource.includes('ComparisonAlternativeCard'), false);
+  assert.ok(dashboardSource.includes('t.analysisSectionComparisonTitle'));
+  assert.ok(dashboardSource.includes('t.analysisSectionComparisonSubtitle'));
+  assert.ok(dashboardSource.includes('t.analysisComparisonAlternativesTitle'));
+  assert.ok(dashboardSource.includes('comparisonStandingCard'));
+  assert.ok(dashboardSource.includes('ComparisonAlternativeCard'));
+  assert.ok(dashboardSource.includes("comparisonStanding?.status === 'ready'"));
+  assert.ok(dashboardSource.includes('canonicalIdentityConfidenceHigh'));
   assert.ok(dashboardSource.includes('resolveCanonicalBarcodeFromBundleMeta'));
   assert.ok(dashboardSource.includes('const authoritativeIdentityType ='));
   assert.ok(dashboardSource.includes("typeof bundleState.meta.authoritativeIdentity?.type === 'string'"));
@@ -57,14 +63,7 @@ test('scan trust contract preserves the sectioned analysis shell and deep dive c
   assert.ok(dashboardSource.includes('pickStrongestDecisionPayloadForFacts('));
   assert.ok(dashboardSource.includes('const pickCompatibleDecisionPayload ='));
   assert.ok(dashboardSource.includes('pickAuthoritativeDecisionPayloadUpgrade('));
-  assert.match(dashboardSource, /stripDecisionPayloadPersonalization/);
-  assert.match(dashboardSource, /const buildPendingDecisionAuthorityState = \(scopeKey: string\): DecisionAuthorityState => \(\{/);
-  assert.match(dashboardSource, /authoritativePersonalizationReady === true/);
-  assert.match(dashboardSource, /status: 'terminal_no_authority'/);
-  assert.match(dashboardSource, /const authoritativeDecisionTemplatePayload = useMemo<DecisionSupportTemplatePayload \| null>/);
-  assert.match(dashboardSource, /const decisionPersonalizedResultLane = authoritativeDecisionTemplatePayload\?\.personalizedResultLane \?\? null;/);
-  assert.match(dashboardSource, /if \(!decisionPersonalizedResultLane\) \{\s*return null;\s*\}/);
-  assert.match(dashboardSource, /shouldShowTopSectionAuthorityPlaceholder \? \(\s*<TopSectionAuthorityPlaceholder \/>/);
+  assert.ok(dashboardSource.includes('mergeDecisionPayloadPersonalization(strongestPayload, fetchedPersonalizationPayload)'));
 });
 
 test('recent scan save chain contract still preserves dosageText and imageUrl assertions', () => {

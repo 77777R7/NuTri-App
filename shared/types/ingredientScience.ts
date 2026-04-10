@@ -26,8 +26,6 @@ export type ScientificBackgroundBlock = {
 export type IngredientOverviewResponse = {
   status: "ok";
   digest: string;
-  decisionInputsHash?: string;
-  personalizationScopeHash?: string;
   ingredientOverview: IngredientOverviewBlock;
   source: "api" | "fallback";
   fallbackUsed: boolean;
@@ -37,8 +35,6 @@ export type IngredientOverviewResponse = {
 export type ScientificBackgroundResponse = {
   status: "ok";
   digest: string;
-  decisionInputsHash?: string;
-  personalizationScopeHash?: string;
   scientificBackground: ScientificBackgroundBlock;
   source: "api" | "fallback";
   fallbackUsed: boolean;

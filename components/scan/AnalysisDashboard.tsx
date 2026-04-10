@@ -131,14 +131,7 @@ type DecisionSupportState = {
     autoRetryUsed: boolean;
 };
 
-type DecisionAuthorityStatus = 'pending' | 'ready' | 'terminal_no_authority';
-type DecisionAuthorityOrigin = 'fetch' | 'seed';
-type DecisionAuthorityState = {
-    status: DecisionAuthorityStatus;
-    scopeKey: string;
-    origin: DecisionAuthorityOrigin;
-    payload: Record<string, unknown> | null;
-};
+type DecisionSupportAuthorityGate = 'waiting' | 'ready';
 
 type DecisionChecklistStatus = 'verified' | 'missing' | 'unknown';
 type DecisionChecklistRow = {
@@ -387,9 +380,6 @@ type DecisionSupportPersonalizedResultLane = {
 type DecisionSupportTemplatePayload = {
     digest?: string;
     decisionInputsHash?: string;
-    authoritativePersonalizationReady?: boolean;
-    personalizationAttachmentStatus?: 'attached' | 'partial' | 'none';
-    personalizationScopeHash?: string;
     decisionContractVersion?: string;
     overlayClaimsHash?: string | null;
     overlayAugmentationVersion?: string | null;
@@ -768,35 +758,11 @@ const getDecisionPayloadFactsDigestHash = (payload: Record<string, unknown> | nu
 const getDecisionPayloadDigest = (payload: Record<string, unknown> | null | undefined): string =>
     normalizeText(payload && typeof payload.digest === 'string' ? payload.digest : null);
 
-const getDecisionPayloadDecisionInputsHash = (payload: Record<string, unknown> | null | undefined): string =>
-    normalizeText(payload && typeof payload.decisionInputsHash === 'string' ? payload.decisionInputsHash : null);
-
-const getDecisionPayloadPersonalizationScopeHash = (payload: Record<string, unknown> | null | undefined): string =>
-    normalizeText(payload && typeof payload.personalizationScopeHash === 'string' ? payload.personalizationScopeHash : null);
-
 const isDecisionPayloadExplicitlyStale = (payload: Record<string, unknown> | null | undefined): boolean =>
     Boolean(payload && typeof payload === 'object' && payload.staleDigest === true);
 
 const hasPersonalizedResultLane = (payload: Record<string, unknown> | null | undefined): boolean =>
     Boolean(payload && typeof payload.personalizedResultLane === 'object' && payload.personalizedResultLane !== null);
-
-const stripDecisionPayloadPersonalization = (
-    payload: Record<string, unknown> | null | undefined,
-): Record<string, unknown> | null => {
-    if (!payload || typeof payload !== 'object') return null;
-    const {
-        personalizedResultLane,
-        authoritativePersonalizationReady,
-        personalizationAttachmentStatus,
-        personalizationScopeHash,
-        ...basePayload
-    } = payload as Record<string, unknown>;
-    void personalizedResultLane;
-    void authoritativePersonalizationReady;
-    void personalizationAttachmentStatus;
-    void personalizationScopeHash;
-    return basePayload;
-};
 
 const getV2ModulesFromPayload = (payload: Record<string, unknown> | null | undefined): Record<string, unknown>[] => {
     const card = payload?.nutriScoreCardV2;
@@ -947,12 +913,7 @@ const isAuthoritativeDecisionPayloadSource = (
 
 const isAuthoritativePersonalizedDecisionPayload = (
     payload: Record<string, unknown> | null | undefined,
-): boolean => (
-    Boolean(payload && typeof payload === 'object' && payload.authoritativePersonalizationReady === true)
-    && hasPersonalizedResultLane(payload)
-    && !isDecisionPayloadExplicitlyStale(payload)
-    && getDecisionPayloadPersonalizationScopeHash(payload).length > 0
-);
+): boolean => isAuthoritativeDecisionPayloadSource(payload) && hasPersonalizedResultLane(payload);
 
 const shouldUseDecisionPayloadForBundle = (params: {
     payload: Record<string, unknown> | null | undefined;
@@ -1003,35 +964,39 @@ const pickCompatibleDecisionPayload = (params: {
     return pickStrongestDecisionPayloadForFacts(params.factsDigestHash, ...params.payloads);
 };
 
+const mergeDecisionPayloadPersonalization = (
+    basePayload: Record<string, unknown> | null | undefined,
+    personalizationPayload: Record<string, unknown> | null | undefined,
+): Record<string, unknown> | null => {
+    if (!basePayload && !personalizationPayload) return null;
+    if (!basePayload) return personalizationPayload ?? null;
+    if (!personalizationPayload || typeof personalizationPayload !== 'object') return basePayload;
+
+    const personalizedResultLane =
+        typeof personalizationPayload.personalizedResultLane === 'object'
+            ? personalizationPayload.personalizedResultLane
+            : null;
+
+    if (!personalizedResultLane) return basePayload;
+
+    return {
+        ...basePayload,
+        personalizedResultLane,
+    };
+};
+
 const upsertDecisionPayloadByBarcode = (
     cache: Map<string, Record<string, unknown>>,
     barcode: string,
     payload: Record<string, unknown>,
 ): Record<string, unknown> => {
-    const strippedPayload = stripDecisionPayloadPersonalization(payload) ?? payload;
     const existing = cache.get(barcode) ?? null;
-    const selected = pickStrongerDecisionPayload(existing, strippedPayload);
+    const selected = pickStrongerDecisionPayload(existing, payload);
     if (selected) {
         cache.set(barcode, selected);
         return selected;
     }
-    return strippedPayload;
-};
-
-const buildPendingDecisionAuthorityState = (scopeKey: string): DecisionAuthorityState => ({
-    status: 'pending',
-    scopeKey,
-    origin: 'seed',
-    payload: null,
-});
-
-const getCachedBaseDecisionPayload = (
-    cache: Map<string, Record<string, unknown>>,
-    key: string | null | undefined,
-): Record<string, unknown> | null => {
-    if (!key) return null;
-    const cached = cache.get(key) ?? null;
-    return stripDecisionPayloadPersonalization(cached) ?? cached;
+    return payload;
 };
 
 if (__DEV__) {
@@ -1923,6 +1888,138 @@ const NutriScoreCardV2: React.FC<{
     );
 };
 
+const ComparisonAlternativeCard: React.FC<{
+    alternative: DecisionSupportPersonalizedStandingAlternative;
+    cardWidth: number;
+}> = ({ alternative, cardWidth }) => {
+    const { t } = useTranslation();
+    const scoreText = Number.isFinite(Number(alternative.nutriScore))
+        ? `${Math.round(Number(alternative.nutriScore))}/100`
+        : '--';
+
+    return (
+        <View style={[styles.comparisonCard, { width: cardWidth }]}>
+            <View style={styles.comparisonCardTopRow}>
+                <View style={styles.comparisonCardIdentity}>
+                    {alternative.imageUrl ? (
+                        <Image source={{ uri: alternative.imageUrl }} style={styles.comparisonCardImage} />
+                    ) : (
+                        <View style={styles.comparisonCardImagePlaceholder}>
+                            <Pill size={18} color="#64748B" />
+                        </View>
+                    )}
+                    <View style={styles.comparisonCardIdentityText}>
+                        <Text style={styles.comparisonCardTitle} numberOfLines={2}>
+                            {alternative.title}
+                        </Text>
+                        {alternative.brand ? (
+                            <Text style={styles.comparisonCardBrand} numberOfLines={1}>
+                                {alternative.brand}
+                            </Text>
+                        ) : null}
+                    </View>
+                </View>
+
+                <View style={styles.comparisonCardScoreBlock}>
+                    <Text style={styles.comparisonCardScore}>{scoreText}</Text>
+                    <Text style={styles.comparisonCardScoreLabel}>{t.analysisComparisonScoreLabel}</Text>
+                </View>
+            </View>
+
+            {alternative.reason ? <Text style={styles.comparisonCardReason}>{alternative.reason}</Text> : null}
+        </View>
+    );
+};
+
+const DecisionSupportAuthorityPlaceholder: React.FC = () => {
+    return (
+        <View style={styles.authorityPlaceholderWrap}>
+            <View style={styles.authorityPlaceholderHeroCard}>
+                <SkeletonLoader width={168} height={32} borderRadius={999} style={{ borderCurve: 'continuous' }} />
+                <View style={styles.authorityPlaceholderProductRow}>
+                    <SkeletonLoader width={72} height={72} borderRadius={20} style={{ borderCurve: 'continuous' }} />
+                    <View style={styles.authorityPlaceholderProductCopy}>
+                        <SkeletonLoader width="82%" height={22} style={{ marginBottom: 6, borderCurve: 'continuous' }} />
+                        <SkeletonLoader width="52%" height={16} style={{ marginBottom: 8, borderCurve: 'continuous' }} />
+                    </View>
+                </View>
+                <SkeletonLoader width="74%" height={18} style={{ marginTop: 18, marginBottom: 8, borderCurve: 'continuous' }} />
+                <SkeletonLoader width="58%" height={14} style={{ borderCurve: 'continuous' }} />
+            </View>
+
+            <View style={styles.authorityPlaceholderInsightsBlock}>
+                <Text style={styles.insightsTitle}>Personalized Insights</Text>
+                <View style={styles.authorityPlaceholderInsightsCard}>
+                    {Array.from({ length: 4 }).map((_, index) => (
+                        <View key={`authority-row-${index}`} style={styles.authorityPlaceholderInsightRow}>
+                            <SkeletonLoader width={40} height={40} borderRadius={20} style={{ borderCurve: 'continuous' }} />
+                            <View style={styles.authorityPlaceholderInsightCopy}>
+                                <SkeletonLoader width={index === 0 ? '72%' : '64%'} height={16} style={{ marginBottom: 6, borderCurve: 'continuous' }} />
+                                <SkeletonLoader width={index === 0 ? '48%' : '36%'} height={12} style={{ borderCurve: 'continuous' }} />
+                            </View>
+                        </View>
+                    ))}
+                </View>
+            </View>
+        </View>
+    );
+};
+
+const ComparisonAuthorityPlaceholder: React.FC = () => {
+    return (
+        <View style={styles.sectionBlock}>
+            <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Comparison</Text>
+                <Text style={styles.sectionSubtitle}>Checking similar products and better alternatives.</Text>
+            </View>
+
+            <View style={styles.comparisonStandingCard}>
+                <View style={styles.comparisonLeadRow}>
+                    <View style={styles.comparisonLeadIconWrap}>
+                        <BarChart3 size={18} color="#94A3B8" />
+                    </View>
+                    <View style={styles.comparisonLeadCopy}>
+                        <SkeletonLoader width="68%" height={16} style={{ marginBottom: 6, borderCurve: 'continuous' }} />
+                        <SkeletonLoader width="44%" height={12} style={{ borderCurve: 'continuous' }} />
+                    </View>
+                </View>
+                <View style={styles.comparisonSectionDivider} />
+                <Text style={styles.comparisonAlternativesTitle}>Alternatives</Text>
+                <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    decelerationRate="fast"
+                    contentContainerStyle={styles.comparisonRailContent}
+                    scrollEnabled={false}
+                >
+                    {Array.from({ length: 2 }).map((_, index) => (
+                        <View
+                            key={`comparison-placeholder-${index}`}
+                            style={[styles.comparisonCard, styles.comparisonPlaceholderCard]}
+                        >
+                            <View style={styles.comparisonCardTopRow}>
+                                <View style={styles.comparisonCardIdentity}>
+                                    <SkeletonLoader width={42} height={42} borderRadius={14} style={{ borderCurve: 'continuous' }} />
+                                    <View style={styles.comparisonCardIdentityText}>
+                                        <SkeletonLoader width="84%" height={15} style={{ marginBottom: 6, borderCurve: 'continuous' }} />
+                                        <SkeletonLoader width="48%" height={12} style={{ borderCurve: 'continuous' }} />
+                                    </View>
+                                </View>
+                                <View style={styles.comparisonCardScoreBlock}>
+                                    <SkeletonLoader width={42} height={14} style={{ marginBottom: 4, borderCurve: 'continuous' }} />
+                                    <SkeletonLoader width={34} height={10} style={{ borderCurve: 'continuous' }} />
+                                </View>
+                            </View>
+                            <SkeletonLoader width="88%" height={12} style={{ marginTop: 12, borderCurve: 'continuous' }} />
+                            <SkeletonLoader width="72%" height={12} style={{ marginTop: 6, borderCurve: 'continuous' }} />
+                        </View>
+                    ))}
+                </ScrollView>
+            </View>
+        </View>
+    );
+};
+
 function clampText(value?: string | null, maxChars: number = 100) {
     const normalized = normalizeText(value);
     if (!normalized) return '';
@@ -2346,41 +2443,6 @@ const WidgetTile: React.FC<WidgetTileProps> = ({ tile, onPress }) => {
         </View>
     );
 };
-
-const TopSectionAuthorityPlaceholder: React.FC = () => (
-    <View style={styles.authorityPlaceholderWrap}>
-        <View style={styles.authorityPlaceholderHeroCard}>
-            <SkeletonLoader width="42%" height={16} borderRadius={999} />
-            <View style={styles.authorityPlaceholderProductRow}>
-                <SkeletonLoader width={72} height={72} borderRadius={24} />
-                <View style={styles.authorityPlaceholderProductCopy}>
-                    <SkeletonLoader width="78%" height={18} style={{ borderCurve: 'continuous' }} />
-                    <SkeletonLoader width="54%" height={14} style={{ borderCurve: 'continuous' }} />
-                </View>
-            </View>
-            <View style={{ marginTop: 18, gap: 10 }}>
-                <SkeletonLoader width="92%" height={16} style={{ borderCurve: 'continuous' }} />
-                <SkeletonLoader width="68%" height={16} style={{ borderCurve: 'continuous' }} />
-                <SkeletonLoader width="30%" height={14} style={{ borderCurve: 'continuous' }} />
-            </View>
-        </View>
-
-        <View style={styles.authorityPlaceholderInsightsBlock}>
-            <Text style={styles.sectionTitle}>Personalized Insights</Text>
-            <View style={styles.authorityPlaceholderInsightsCard}>
-            {Array.from({ length: 4 }).map((_, index) => (
-                <View key={`top-section-placeholder-${index}`} style={styles.authorityPlaceholderInsightRow}>
-                    <SkeletonLoader width={40} height={40} borderRadius={999} />
-                    <View style={styles.authorityPlaceholderInsightCopy}>
-                        <SkeletonLoader width="76%" height={14} style={{ borderCurve: 'continuous' }} />
-                        <SkeletonLoader width="48%" height={12} style={{ borderCurve: 'continuous' }} />
-                    </View>
-                </View>
-            ))}
-            </View>
-        </View>
-    </View>
-);
 
 // ---------- Glass UI primitives (iOS-like, frosted) ----------
 type PillarStatus = 'good' | 'ok' | 'warn' | 'unknown';
@@ -3634,9 +3696,7 @@ const AnalysisBundleDashboard: React.FC<{
         error: null,
         autoRetryUsed: false,
     });
-    const [decisionAuthorityState, setDecisionAuthorityState] = useState<DecisionAuthorityState>(() =>
-        buildPendingDecisionAuthorityState('scope_pending'),
-    );
+    const [authoritativeDecisionPayload, setAuthoritativeDecisionPayload] = useState<Record<string, unknown> | null>(null);
     const [productOverviewAiByDigest, setProductOverviewAiByDigest] = useState<Record<string, ProductOverviewAiState>>({});
     const [ingredientOverviewByRequestKey, setIngredientOverviewByRequestKey] = useState<Record<string, IngredientOverviewSidecarState>>({});
     const [scientificBackgroundByRequestKey, setScientificBackgroundByRequestKey] = useState<Record<string, ScientificBackgroundSidecarState>>({});
@@ -3644,12 +3704,7 @@ const AnalysisBundleDashboard: React.FC<{
     const ingredientOverviewStateRef = useRef<Record<string, IngredientOverviewSidecarState>>({});
     const scientificBackgroundStateRef = useRef<Record<string, ScientificBackgroundSidecarState>>({});
     const decisionSupportCacheRef = useRef<Map<string, Record<string, unknown>>>(new Map());
-    const decisionSupportFullCacheRef = useRef<Map<string, Record<string, unknown>>>(new Map());
     const decisionSupportByBarcodeRef = useRef<Map<string, Record<string, unknown>>>(decisionSupportWarmCache);
-    const decisionAuthorityStateRef = useRef<DecisionAuthorityState>(buildPendingDecisionAuthorityState('scope_pending'));
-    const decisionSupportAuthorityScopeKeyRef = useRef<string>('scope_pending');
-    const ingredientOverviewRevalidateCooldownRef = useRef<Record<string, number>>({});
-    const scientificBackgroundRevalidateCooldownRef = useRef<Record<string, number>>({});
     const [simpleSourcesOpen, setSimpleSourcesOpen] = useState(false);
     const detailLoadingRef = useRef(false);
     const detailInFlightKeyRef = useRef<string | null>(null);
@@ -3668,13 +3723,16 @@ const AnalysisBundleDashboard: React.FC<{
         if (digits.length < 8) return null;
         return digits.length > 14 ? digits.slice(-14) : digits.padStart(14, '0');
     }, [analysisBarcodeRaw]);
-    const authorityScopeBarcode = useMemo(
-        () => resolveCanonicalBarcodeFromBundleMeta(bundle.meta, analysisBarcodeDigits),
-        [analysisBarcodeDigits, bundle.meta],
-    );
     const foundationMetricLoggedRef = useRef<Set<string>>(new Set());
     const overlayConsumerMetricLoggedRef = useRef<Set<string>>(new Set());
     const currentRunKeyRef = useRef<string | null>(null);
+    const decisionSupportAuthorityScopeKey = useMemo(
+        () => [
+            normalizeText(scanSessionId) || 'session_unknown',
+            normalizeText((bundle.meta as { bundleId?: string | null }).bundleId ?? null) || 'bundle_unknown',
+        ].join('|'),
+        [bundle.meta, scanSessionId],
+    );
     const localDecisionSupportProfile = useMemo(
         () => toLocalDecisionSupportProfilePayload(onboardingDraft),
         [onboardingDraft],
@@ -3700,41 +3758,24 @@ const AnalysisBundleDashboard: React.FC<{
         () => !authLoading && Boolean(localDecisionSupportHeader),
         [authLoading, localDecisionSupportHeader],
     );
+    const localDecisionSupportCacheScope = useMemo(() => {
+        if (authLoading || onboardingLoading) return 'local_profile_loading';
+        if (shouldUseLocalDecisionSupport && localDecisionSupportHeader) {
+            return `local_profile:${localDecisionSupportHeader}`;
+        }
+        if (authToken) return 'auth_session';
+        return 'local_profile:none';
+    }, [
+        authLoading,
+        authToken,
+        localDecisionSupportHeader,
+        onboardingLoading,
+        shouldUseLocalDecisionSupport,
+    ]);
     const localDecisionSupportProfileKey = useMemo(() => {
         if (!localDecisionSupportHeader) return null;
         return hashDecisionSupportProfileKey(localDecisionSupportHeader);
     }, [localDecisionSupportHeader]);
-    const decisionSupportBaseCacheScopeKey = useMemo(
-        () => normalizeText(localDecisionSupportProfileKey ?? null) || (authToken ? 'auth_session' : 'anon'),
-        [authToken, localDecisionSupportProfileKey],
-    );
-    const decisionSupportAuthorityResetScopeKey = useMemo(() => {
-        const normalizedSessionId = normalizeText(scanSessionId);
-        const explicitBundleId = normalizeText(
-            (bundle.meta as { bundleId?: string | null })?.bundleId ?? null,
-        );
-        const stableScanKey = normalizedSessionId
-            ? `session:${normalizedSessionId}`
-            : explicitBundleId
-                ? `bundle:${explicitBundleId}`
-                : authorityScopeBarcode
-                    ? `barcode:${authorityScopeBarcode}`
-                    : analysisBarcodeDigits
-                        ? `barcode:${analysisBarcodeDigits}`
-                        : 'scan_unknown';
-
-        return [
-            stableScanKey,
-            SCAN_UX_VIEW_MODE,
-            decisionSupportBaseCacheScopeKey || 'scope_unknown',
-        ].join('|');
-    }, [
-        scanSessionId,
-        (bundle.meta as { bundleId?: string | null })?.bundleId,
-        authorityScopeBarcode,
-        analysisBarcodeDigits,
-        decisionSupportBaseCacheScopeKey,
-    ]);
     const localDecisionSupportDebugSignatureRef = useRef<string>('');
     useEffect(() => {
         if (onboardingLoading) return;
@@ -3771,12 +3812,8 @@ const AnalysisBundleDashboard: React.FC<{
         shouldUseLocalDecisionSupport,
     ]);
     useEffect(() => {
-        decisionAuthorityStateRef.current = decisionAuthorityState;
-    }, [decisionAuthorityState]);
-    useEffect(() => {
-        decisionSupportAuthorityScopeKeyRef.current = decisionSupportAuthorityResetScopeKey;
-        setDecisionAuthorityState(buildPendingDecisionAuthorityState(decisionSupportAuthorityResetScopeKey));
-    }, [decisionSupportAuthorityResetScopeKey]);
+        setAuthoritativeDecisionPayload(null);
+    }, [decisionSupportAuthorityScopeKey]);
     const emitScanUxTimingOnce = useCallback((
         key: 'firstRenderableLogged' | 'scoreVisibleLogged' | 'coreCardsVisibleLogged',
         event:
@@ -3884,10 +3921,12 @@ const AnalysisBundleDashboard: React.FC<{
     const scrollHandler = useAnimatedScrollHandler((event) => {
         scrollY.value = event.contentOffset.y;
     });
-    const { height: viewportHeight } = useWindowDimensions();
+    const { height: viewportHeight, width: viewportWidth } = useWindowDimensions();
     const [tilesContainerW, setTilesContainerW] = useState(0);
     const TILE_GAP = 12;
     const tileWidth: DimensionValue = tilesContainerW > 0 ? tilesContainerW : '100%';
+    const comparisonCardWidth = Math.min(Math.max(viewportWidth - 92, 268), 336);
+    const comparisonSnapInterval = comparisonCardWidth + 12;
     const TileRenderer = disableTileAnimation ? StaticTile : AnimatedTile;
     const ScrollContainer: any = disableReanimatedScroll ? ScrollView : Animated.ScrollView;
     const handlePlainScroll = useCallback((event: any) => {
@@ -3944,7 +3983,7 @@ const AnalysisBundleDashboard: React.FC<{
                 `${bundle.meta.authoritativeIdentity.type}:${bundle.meta.authoritativeIdentity.value}`,
                 incomingDecisionDigest ?? incomingFactsDigestHash ?? 'no_digest',
                 SCAN_UX_VIEW_MODE,
-                decisionSupportBaseCacheScopeKey,
+                localDecisionSupportCacheScope,
             ].join('|')
             : null;
         const seededDecision = incomingBarcode
@@ -3956,10 +3995,12 @@ const AnalysisBundleDashboard: React.FC<{
                     bundleSourceTypeFinal: bundle.meta.sourceTypeFinal === true,
                     payloads: shouldUseLocalDecisionSupport
                         ? [
-                            getCachedBaseDecisionPayload(decisionSupportCacheRef.current, incomingDecisionCacheKey),
+                            incomingDecisionCacheKey
+                                ? decisionSupportCacheRef.current.get(incomingDecisionCacheKey) ?? null
+                                : null,
                         ]
                         : [
-                            getCachedBaseDecisionPayload(decisionSupportByBarcodeRef.current, incomingBarcode),
+                            decisionSupportByBarcodeRef.current.get(incomingBarcode) ?? null,
                         ],
                 })
             )
@@ -3975,6 +4016,9 @@ const AnalysisBundleDashboard: React.FC<{
                     ? bundle.meta.authoritativeIdentity.type
                     : null,
         });
+        if (seededDecision && allowSeededDecision && isAuthoritativePersonalizedDecisionPayload(seededDecision)) {
+            setAuthoritativeDecisionPayload((prev) => pickStrongerDecisionPayload(prev, seededDecision) ?? seededDecision);
+        }
         setBundleState(bundle);
         setDecisionSupportState(
             seededDecision && allowSeededDecision
@@ -3994,7 +4038,7 @@ const AnalysisBundleDashboard: React.FC<{
         setDetailError(null);
         setDetailLoading(false);
         setSimpleSourcesOpen(false);
-    }, [analysis, bundle, incomingBundleRunKey, decisionSupportBaseCacheScopeKey, shouldUseLocalDecisionSupport]);
+    }, [analysis, bundle, incomingBundleRunKey, localDecisionSupportCacheScope, shouldUseLocalDecisionSupport]);
 
     useEffect(() => {
         // Never clobber on-demand detail fields (e.g. ingredients.detail) when a newer analysis_bundle
@@ -4158,13 +4202,12 @@ const AnalysisBundleDashboard: React.FC<{
                     ? bundleState.meta.authoritativeIdentity.type
                     : null,
         });
-        const authorityScopeKeyForRequest = decisionSupportAuthorityResetScopeKey;
-        const decisionBaseCacheKey = [
+        const decisionCacheKey = [
             resolvedBarcode,
             `${bundleState.meta.authoritativeIdentity.type}:${bundleState.meta.authoritativeIdentity.value}`,
             digestHint ?? currentFactsDigestHash ?? 'no_digest',
             SCAN_UX_VIEW_MODE,
-            decisionSupportBaseCacheScopeKey,
+            localDecisionSupportCacheScope,
         ].join('|');
         const normalizedSessionId = normalizeText(scanSessionId) || 'session_unknown';
         const normalizedSessionIdRaw = normalizeText(scanSessionId) || null;
@@ -4197,7 +4240,7 @@ const AnalysisBundleDashboard: React.FC<{
         const shouldBypassStaleDecisionHints = shouldUseLocalDecisionSupport;
         const initialDecisionDigestHint = shouldBypassStaleDecisionHints ? null : digestHint;
         const initialDecisionInputsHashHint = shouldBypassStaleDecisionHints ? null : decisionInputsHashHint;
-        const fetchKey = `${normalizedSessionId}|${authorityScopeKeyForRequest}|${decisionBaseCacheKey}`;
+        const fetchKey = `${normalizedSessionId}|${decisionCacheKey}`;
         if (decisionSupportFetchKeyRef.current === fetchKey) return;
         decisionSupportFetchKeyRef.current = fetchKey;
         const requestSeq = ++decisionSupportRequestSeqRef.current;
@@ -4212,12 +4255,12 @@ const AnalysisBundleDashboard: React.FC<{
 
         let cancelled = false;
         let autoRetryUsed = false;
-        const cachedPayload = getCachedBaseDecisionPayload(decisionSupportCacheRef.current, decisionBaseCacheKey);
+        const cachedPayload = decisionSupportCacheRef.current.get(decisionCacheKey) ?? null;
         const inlinePayloadRaw =
             (bundleState.meta as { decisionSupportInline?: Record<string, unknown> | null }).decisionSupportInline ?? null;
         const inlineFallback =
             inlinePayloadRaw && typeof inlinePayloadRaw === 'object'
-                ? (stripDecisionPayloadPersonalization({
+                ? {
                     ...inlinePayloadRaw,
                     factsDigestHash: currentFactsDigestHash ?? getDecisionPayloadFactsDigestHash(inlinePayloadRaw),
                     digest: normalizeText(
@@ -4230,20 +4273,7 @@ const AnalysisBundleDashboard: React.FC<{
                             ? inlinePayloadRaw.sourceType
                             : bundleState.meta.sourceType,
                     ) || undefined,
-                  }) ?? {
-                    ...inlinePayloadRaw,
-                    factsDigestHash: currentFactsDigestHash ?? getDecisionPayloadFactsDigestHash(inlinePayloadRaw),
-                    digest: normalizeText(
-                        typeof inlinePayloadRaw.digest === 'string'
-                            ? inlinePayloadRaw.digest
-                            : digestHint,
-                    ) || undefined,
-                    sourceType: normalizeText(
-                        typeof inlinePayloadRaw.sourceType === 'string'
-                            ? inlinePayloadRaw.sourceType
-                            : bundleState.meta.sourceType,
-                    ) || undefined,
-                  })
+                  }
                 : null;
         const seededPayload = shouldUseLocalDecisionSupport
             ? pickCompatibleDecisionPayload({
@@ -4256,13 +4286,13 @@ const AnalysisBundleDashboard: React.FC<{
             : pickCompatibleDecisionPayload({
                 factsDigestHash: currentFactsDigestHash,
                 decisionDigest: digestHint,
-                    bundleSourceType: sourceType,
-                    bundleSourceTypeFinal: sourceTypeFinal,
-                    payloads: [
-                        getCachedBaseDecisionPayload(decisionSupportByBarcodeRef.current, resolvedBarcode),
-                        inlineFallback ?? null,
-                        cachedPayload,
-                    ],
+                bundleSourceType: sourceType,
+                bundleSourceTypeFinal: sourceTypeFinal,
+                payloads: [
+                    decisionSupportByBarcodeRef.current.get(resolvedBarcode) ?? null,
+                    inlineFallback ?? null,
+                    cachedPayload,
+                ],
             });
         const allowSeededPayload = shouldUseDecisionPayloadForBundle({
             payload: seededPayload,
@@ -4783,23 +4813,11 @@ const AnalysisBundleDashboard: React.FC<{
                             allergySummary,
                         })}`);
                     }
-                    const basePayload = stripDecisionPayloadPersonalization(objectPayload) ?? objectPayload;
-                    const fetchedPersonalizationScopeHash =
-                        getDecisionPayloadPersonalizationScopeHash(objectPayload) || 'scope_missing';
-                    const decisionFullCacheKey = [
-                        resolvedBarcode,
-                        `${bundleState.meta.authoritativeIdentity.type}:${bundleState.meta.authoritativeIdentity.value}`,
-                        getDecisionPayloadFactsDigestHash(objectPayload) || currentFactsDigestHash || 'no_digest',
-                        SCAN_UX_VIEW_MODE,
-                        fetchedPersonalizationScopeHash,
-                        getDecisionPayloadDecisionInputsHash(objectPayload) || 'no_inputs',
-                    ].join('|');
-                    decisionSupportCacheRef.current.set(decisionBaseCacheKey, basePayload);
-                    decisionSupportFullCacheRef.current.set(decisionFullCacheKey, objectPayload);
+                    decisionSupportCacheRef.current.set(decisionCacheKey, objectPayload);
                     upsertDecisionPayloadByBarcode(
                         decisionSupportByBarcodeRef.current,
                         resolvedBarcode,
-                        basePayload,
+                        objectPayload,
                     );
                     const authoritativeFetchedPayload = isAuthoritativePersonalizedDecisionPayload(objectPayload)
                         ? objectPayload
@@ -4810,58 +4828,40 @@ const AnalysisBundleDashboard: React.FC<{
                             sourceType: getPayloadSourceType(authoritativeFetchedPayload),
                             factsDigestHash: getDecisionPayloadFactsDigestHash(authoritativeFetchedPayload) || null,
                             decisionDigest: getDecisionPayloadDigest(authoritativeFetchedPayload) || null,
-                            personalizationScopeHash: fetchedPersonalizationScopeHash,
                         })}`);
-                        if (
-                            requestSeq === decisionSupportRequestSeqRef.current
-                            && decisionSupportAuthorityScopeKeyRef.current === authorityScopeKeyForRequest
-                        ) {
-                            setDecisionAuthorityState({
-                                status: 'ready',
-                                scopeKey: `${authorityScopeKeyForRequest}|${fetchedPersonalizationScopeHash}`,
-                                origin: 'fetch',
-                                payload: authoritativeFetchedPayload,
-                            });
-                        }
-                    } else if (
-                        requestSeq === decisionSupportRequestSeqRef.current
-                        && decisionSupportAuthorityScopeKeyRef.current === authorityScopeKeyForRequest
-                        && decisionAuthorityStateRef.current.status !== 'ready'
-                    ) {
-                        setDecisionAuthorityState({
-                            status: 'terminal_no_authority',
-                            scopeKey: authorityScopeKeyForRequest,
-                            origin: 'fetch',
-                            payload: null,
-                        });
+                        setAuthoritativeDecisionPayload((prev) =>
+                            pickStrongerDecisionPayload(prev, authoritativeFetchedPayload) ?? authoritativeFetchedPayload,
+                        );
                     }
                     const resolvedDecisionDigest =
                         getDecisionPayloadDigest(objectPayload)
                         || normalizeText(digestParam)
                         || digestHint;
-                    const selectedPayload = shouldUseLocalDecisionSupport
-                        ? pickCompatibleDecisionPayload({
-                            factsDigestHash: currentFactsDigestHash,
-                            decisionDigest: resolvedDecisionDigest,
-                            bundleSourceType: sourceType,
-                            bundleSourceTypeFinal: sourceTypeFinal,
-                            payloads: [
-                                basePayload,
-                                getCachedBaseDecisionPayload(decisionSupportCacheRef.current, decisionBaseCacheKey),
-                            ],
-                        })
-                        : pickCompatibleDecisionPayload({
-                            factsDigestHash: currentFactsDigestHash,
-                            decisionDigest: resolvedDecisionDigest,
-                            bundleSourceType: sourceType,
-                            bundleSourceTypeFinal: sourceTypeFinal,
-                            payloads: [
-                                basePayload,
-                                inlineFallback ?? null,
-                                getCachedBaseDecisionPayload(decisionSupportByBarcodeRef.current, resolvedBarcode),
-                                getCachedBaseDecisionPayload(decisionSupportCacheRef.current, decisionBaseCacheKey),
-                            ],
-                        });
+                    const selectedPayload = authoritativeFetchedPayload ?? (
+                        shouldUseLocalDecisionSupport
+                            ? pickCompatibleDecisionPayload({
+                                factsDigestHash: currentFactsDigestHash,
+                                decisionDigest: resolvedDecisionDigest,
+                                bundleSourceType: sourceType,
+                                bundleSourceTypeFinal: sourceTypeFinal,
+                                payloads: [
+                                    objectPayload,
+                                    decisionSupportCacheRef.current.get(decisionCacheKey) ?? null,
+                                ],
+                            })
+                            : pickCompatibleDecisionPayload({
+                                factsDigestHash: currentFactsDigestHash,
+                                decisionDigest: resolvedDecisionDigest,
+                                bundleSourceType: sourceType,
+                                bundleSourceTypeFinal: sourceTypeFinal,
+                                payloads: [
+                                    objectPayload,
+                                    inlineFallback ?? null,
+                                    decisionSupportByBarcodeRef.current.get(resolvedBarcode) ?? null,
+                                    decisionSupportCacheRef.current.get(decisionCacheKey) ?? null,
+                                ],
+                            })
+                    );
                     setDecisionSupportState({
                         status: selectedPayload ? 'ready' : 'error',
                         data: selectedPayload,
@@ -4912,25 +4912,13 @@ const AnalysisBundleDashboard: React.FC<{
                         bundleSourceType: sourceType,
                         bundleSourceTypeFinal: sourceTypeFinal,
                         payloads: [
-                            getCachedBaseDecisionPayload(decisionSupportByBarcodeRef.current, resolvedBarcode),
+                            decisionSupportByBarcodeRef.current.get(resolvedBarcode) ?? null,
                             inlineFallback ?? null,
                             cachedPayload,
                         ],
                     });
                 if (fallbackData) {
                     upsertDecisionPayloadByBarcode(decisionSupportByBarcodeRef.current, resolvedBarcode, fallbackData);
-                }
-                if (
-                    requestSeq === decisionSupportRequestSeqRef.current
-                    && decisionSupportAuthorityScopeKeyRef.current === authorityScopeKeyForRequest
-                    && decisionAuthorityStateRef.current.status !== 'ready'
-                ) {
-                    setDecisionAuthorityState({
-                        status: 'terminal_no_authority',
-                        scopeKey: authorityScopeKeyForRequest,
-                        origin: 'fetch',
-                        payload: null,
-                    });
                 }
                 setDecisionSupportState({
                     status: fallbackData ? 'ready' : 'error',
@@ -4962,8 +4950,7 @@ const AnalysisBundleDashboard: React.FC<{
         localDecisionSupportHeader,
         localDecisionSupportProfileKey,
         localDecisionSupportSignals,
-        decisionSupportAuthorityResetScopeKey,
-        decisionSupportBaseCacheScopeKey,
+        localDecisionSupportCacheScope,
         factsDtoState.data?.product?.brand,
         factsDtoState.data?.product?.name,
         analysis?.productInfo?.brand,
@@ -4989,9 +4976,8 @@ const AnalysisBundleDashboard: React.FC<{
                 typeof inline.sourceType === 'string' ? inline.sourceType : bundleState.meta.sourceType,
             ) || undefined,
         };
-        const strippedInline = stripDecisionPayloadPersonalization(normalizedInline) ?? normalizedInline;
         return shouldUseDecisionPayloadForBundle({
-            payload: strippedInline,
+            payload: normalizedInline,
             bundleSourceType: normalizeText(bundleState.meta.sourceType ?? null).toLowerCase() || null,
             bundleSourceTypeFinal: bundleState.meta.sourceTypeFinal === true,
             phase: typeof bundleState.meta.phase === 'string' ? bundleState.meta.phase : null,
@@ -5001,10 +4987,26 @@ const AnalysisBundleDashboard: React.FC<{
                     ? bundleState.meta.authoritativeIdentity.type
                     : null,
         })
-            ? strippedInline
+            ? normalizedInline
             : null;
     }, [bundleState.meta, isStreaming]);
+    const authoritativeDecisionTemplatePayload = useMemo<DecisionSupportTemplatePayload | null>(() => {
+        if (authoritativeDecisionPayload && typeof authoritativeDecisionPayload === 'object') {
+            return authoritativeDecisionPayload as DecisionSupportTemplatePayload;
+        }
+        const fetchedPayload =
+            decisionSupportState.status === 'ready' && decisionSupportState.data && typeof decisionSupportState.data === 'object'
+                ? decisionSupportState.data
+                : null;
+        if (isAuthoritativePersonalizedDecisionPayload(fetchedPayload)) {
+            return fetchedPayload as DecisionSupportTemplatePayload;
+        }
+        return null;
+    }, [authoritativeDecisionPayload, decisionSupportState.data, decisionSupportState.status]);
     const decisionTemplatePayload = useMemo<DecisionSupportTemplatePayload | null>(() => {
+        if (authoritativeDecisionTemplatePayload) {
+            return authoritativeDecisionTemplatePayload;
+        }
         const currentFactsDigestHash = normalizeText(bundleState.meta.factsDigestHash ?? null) || null;
         const fetchedPayload =
             decisionSupportState.status === 'ready' && decisionSupportState.data && typeof decisionSupportState.data === 'object'
@@ -5029,30 +5031,41 @@ const AnalysisBundleDashboard: React.FC<{
                 fetchedPayload,
             ],
         });
-        return strongestPayload ? (strongestPayload as DecisionSupportTemplatePayload) : null;
+        const fetchedPersonalizationPayload = shouldUseLocalDecisionSupport
+            ? pickCompatibleDecisionPayload({
+                factsDigestHash: currentFactsDigestHash,
+                decisionDigest: fetchedDecisionDigest,
+                bundleSourceType: normalizeText(bundleState.meta.sourceType ?? null).toLowerCase() || null,
+                bundleSourceTypeFinal: bundleState.meta.sourceTypeFinal === true,
+                payloads: [fetchedPayload],
+            })
+            : null;
+        const selectedPayload =
+            mergeDecisionPayloadPersonalization(strongestPayload, fetchedPersonalizationPayload)
+            ?? strongestPayload
+            ?? fetchedPersonalizationPayload;
+        if (!selectedPayload) return null;
+        return selectedPayload as DecisionSupportTemplatePayload;
     }, [
+        authoritativeDecisionTemplatePayload,
         (bundleState.meta as { decisionSupportDigest?: string | null })?.decisionSupportDigest,
         bundleState.meta.factsDigestHash,
         decisionSupportState.data,
         decisionSupportState.status,
         inlineDecisionTemplatePayload,
+        shouldUseLocalDecisionSupport,
     ]);
-    const authoritativeDecisionTemplatePayload = useMemo<DecisionSupportTemplatePayload | null>(
-        () => (
-            decisionAuthorityState.status === 'ready'
-            && decisionAuthorityState.payload
-            && typeof decisionAuthorityState.payload === 'object'
-                ? (decisionAuthorityState.payload as DecisionSupportTemplatePayload)
-                : null
-        ),
-        [decisionAuthorityState],
-    );
     const decisionOverviewBlock = decisionTemplatePayload?.overviewBlock;
+    const decisionScienceBlock = decisionTemplatePayload?.scienceBlock;
     const decisionUsageBlock = decisionTemplatePayload?.usageBlock;
     const decisionSafetyBlock = decisionTemplatePayload?.safetyBlock;
-    const decisionScienceBlock = decisionTemplatePayload?.scienceBlock ?? null;
     const decisionQualityMark = decisionTemplatePayload?.qualityMark;
-    const decisionPersonalizedResultLane = authoritativeDecisionTemplatePayload?.personalizedResultLane ?? null;
+    const decisionSupportAuthorityGate: DecisionSupportAuthorityGate =
+        authoritativeDecisionTemplatePayload ? 'ready' : 'waiting';
+    const decisionPersonalizedResultLane =
+        decisionSupportAuthorityGate === 'ready'
+            ? authoritativeDecisionTemplatePayload?.personalizedResultLane ?? decisionTemplatePayload?.personalizedResultLane ?? null
+            : null;
     const currentDecisionDigest =
         normalizeText(
             decisionTemplatePayload?.digest
@@ -5117,7 +5130,50 @@ const AnalysisBundleDashboard: React.FC<{
     );
     const productTitle = trustedDisplayIdentity.title;
     const productSubtitle = trustedDisplayIdentity.subtitle;
-    const canonicalDecisionBarcode = authorityScopeBarcode;
+    const canonicalDecisionBarcode = useMemo(
+        () => resolveCanonicalBarcodeFromBundleMeta(bundleState.meta, analysisBarcodeDigits),
+        [analysisBarcodeDigits, bundleState.meta],
+    );
+    const canonicalIdentityConfidenceHigh = useMemo(() => {
+        const productIdentity =
+            (bundleState.meta as { productIdentity?: { identityStable?: boolean | null; sourceAttribution?: string | null } | null })
+                .productIdentity ?? null;
+        const sourceAttribution = normalizeText(productIdentity?.sourceAttribution ?? trustedDisplayIdentity.sourceAttributionUsed).toLowerCase();
+        return Boolean(canonicalDecisionBarcode) && (
+            productIdentity?.identityStable === true
+            || trustedDisplayIdentity.displayIdentityMode === 'trusted'
+            || sourceAttribution === 'verified_regulatory'
+            || sourceAttribution === 'label_record'
+        );
+    }, [bundleState.meta, canonicalDecisionBarcode, trustedDisplayIdentity.displayIdentityMode, trustedDisplayIdentity.sourceAttributionUsed]);
+    const normalizedComparisonSection = useMemo(() => {
+        if (decisionSupportAuthorityGate !== 'ready') {
+            return null;
+        }
+        const standing = decisionPersonalizedResultLane?.productStanding ?? null;
+        if (!standing || standing.status !== 'ready' || !canonicalIdentityConfidenceHigh) {
+            return null;
+        }
+
+        const alternatives = Array.isArray(standing.betterAlternatives)
+            ? standing.betterAlternatives.filter((item) => Boolean(item?.title))
+            : [];
+        const summary = normalizeText(standing.summary ?? null);
+        const secondarySummary = normalizeText(standing.secondarySummary ?? null);
+
+        if (!summary && alternatives.length === 0) {
+            return null;
+        }
+
+        return {
+            standing,
+            alternatives,
+            summary,
+            secondarySummary,
+            showEmptyState: alternatives.length === 0 && standing.standing !== 'unknown',
+        };
+    }, [canonicalIdentityConfidenceHigh, decisionPersonalizedResultLane?.productStanding, decisionSupportAuthorityGate]);
+    const shouldShowComparisonPlaceholder = decisionSupportAuthorityGate === 'waiting';
     const bundleSourceTypeFinal = bundleState.meta.sourceTypeFinal !== false && Number(bundleState.meta.revision) >= 1;
     const bundleSourceType = typeof bundleState.meta.sourceType === 'string' ? bundleState.meta.sourceType : null;
     const verificationPresentation = useMemo(
@@ -5679,28 +5735,88 @@ const AnalysisBundleDashboard: React.FC<{
         omegaCoverSignals.total?.dose,
         scienceIngredientsAll,
     ]);
-    const shouldShowTopSectionAuthorityPlaceholder = decisionAuthorityState.status === 'pending';
     const topSectionPresentation = useMemo(() => {
-        if (!decisionPersonalizedResultLane) {
+        if (decisionSupportAuthorityGate !== 'ready' || !decisionPersonalizedResultLane) {
             return null;
         }
-        const goalFit = decisionPersonalizedResultLane?.goalFit;
-        const personalInsight = decisionPersonalizedResultLane?.personalInsight;
+        const rawGoalFit = decisionPersonalizedResultLane?.goalFit;
+        const rawPersonalInsight = decisionPersonalizedResultLane?.personalInsight;
+        const rawAllergyInsight = decisionPersonalizedResultLane?.allergyInsight;
+        const rawDosageContext = decisionPersonalizedResultLane?.dosageContext;
         const hasSavedAllergyPreferences =
             localDecisionSupportSignals.allergyCount > 0 || localDecisionSupportSignals.restrictionCount > 0;
-        const allergyInsight =
-            decisionPersonalizedResultLane?.allergyInsight
-            ?? (hasSavedAllergyPreferences
+        const goalCoverageSummary = rawGoalFit?.goalCoverageSummary ?? null;
+        const analyzedGoalCount = goalCoverageSummary?.analyzedGoalCount ?? rawGoalFit?.analyzedGoalCount ?? 0;
+        const hasGoalCoverage =
+            analyzedGoalCount > 0
+            || (rawGoalFit?.goalCoverageSummary?.items?.length ?? 0) > 0
+            || (rawGoalFit?.goalCoverage?.length ?? 0) > 0
+            || (rawGoalFit?.allGoalCoverage?.length ?? 0) > 0;
+        const goalFit =
+            rawGoalFit?.status === 'pending' && !hasGoalCoverage
                 ? {
-                    status: 'pending' as const,
-                    reasonCode: 'LOCAL_PROFILE_ALLERGY_CONTEXT_PENDING',
-                    summary: 'Saved allergy preferences are still attaching to this scan.',
-                    matchedAllergyFlags: [],
-                    matchedRestrictions: [],
-                    details: [],
+                    ...rawGoalFit,
+                    selectedGoalKey: null,
+                    previewTopGoalKey: null,
+                    dominantGoalKey: null,
+                    secondaryGoalKey: null,
+                    selectedGoalKeys: [],
+                    allSelectedGoalKeys: [],
+                    candidateGoalKeys: [],
+                    defaultVisibleGoalKeys: [],
+                    goalCoverage: [],
+                    allGoalCoverage: [],
+                    goalCoverageSummary: rawGoalFit.goalCoverageSummary
+                        ? {
+                            ...rawGoalFit.goalCoverageSummary,
+                            analyzedGoalCount: 0,
+                            surfacedGoalCount: 0,
+                            hiddenGoalsCount: 0,
+                            allGoalsAnalyzed: false,
+                            items: [],
+                          }
+                        : undefined,
+                    selectedGoalCount: 0,
+                    analyzedGoalCount: 0,
+                    surfacedGoalCount: 0,
+                    allGoalsAnalyzed: false,
+                    fitDecision: 'unknown' as const,
+                    fitTier: 'unknown' as const,
+                    previewTopTier: 'unknown' as const,
+                    heroMode: undefined,
                 }
-                : null);
-        const dosageContext = decisionPersonalizedResultLane?.dosageContext;
+                : rawGoalFit;
+        const personalInsight = rawPersonalInsight?.status === 'ready' ? rawPersonalInsight : null;
+        const allergyInsight = (() => {
+            if (rawAllergyInsight?.status === 'ready' || rawAllergyInsight?.status === 'unavailable') {
+                return rawAllergyInsight;
+            }
+
+            if (hasSavedAllergyPreferences) {
+                return {
+                    status: 'unavailable' as const,
+                    reasonCode: rawAllergyInsight?.reasonCode ?? 'ALLERGY_PROFILE_NOT_ATTACHED',
+                    summary: normalizeText(rawAllergyInsight?.summary ?? null) || 'Allergy check unavailable for this scan.',
+                    matchedAllergyFlags: rawAllergyInsight?.matchedAllergyFlags ?? [],
+                    matchedRestrictions: rawAllergyInsight?.matchedRestrictions ?? [],
+                    details: rawAllergyInsight?.details ?? [],
+                };
+            }
+
+            return null;
+        })();
+        const dosageContext =
+            rawDosageContext?.status === 'pending'
+                ? {
+                    ...rawDosageContext,
+                    status: 'unavailable' as const,
+                    reasonCode: rawDosageContext.reasonCode ?? 'RECOMMENDED_DOSE_COMPARISON_NOT_ATTACHED',
+                    summary: normalizeText(rawDosageContext.summary ?? null) || 'Dose guidance unavailable for this scan.',
+                    comparisonMode: rawDosageContext.comparisonMode === 'not_attached'
+                        ? rawDosageContext.comparisonMode
+                        : 'not_attached',
+                }
+                : rawDosageContext;
         const firstConflict = (personalInsight?.conflicts ?? [])
             .map((conflict) => normalizeText(conflict.summary))
             .find(Boolean);
@@ -5937,15 +6053,17 @@ const AnalysisBundleDashboard: React.FC<{
             },
         });
     }, [
-        decisionPersonalizedResultLane,
+        decisionSupportAuthorityGate,
+        decisionPersonalizedResultLane?.goalFit,
+        decisionPersonalizedResultLane?.personalInsight,
+        decisionPersonalizedResultLane?.allergyInsight,
+        decisionPersonalizedResultLane?.dosageContext,
         localDecisionSupportSignals.allergyCount,
         localDecisionSupportSignals.restrictionCount,
         safetyTipCoverText,
         safetyWarningCoverText,
         topSectionDosePreviewText,
     ]);
-    const shouldRenderTopSection =
-        shouldShowTopSectionAuthorityPlaceholder || Boolean(topSectionPresentation);
     const heroImageUri = saveItem?.imageUrl ?? productInfo?.image ?? null;
     const verifiedLabelText = normalizeText(sourceBadgeLabel) || 'Verified Label Data';
 
@@ -7182,11 +7300,6 @@ const AnalysisBundleDashboard: React.FC<{
 
     const decisionBarcodeForScience = canonicalDecisionBarcode;
     const decisionDigestForScience = normalizeText(decisionTemplatePayload?.digest ?? '') || null;
-    const decisionInputsHashForScience =
-        normalizeText(decisionTemplatePayload?.decisionInputsHash ?? '') || null;
-    const personalizationScopeHashForScience =
-        normalizeText(decisionTemplatePayload?.personalizationScopeHash ?? '') || null;
-    const decisionAuthorityScopeKey = decisionSupportBaseCacheScopeKey || incomingBundleRunKey;
     const shouldLoadScienceSidecars =
         selectedTileType === 'science'
         && decisionSupportState.status === 'ready'
@@ -7253,29 +7366,15 @@ const AnalysisBundleDashboard: React.FC<{
     const ingredientOverviewRequestKey = useMemo(
         () =>
             decisionBarcodeForScience && decisionDigestForScience
-                ? [
-                    'ingredient_overview',
-                    decisionAuthorityScopeKey,
-                    scienceAuthoritativeIdentityKey,
-                    decisionBarcodeForScience,
-                    decisionDigestForScience,
-                    scienceSourceFinalKey,
-                ].join('|')
+                ? ['ingredient_overview', scienceAuthoritativeIdentityKey, decisionBarcodeForScience, decisionDigestForScience, scienceSourceFinalKey].join('|')
                 : null,
-        [
-            decisionAuthorityScopeKey,
-            decisionBarcodeForScience,
-            decisionDigestForScience,
-            scienceAuthoritativeIdentityKey,
-            scienceSourceFinalKey,
-        ],
+        [decisionBarcodeForScience, decisionDigestForScience, scienceAuthoritativeIdentityKey, scienceSourceFinalKey],
     );
     const scientificBackgroundRequestKey = useMemo(
         () =>
             decisionBarcodeForScience && decisionDigestForScience && activeIngredientKey
                 ? [
                     'scientific_background',
-                    decisionAuthorityScopeKey,
                     scienceAuthoritativeIdentityKey,
                     decisionBarcodeForScience,
                     decisionDigestForScience,
@@ -7283,14 +7382,7 @@ const AnalysisBundleDashboard: React.FC<{
                     scienceSourceFinalKey,
                 ].join('|')
                 : null,
-        [
-            activeIngredientKey,
-            decisionAuthorityScopeKey,
-            decisionBarcodeForScience,
-            decisionDigestForScience,
-            scienceAuthoritativeIdentityKey,
-            scienceSourceFinalKey,
-        ],
+        [activeIngredientKey, decisionBarcodeForScience, decisionDigestForScience, scienceAuthoritativeIdentityKey, scienceSourceFinalKey],
     );
     const ingredientOverviewState = ingredientOverviewRequestKey
         ? ingredientOverviewByRequestKey[ingredientOverviewRequestKey]
@@ -7323,37 +7415,21 @@ const AnalysisBundleDashboard: React.FC<{
                     : null,
         [activeScienceIngredientRow, decisionScienceIngredientRows, scientificBackgroundState],
     );
-    const showIngredientOverviewLoading =
-        selectedTileType === 'science'
-        && ingredientOverviewState?.status === 'loading';
-    const showScientificBackgroundLoading =
-        selectedTileType === 'science'
-        && Boolean(activeScienceIngredientRow)
-        && scientificBackgroundState?.status === 'loading';
 
     useEffect(() => {
         setIngredientOverviewByRequestKey({});
         setScientificBackgroundByRequestKey({});
         ingredientOverviewStateRef.current = {};
         scientificBackgroundStateRef.current = {};
-        ingredientOverviewRevalidateCooldownRef.current = {};
-        scientificBackgroundRevalidateCooldownRef.current = {};
         setActiveIngredientName(keyIngredientsForDetail[0] ?? null);
         setActiveSafetyIngredientName(keyIngredientsForSafety[0] ?? null);
     }, [incomingBundleRunKey, keyIngredientsForDetail, keyIngredientsForSafety]);
 
     useEffect(() => {
         if (!shouldLoadScienceSidecars) return;
-        if (!ingredientOverviewRequestKey || !decisionBarcodeForScience || !decisionDigestForScience) {
-            return;
-        }
+        if (!ingredientOverviewRequestKey || !decisionBarcodeForScience || !decisionDigestForScience) return;
         const current = ingredientOverviewStateRef.current[ingredientOverviewRequestKey];
-        const lastRevalidateAt = ingredientOverviewRevalidateCooldownRef.current[ingredientOverviewRequestKey] ?? 0;
-        const allowFallbackRevalidate =
-            current?.status === 'ok'
-            && current.source === 'fallback'
-            && Date.now() - lastRevalidateAt >= 20_000;
-        if (current && (current.status === 'loading' || (current.status === 'ok' && !allowFallbackRevalidate))) return;
+        if (current && (current.status === 'loading' || current.status === 'ok')) return;
 
         let cancelled = false;
         let settled = false;
@@ -7362,35 +7438,21 @@ const AnalysisBundleDashboard: React.FC<{
 
         const run = async (
             digestParam: string,
-            decisionInputsHashParam: string,
-            personalizationScopeHashParam: string,
             canRetry: boolean,
-            revalidateFallback: boolean,
         ): Promise<void> => {
             try {
-                if (revalidateFallback) {
-                    ingredientOverviewRevalidateCooldownRef.current[ingredientOverviewRequestKey] = Date.now();
-                }
                 setIngredientOverviewSidecarState(ingredientOverviewRequestKey, { status: 'loading' });
                 const baseUrl = String(Config.searchApiBaseUrl).replace(/\/$/, '');
-                const headers = await withAuthHeaders({
-                    'Content-Type': 'application/json',
-                });
-                if (shouldUseLocalDecisionSupport && localDecisionSupportHeader) {
-                    headers['x-local-personalization'] = localDecisionSupportHeader;
-                    headers['Cache-Control'] = 'no-cache, no-store';
-                    headers.Pragma = 'no-cache';
-                }
                 const response = await fetch(`${baseUrl}/api/ingredient-overview/v1`, {
                     method: 'POST',
-                    headers,
+                    headers: {
+                        ...(await withAuthHeaders({
+                            'Content-Type': 'application/json',
+                        })),
+                    },
                     body: JSON.stringify({
                         barcode: decisionBarcodeForScience,
                         decisionDigest: digestParam,
-                        decisionInputsHash: decisionInputsHashParam,
-                        personalizationScopeHash: personalizationScopeHashParam,
-                        revalidateFallback,
-                        viewMode: SCAN_UX_VIEW_MODE,
                     }),
                     signal: controller.signal,
                 });
@@ -7400,32 +7462,8 @@ const AnalysisBundleDashboard: React.FC<{
                 if (response.status === 409) {
                     const mismatchPayload = await response.json().catch(() => null);
                     const latestDigest = typeof mismatchPayload?.latestDigest === 'string' ? mismatchPayload.latestDigest : null;
-                    const latestDecisionInputsHash =
-                        typeof mismatchPayload?.latestDecisionInputsHash === 'string'
-                            ? mismatchPayload.latestDecisionInputsHash
-                            : null;
-                    const latestPersonalizationScopeHash =
-                        typeof mismatchPayload?.latestPersonalizationScopeHash === 'string'
-                            ? mismatchPayload.latestPersonalizationScopeHash
-                            : null;
-                    if (
-                        canRetry
-                        && latestDigest
-                        && latestDecisionInputsHash
-                        && latestPersonalizationScopeHash
-                        && (
-                            latestDigest !== digestParam
-                            || latestDecisionInputsHash !== decisionInputsHashParam
-                            || latestPersonalizationScopeHash !== personalizationScopeHashParam
-                        )
-                    ) {
-                        return run(
-                            latestDigest,
-                            latestDecisionInputsHash,
-                            latestPersonalizationScopeHash,
-                            false,
-                            revalidateFallback,
-                        );
+                    if (canRetry && latestDigest && latestDigest !== digestParam) {
+                        return run(latestDigest, false);
                     }
                 }
 
@@ -7470,13 +7508,7 @@ const AnalysisBundleDashboard: React.FC<{
         };
 
         const interactionTask = InteractionManager.runAfterInteractions(() => {
-            void run(
-                decisionDigestForScience,
-                decisionInputsHashForScience,
-                personalizationScopeHashForScience,
-                true,
-                allowFallbackRevalidate,
-            );
+            void run(decisionDigestForScience, true);
         });
         return () => {
             cancelled = true;
@@ -7492,20 +7524,14 @@ const AnalysisBundleDashboard: React.FC<{
         shouldLoadScienceSidecars,
         decisionBarcodeForScience,
         decisionDigestForScience,
-        decisionInputsHashForScience,
-        personalizationScopeHashForScience,
         decisionScienceIngredientRows,
         ingredientOverviewRequestKey,
-        localDecisionSupportHeader,
-        shouldUseLocalDecisionSupport,
         setIngredientOverviewSidecarState,
     ]);
 
     useEffect(() => {
         if (!shouldLoadScienceSidecars) return;
-        if (!decisionBarcodeForScience || !decisionDigestForScience) {
-            return;
-        }
+        if (!decisionBarcodeForScience || !decisionDigestForScience) return;
         if (!activeScienceIngredientRow || !scientificBackgroundRequestKey) return;
 
         let cancelled = false;
@@ -7518,12 +7544,7 @@ const AnalysisBundleDashboard: React.FC<{
             const requestKey = scientificBackgroundRequestKey;
             const row = activeScienceIngredientRow;
             const current = scientificBackgroundStateRef.current[requestKey];
-            const lastRevalidateAt = scientificBackgroundRevalidateCooldownRef.current[requestKey] ?? 0;
-            const allowFallbackRevalidate =
-                current?.status === 'ok'
-                && current.source === 'fallback'
-                && Date.now() - lastRevalidateAt >= 20_000;
-            if (current && (current.status === 'loading' || (current.status === 'ok' && !allowFallbackRevalidate))) return;
+            if (current && (current.status === 'loading' || current.status === 'ok')) return;
 
             startedRequestKey = requestKey;
             const fallbackBlock = buildScientificBackgroundFallbackClient(
@@ -7533,34 +7554,20 @@ const AnalysisBundleDashboard: React.FC<{
 
             const run = async (
                 digestParam: string,
-                decisionInputsHashParam: string,
-                personalizationScopeHashParam: string,
                 canRetry: boolean,
-                revalidateFallback: boolean,
             ): Promise<void> => {
                 try {
-                    if (revalidateFallback) {
-                        scientificBackgroundRevalidateCooldownRef.current[requestKey] = Date.now();
-                    }
                     setScientificBackgroundSidecarState(requestKey, { status: 'loading' });
-                    const headers = await withAuthHeaders({
-                        'Content-Type': 'application/json',
-                    });
-                    if (shouldUseLocalDecisionSupport && localDecisionSupportHeader) {
-                        headers['x-local-personalization'] = localDecisionSupportHeader;
-                        headers['Cache-Control'] = 'no-cache, no-store';
-                        headers.Pragma = 'no-cache';
-                    }
                     const response = await fetch(`${baseUrl}/api/scientific-background/v1`, {
                         method: 'POST',
-                        headers,
+                        headers: {
+                            ...(await withAuthHeaders({
+                                'Content-Type': 'application/json',
+                            })),
+                        },
                         body: JSON.stringify({
                             barcode: decisionBarcodeForScience,
                             decisionDigest: digestParam,
-                            decisionInputsHash: decisionInputsHashParam,
-                            personalizationScopeHash: personalizationScopeHashParam,
-                            revalidateFallback,
-                            viewMode: SCAN_UX_VIEW_MODE,
                             selectedIngredientName: row.name,
                         }),
                         signal: controller.signal,
@@ -7571,32 +7578,8 @@ const AnalysisBundleDashboard: React.FC<{
                     if (response.status === 409) {
                         const mismatchPayload = await response.json().catch(() => null);
                         const latestDigest = typeof mismatchPayload?.latestDigest === 'string' ? mismatchPayload.latestDigest : null;
-                        const latestDecisionInputsHash =
-                            typeof mismatchPayload?.latestDecisionInputsHash === 'string'
-                                ? mismatchPayload.latestDecisionInputsHash
-                                : null;
-                        const latestPersonalizationScopeHash =
-                            typeof mismatchPayload?.latestPersonalizationScopeHash === 'string'
-                                ? mismatchPayload.latestPersonalizationScopeHash
-                                : null;
-                        if (
-                            canRetry
-                            && latestDigest
-                            && latestDecisionInputsHash
-                            && latestPersonalizationScopeHash
-                            && (
-                                latestDigest !== digestParam
-                                || latestDecisionInputsHash !== decisionInputsHashParam
-                                || latestPersonalizationScopeHash !== personalizationScopeHashParam
-                            )
-                        ) {
-                            return run(
-                                latestDigest,
-                                latestDecisionInputsHash,
-                                latestPersonalizationScopeHash,
-                                false,
-                                revalidateFallback,
-                            );
+                        if (canRetry && latestDigest && latestDigest !== digestParam) {
+                            return run(latestDigest, false);
                         }
                     }
 
@@ -7640,13 +7623,7 @@ const AnalysisBundleDashboard: React.FC<{
                 }
             };
 
-            void run(
-                decisionDigestForScience,
-                decisionInputsHashForScience,
-                personalizationScopeHashForScience,
-                true,
-                allowFallbackRevalidate,
-            );
+            void run(decisionDigestForScience, true);
         });
         return () => {
             cancelled = true;
@@ -7663,11 +7640,7 @@ const AnalysisBundleDashboard: React.FC<{
         shouldLoadScienceSidecars,
         decisionBarcodeForScience,
         decisionDigestForScience,
-        decisionInputsHashForScience,
-        personalizationScopeHashForScience,
         decisionScienceIngredientRows,
-        localDecisionSupportHeader,
-        shouldUseLocalDecisionSupport,
         scientificBackgroundRequestKey,
         scienceSourceFinalKey,
         setScientificBackgroundSidecarState,
@@ -7755,7 +7728,7 @@ const AnalysisBundleDashboard: React.FC<{
             >
                 {resolvedIngredientOverviewBlock ? (
                     <View style={{ gap: 12 }}>
-                        {showIngredientOverviewLoading ? (
+                        {ingredientOverviewState?.status === 'loading' ? (
                             <View style={styles.inlineLoadingRow}>
                                 <ActivityIndicator />
                                 <Text style={styles.inlineLoadingText}>Generating overview…</Text>
@@ -7820,7 +7793,7 @@ const AnalysisBundleDashboard: React.FC<{
 
                     {resolvedScientificBackgroundBlock ? (
                         <View style={{ gap: 16 }}>
-                            {showScientificBackgroundLoading ? (
+                            {scientificBackgroundState?.status === 'loading' ? (
                                 <View style={styles.inlineLoadingRow}>
                                     <ActivityIndicator />
                                     <Text style={styles.inlineLoadingText}>Generating scientific background…</Text>
@@ -7850,7 +7823,7 @@ const AnalysisBundleDashboard: React.FC<{
                             ) : null}
                         </View>
                     ) : (
-                        <Text style={styles.detailPlaceholderText}>Scientific background is unavailable for this scan.</Text>
+                        <Text style={styles.detailPlaceholderText}>Scientific background is pending.</Text>
                     )}
                 </View>
             </GlassCard>
@@ -8621,9 +8594,9 @@ const AnalysisBundleDashboard: React.FC<{
         });
         return counts;
     }, [
-        decisionScienceBlock?.odsGeneralScienceBullets,
         decisionSafetyBlock?.generalWatchouts,
         decisionSafetyBlock?.ulGuidance,
+        decisionScienceBlock?.odsGeneralScienceBullets,
         decisionUsageBlock?.directions?.sourceTier,
         scoreCardV2DisplayModules,
     ]);
@@ -9278,9 +9251,7 @@ const AnalysisBundleDashboard: React.FC<{
                 {...scrollProps}
             >
                 {!disableHeroHeader ? (
-                    shouldShowTopSectionAuthorityPlaceholder ? (
-                        <TopSectionAuthorityPlaceholder />
-                    ) : topSectionPresentation ? (
+                    decisionSupportAuthorityGate === 'ready' && topSectionPresentation ? (
                         <AnalysisTopSectionRedesign
                             hero={topSectionPresentation.hero}
                             banner={topSectionPresentation.banner}
@@ -9291,10 +9262,12 @@ const AnalysisBundleDashboard: React.FC<{
                             heroImageUri={heroImageUri}
                             verifiedLabelText={verifiedLabelText}
                         />
-                    ) : null
+                    ) : (
+                        <DecisionSupportAuthorityPlaceholder />
+                    )
                 ) : null}
 
-                {!disableHeroHeader && shouldRenderTopSection ? <View style={styles.sectionDivider} /> : null}
+                {!disableHeroHeader ? <View style={styles.sectionDivider} /> : null}
 
                 {SHOW_SCAN_DEBUG ? (
                     <View style={styles.scanDebugCard}>
@@ -9414,6 +9387,76 @@ const AnalysisBundleDashboard: React.FC<{
                             <Text style={styles.bisectNoticeText}>Set by `no_tiles` in `EXPO_PUBLIC_SCAN_DASHBOARD_BISECT`.</Text>
                         </View>
                     )}
+
+                    {normalizedComparisonSection || shouldShowComparisonPlaceholder ? <View style={styles.sectionDivider} /> : null}
+
+                    {normalizedComparisonSection ? (
+                        <View style={styles.sectionBlock}>
+                            <View style={styles.sectionHeader}>
+                                <Text style={styles.sectionTitle}>{t.analysisSectionComparisonTitle}</Text>
+                                <Text style={styles.sectionSubtitle}>{t.analysisSectionComparisonSubtitle}</Text>
+                            </View>
+
+                            <View style={styles.comparisonStandingCard}>
+                                <View style={styles.comparisonLeadRow}>
+                                    <View style={styles.comparisonLeadIconWrap}>
+                                        <BarChart3 size={18} color="#4F6B8A" />
+                                    </View>
+                                    <View style={styles.comparisonLeadCopy}>
+                                        <Text style={styles.comparisonStandingSummary}>
+                                            {normalizedComparisonSection.summary || t.analysisComparisonNotEnoughPeers}
+                                        </Text>
+                                        {normalizedComparisonSection.secondarySummary ? (
+                                            <Text style={styles.comparisonStandingSecondary}>
+                                                {normalizedComparisonSection.secondarySummary}
+                                            </Text>
+                                        ) : null}
+                                    </View>
+                                </View>
+
+                                {normalizedComparisonSection.alternatives.length > 0 ? (
+                                    <>
+                                        <View style={styles.comparisonSectionDivider} />
+                                        <Text style={styles.comparisonAlternativesTitle}>
+                                            {t.analysisComparisonAlternativesTitle}
+                                        </Text>
+                                        <ScrollView
+                                            horizontal
+                                            showsHorizontalScrollIndicator={false}
+                                            decelerationRate="fast"
+                                            snapToAlignment="start"
+                                            snapToInterval={comparisonSnapInterval}
+                                            contentContainerStyle={styles.comparisonRailContent}
+                                        >
+                                            {normalizedComparisonSection.alternatives.map((alternative) => (
+                                                <ComparisonAlternativeCard
+                                                    key={`${alternative.productId ?? alternative.title}`}
+                                                    alternative={alternative}
+                                                    cardWidth={comparisonCardWidth}
+                                                />
+                                            ))}
+                                        </ScrollView>
+                                    </>
+                                ) : null}
+
+                                {normalizedComparisonSection.showEmptyState ? (
+                                    <>
+                                        <View style={styles.comparisonSectionDivider} />
+                                        <View style={styles.comparisonEmptyStateCard}>
+                                            <View style={styles.comparisonEmptyStateIconWrap}>
+                                                <CheckCircle2 size={16} color="#1E7B55" />
+                                            </View>
+                                            <Text style={styles.comparisonEmptyState}>
+                                                {t.analysisComparisonAlreadyScoresWell}
+                                            </Text>
+                                        </View>
+                                    </>
+                                ) : null}
+                            </View>
+                        </View>
+                    ) : shouldShowComparisonPlaceholder ? (
+                        <ComparisonAuthorityPlaceholder />
+                    ) : null}
 
                 </>
             </ScrollContainer>
@@ -9629,34 +9672,6 @@ const styles = StyleSheet.create({
     authorityPlaceholderInsightCopy: {
         flex: 1,
         minWidth: 0,
-    },
-    authorityUnavailableWrap: {
-        width: '100%',
-        alignSelf: 'stretch',
-    },
-    authorityUnavailableCard: {
-        borderRadius: 28,
-        borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.68)',
-        backgroundColor: 'rgba(255,255,255,0.72)',
-        paddingHorizontal: 18,
-        paddingVertical: 18,
-        shadowColor: '#0B1E36',
-        shadowOpacity: 0.03,
-        shadowRadius: 22,
-        shadowOffset: { width: 0, height: 4 },
-        gap: 8,
-    },
-    authorityUnavailableTitle: {
-        fontSize: 20,
-        lineHeight: 24,
-        fontWeight: '700',
-        color: '#111827',
-    },
-    authorityUnavailableBody: {
-        fontSize: 14,
-        lineHeight: 20,
-        color: '#4B5563',
     },
     comparisonStandingCard: {
         borderRadius: 32,

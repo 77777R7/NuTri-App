@@ -79,7 +79,7 @@ test('score section render stays limited to the score card shell', () => {
     'SCORE_SECTION_FROZEN_RENDER_END',
   );
 
-  assert.ok(frozenRender.includes('style={styles.scoreSection}'));
+  assert.ok(frozenRender.includes('<View style={styles.scoreSection}>'));
   assert.ok(frozenRender.includes('<NutriScoreCardV2'));
 
   const forbiddenTokens = [
