@@ -3819,22 +3819,33 @@ const AnalysisBundleDashboard: React.FC<{
         () => normalizeText(localDecisionSupportProfileKey ?? null) || (authToken ? 'auth_session' : 'anon'),
         [authToken, localDecisionSupportProfileKey],
     );
-    const decisionSupportAuthorityScopeSeedKey = useMemo(
-        () => [
-            authorityScopeBarcode ?? 'barcode_unknown',
-            `${bundle.meta.authoritativeIdentity.type}:${bundle.meta.authoritativeIdentity.value}`,
-            normalizeText(bundle.meta.factsDigestHash ?? null) || 'facts_unknown',
+    const decisionSupportAuthorityResetScopeKey = useMemo(() => {
+        const normalizedSessionId = normalizeText(scanSessionId);
+        const explicitBundleId = normalizeText(
+            (bundle.meta as { bundleId?: string | null })?.bundleId ?? null,
+        );
+        const stableScanKey = normalizedSessionId
+            ? `session:${normalizedSessionId}`
+            : explicitBundleId
+                ? `bundle:${explicitBundleId}`
+                : authorityScopeBarcode
+                    ? `barcode:${authorityScopeBarcode}`
+                    : analysisBarcodeDigits
+                        ? `barcode:${analysisBarcodeDigits}`
+                        : 'scan_unknown';
+
+        return [
+            stableScanKey,
             SCAN_UX_VIEW_MODE,
             decisionSupportBaseCacheScopeKey || 'scope_unknown',
-        ].join('|'),
-        [
-            authorityScopeBarcode,
-            bundle.meta.authoritativeIdentity.type,
-            bundle.meta.authoritativeIdentity.value,
-            bundle.meta.factsDigestHash,
-            decisionSupportBaseCacheScopeKey,
-        ],
-    );
+        ].join('|');
+    }, [
+        scanSessionId,
+        (bundle.meta as { bundleId?: string | null })?.bundleId,
+        authorityScopeBarcode,
+        analysisBarcodeDigits,
+        decisionSupportBaseCacheScopeKey,
+    ]);
     const localDecisionSupportDebugSignatureRef = useRef<string>('');
     useEffect(() => {
         if (onboardingLoading) return;
@@ -3874,9 +3885,9 @@ const AnalysisBundleDashboard: React.FC<{
         decisionAuthorityStateRef.current = decisionAuthorityState;
     }, [decisionAuthorityState]);
     useEffect(() => {
-        decisionSupportAuthorityScopeKeyRef.current = decisionSupportAuthorityScopeSeedKey;
-        setDecisionAuthorityState(buildPendingDecisionAuthorityState(decisionSupportAuthorityScopeSeedKey));
-    }, [decisionSupportAuthorityScopeSeedKey]);
+        decisionSupportAuthorityScopeKeyRef.current = decisionSupportAuthorityResetScopeKey;
+        setDecisionAuthorityState(buildPendingDecisionAuthorityState(decisionSupportAuthorityResetScopeKey));
+    }, [decisionSupportAuthorityResetScopeKey]);
     const emitScanUxTimingOnce = useCallback((
         key: 'firstRenderableLogged' | 'scoreVisibleLogged' | 'coreCardsVisibleLogged',
         event:
@@ -4260,7 +4271,7 @@ const AnalysisBundleDashboard: React.FC<{
                     ? bundleState.meta.authoritativeIdentity.type
                     : null,
         });
-        const authorityScopeKeyForRequest = decisionSupportAuthorityScopeSeedKey;
+        const authorityScopeKeyForRequest = decisionSupportAuthorityResetScopeKey;
         const decisionBaseCacheKey = [
             resolvedBarcode,
             `${bundleState.meta.authoritativeIdentity.type}:${bundleState.meta.authoritativeIdentity.value}`,
@@ -5064,7 +5075,7 @@ const AnalysisBundleDashboard: React.FC<{
         localDecisionSupportHeader,
         localDecisionSupportProfileKey,
         localDecisionSupportSignals,
-        decisionSupportAuthorityScopeSeedKey,
+        decisionSupportAuthorityResetScopeKey,
         decisionSupportBaseCacheScopeKey,
         factsDtoState.data?.product?.brand,
         factsDtoState.data?.product?.name,
@@ -7398,7 +7409,7 @@ const AnalysisBundleDashboard: React.FC<{
         normalizeText(authoritativeDecisionTemplatePayload?.personalizationScopeHash ?? '') || null;
     const decisionAuthorityScopeKey = decisionAuthorityState.status === 'ready'
         ? decisionAuthorityState.scopeKey
-        : decisionSupportAuthorityScopeSeedKey;
+        : decisionSupportAuthorityResetScopeKey;
     const shouldLoadScienceSidecars =
         selectedTileType === 'science'
         && decisionSupportAuthorityGate === 'ready'

@@ -13,13 +13,32 @@ test('authority lifecycle is an explicit state machine and seeded payloads canno
   assert.match(source, /type DecisionAuthorityStatus = 'pending' \| 'ready' \| 'terminal_no_authority';/);
   assert.match(source, /status: DecisionAuthorityStatus;/);
   assert.match(source, /const buildPendingDecisionAuthorityState = \(scopeKey: string\): DecisionAuthorityState => \(\{/);
-  assert.match(source, /setDecisionAuthorityState\(buildPendingDecisionAuthorityState\(decisionSupportAuthorityScopeSeedKey\)\);/);
+  assert.match(source, /const decisionSupportAuthorityResetScopeKey = useMemo\(\(\) => \{/);
+  assert.match(source, /setDecisionAuthorityState\(buildPendingDecisionAuthorityState\(decisionSupportAuthorityResetScopeKey\)\);/);
   assert.match(source, /const allowSeededDecision = shouldUseDecisionPayloadForBundle\(\{/);
   assert.doesNotMatch(source, /seededDecision[\s\S]{0,400}setDecisionAuthorityState\(/);
   assert.match(source, /setDecisionAuthorityState\(\{\s*status: 'ready'/);
   assert.match(source, /setDecisionAuthorityState\(\{\s*status: 'terminal_no_authority'/);
   assert.match(source, /requestSeq === decisionSupportRequestSeqRef\.current/);
   assert.match(source, /decisionSupportAuthorityScopeKeyRef\.current === authorityScopeKeyForRequest/);
+});
+
+test('authority reset scope follows a stable scan key instead of drifting bundle facts metadata', async () => {
+  const source = await readFile(DASHBOARD_PATH, 'utf8');
+
+  assert.match(source, /const stableScanKey = normalizedSessionId/);
+  assert.match(source, /: explicitBundleId/);
+  assert.match(source, /: authorityScopeBarcode/);
+  assert.match(source, /: analysisBarcodeDigits/);
+  assert.match(source, /\[\s*stableScanKey,\s*SCAN_UX_VIEW_MODE,\s*decisionSupportBaseCacheScopeKey \|\| 'scope_unknown',\s*\]\.join\('\|'\)/);
+  assert.doesNotMatch(
+    source,
+    /const decisionSupportAuthorityResetScopeKey = useMemo\(\(\) => \{[\s\S]{0,800}bundle\.meta\.factsDigestHash/,
+  );
+  assert.doesNotMatch(
+    source,
+    /const decisionSupportAuthorityResetScopeKey = useMemo\(\(\) => \{[\s\S]{0,800}bundle\.meta\.authoritativeIdentity/,
+  );
 });
 
 test('decision payload caches are stripped and no longer merge personalization back into the base template', async () => {
