@@ -139,7 +139,6 @@ type DecisionAuthorityState = {
     origin: DecisionAuthorityOrigin;
     payload: Record<string, unknown> | null;
 };
-type DecisionSupportAuthorityGate = 'waiting' | 'ready' | 'terminal_no_authority';
 
 type DecisionChecklistStatus = 'verified' | 'missing' | 'unknown';
 type DecisionChecklistRow = {
@@ -1920,151 +1919,6 @@ const NutriScoreCardV2: React.FC<{
                 })}
             </View>
             <ScoreLearnMoreModal visible={learnMoreVisible} onClose={() => setLearnMoreVisible(false)} />
-        </View>
-    );
-};
-
-const ComparisonAlternativeCard: React.FC<{
-    alternative: DecisionSupportPersonalizedStandingAlternative;
-    cardWidth: number;
-}> = ({ alternative, cardWidth }) => {
-    const { t } = useTranslation();
-    const scoreText = Number.isFinite(Number(alternative.nutriScore))
-        ? `${Math.round(Number(alternative.nutriScore))}/100`
-        : '--';
-
-    return (
-        <View style={[styles.comparisonCard, { width: cardWidth }]}>
-            <View style={styles.comparisonCardTopRow}>
-                <View style={styles.comparisonCardIdentity}>
-                    {alternative.imageUrl ? (
-                        <Image source={{ uri: alternative.imageUrl }} style={styles.comparisonCardImage} />
-                    ) : (
-                        <View style={styles.comparisonCardImagePlaceholder}>
-                            <Pill size={18} color="#64748B" />
-                        </View>
-                    )}
-                    <View style={styles.comparisonCardIdentityText}>
-                        <Text style={styles.comparisonCardTitle} numberOfLines={2}>
-                            {alternative.title}
-                        </Text>
-                        {alternative.brand ? (
-                            <Text style={styles.comparisonCardBrand} numberOfLines={1}>
-                                {alternative.brand}
-                            </Text>
-                        ) : null}
-                    </View>
-                </View>
-
-                <View style={styles.comparisonCardScoreBlock}>
-                    <Text style={styles.comparisonCardScore}>{scoreText}</Text>
-                    <Text style={styles.comparisonCardScoreLabel}>{t.analysisComparisonScoreLabel}</Text>
-                </View>
-            </View>
-
-            {alternative.reason ? <Text style={styles.comparisonCardReason}>{alternative.reason}</Text> : null}
-        </View>
-    );
-};
-
-const DecisionSupportAuthorityPlaceholder: React.FC = () => {
-    return (
-        <View style={styles.authorityPlaceholderWrap}>
-            <View style={styles.authorityPlaceholderHeroCard}>
-                <SkeletonLoader width={168} height={32} borderRadius={999} style={{ borderCurve: 'continuous' }} />
-                <View style={styles.authorityPlaceholderProductRow}>
-                    <SkeletonLoader width={72} height={72} borderRadius={20} style={{ borderCurve: 'continuous' }} />
-                    <View style={styles.authorityPlaceholderProductCopy}>
-                        <SkeletonLoader width="82%" height={22} style={{ marginBottom: 6, borderCurve: 'continuous' }} />
-                        <SkeletonLoader width="52%" height={16} style={{ marginBottom: 8, borderCurve: 'continuous' }} />
-                    </View>
-                </View>
-                <SkeletonLoader width="74%" height={18} style={{ marginTop: 18, marginBottom: 8, borderCurve: 'continuous' }} />
-                <SkeletonLoader width="58%" height={14} style={{ borderCurve: 'continuous' }} />
-            </View>
-
-            <View style={styles.authorityPlaceholderInsightsBlock}>
-                <Text style={styles.insightsTitle}>Personalized Insights</Text>
-                <View style={styles.authorityPlaceholderInsightsCard}>
-                    {Array.from({ length: 4 }).map((_, index) => (
-                        <View key={`authority-row-${index}`} style={styles.authorityPlaceholderInsightRow}>
-                            <SkeletonLoader width={40} height={40} borderRadius={20} style={{ borderCurve: 'continuous' }} />
-                            <View style={styles.authorityPlaceholderInsightCopy}>
-                                <SkeletonLoader width={index === 0 ? '72%' : '64%'} height={16} style={{ marginBottom: 6, borderCurve: 'continuous' }} />
-                                <SkeletonLoader width={index === 0 ? '48%' : '36%'} height={12} style={{ borderCurve: 'continuous' }} />
-                            </View>
-                        </View>
-                    ))}
-                </View>
-            </View>
-        </View>
-    );
-};
-
-const DecisionSupportAuthorityUnavailable: React.FC = () => {
-    return (
-        <View style={styles.authorityUnavailableWrap}>
-            <View style={styles.authorityUnavailableCard}>
-                <Text style={styles.authorityUnavailableTitle}>Personalized insights unavailable</Text>
-                <Text style={styles.authorityUnavailableBody}>
-                    Verified personalized guidance could not be prepared for this scan. Product details below are still available.
-                </Text>
-            </View>
-        </View>
-    );
-};
-
-const ComparisonAuthorityPlaceholder: React.FC = () => {
-    return (
-        <View style={styles.sectionBlock}>
-            <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>Comparison</Text>
-                <Text style={styles.sectionSubtitle}>Checking similar products and better alternatives.</Text>
-            </View>
-
-            <View style={styles.comparisonStandingCard}>
-                <View style={styles.comparisonLeadRow}>
-                    <View style={styles.comparisonLeadIconWrap}>
-                        <BarChart3 size={18} color="#94A3B8" />
-                    </View>
-                    <View style={styles.comparisonLeadCopy}>
-                        <SkeletonLoader width="68%" height={16} style={{ marginBottom: 6, borderCurve: 'continuous' }} />
-                        <SkeletonLoader width="44%" height={12} style={{ borderCurve: 'continuous' }} />
-                    </View>
-                </View>
-                <View style={styles.comparisonSectionDivider} />
-                <Text style={styles.comparisonAlternativesTitle}>Alternatives</Text>
-                <ScrollView
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    decelerationRate="fast"
-                    contentContainerStyle={styles.comparisonRailContent}
-                    scrollEnabled={false}
-                >
-                    {Array.from({ length: 2 }).map((_, index) => (
-                        <View
-                            key={`comparison-placeholder-${index}`}
-                            style={[styles.comparisonCard, styles.comparisonPlaceholderCard]}
-                        >
-                            <View style={styles.comparisonCardTopRow}>
-                                <View style={styles.comparisonCardIdentity}>
-                                    <SkeletonLoader width={42} height={42} borderRadius={14} style={{ borderCurve: 'continuous' }} />
-                                    <View style={styles.comparisonCardIdentityText}>
-                                        <SkeletonLoader width="84%" height={15} style={{ marginBottom: 6, borderCurve: 'continuous' }} />
-                                        <SkeletonLoader width="48%" height={12} style={{ borderCurve: 'continuous' }} />
-                                    </View>
-                                </View>
-                                <View style={styles.comparisonCardScoreBlock}>
-                                    <SkeletonLoader width={42} height={14} style={{ marginBottom: 4, borderCurve: 'continuous' }} />
-                                    <SkeletonLoader width={34} height={10} style={{ borderCurve: 'continuous' }} />
-                                </View>
-                            </View>
-                            <SkeletonLoader width="88%" height={12} style={{ marginTop: 12, borderCurve: 'continuous' }} />
-                            <SkeletonLoader width="72%" height={12} style={{ marginTop: 6, borderCurve: 'continuous' }} />
-                        </View>
-                    ))}
-                </ScrollView>
-            </View>
         </View>
     );
 };
@@ -3995,12 +3849,10 @@ const AnalysisBundleDashboard: React.FC<{
     const scrollHandler = useAnimatedScrollHandler((event) => {
         scrollY.value = event.contentOffset.y;
     });
-    const { height: viewportHeight, width: viewportWidth } = useWindowDimensions();
+    const { height: viewportHeight } = useWindowDimensions();
     const [tilesContainerW, setTilesContainerW] = useState(0);
     const TILE_GAP = 12;
     const tileWidth: DimensionValue = tilesContainerW > 0 ? tilesContainerW : '100%';
-    const comparisonCardWidth = Math.min(Math.max(viewportWidth - 92, 268), 336);
-    const comparisonSnapInterval = comparisonCardWidth + 12;
     const TileRenderer = disableTileAnimation ? StaticTile : AnimatedTile;
     const ScrollContainer: any = disableReanimatedScroll ? ScrollView : Animated.ScrollView;
     const handlePlainScroll = useCallback((event: any) => {
@@ -5117,12 +4969,6 @@ const AnalysisBundleDashboard: React.FC<{
             ? strippedInline
             : null;
     }, [bundleState.meta, isStreaming]);
-    const authoritativeDecisionTemplatePayload = useMemo<DecisionSupportTemplatePayload | null>(() => {
-        if (decisionAuthorityState.status === 'ready' && decisionAuthorityState.payload && typeof decisionAuthorityState.payload === 'object') {
-            return decisionAuthorityState.payload as DecisionSupportTemplatePayload;
-        }
-        return null;
-    }, [decisionAuthorityState]);
     const decisionTemplatePayload = useMemo<DecisionSupportTemplatePayload | null>(() => {
         const currentFactsDigestHash = normalizeText(bundleState.meta.factsDigestHash ?? null) || null;
         const fetchedPayload =
@@ -5159,18 +5005,9 @@ const AnalysisBundleDashboard: React.FC<{
     const decisionOverviewBlock = decisionTemplatePayload?.overviewBlock;
     const decisionUsageBlock = decisionTemplatePayload?.usageBlock;
     const decisionSafetyBlock = decisionTemplatePayload?.safetyBlock;
+    const decisionScienceBlock = decisionTemplatePayload?.scienceBlock ?? null;
     const decisionQualityMark = decisionTemplatePayload?.qualityMark;
-    const authoritativeDecisionScienceBlock = authoritativeDecisionTemplatePayload?.scienceBlock ?? null;
-    const decisionSupportAuthorityGate: DecisionSupportAuthorityGate =
-        decisionAuthorityState.status === 'pending'
-            ? 'waiting'
-            : decisionAuthorityState.status === 'ready'
-                ? 'ready'
-                : 'terminal_no_authority';
-    const decisionPersonalizedResultLane =
-        decisionSupportAuthorityGate === 'ready'
-            ? authoritativeDecisionTemplatePayload?.personalizedResultLane ?? null
-            : null;
+    const decisionPersonalizedResultLane = decisionTemplatePayload?.personalizedResultLane ?? null;
     const currentDecisionDigest =
         normalizeText(
             decisionTemplatePayload?.digest
@@ -5236,46 +5073,6 @@ const AnalysisBundleDashboard: React.FC<{
     const productTitle = trustedDisplayIdentity.title;
     const productSubtitle = trustedDisplayIdentity.subtitle;
     const canonicalDecisionBarcode = authorityScopeBarcode;
-    const canonicalIdentityConfidenceHigh = useMemo(() => {
-        const productIdentity =
-            (bundleState.meta as { productIdentity?: { identityStable?: boolean | null; sourceAttribution?: string | null } | null })
-                .productIdentity ?? null;
-        const sourceAttribution = normalizeText(productIdentity?.sourceAttribution ?? trustedDisplayIdentity.sourceAttributionUsed).toLowerCase();
-        return Boolean(canonicalDecisionBarcode) && (
-            productIdentity?.identityStable === true
-            || trustedDisplayIdentity.displayIdentityMode === 'trusted'
-            || sourceAttribution === 'verified_regulatory'
-            || sourceAttribution === 'label_record'
-        );
-    }, [bundleState.meta, canonicalDecisionBarcode, trustedDisplayIdentity.displayIdentityMode, trustedDisplayIdentity.sourceAttributionUsed]);
-    const normalizedComparisonSection = useMemo(() => {
-        if (decisionSupportAuthorityGate !== 'ready') {
-            return null;
-        }
-        const standing = decisionPersonalizedResultLane?.productStanding ?? null;
-        if (!standing || standing.status !== 'ready' || !canonicalIdentityConfidenceHigh) {
-            return null;
-        }
-
-        const alternatives = Array.isArray(standing.betterAlternatives)
-            ? standing.betterAlternatives.filter((item) => Boolean(item?.title))
-            : [];
-        const summary = normalizeText(standing.summary ?? null);
-        const secondarySummary = normalizeText(standing.secondarySummary ?? null);
-
-        if (!summary && alternatives.length === 0) {
-            return null;
-        }
-
-        return {
-            standing,
-            alternatives,
-            summary,
-            secondarySummary,
-            showEmptyState: alternatives.length === 0 && standing.standing !== 'unknown',
-        };
-    }, [canonicalIdentityConfidenceHigh, decisionPersonalizedResultLane?.productStanding, decisionSupportAuthorityGate]);
-    const shouldShowComparisonPlaceholder = decisionSupportAuthorityGate === 'waiting';
     const bundleSourceTypeFinal = bundleState.meta.sourceTypeFinal !== false && Number(bundleState.meta.revision) >= 1;
     const bundleSourceType = typeof bundleState.meta.sourceType === 'string' ? bundleState.meta.sourceType : null;
     const verificationPresentation = useMemo(
@@ -5514,34 +5311,34 @@ const AnalysisBundleDashboard: React.FC<{
     const safetyBullet1Text = normalizeText(legacySafetyTipCoverText);
     const showGeneralWatchOuts = !bundleState.sections.safety.detail?.warnings?.length && keyIngredientsForSafety.length > 0;
     const hasAnyProductSpecificSignal = useMemo(() => {
-        const hasScienceRows = (authoritativeDecisionScienceBlock?.ingredientRows ?? []).some((row) => {
+        const hasScienceRows = (decisionScienceBlock?.ingredientRows ?? []).some((row) => {
             const name = String(row?.name ?? '').trim();
             const dose = String(row?.dose ?? '').trim();
             return name.length > 0 && !isNutritionLabelLikeIngredient(name) && (dose.length > 0 || name.length > 0);
         });
-        const hasSnapshotNames = (authoritativeDecisionScienceBlock?.ingredientSnapshotNames ?? []).some((name) => {
+        const hasSnapshotNames = (decisionScienceBlock?.ingredientSnapshotNames ?? []).some((name) => {
             const normalized = String(name ?? '').trim();
             return normalized.length > 0 && !isNutritionLabelLikeIngredient(normalized);
         });
-        const hasFormSignal = normalizeText(authoritativeDecisionScienceBlock?.formMatters?.ingredientChemicalForm ?? '').length > 0;
+        const hasFormSignal = normalizeText(decisionScienceBlock?.formMatters?.ingredientChemicalForm ?? '').length > 0;
         return hasScienceRows || hasSnapshotNames || hasFormSignal;
     }, [
-        authoritativeDecisionScienceBlock?.formMatters?.ingredientChemicalForm,
-        authoritativeDecisionScienceBlock?.ingredientRows,
-        authoritativeDecisionScienceBlock?.ingredientSnapshotNames,
+        decisionScienceBlock?.formMatters?.ingredientChemicalForm,
+        decisionScienceBlock?.ingredientRows,
+        decisionScienceBlock?.ingredientSnapshotNames,
     ]);
     const ingredientsNotes = hasAnyProductSpecificSignal
         ? undefined
         : ['Product-specific signals are limited for current evidence set.'];
     const sourceLockedScienceRows = useMemo(
         () =>
-            (authoritativeDecisionScienceBlock?.ingredientRows ?? [])
+            (decisionScienceBlock?.ingredientRows ?? [])
                 .map((row) => ({
                     name: String(row?.name ?? '').trim(),
                     dose: String(row?.dose ?? '').trim(),
                 }))
                 .filter((row) => row.name.length > 0 && !isNutritionLabelLikeIngredient(row.name)),
-        [authoritativeDecisionScienceBlock?.ingredientRows],
+        [decisionScienceBlock?.ingredientRows],
     );
     const scienceIngredientsMerged = useMemo(() => {
         if (sourceLockedScienceRows.length > 0) {
@@ -5556,7 +5353,7 @@ const AnalysisBundleDashboard: React.FC<{
         }
 
         const candidates = [
-            ...(authoritativeDecisionScienceBlock?.ingredientSnapshotNames ?? [])
+            ...(decisionScienceBlock?.ingredientSnapshotNames ?? [])
                 .map((name) => ({
                     name: String(name ?? '').trim(),
                     dose: '',
@@ -5586,7 +5383,7 @@ const AnalysisBundleDashboard: React.FC<{
         return mergeScienceIngredientCandidates({ candidates, maxCoverItems: 3 });
     }, [
         decisionOverviewBlock?.providesVerified?.keyIngredients,
-        authoritativeDecisionScienceBlock?.ingredientSnapshotNames,
+        decisionScienceBlock?.ingredientSnapshotNames,
         ingredientsItemsFiltered,
         recordFacts.ingredientRows,
         sourceLockedScienceRows,
@@ -5838,87 +5635,23 @@ const AnalysisBundleDashboard: React.FC<{
         scienceIngredientsAll,
     ]);
     const topSectionPresentation = useMemo(() => {
-        if (decisionSupportAuthorityGate !== 'ready' || !decisionPersonalizedResultLane) {
-            return null;
-        }
-        const rawGoalFit = decisionPersonalizedResultLane?.goalFit;
-        const rawPersonalInsight = decisionPersonalizedResultLane?.personalInsight;
-        const rawAllergyInsight = decisionPersonalizedResultLane?.allergyInsight;
-        const rawDosageContext = decisionPersonalizedResultLane?.dosageContext;
+        const goalFit = decisionPersonalizedResultLane?.goalFit;
+        const personalInsight = decisionPersonalizedResultLane?.personalInsight;
         const hasSavedAllergyPreferences =
             localDecisionSupportSignals.allergyCount > 0 || localDecisionSupportSignals.restrictionCount > 0;
-        const goalCoverageSummary = rawGoalFit?.goalCoverageSummary ?? null;
-        const analyzedGoalCount = goalCoverageSummary?.analyzedGoalCount ?? rawGoalFit?.analyzedGoalCount ?? 0;
-        const hasGoalCoverage =
-            analyzedGoalCount > 0
-            || (rawGoalFit?.goalCoverageSummary?.items?.length ?? 0) > 0
-            || (rawGoalFit?.goalCoverage?.length ?? 0) > 0
-            || (rawGoalFit?.allGoalCoverage?.length ?? 0) > 0;
-        const goalFit =
-            rawGoalFit?.status === 'pending' && !hasGoalCoverage
+        const allergyInsight =
+            decisionPersonalizedResultLane?.allergyInsight
+            ?? (hasSavedAllergyPreferences
                 ? {
-                    ...rawGoalFit,
-                    selectedGoalKey: null,
-                    previewTopGoalKey: null,
-                    dominantGoalKey: null,
-                    secondaryGoalKey: null,
-                    selectedGoalKeys: [],
-                    allSelectedGoalKeys: [],
-                    candidateGoalKeys: [],
-                    defaultVisibleGoalKeys: [],
-                    goalCoverage: [],
-                    allGoalCoverage: [],
-                    goalCoverageSummary: rawGoalFit.goalCoverageSummary
-                        ? {
-                            ...rawGoalFit.goalCoverageSummary,
-                            analyzedGoalCount: 0,
-                            surfacedGoalCount: 0,
-                            hiddenGoalsCount: 0,
-                            allGoalsAnalyzed: false,
-                            items: [],
-                          }
-                        : undefined,
-                    selectedGoalCount: 0,
-                    analyzedGoalCount: 0,
-                    surfacedGoalCount: 0,
-                    allGoalsAnalyzed: false,
-                    fitDecision: 'unknown' as const,
-                    fitTier: 'unknown' as const,
-                    previewTopTier: 'unknown' as const,
-                    heroMode: undefined,
+                    status: 'pending' as const,
+                    reasonCode: 'LOCAL_PROFILE_ALLERGY_CONTEXT_PENDING',
+                    summary: 'Saved allergy preferences are still attaching to this scan.',
+                    matchedAllergyFlags: [],
+                    matchedRestrictions: [],
+                    details: [],
                 }
-                : rawGoalFit;
-        const personalInsight = rawPersonalInsight?.status === 'ready' ? rawPersonalInsight : null;
-        const allergyInsight = (() => {
-            if (rawAllergyInsight?.status === 'ready' || rawAllergyInsight?.status === 'unavailable') {
-                return rawAllergyInsight;
-            }
-
-            if (hasSavedAllergyPreferences) {
-                return {
-                    status: 'unavailable' as const,
-                    reasonCode: rawAllergyInsight?.reasonCode ?? 'ALLERGY_PROFILE_NOT_ATTACHED',
-                    summary: normalizeText(rawAllergyInsight?.summary ?? null) || 'Allergy check unavailable for this scan.',
-                    matchedAllergyFlags: rawAllergyInsight?.matchedAllergyFlags ?? [],
-                    matchedRestrictions: rawAllergyInsight?.matchedRestrictions ?? [],
-                    details: rawAllergyInsight?.details ?? [],
-                };
-            }
-
-            return null;
-        })();
-        const dosageContext =
-            rawDosageContext?.status === 'pending'
-                ? {
-                    ...rawDosageContext,
-                    status: 'unavailable' as const,
-                    reasonCode: rawDosageContext.reasonCode ?? 'RECOMMENDED_DOSE_COMPARISON_NOT_ATTACHED',
-                    summary: normalizeText(rawDosageContext.summary ?? null) || 'Dose guidance unavailable for this scan.',
-                    comparisonMode: rawDosageContext.comparisonMode === 'not_attached'
-                        ? rawDosageContext.comparisonMode
-                        : 'not_attached',
-                }
-                : rawDosageContext;
+                : null);
+        const dosageContext = decisionPersonalizedResultLane?.dosageContext;
         const firstConflict = (personalInsight?.conflicts ?? [])
             .map((conflict) => normalizeText(conflict.summary))
             .find(Boolean);
@@ -6155,11 +5888,10 @@ const AnalysisBundleDashboard: React.FC<{
             },
         });
     }, [
-        decisionSupportAuthorityGate,
-        decisionPersonalizedResultLane?.goalFit,
-        decisionPersonalizedResultLane?.personalInsight,
         decisionPersonalizedResultLane?.allergyInsight,
         decisionPersonalizedResultLane?.dosageContext,
+        decisionPersonalizedResultLane?.goalFit,
+        decisionPersonalizedResultLane?.personalInsight,
         localDecisionSupportSignals.allergyCount,
         localDecisionSupportSignals.restrictionCount,
         safetyTipCoverText,
@@ -6205,11 +5937,11 @@ const AnalysisBundleDashboard: React.FC<{
 
         const hasEvidenceMapping =
             sourceLockedScienceRows.length > 0
-            || (authoritativeDecisionScienceBlock?.ingredientSnapshotNames ?? []).some((name) => {
+            || (decisionScienceBlock?.ingredientSnapshotNames ?? []).some((name) => {
                 const normalized = String(name ?? '').trim();
                 return normalized.length > 0 && !isNutritionLabelLikeIngredient(normalized);
             });
-        const hasFormQuality = normalizeText(authoritativeDecisionScienceBlock?.formMatters?.ingredientChemicalForm ?? '').length > 0;
+        const hasFormQuality = normalizeText(decisionScienceBlock?.formMatters?.ingredientChemicalForm ?? '').length > 0;
 
         if (!hasPrimary) missingReasons.add('MISSING_PRIMARY_ACTIVE');
         if (!hasDoseRange) missingReasons.add('MISSING_DOSE_RANGE');
@@ -6231,8 +5963,8 @@ const AnalysisBundleDashboard: React.FC<{
         bundleSourceType,
         bundleSourceTypeFinal,
         decisionOverlayUsed,
-        authoritativeDecisionScienceBlock?.formMatters?.ingredientChemicalForm,
-        authoritativeDecisionScienceBlock?.ingredientSnapshotNames,
+        decisionScienceBlock?.formMatters?.ingredientChemicalForm,
+        decisionScienceBlock?.ingredientSnapshotNames,
         ingredientsItems,
         ingredientsNotes,
         sourceLockedScienceRows,
@@ -6863,7 +6595,7 @@ const AnalysisBundleDashboard: React.FC<{
                 },
             ];
         }
-        const rows = (authoritativeDecisionScienceBlock?.ingredientRows ?? [])
+        const rows = (decisionScienceBlock?.ingredientRows ?? [])
             .map((row, index) => ({
                 name: normalizeText(row?.name ?? ''),
                 amount: normalizeText(row?.dose ?? '') || 'Dose not disclosed',
@@ -6885,7 +6617,7 @@ const AnalysisBundleDashboard: React.FC<{
         ];
     }, [
         authoritativeTilePayloadReady,
-        authoritativeDecisionScienceBlock?.ingredientRows,
+        decisionScienceBlock?.ingredientRows,
         decisionTemplateUnavailable,
         ingredientMechanisms,
     ]);
@@ -7400,35 +7132,30 @@ const AnalysisBundleDashboard: React.FC<{
         </View>
     );
 
-    const scienceAuthorityWaiting = decisionAuthorityState.status === 'pending';
     const decisionBarcodeForScience = canonicalDecisionBarcode;
-    const decisionDigestForScience = normalizeText(authoritativeDecisionTemplatePayload?.digest ?? '') || null;
+    const decisionDigestForScience = normalizeText(decisionTemplatePayload?.digest ?? '') || null;
     const decisionInputsHashForScience =
-        normalizeText(authoritativeDecisionTemplatePayload?.decisionInputsHash ?? '') || null;
+        normalizeText(decisionTemplatePayload?.decisionInputsHash ?? '') || null;
     const personalizationScopeHashForScience =
-        normalizeText(authoritativeDecisionTemplatePayload?.personalizationScopeHash ?? '') || null;
-    const decisionAuthorityScopeKey = decisionAuthorityState.status === 'ready'
-        ? decisionAuthorityState.scopeKey
-        : decisionSupportAuthorityResetScopeKey;
+        normalizeText(decisionTemplatePayload?.personalizationScopeHash ?? '') || null;
+    const decisionAuthorityScopeKey = decisionSupportBaseCacheScopeKey || incomingBundleRunKey;
     const shouldLoadScienceSidecars =
         selectedTileType === 'science'
-        && decisionSupportAuthorityGate === 'ready'
-        && authoritativeDecisionTemplatePayload != null
+        && decisionSupportState.status === 'ready'
+        && decisionTemplatePayload != null
         && Boolean(decisionBarcodeForScience)
-        && Boolean(decisionDigestForScience)
-        && Boolean(decisionInputsHashForScience)
-        && Boolean(personalizationScopeHashForScience);
+        && Boolean(decisionDigestForScience);
     const scienceSourceFinalKey = bundleSourceTypeFinal ? 'final' : 'nonfinal';
     const decisionScienceIngredientRows = useMemo<ScienceSidecarIngredientRow[]>(
         () =>
-            (authoritativeDecisionScienceBlock?.ingredientRows ?? [])
+            (decisionScienceBlock?.ingredientRows ?? [])
                 .map((row) => ({
                     key: normalizeIngredientNameForBackground(row?.name),
                     name: normalizeText(row?.name ?? ''),
                     dose: normalizeText(row?.dose ?? '') || null,
                 }))
                 .filter((row) => row.key.length > 0 && row.name.length > 0 && !isNutritionLabelLikeIngredient(row.name)),
-        [authoritativeDecisionScienceBlock?.ingredientRows],
+        [decisionScienceBlock?.ingredientRows],
     );
     const scientificBackgroundIngredientRows = useMemo(
         () => {
@@ -7471,20 +7198,19 @@ const AnalysisBundleDashboard: React.FC<{
         }
         return `${selectedName} • ${isDataCeiling ? 'Scan Supplement Facts to continue' : 'Dose not disclosed on label'}`;
     }, [activeScienceIngredientRow?.dose, activeScienceIngredientRow?.name, isDataCeiling]);
-    const chemicalFormDisplayText = normalizeText(authoritativeDecisionScienceBlock?.formMatters?.ingredientChemicalForm ?? '') || null;
-    const deliveryTypeDisplayText = normalizeText(authoritativeDecisionScienceBlock?.formMatters?.dosageForm ?? '') || null;
+    const chemicalFormDisplayText = normalizeText(decisionScienceBlock?.formMatters?.ingredientChemicalForm ?? '') || null;
+    const deliveryTypeDisplayText = normalizeText(decisionScienceBlock?.formMatters?.dosageForm ?? '') || null;
     const scienceAuthoritativeIdentityKey = `${bundleState.meta.authoritativeIdentity?.type ?? 'unknown'}:${bundleState.meta.authoritativeIdentity?.value ?? 'unknown'}`;
 
     const ingredientOverviewRequestKey = useMemo(
         () =>
-            decisionBarcodeForScience && decisionDigestForScience && decisionInputsHashForScience
+            decisionBarcodeForScience && decisionDigestForScience
                 ? [
                     'ingredient_overview',
                     decisionAuthorityScopeKey,
                     scienceAuthoritativeIdentityKey,
                     decisionBarcodeForScience,
                     decisionDigestForScience,
-                    decisionInputsHashForScience,
                     scienceSourceFinalKey,
                 ].join('|')
                 : null,
@@ -7492,21 +7218,19 @@ const AnalysisBundleDashboard: React.FC<{
             decisionAuthorityScopeKey,
             decisionBarcodeForScience,
             decisionDigestForScience,
-            decisionInputsHashForScience,
             scienceAuthoritativeIdentityKey,
             scienceSourceFinalKey,
         ],
     );
     const scientificBackgroundRequestKey = useMemo(
         () =>
-            decisionBarcodeForScience && decisionDigestForScience && decisionInputsHashForScience && activeIngredientKey
+            decisionBarcodeForScience && decisionDigestForScience && activeIngredientKey
                 ? [
                     'scientific_background',
                     decisionAuthorityScopeKey,
                     scienceAuthoritativeIdentityKey,
                     decisionBarcodeForScience,
                     decisionDigestForScience,
-                    decisionInputsHashForScience,
                     activeIngredientKey,
                     scienceSourceFinalKey,
                 ].join('|')
@@ -7516,7 +7240,6 @@ const AnalysisBundleDashboard: React.FC<{
             decisionAuthorityScopeKey,
             decisionBarcodeForScience,
             decisionDigestForScience,
-            decisionInputsHashForScience,
             scienceAuthoritativeIdentityKey,
             scienceSourceFinalKey,
         ],
@@ -7527,37 +7250,38 @@ const AnalysisBundleDashboard: React.FC<{
     const scientificBackgroundState = scientificBackgroundRequestKey
         ? scientificBackgroundByRequestKey[scientificBackgroundRequestKey]
         : undefined;
+    const ingredientOverviewFallbackBlock = useMemo(
+        () => buildIngredientOverviewFallbackClient(decisionScienceIngredientRows),
+        [decisionScienceIngredientRows],
+    );
     const resolvedIngredientOverviewBlock = useMemo(
-        () => {
-            if (scienceAuthorityWaiting) return null;
-            return ingredientOverviewState?.status === 'ok' && ingredientOverviewState.data
+        () =>
+            ingredientOverviewState?.status === 'ok' && ingredientOverviewState.data
                 ? ingredientOverviewState.data
-                : null;
-        },
-        [ingredientOverviewState, scienceAuthorityWaiting],
+                : decisionScienceIngredientRows.length > 0
+                    ? ingredientOverviewFallbackBlock
+                    : null,
+        [decisionScienceIngredientRows.length, ingredientOverviewFallbackBlock, ingredientOverviewState],
     );
     const resolvedScientificBackgroundBlock = useMemo(
-        () => {
-            if (scienceAuthorityWaiting) return null;
-            return scientificBackgroundState?.status === 'ok' && scientificBackgroundState.data
+        () =>
+            scientificBackgroundState?.status === 'ok' && scientificBackgroundState.data
                 ? scientificBackgroundState.data
-                : null;
-        },
-        [scienceAuthorityWaiting, scientificBackgroundState],
+                : activeScienceIngredientRow
+                    ? buildScientificBackgroundFallbackClient(
+                        activeScienceIngredientRow.name,
+                        decisionScienceIngredientRows,
+                    )
+                    : null,
+        [activeScienceIngredientRow, decisionScienceIngredientRows, scientificBackgroundState],
     );
     const showIngredientOverviewLoading =
         selectedTileType === 'science'
-        && (
-            scienceAuthorityWaiting
-            || (shouldLoadScienceSidecars && !resolvedIngredientOverviewBlock)
-        );
+        && ingredientOverviewState?.status === 'loading';
     const showScientificBackgroundLoading =
         selectedTileType === 'science'
         && Boolean(activeScienceIngredientRow)
-        && (
-            scienceAuthorityWaiting
-            || (shouldLoadScienceSidecars && !resolvedScientificBackgroundBlock)
-        );
+        && scientificBackgroundState?.status === 'loading';
 
     useEffect(() => {
         setIngredientOverviewByRequestKey({});
@@ -7568,17 +7292,11 @@ const AnalysisBundleDashboard: React.FC<{
         scientificBackgroundRevalidateCooldownRef.current = {};
         setActiveIngredientName(keyIngredientsForDetail[0] ?? null);
         setActiveSafetyIngredientName(keyIngredientsForSafety[0] ?? null);
-    }, [decisionAuthorityScopeKey, keyIngredientsForDetail, keyIngredientsForSafety]);
+    }, [incomingBundleRunKey, keyIngredientsForDetail, keyIngredientsForSafety]);
 
     useEffect(() => {
         if (!shouldLoadScienceSidecars) return;
-        if (
-            !ingredientOverviewRequestKey
-            || !decisionBarcodeForScience
-            || !decisionDigestForScience
-            || !decisionInputsHashForScience
-            || !personalizationScopeHashForScience
-        ) {
+        if (!ingredientOverviewRequestKey || !decisionBarcodeForScience || !decisionDigestForScience) {
             return;
         }
         const current = ingredientOverviewStateRef.current[ingredientOverviewRequestKey];
@@ -7737,12 +7455,7 @@ const AnalysisBundleDashboard: React.FC<{
 
     useEffect(() => {
         if (!shouldLoadScienceSidecars) return;
-        if (
-            !decisionBarcodeForScience
-            || !decisionDigestForScience
-            || !decisionInputsHashForScience
-            || !personalizationScopeHashForScience
-        ) {
+        if (!decisionBarcodeForScience || !decisionDigestForScience) {
             return;
         }
         if (!activeScienceIngredientRow || !scientificBackgroundRequestKey) return;
@@ -7960,9 +7673,7 @@ const AnalysisBundleDashboard: React.FC<{
                             ))
                         ) : (
                             <Text style={styles.detailPlaceholderText}>
-                                {scienceAuthorityWaiting
-                                    ? 'Waiting for verified ingredient context before loading product details.'
-                                    : isDataCeiling && dataCeilingScienceLead && dataCeilingScienceAction
+                                {isDataCeiling && dataCeilingScienceLead && dataCeilingScienceAction
                                     ? `${dataCeilingScienceLead} ${dataCeilingScienceAction}`
                                     : 'Verified ingredient rows are still loading.'}
                             </Text>
@@ -7999,7 +7710,7 @@ const AnalysisBundleDashboard: React.FC<{
                         {showIngredientOverviewLoading ? (
                             <View style={styles.inlineLoadingRow}>
                                 <ActivityIndicator />
-                                <Text style={styles.inlineLoadingText}>Preparing verified ingredient overview…</Text>
+                                <Text style={styles.inlineLoadingText}>Generating overview…</Text>
                             </View>
                         ) : null}
                         {ingredientOverviewTitleLine ? (
@@ -8016,11 +7727,7 @@ const AnalysisBundleDashboard: React.FC<{
                         ) : null}
                     </View>
                 ) : (
-                    <Text style={styles.detailPlaceholderText}>
-                        {scienceAuthorityWaiting
-                            ? 'Waiting for verified ingredient context before loading the overview.'
-                            : 'Ingredient overview is unavailable for this scan.'}
-                    </Text>
+                    <Text style={styles.detailPlaceholderText}>Ingredient overview is pending.</Text>
                 )}
             </GlassCard>
 
@@ -8068,7 +7775,7 @@ const AnalysisBundleDashboard: React.FC<{
                             {showScientificBackgroundLoading ? (
                                 <View style={styles.inlineLoadingRow}>
                                     <ActivityIndicator />
-                                    <Text style={styles.inlineLoadingText}>Preparing verified scientific background…</Text>
+                                    <Text style={styles.inlineLoadingText}>Generating scientific background…</Text>
                                 </View>
                             ) : null}
                             {!showIngredientSelector ? (
@@ -8095,11 +7802,7 @@ const AnalysisBundleDashboard: React.FC<{
                             ) : null}
                         </View>
                     ) : (
-                        <Text style={styles.detailPlaceholderText}>
-                            {scienceAuthorityWaiting
-                                ? 'Waiting for verified ingredient context before loading scientific background.'
-                                : 'Scientific background is unavailable for this scan.'}
-                        </Text>
+                        <Text style={styles.detailPlaceholderText}>Scientific background is unavailable for this scan.</Text>
                     )}
                 </View>
             </GlassCard>
@@ -8859,7 +8562,7 @@ const AnalysisBundleDashboard: React.FC<{
             });
         });
         addByTier(decisionUsageBlock?.directions?.sourceTier ?? null);
-        (authoritativeDecisionScienceBlock?.odsGeneralScienceBullets ?? []).forEach(() => {
+        (decisionScienceBlock?.odsGeneralScienceBullets ?? []).forEach(() => {
             counts.generalScience += 1;
         });
         (decisionSafetyBlock?.ulGuidance ?? []).forEach(() => {
@@ -8870,7 +8573,7 @@ const AnalysisBundleDashboard: React.FC<{
         });
         return counts;
     }, [
-        authoritativeDecisionScienceBlock?.odsGeneralScienceBullets,
+        decisionScienceBlock?.odsGeneralScienceBullets,
         decisionSafetyBlock?.generalWatchouts,
         decisionSafetyBlock?.ulGuidance,
         decisionUsageBlock?.directions?.sourceTier,
@@ -8998,7 +8701,7 @@ const AnalysisBundleDashboard: React.FC<{
     }, [bundleSourceType, coreCoverCardsReady, emitScanUxTimingOnce]);
     // SCORE_SECTION_FROZEN_STATE_START
     const overviewBlock = decisionOverviewBlock;
-    const scienceBlock = authoritativeDecisionScienceBlock;
+    const scienceBlock = decisionScienceBlock;
     const usageBlock = decisionUsageBlock;
     const safetyBlock = decisionSafetyBlock;
     const qualityMark = decisionQualityMark;
@@ -9527,22 +9230,16 @@ const AnalysisBundleDashboard: React.FC<{
                 {...scrollProps}
             >
                 {!disableHeroHeader ? (
-                    decisionSupportAuthorityGate === 'ready' && topSectionPresentation ? (
-                        <AnalysisTopSectionRedesign
-                            hero={topSectionPresentation.hero}
-                            banner={topSectionPresentation.banner}
-                            insights={topSectionPresentation.insights}
-                            secondaryNote={topSectionPresentation.secondaryNote ?? null}
-                            productTitle={productTitle}
-                            productSubtitle={productSubtitle}
-                            heroImageUri={heroImageUri}
-                            verifiedLabelText={verifiedLabelText}
-                        />
-                    ) : decisionSupportAuthorityGate === 'terminal_no_authority' ? (
-                        <DecisionSupportAuthorityUnavailable />
-                    ) : (
-                        <DecisionSupportAuthorityPlaceholder />
-                    )
+                    <AnalysisTopSectionRedesign
+                        hero={topSectionPresentation.hero}
+                        banner={topSectionPresentation.banner}
+                        insights={topSectionPresentation.insights}
+                        secondaryNote={topSectionPresentation.secondaryNote ?? null}
+                        productTitle={productTitle}
+                        productSubtitle={productSubtitle}
+                        heroImageUri={heroImageUri}
+                        verifiedLabelText={verifiedLabelText}
+                    />
                 ) : null}
 
                 {!disableHeroHeader ? <View style={styles.sectionDivider} /> : null}
@@ -9665,76 +9362,6 @@ const AnalysisBundleDashboard: React.FC<{
                             <Text style={styles.bisectNoticeText}>Set by `no_tiles` in `EXPO_PUBLIC_SCAN_DASHBOARD_BISECT`.</Text>
                         </View>
                     )}
-
-                    {normalizedComparisonSection || shouldShowComparisonPlaceholder ? <View style={styles.sectionDivider} /> : null}
-
-                    {normalizedComparisonSection ? (
-                        <View style={styles.sectionBlock}>
-                            <View style={styles.sectionHeader}>
-                                <Text style={styles.sectionTitle}>{t.analysisSectionComparisonTitle}</Text>
-                                <Text style={styles.sectionSubtitle}>{t.analysisSectionComparisonSubtitle}</Text>
-                            </View>
-
-                            <View style={styles.comparisonStandingCard}>
-                                <View style={styles.comparisonLeadRow}>
-                                    <View style={styles.comparisonLeadIconWrap}>
-                                        <BarChart3 size={18} color="#4F6B8A" />
-                                    </View>
-                                    <View style={styles.comparisonLeadCopy}>
-                                        <Text style={styles.comparisonStandingSummary}>
-                                            {normalizedComparisonSection.summary || t.analysisComparisonNotEnoughPeers}
-                                        </Text>
-                                        {normalizedComparisonSection.secondarySummary ? (
-                                            <Text style={styles.comparisonStandingSecondary}>
-                                                {normalizedComparisonSection.secondarySummary}
-                                            </Text>
-                                        ) : null}
-                                    </View>
-                                </View>
-
-                                {normalizedComparisonSection.alternatives.length > 0 ? (
-                                    <>
-                                        <View style={styles.comparisonSectionDivider} />
-                                        <Text style={styles.comparisonAlternativesTitle}>
-                                            {t.analysisComparisonAlternativesTitle}
-                                        </Text>
-                                        <ScrollView
-                                            horizontal
-                                            showsHorizontalScrollIndicator={false}
-                                            decelerationRate="fast"
-                                            snapToAlignment="start"
-                                            snapToInterval={comparisonSnapInterval}
-                                            contentContainerStyle={styles.comparisonRailContent}
-                                        >
-                                            {normalizedComparisonSection.alternatives.map((alternative) => (
-                                                <ComparisonAlternativeCard
-                                                    key={`${alternative.productId ?? alternative.title}`}
-                                                    alternative={alternative}
-                                                    cardWidth={comparisonCardWidth}
-                                                />
-                                            ))}
-                                        </ScrollView>
-                                    </>
-                                ) : null}
-
-                                {normalizedComparisonSection.showEmptyState ? (
-                                    <>
-                                        <View style={styles.comparisonSectionDivider} />
-                                        <View style={styles.comparisonEmptyStateCard}>
-                                            <View style={styles.comparisonEmptyStateIconWrap}>
-                                                <CheckCircle2 size={16} color="#1E7B55" />
-                                            </View>
-                                            <Text style={styles.comparisonEmptyState}>
-                                                {t.analysisComparisonAlreadyScoresWell}
-                                            </Text>
-                                        </View>
-                                    </>
-                                ) : null}
-                            </View>
-                        </View>
-                    ) : shouldShowComparisonPlaceholder ? (
-                        <ComparisonAuthorityPlaceholder />
-                    ) : null}
 
                 </>
             </ScrollContainer>
