@@ -188,9 +188,14 @@ const main = async () => {
       Boolean(gtin14) &&
       stillMissingFields.length === 0 &&
       sourceTypes.has("official_product_page");
+    const fullAuthoritativeDsldReady =
+      !npnIgnored &&
+      Boolean(gtin14) &&
+      stillMissingFields.length === 0 &&
+      sourceTypes.has("dsld_label_api");
     const strictMergeReady = status === "full_overlay_ready" && hasUsIherbPage && !npnIgnored;
     const apiFillReady = status === "partial_overlay" && hasUsIherbPage && !npnIgnored && !fullOfficialProductPageReady;
-    const mergeReady = strictMergeReady || fullOfficialProductPageReady;
+    const mergeReady = strictMergeReady || fullOfficialProductPageReady || fullAuthoritativeDsldReady;
 
     let mergeDecision = "queued";
     let blockReasonCode = null;
