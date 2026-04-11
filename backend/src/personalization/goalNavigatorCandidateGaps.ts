@@ -18,8 +18,9 @@ export type GoalNavigatorCandidateGapRecord = {
   details: Record<string, unknown>;
 };
 
-const DOSE_NUMBER_PATTERN = /-?\d[\d,]*(?:\.\d+)?/;
-const DOSE_UNIT_PATTERN = /\b(mcg|mg|g)\b/i;
+const DOSE_NUMBER_PATTERN = /\d[\d,]*(?:\.\d+)?/;
+const DOSE_UNIT_PATTERN =
+  /\b(mcg|μg|µg|ug|mg|g|iu|ui|cfu|afu|tfu|spu|galu|units?|usp\s+units?|ml|μl|µl|ul|ppm|live\s+cells?|pfu|fu|hut|pu|alu|fip|du|pc|lu|cu|agu|hcu|pgu|sapu|fcc|fcclu|xu|su|hsu|bgu|dpp-?iv|endo-pgu)\b/i;
 const BLEND_PATTERN = /\b(blend|complex|matrix|formula|proprietary|booster|support)\b/i;
 
 const isDoseMissing = (dose: string | null | undefined) =>
@@ -41,6 +42,12 @@ const getBlendLabels = (ingredients: CatalogOverlayIngredientRow[]) =>
     .filter((value): value is string => Boolean(value) && BLEND_PATTERN.test(value))
     .slice(0, 5);
 
+const countConcreteIngredientRows = (ingredients: CatalogOverlayIngredientRow[]) =>
+  ingredients.filter((ingredient) => {
+    const name = ingredient.name?.trim();
+    return Boolean(name) && !BLEND_PATTERN.test(name);
+  }).length;
+
 export const buildGoalNavigatorCandidateGapRecord = (
   preparedProduct: CatalogPreparedProduct,
 ): GoalNavigatorCandidateGapRecord | null => {
@@ -60,7 +67,9 @@ export const buildGoalNavigatorCandidateGapRecord = (
   const missingUnitCount = ingredients.filter((ingredient) =>
     hasDoseNumberWithoutSupportedUnit(ingredient.dose),
   ).length;
-  const unresolvedIngredientCount = ingredients.filter(isPotentiallyUnresolvedIngredient).length;
+  const unresolvedBlendCount = ingredients.filter(isPotentiallyUnresolvedIngredient).length;
+  const concreteIngredientCount = countConcreteIngredientRows(ingredients);
+  const unresolvedIngredientCount = concreteIngredientCount > 0 ? 0 : unresolvedBlendCount;
 
   if (missingDoseCount > 0) {
     gapCodes.add("missing_dose");
@@ -88,6 +97,7 @@ export const buildGoalNavigatorCandidateGapRecord = (
     gapCodes: Array.from(gapCodes),
     details: {
       ingredientCount: ingredients.length,
+      concreteIngredientCount,
       parsedIngredientCount: preparedProduct.ingredientInputs.length,
       missingDoseCount,
       missingUnitCount,

@@ -389,18 +389,36 @@ const mergeDescriptionSections = (currentSections, currentRank, incomingSections
   return out;
 };
 
+const countUsefulNutritionFactsForMerge = (supplementFacts) => {
+  const rows = Array.isArray(supplementFacts?.nutritionalFacts) ? supplementFacts.nutritionalFacts : [];
+  return rows.filter((row) => {
+    const substancy = normalizeText(row?.substancy ?? row?.substance ?? row?.name);
+    const amount = normalizeText(row?.amountPerServing ?? row?.amount ?? row?.value);
+    if (!substancy || !amount) return false;
+    if (/^amount per serving$/i.test(substancy)) return false;
+    if (/^amount per serving$/i.test(amount)) return false;
+    return true;
+  }).length;
+};
+
 const mergeSupplementFacts = (currentFacts, currentRank, incomingFacts, incomingRank) => {
   const current = currentFacts ?? { servingSize: null, servingsPerContainer: null, nutritionalFacts: [] };
   const incoming = incomingFacts ?? { servingSize: null, servingsPerContainer: null, nutritionalFacts: [] };
   const chooseIncoming = incomingRank > currentRank;
+  const currentUsefulFacts = countUsefulNutritionFactsForMerge(current);
+  const incomingUsefulFacts = countUsefulNutritionFactsForMerge(incoming);
+  const currentRows = Array.isArray(current.nutritionalFacts) ? current.nutritionalFacts : [];
+  const incomingRows = Array.isArray(incoming.nutritionalFacts) ? incoming.nutritionalFacts : [];
   const nutritionalFacts =
-    chooseIncoming && Array.isArray(incoming.nutritionalFacts) && incoming.nutritionalFacts.length > 0
-      ? incoming.nutritionalFacts
-      : Array.isArray(current.nutritionalFacts) && current.nutritionalFacts.length > 0
-        ? current.nutritionalFacts
-        : Array.isArray(incoming.nutritionalFacts)
-          ? incoming.nutritionalFacts
-          : [];
+    incomingUsefulFacts > currentUsefulFacts && incomingRows.length > 0
+      ? incomingRows
+      : currentUsefulFacts > incomingUsefulFacts && currentRows.length > 0
+        ? currentRows
+        : chooseIncoming && incomingRows.length > 0
+          ? incomingRows
+          : currentRows.length > 0
+            ? currentRows
+            : incomingRows;
   return {
     servingSize: pickPreferredScalar(current.servingSize, currentRank, incoming.servingSize, incomingRank),
     servingsPerContainer:

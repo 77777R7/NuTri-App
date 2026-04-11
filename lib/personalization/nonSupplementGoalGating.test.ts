@@ -58,6 +58,17 @@ test('non-supplement goal gate blocks Walden Farms pantry condiment source zips'
   assert.ok(decision.matchedRules.some((rule) => rule.type === 'source_zip'));
 });
 
+test('non-supplement goal gate blocks Stonewall Kitchen food surfaces by source zip', () => {
+  const decision = assessNonSupplementGoalGate({
+    title: 'Stonewall Kitchen, Lemon Herb Aioli, 10.25 oz',
+    brandName: 'Stonewall Kitchen',
+    sourceZipPath: 'stonewall-kitchen.json',
+  });
+
+  assert.equal(decision.shouldGate, true);
+  assert.ok(decision.matchedRules.some((rule) => rule.type === 'source_zip'));
+});
+
 test('non-supplement goal gate blocks pantry title phrases when no supplement override exists', () => {
   const decision = assessNonSupplementGoalGate({
     title: 'Comvita, Manuka Honey, UMF 15+, 17.6 oz',
@@ -110,6 +121,41 @@ test('non-supplement goal gate blocks Nutricost Pantry products by source-specif
 
   assert.equal(decision.shouldGate, true);
   assert.ok(decision.matchedRules.some((rule) => rule.type === 'title_phrase' && rule.value === 'pantry'));
+});
+
+test('non-supplement goal gate blocks Hyalogic oral-care mint products by source-specific phrase', () => {
+  const decision = assessNonSupplementGoalGate({
+    title: 'Hyalogic, HylaMints, Hyaluronic Acid + Xylitol + Slippery Elm + Cranberry, Mint, 60 Lozenges',
+    brandName: 'Hyalogic',
+    sourceZipPath: 'hyalogic-llc.json',
+  });
+
+  assert.equal(decision.shouldGate, true);
+  assert.ok(decision.matchedRules.some((rule) => rule.type === 'title_phrase' && rule.value === 'hylamints'));
+});
+
+test('non-supplement goal gate blocks NuNaturals sweetener products by source-specific phrase', () => {
+  const decision = assessNonSupplementGoalGate({
+    title: 'NuNaturals, Vanilla Stevia, 2 fl oz (59 ml)',
+    brandName: 'NuNaturals',
+    sourceZipPath: 'nunaturals.json',
+  });
+
+  assert.equal(decision.shouldGate, true);
+  assert.ok(decision.matchedRules.some((rule) => rule.type === 'title_phrase' && rule.value === 'stevia'));
+});
+
+test('non-supplement goal gate blocks Christopher oral-care powders by source-specific phrase', () => {
+  const decision = assessNonSupplementGoalGate({
+    title: "Christopher's Original Formulas, Herbal Tooth & Gum Powder, 2 oz.",
+    brandName: "Christopher's Original Formulas",
+    sourceZipPath: 'christopher-s-original-formulas.json',
+  });
+
+  assert.equal(decision.shouldGate, true);
+  assert.ok(
+    decision.matchedRules.some((rule) => rule.type === 'title_phrase' && rule.value === 'tooth & gum powder'),
+  );
 });
 
 test('non-supplement goal gate does not block supplement capsules even when tea phrases appear', () => {

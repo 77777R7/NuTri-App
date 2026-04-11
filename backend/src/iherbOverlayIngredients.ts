@@ -56,9 +56,12 @@ const BLEND_TAIL_SIGNAL_PATTERN =
 
 const BLEND_LABEL_PATTERN = /\b(blend|complex|matrix|formula)\b/i;
 const BLEND_PREFIX_PATTERN =
-  /^(?:proprietary\s+)?(?:herbal\s+)?(?:blend|complex|matrix|formula)\s*:\s*/i;
+  /^(?:proprietary\s+)?(?:herbal\s+)?(?:blend|complex|matrix|formula)(?:\s+of\s+[^:]+)?\s*:\s*/i;
 const MEMBER_DOSE_PREFIX_STRIP_PATTERN =
   /^(?:to\s+break\s+down\s+[a-z\s]+:\s*|[a-z-]+(?:\s+|-)digesting\s+enzymes?\s*)/i;
+const OCR_AMOUNT_PREFIX_PATTERN = /^amount per(?:\s+%dv)?\s+serving\s+/i;
+const OCR_LEADING_DOSE_NAME_PATTERN =
+  /^\d+(?:\.\d+)?(?:\s*(?:million|billion|trillion))?\s*(?:mcg|μg|µg|ug|mg|g|gram|grams|iu|ui|ml|milliliters?)\b(?:\s*[*†‡%]+)?\s*/i;
 const ALIAS_SEGMENT_EXCLUSION_PATTERN =
   /^(as|from|providing|std\.?\s*to|standardized?|daily value|cfu\b|colony forming units?)\b/i;
 const ALIAS_KEY_REJECTION_LIST = new Set([
@@ -77,6 +80,13 @@ const ALIAS_KEY_REJECTION_LIST = new Set([
   "fcc",
 ]);
 const UNMATCHED_OVERLAY_INDEX = Number.MAX_SAFE_INTEGER;
+const GENERIC_OCR_INGREDIENT_RESIDUE = new Set([
+  "dfe",
+  "extract",
+  "provides",
+]);
+const OCR_INSTRUCTIONAL_RESIDUE_PATTERN =
+  /\b(suggested\s*u(?:se)?|serving\s*(?:size|per|container)|daily\s*value|%daily|take\s+with\s+food|healthcare\s+pro(?:fessional|vider)|planned\s+pregnan|capsules?\b|tablet\b|days?\b|per\s+serving)\b/i;
 
 const isHeaderLike = (value: string | null | undefined): boolean => {
   const normalized = normalizeDisplayText(value).replace(/[%*†‡]+/g, "");
@@ -204,9 +214,31 @@ const truncateBlendLikeTail = (value: string): string => {
   return value;
 };
 
+const stripDanglingEdgeParens = (value: string): string => {
+  let current = value;
+  while (current.startsWith(")") || current.startsWith("]")) current = current.slice(1).trim();
+  while (current.endsWith("(") || current.endsWith("[")) current = current.slice(0, -1).trim();
+
+  const openParenCount = (current.match(/\(/g) ?? []).length;
+  const closeParenCount = (current.match(/\)/g) ?? []).length;
+  if (closeParenCount > openParenCount) {
+    current = current.replace(/\)+$/g, "").trim();
+  }
+  return current;
+};
+
+const looksLikeInstructionalOcrResidue = (value: string): boolean => {
+  const normalized = normalizeDisplayText(value).toLowerCase();
+  if (!normalized) return false;
+  if (!OCR_INSTRUCTIONAL_RESIDUE_PATTERN.test(normalized)) return false;
+  const tokenCount = normalized.split(/\s+/).filter(Boolean).length;
+  return tokenCount >= 6 || normalized.length >= 40;
+};
+
 const cleanOverlayIngredientName = (value: string | null | undefined): string | null => {
   const normalized = normalizePunctuationSpacing(String(value ?? ""));
   if (!normalized || isHeaderLike(normalized)) return null;
+  if (/^dietary fiber\b/i.test(normalized)) return "Fiber";
   const specialRowLabel = SPECIAL_NUTRIENT_ROW_LABELS.get(normalizeDisplayText(normalized).toLowerCase());
   if (specialRowLabel) return specialRowLabel;
   if (isNutritionLabelLike(normalized) && !COMPOUND_INGREDIENT_EXEMPT_PATTERN.test(normalized)) return null;
@@ -214,7 +246,13 @@ const cleanOverlayIngredientName = (value: string | null | undefined): string | 
   const withoutExplanatorySegments = normalizePunctuationSpacing(stripExplanatorySegments(normalized));
   const truncated = truncateBlendLikeTail(withoutExplanatorySegments);
   const cleaned = normalizeDisplayText(
-    truncated
+    stripDanglingEdgeParens(
+      truncated
+        .replace(OCR_AMOUNT_PREFIX_PATTERN, "")
+        .replace(OCR_LEADING_DOSE_NAME_PATTERN, "")
+        .replace(/\bVitamin B[,.\s]*2\b/gi, "Vitamin B12")
+        .replace(/\bVitamin B\.\s*(?=\()/gi, "Vitamin B12 ")
+    )
       .replace(/\s+([)\]])/g, "$1")
       .replace(/([(\[])\s+/g, "$1")
       .replace(/[:;,/-]+$/g, ""),
@@ -222,6 +260,11 @@ const cleanOverlayIngredientName = (value: string | null | undefined): string | 
 
   if (
     !cleaned ||
+    looksLikeInstructionalOcrResidue(cleaned) ||
+    GENERIC_OCR_INGREDIENT_RESIDUE.has(cleaned.toLowerCase()) ||
+    (/^from\b/i.test(cleaned) && !cleaned.includes("(")) ||
+    /^[a-z]\s*\d+\)?$/i.test(cleaned) ||
+    (/^[a-z][a-z-]*\)/.test(cleaned) && !cleaned.includes("(")) ||
     !hasAlphaNumericContent(cleaned) ||
     isHeaderLike(cleaned) ||
     (isNutritionLabelLike(cleaned) && !COMPOUND_INGREDIENT_EXEMPT_PATTERN.test(cleaned))
@@ -240,7 +283,7 @@ const stripTrailingOverlayMarkers = (value: string): string =>
   );
 
 const STRUCTURED_MEMBER_DOSE_PATTERN =
-  /([^,()]+?)\s*\((\d[\d,\s]*(?:\.\d+)?)\s*(trillion|billion|million)?\s*(mcg|μg|µg|ug|mg|g|iu|ui|cfu|spu|ml|pfu(?:'s|s)?|fu(?:'s|s)?|hut|fip|alu|cu|agu|dpp-iv|bgu|hcu|xu|su|galu|sapu|dp|endo-pgu)\)/gi;
+  /([^,()]+?)\s*\((\d[\d,\s]*(?:\.\d+)?)\s*(trillion|billion|million)?\s*(mcg|μg|µg|ug|mg|g|iu|ui|cfu|spu|ml|pfu(?:'s|s)?|fu(?:'s|s)?|hut|fip|alu|cu|agu|dpp-iv|bgu|hcu|xu|su|galu|sapu|dp|pc|fcclu|endo-pgu)\)/gi;
 
 const deriveEmbeddedDoseMemberRows = (
   name: string | null | undefined,
@@ -331,8 +374,13 @@ const normalizeMatchKey = (value: string): string =>
     .replace(/[^a-z0-9]+/g, "")
     .trim();
 
-const TITLE_COUNT_OR_PACKAGE_PATTERN =
-  /\b\d+(?:\.\d+)?\s*(?:capsules?|tablets?|softgels?|soft-gels?|gummies?|chews?|drops?|sprays?|packets?|sachets?|tea bags?|bags?|count|ct|servings?)\b/i;
+const TITLE_PACKAGE_DESCRIPTOR_PATTERN =
+  /(?:(?:vegetable|veggie|vegan|coated|chewable|chewy|delayed-release|delayed release|extended-release|extended release|quick-release|quick release|enteric-coated|enteric coated|liquid-filled|quick dissolve|quick-dissolve)\s+){0,3}/i;
+
+const TITLE_COUNT_OR_PACKAGE_PATTERN = new RegExp(
+  String.raw`\b\d+(?:\.\d+)?\s*${TITLE_PACKAGE_DESCRIPTOR_PATTERN.source}(?:capsules?|tablets?|softgels?|soft-gels?|gummies?|chews?|drops?|sprays?|packets?|sachets?|tea bags?|bags?|count|ct|servings?)\b`,
+  "i",
+);
 
 const TITLE_SIZE_PATTERN =
   /\b\d+(?:\.\d+)?\s*(?:lb|lbs|oz|fl\s*oz|ml|l|g|kg)\b/i;
@@ -340,17 +388,20 @@ const TITLE_SIZE_PATTERN =
 const TITLE_FLAVOR_PATTERN =
   /\b(chocolate|vanilla|raspberry|strawberry|berry|lemon|lime|orange|peppermint|natural\s+[a-z]+|unflavored|flavor|flavour)\b/i;
 
+const TITLE_SUPPLEMENT_FORM_PATTERN =
+  /\b(capsules?|caps\b|tablets?|softgels?|soft-gels?|vegicaps?\b|vegcaps?\b|veg(?:gie)?\s*caps?(?:ules?)?\b|gummies?|chews?|lozenges?|drops?|sprays?|packets?|sachets?)\b/i;
+
 const TITLE_MARKETING_PATTERN =
   /^(kids|kid|women'?s|mens?|male performance|female support|innovations?|optimal wellness|once daily|daily|immune|control|advanced|premium|extra strength|original|complete)$/i;
 
 const TITLE_INGREDIENT_SIGNAL_PATTERN =
-  /\b(vitamin|mineral|biotin|probiotic|pro-bio|extract|root|leaf|seed|bark|herb|botanical|oil|acid|citrate|glycinate|orotate|taurate|malate|tribuytrin|tributyrin|konjac|grape seed|olive leaf|oregano|saw palmetto|pumpkin seed|elderberry|melatonin|magnesium|zinc|iron|calcium|d3|vitamin c|b12|nac|collagen|creatine|l-theanine|ashwagandha|rhodiola|garlic|turmeric|curcumin|fiber|protein|enzyme|cfu|ahcc|nattokinase|bacteriophage|phage|saccharomyces boulardii|sodium bicarbonate|sodium citrate)\b/i;
+  /\b(vitamin|mineral|biotin|probiotic|pro-bio|extract|root|leaf|seed|bark|herb|botanical|oil|acid|citrate|glycinate|orotate|taurate|malate|tribuytrin|tributyrin|konjac|grape seed|olive leaf|oregano|saw palmetto|pumpkin seed|elderberry|melatonin|magnesium|zinc|iron|calcium|d3|vitamin c|b12|nac|collagen|creatine|l-theanine|ashwagandha|rhodiola|garlic|turmeric|curcumin|fiber|protein|enzyme|cfu|ahcc|nattokinase|bacteriophage|phage|saccharomyces boulardii|sodium bicarbonate|sodium citrate|fenugreek|moringa|chitosan|nitric oxide|peppermint|postbiotic)\b/i;
 
 const TITLE_DOSE_PATTERN =
-  /(\d[\d,]*(?:\.\d+)?)\s*(billion|million)?\s*(mcg|μg|µg|ug|mg|g|gram|grams|iu|ui|cfu|spu|ml|pfu(?:'s|s)?|fu(?:'s|s)?)\b/i;
+  /(\d[\d,]*(?:\.\d+)?)\s*(trillion|billion|million)?\s*(mcg|μg|µg|ug|mg|g|gram|grams|iu|ui|cfu\d*|spu(?:'s|s)?|galu|units?|ml|milliliters?|pfu(?:'s|s)?|fu(?:'s|s)?|pc|fcclu|xu|su|hsu|bgu|dpp-?iv|endo-pgu)\b/i;
 
 const TITLE_PARENTHETICAL_DOSE_PATTERN =
-  /\(([^()]*(\d[\d,]*(?:\.\d+)?)\s*(billion|million)?\s*(mcg|μg|µg|ug|mg|g|gram|grams|iu|ui|cfu|spu|ml|pfu(?:'s|s)?|fu(?:'s|s)?)\b[^()]*)\)/i;
+  /\(([^()]*(\d[\d,]*(?:\.\d+)?)\s*(trillion|billion|million)?\s*(mcg|μg|µg|ug|mg|g|gram|grams|iu|ui|cfu\d*|spu(?:'s|s)?|galu|units?|ml|milliliters?|pfu(?:'s|s)?|fu(?:'s|s)?|pc|fcclu|xu|su|hsu|bgu|dpp-?iv|endo-pgu)\b[^()]*)\)/i;
 const TITLE_PROBIOTIC_COUNT_PATTERN = /(\d[\d,]*(?:\.\d+)?)\s*(trillion|billion|million)\b/i;
 const PROBIOTIC_SIGNAL_PATTERN =
   /\b(probiotic|probiotics|pro-bio|flora|microbiome|live cultures?|cfu|lactobacillus|bifidobacterium|saccharomyces|bacillus coagulans)\b/i;
@@ -399,14 +450,16 @@ const GENERIC_AGGREGATE_FORMULA_SOURCE_ZIPS = new Set([
 ]);
 const DESCRIPTION_DOSE_FALLBACK_SOURCE_ZIPS = new Set([
   "eclectic-herb.json",
+  "evlution-nutrition.json",
   "metagenics.json",
+  "micro-ingredients.json",
   "natures-craft.json",
   "planetary-herbals.json",
 ]);
 const STRUCTURED_AGGREGATE_DOSE_PATTERN =
   /(-?\d[\d,]*(?:\.\d+)?)\s*(mcg|μg|µg|ug|mg|g|ml)\b/i;
 const BOTANICAL_AGGREGATE_SIGNAL_PATTERN =
-  /\b(root|leaf|berry|bark|rhizome|flower|fruit|seed|stem|aerial|strobile|extract|herb|botanical|mushroom|fungi|reishi|cordyceps|astragalus|echinacea|goldenseal|ashwagandha|turmeric|curcumin|boswellia|oregano|olive leaf|magnolia|licorice|angelica|poria|jujube)\b/i;
+  /\b(root|leaf|berry|bark|rhizome|flower|fruit|seed|stem|aerial|strobile|extract|herb|botanical|mushroom|fungi|reishi|cordyceps|astragalus|echinacea|goldenseal|ashwagandha|turmeric|curcumin|boswellia|oregano|olive leaf|magnolia|licorice|angelica|poria|jujube|alfalfa|barley|wheat\s*grass|grass|greens?)\b/i;
 
 const cleanTitleSegment = (value: string): string =>
   normalizeDisplayText(value)
@@ -417,11 +470,31 @@ const cleanTitleSegment = (value: string): string =>
 const hasStrongIngredientSignal = (value: string): boolean =>
   TITLE_INGREDIENT_SIGNAL_PATTERN.test(cleanTitleSegment(value));
 
+const hasSupplementAggregateSurfaceSignal = (params: {
+  title?: string | null;
+  servingSize?: string | null;
+  preferredTitleSegment?: string | null;
+  blendLabel?: string | null;
+}): boolean => {
+  const title = normalizeWhitespace(params.title);
+  const servingSize = normalizeWhitespace(params.servingSize);
+  const preferredTitleSegment = normalizeWhitespace(params.preferredTitleSegment);
+  const blendLabel = normalizeWhitespace(params.blendLabel);
+
+  if (TITLE_SUPPLEMENT_FORM_PATTERN.test(title)) return true;
+  if (/\b(capsule|tablet|softgel|lozenge|gummy|drop|spray)\b/i.test(servingSize)) return true;
+  if (hasStrongIngredientSignal(preferredTitleSegment)) return true;
+  if (PROBIOTIC_SIGNAL_PATTERN.test(title) || DIGESTIVE_ENZYME_SIGNAL_PATTERN.test(title)) return true;
+  if (PROBIOTIC_SIGNAL_PATTERN.test(blendLabel) || DIGESTIVE_ENZYME_SIGNAL_PATTERN.test(blendLabel)) return true;
+  if (BOTANICAL_AGGREGATE_SIGNAL_PATTERN.test(blendLabel)) return true;
+  return false;
+};
+
 const isDescriptionDoseFallbackSource = (value: string | null | undefined): boolean =>
   DESCRIPTION_DOSE_FALLBACK_SOURCE_ZIPS.has(normalizeWhitespace(value).toLowerCase());
 
 const DESCRIPTION_DOSE_PATTERN =
-  /(\d[\d,]*(?:\.\d+)?)\s*(billion|million)?\s*(mcg|μg|µg|ug|mg|g|iu|ui|cfu|spu|ml|pfu(?:'s|s)?|fu(?:'s|s)?)(?=\b|[A-Z])/i;
+  /(\d[\d,]*(?:\.\d+)?)\s*(trillion|billion|million)?\s*(mcg|μg|µg|ug|mg|g|gram|grams|iu|ui|cfu\d*|spu(?:'s|s)?|galu|units?|ml|milliliters?|pfu(?:'s|s)?|fu(?:'s|s)?|pc|fcclu|xu|su|hsu|bgu|dpp-?iv|endo-pgu)(?=\b|[A-Z])/i;
 
 const ECLECTIC_DRY_HERB_STRENGTH_PATTERN =
   /dry herb strength:\s*\d+\s*:\s*\d+\s*\((\d[\d,]*(?:\.\d+)?)\s*(mcg|μg|µg|ug|mg|g)\s*\/\s*ml\)/i;
@@ -471,10 +544,42 @@ const parseVolumeMl = (value: string | null | undefined): number | null => {
   return null;
 };
 
+const parseWeightGrams = (value: string | null | undefined): number | null => {
+  const normalized = normalizeWhitespace(value);
+  if (!normalized) return null;
+  if (/\bfl\s*oz\b/i.test(normalized)) return null;
+
+  const match = normalized.match(/(\d[\d,]*(?:\.\d+)?)\s*(kg|g|grams?|lb|lbs|oz)\b/i);
+  if (!match) return null;
+
+  const amount = Number.parseFloat(match[1].replace(/,/g, ""));
+  if (!Number.isFinite(amount) || amount <= 0) return null;
+
+  const unit = normalizeWhitespace(match[2]).toLowerCase();
+  if (unit === "kg") return amount * 1000;
+  if (unit === "g" || unit === "gram" || unit === "grams") return amount;
+  if (unit === "lb" || unit === "lbs") return amount * 453.59237;
+  if (unit === "oz") return amount * 28.349523125;
+  return null;
+};
+
 const formatMlDose = (value: number): string | null => {
   if (!Number.isFinite(value) || value <= 0) return null;
   const rounded = Math.round(value * 100) / 100;
   return normalizeDisplayText(`${Number(rounded.toFixed(2)).toString()} ml`);
+};
+
+const formatWeightDose = (grams: number): string | null => {
+  if (!Number.isFinite(grams) || grams <= 0) return null;
+  if (grams < 0.1) return null;
+
+  if (grams < 1) {
+    const mg = Math.round(grams * 1000);
+    return mg > 0 ? normalizeDisplayText(`${mg} mg`) : null;
+  }
+
+  const rounded = Math.round(grams * 100) / 100;
+  return normalizeDisplayText(`${Number(rounded.toFixed(2)).toString()} g`);
 };
 
 const hasStructuredAggregateDose = (value: string | null | undefined): boolean =>
@@ -484,6 +589,19 @@ const isServingCountDose = (value: string | null | undefined): boolean =>
   /\b(drops?|droppers?|dropperfuls?|capsules?|tablets?|softgels?|soft-gels?|packets?|sachets?|servings?|teaspoons?|tsp|tablespoons?|tbsp|scoops?)\b/i.test(
     normalizeWhitespace(value),
   );
+
+const isPowderServingMeasure = (value: string | null | undefined): boolean =>
+  /\b(level\s+)?(scoops?|teaspoons?|tsp|tablespoons?|tbsp)\b/i.test(normalizeWhitespace(value));
+
+const derivePerServingPowderDose = (params: TitleFallbackParams): string | null => {
+  if (!isPowderServingMeasure(params.servingSize)) return null;
+
+  const totalWeightGrams = parseWeightGrams(params.title);
+  const servings = parseNumericCount(params.servingsPerContainer);
+  if (!totalWeightGrams || !servings || servings <= 0) return null;
+
+  return formatWeightDose(totalWeightGrams / servings);
+};
 
 const stripBrandPrefix = (title: string, brandName?: string | null): string => {
   const normalizedBrand = cleanTitleSegment(brandName ?? "");
@@ -674,6 +792,9 @@ const deriveTitleFallbackRows = (params: TitleFallbackParams): ScienceIngredient
   ];
 };
 
+const hasStructuredFallbackDose = (rows: ScienceIngredientRow[]): boolean =>
+  rows.some((row) => hasPositiveStructuredDose(row.dose));
+
 const extractBlendTail = (value: string): string | null => {
   if (BLEND_PREFIX_PATTERN.test(value)) {
     const tail = normalizeWhitespace(value.replace(BLEND_PREFIX_PATTERN, ""));
@@ -689,7 +810,7 @@ const extractBlendTail = (value: string): string | null => {
 const extractLiveCultureDose = (value: string): string | null => {
   const matches = Array.from(
     normalizeWhitespace(value).matchAll(
-      /(\d[\d,]*(?:\.\d+)?)\s*(trillion|billion|million|tn|bn|mn)?\s*(?:probiotic\s+)?(?:cfus?\b|live cultures?\b|organisms?\b)/gi,
+      /(\d[\d,]*(?:\.\d+)?)\s*(trillion|billion|million|tn|bn|mn)?\s*(?:probiotic\s+)?(?:cfus?\b|afu\b|live cultures?\b|live cells?\b|organisms?\b)/gi,
     ),
   );
   const match = matches.at(-1);
@@ -722,7 +843,7 @@ const deriveBlendAggregateLabel = (value: string): string | null => {
 const deriveSupplementalBlendRows = (
   name: string | null | undefined,
   dose: string | null,
-): { name: string; dose: string | null }[] => {
+): { name: string; dose: string | null; proprietaryBlendSource?: boolean; aggregateFormula?: boolean }[] => {
   const normalized = normalizePunctuationSpacing(String(name ?? ""));
   if (!normalized) return [];
   const liveCultureDose = extractLiveCultureDose(normalized) ?? extractLiveCultureDose(dose);
@@ -735,6 +856,8 @@ const deriveSupplementalBlendRows = (
           {
             name: "Probiotics",
             dose: liveCultureDose,
+            proprietaryBlendSource: true,
+            aggregateFormula: true,
           },
         ]
       : [];
@@ -748,35 +871,42 @@ const deriveSupplementalBlendRows = (
           {
             name: "Probiotics",
             dose: liveCultureDose,
+            proprietaryBlendSource: true,
+            aggregateFormula: true,
           },
         ]
       : [];
   }
 
-  const next: { name: string; dose: string | null }[] = [];
+  const next: { name: string; dose: string | null; proprietaryBlendSource?: boolean; aggregateFormula?: boolean }[] = [];
   const aggregateLabel = deriveBlendAggregateLabel(normalized);
   const shouldSuppressExplicitProbioticBlendAggregate =
     aggregateLabel === "Probiotics"
     && Boolean(cleanedPrimaryLabel)
     && /\bprobiotic(s)?\b/i.test(cleanedPrimaryLabel ?? "")
     && BLEND_LABEL_PATTERN.test(cleanedPrimaryLabel ?? "")
-    && normalizeMatchKey(cleanedPrimaryLabel ?? "") !== "proprietaryblend";
+    && normalizeMatchKey(cleanedPrimaryLabel ?? "") !== "proprietaryblend"
+    && !hasLikelyCompositeMembers;
 
   if (aggregateLabel) {
     if (!shouldSuppressExplicitProbioticBlendAggregate) {
       next.push({
         name: aggregateLabel,
         dose: aggregateLabel === "Probiotics" && liveCultureDose ? liveCultureDose : dose,
+        proprietaryBlendSource: true,
+        aggregateFormula: true,
       });
     }
   } else if (liveCultureDose) {
     next.push({
       name: "Probiotics",
       dose: liveCultureDose,
+      proprietaryBlendSource: true,
+      aggregateFormula: true,
     });
   }
 
-  const deduped = new Map<string, { name: string; dose: string | null }>();
+  const deduped = new Map<string, { name: string; dose: string | null; proprietaryBlendSource?: boolean; aggregateFormula?: boolean }>();
   for (const row of next) {
     const cleanedName = cleanOverlayIngredientName(row.name);
     if (!cleanedName) continue;
@@ -784,8 +914,19 @@ const deriveSupplementalBlendRows = (
     if (!key) continue;
     const existing = deduped.get(key);
     if (!existing || (!existing.dose && row.dose)) {
-      deduped.set(key, { name: cleanedName, dose: row.dose });
+      deduped.set(key, {
+        name: cleanedName,
+        dose: row.dose,
+        ...(row.proprietaryBlendSource ? { proprietaryBlendSource: true } : {}),
+        ...(row.aggregateFormula ? { aggregateFormula: true } : {}),
+      });
+      continue;
     }
+    deduped.set(key, {
+      ...existing,
+      ...(row.proprietaryBlendSource ? { proprietaryBlendSource: true } : {}),
+      ...(row.aggregateFormula ? { aggregateFormula: true } : {}),
+    });
   }
 
   return Array.from(deduped.values());
@@ -900,7 +1041,13 @@ const deriveGenericAggregateFormulaName = (params: {
   sourceZipPath?: string | null;
   blendLabel?: string | null;
 }): string | null => {
-  if (!isAllowedGenericAggregateFormulaSource(params.sourceZipPath)) return null;
+  const hasGenericAggregateFallbackSignal =
+    isAllowedGenericAggregateFormulaSource(params.sourceZipPath) ||
+    hasSupplementAggregateSurfaceSignal({
+      title: params.title,
+      blendLabel: params.blendLabel,
+    });
+  if (!hasGenericAggregateFallbackSignal) return null;
 
   const haystack = normalizePunctuationSpacing(
     [params.title, params.blendLabel].filter((value): value is string => Boolean(value)).join(" "),
@@ -921,8 +1068,6 @@ const deriveHerbalFormulaAggregateRows = (params: {
   servingSize?: string | null;
   servingsPerContainer?: string | null;
 }): ScienceIngredientRow[] => {
-  if (!isAllowedHerbalFormulaAggregateSource(params.sourceZipPath)) return [];
-
   const titleSegment = pickTitleFallbackIngredientSegment({
     title: params.title,
     brandName: params.brandName,
@@ -957,12 +1102,22 @@ const deriveHerbalFormulaAggregateRows = (params: {
           servingsPerContainer: params.servingsPerContainer,
         })
       : null;
+    const derivedPowderAggregateDose = isServingCountDose(normalizedDose)
+      ? derivePerServingPowderDose({
+          title: params.title,
+          brandName: params.brandName,
+          servingSize: params.servingSize,
+          servingsPerContainer: params.servingsPerContainer,
+        })
+      : null;
     const aggregateDose =
       normalizedDose && hasStructuredAggregateDose(normalizedDose)
         ? normalizedDose
         : derivedServingSizeAggregateDose
           ? derivedServingSizeAggregateDose
-        : derivedLiquidAggregateDose;
+        : derivedLiquidAggregateDose
+          ? derivedLiquidAggregateDose
+        : derivedPowderAggregateDose;
     if (!blendLabel || !aggregateDose) continue;
     if (!BLEND_LABEL_PATTERN.test(blendLabel) && !/^proprietary\s+blend\b/i.test(blendLabel)) {
       continue;
@@ -980,21 +1135,38 @@ const deriveHerbalFormulaAggregateRows = (params: {
     const hasGenericAggregateSignal =
       isAllowedGenericAggregateFormulaSource(params.sourceZipPath) && Boolean(deriveBlendAggregateLabel(blendLabel));
 
+    const blendLooksComposite = looksLikeCompositeBlendTail(blendLabel);
+    const hasGenericSurfaceRecoverySignal = hasSupplementAggregateSurfaceSignal({
+      title: params.title,
+      servingSize: params.servingSize,
+      preferredTitleSegment,
+      blendLabel,
+    });
+
     if (
-      !looksLikeCompositeBlendTail(blendLabel) &&
+      !blendLooksComposite &&
       supportingDoseLessMembers < 2 &&
       !hasFollowOnMemberDisclosure &&
       !hasGenericFollowOnDisclosure &&
-      !hasGenericAggregateSignal
+      !hasGenericAggregateSignal &&
+      !hasGenericSurfaceRecoverySignal
     ) {
       continue;
     }
 
     const cleanedPreferredTitleSegment = cleanOverlayIngredientName(preferredTitleSegment);
+    const preferredAggregateName =
+      cleanedPreferredTitleSegment &&
+      (
+        shortAcronymTitleSegment === cleanedPreferredTitleSegment ||
+        hasStrongIngredientSignal(cleanedPreferredTitleSegment)
+      )
+        ? cleanedPreferredTitleSegment
+        : null;
     const aggregateName =
       (normalizeWhitespace(params.sourceZipPath).toLowerCase() === "california-gold-nutrition.json | iherb-brands.json"
-        ? cleanOverlayIngredientName(cleanedPreferredTitleSegment?.replace(/\s+with\s+.+$/i, "") ?? null)
-        : cleanedPreferredTitleSegment) ??
+        ? cleanOverlayIngredientName(preferredAggregateName?.replace(/\s+with\s+.+$/i, "") ?? null)
+        : preferredAggregateName) ??
       deriveGenericAggregateFormulaName({
         title: params.title,
         sourceZipPath: params.sourceZipPath,
@@ -1019,6 +1191,48 @@ const deriveHerbalFormulaAggregateRows = (params: {
   }
 
   return [];
+};
+
+const derivePowderNetContentAggregateRows = (params: {
+  rows: OverlayNutritionalFactRow[] | null | undefined;
+  normalizedRows: NormalizedScienceIngredientRow[];
+  title?: string | null;
+  brandName?: string | null;
+  sourceZipPath?: string | null;
+  servingSize?: string | null;
+  servingsPerContainer?: string | null;
+}): ScienceIngredientRow[] => {
+  const aggregateDose = derivePerServingPowderDose({
+    title: params.title,
+    brandName: params.brandName,
+    servingSize: params.servingSize,
+    servingsPerContainer: params.servingsPerContainer,
+  });
+  if (!aggregateDose) return [];
+  if (params.normalizedRows.some((row) => hasPositiveStructuredDose(row.dose))) return [];
+
+  const supportingDoseLessMembers = countDoseLessNamedRows(params.normalizedRows);
+  const rawBlendLabel =
+    (params.rows ?? [])
+      .map((row) => normalizePunctuationSpacing(String(row?.substancy ?? "")))
+      .find((value) => BLEND_LABEL_PATTERN.test(value) || looksLikeMemberDisclosureRow(value)) ?? null;
+  if (!rawBlendLabel && supportingDoseLessMembers < 2) return [];
+
+  const aggregateName = deriveGenericAggregateFormulaName({
+    title: params.title,
+    sourceZipPath: params.sourceZipPath,
+    blendLabel: rawBlendLabel,
+  });
+  if (!aggregateName) return [];
+
+  return [
+    {
+      name: aggregateName,
+      dose: aggregateDose,
+      proprietaryBlendSource: true,
+      aggregateFormula: true,
+    },
+  ];
 };
 
 const toPrimaryMatchKey = (value: string): string => {
@@ -1134,6 +1348,51 @@ const pickPreferredRow = (
   return mergeRowMatchKeys(current, incoming);
 };
 
+const GENERIC_DESCRIPTOR_MATCH_KEYS = new Set([
+  "extract",
+  "liposomal",
+]);
+
+const normalizeDoseKey = (value: string | null | undefined): string =>
+  normalizeDisplayText(value)
+    .toLowerCase()
+    .replace(/,/g, ".")
+    .replace(/(\d)\s+(?=[a-zμµ])/g, "$1");
+
+const shouldPreferContainedSameDoseRow = (
+  candidate: NormalizedScienceIngredientRow,
+  other: NormalizedScienceIngredientRow,
+): boolean => {
+  const candidateDoseKey = normalizeDoseKey(candidate.dose);
+  const otherDoseKey = normalizeDoseKey(other.dose);
+  if (!candidateDoseKey || candidateDoseKey !== otherDoseKey) return false;
+  if (candidate.primaryMatchKey === other.primaryMatchKey) return false;
+
+  const candidateIsGenericDescriptor = GENERIC_DESCRIPTOR_MATCH_KEYS.has(candidate.primaryMatchKey);
+  const otherIsGenericDescriptor = GENERIC_DESCRIPTOR_MATCH_KEYS.has(other.primaryMatchKey);
+  if (candidateIsGenericDescriptor && !otherIsGenericDescriptor) return true;
+  if (!candidateIsGenericDescriptor && otherIsGenericDescriptor) return false;
+
+  const candidateContainsOther = candidate.primaryMatchKey.includes(other.primaryMatchKey);
+  const otherContainsCandidate = other.primaryMatchKey.includes(candidate.primaryMatchKey);
+  if (!candidateContainsOther || otherContainsCandidate) return false;
+  if (other.primaryMatchKey.length < 6) return false;
+  return true;
+};
+
+const pruneOverlappingDoseRows = (
+  rows: NormalizedScienceIngredientRow[],
+): NormalizedScienceIngredientRow[] => {
+  const kept: NormalizedScienceIngredientRow[] = [];
+
+  for (const row of rows) {
+    const shouldDrop = rows.some((other) => other !== row && shouldPreferContainedSameDoseRow(row, other));
+    if (!shouldDrop) kept.push(row);
+  }
+
+  return kept;
+};
+
 const normalizeIherbSupplementFactsRowsInternal = (
   rows: OverlayNutritionalFactRow[] | null | undefined,
 ): NormalizedScienceIngredientRow[] => {
@@ -1165,9 +1424,11 @@ const normalizeIherbSupplementFactsRowsInternal = (
     }
   }
 
-  return order
+  return pruneOverlappingDoseRows(
+    order
     .map((key) => deduped.get(key))
-    .filter((row): row is NormalizedScienceIngredientRow => Boolean(row));
+    .filter((row): row is NormalizedScienceIngredientRow => Boolean(row)),
+  );
 };
 
 export const normalizeIherbSupplementFactsRows = (
@@ -1201,6 +1462,15 @@ export const normalizeIherbSupplementFactsRowsWithTitleFallback = (params: {
     return singleRowRescue;
   }
   const herbalFormulaAggregateRows = deriveHerbalFormulaAggregateRows({
+    rows: params.rows,
+    normalizedRows,
+    title: params.title,
+    brandName: params.brandName,
+    sourceZipPath: params.sourceZipPath,
+    servingSize: params.servingSize,
+    servingsPerContainer: params.servingsPerContainer,
+  });
+  const powderNetContentAggregateRows = derivePowderNetContentAggregateRows({
     rows: params.rows,
     normalizedRows,
     title: params.title,
@@ -1265,11 +1535,23 @@ export const normalizeIherbSupplementFactsRowsWithTitleFallback = (params: {
   };
 
   const rowsWithAggregate = pruneGenericBlendRowsWhenAggregatePresent(
-    mergeFallbackRows(normalizedRows, herbalFormulaAggregateRows),
+    mergeFallbackRows(
+      mergeFallbackRows(normalizedRows, herbalFormulaAggregateRows),
+      powderNetContentAggregateRows,
+    ),
   );
 
   if (rowsWithAggregate.length === 0) {
     return titleFallbackRows;
+  }
+
+  if (!hasStructuredFallbackDose(titleFallbackRows)) {
+    return rowsWithAggregate.map((row) => ({
+      name: row.name,
+      dose: row.dose,
+      ...(row.proprietaryBlendSource ? { proprietaryBlendSource: true } : {}),
+      ...(row.aggregateFormula ? { aggregateFormula: true } : {}),
+    }));
   }
 
   const hasCoverageEligibleDose = rowsWithAggregate.some(
@@ -1288,6 +1570,30 @@ export const normalizeIherbSupplementFactsRowsWithTitleFallback = (params: {
     ...(row.proprietaryBlendSource ? { proprietaryBlendSource: true } : {}),
     ...(row.aggregateFormula ? { aggregateFormula: true } : {}),
   }));
+};
+
+export const normalizeIherbSupplementFactsRowsForGoalNavigatorCoverage = (params: {
+  rows: OverlayNutritionalFactRow[] | null | undefined;
+  title?: string | null;
+  brandName?: string | null;
+  servingSize?: string | null;
+  servingsPerContainer?: string | null;
+  sourceZipPath?: string | null;
+  descriptionText?: string | null;
+}): ScienceIngredientRow[] => {
+  const normalizedRows = normalizeIherbSupplementFactsRowsInternal(params.rows);
+  const rowsWithTitleFallback = normalizeIherbSupplementFactsRowsWithTitleFallback(params);
+
+  // For goal-navigator coverage, do not let a header-only facts block invent a weak ingredient row
+  // from the product title unless the title itself contributes a structured dose.
+  if (normalizedRows.length === 0) {
+    const hasStructuredTitleFallbackDose = rowsWithTitleFallback.some((row) =>
+      hasPositiveStructuredDose(row.dose),
+    );
+    return hasStructuredTitleFallbackDose ? rowsWithTitleFallback : [];
+  }
+
+  return rowsWithTitleFallback;
 };
 
 const rowsMatchForCoverage = (
@@ -1440,6 +1746,7 @@ export const iherbOverlayIngredientInternals = {
   stripTrailingOverlayMarkers,
   deriveTitleFallbackRows,
   hasStrongIngredientSignal,
+  normalizeIherbSupplementFactsRowsForGoalNavigatorCoverage,
   parseNumericCount,
   parseVolumeMl,
   pickTitleFallbackIngredientSegment,

@@ -8,6 +8,7 @@
     "gaea.json",
     "hbaf.json",
     "lawrys.json",
+    "stonewall-kitchen.json",
     "sweetleaf-stevia.json",
     "the-spice-lab.json",
     "true-citrus.json",
@@ -22,6 +23,7 @@
     "gaea",
     "hbaf",
     "lawry's",
+    "stonewall kitchen",
     "sweetleaf stevia",
     "the spice lab",
     "true citrus",
@@ -71,6 +73,16 @@
     ],
     "nutricost.json": [
       "pantry"
+    ],
+    "christopher-s-original-formulas.json": [
+      "tooth & gum powder"
+    ],
+    "hyalogic-llc.json": [
+      "hylamints",
+      "dry mouth"
+    ],
+    "nunaturals.json": [
+      "stevia"
     ]
   },
   "supplementOverrideTitlePhrases": [

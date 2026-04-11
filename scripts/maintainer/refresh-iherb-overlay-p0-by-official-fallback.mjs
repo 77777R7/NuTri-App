@@ -882,14 +882,29 @@ const parseOtherIngredientsFromBlock = (text) =>
 
 const parseSupplementFactsFromOcrText = (text) => {
   const normalized = String(text ?? "").replace(/\r/g, "");
-  const blockMatch = normalized.match(
-    /Supplement Facts([\s\S]*?)(?=\n(?:Other Ingredients|Directions|Suggested Use|Recommended Use|Warning|Warnings|Caution|Store in a cool|KEEP OUT OF REACH|Distributed by)\b|$)/i,
-  );
-  if (!blockMatch) return null;
+  const rawLines = normalized
+    .split("\n")
+    .map((line) => normalizeText(line))
+    .filter(Boolean);
 
-  const block = blockMatch[1];
-  const servingSize = normalizeText(block.match(/Serving Size[:\s]+([^\n]+)/i)?.[1] ?? null) || null;
-  const servingsPerContainer = normalizeText(block.match(/Servings per Container[:\s]+([^\n]+)/i)?.[1] ?? null) || null;
+  let factsStartIndex = rawLines.findIndex((line, index) => {
+    if (/^supplement facts$/i.test(line)) return true;
+    if (/^supplement$/i.test(line) && /^facts$/i.test(rawLines[index + 1] ?? "")) return true;
+    return false;
+  });
+
+  if (factsStartIndex === -1) {
+    factsStartIndex = rawLines.findIndex((line) => /supplement facts/i.test(line));
+  }
+  if (factsStartIndex === -1) return null;
+
+  const lines = rawLines.slice(factsStartIndex).filter(
+    (line, index) => !(index === 1 && /^facts$/i.test(line) && /^supplement$/i.test(rawLines[factsStartIndex] ?? "")),
+  );
+  const block = lines.join("\n");
+  const servingSize = normalizeText(block.match(/Serving size[:\s]+([^\n]+)/i)?.[1] ?? null) || null;
+  const servingsPerContainer =
+    normalizeText(block.match(/Servings?\s+per\s+container[:\s]+([^\n]+)/i)?.[1] ?? null) || null;
 
   const facts = [];
   const seen = new Set();
@@ -906,6 +921,35 @@ const parseSupplementFactsFromOcrText = (text) => {
       amountPerServing: amount,
       dailyValuePercent: dailyValue,
     });
+  };
+
+  const appendToLastFactName = (suffix) => {
+    const normalizedSuffix = normalizeText(suffix);
+    if (!normalizedSuffix || facts.length === 0) return;
+    const current = facts[facts.length - 1];
+    current.substancy = normalizeText([current.substancy, normalizedSuffix].filter(Boolean).join(" "));
+  };
+
+  const dailyValueOnlyPattern = /^(?:% ?DV|% ?Daily Value|\d{1,3}(?:,\d{3})*(?:\.\d+)?%|\*|†)$/i;
+  const amountPattern =
+    /(\d[\d,]*(?:\.\d+)?\s*(?:mcg|mg|g|iu|cfu|fus?|mL|ml)\b(?:\s*\([^)]*\))?(?:\s*[A-Z]{2,5})?)/i;
+  const stripTrailingDailyValue = (value) =>
+    normalizeText(String(value ?? "").replace(/\s+(\d{1,3}(?:,\d{3})*(?:\.\d+)?%|\*|†)\s*$/i, ""));
+  const extractInlineFact = (line) => {
+    const amountMatch = line.match(amountPattern);
+    if (!amountMatch || amountMatch.index == null) return null;
+    const amount = normalizeText(amountMatch[1]);
+    const rawName = normalizeText(line.slice(0, amountMatch.index));
+    const trailing = normalizeText(line.slice(amountMatch.index + amountMatch[1].length));
+    const dailyValueMatch = trailing.match(/(\d{1,3}(?:,\d{3})*(?:\.\d+)?%|\*|†)\s*$/i);
+    const dailyValuePercent = normalizeText(dailyValueMatch?.[1] ?? null) || null;
+    const substancy = stripTrailingDailyValue(rawName);
+    if (!substancy || /^supplement facts$/i.test(substancy)) return null;
+    return {
+      substancy,
+      amountPerServing: amount,
+      dailyValuePercent,
+    };
   };
 
   const inlineMatches = block.matchAll(
@@ -938,15 +982,57 @@ const parseSupplementFactsFromOcrText = (text) => {
         !/Daily Value not established/i.test(line),
     );
 
+  let pendingName = null;
+  let pendingFactIndex = -1;
   for (let index = 0; index < cleanedLines.length; index += 1) {
     const line = cleanedLines[index];
-    const nextLine = cleanedLines[index + 1] ?? "";
-    const amountMatch = line.match(/(\d[\d,]*(?:\.\d+)?)\s*(mg|mcg|g|iu|cfu|fus?|mL)\b/i);
-    const nextAmountMatch = nextLine.match(/(\d[\d,]*(?:\.\d+)?)\s*(mg|mcg|g|iu|cfu|fus?|mL)\b/i);
-    if (amountMatch && nextLine && /[A-Za-z]/.test(nextLine)) {
-      registerFact(nextLine, `${amountMatch[1]} ${amountMatch[2]}`);
-    } else if (nextAmountMatch && /[A-Za-z]/.test(line)) {
-      registerFact(line, `${nextAmountMatch[1]} ${nextAmountMatch[2]}`);
+    if (
+      /^(other ingredients|directions|suggested use|recommended use|warning|warnings|caution|store in a cool|keep out of reach|distributed by)\b/i.test(
+        line,
+      )
+    ) {
+      break;
+    }
+    if (/^supplement facts$/i.test(line) || /^amount per serving$/i.test(line) || /^% ?DV$/i.test(line)) {
+      continue;
+    }
+
+    if (dailyValueOnlyPattern.test(line)) {
+      if (pendingFactIndex >= 0 && facts[pendingFactIndex] && !facts[pendingFactIndex].dailyValuePercent) {
+        facts[pendingFactIndex].dailyValuePercent = normalizeText(line);
+      }
+      continue;
+    }
+
+    const inlineFact = extractInlineFact(line);
+    if (inlineFact) {
+      registerFact(inlineFact.substancy, inlineFact.amountPerServing, inlineFact.dailyValuePercent);
+      pendingName = null;
+      pendingFactIndex = facts.length - 1;
+      continue;
+    }
+
+    if (amountPattern.test(line)) {
+      const amountOnly = normalizeText(line.match(amountPattern)?.[1] ?? null);
+      if (pendingName && amountOnly) {
+        registerFact(pendingName, amountOnly);
+        pendingName = null;
+        pendingFactIndex = facts.length - 1;
+        continue;
+      }
+    }
+
+    if (/^[,(]/.test(line) || /^\(as /i.test(line)) {
+      if (pendingName) {
+        pendingName = normalizeText([pendingName, line].filter(Boolean).join(" "));
+      } else {
+        appendToLastFactName(line);
+      }
+      continue;
+    }
+
+    if (/[A-Za-z]/.test(line)) {
+      pendingName = normalizeText([pendingName, line].filter(Boolean).join(" "));
     }
   }
 
@@ -1131,6 +1217,8 @@ const runImageOcrFallback = async ({ stagedRow, selectedCandidate, beforeMissing
     .filter((value) => Boolean(value) && isLikelyProductImageUrl(value) && !/\/cms\/|banner/i.test(value));
 
   const imageUrls = [...new Set(candidateImageUrls)].slice(0, OCR_MAX_IMAGES);
+  const attemptedImageUrls = [];
+  const existingUsefulFactsCount = countUsefulSupplementFacts(stagedRow?.supplementFacts ?? null);
   let suggestedUse = null;
   let warnings = null;
   let otherIngredients = null;
@@ -1139,6 +1227,7 @@ const runImageOcrFallback = async ({ stagedRow, selectedCandidate, beforeMissing
   let imageOcrHit = false;
 
   for (const imageUrl of imageUrls) {
+    attemptedImageUrls.push(imageUrl);
     try {
       const payload = await runMacosVisionOcr(imageUrl);
       const ocrText = String(payload?.fullText ?? "")
@@ -1159,16 +1248,18 @@ const runImageOcrFallback = async ({ stagedRow, selectedCandidate, beforeMissing
       suggestedUse = suggestedUse ?? parsedSuggestedUse ?? null;
       warnings = warnings ?? parsedWarnings ?? null;
       otherIngredients = otherIngredients ?? parsedOtherIngredients ?? null;
-      supplementFacts = supplementFacts ?? parsedSupplementFacts ?? null;
+      supplementFacts = selectBetterSupplementFacts(supplementFacts, parsedSupplementFacts ?? null);
 
       const remainingNeeds = new Set(beforeMissingFields);
       if (suggestedUse) remainingNeeds.delete("suggested_use");
       if (warnings) remainingNeeds.delete("warnings");
-      if (supplementFacts?.nutritionalFacts?.length) {
+      const usefulSupplementFactsCount = countUsefulSupplementFacts(supplementFacts);
+      if (usefulSupplementFactsCount > 0) {
         remainingNeeds.delete("ingredient");
-        if (supplementFacts.nutritionalFacts.some((row) => normalizeText(row?.amountPerServing))) {
-          remainingNeeds.delete("dosage");
-        }
+        remainingNeeds.delete("dosage");
+      } else if (existingUsefulFactsCount === 0) {
+        remainingNeeds.add("ingredient");
+        remainingNeeds.add("dosage");
       }
       if (remainingNeeds.size === 0) break;
     } catch (error) {
@@ -1178,7 +1269,7 @@ const runImageOcrFallback = async ({ stagedRow, selectedCandidate, beforeMissing
 
   return {
     imageOcrHit,
-    imageUrlsTried: imageUrls,
+    imageUrlsTried: attemptedImageUrls,
     suggestedUse,
     warnings,
     otherIngredients,
@@ -1350,23 +1441,59 @@ const parsePackageAmountForGenericFacts = (text) => {
   return normalizeText([amount, paren ? `(${paren})` : null].filter(Boolean).join(" ")) || null;
 };
 
+const countUsefulSupplementFacts = (supplementFacts) => {
+  const rows = Array.isArray(supplementFacts?.nutritionalFacts) ? supplementFacts.nutritionalFacts : [];
+  return rows.filter((row) => {
+    const substancy = normalizeText(row?.substancy ?? row?.substance ?? row?.name);
+    const amount = normalizeText(row?.amountPerServing ?? row?.amount ?? row?.value);
+    if (!substancy || !amount) return false;
+    if (/^amount per serving$/i.test(amount)) return false;
+    if (/^amount per serving$/i.test(substancy)) return false;
+    return true;
+  }).length;
+};
+
+const selectBetterSupplementFacts = (currentFacts, candidateFacts) => {
+  if (!candidateFacts) return currentFacts ?? null;
+  if (!currentFacts) return candidateFacts;
+
+  const currentUsefulCount = countUsefulSupplementFacts(currentFacts);
+  const candidateUsefulCount = countUsefulSupplementFacts(candidateFacts);
+  if (candidateUsefulCount > currentUsefulCount) return candidateFacts;
+  if (candidateUsefulCount < currentUsefulCount) return currentFacts;
+
+  const currentRowCount = Array.isArray(currentFacts?.nutritionalFacts) ? currentFacts.nutritionalFacts.length : 0;
+  const candidateRowCount = Array.isArray(candidateFacts?.nutritionalFacts) ? candidateFacts.nutritionalFacts.length : 0;
+  if (candidateRowCount > currentRowCount) return candidateFacts;
+  if (candidateRowCount < currentRowCount) return currentFacts;
+
+  const currentServingSignals =
+    Number(Boolean(normalizeText(currentFacts?.servingSize))) +
+    Number(Boolean(normalizeText(currentFacts?.servingsPerContainer)));
+  const candidateServingSignals =
+    Number(Boolean(normalizeText(candidateFacts?.servingSize))) +
+    Number(Boolean(normalizeText(candidateFacts?.servingsPerContainer)));
+  if (candidateServingSignals > currentServingSignals) return candidateFacts;
+  if (candidateServingSignals < currentServingSignals) return currentFacts;
+
+  return currentFacts;
+};
+
 const buildGenericIngredientFactsHelper = ({
   stagedRow,
   combinedPageText,
   otherIngredients,
   existingSupplementFacts,
 }) => {
-  if (existingSupplementFacts?.nutritionalFacts?.length) return existingSupplementFacts;
-  if (stagedRow?.supplementFacts?.nutritionalFacts?.length) {
-    return stagedRow.supplementFacts;
-  }
+  const bestExistingFacts = selectBetterSupplementFacts(existingSupplementFacts, stagedRow?.supplementFacts ?? null);
+  if (countUsefulSupplementFacts(bestExistingFacts) > 0) return bestExistingFacts;
   const ingredientText = normalizeText(otherIngredients) || null;
   const dosageText =
     parsePackageAmountForGenericFacts(stagedRow?.title) ??
     parsePackageAmountForGenericFacts(stagedRow?.count) ??
     parsePackageAmountForGenericFacts(combinedPageText);
-  if (!ingredientText || !dosageText) return existingSupplementFacts;
-  return {
+  if (!ingredientText || !dosageText) return bestExistingFacts;
+  const genericFacts = {
     servingSize: null,
     servingsPerContainer: null,
     nutritionalFacts: [
@@ -1377,6 +1504,7 @@ const buildGenericIngredientFactsHelper = ({
       },
     ],
   };
+  return selectBetterSupplementFacts(bestExistingFacts, genericFacts);
 };
 
 const main = async () => {

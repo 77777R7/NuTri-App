@@ -120,9 +120,9 @@ if (typeof evaluateSavedProducts !== "function") {
   throw new Error("[catalogProductEvaluation] Failed to load evaluateSavedProducts");
 }
 
-const PROPRIETARY_BLEND_EXPLICIT_PATTERN = /\bproprietary\s+(blend|complex|matrix|formula)\b/i;
+const PROPRIETARY_BLEND_EXPLICIT_PATTERN = /^(?:proprietary\s+)?(?:blend|complex|matrix|formula)\b/i;
 const PROPRIETARY_BLEND_GENERIC_NAME_PATTERN =
-  /\b(probiotic|bacteriophage|digestive|enzyme|enzymes|herbal|botanical|flora|microbiome|female hormone|male performance|greens|reds|superfood|pre-?workout)\s+(blend|complex|matrix|formula)\b/i;
+  /^(probiotic|bacteriophage|digestive|enzyme|enzymes|herbal|botanical|flora|microbiome|female hormone|male performance|greens|reds|superfood|pre-?workout)\s+(blend|complex|matrix|formula)\b/i;
 
 const isLikelyProprietaryBlendName = (value: string): boolean => {
   const normalized = value.trim().toLowerCase();
@@ -135,27 +135,48 @@ const isLikelyProprietaryBlendName = (value: string): boolean => {
 };
 
 const normalizeParsedUnit = (value: string): string | null => {
-  const normalized = value.trim().toLowerCase().replace(/['’]/g, "");
+  const normalized = value
+    .trim()
+    .toLowerCase()
+    .replace(/['’]/g, "")
+    .replace(/\d+$/g, "");
   if (!normalized) return null;
   if (normalized === "μg" || normalized === "µg" || normalized === "ug") return "mcg";
+  if (normalized === "μl" || normalized === "µl" || normalized === "ul") return "ul";
+  if (normalized === "gram" || normalized === "grams") return "g";
   if (normalized === "iu" || normalized === "ui") return "iu";
   if (normalized === "cfu") return "cfu";
+  if (normalized === "afu") return "afu";
+  if (normalized === "tfu") return "tfu";
+  if (normalized === "ppm") return "ppm";
+  if (normalized === "usp unit" || normalized === "usp units") return "usp";
   if (normalized === "spu") return "spu";
+  if (normalized === "galu") return "galu";
   if (normalized === "pfu" || normalized === "pfus") return "pfu";
   if (normalized === "fu" || normalized === "fus") return "fu";
+  if (normalized === "unit" || normalized === "units") return "unit";
   if (
     normalized === "hut" ||
     normalized === "pu" ||
     normalized === "alu" ||
     normalized === "fip" ||
     normalized === "du" ||
+    normalized === "pc" ||
     normalized === "lu" ||
     normalized === "cu" ||
     normalized === "agu" ||
     normalized === "hcu" ||
     normalized === "pgu" ||
     normalized === "sapu" ||
-    normalized === "fcc"
+    normalized === "fcc" ||
+    normalized === "fcclu" ||
+    normalized === "galu" ||
+    normalized === "xu" ||
+    normalized === "su" ||
+    normalized === "hsu" ||
+    normalized === "bgu" ||
+    normalized === "dppiv" ||
+    normalized === "endo-pgu"
   ) {
     return normalized;
   }
@@ -167,11 +188,19 @@ const normalizeParsedUnit = (value: string): string | null => {
   return null;
 };
 
+const preprocessAmountText = (value: string): string => value
+  .replace(/(\d[\d,]*(?:\.\d+)?)\s*-\s*(\d[\d,]*(?:\.\d+)?)\s*(mcg|μg|µg|ug|mg|g|gram|grams|iu|ui|cfu|afu|tfu|spu|galu|units?|usp\s+units?|ml|milliliters?|μl|µl|ul|ppm)\b/gi, "$1 $3")
+  .replace(/(mcg|μg|µg|ug|mg|g|gram|grams|iu|ui|cfu\d*|afu|tfu|spu(?:['’]?s)?|galu|units?|usp\s+units?|ml|milliliters?|μl|µl|ul|pfu(?:['’]?s)?|fu(?:['’]?s)?|hut|pu|alu|fip|du|pc|lu|cu|agu|hcu|pgu|sapu|fcc|fcclu|xu|su|hsu|bgu|dpp-?iv|endo-pgu)(?=\d)/gi, "$1 ")
+  .replace(/[†‡*]+/g, " ")
+  .replace(/\s+/g, " ")
+  .trim();
+
 const parseAmountText = (value?: string | null): { amount: number | null; unit: string | null } => {
   const trimmed = value?.trim();
   if (!trimmed) return { amount: null, unit: null };
+  const normalized = preprocessAmountText(trimmed);
 
-  const cfuScaledMatch = trimmed.match(/(-?\d[\d,]*(?:\.\d+)?)\s*(billion|million)\s*cfu\b/i);
+  const cfuScaledMatch = normalized.match(/(\d[\d,]*(?:\.\d+)?)\s*(billion|million)\s*cfu\d*\b/i);
   if (cfuScaledMatch) {
     const amount = Number.parseFloat(cfuScaledMatch[1].replace(/,/g, ""));
     if (!Number.isFinite(amount)) {
@@ -184,8 +213,8 @@ const parseAmountText = (value?: string | null): { amount: number | null; unit: 
     };
   }
 
-  const organismScaledMatch = trimmed.match(
-    /(-?\d[\d,]*(?:\.\d+)?)\s*(trillion|billion|million)\s*organisms?\b/i,
+  const organismScaledMatch = normalized.match(
+    /(\d[\d,]*(?:\.\d+)?)\s*(trillion|billion|million)\s*organisms?\b/i,
   );
   if (organismScaledMatch) {
     const amount = Number.parseFloat(organismScaledMatch[1].replace(/,/g, ""));
@@ -200,8 +229,56 @@ const parseAmountText = (value?: string | null): { amount: number | null; unit: 
     };
   }
 
-  const match = trimmed.match(
-    /(-?\d[\d,]*(?:\.\d+)?)\s*(mcg|μg|µg|ug|mg|g|iu|ui|cfu|spu|ml|pfu(?:['’]?s)?|fu(?:['’]?s)?|hut|pu|alu|fip|du|lu|cu|agu|hcu|pgu|sapu|fcc)\b/i,
+  const liveCellsScaledMatch = normalized.match(
+    /(\d[\d,]*(?:\.\d+)?)\s*(trillion|billion|million)\s*live\s+cells?\b/i,
+  );
+  if (liveCellsScaledMatch) {
+    const amount = Number.parseFloat(liveCellsScaledMatch[1].replace(/,/g, ""));
+    if (!Number.isFinite(amount)) {
+      return { amount: null, unit: null };
+    }
+    const scale = liveCellsScaledMatch[2]?.toLowerCase();
+    const multiplier = scale === "trillion" ? 1e12 : scale === "billion" ? 1e9 : 1e6;
+    return {
+      amount: amount * multiplier,
+      unit: "cfu",
+    };
+  }
+
+  const tfuScaledMatch = normalized.match(
+    /(\d[\d,]*(?:\.\d+)?)\s*(trillion|billion|million)\s*tfu\b/i,
+  );
+  if (tfuScaledMatch) {
+    const amount = Number.parseFloat(tfuScaledMatch[1].replace(/,/g, ""));
+    if (!Number.isFinite(amount)) {
+      return { amount: null, unit: null };
+    }
+    const scale = tfuScaledMatch[2]?.toLowerCase();
+    const multiplier = scale === "trillion" ? 1e12 : scale === "billion" ? 1e9 : 1e6;
+    return {
+      amount: amount * multiplier,
+      unit: "tfu",
+    };
+  }
+
+  const afuScaledMatch = normalized.match(
+    /(\d[\d,]*(?:\.\d+)?)\s*(trillion|billion|million)\s*afu\b/i,
+  );
+  if (afuScaledMatch) {
+    const amount = Number.parseFloat(afuScaledMatch[1].replace(/,/g, ""));
+    if (!Number.isFinite(amount)) {
+      return { amount: null, unit: null };
+    }
+    const scale = afuScaledMatch[2]?.toLowerCase();
+    const multiplier = scale === "trillion" ? 1e12 : scale === "billion" ? 1e9 : 1e6;
+    return {
+      amount: amount * multiplier,
+      unit: "afu",
+    };
+  }
+
+  const match = normalized.match(
+    /(\d[\d,]*(?:\.\d+)?)\s*(mcg|μg|µg|ug|mg|g|gram|grams|iu|ui|cfu\d*|afu|tfu|spu(?:['’]?s)?|galu|units?|usp\s+units?|ml|milliliters?|μl|µl|ul|ppm|pfu(?:['’]?s)?|fu(?:['’]?s)?|hut|pu|alu|fip|du|pc|lu|cu|agu|hcu|pgu|sapu|fcc|fcclu|xu|su|hsu|bgu|dpp-?iv|endo-pgu)\b/i,
   );
   if (!match) return { amount: null, unit: null };
 
