@@ -142,7 +142,7 @@ import { buildMySupplementFactsV1, type MySupplementFactsV1 } from "./mySuppleme
 import { getMySupplementOverviewV2GateReason } from "./mySupplementOverviewGate.js";
 import { getNutriTipsData } from "./nutriTips.js";
 import { buildRuleBasedOverview } from "./overviewRuleBased.js";
-import { searchProducts } from "./productSearch.js";
+import { searchProducts, warmProductSearchIndex } from "./productSearch.js";
 import * as profileResolverModule from "../../lib/personalization/core/profileResolver.ts";
 import {
   buildEnsureOverviewInflightKey,
@@ -23504,4 +23504,5 @@ process.on("uncaughtException", (err) => {
 
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`Search backend listening on http://0.0.0.0:${PORT}`);
+  warmProductSearchIndex();
 });

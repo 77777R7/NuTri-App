@@ -1,6 +1,7 @@
 import { useScreenTokens } from '@/hooks/useScreenTokens';
 import { useFullBleed } from '@/hooks/useFullBleed';
 import { apiClient, type SearchAPIResponse, type SearchSupplement } from '@/lib/api-client';
+import { ensureSessionId, setScanSession } from '@/lib/scan/session';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Stack, router } from 'expo-router';
 import { MotiView } from 'moti';
@@ -29,6 +30,8 @@ type Category =
   | 'Vitamins'
   | 'Minerals'
   | 'Herbs'
+  | 'Essential'
+  | 'Amino Acids'
   | 'Probiotics'
   | 'Protein';
 
@@ -42,6 +45,8 @@ const CATEGORIES: Category[] = [
   'Vitamins',
   'Minerals',
   'Herbs',
+  'Essential',
+  'Amino Acids',
   'Probiotics',
   'Protein',
 ];
@@ -212,6 +217,28 @@ const SearchPage = () => {
       clearTimeout(debounceTimeout);
     };
   }, [activeFilter, debouncedQuery]);
+
+  const handleOpenResult = React.useCallback((item: SearchSupplement) => {
+    const scanCode = item.barcode?.trim() || item.upcCode?.trim();
+    if (!scanCode) return;
+
+    const sessionId = ensureSessionId();
+    setScanSession({
+      id: sessionId,
+      mode: 'barcode',
+      input: { barcode: scanCode },
+      isLoading: true,
+      source: 'search',
+    });
+
+    router.push({
+      pathname: '/scan/result',
+      params: {
+        sessionId,
+        source: 'search',
+      },
+    });
+  }, []);
 
   const handleScroll = useAnimatedScrollHandler({
     onScroll: (event) => {
@@ -437,7 +464,11 @@ const SearchPage = () => {
                                   : styles.filterChipTextInactive,
                               ]}
                             >
-                              {category === 'Probiotics' && isNarrow ? 'Probiotic' : category}
+                              {category === 'Probiotics' && isNarrow
+                                ? 'Probiotic'
+                                : category === 'Amino Acids' && isNarrow
+                                  ? 'Amino'
+                                  : category}
                             </Text>
                           </Pressable>
                         );
@@ -533,7 +564,12 @@ const SearchPage = () => {
                         delay: 200 + index * 34,
                       }}
                     >
-                      <Pressable style={styles.resultRow}>
+                      <Pressable
+                        accessibilityRole="button"
+                        disabled={!(item.barcode?.trim() || item.upcCode?.trim())}
+                        onPress={() => handleOpenResult(item)}
+                        style={styles.resultRow}
+                      >
                         <View
                           style={[
                             styles.resultCard,
