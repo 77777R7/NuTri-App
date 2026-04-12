@@ -103,6 +103,11 @@ export type ProductSearchResponse = {
   };
 };
 
+export type ProductSearchBootstrapResponse = {
+  generatedAt: number;
+  categories: Record<string, ProductSearchCard[]>;
+};
+
 type SearchParams = {
   query?: string | null;
   category?: string | null;
@@ -121,7 +126,7 @@ type EnrichedCandidate = {
 };
 
 const SEARCH_INDEX_TTL_MS = 15 * 60 * 1000;
-const OVERLAY_PAGE_SIZE = 1000;
+const OVERLAY_PAGE_SIZE = 250;
 const DEFAULT_LIMIT = 20;
 const MAX_LIMIT = 30;
 const MAX_PRELIMINARY_CANDIDATES = 180;
@@ -129,6 +134,16 @@ const MAX_SUGGESTION_BRANDS = 6;
 const COLD_FALLBACK_QUERY_LIMIT = 220;
 const COLD_FALLBACK_BROWSE_LIMIT = 320;
 const POPULAR_SEARCHES = ["Magnesium", "Vitamin D", "Omega-3", "Probiotic", "Ashwagandha"];
+const SEARCH_BROWSE_CATEGORIES = [
+  "All",
+  "Vitamins",
+  "Minerals",
+  "Herbs",
+  "Essential",
+  "Amino Acids",
+  "Probiotics",
+  "Protein",
+] as const;
 const OVERLAY_SEARCH_SELECT =
   "id,product_id,upc_code,barcode_gtin14,brand_name,title,product_catalog_image,product_images,categories,serving,supplement_facts,description_sections,updated_at";
 const POPULAR_FALLBACK_BRANDS = [
@@ -262,6 +277,13 @@ const GOAL_RULES: {
 
 let cachedSearchIndex: ProductSearchIndex | null = null;
 let inflightSearchIndexBuild: Promise<ProductSearchIndex> | null = null;
+let cachedBrowseResponseMap:
+  | {
+      builtAt: number;
+      responses: Map<string, ProductSearchResponse>;
+      bootstrap: ProductSearchBootstrapResponse;
+    }
+  | null = null;
 
 const safeTrim = (value: unknown): string | null => {
   if (typeof value !== "string") return null;
@@ -288,6 +310,22 @@ const POPULAR_FALLBACK_BRAND_SCORES = new Map(
 
 const normalizeLookupText = (value: string | null | undefined): string =>
   normalizeSearchText(String(value ?? ""));
+
+const buildBrowseCacheKey = (params: SearchParams): string => {
+  const category = safeTrim(params.category) ?? "All";
+  const page =
+    Number.isFinite(params.page) && (params.page ?? 0) > 0 ? Math.floor(params.page as number) : 1;
+  const limit = Math.min(
+    MAX_LIMIT,
+    Math.max(
+      1,
+      Number.isFinite(params.limit) && (params.limit ?? 0) > 0
+        ? Math.floor(params.limit as number)
+        : DEFAULT_LIMIT,
+    ),
+  );
+  return `${category}::${page}::${limit}`;
+};
 
 const toPostgrestIlikeValue = (value: string | null | undefined): string | null => {
   const normalized = normalizeLookupText(value).replace(/[%_,]/g, " ").trim();
@@ -1194,6 +1232,7 @@ const ensureSearchIndexWarm = (): Promise<ProductSearchIndex> => {
   inflightSearchIndexBuild = buildSearchIndex()
     .then((index) => {
       cachedSearchIndex = index;
+      rebuildWarmBrowseResponseMap(index);
       return index;
     })
     .finally(() => {
@@ -1355,16 +1394,94 @@ const buildSearchResponseFromRows = (
       totalPages: Math.max(1, Math.ceil(total / limit)),
     },
     suggestions: {
-      categories: ["All", "Vitamins", "Minerals", "Herbs", "Essential", "Amino Acids", "Probiotics", "Protein"],
+      categories: [...SEARCH_BROWSE_CATEGORIES],
       brands: topBrands,
       popularSearches: POPULAR_SEARCHES,
     },
   };
 };
 
+const rebuildWarmBrowseResponseMap = (index: ProductSearchIndex): void => {
+  const responses = new Map<string, ProductSearchResponse>();
+
+  for (const category of SEARCH_BROWSE_CATEGORIES) {
+    const params: SearchParams = {
+      query: "",
+      category: category === "All" ? null : category,
+      page: 1,
+      limit: DEFAULT_LIMIT,
+    };
+    const response = buildSearchResponseFromRows(index.rows, params);
+    responses.set(buildBrowseCacheKey(params), response);
+  }
+
+  cachedBrowseResponseMap = {
+    builtAt: index.builtAt,
+    responses,
+    bootstrap: {
+      generatedAt: Date.now(),
+      categories: Object.fromEntries(
+        SEARCH_BROWSE_CATEGORIES.map((category) => {
+          const params: SearchParams = {
+            query: "",
+            category: category === "All" ? null : category,
+            page: 1,
+            limit: DEFAULT_LIMIT,
+          };
+          const response = responses.get(buildBrowseCacheKey(params));
+          return [category, response?.supplements ?? []];
+        }),
+      ),
+    },
+  };
+};
+
+const getWarmBrowseResponse = (params: SearchParams): ProductSearchResponse | null => {
+  if (safeTrim(params.query) || safeTrim(params.brand)) return null;
+  const page =
+    Number.isFinite(params.page) && (params.page ?? 0) > 0 ? Math.floor(params.page as number) : 1;
+  const limit = Math.min(
+    MAX_LIMIT,
+    Math.max(
+      1,
+      Number.isFinite(params.limit) && (params.limit ?? 0) > 0
+        ? Math.floor(params.limit as number)
+        : DEFAULT_LIMIT,
+    ),
+  );
+  if (page !== 1 || limit !== DEFAULT_LIMIT) return null;
+
+  if (!cachedBrowseResponseMap) return null;
+  if (cachedSearchIndex && cachedBrowseResponseMap.builtAt !== cachedSearchIndex.builtAt) {
+    return null;
+  }
+  return cachedBrowseResponseMap.responses.get(buildBrowseCacheKey(params)) ?? null;
+};
+
+export const getProductSearchBootstrap = async (): Promise<ProductSearchBootstrapResponse> => {
+  const warmIndex = getUsableSearchIndex();
+  if (warmIndex && cachedBrowseResponseMap?.builtAt === warmIndex.builtAt) {
+    return cachedBrowseResponseMap.bootstrap;
+  }
+
+  const index = warmIndex ?? (await ensureSearchIndexWarm());
+  if (!cachedBrowseResponseMap || cachedBrowseResponseMap.builtAt !== index.builtAt) {
+    rebuildWarmBrowseResponseMap(index);
+  }
+  return cachedBrowseResponseMap!.bootstrap;
+};
+
 export const searchProducts = async (params: SearchParams): Promise<ProductSearchResponse> => {
+  const warmBrowseResponse = getWarmBrowseResponse(params);
+  if (warmBrowseResponse) {
+    return warmBrowseResponse;
+  }
+
   const index = getUsableSearchIndex();
   if (index) {
+    if (!cachedBrowseResponseMap || cachedBrowseResponseMap.builtAt !== index.builtAt) {
+      rebuildWarmBrowseResponseMap(index);
+    }
     return buildSearchResponseFromRows(index.rows, params);
   }
 

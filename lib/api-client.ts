@@ -102,6 +102,18 @@ export type SearchAPIResponse =
       data: SearchResponse;
     };
 
+export type SearchBootstrapResponse = {
+  generatedAt: number;
+  categories: Record<string, SearchSupplement[]>;
+};
+
+export type SearchBootstrapAPIResponse =
+  | SearchBootstrapResponse
+  | {
+      success: boolean;
+      data: SearchBootstrapResponse;
+    };
+
 export type AnalyzeRequest = {
   scanId?: string;
   text: string;
@@ -402,6 +414,12 @@ export const apiClient = {
       ...(payload.page ? { page: String(payload.page) } : {}),
       ...(payload.limit ? { limit: String(payload.limit) } : {}),
     }).toString()}`, { method: 'GET', ...options }),
+
+  searchBootstrap: (options?: AuthenticatedRequestOptions) =>
+    requestTo<SearchBootstrapAPIResponse>(ENV.searchApiBaseUrl, '/api/search/bootstrap', {
+      method: 'GET',
+      ...options,
+    }),
 
   analyze: (payload: AnalyzeRequest, options?: AuthenticatedRequestOptions) =>
     request<AnalyzeResponse>('/api/analyze', {
