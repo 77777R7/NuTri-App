@@ -512,10 +512,36 @@ const DISPLAYABLE_DOSE_PATTERN =
 
 const CALORIE_DOSE_PATTERN = /\b(?:calories?|kcal|cal)\b/i;
 
-const NON_DISPLAY_DOSAGE_INGREDIENT_NAME_PATTERN = /^calories?$/i;
+const NON_DISPLAY_DOSAGE_INGREDIENT_NAME_PATTERN =
+  /^(?:calories?|fat calories|total fat|saturated fat|trans fat|cholesterol|sodium|total carbohydrates?|dietary fiber|sugars?|added sugars?)$/i;
 
 const DOSE_SUFFIX_NOISE_PATTERN =
   /\b(?:per\s+(?:capsule|capsules|tablet|tablets|softgel|softgels|serving|servings|gummy|gummies|packet|packets|stick|sticks|scoop|scoops|drop|drops|dropperful)|each)\b/gi;
+
+const TITLE_DOSE_PATTERN = new RegExp(`(${DISPLAYABLE_DOSE_PATTERN.source})`, "i");
+const TITLE_PACKAGE_SIZE_PATTERN =
+  /\b\d[\d,]*(?:[.,]\d+)?\s*(?:lb|lbs|oz|fl\.?\s*oz|fluid ounces?)\s*(?:\(\s*\d[\d,]*(?:[.,]\d+)?\s*(?:mcg|μg|µg|ug|mg|g|ml)\s*\))?/gi;
+const TYPE_PRIORITY: Record<SearchTypeKey, number> = {
+  vitamin: 5,
+  mineral: 4,
+  probiotic: 3,
+  herb: 2,
+  protein: 1,
+};
+const PROBIOTIC_SIGNAL_PATTERN = /\b(probiotic|lactobacillus|bifidobacter(?:ium)?|saccharomyces|prebiotic|cfu|biome)\b/;
+const PROTEIN_SIGNAL_PATTERN =
+  /\b(?:\w*protein|whey|casein|pea protein|rice protein|milk protein|hemp protein|bone broth protein|isolate|collagen peptides?)\b/;
+const VITAMIN_SIGNAL_PATTERN =
+  /\b(vitamin|multivitamin|multi\b|prenatal|ascorbic|cholecalciferol|ergocalciferol|tocopherol|retinol|folate|folic acid|cobalamin|niacin|thiamin|riboflavin|biotin|pantothenic|lutein|coq10|ubiquinol|ubiquinone|b[- ]?complex)\b/;
+const MINERAL_SIGNAL_PATTERN =
+  /\b(magnesium|zinc|calcium|iron|selenium|copper|chromium|potassium|iodine|manganese|electrolyte)\b/;
+const HERB_SIGNAL_PATTERN =
+  /\b(ashwagandha|rhodiola|turmeric|elderberry|bacopa|ginseng|garlic|maca|valerian|mushroom|lion'?s mane|reishi|cordyceps|botanical|herbal?)\b/;
+const AMINO_ACID_FALLBACK_PATTERN =
+  /\b(creatine|taurine|theanine|carnitine|bcaa|eaa|amino acid|nac|n acetyl cysteine|glutamine|glycine|glutathione|arginine|citrulline|ornithine|5-htp|tryptophan|lysine|tyrosine)\b/;
+const ESSENTIAL_FALLBACK_PATTERN =
+  /\b(omega 3|omega3|fish oil|krill oil|cod liver oil|dha|epa|essential fatty|borage oil|evening primrose|flax oil|gla)\b/;
+const PROBIOTIC_DOSE_UNIT_PATTERN = /\b(?:cfu|billion(?:\s+cfu)?|million(?:\s+cfu)?|trillion(?:\s+cfu)?)\b/i;
 
 const hasStructuredDose = (value: string | null | undefined): boolean =>
   DISPLAYABLE_DOSE_PATTERN.test(normalizeDoseLabel(String(value ?? "")));
@@ -532,7 +558,131 @@ const getDisplayDose = (ingredientDose: string | null | undefined): string | nul
   return normalizeDoseLabel(extracted[0]);
 };
 
-const pickDisplayDose = (row: ProductSearchIndexRow): string => {
+const parseDoseMagnitude = (value: string | null | undefined): number | null => {
+  const match = normalizeDoseLabel(String(value ?? "")).match(/[<>~]?\s*([\d,]+(?:[.,]\d+)?)/);
+  if (!match?.[1]) return null;
+  const parsed = Number.parseFloat(match[1].replace(/,/g, ""));
+  return Number.isFinite(parsed) ? parsed : null;
+};
+
+const buildTitleSignalTokens = (title: string): string[] =>
+  Array.from(
+    new Set(
+      normalizeLookupText(title)
+        .split(" ")
+        .filter(
+          (token) =>
+            token.length >= 4 &&
+            !/^\d/.test(token) &&
+            !/^(capsule|capsules|tablet|tablets|softgel|softgels|powder|flavor|vegan|pack|packets|count|liquid)$/i.test(
+              token,
+            ),
+        ),
+    ),
+  );
+
+const getDoseUnit = (value: string | null | undefined): string | null => {
+  const normalized = normalizeDoseLabel(String(value ?? ""));
+  const match = normalized.match(
+    /\b(mcg|μg|µg|ug|mg|g|iu|ui|ml|cfu|billion(?:\s+cfu)?|million(?:\s+cfu)?|trillion(?:\s+cfu)?)\b/i,
+  );
+  return match?.[1]?.toLowerCase() ?? null;
+};
+
+const computeDoseCandidateScore = (
+  row: ProductSearchIndexRow,
+  ingredient: SearchIngredientRow,
+  typeKey: SearchTypeKey | null,
+): number => {
+  const name = normalizeLookupText(ingredient.name);
+  if (!name || NON_DISPLAY_DOSAGE_INGREDIENT_NAME_PATTERN.test(name)) return Number.NEGATIVE_INFINITY;
+
+  const displayDose = getDisplayDose(ingredient.dose);
+  if (!displayDose) return Number.NEGATIVE_INFINITY;
+
+  const magnitude = parseDoseMagnitude(displayDose);
+  if (magnitude !== null && magnitude <= 0) return Number.NEGATIVE_INFINITY;
+  const unit = getDoseUnit(displayDose);
+
+  let score = 0;
+  const titleTokens = buildTitleSignalTokens(row.title);
+  if (titleTokens.some((token) => name.includes(token))) score += 5;
+
+  if (typeKey === "probiotic" && PROBIOTIC_SIGNAL_PATTERN.test(name)) score += 8;
+  if (typeKey === "protein" && PROTEIN_SIGNAL_PATTERN.test(name)) score += 8;
+  if (typeKey === "vitamin" && VITAMIN_SIGNAL_PATTERN.test(name)) score += 8;
+  if (typeKey === "mineral" && MINERAL_SIGNAL_PATTERN.test(name)) score += 8;
+  if (typeKey === "herb" && HERB_SIGNAL_PATTERN.test(name)) score += 8;
+  if (typeKey === "protein" && unit === "g") score += 6;
+  if (typeKey === "protein" && (unit === "mg" || unit === "mcg" || unit === "ug")) score -= 4;
+
+  if (
+    ESSENTIAL_FALLBACK_PATTERN.test(normalizeLookupText(row.title)) &&
+    /\b(epa|dha|omega|fish oil|krill|borage|gla|primrose|cod liver|flax)\b/.test(name)
+  )
+    score += 7;
+  if (AMINO_ACID_FALLBACK_PATTERN.test(normalizeLookupText(row.title)) && AMINO_ACID_FALLBACK_PATTERN.test(name))
+    score += 7;
+  if (/\bblend\b/.test(name)) score += 2;
+
+  return score + 1;
+};
+
+const extractTitleDisplayDose = (title: string): string | null => {
+  const cleanedTitle = normalizeDoseLabel(title.replace(TITLE_PACKAGE_SIZE_PATTERN, " "));
+  const match = cleanedTitle.match(TITLE_DOSE_PATTERN);
+  if (!match?.[1]) return null;
+  return getDisplayDose(match[1]);
+};
+
+const pickDisplayDose = (row: ProductSearchIndexRow, typeKey: SearchTypeKey | null): string => {
+  const titleDose = extractTitleDisplayDose(row.title);
+  if (typeKey === "probiotic" && titleDose && PROBIOTIC_DOSE_UNIT_PATTERN.test(titleDose)) {
+    return titleDose;
+  }
+  if (typeKey === "protein" && titleDose) return titleDose;
+  if (titleDose) return titleDose;
+
+  const ingredientCandidates = row.ingredients
+    .map((ingredient) => ({
+      ingredient,
+      score: computeDoseCandidateScore(row, ingredient, typeKey),
+      displayDose: getDisplayDose(ingredient.dose),
+      unit: getDoseUnit(ingredient.dose),
+    }))
+    .filter((entry) => Number.isFinite(entry.score) && entry.displayDose);
+
+  if (typeKey === "protein") {
+    const proteinNamedGramCandidate = ingredientCandidates
+      .filter(
+        (entry) =>
+          entry.unit === "g" && PROTEIN_SIGNAL_PATTERN.test(normalizeLookupText(entry.ingredient.name)),
+      )
+      .sort((left, right) => right.score - left.score)[0];
+
+    if (proteinNamedGramCandidate?.displayDose) {
+      return proteinNamedGramCandidate.displayDose;
+    }
+
+    const servingDose = getDisplayDose(row.servingSize);
+    if (getDoseUnit(servingDose) === "g") {
+      return servingDose as string;
+    }
+
+    const gramCandidate = ingredientCandidates
+      .filter((entry) => entry.unit === "g")
+      .sort((left, right) => right.score - left.score)[0];
+    if (gramCandidate?.displayDose) {
+      return gramCandidate.displayDose;
+    }
+  }
+
+  const bestIngredient = ingredientCandidates.sort((left, right) => right.score - left.score)[0];
+
+  if (bestIngredient?.displayDose) {
+    return bestIngredient.displayDose;
+  }
+
   for (const ingredient of row.ingredients) {
     if (NON_DISPLAY_DOSAGE_INGREDIENT_NAME_PATTERN.test(ingredient.name.trim())) continue;
     const displayDose = getDisplayDose(ingredient.dose);
@@ -542,8 +692,9 @@ const pickDisplayDose = (row: ProductSearchIndexRow): string => {
   const primaryFactsDose = getDisplayDose(row.primaryFactsAmount);
   if (primaryFactsDose) return primaryFactsDose;
 
-  const servingDose = getDisplayDose(row.servingSize);
-  return servingDose ?? "";
+  if (titleDose) return titleDose;
+
+  return getDisplayDose(row.servingSize) ?? "";
 };
 
 const stripRedundantBrandPrefix = (title: string, brandName: string): string => {
@@ -576,56 +727,45 @@ const deriveTypeKeysFromContent = (input: {
   brandName: string;
   description: string | null;
   suggestedUse: string | null;
+  categories: string[];
   ingredients: SearchIngredientRow[];
 }): SearchTypeKey[] => {
-  const haystack = normalizeLookupText(
-    [
-      input.title,
-      input.brandName,
-      input.description ?? "",
-      input.suggestedUse ?? "",
-      ...input.ingredients.map((ingredient) => ingredient.name),
-    ].join(" "),
-  );
+  const titleHaystack = normalizeLookupText([input.title, input.brandName, ...input.categories].join(" "));
+  const ingredientHaystack = normalizeLookupText(input.ingredients.map((ingredient) => ingredient.name).join(" "));
+  const contextHaystack = normalizeLookupText([input.description ?? "", input.suggestedUse ?? ""].join(" "));
 
-  const next = new Set<SearchTypeKey>();
+  const scores = new Map<SearchTypeKey, number>();
+  const addScore = (key: SearchTypeKey, amount: number) => {
+    scores.set(key, (scores.get(key) ?? 0) + amount);
+  };
 
-  if (/\b(probiotic|lactobacillus|bifidobacter|saccharomyces|prebiotic|cfu)\b/.test(haystack)) {
-    next.add("probiotic");
-  }
-  const proteinSignalHaystack = normalizeLookupText(
-    [input.title, ...input.ingredients.map((ingredient) => ingredient.name), input.suggestedUse ?? ""].join(" "),
-  );
-  if (
-    /\b(protein|whey|casein|isolate|pea protein|rice protein|collagen peptides?|amino acid|bcaa|eaa)\b/.test(
-      proteinSignalHaystack,
-    )
-  ) {
-    next.add("protein");
-  }
-  if (
-    /\b(vitamin|ascorbic|cholecalciferol|ergocalciferol|tocopherol|retinol|folate|folic acid|cobalamin|niacin|thiamin|riboflavin|biotin|pantothenic)\b/.test(
-      haystack,
-    )
-  ) {
-    next.add("vitamin");
-  }
-  if (
-    /\b(magnesium|zinc|calcium|iron|selenium|copper|chromium|potassium|iodine|manganese|electrolyte)\b/.test(
-      haystack,
-    )
-  ) {
-    next.add("mineral");
-  }
-  if (
-    /\b(ashwagandha|rhodiola|turmeric|elderberry|bacopa|ginseng|garlic|maca|valerian|mushroom|lion'?s mane|reishi|cordyceps|botanical|herbal?)\b/.test(
-      haystack,
-    )
-  ) {
-    next.add("herb");
-  }
+  if (PROBIOTIC_SIGNAL_PATTERN.test(titleHaystack)) addScore("probiotic", 8);
+  if (PROBIOTIC_SIGNAL_PATTERN.test(ingredientHaystack)) addScore("probiotic", 6);
+  if (PROBIOTIC_SIGNAL_PATTERN.test(contextHaystack)) addScore("probiotic", 3);
 
-  return Array.from(next);
+  if (PROTEIN_SIGNAL_PATTERN.test(titleHaystack)) addScore("protein", 8);
+  if (PROTEIN_SIGNAL_PATTERN.test(ingredientHaystack)) addScore("protein", 6);
+
+  if (VITAMIN_SIGNAL_PATTERN.test(titleHaystack)) addScore("vitamin", 8);
+  if (VITAMIN_SIGNAL_PATTERN.test(ingredientHaystack)) addScore("vitamin", 6);
+  if (VITAMIN_SIGNAL_PATTERN.test(contextHaystack)) addScore("vitamin", 2);
+
+  if (MINERAL_SIGNAL_PATTERN.test(titleHaystack)) addScore("mineral", 8);
+  if (MINERAL_SIGNAL_PATTERN.test(ingredientHaystack)) addScore("mineral", 6);
+  if (MINERAL_SIGNAL_PATTERN.test(contextHaystack)) addScore("mineral", 2);
+
+  if (HERB_SIGNAL_PATTERN.test(titleHaystack)) addScore("herb", 8);
+  if (HERB_SIGNAL_PATTERN.test(ingredientHaystack)) addScore("herb", 6);
+  if (HERB_SIGNAL_PATTERN.test(contextHaystack)) addScore("herb", 2);
+
+  return Array.from(scores.entries())
+    .filter(([, score]) => score > 0)
+    .sort((left, right) => {
+      const scoreDelta = right[1] - left[1];
+      if (scoreDelta !== 0) return scoreDelta;
+      return TYPE_PRIORITY[right[0]] - TYPE_PRIORITY[left[0]];
+    })
+    .map(([key]) => key);
 };
 
 const getFallbackCardCategory = (input: {
@@ -646,10 +786,43 @@ const getFallbackCardCategory = (input: {
   if (/\b(omega 3|omega3|fish oil|dha|epa|essential fatty)\b/.test(haystack)) {
     return "Essential";
   }
-  if (/\b(creatine|taurine|theanine|carnitine|bcaa|eaa|amino acid)\b/.test(haystack)) {
+  if (AMINO_ACID_FALLBACK_PATTERN.test(haystack)) {
     return "Amino Acids";
   }
   return "Supplement";
+};
+
+const resolveCardCategoryLabel = (input: {
+  primaryTypeKey: SearchTypeKey | null;
+  fallbackCategory: string;
+  title: string;
+  description: string | null;
+  suggestedUse: string | null;
+  ingredients: SearchIngredientRow[];
+}): string => {
+  const haystack = normalizeLookupText(
+    [
+      input.title,
+      input.description ?? "",
+      input.suggestedUse ?? "",
+      ...input.ingredients.map((ingredient) => ingredient.name),
+    ].join(" "),
+  );
+
+  if (
+    ESSENTIAL_FALLBACK_PATTERN.test(haystack) &&
+    input.primaryTypeKey !== "protein" &&
+    input.primaryTypeKey !== "probiotic" &&
+    input.primaryTypeKey !== "herb"
+  ) {
+    return "Essential";
+  }
+
+  if (!input.primaryTypeKey && AMINO_ACID_FALLBACK_PATTERN.test(haystack)) {
+    return "Amino Acids";
+  }
+
+  return input.primaryTypeKey ? TYPE_KEY_TO_CARD_CATEGORY[input.primaryTypeKey] : input.fallbackCategory;
 };
 
 const getFallbackBenefit = (category: string): string => {
@@ -801,6 +974,7 @@ const enrichSearchRow = (row: ProductSearchIndexRow, baseSearchScore: number): E
     brandName: row.brandName,
     description: row.description,
     suggestedUse: row.suggestedUse,
+    categories: row.categories,
     ingredients: row.ingredients,
   });
   const primaryTypeKey = typeKeys[0] ?? null;
@@ -810,7 +984,14 @@ const enrichSearchRow = (row: ProductSearchIndexRow, baseSearchScore: number): E
     suggestedUse: row.suggestedUse,
     ingredients: row.ingredients,
   });
-  const categoryLabel = primaryTypeKey ? TYPE_KEY_TO_CARD_CATEGORY[primaryTypeKey] : fallbackCategory;
+  const categoryLabel = resolveCardCategoryLabel({
+    primaryTypeKey,
+    fallbackCategory,
+    title: row.title,
+    description: row.description,
+    suggestedUse: row.suggestedUse,
+    ingredients: row.ingredients,
+  });
   const goalHaystack = normalizeLookupText(
     [
       row.title,
@@ -844,7 +1025,7 @@ const enrichSearchRow = (row: ProductSearchIndexRow, baseSearchScore: number): E
       category: categoryLabel,
       categoryKey: primaryTypeKey,
       benefit,
-      dose: pickDisplayDose(row),
+      dose: pickDisplayDose(row, primaryTypeKey),
       imageUrl: row.imageUrl,
       popularityScore: row.brandPopularity,
       relevanceScore: baseSearchScore > 0 ? finalSearchScore : null,
