@@ -47,6 +47,7 @@ type ProductSearchIndexRow = {
   brandName: string;
   title: string;
   imageUrl: string | null;
+  primaryFactsAmount: string | null;
   servingSize: string | null;
   description: string | null;
   suggestedUse: string | null;
@@ -383,6 +384,26 @@ const readServingSize = (serving: Record<string, unknown>, supplementFacts: Reco
   return null;
 };
 
+const readPrimarySupplementFactsAmount = (supplementFacts: Record<string, unknown>): string | null => {
+  const nutritionalFactsRaw = Array.isArray(supplementFacts.nutritionalFacts)
+    ? supplementFacts.nutritionalFacts
+    : Array.isArray(supplementFacts.nutritional_facts)
+      ? supplementFacts.nutritional_facts
+      : [];
+
+  for (const entry of nutritionalFactsRaw) {
+    const record = toObjectRecord(entry);
+    const substance = safeTrim(record.substancy ?? record.substance ?? record.substance_name ?? record.name) ?? "";
+    const amount = safeTrim(record.amountPerServing ?? record.amount_per_serving ?? record.amount);
+    if (!amount) continue;
+    if (/^calories?$/i.test(substance)) continue;
+    if (/\b(?:calories?|kcal|cal)\b/i.test(amount)) continue;
+    return amount;
+  }
+
+  return null;
+};
+
 const extractOverlayCategories = (row: OverlaySearchTableRow): string[] => {
   if (!Array.isArray(row.categories)) return [];
   return row.categories
@@ -440,6 +461,7 @@ const buildProductSearchIndexRow = (
   const imageUrl = readOverlayImageUrl(rawRow as Record<string, unknown>);
   const barcode = safeTrim(rawRow.barcode_gtin14);
   const upcCode = safeTrim(rawRow.upc_code);
+  const primaryFactsAmount = readPrimarySupplementFactsAmount(supplementFacts);
   const servingSize = readServingSize(serving, supplementFacts);
   const searchText = buildSearchText({
     title,
@@ -460,6 +482,7 @@ const buildProductSearchIndexRow = (
     brandName,
     title,
     imageUrl,
+    primaryFactsAmount,
     servingSize,
     description,
     suggestedUse,
@@ -515,6 +538,9 @@ const pickDisplayDose = (row: ProductSearchIndexRow): string => {
     const displayDose = getDisplayDose(ingredient.dose);
     if (displayDose) return displayDose;
   }
+
+  const primaryFactsDose = getDisplayDose(row.primaryFactsAmount);
+  if (primaryFactsDose) return primaryFactsDose;
 
   const servingDose = getDisplayDose(row.servingSize);
   return servingDose ?? "";
