@@ -430,10 +430,67 @@ const buildProductSearchIndexRow = (
   };
 };
 
+const escapeRegExp = (value: string): string => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+const normalizeDoseLabel = (value: string): string =>
+  value
+    .replace(/\bgram(?:\s*\(s\))?s?\b/gi, "g")
+    .replace(/\bmilligram(?:\s*\(s\))?s?\b/gi, "mg")
+    .replace(/\bmicrogram(?:\s*\(s\))?s?\b/gi, "mcg")
+    .replace(/\binternational units?\b/gi, "IU")
+    .replace(/\bcfu\b/gi, "CFU")
+    .replace(/\(s\)/gi, "")
+    .replace(/\s+/g, " ")
+    .trim();
+
+const DISPLAYABLE_DOSE_PATTERN =
+  /^\s*[<>~]?\s*\d[\d,]*(?:[.,]\d+)?\s*(mcg|μg|µg|ug|mg|g|iu|ui|ml|cfu|billion|million|trillion)\b/i;
+
+const CALORIE_DOSE_PATTERN = /\b(?:calories?|kcal|cal)\b/i;
+
+const NON_DISPLAY_DOSAGE_INGREDIENT_NAME_PATTERN = /^calories?$/i;
+
 const hasStructuredDose = (value: string | null | undefined): boolean =>
-  /^\s*\d+(?:[.,]\d+)?\s*(mcg|μg|µg|ug|mg|g|iu|ui|ml|cfu|billion|million|trillion)\b/i.test(
-    String(value ?? ""),
-  );
+  DISPLAYABLE_DOSE_PATTERN.test(normalizeDoseLabel(String(value ?? "")));
+
+const getDisplayDose = (ingredientDose: string | null | undefined): string | null => {
+  const normalized = normalizeDoseLabel(String(ingredientDose ?? ""));
+  if (!normalized) return null;
+  if (CALORIE_DOSE_PATTERN.test(normalized)) return null;
+  if (!DISPLAYABLE_DOSE_PATTERN.test(normalized)) return null;
+  return normalized;
+};
+
+const pickDisplayDose = (row: ProductSearchIndexRow): string => {
+  for (const ingredient of row.ingredients) {
+    if (NON_DISPLAY_DOSAGE_INGREDIENT_NAME_PATTERN.test(ingredient.name.trim())) continue;
+    const displayDose = getDisplayDose(ingredient.dose);
+    if (displayDose) return displayDose;
+  }
+
+  const servingDose = getDisplayDose(row.servingSize);
+  return servingDose ?? "";
+};
+
+const stripRedundantBrandPrefix = (title: string, brandName: string): string => {
+  const trimmedTitle = title.trim();
+  const trimmedBrand = brandName.trim();
+  if (!trimmedTitle || !trimmedBrand) return trimmedTitle;
+
+  const looseBrandPattern = escapeRegExp(trimmedBrand).replace(/\s+/g, "[\\s,\\-–—]+");
+  const strippedTitle = trimmedTitle
+    .replace(new RegExp(`^${looseBrandPattern}[\\s,\\-–—:|]*`, "i"), "")
+    .trim();
+
+  return strippedTitle || trimmedTitle;
+};
+
+const normalizeDisplayTitle = (title: string, brandName: string): string =>
+  stripRedundantBrandPrefix(title, brandName)
+    .replace(/\s*,\s*,+/g, ", ")
+    .replace(/\s+,/g, ",")
+    .replace(/\s{2,}/g, " ")
+    .trim();
 
 const deriveFactsStatus = (ingredients: SearchIngredientRow[]): FactsStatus => {
   if (ingredients.length === 0) return "none";
@@ -701,12 +758,12 @@ const enrichSearchRow = (row: ProductSearchIndexRow, baseSearchScore: number): E
       id: row.id,
       productId: row.productId,
       barcode: row.barcode,
-      name: row.title,
+      name: normalizeDisplayTitle(row.title, row.brandName),
       brand: row.brandName,
       category: categoryLabel,
       categoryKey: primaryTypeKey,
       benefit,
-      dose: row.ingredients.find((ingredient) => ingredient.dose)?.dose ?? row.servingSize ?? "",
+      dose: pickDisplayDose(row),
       imageUrl: row.imageUrl,
       popularityScore: row.brandPopularity,
       relevanceScore: baseSearchScore > 0 ? finalSearchScore : null,

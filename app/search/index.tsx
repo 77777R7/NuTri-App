@@ -7,6 +7,7 @@ import { MotiView } from 'moti';
 import { ArrowLeft, ChevronRight, Search, X } from 'lucide-react-native';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
+  Image,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -113,7 +114,7 @@ const SearchPage = () => {
   const searchHeight = clamp(Math.round(48 * contentScale), 44, 52);
   const chipHeight = clamp(Math.round(36 * contentScale), 32, 40);
   const cardRadius = clamp(Math.round(22 * contentScale), 18, 24);
-  const cardMinHeight = clamp(Math.round(106 * contentScale), 98, 118);
+  const cardMinHeight = clamp(Math.round(114 * contentScale), 106, 126);
   const cardPaddingX = clamp(Math.round(16 * contentScale), 14, 18);
   const cardPaddingY = clamp(Math.round(15 * contentScale), 13, 18);
   const titleFontSize = clamp(Math.round(16 * contentScale), 15, 17);
@@ -122,6 +123,7 @@ const SearchPage = () => {
   const chipFontSize = clamp(Math.round(13 * contentScale), 12, 14);
   const categoryFontSize = clamp(Math.round(10.5 * contentScale), 10, 11);
   const actionSize = clamp(Math.round(36 * contentScale), 32, 40);
+  const imageSize = clamp(Math.round(54 * contentScale), 46, 58);
   const isNarrow = tokens.width < 380;
   const headerTitleGap = clamp(Math.round(sectionGap * 0.7), 12, 18);
   const headerOverlayHeight =
@@ -466,12 +468,25 @@ const SearchPage = () => {
                           },
                         ]}
                       >
-                        <View style={styles.resultCopy}>
-                          <View style={[styles.skeletonLine, styles.skeletonTitle]} />
-                          <View style={[styles.skeletonLine, styles.skeletonBenefit]} />
-                          <View style={styles.resultMetaRow}>
-                            <View style={styles.skeletonTag} />
-                            <View style={[styles.skeletonLine, styles.skeletonDose]} />
+                        <View style={styles.resultContentRow}>
+                          <View
+                            style={[
+                              styles.skeletonImage,
+                              {
+                                width: imageSize,
+                                height: imageSize,
+                                borderRadius: Math.round(imageSize * 0.24),
+                                marginRight: 12,
+                              },
+                            ]}
+                          />
+                          <View style={styles.resultCopy}>
+                            <View style={[styles.skeletonLine, styles.skeletonTitle]} />
+                            <View style={[styles.skeletonLine, styles.skeletonBenefit]} />
+                            <View style={styles.resultMetaRow}>
+                              <View style={styles.skeletonTag} />
+                              <View style={[styles.skeletonLine, styles.skeletonDose]} />
+                            </View>
                           </View>
                         </View>
                         <View style={styles.resultAction}>
@@ -518,56 +533,83 @@ const SearchPage = () => {
                             },
                           ]}
                         >
-                          <View style={styles.resultCopy}>
-                            <Text
-                              numberOfLines={1}
+                          <View style={styles.resultContentRow}>
+                            <View
                               style={[
-                                styles.resultTitle,
-                                { fontSize: titleFontSize, lineHeight: titleFontSize * 1.3 },
-                              ]}
-                            >
-                                {item.name}
-                              </Text>
-                            <Text
-                              numberOfLines={1}
-                              style={[
-                                styles.resultBenefit,
+                                styles.resultImageWrap,
                                 {
-                                  fontSize: benefitFontSize,
-                                  lineHeight: benefitFontSize * 1.45,
+                                  width: imageSize,
+                                  height: imageSize,
+                                  borderRadius: Math.round(imageSize * 0.24),
+                                  marginRight: 12,
                                 },
                               ]}
                             >
-                              {item.benefit}
-                            </Text>
-
-                            <View style={styles.resultMetaRow}>
-                              <View
+                              {item.imageUrl ? (
+                                <Image
+                                  source={{ uri: item.imageUrl }}
+                                  style={styles.resultImage}
+                                  resizeMode="contain"
+                                />
+                              ) : (
+                                <View style={styles.resultImageFallback}>
+                                  <Text style={styles.resultImageFallbackText}>
+                                    {item.category.slice(0, 1).toUpperCase()}
+                                  </Text>
+                                </View>
+                              )}
+                            </View>
+                            <View style={styles.resultCopy}>
+                              <Text
+                                numberOfLines={2}
                                 style={[
-                                  styles.categoryTag,
+                                  styles.resultTitle,
+                                  { fontSize: titleFontSize, lineHeight: titleFontSize * 1.22 },
+                                ]}
+                              >
+                                {item.name}
+                              </Text>
+                              <Text
+                                numberOfLines={1}
+                                style={[
+                                  styles.resultBenefit,
                                   {
-                                    backgroundColor: categoryStyle.pillBg,
-                                    borderColor: categoryStyle.pillBorder,
+                                    fontSize: benefitFontSize,
+                                    lineHeight: benefitFontSize * 1.45,
                                   },
                                 ]}
                               >
-                                <Text
+                                {item.benefit}
+                              </Text>
+
+                              <View style={styles.resultMetaRow}>
+                                <View
                                   style={[
-                                    styles.categoryTagText,
+                                    styles.categoryTag,
                                     {
-                                      color: categoryStyle.pillText,
-                                      fontSize: categoryFontSize,
+                                      backgroundColor: categoryStyle.pillBg,
+                                      borderColor: categoryStyle.pillBorder,
                                     },
                                   ]}
                                 >
-                                  {item.category}
-                                </Text>
+                                  <Text
+                                    style={[
+                                      styles.categoryTagText,
+                                      {
+                                        color: categoryStyle.pillText,
+                                        fontSize: categoryFontSize,
+                                      },
+                                    ]}
+                                  >
+                                    {item.category}
+                                  </Text>
+                                </View>
+                                {item.dose ? (
+                                  <Text style={[styles.doseText, { fontSize: doseFontSize }]}>
+                                    {item.dose}
+                                  </Text>
+                                ) : null}
                               </View>
-                              {item.dose ? (
-                                <Text style={[styles.doseText, { fontSize: doseFontSize }]}>
-                                  {item.dose}
-                                </Text>
-                              ) : null}
                             </View>
                           </View>
 
@@ -785,9 +827,41 @@ const styles = StyleSheet.create({
   resultCardSkeleton: {
     backgroundColor: '#FFFFFF',
   },
+  resultContentRow: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    minWidth: 0,
+  },
+  resultImageWrap: {
+    overflow: 'hidden',
+    backgroundColor: '#F7F9FC',
+    borderWidth: 1,
+    borderColor: 'rgba(226,232,240,0.92)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  resultImage: {
+    width: '100%',
+    height: '100%',
+  },
+  resultImageFallback: {
+    width: '100%',
+    height: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#EEF2F7',
+  },
+  resultImageFallbackText: {
+    color: '#91A0B8',
+    fontSize: 16,
+    fontWeight: '800',
+    letterSpacing: -0.3,
+  },
   resultCopy: {
     flex: 1,
-    paddingRight: 12,
+    minWidth: 0,
+    paddingRight: 8,
   },
   resultTitle: {
     color: '#14213D',
@@ -841,6 +915,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#F3F6FA',
     shadowOpacity: 0,
     elevation: 0,
+  },
+  skeletonImage: {
+    backgroundColor: '#EEF2F7',
   },
   skeletonLine: {
     borderRadius: 999,
