@@ -118,6 +118,8 @@ const SearchPage = () => {
   const { bleedStyle, contentStyle } = useFullBleed(tokens.pageX);
   const scrollY = useSharedValue(0);
   const hasMountedRef = useRef(false);
+  const requestSeqRef = useRef(0);
+  const resultsCacheRef = useRef<Map<string, SearchSupplement[]>>(new Map());
 
   const contentScale = clamp(Math.min(tokens.width, 430) / 390, 0.92, 1.06);
   const horizontalPadding = tokens.pageX;
@@ -157,6 +159,10 @@ const SearchPage = () => {
   const railFadeStart = clamp(Math.round(110 * contentScale), 92, 128);
   const railFadeEnd = clamp(Math.round(184 * contentScale), 148, 208);
   const debouncedQuery = useMemo(() => searchQuery.trim(), [searchQuery]);
+  const requestKey = useMemo(
+    () => `${activeFilter}::${debouncedQuery.toLowerCase()}`,
+    [activeFilter, debouncedQuery],
+  );
 
   useEffect(() => {
     if (!hasMountedRef.current) {
@@ -167,8 +173,18 @@ const SearchPage = () => {
   }, [activeFilter]);
 
   useEffect(() => {
+    const cachedResults = resultsCacheRef.current.get(requestKey);
+    if (cachedResults) {
+      setResults(cachedResults);
+      setLoading(false);
+      setErrorMessage(null);
+      return;
+    }
+
     const controller = new AbortController();
     let didTimeout = false;
+    const requestSeq = requestSeqRef.current + 1;
+    requestSeqRef.current = requestSeq;
 
     const debounceTimeout = setTimeout(async () => {
       const requestTimeout = setTimeout(() => {
@@ -193,9 +209,13 @@ const SearchPage = () => {
         );
 
         const payload = resolveSearchPayload(response);
-        setResults(payload.supplements ?? []);
+        if (requestSeq !== requestSeqRef.current) return;
+        const nextResults = payload.supplements ?? [];
+        resultsCacheRef.current.set(requestKey, nextResults);
+        setResults(nextResults);
       } catch (error) {
         if (controller.signal.aborted && !didTimeout) return;
+        if (requestSeq !== requestSeqRef.current) return;
         setErrorMessage(
           didTimeout
             ? 'Search is still warming up. Please try again in a moment.'
@@ -206,17 +226,53 @@ const SearchPage = () => {
         setResults([]);
       } finally {
         clearTimeout(requestTimeout);
-        if (!controller.signal.aborted || didTimeout) {
+        if (requestSeq === requestSeqRef.current && (!controller.signal.aborted || didTimeout)) {
           setLoading(false);
         }
       }
-    }, debouncedQuery.length >= 2 ? 220 : 80);
+    }, debouncedQuery.length >= 2 ? 220 : 30);
 
     return () => {
       controller.abort();
       clearTimeout(debounceTimeout);
     };
-  }, [activeFilter, debouncedQuery]);
+  }, [activeFilter, debouncedQuery, requestKey]);
+
+  useEffect(() => {
+    if (debouncedQuery.length > 0 || loading || results.length === 0) return;
+
+    const categoriesToPrefetch = CATEGORIES.filter(
+      (category) => category !== 'All' && !resultsCacheRef.current.has(`${category}::`),
+    );
+    if (categoriesToPrefetch.length === 0) return;
+
+    let cancelled = false;
+
+    const runPrefetch = async () => {
+      for (const category of categoriesToPrefetch) {
+        if (cancelled) return;
+        try {
+          const response = await apiClient.search({
+            query: '',
+            category,
+            page: 1,
+            limit: 20,
+          });
+          if (cancelled) return;
+          const payload = resolveSearchPayload(response);
+          resultsCacheRef.current.set(`${category}::`, payload.supplements ?? []);
+        } catch {
+          // Ignore background prefetch failures. The foreground request path still handles errors.
+        }
+      }
+    };
+
+    void runPrefetch();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [debouncedQuery, loading, results]);
 
   const handleOpenResult = React.useCallback((item: SearchSupplement) => {
     const scanCode = item.barcode?.trim() || item.upcCode?.trim();
@@ -239,6 +295,11 @@ const SearchPage = () => {
       },
     });
   }, []);
+
+  const handleSelectCategory = React.useCallback((category: Category) => {
+    if (category === activeFilter) return;
+    setActiveFilter(category);
+  }, [activeFilter]);
 
   const handleScroll = useAnimatedScrollHandler({
     onScroll: (event) => {
@@ -448,7 +509,7 @@ const SearchPage = () => {
                         return (
                           <Pressable
                             key={category}
-                            onPress={() => setActiveFilter(category)}
+                            onPress={() => handleSelectCategory(category)}
                             style={[
                               styles.filterChip,
                               { height: chipHeight, borderRadius: chipHeight / 2 },
@@ -555,7 +616,7 @@ const SearchPage = () => {
                     const categoryStyle = CATEGORY_STYLES[item.category] ?? CATEGORY_STYLES.Supplement;
                     return (
                     <MotiView
-                      key={`${resultsTransitionKey}-${item.id}`}
+                      key={`${resultsTransitionKey}-${requestKey}-${item.id}`}
                       from={{ opacity: 0, translateY: 12 }}
                       animate={{ opacity: 1, translateY: 0 }}
                       transition={{
