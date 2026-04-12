@@ -142,7 +142,7 @@ import { buildMySupplementFactsV1, type MySupplementFactsV1 } from "./mySuppleme
 import { getMySupplementOverviewV2GateReason } from "./mySupplementOverviewGate.js";
 import { getNutriTipsData } from "./nutriTips.js";
 import { buildRuleBasedOverview } from "./overviewRuleBased.js";
-import { searchProducts, warmProductSearchIndex } from "./productSearch.js";
+import { getProductSearchBootstrap, searchProducts, warmProductSearchIndex } from "./productSearch.js";
 import * as profileResolverModule from "../../lib/personalization/core/profileResolver.ts";
 import {
   buildEnsureOverviewInflightKey,
@@ -9601,6 +9601,24 @@ app.get("/api/search", async (req: Request, res: Response) => {
     return res.status(500).json({
       success: false,
       message: "Search temporarily unavailable",
+    });
+  }
+});
+
+app.get("/api/search/bootstrap", async (_req: Request, res: Response) => {
+  try {
+    const payload = await getProductSearchBootstrap();
+    res.setHeader("Cache-Control", "private, max-age=300");
+    return res.json({
+      success: true,
+      data: payload,
+    });
+  } catch (error) {
+    captureException(error, { route: "/api/search/bootstrap" });
+    console.error("/api/search/bootstrap unexpected error", error);
+    return res.status(500).json({
+      success: false,
+      message: "Search bootstrap temporarily unavailable",
     });
   }
 });

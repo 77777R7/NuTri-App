@@ -1,6 +1,12 @@
 import { useScreenTokens } from '@/hooks/useScreenTokens';
 import { useFullBleed } from '@/hooks/useFullBleed';
-import { apiClient, type SearchAPIResponse, type SearchSupplement } from '@/lib/api-client';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import {
+  apiClient,
+  type SearchAPIResponse,
+  type SearchBootstrapAPIResponse,
+  type SearchSupplement,
+} from '@/lib/api-client';
 import { ensureSessionId, setScanSession } from '@/lib/scan/session';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Stack, router } from 'expo-router';
@@ -51,9 +57,14 @@ const CATEGORIES: Category[] = [
   'Protein',
 ];
 const SEARCH_REQUEST_TIMEOUT_MS = 8000;
+const SEARCH_BOOTSTRAP_STORAGE_KEY = 'product-search-bootstrap-v2';
+const SEARCH_BOOTSTRAP_MAX_AGE_MS = 6 * 60 * 60 * 1000;
 
 const buildSearchRequestKey = (category: Category, query: string) =>
   `${category}::${query.trim().toLowerCase()}`;
+
+const resolveSearchBootstrapPayload = (response: SearchBootstrapAPIResponse) =>
+  'data' in response ? response.data : response;
 
 const CATEGORY_STYLES: Record<string, { pillBg: string; pillText: string; pillBorder: string }> = {
   Vitamins: {
@@ -110,6 +121,14 @@ const buildBrandMonogram = (brand: string) => {
   return `${parts[0][0] ?? ''}${parts[1][0] ?? ''}`.toUpperCase();
 };
 
+type StoredSearchBootstrap = {
+  savedAt: number;
+  categories: Partial<Record<Category, SearchSupplement[]>>;
+};
+
+const isCategory = (value: string): value is Category =>
+  CATEGORIES.includes(value as Category);
+
 const SearchPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState<Category>('All');
@@ -117,13 +136,18 @@ const SearchPage = () => {
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [resultsTransitionKey, setResultsTransitionKey] = useState(0);
+  const [bootstrapStatus, setBootstrapStatus] = useState<'idle' | 'loading' | 'ready' | 'failed'>(
+    'idle',
+  );
   const tokens = useScreenTokens(NAV_HEIGHT);
   const { bleedStyle, contentStyle } = useFullBleed(tokens.pageX);
   const scrollY = useSharedValue(0);
   const requestSeqRef = useRef(0);
   const resultsCacheRef = useRef<Map<string, SearchSupplement[]>>(new Map());
   const inflightResultsRef = useRef<Map<string, Promise<SearchSupplement[]>>>(new Map());
-  const prefetchedEmptyCategoriesRef = useRef(false);
+  const bootstrapSeededRef = useRef(false);
+  const bootstrapInflightRef = useRef<Promise<void> | null>(null);
+  const [storageHydrated, setStorageHydrated] = useState(false);
 
   const contentScale = clamp(Math.min(tokens.width, 430) / 390, 0.92, 1.06);
   const horizontalPadding = tokens.pageX;
@@ -166,6 +190,24 @@ const SearchPage = () => {
   const requestKey = useMemo(
     () => buildSearchRequestKey(activeFilter, debouncedQuery),
     [activeFilter, debouncedQuery],
+  );
+
+  const seedBootstrapCategories = React.useCallback(
+    (categories: Partial<Record<Category, SearchSupplement[]>>) => {
+      let seededAny = false;
+
+      for (const [category, supplements] of Object.entries(categories)) {
+        if (!isCategory(category) || !Array.isArray(supplements)) continue;
+        resultsCacheRef.current.set(buildSearchRequestKey(category, ''), supplements);
+        seededAny = true;
+      }
+
+      if (seededAny) {
+        bootstrapSeededRef.current = true;
+        setBootstrapStatus('ready');
+      }
+    },
+    [],
   );
 
   const applyResolvedResults = React.useCallback(
@@ -222,12 +264,55 @@ const SearchPage = () => {
   );
 
   useEffect(() => {
+    let cancelled = false;
+
+    const hydrateStoredBootstrap = async () => {
+      try {
+        const raw = await AsyncStorage.getItem(SEARCH_BOOTSTRAP_STORAGE_KEY);
+        if (!raw || cancelled) return;
+        const parsed = JSON.parse(raw) as StoredSearchBootstrap;
+        if (
+          !parsed ||
+          typeof parsed !== 'object' ||
+          typeof parsed.savedAt !== 'number' ||
+          !parsed.categories ||
+          Date.now() - parsed.savedAt > SEARCH_BOOTSTRAP_MAX_AGE_MS
+        ) {
+          return;
+        }
+
+        seedBootstrapCategories(parsed.categories);
+      } catch {
+        // Ignore corrupt local cache and rebuild it from the server bootstrap.
+      } finally {
+        if (!cancelled) {
+          setStorageHydrated(true);
+        }
+      }
+    };
+
+    void hydrateStoredBootstrap();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [seedBootstrapCategories]);
+
+  useEffect(() => {
+    if (!storageHydrated && debouncedQuery.length === 0) return;
+
     const requestSeq = requestSeqRef.current + 1;
     requestSeqRef.current = requestSeq;
     const cachedResults = resultsCacheRef.current.get(requestKey);
     if (cachedResults) {
       applyResolvedResults(cachedResults);
       setLoading(false);
+      setErrorMessage(null);
+      return;
+    }
+
+    if (debouncedQuery.length === 0 && bootstrapStatus === 'loading') {
+      setLoading(true);
       setErrorMessage(null);
       return;
     }
@@ -279,34 +364,73 @@ const SearchPage = () => {
       controller.abort();
       clearTimeout(debounceTimeout);
     };
-  }, [activeFilter, debouncedQuery, requestKey]);
+  }, [
+    activeFilter,
+    applyResolvedResults,
+    bootstrapStatus,
+    debouncedQuery,
+    fetchSearchResults,
+    requestKey,
+    storageHydrated,
+  ]);
 
   useEffect(() => {
-    if (debouncedQuery.length > 0 || loading || results.length === 0) return;
+    if (!storageHydrated || debouncedQuery.length > 0 || bootstrapSeededRef.current) return;
+    if (bootstrapInflightRef.current) return;
 
-    const categoriesToPrefetch = CATEGORIES.filter(
-      (category) =>
-        category !== 'All' && !resultsCacheRef.current.has(buildSearchRequestKey(category, '')),
-    );
-    if (categoriesToPrefetch.length === 0) return;
-    if (prefetchedEmptyCategoriesRef.current) return;
+    let cancelled = false;
 
-    prefetchedEmptyCategoriesRef.current = true;
+    const runBootstrap = async () => {
+      setBootstrapStatus('loading');
+      const bootstrapPromise = (async () => {
+        const response = await apiClient.searchBootstrap();
+        if (cancelled) return;
+        const payload = resolveSearchBootstrapPayload(response);
+        const nextCategories = Object.fromEntries(
+          Object.entries(payload.categories ?? {}).filter(
+            ([category, supplements]) => isCategory(category) && Array.isArray(supplements),
+          ),
+        ) as Partial<Record<Category, SearchSupplement[]>>;
 
-    const runPrefetch = async () => {
-      await Promise.allSettled(
-        categoriesToPrefetch.map((category) =>
-          fetchSearchResults({
-            key: buildSearchRequestKey(category, ''),
-            query: '',
-            category,
-          }),
-        ),
-      );
+        seedBootstrapCategories(nextCategories);
+        setBootstrapStatus('ready');
+        await AsyncStorage.setItem(
+          SEARCH_BOOTSTRAP_STORAGE_KEY,
+          JSON.stringify({
+            savedAt: Date.now(),
+            categories: nextCategories,
+          } satisfies StoredSearchBootstrap),
+        );
+
+        const currentResults = resultsCacheRef.current.get(buildSearchRequestKey(activeFilter, ''));
+        if (currentResults) {
+          applyResolvedResults(currentResults);
+          setLoading(false);
+        }
+      })();
+
+      bootstrapInflightRef.current = bootstrapPromise;
+
+      try {
+        await bootstrapPromise;
+      } catch {
+        if (!cancelled) {
+          setBootstrapStatus('failed');
+        }
+        // Keep the page usable; per-filter fetches still work if bootstrap fails.
+      } finally {
+        if (bootstrapInflightRef.current === bootstrapPromise) {
+          bootstrapInflightRef.current = null;
+        }
+      }
     };
 
-    void runPrefetch();
-  }, [debouncedQuery, fetchSearchResults, loading, results]);
+    void runBootstrap();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [activeFilter, applyResolvedResults, debouncedQuery, seedBootstrapCategories, storageHydrated]);
 
   const handleOpenResult = React.useCallback((item: SearchSupplement) => {
     const scanCode = item.barcode?.trim() || item.upcCode?.trim();
