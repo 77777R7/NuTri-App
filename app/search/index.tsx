@@ -44,6 +44,7 @@ const CATEGORIES: Category[] = [
   'Probiotics',
   'Protein',
 ];
+const SEARCH_REQUEST_TIMEOUT_MS = 8000;
 
 const CATEGORY_STYLES: Record<string, { pillBg: string; pillText: string; pillBorder: string }> = {
   Vitamins: {
@@ -150,7 +151,14 @@ const SearchPage = () => {
 
   useEffect(() => {
     const controller = new AbortController();
-    const timeout = setTimeout(async () => {
+    let didTimeout = false;
+
+    const debounceTimeout = setTimeout(async () => {
+      const requestTimeout = setTimeout(() => {
+        didTimeout = true;
+        controller.abort();
+      }, SEARCH_REQUEST_TIMEOUT_MS);
+
       try {
         setLoading(true);
         setErrorMessage(null);
@@ -170,11 +178,18 @@ const SearchPage = () => {
         const payload = resolveSearchPayload(response);
         setResults(payload.supplements ?? []);
       } catch (error) {
-        if (controller.signal.aborted) return;
-        setErrorMessage(error instanceof Error ? error.message : 'Search failed');
+        if (controller.signal.aborted && !didTimeout) return;
+        setErrorMessage(
+          didTimeout
+            ? 'Search is still warming up. Please try again in a moment.'
+            : error instanceof Error
+              ? error.message
+              : 'Search failed',
+        );
         setResults([]);
       } finally {
-        if (!controller.signal.aborted) {
+        clearTimeout(requestTimeout);
+        if (!controller.signal.aborted || didTimeout) {
           setLoading(false);
         }
       }
@@ -182,7 +197,7 @@ const SearchPage = () => {
 
     return () => {
       controller.abort();
-      clearTimeout(timeout);
+      clearTimeout(debounceTimeout);
     };
   }, [activeFilter, debouncedQuery]);
 

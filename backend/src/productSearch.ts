@@ -117,7 +117,32 @@ const DEFAULT_LIMIT = 20;
 const MAX_LIMIT = 30;
 const MAX_PRELIMINARY_CANDIDATES = 180;
 const MAX_SUGGESTION_BRANDS = 6;
+const COLD_FALLBACK_QUERY_LIMIT = 220;
+const COLD_FALLBACK_BROWSE_LIMIT = 320;
 const POPULAR_SEARCHES = ["Magnesium", "Vitamin D", "Omega-3", "Probiotic", "Ashwagandha"];
+const OVERLAY_SEARCH_SELECT =
+  "id,product_id,upc_code,barcode_gtin14,brand_name,title,product_catalog_image,product_images,categories,serving,supplement_facts,description_sections,updated_at";
+const POPULAR_FALLBACK_BRANDS = [
+  "Swanson",
+  "NOW Foods",
+  "Nutricost",
+  "Solgar",
+  "Solaray",
+  "Source Naturals",
+  "California Gold Nutrition",
+  "Nature's Way",
+  "Nature Made",
+  "Nature's Bounty",
+  "Healthy Origins",
+  "Pure Encapsulations",
+  "Carlson",
+  "Garden of Life",
+  "Nordic Naturals",
+  "Sports Research",
+  "Natrol",
+  "Centrum",
+  "Qunol",
+] as const;
 
 const FILTER_CATEGORY_TO_TYPE_KEY: Record<string, SearchTypeKey> = {
   vitamins: "vitamin",
@@ -236,8 +261,23 @@ const normalizeSearchText = (value: string): string =>
     .replace(/\s+/g, " ")
     .trim();
 
+const POPULAR_FALLBACK_BRAND_SCORES = new Map(
+  POPULAR_FALLBACK_BRANDS.map((brand, index) => [
+    normalizeSearchText(brand),
+    (POPULAR_FALLBACK_BRANDS.length - index) * 120,
+  ]),
+);
+
 const normalizeLookupText = (value: string | null | undefined): string =>
   normalizeSearchText(String(value ?? ""));
+
+const toPostgrestIlikeValue = (value: string | null | undefined): string | null => {
+  const normalized = normalizeLookupText(value).replace(/[%_,]/g, " ").trim();
+  return normalized.length > 0 ? normalized : null;
+};
+
+const getFallbackBrandPopularity = (brandName: string, batchCount: number): number =>
+  (POPULAR_FALLBACK_BRAND_SCORES.get(normalizeLookupText(brandName)) ?? 0) + batchCount * 12;
 
 const normalizeSectionKey = (value: string): string =>
   value
@@ -338,6 +378,56 @@ const extractOverlayIngredients = (row: OverlaySearchTableRow): SearchIngredient
           : null,
     descriptionText: readSectionText(descriptionSections, ["description"]),
   });
+};
+
+const buildProductSearchIndexRow = (
+  rawRow: OverlaySearchTableRow,
+  brandPopularity: number,
+): ProductSearchIndexRow | null => {
+  const productId = safeTrim(rawRow.product_id);
+  const title = safeTrim(rawRow.title);
+  const brandName = safeTrim(rawRow.brand_name);
+  if (!productId || !title || !brandName) return null;
+
+  const supplementFacts = toObjectRecord(rawRow.supplement_facts);
+  const descriptionSections = toObjectRecord(rawRow.description_sections);
+  const serving = toObjectRecord(rawRow.serving);
+  const categories = extractOverlayCategories(rawRow);
+  const ingredients = extractOverlayIngredients(rawRow);
+  const description = readSectionText(descriptionSections, ["description"]);
+  const suggestedUse = readSectionText(descriptionSections, ["suggested use", "suggested usage", "suggested use."]);
+  const imageUrl = readOverlayImageUrl(rawRow as Record<string, unknown>);
+  const barcode = safeTrim(rawRow.barcode_gtin14);
+  const upcCode = safeTrim(rawRow.upc_code);
+  const servingSize = readServingSize(serving, supplementFacts);
+  const searchText = buildSearchText({
+    title,
+    brandName,
+    barcode,
+    upcCode,
+    categories,
+    ingredients,
+    description,
+    suggestedUse,
+  });
+
+  return {
+    id: String(rawRow.id ?? productId),
+    productId,
+    barcode,
+    upcCode,
+    brandName,
+    title,
+    imageUrl,
+    servingSize,
+    description,
+    suggestedUse,
+    categories,
+    ingredients,
+    updatedAt: rawRow.updated_at ?? null,
+    searchText,
+    brandPopularity,
+  };
 };
 
 const hasStructuredDose = (value: string | null | undefined): boolean =>
@@ -701,9 +791,7 @@ const buildSearchIndex = async (): Promise<ProductSearchIndex> => {
   while (true) {
     let query = supabase
       .from("iherb_overlay_products")
-      .select(
-        "id,product_id,upc_code,barcode_gtin14,brand_name,title,product_catalog_image,product_images,categories,serving,supplement_facts,description_sections,updated_at",
-      )
+      .select(OVERLAY_SEARCH_SELECT)
       .order("id", { ascending: true })
       .limit(OVERLAY_PAGE_SIZE);
 
@@ -725,53 +813,14 @@ const buildSearchIndex = async (): Promise<ProductSearchIndex> => {
     if (batch.length === 0) break;
 
     for (const rawRow of batch) {
-      const productId = safeTrim(rawRow.product_id);
-      const title = safeTrim(rawRow.title);
       const brandName = safeTrim(rawRow.brand_name);
-      if (!productId || !title || !brandName) continue;
-
-      const supplementFacts = toObjectRecord(rawRow.supplement_facts);
-      const descriptionSections = toObjectRecord(rawRow.description_sections);
-      const serving = toObjectRecord(rawRow.serving);
-      const categories = extractOverlayCategories(rawRow);
-      const ingredients = extractOverlayIngredients(rawRow);
-      const description = readSectionText(descriptionSections, ["description"]);
-      const suggestedUse = readSectionText(descriptionSections, ["suggested use", "suggested usage", "suggested use."]);
-      const imageUrl = readOverlayImageUrl(rawRow as Record<string, unknown>);
-      const barcode = safeTrim(rawRow.barcode_gtin14);
-      const upcCode = safeTrim(rawRow.upc_code);
-      const servingSize = readServingSize(serving, supplementFacts);
-      const searchText = buildSearchText({
-        title,
-        brandName,
-        barcode,
-        upcCode,
-        categories,
-        ingredients,
-        description,
-        suggestedUse,
-      });
-
+      if (!brandName) continue;
       const normalizedBrand = normalizeLookupText(brandName);
       brandCounts.set(normalizedBrand, (brandCounts.get(normalizedBrand) ?? 0) + 1);
-
-      rows.push({
-        id: String(rawRow.id ?? productId),
-        productId,
-        barcode,
-        upcCode,
-        brandName,
-        title,
-        imageUrl,
-        servingSize,
-        description,
-        suggestedUse,
-        categories,
-        ingredients,
-        updatedAt: rawRow.updated_at ?? null,
-        searchText,
-        brandPopularity: 0,
-      });
+      const builtRow = buildProductSearchIndexRow(rawRow, 0);
+      if (builtRow) {
+        rows.push(builtRow);
+      }
     }
 
     const nextLastSeenId = Number(batch[batch.length - 1]?.id ?? 0);
@@ -788,10 +837,10 @@ const buildSearchIndex = async (): Promise<ProductSearchIndex> => {
   };
 };
 
-const getSearchIndex = async (): Promise<ProductSearchIndex> => {
+const ensureSearchIndexWarm = (): Promise<ProductSearchIndex> => {
   const now = Date.now();
   if (cachedSearchIndex && now - cachedSearchIndex.builtAt < SEARCH_INDEX_TTL_MS) {
-    return cachedSearchIndex;
+    return Promise.resolve(cachedSearchIndex);
   }
 
   if (inflightSearchIndexBuild) {
@@ -810,7 +859,94 @@ const getSearchIndex = async (): Promise<ProductSearchIndex> => {
   return inflightSearchIndexBuild;
 };
 
-export const searchProducts = async (params: SearchParams): Promise<ProductSearchResponse> => {
+const warmSearchIndexInBackground = (): void => {
+  void ensureSearchIndexWarm().catch((error) => {
+    console.error("[product-search] background warm failed", error);
+  });
+};
+
+const getUsableSearchIndex = (): ProductSearchIndex | null => {
+  const now = Date.now();
+  if (cachedSearchIndex && now - cachedSearchIndex.builtAt < SEARCH_INDEX_TTL_MS) {
+    return cachedSearchIndex;
+  }
+
+  if (cachedSearchIndex) {
+    warmSearchIndexInBackground();
+    return cachedSearchIndex;
+  }
+
+  warmSearchIndexInBackground();
+  return null;
+};
+
+const buildFallbackRows = (batch: OverlaySearchTableRow[]): ProductSearchIndexRow[] => {
+  const brandCounts = new Map<string, number>();
+  for (const rawRow of batch) {
+    const brandName = safeTrim(rawRow.brand_name);
+    if (!brandName) continue;
+    const normalizedBrand = normalizeLookupText(brandName);
+    brandCounts.set(normalizedBrand, (brandCounts.get(normalizedBrand) ?? 0) + 1);
+  }
+
+  return batch
+    .map((rawRow) => {
+      const brandName = safeTrim(rawRow.brand_name);
+      const fallbackPopularity = brandName
+        ? getFallbackBrandPopularity(brandName, brandCounts.get(normalizeLookupText(brandName)) ?? 0)
+        : 0;
+      return buildProductSearchIndexRow(rawRow, fallbackPopularity);
+    })
+    .filter((row): row is ProductSearchIndexRow => Boolean(row));
+};
+
+const fetchColdFallbackRows = async (params: SearchParams): Promise<ProductSearchIndexRow[]> => {
+  const queryLike = toPostgrestIlikeValue(params.query);
+  const brandLike = toPostgrestIlikeValue(params.brand);
+  const hasQuery = Boolean(queryLike);
+  const shouldUsePopularBrandBrowse = !hasQuery && !brandLike;
+
+  let query = supabase
+    .from("iherb_overlay_products")
+    .select(OVERLAY_SEARCH_SELECT)
+    .order("updated_at", { ascending: false })
+    .limit(hasQuery ? COLD_FALLBACK_QUERY_LIMIT : COLD_FALLBACK_BROWSE_LIMIT);
+
+  if (brandLike) {
+    query = query.ilike("brand_name", `%${brandLike}%`);
+  }
+
+  if (queryLike) {
+    query = query.or(
+      [
+        `title.ilike.%${queryLike}%`,
+        `brand_name.ilike.%${queryLike}%`,
+        `upc_code.ilike.%${queryLike}%`,
+        `barcode_gtin14.ilike.%${queryLike}%`,
+      ].join(","),
+    );
+  } else if (shouldUsePopularBrandBrowse) {
+    query = query.in("brand_name", [...POPULAR_FALLBACK_BRANDS]);
+  }
+
+  const { data, error } = await withRetry(() => query, {
+    retries: 2,
+    baseDelayMs: 120,
+    maxDelayMs: 800,
+  });
+
+  if (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(`[product-search] cold fallback read failed: ${message}`);
+  }
+
+  return buildFallbackRows(Array.isArray(data) ? (data as OverlaySearchTableRow[]) : []);
+};
+
+const buildSearchResponseFromRows = (
+  rows: ProductSearchIndexRow[],
+  params: SearchParams,
+): ProductSearchResponse => {
   const page = Number.isFinite(params.page) && (params.page ?? 0) > 0 ? Math.floor(params.page as number) : 1;
   const limit = Math.min(
     MAX_LIMIT,
@@ -821,8 +957,7 @@ export const searchProducts = async (params: SearchParams): Promise<ProductSearc
   const normalizedBrandFilter = normalizeLookupText(params.brand);
   const categoryTypeKey = categoryFilterToTypeKey(params.category);
 
-  const index = await getSearchIndex();
-  let preliminary = index.rows
+  let preliminary = rows
     .filter((row) =>
       normalizedBrandFilter ? normalizeLookupText(row.brandName).includes(normalizedBrandFilter) : true,
     )
@@ -877,4 +1012,20 @@ export const searchProducts = async (params: SearchParams): Promise<ProductSearc
       popularSearches: POPULAR_SEARCHES,
     },
   };
+};
+
+export const searchProducts = async (params: SearchParams): Promise<ProductSearchResponse> => {
+  const index = getUsableSearchIndex();
+  if (index) {
+    return buildSearchResponseFromRows(index.rows, params);
+  }
+
+  console.info("[product-search] using cold fallback while warming full index", {
+    query: safeTrim(params.query) ?? null,
+    category: safeTrim(params.category) ?? null,
+    brand: safeTrim(params.brand) ?? null,
+  });
+
+  const fallbackRows = await fetchColdFallbackRows(params);
+  return buildSearchResponseFromRows(fallbackRows, params);
 };
