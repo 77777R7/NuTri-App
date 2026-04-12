@@ -1,4 +1,4 @@
-import { normalizeIherbSupplementFactsRowsForGoalNavigatorCoverage } from "./iherbOverlayIngredients.js";
+import { normalizeIherbSupplementFactsRowsWithTitleFallback } from "./iherbOverlayIngredients.js";
 import { supabase } from "./supabase.js";
 import { withRetry } from "./supabaseRetry.js";
 
@@ -319,7 +319,7 @@ const extractOverlayIngredients = (row: OverlaySearchTableRow): SearchIngredient
       ? supplementFacts.nutritional_facts
       : [];
 
-  return normalizeIherbSupplementFactsRowsForGoalNavigatorCoverage({
+  return normalizeIherbSupplementFactsRowsWithTitleFallback({
     rows: Array.isArray(nutritionalFactsRaw) ? (nutritionalFactsRaw as Record<string, unknown>[]) : [],
     title: row.title,
     brandName: row.brand_name,
