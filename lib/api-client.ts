@@ -11,13 +11,17 @@ import type {
 
 export type AuthenticatedRequestOptions = RequestInit & { token?: string | null };
 
-const buildUrl = (path: string) => {
+const buildUrl = (path: string, baseUrl: string = ENV.apiBaseUrl) => {
   const normalizedPath = path.startsWith('/') ? path : `/${path}`;
-  return `${ENV.apiBaseUrl}${normalizedPath}`;
+  return `${baseUrl}${normalizedPath}`;
 };
 
-async function request<T>(path: string, options: AuthenticatedRequestOptions = {}): Promise<T> {
-  const url = buildUrl(path);
+async function requestTo<T>(
+  baseUrl: string,
+  path: string,
+  options: AuthenticatedRequestOptions = {},
+): Promise<T> {
+  const url = buildUrl(path, baseUrl);
   const headers = new Headers(options.headers);
   headers.set('Content-Type', 'application/json');
   if (AUTH_DISABLED) {
@@ -44,6 +48,10 @@ async function request<T>(path: string, options: AuthenticatedRequestOptions = {
   }
 
   return (await response.json()) as T;
+}
+
+async function request<T>(path: string, options: AuthenticatedRequestOptions = {}): Promise<T> {
+  return requestTo<T>(ENV.apiBaseUrl, path, options);
 }
 
 export type SearchRequest = {
@@ -386,7 +394,7 @@ export type EnsureOverviewResponse = {
 
 export const apiClient = {
   search: (payload: SearchRequest, options?: AuthenticatedRequestOptions) =>
-    request<SearchAPIResponse>(`/api/search?${new URLSearchParams({
+    requestTo<SearchAPIResponse>(ENV.searchApiBaseUrl, `/api/search?${new URLSearchParams({
       q: payload.query,
       ...(payload.category ? { category: payload.category } : {}),
       ...(payload.brand ? { brand: payload.brand } : {}),
