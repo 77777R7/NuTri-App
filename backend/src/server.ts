@@ -141,6 +141,7 @@ import { buildMySupplementFactsV1, type MySupplementFactsV1 } from "./mySuppleme
 import { getMySupplementOverviewV2GateReason } from "./mySupplementOverviewGate.js";
 import { getNutriTipsData } from "./nutriTips.js";
 import { buildRuleBasedOverview } from "./overviewRuleBased.js";
+import { searchProducts } from "./productSearch.js";
 import * as profileResolverModule from "../../lib/personalization/core/profileResolver.ts";
 import {
   buildEnsureOverviewInflightKey,
@@ -9571,6 +9572,37 @@ app.get(
     }
   },
 );
+
+app.get("/api/search", async (req: Request, res: Response) => {
+  try {
+    const query = typeof req.query.q === "string" ? req.query.q : "";
+    const category = typeof req.query.category === "string" ? req.query.category : null;
+    const brand = typeof req.query.brand === "string" ? req.query.brand : null;
+    const pageRaw = typeof req.query.page === "string" ? Number.parseInt(req.query.page, 10) : 1;
+    const limitRaw = typeof req.query.limit === "string" ? Number.parseInt(req.query.limit, 10) : 20;
+
+    const payload = await searchProducts({
+      query,
+      category,
+      brand,
+      page: Number.isFinite(pageRaw) ? pageRaw : 1,
+      limit: Number.isFinite(limitRaw) ? limitRaw : 20,
+    });
+
+    res.setHeader("Cache-Control", "private, max-age=60");
+    return res.json({
+      success: true,
+      data: payload,
+    });
+  } catch (error) {
+    captureException(error, { route: "/api/search" });
+    console.error("/api/search unexpected error", error);
+    return res.status(500).json({
+      success: false,
+      message: "Search temporarily unavailable",
+    });
+  }
+});
 
 /**
  * Legacy endpoint for barcode search only (no AI analysis)
