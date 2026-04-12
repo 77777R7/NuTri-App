@@ -52,6 +52,9 @@ const CATEGORIES: Category[] = [
 ];
 const SEARCH_REQUEST_TIMEOUT_MS = 8000;
 
+const buildSearchRequestKey = (category: Category, query: string) =>
+  `${category}::${query.trim().toLowerCase()}`;
+
 const CATEGORY_STYLES: Record<string, { pillBg: string; pillText: string; pillBorder: string }> = {
   Vitamins: {
     pillBg: '#FEF3C6',
@@ -117,9 +120,10 @@ const SearchPage = () => {
   const tokens = useScreenTokens(NAV_HEIGHT);
   const { bleedStyle, contentStyle } = useFullBleed(tokens.pageX);
   const scrollY = useSharedValue(0);
-  const hasMountedRef = useRef(false);
   const requestSeqRef = useRef(0);
   const resultsCacheRef = useRef<Map<string, SearchSupplement[]>>(new Map());
+  const inflightResultsRef = useRef<Map<string, Promise<SearchSupplement[]>>>(new Map());
+  const prefetchedEmptyCategoriesRef = useRef(false);
 
   const contentScale = clamp(Math.min(tokens.width, 430) / 390, 0.92, 1.06);
   const horizontalPadding = tokens.pageX;
@@ -160,22 +164,69 @@ const SearchPage = () => {
   const railFadeEnd = clamp(Math.round(184 * contentScale), 148, 208);
   const debouncedQuery = useMemo(() => searchQuery.trim(), [searchQuery]);
   const requestKey = useMemo(
-    () => `${activeFilter}::${debouncedQuery.toLowerCase()}`,
+    () => buildSearchRequestKey(activeFilter, debouncedQuery),
     [activeFilter, debouncedQuery],
   );
 
-  useEffect(() => {
-    if (!hasMountedRef.current) {
-      hasMountedRef.current = true;
-      return;
-    }
-    setResultsTransitionKey((value) => value + 1);
-  }, [activeFilter]);
+  const applyResolvedResults = React.useCallback(
+    (nextResults: SearchSupplement[], options?: { animate?: boolean }) => {
+      setResults(nextResults);
+      setErrorMessage(null);
+      if (options?.animate) {
+        setResultsTransitionKey((value) => value + 1);
+      }
+    },
+    [],
+  );
+
+  const fetchSearchResults = React.useCallback(
+    async ({
+      key,
+      query,
+      category,
+    }: {
+      key: string;
+      query: string;
+      category: Category;
+    }) => {
+      const cached = resultsCacheRef.current.get(key);
+      if (cached) return cached;
+
+      const inflight = inflightResultsRef.current.get(key);
+      if (inflight) return inflight;
+
+      const requestPromise = (async () => {
+        const response = await apiClient.search({
+          query,
+          category: category !== 'All' ? category : undefined,
+          page: 1,
+          limit: 20,
+        });
+        const payload = resolveSearchPayload(response);
+        const nextResults = payload.supplements ?? [];
+        resultsCacheRef.current.set(key, nextResults);
+        return nextResults;
+      })();
+
+      inflightResultsRef.current.set(key, requestPromise);
+
+      try {
+        return await requestPromise;
+      } finally {
+        if (inflightResultsRef.current.get(key) === requestPromise) {
+          inflightResultsRef.current.delete(key);
+        }
+      }
+    },
+    [],
+  );
 
   useEffect(() => {
+    const requestSeq = requestSeqRef.current + 1;
+    requestSeqRef.current = requestSeq;
     const cachedResults = resultsCacheRef.current.get(requestKey);
     if (cachedResults) {
-      setResults(cachedResults);
+      applyResolvedResults(cachedResults);
       setLoading(false);
       setErrorMessage(null);
       return;
@@ -183,8 +234,9 @@ const SearchPage = () => {
 
     const controller = new AbortController();
     let didTimeout = false;
-    const requestSeq = requestSeqRef.current + 1;
-    requestSeqRef.current = requestSeq;
+    setLoading(true);
+    setErrorMessage(null);
+    setResults([]);
 
     const debounceTimeout = setTimeout(async () => {
       const requestTimeout = setTimeout(() => {
@@ -193,26 +245,14 @@ const SearchPage = () => {
       }, SEARCH_REQUEST_TIMEOUT_MS);
 
       try {
-        setLoading(true);
-        setErrorMessage(null);
-
-        const response = await apiClient.search(
-          {
-            query: debouncedQuery,
-            category: activeFilter !== 'All' ? activeFilter : undefined,
-            page: 1,
-            limit: 20,
-          },
-          {
-            signal: controller.signal,
-          },
-        );
-
-        const payload = resolveSearchPayload(response);
+        const nextResults = await fetchSearchResults({
+          key: requestKey,
+          query: debouncedQuery,
+          category: activeFilter,
+        });
+        if (controller.signal.aborted && !didTimeout) return;
         if (requestSeq !== requestSeqRef.current) return;
-        const nextResults = payload.supplements ?? [];
-        resultsCacheRef.current.set(requestKey, nextResults);
-        setResults(nextResults);
+        applyResolvedResults(nextResults, { animate: true });
       } catch (error) {
         if (controller.signal.aborted && !didTimeout) return;
         if (requestSeq !== requestSeqRef.current) return;
@@ -226,7 +266,10 @@ const SearchPage = () => {
         setResults([]);
       } finally {
         clearTimeout(requestTimeout);
-        if (requestSeq === requestSeqRef.current && (!controller.signal.aborted || didTimeout)) {
+        if (
+          requestSeq === requestSeqRef.current &&
+          (!controller.signal.aborted || didTimeout)
+        ) {
           setLoading(false);
         }
       }
@@ -242,37 +285,28 @@ const SearchPage = () => {
     if (debouncedQuery.length > 0 || loading || results.length === 0) return;
 
     const categoriesToPrefetch = CATEGORIES.filter(
-      (category) => category !== 'All' && !resultsCacheRef.current.has(`${category}::`),
+      (category) =>
+        category !== 'All' && !resultsCacheRef.current.has(buildSearchRequestKey(category, '')),
     );
     if (categoriesToPrefetch.length === 0) return;
+    if (prefetchedEmptyCategoriesRef.current) return;
 
-    let cancelled = false;
+    prefetchedEmptyCategoriesRef.current = true;
 
     const runPrefetch = async () => {
-      for (const category of categoriesToPrefetch) {
-        if (cancelled) return;
-        try {
-          const response = await apiClient.search({
+      await Promise.allSettled(
+        categoriesToPrefetch.map((category) =>
+          fetchSearchResults({
+            key: buildSearchRequestKey(category, ''),
             query: '',
             category,
-            page: 1,
-            limit: 20,
-          });
-          if (cancelled) return;
-          const payload = resolveSearchPayload(response);
-          resultsCacheRef.current.set(`${category}::`, payload.supplements ?? []);
-        } catch {
-          // Ignore background prefetch failures. The foreground request path still handles errors.
-        }
-      }
+          }),
+        ),
+      );
     };
 
     void runPrefetch();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [debouncedQuery, loading, results]);
+  }, [debouncedQuery, fetchSearchResults, loading, results]);
 
   const handleOpenResult = React.useCallback((item: SearchSupplement) => {
     const scanCode = item.barcode?.trim() || item.upcCode?.trim();
@@ -616,7 +650,7 @@ const SearchPage = () => {
                     const categoryStyle = CATEGORY_STYLES[item.category] ?? CATEGORY_STYLES.Supplement;
                     return (
                     <MotiView
-                      key={`${resultsTransitionKey}-${requestKey}-${item.id}`}
+                      key={`${resultsTransitionKey}-${item.id}`}
                       from={{ opacity: 0, translateY: 12 }}
                       animate={{ opacity: 1, translateY: 0 }}
                       transition={{
