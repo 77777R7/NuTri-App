@@ -92,6 +92,16 @@ const CATEGORY_STYLES: Record<string, { pillBg: string; pillText: string; pillBo
 
 const resolveSearchPayload = (response: SearchAPIResponse) => ('data' in response ? response.data : response);
 
+const buildBrandMonogram = (brand: string) => {
+  const parts = brand
+    .split(/[\s&'’.-]+/)
+    .map((part) => part.trim())
+    .filter(Boolean);
+  if (parts.length === 0) return 'N';
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return `${parts[0][0] ?? ''}${parts[1][0] ?? ''}`.toUpperCase();
+};
+
 const SearchPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState<Category>('All');
@@ -114,16 +124,16 @@ const SearchPage = () => {
   const searchHeight = clamp(Math.round(48 * contentScale), 44, 52);
   const chipHeight = clamp(Math.round(36 * contentScale), 32, 40);
   const cardRadius = clamp(Math.round(22 * contentScale), 18, 24);
-  const cardMinHeight = clamp(Math.round(114 * contentScale), 106, 126);
+  const cardMinHeight = clamp(Math.round(136 * contentScale), 124, 148);
   const cardPaddingX = clamp(Math.round(16 * contentScale), 14, 18);
-  const cardPaddingY = clamp(Math.round(15 * contentScale), 13, 18);
+  const cardPaddingY = clamp(Math.round(17 * contentScale), 15, 20);
   const titleFontSize = clamp(Math.round(16 * contentScale), 15, 17);
   const benefitFontSize = clamp(Math.round(13 * contentScale), 12, 14);
   const doseFontSize = clamp(Math.round(12.5 * contentScale), 12, 13);
   const chipFontSize = clamp(Math.round(13 * contentScale), 12, 14);
   const categoryFontSize = clamp(Math.round(10.5 * contentScale), 10, 11);
-  const actionSize = clamp(Math.round(36 * contentScale), 32, 40);
-  const imageSize = clamp(Math.round(54 * contentScale), 46, 58);
+  const actionSize = clamp(Math.round(34 * contentScale), 30, 38);
+  const imageSize = clamp(Math.round(64 * contentScale), 56, 68);
   const isNarrow = tokens.width < 380;
   const headerTitleGap = clamp(Math.round(sectionGap * 0.7), 12, 18);
   const headerOverlayHeight =
@@ -468,39 +478,41 @@ const SearchPage = () => {
                           },
                         ]}
                       >
-                        <View style={styles.resultContentRow}>
-                          <View
-                            style={[
-                              styles.skeletonImage,
-                              {
-                                width: imageSize,
-                                height: imageSize,
-                                borderRadius: Math.round(imageSize * 0.24),
-                                marginRight: 12,
-                              },
-                            ]}
-                          />
-                          <View style={styles.resultCopy}>
-                            <View style={[styles.skeletonLine, styles.skeletonTitle]} />
-                            <View style={[styles.skeletonLine, styles.skeletonBenefit]} />
-                            <View style={styles.resultMetaRow}>
-                              <View style={styles.skeletonTag} />
-                              <View style={[styles.skeletonLine, styles.skeletonDose]} />
+                        <View style={styles.resultCardBody}>
+                          <View style={styles.resultTopRow}>
+                            <View
+                              style={[
+                                styles.skeletonImage,
+                                {
+                                  width: imageSize,
+                                  height: imageSize,
+                                  borderRadius: Math.round(imageSize * 0.24),
+                                  marginRight: 14,
+                                },
+                              ]}
+                            />
+                            <View style={styles.resultCopy}>
+                              <View style={[styles.skeletonLine, styles.skeletonTitle]} />
+                              <View style={[styles.skeletonLine, styles.skeletonBenefit]} />
+                            </View>
+                            <View style={styles.resultAction}>
+                              <View
+                                style={[
+                                  styles.resultActionCircle,
+                                  styles.resultActionCircleSkeleton,
+                                  {
+                                    width: actionSize,
+                                    height: actionSize,
+                                    borderRadius: actionSize / 2,
+                                  },
+                                ]}
+                              />
                             </View>
                           </View>
-                        </View>
-                        <View style={styles.resultAction}>
-                          <View
-                            style={[
-                              styles.resultActionCircle,
-                              styles.resultActionCircleSkeleton,
-                              {
-                                width: actionSize,
-                                height: actionSize,
-                                borderRadius: actionSize / 2,
-                              },
-                            ]}
-                          />
+                          <View style={styles.resultMetaRow}>
+                            <View style={styles.skeletonTag} />
+                            <View style={[styles.skeletonLine, styles.skeletonDose]} />
+                          </View>
                         </View>
                       </View>
                     </View>
@@ -533,56 +545,78 @@ const SearchPage = () => {
                             },
                           ]}
                         >
-                          <View style={styles.resultContentRow}>
-                            <View
-                              style={[
-                                styles.resultImageWrap,
-                                {
-                                  width: imageSize,
-                                  height: imageSize,
-                                  borderRadius: Math.round(imageSize * 0.24),
-                                  marginRight: 12,
-                                },
-                              ]}
-                            >
-                              {item.imageUrl ? (
-                                <Image
-                                  source={{ uri: item.imageUrl }}
-                                  style={styles.resultImage}
-                                  resizeMode="contain"
-                                />
-                              ) : (
-                                <View style={styles.resultImageFallback}>
-                                  <Text style={styles.resultImageFallbackText}>
-                                    {item.category.slice(0, 1).toUpperCase()}
-                                  </Text>
-                                </View>
-                              )}
-                            </View>
-                            <View style={styles.resultCopy}>
-                              <Text
-                                numberOfLines={2}
+                          <View style={styles.resultCardBody}>
+                            <View style={styles.resultTopRow}>
+                              <View
                                 style={[
-                                  styles.resultTitle,
-                                  { fontSize: titleFontSize, lineHeight: titleFontSize * 1.22 },
+                                  styles.resultImageWrap,
+                                  {
+                                    width: imageSize,
+                                    height: imageSize,
+                                    borderRadius: Math.round(imageSize * 0.24),
+                                    marginRight: 14,
+                                  },
                                 ]}
                               >
-                                {item.name}
-                              </Text>
-                              <Text
-                                numberOfLines={1}
+                                {item.imageUrl ? (
+                                  <Image
+                                    source={{ uri: item.imageUrl }}
+                                    style={styles.resultImage}
+                                    resizeMode="contain"
+                                  />
+                                ) : (
+                                  <View style={styles.resultImageFallback}>
+                                    <Text style={styles.resultImageFallbackText}>
+                                      {buildBrandMonogram(item.brand)}
+                                    </Text>
+                                  </View>
+                                )}
+                              </View>
+                              <View style={styles.resultCopy}>
+                                <Text
+                                  numberOfLines={2}
+                                  style={[
+                                    styles.resultTitle,
+                                    { fontSize: titleFontSize, lineHeight: titleFontSize * 1.18 },
+                                  ]}
+                                >
+                                  {item.name}
+                                </Text>
+                                <Text
+                                  numberOfLines={1}
                                 style={[
                                   styles.resultBenefit,
                                   {
                                     fontSize: benefitFontSize,
-                                    lineHeight: benefitFontSize * 1.45,
+                                    lineHeight: benefitFontSize * 1.42,
                                   },
                                 ]}
                               >
-                                {item.benefit}
-                              </Text>
+                                  {`${item.brand} · ${item.benefit}`}
+                                </Text>
+                              </View>
 
-                              <View style={styles.resultMetaRow}>
+                              <View style={styles.resultAction}>
+                                <View
+                                  style={[
+                                    styles.resultActionCircle,
+                                    {
+                                      width: actionSize,
+                                      height: actionSize,
+                                      borderRadius: actionSize / 2,
+                                    },
+                                  ]}
+                                >
+                                  <ChevronRight
+                                    size={Math.round(actionSize * 0.54)}
+                                    color="#4A67FF"
+                                    strokeWidth={2.75}
+                                  />
+                                </View>
+                              </View>
+                            </View>
+
+                            <View style={styles.resultMetaRow}>
                                 <View
                                   style={[
                                     styles.categoryTag,
@@ -609,26 +643,6 @@ const SearchPage = () => {
                                     {item.dose}
                                   </Text>
                                 ) : null}
-                              </View>
-                            </View>
-                          </View>
-
-                          <View style={styles.resultAction}>
-                            <View
-                              style={[
-                                styles.resultActionCircle,
-                                {
-                                  width: actionSize,
-                                  height: actionSize,
-                                  borderRadius: actionSize / 2,
-                                },
-                              ]}
-                            >
-                              <ChevronRight
-                                size={Math.round(actionSize * 0.54)}
-                                color="#4A67FF"
-                                strokeWidth={2.75}
-                              />
                             </View>
                           </View>
                         </View>
@@ -827,10 +841,14 @@ const styles = StyleSheet.create({
   resultCardSkeleton: {
     backgroundColor: '#FFFFFF',
   },
-  resultContentRow: {
+  resultCardBody: {
+    flex: 1,
+    minWidth: 0,
+  },
+  resultTopRow: {
     flex: 1,
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     minWidth: 0,
   },
   resultImageWrap: {
@@ -861,7 +879,7 @@ const styles = StyleSheet.create({
   resultCopy: {
     flex: 1,
     minWidth: 0,
-    paddingRight: 8,
+    paddingRight: 4,
   },
   resultTitle: {
     color: '#14213D',
@@ -869,15 +887,18 @@ const styles = StyleSheet.create({
     letterSpacing: -0.45,
   },
   resultBenefit: {
-    marginTop: 5,
+    marginTop: 6,
     fontWeight: '500',
     color: '#73819B',
     letterSpacing: -0.18,
   },
   resultMetaRow: {
-    marginTop: 10,
+    marginTop: 14,
     flexDirection: 'row',
     alignItems: 'center',
+    flexWrap: 'wrap',
+    columnGap: 8,
+    rowGap: 6,
   },
   categoryTag: {
     minHeight: 24,
@@ -892,14 +913,15 @@ const styles = StyleSheet.create({
     letterSpacing: 0.55,
   },
   doseText: {
-    marginLeft: 8,
     fontWeight: '600',
     color: '#95A3B8',
     letterSpacing: -0.08,
+    flexShrink: 1,
   },
   resultAction: {
-    marginLeft: 10,
-    alignSelf: 'center',
+    marginLeft: 12,
+    alignSelf: 'flex-start',
+    marginTop: 2,
   },
   resultActionCircle: {
     backgroundColor: '#FFFFFF',

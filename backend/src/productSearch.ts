@@ -296,31 +296,72 @@ const readSectionText = (sections: Record<string, unknown>, aliases: string[]): 
   return null;
 };
 
-const readOverlayImageUrl = (row: Record<string, unknown>): string | null => {
-  const directCandidates = [row.productCatalogImage, row.product_catalog_image, row.imageUrl, row.image_url];
-  for (const candidate of directCandidates) {
-    if (typeof candidate !== "string") continue;
-    const trimmed = candidate.trim();
-    if (trimmed) return trimmed;
+const IHERB_IMAGE_HOST_PATTERN = /(^|\.)images-iherb\.com$/i;
+const IHERB_CMS_BANNER_PATTERN = /\/images\/cms\//i;
+const INTERNAL_RENDER_IMAGE_PATTERN =
+  /\/overlay-label-assets\/(?:generated-fallback-cards|dsld-label-renders)\//i;
+
+const scoreSearchImageUrl = (value: string): number => {
+  let parsed: URL;
+  try {
+    parsed = new URL(value);
+  } catch {
+    return 0;
   }
+
+  if (IHERB_IMAGE_HOST_PATTERN.test(parsed.hostname)) {
+    if (IHERB_CMS_BANNER_PATTERN.test(parsed.pathname)) return 20;
+    return 100;
+  }
+
+  if (INTERNAL_RENDER_IMAGE_PATTERN.test(value)) {
+    return 10;
+  }
+
+  if (/^https?:$/i.test(parsed.protocol)) {
+    return 70;
+  }
+
+  return 30;
+};
+
+const readOverlayImageUrl = (row: Record<string, unknown>): string | null => {
+  const candidates: string[] = [];
+  const seen = new Set<string>();
+  const pushCandidate = (value: unknown) => {
+    if (typeof value !== "string") return;
+    const trimmed = value.trim();
+    if (!trimmed || seen.has(trimmed)) return;
+    seen.add(trimmed);
+    candidates.push(trimmed);
+  };
+
+  [row.productCatalogImage, row.product_catalog_image, row.imageUrl, row.image_url].forEach(pushCandidate);
 
   const imageCollections = [row.productImages, row.product_images];
   for (const collection of imageCollections) {
     if (!Array.isArray(collection)) continue;
     for (const item of collection) {
-      if (typeof item === "string" && item.trim()) return item.trim();
+      if (typeof item === "string") {
+        pushCandidate(item);
+        continue;
+      }
       if (item && typeof item === "object") {
         const record = item as Record<string, unknown>;
         for (const nested of [record.url, record.src, record.imageUrl, record.image_url]) {
-          if (typeof nested !== "string") continue;
-          const trimmed = nested.trim();
-          if (trimmed) return trimmed;
+          pushCandidate(nested);
         }
       }
     }
   }
 
-  return null;
+  const ranked = candidates
+    .map((candidate) => ({ candidate, score: scoreSearchImageUrl(candidate) }))
+    .sort((left, right) => right.score - left.score);
+
+  const best = ranked[0];
+  if (!best || best.score < 50) return null;
+  return best.candidate;
 };
 
 const readServingSize = (serving: Record<string, unknown>, supplementFacts: Record<string, unknown>): string | null => {
@@ -444,11 +485,14 @@ const normalizeDoseLabel = (value: string): string =>
     .trim();
 
 const DISPLAYABLE_DOSE_PATTERN =
-  /^\s*[<>~]?\s*\d[\d,]*(?:[.,]\d+)?\s*(mcg|μg|µg|ug|mg|g|iu|ui|ml|cfu|billion|million|trillion)\b/i;
+  /[<>~]?\s*\d[\d,]*(?:[.,]\d+)?\s*(mcg|μg|µg|ug|mg|g|iu|ui|ml|cfu|(?:billion|million|trillion)(?:\s+cfu)?)\b/i;
 
 const CALORIE_DOSE_PATTERN = /\b(?:calories?|kcal|cal)\b/i;
 
 const NON_DISPLAY_DOSAGE_INGREDIENT_NAME_PATTERN = /^calories?$/i;
+
+const DOSE_SUFFIX_NOISE_PATTERN =
+  /\b(?:per\s+(?:capsule|capsules|tablet|tablets|softgel|softgels|serving|servings|gummy|gummies|packet|packets|stick|sticks|scoop|scoops|drop|drops|dropperful)|each)\b/gi;
 
 const hasStructuredDose = (value: string | null | undefined): boolean =>
   DISPLAYABLE_DOSE_PATTERN.test(normalizeDoseLabel(String(value ?? "")));
@@ -458,7 +502,11 @@ const getDisplayDose = (ingredientDose: string | null | undefined): string | nul
   if (!normalized) return null;
   if (CALORIE_DOSE_PATTERN.test(normalized)) return null;
   if (!DISPLAYABLE_DOSE_PATTERN.test(normalized)) return null;
-  return normalized;
+
+  const compact = normalized.replace(DOSE_SUFFIX_NOISE_PATTERN, "").replace(/\s+/g, " ").trim();
+  const extracted = compact.match(DISPLAYABLE_DOSE_PATTERN);
+  if (!extracted?.[0]) return compact;
+  return normalizeDoseLabel(extracted[0]);
 };
 
 const pickDisplayDose = (row: ProductSearchIndexRow): string => {
@@ -519,7 +567,14 @@ const deriveTypeKeysFromContent = (input: {
   if (/\b(probiotic|lactobacillus|bifidobacter|saccharomyces|prebiotic|cfu)\b/.test(haystack)) {
     next.add("probiotic");
   }
-  if (/\b(protein|whey|casein|isolate|collagen|amino acid|bcaa|eaa)\b/.test(haystack)) {
+  const proteinSignalHaystack = normalizeLookupText(
+    [input.title, ...input.ingredients.map((ingredient) => ingredient.name), input.suggestedUse ?? ""].join(" "),
+  );
+  if (
+    /\b(protein|whey|casein|isolate|pea protein|rice protein|collagen peptides?|amino acid|bcaa|eaa)\b/.test(
+      proteinSignalHaystack,
+    )
+  ) {
     next.add("protein");
   }
   if (
