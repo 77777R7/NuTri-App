@@ -51,15 +51,24 @@ export type SearchRequest = {
   category?: string;
   brand?: string;
   page?: number;
+  limit?: number;
 };
 
 export type SearchSupplement = {
   id: string;
+  productId: string;
+  barcode?: string | null;
   name: string;
   brand: string;
   category: string;
+  categoryKey?: string | null;
+  benefit: string;
+  dose: string;
   imageUrl?: string | null;
   relevanceScore?: number;
+  popularityScore?: number;
+  factsStatus?: 'full' | 'partial' | 'none';
+  coverageStatus?: 'coverage_ready' | 'not_enough_structured_data';
 };
 
 export type SearchResponse = {
@@ -382,6 +391,7 @@ export const apiClient = {
       ...(payload.category ? { category: payload.category } : {}),
       ...(payload.brand ? { brand: payload.brand } : {}),
       ...(payload.page ? { page: String(payload.page) } : {}),
+      ...(payload.limit ? { limit: String(payload.limit) } : {}),
     }).toString()}`, { method: 'GET', ...options }),
 
   analyze: (payload: AnalyzeRequest, options?: AuthenticatedRequestOptions) =>
