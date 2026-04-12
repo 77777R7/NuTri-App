@@ -2,7 +2,14 @@ import { normalizeIherbSupplementFactsRowsWithTitleFallback } from "./iherbOverl
 import { supabase } from "./supabase.js";
 import { withRetry } from "./supabaseRetry.js";
 
-type SearchTypeKey = "vitamin" | "mineral" | "herb" | "probiotic" | "protein";
+type SearchTypeKey =
+  | "vitamin"
+  | "mineral"
+  | "herb"
+  | "probiotic"
+  | "protein"
+  | "essential"
+  | "amino_acid";
 type SearchGoalKey =
   | "sleep"
   | "energy"
@@ -67,6 +74,7 @@ export type ProductSearchCard = {
   id: string;
   productId: string;
   barcode: string | null;
+  upcCode: string | null;
   name: string;
   brand: string;
   category: string;
@@ -152,6 +160,13 @@ const FILTER_CATEGORY_TO_TYPE_KEY: Record<string, SearchTypeKey> = {
   mineral: "mineral",
   herbs: "herb",
   herb: "herb",
+  essential: "essential",
+  essentials: "essential",
+  amino: "amino_acid",
+  aminoacid: "amino_acid",
+  aminoacids: "amino_acid",
+  "amino acid": "amino_acid",
+  "amino acids": "amino_acid",
   probiotics: "probiotic",
   probiotic: "probiotic",
   protein: "protein",
@@ -163,6 +178,8 @@ const TYPE_KEY_TO_CARD_CATEGORY: Record<SearchTypeKey, string> = {
   herb: "Herbs",
   probiotic: "Probiotics",
   protein: "Protein",
+  essential: "Essential",
+  amino_acid: "Amino Acids",
 };
 
 const GOAL_BENEFIT_COPY: Record<SearchGoalKey, string> = {
@@ -300,7 +317,13 @@ const readSectionText = (sections: Record<string, unknown>, aliases: string[]): 
 const IHERB_IMAGE_HOST_PATTERN = /(^|\.)images-iherb\.com$/i;
 const IHERB_CMS_BANNER_PATTERN = /\/images\/cms\//i;
 const INTERNAL_RENDER_IMAGE_PATTERN =
-  /\/overlay-label-assets\/(?:generated-fallback-cards|dsld-label-renders)\//i;
+  /\/overlay-label-assets\/(?:generated-fallback-cards|dsld-label-renders|manual-fallback-renders)\//i;
+const INTERNAL_RENDER_FILENAME_PATTERN = /(?:^|[_-])render(?:s|ed)?(?:[_-]|\b)/i;
+
+const isInternalRenderImageUrl = (value: string): boolean =>
+  INTERNAL_RENDER_IMAGE_PATTERN.test(value) ||
+  (/supabase\.co/i.test(value) && INTERNAL_RENDER_FILENAME_PATTERN.test(value)) ||
+  /HAIR_GROWTH_RENDER/i.test(value);
 
 const scoreSearchImageUrl = (value: string): number => {
   let parsed: URL;
@@ -315,8 +338,8 @@ const scoreSearchImageUrl = (value: string): number => {
     return 100;
   }
 
-  if (INTERNAL_RENDER_IMAGE_PATTERN.test(value)) {
-    return 10;
+  if (isInternalRenderImageUrl(value)) {
+    return 0;
   }
 
   if (/^https?:$/i.test(parsed.protocol)) {
@@ -357,6 +380,7 @@ const readOverlayImageUrl = (row: Record<string, unknown>): string | null => {
   }
 
   const ranked = candidates
+    .filter((candidate) => !isInternalRenderImageUrl(candidate))
     .map((candidate) => ({ candidate, score: scoreSearchImageUrl(candidate) }))
     .sort((left, right) => right.score - left.score);
 
@@ -522,9 +546,11 @@ const TITLE_DOSE_PATTERN = new RegExp(`(${DISPLAYABLE_DOSE_PATTERN.source})`, "i
 const TITLE_PACKAGE_SIZE_PATTERN =
   /\b\d[\d,]*(?:[.,]\d+)?\s*(?:lb|lbs|oz|fl\.?\s*oz|fluid ounces?)\s*(?:\(\s*\d[\d,]*(?:[.,]\d+)?\s*(?:mcg|μg|µg|ug|mg|g|ml)\s*\))?/gi;
 const TYPE_PRIORITY: Record<SearchTypeKey, number> = {
-  vitamin: 5,
-  mineral: 4,
-  probiotic: 3,
+  vitamin: 7,
+  mineral: 6,
+  probiotic: 5,
+  essential: 4,
+  amino_acid: 3,
   herb: 2,
   protein: 1,
 };
@@ -536,11 +562,11 @@ const VITAMIN_SIGNAL_PATTERN =
 const MINERAL_SIGNAL_PATTERN =
   /\b(magnesium|zinc|calcium|iron|selenium|copper|chromium|potassium|iodine|manganese|electrolyte)\b/;
 const HERB_SIGNAL_PATTERN =
-  /\b(ashwagandha|rhodiola|turmeric|elderberry|bacopa|ginseng|garlic|maca|valerian|mushroom|lion'?s mane|reishi|cordyceps|botanical|herbal?)\b/;
+  /\b(ashwagandha|rhodiola|turmeric|elderberry|bacopa|ginseng|garlic|maca|valerian|mushroom|lion'?s mane|reishi|cordyceps|botanical|herbal?|echinacea|ginger|cranberry|saffron|dandelion|black seed)\b/;
 const AMINO_ACID_FALLBACK_PATTERN =
-  /\b(creatine|taurine|theanine|carnitine|bcaa|eaa|amino acid|nac|n acetyl cysteine|glutamine|glycine|glutathione|arginine|citrulline|ornithine|5-htp|tryptophan|lysine|tyrosine)\b/;
+  /\b(creatine|taurine|theanine|carnitine|bcaa|eaa|amino acid|amino acids|nac|n acetyl cysteine|glutamine|glycine|glutathione|arginine|citrulline|ornithine|5-htp|tryptophan|lysine|tyrosine|citicoline|cdp choline|alpha gpc|gaba|betaine|acetyl l carnitine)\b/;
 const ESSENTIAL_FALLBACK_PATTERN =
-  /\b(omega 3|omega3|fish oil|krill oil|cod liver oil|dha|epa|essential fatty|borage oil|evening primrose|flax oil|gla)\b/;
+  /\b(omega 3|omega3|fish oil|krill oil|cod liver oil|dha|epa|essential fatty|borage oil|evening primrose|flax oil|gla|mct oil|calanus oil|algae omega|omega 7|omega-7|black seed oil|cla)\b/;
 const PROBIOTIC_DOSE_UNIT_PATTERN = /\b(?:cfu|billion(?:\s+cfu)?|million(?:\s+cfu)?|trillion(?:\s+cfu)?)\b/i;
 
 const hasStructuredDose = (value: string | null | undefined): boolean =>
@@ -754,6 +780,14 @@ const deriveTypeKeysFromContent = (input: {
   if (MINERAL_SIGNAL_PATTERN.test(ingredientHaystack)) addScore("mineral", 6);
   if (MINERAL_SIGNAL_PATTERN.test(contextHaystack)) addScore("mineral", 2);
 
+  if (ESSENTIAL_FALLBACK_PATTERN.test(titleHaystack)) addScore("essential", 8);
+  if (ESSENTIAL_FALLBACK_PATTERN.test(ingredientHaystack)) addScore("essential", 6);
+  if (ESSENTIAL_FALLBACK_PATTERN.test(contextHaystack)) addScore("essential", 3);
+
+  if (AMINO_ACID_FALLBACK_PATTERN.test(titleHaystack)) addScore("amino_acid", 8);
+  if (AMINO_ACID_FALLBACK_PATTERN.test(ingredientHaystack)) addScore("amino_acid", 6);
+  if (AMINO_ACID_FALLBACK_PATTERN.test(contextHaystack)) addScore("amino_acid", 2);
+
   if (HERB_SIGNAL_PATTERN.test(titleHaystack)) addScore("herb", 8);
   if (HERB_SIGNAL_PATTERN.test(ingredientHaystack)) addScore("herb", 6);
   if (HERB_SIGNAL_PATTERN.test(contextHaystack)) addScore("herb", 2);
@@ -809,20 +843,10 @@ const resolveCardCategoryLabel = (input: {
     ].join(" "),
   );
 
-  if (
-    ESSENTIAL_FALLBACK_PATTERN.test(haystack) &&
-    input.primaryTypeKey !== "protein" &&
-    input.primaryTypeKey !== "probiotic" &&
-    input.primaryTypeKey !== "herb"
-  ) {
-    return "Essential";
-  }
-
-  if (!input.primaryTypeKey && AMINO_ACID_FALLBACK_PATTERN.test(haystack)) {
-    return "Amino Acids";
-  }
-
-  return input.primaryTypeKey ? TYPE_KEY_TO_CARD_CATEGORY[input.primaryTypeKey] : input.fallbackCategory;
+  if (input.primaryTypeKey) return TYPE_KEY_TO_CARD_CATEGORY[input.primaryTypeKey];
+  if (ESSENTIAL_FALLBACK_PATTERN.test(haystack)) return "Essential";
+  if (AMINO_ACID_FALLBACK_PATTERN.test(haystack)) return "Amino Acids";
+  return input.fallbackCategory;
 };
 
 const getFallbackBenefit = (category: string): string => {
@@ -1020,6 +1044,7 @@ const enrichSearchRow = (row: ProductSearchIndexRow, baseSearchScore: number): E
       id: row.id,
       productId: row.productId,
       barcode: row.barcode,
+      upcCode: row.upcCode,
       name: normalizeDisplayTitle(row.title, row.brandName),
       brand: row.brandName,
       category: categoryLabel,
@@ -1184,6 +1209,10 @@ const warmSearchIndexInBackground = (): void => {
   });
 };
 
+export const warmProductSearchIndex = (): void => {
+  warmSearchIndexInBackground();
+};
+
 const getUsableSearchIndex = (): ProductSearchIndex | null => {
   const now = Date.now();
   if (cachedSearchIndex && now - cachedSearchIndex.builtAt < SEARCH_INDEX_TTL_MS) {
@@ -1326,7 +1355,7 @@ const buildSearchResponseFromRows = (
       totalPages: Math.max(1, Math.ceil(total / limit)),
     },
     suggestions: {
-      categories: ["All", "Vitamins", "Minerals", "Herbs", "Probiotics", "Protein"],
+      categories: ["All", "Vitamins", "Minerals", "Herbs", "Essential", "Amino Acids", "Probiotics", "Protein"],
       brands: topBrands,
       popularSearches: POPULAR_SEARCHES,
     },

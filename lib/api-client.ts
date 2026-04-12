@@ -66,6 +66,7 @@ export type SearchSupplement = {
   id: string;
   productId: string;
   barcode?: string | null;
+  upcCode?: string | null;
   name: string;
   brand: string;
   category: string;
