@@ -126,6 +126,7 @@ type EnrichedCandidate = {
 };
 
 const SEARCH_INDEX_TTL_MS = 15 * 60 * 1000;
+const COLD_BOOTSTRAP_TTL_MS = 5 * 60 * 1000;
 const OVERLAY_PAGE_SIZE = 250;
 const DEFAULT_LIMIT = 20;
 const MAX_LIMIT = 30;
@@ -282,6 +283,12 @@ let cachedBrowseResponseMap:
       builtAt: number;
       responses: Map<string, ProductSearchResponse>;
       bootstrap: ProductSearchBootstrapResponse;
+    }
+  | null = null;
+let cachedColdBootstrap:
+  | {
+      builtAt: number;
+      payload: ProductSearchBootstrapResponse;
     }
   | null = null;
 
@@ -1401,6 +1408,21 @@ const buildSearchResponseFromRows = (
   };
 };
 
+const buildBootstrapPayloadFromRows = (rows: ProductSearchIndexRow[]): ProductSearchBootstrapResponse => ({
+  generatedAt: Date.now(),
+  categories: Object.fromEntries(
+    SEARCH_BROWSE_CATEGORIES.map((category) => {
+      const params: SearchParams = {
+        query: "",
+        category: category === "All" ? null : category,
+        page: 1,
+        limit: DEFAULT_LIMIT,
+      };
+      return [category, buildSearchResponseFromRows(rows, params).supplements];
+    }),
+  ),
+});
+
 const rebuildWarmBrowseResponseMap = (index: ProductSearchIndex): void => {
   const responses = new Map<string, ProductSearchResponse>();
 
@@ -1418,21 +1440,7 @@ const rebuildWarmBrowseResponseMap = (index: ProductSearchIndex): void => {
   cachedBrowseResponseMap = {
     builtAt: index.builtAt,
     responses,
-    bootstrap: {
-      generatedAt: Date.now(),
-      categories: Object.fromEntries(
-        SEARCH_BROWSE_CATEGORIES.map((category) => {
-          const params: SearchParams = {
-            query: "",
-            category: category === "All" ? null : category,
-            page: 1,
-            limit: DEFAULT_LIMIT,
-          };
-          const response = responses.get(buildBrowseCacheKey(params));
-          return [category, response?.supplements ?? []];
-        }),
-      ),
-    },
+    bootstrap: buildBootstrapPayloadFromRows(index.rows),
   };
 };
 
@@ -1463,12 +1471,27 @@ export const getProductSearchBootstrap = async (): Promise<ProductSearchBootstra
   if (warmIndex && cachedBrowseResponseMap?.builtAt === warmIndex.builtAt) {
     return cachedBrowseResponseMap.bootstrap;
   }
-
-  const index = warmIndex ?? (await ensureSearchIndexWarm());
-  if (!cachedBrowseResponseMap || cachedBrowseResponseMap.builtAt !== index.builtAt) {
-    rebuildWarmBrowseResponseMap(index);
+  if (warmIndex) {
+    if (!cachedBrowseResponseMap || cachedBrowseResponseMap.builtAt !== warmIndex.builtAt) {
+      rebuildWarmBrowseResponseMap(warmIndex);
+    }
+    return cachedBrowseResponseMap!.bootstrap;
   }
-  return cachedBrowseResponseMap!.bootstrap;
+
+  const now = Date.now();
+  if (cachedColdBootstrap && now - cachedColdBootstrap.builtAt < COLD_BOOTSTRAP_TTL_MS) {
+    warmSearchIndexInBackground();
+    return cachedColdBootstrap.payload;
+  }
+
+  warmSearchIndexInBackground();
+  const fallbackRows = await fetchColdFallbackRows({ query: "", page: 1, limit: DEFAULT_LIMIT });
+  const payload = buildBootstrapPayloadFromRows(fallbackRows);
+  cachedColdBootstrap = {
+    builtAt: Date.now(),
+    payload,
+  };
+  return payload;
 };
 
 export const searchProducts = async (params: SearchParams): Promise<ProductSearchResponse> => {
