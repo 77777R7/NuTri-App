@@ -61,6 +61,7 @@ import { useTranslation } from '@/lib/i18n';
 import { lookupFoundationForIngredient, summarizeFoundationHits } from '@/lib/knowledge/foundationLookup';
 import { normalizeAvoidItemsSelection } from '@/lib/onboarding-v2';
 import { getGoalDisplayLabel } from '@/lib/personalization/uiLabels';
+import { choosePreferredProductImageUrl } from '@/lib/productImagePreference';
 import { resolveDataCeilingSignal } from '@/lib/scan/dataCeiling';
 import { buildGapActionSentences } from '@/lib/scan/gapActionSentenceLibrary';
 import { buildAnalysisTopSectionPresentation } from '@/lib/scan/analysisTopSectionPresentation';
@@ -5362,6 +5363,14 @@ const AnalysisBundleDashboard: React.FC<{
     );
     const personalizedDecisionPayload = authoritativeDecisionTemplatePayload ?? decisionTemplatePayload;
     const scienceDecisionPayload = authoritativeDecisionTemplatePayload ?? decisionTemplatePayload;
+    const scienceSidecarDecisionPayload = useMemo<DecisionSupportTemplatePayload | null>(
+        () =>
+            scienceDecisionPayload
+            && !isDecisionPayloadExplicitlyStale(scienceDecisionPayload as Record<string, unknown>)
+                ? scienceDecisionPayload
+                : null,
+        [scienceDecisionPayload],
+    );
     const decisionOverviewBlock = decisionTemplatePayload?.overviewBlock;
     const decisionScienceBlock = scienceDecisionPayload?.scienceBlock;
     const decisionUsageBlock = decisionTemplatePayload?.usageBlock;
@@ -5381,6 +5390,12 @@ const AnalysisBundleDashboard: React.FC<{
     const currentPersonalizationScopeHash =
         getDecisionPayloadPersonalizationScopeHash(authoritativeDecisionPayload)
         || normalizeText(personalizedDecisionPayload?.personalizationScopeHash ?? null)
+        || null;
+    const scienceDecisionInputsHash =
+        normalizeText(scienceSidecarDecisionPayload?.decisionInputsHash ?? null)
+        || null;
+    const sciencePersonalizationScopeHash =
+        normalizeText(scienceSidecarDecisionPayload?.personalizationScopeHash ?? null)
         || null;
     const decisionOverlayUsed = useMemo(() => {
         if (decisionUsageBlock?.directions?.sourceTier === 'overlay_iherb') return true;
@@ -6330,7 +6345,7 @@ const AnalysisBundleDashboard: React.FC<{
         safetyWarningCoverText,
         topSectionDosePreviewText,
     ]);
-    const heroImageUri = saveItem?.imageUrl ?? productInfo?.image ?? null;
+    const heroImageUri = choosePreferredProductImageUrl(productInfo?.image, saveItem?.imageUrl);
     const verifiedLabelText = normalizeText(sourceBadgeLabel) || 'Verified Label Data';
 
     const overviewDataStatus = useMemo(() => {
@@ -7625,15 +7640,15 @@ const AnalysisBundleDashboard: React.FC<{
     );
 
     const decisionBarcodeForScience = canonicalDecisionBarcode;
-    const decisionDigestForScience = normalizeText(authoritativeDecisionTemplatePayload?.digest ?? '')
+    const decisionDigestForScience = normalizeText(scienceSidecarDecisionPayload?.digest ?? '')
         || null;
     const shouldLoadScienceSidecars =
         selectedTileType === 'science'
-        && authoritativeDecisionTemplatePayload != null
+        && scienceSidecarDecisionPayload != null
         && Boolean(decisionBarcodeForScience)
         && Boolean(decisionDigestForScience)
-        && Boolean(currentDecisionInputsHash)
-        && Boolean(currentPersonalizationScopeHash);
+        && Boolean(scienceDecisionInputsHash)
+        && Boolean(sciencePersonalizationScopeHash);
     const scienceSourceFinalKey = bundleSourceTypeFinal ? 'final' : 'nonfinal';
     const decisionScienceIngredientRows = useMemo<ScienceSidecarIngredientRow[]>(
         () =>
@@ -7693,23 +7708,23 @@ const AnalysisBundleDashboard: React.FC<{
 
     const ingredientOverviewRequestKey = useMemo(
         () =>
-            decisionBarcodeForScience && decisionDigestForScience && currentDecisionInputsHash && currentPersonalizationScopeHash
+            decisionBarcodeForScience && decisionDigestForScience && scienceDecisionInputsHash && sciencePersonalizationScopeHash
                 ? [
                     'ingredient_overview',
                     scienceAuthoritativeIdentityKey,
                     decisionBarcodeForScience,
                     decisionDigestForScience,
-                    currentDecisionInputsHash,
-                    currentPersonalizationScopeHash,
+                    scienceDecisionInputsHash,
+                    sciencePersonalizationScopeHash,
                     scienceSourceFinalKey,
                 ].join('|')
                 : null,
         [
-            currentDecisionInputsHash,
-            currentPersonalizationScopeHash,
             decisionBarcodeForScience,
             decisionDigestForScience,
             scienceAuthoritativeIdentityKey,
+            scienceDecisionInputsHash,
+            sciencePersonalizationScopeHash,
             scienceSourceFinalKey,
         ],
     );
@@ -7717,27 +7732,27 @@ const AnalysisBundleDashboard: React.FC<{
         () =>
             decisionBarcodeForScience
                 && decisionDigestForScience
-                && currentDecisionInputsHash
-                && currentPersonalizationScopeHash
+                && scienceDecisionInputsHash
+                && sciencePersonalizationScopeHash
                 && activeIngredientKey
                 ? [
                     'scientific_background',
                     scienceAuthoritativeIdentityKey,
                     decisionBarcodeForScience,
                     decisionDigestForScience,
-                    currentDecisionInputsHash,
-                    currentPersonalizationScopeHash,
+                    scienceDecisionInputsHash,
+                    sciencePersonalizationScopeHash,
                     activeIngredientKey,
                     scienceSourceFinalKey,
                 ].join('|')
                 : null,
         [
             activeIngredientKey,
-            currentDecisionInputsHash,
-            currentPersonalizationScopeHash,
             decisionBarcodeForScience,
             decisionDigestForScience,
             scienceAuthoritativeIdentityKey,
+            scienceDecisionInputsHash,
+            sciencePersonalizationScopeHash,
             scienceSourceFinalKey,
         ],
     );
@@ -7782,8 +7797,8 @@ const AnalysisBundleDashboard: React.FC<{
             !ingredientOverviewRequestKey
             || !decisionBarcodeForScience
             || !decisionDigestForScience
-            || !currentDecisionInputsHash
-            || !currentPersonalizationScopeHash
+            || !scienceDecisionInputsHash
+            || !sciencePersonalizationScopeHash
         ) {
             return;
         }
@@ -7900,8 +7915,8 @@ const AnalysisBundleDashboard: React.FC<{
 
         void run(
             decisionDigestForScience,
-            currentDecisionInputsHash,
-            currentPersonalizationScopeHash,
+            scienceDecisionInputsHash,
+            sciencePersonalizationScopeHash,
             true,
         );
         return () => {
@@ -7915,12 +7930,12 @@ const AnalysisBundleDashboard: React.FC<{
         };
     }, [
         shouldLoadScienceSidecars,
-        currentDecisionInputsHash,
-        currentPersonalizationScopeHash,
         decisionBarcodeForScience,
         decisionDigestForScience,
         ingredientOverviewRequestKey,
         localDecisionSupportHeader,
+        scienceDecisionInputsHash,
+        sciencePersonalizationScopeHash,
         setIngredientOverviewSidecarState,
     ]);
 
@@ -7929,8 +7944,8 @@ const AnalysisBundleDashboard: React.FC<{
         if (
             !decisionBarcodeForScience
             || !decisionDigestForScience
-            || !currentDecisionInputsHash
-            || !currentPersonalizationScopeHash
+            || !scienceDecisionInputsHash
+            || !sciencePersonalizationScopeHash
         ) {
             return;
         }
@@ -8072,8 +8087,8 @@ const AnalysisBundleDashboard: React.FC<{
 
         void run(
             decisionDigestForScience,
-            currentDecisionInputsHash,
-            currentPersonalizationScopeHash,
+            scienceDecisionInputsHash,
+            sciencePersonalizationScopeHash,
             true,
             shouldRevalidateFallback,
         );
@@ -8089,12 +8104,12 @@ const AnalysisBundleDashboard: React.FC<{
     }, [
         activeScienceIngredientRow,
         shouldLoadScienceSidecars,
-        currentDecisionInputsHash,
-        currentPersonalizationScopeHash,
         decisionBarcodeForScience,
         decisionDigestForScience,
         decisionScienceIngredientRows,
         localDecisionSupportHeader,
+        scienceDecisionInputsHash,
+        sciencePersonalizationScopeHash,
         scientificBackgroundRequestKey,
         scienceSourceFinalKey,
         setScientificBackgroundSidecarState,

@@ -15,6 +15,7 @@ import { useScanHistory } from '@/contexts/ScanHistoryContext';
 import { useResponsiveTokens } from '@/hooks/useResponsiveTokens';
 import { useStreamAnalysis } from '@/hooks/useStreamAnalysis';
 import { useSavedSupplements } from '@/contexts/SavedSupplementsContext';
+import { choosePreferredProductImageUrl } from '@/lib/productImagePreference';
 import { consumeScanSessionWithStatusAsync, ensureSessionId, type ScanSession } from '@/lib/scan/session';
 import { resolveReasonCodeMessage } from '@/lib/scan/streamStateMachine';
 import { getBarcodeQuality } from '@/lib/scan/quality';
@@ -274,7 +275,7 @@ export default function ScanResultScreen() {
       name: productInfo?.name ?? bundleIdentity?.name ?? snapshotProduct?.name ?? null,
       brand: productInfo?.brand ?? bundleIdentity?.brand ?? snapshotProduct?.brand ?? null,
       category: productInfo?.category ?? snapshotProduct?.category ?? null,
-      image: productInfo?.image ?? snapshotProduct?.imageUrl ?? null,
+      image: choosePreferredProductImageUrl(productInfo?.image, snapshotProduct?.imageUrl),
     };
     const hasIdentity =
       (typeof candidate.name === 'string' && candidate.name.trim().length > 0) ||

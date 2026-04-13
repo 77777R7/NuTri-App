@@ -10044,39 +10044,83 @@ const readOverlaySectionText = (
   return null;
 };
 
-const readOverlayImageUrl = (row: Record<string, unknown>): string | null => {
-  const directCandidates = [
-    row.productCatalogImage,
-    row.product_catalog_image,
-    row.imageUrl,
-    row.image_url,
-  ];
-  for (const candidate of directCandidates) {
-    if (typeof candidate !== "string") continue;
-    const trimmed = candidate.trim();
-    if (trimmed) return trimmed;
+const IHERB_IMAGE_HOST_PATTERN = /(^|\.)images-iherb\.com$/i;
+const IHERB_CMS_BANNER_PATTERN = /\/images\/cms\//i;
+const INTERNAL_RENDER_IMAGE_PATTERN =
+  /\/overlay-label-assets\/(?:generated-fallback-cards|dsld-label-renders|manual-fallback-renders)\//i;
+const INTERNAL_RENDER_FILENAME_PATTERN = /(?:^|[_-])render(?:s|ed)?(?:[_-]|\b)/i;
+
+const isInternalRenderImageUrl = (value: string): boolean =>
+  INTERNAL_RENDER_IMAGE_PATTERN.test(value) ||
+  (/supabase\.co/i.test(value) && INTERNAL_RENDER_FILENAME_PATTERN.test(value)) ||
+  /HAIR_GROWTH_RENDER/i.test(value);
+
+const scorePreferredProductImageUrl = (value: string): number => {
+  let parsed: URL;
+  try {
+    parsed = new URL(value);
+  } catch {
+    return 0;
   }
+
+  if (IHERB_IMAGE_HOST_PATTERN.test(parsed.hostname)) {
+    if (IHERB_CMS_BANNER_PATTERN.test(parsed.pathname)) return 20;
+    return 100;
+  }
+
+  if (isInternalRenderImageUrl(value)) {
+    return 0;
+  }
+
+  if (/^https?:$/i.test(parsed.protocol)) {
+    return 70;
+  }
+
+  return 30;
+};
+
+const pickPreferredProductImageUrl = (...candidates: Array<string | null | undefined>): string | null => {
+  const ranked = candidates
+    .map((candidate) => (typeof candidate === "string" ? candidate.trim() : ""))
+    .filter(Boolean)
+    .map((candidate) => ({ candidate, score: scorePreferredProductImageUrl(candidate) }))
+    .sort((left, right) => right.score - left.score);
+
+  const best = ranked[0];
+  return best && best.score >= 50 ? best.candidate : null;
+};
+
+const readOverlayImageUrl = (row: Record<string, unknown>): string | null => {
+  const candidates: string[] = [];
+  const seen = new Set<string>();
+  const pushCandidate = (value: unknown) => {
+    if (typeof value !== "string") return;
+    const trimmed = value.trim();
+    if (!trimmed || seen.has(trimmed)) return;
+    seen.add(trimmed);
+    candidates.push(trimmed);
+  };
+
+  [row.productCatalogImage, row.product_catalog_image, row.imageUrl, row.image_url].forEach(pushCandidate);
 
   const imageCollections = [row.productImages, row.product_images];
   for (const collection of imageCollections) {
     if (!Array.isArray(collection)) continue;
     for (const item of collection) {
-      if (typeof item === "string" && item.trim()) {
-        return item.trim();
+      if (typeof item === "string") {
+        pushCandidate(item);
+        continue;
       }
       if (item && typeof item === "object") {
         const record = item as Record<string, unknown>;
-        const nestedCandidates = [record.url, record.src, record.imageUrl, record.image_url];
-        for (const nested of nestedCandidates) {
-          if (typeof nested !== "string") continue;
-          const trimmed = nested.trim();
-          if (trimmed) return trimmed;
+        for (const nested of [record.url, record.src, record.imageUrl, record.image_url]) {
+          pushCandidate(nested);
         }
       }
     }
   }
 
-  return null;
+  return pickPreferredProductImageUrl(...candidates);
 };
 
 const toDecisionSupportOverlayClaims = (row: Record<string, unknown>): DecisionSupportOverlayClaims => {
@@ -16214,7 +16258,10 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
       snapshot: SupplementSnapshot;
       analysisPayload: SnapshotAnalysisPayload | null;
       expiresAt?: string | null;
-    }, catalog?: CatalogResolved | null, options?: { mode?: CachedSnapshotSseMode }) => {
+    }, catalog?: CatalogResolved | null, options?: {
+      mode?: CachedSnapshotSseMode;
+      overlayClaims?: DecisionSupportOverlayClaims | null;
+    }) => {
       const mode: CachedSnapshotSseMode = options?.mode ?? "full";
       if (STREAM_VERBOSE_LOG_ENABLED) {
         console.log(`[Stream] Cache hit for barcode: ${barcode}`);
@@ -16251,7 +16298,12 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
         ),
         name: pickText(catalog?.productName, workingAnalysisPayload?.productInfo?.name, snapshot.product.name),
         category: pickText(catalogCategory, workingAnalysisPayload?.productInfo?.category, snapshot.product.category),
-        image: pickText(catalog?.imageUrl, workingAnalysisPayload?.productInfo?.image, snapshot.product.imageUrl),
+        image: pickPreferredProductImageUrl(
+          options?.overlayClaims?.imageUrl,
+          catalog?.imageUrl,
+          workingAnalysisPayload?.productInfo?.image,
+          snapshot.product.imageUrl,
+        ),
       };
 
       if (workingAnalysisPayload) {
@@ -16770,7 +16822,10 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
       emitCachedSnapshot(
         cachedFast,
         catalogFast,
-        streamAnalysisBundleOnly ? { mode: "analysis_bundle_only" } : undefined,
+        {
+          mode: streamAnalysisBundleOnly ? "analysis_bundle_only" : undefined,
+          overlayClaims: cachedOverlayClaims,
+        },
       );
       stage0Delivered = true;
       stage0Source = "snapshot";
@@ -17060,6 +17115,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
                 dsldLabelId: snapshot.regulatory.dsldLabelId,
               };
               const catalogCategory = catalog.category ?? catalog.categoryRaw ?? null;
+              const overlayImageUrl = (await getOverlayClaimsForBarcode())?.imageUrl ?? null;
               const finalProductInfo = {
                 brand: resolveBrand(
                   analysisPayload?.brandExtraction,
@@ -17069,7 +17125,12 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
                 ),
                 name: pickText(catalog.productName, analysisPayload?.productInfo?.name, snapshot.product.name),
                 category: pickText(catalogCategory, analysisPayload?.productInfo?.category, snapshot.product.category),
-                image: pickText(catalog.imageUrl, analysisPayload?.productInfo?.image, snapshot.product.imageUrl),
+                image: pickPreferredProductImageUrl(
+                  overlayImageUrl,
+                  catalog.imageUrl,
+                  analysisPayload?.productInfo?.image,
+                  snapshot.product.imageUrl,
+                ),
               };
 
               snapshot.product.brand = finalProductInfo.brand;
@@ -17211,6 +17272,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
       let workingAnalysisPayload: SnapshotAnalysisPayload = cached?.analysisPayload ?? {};
 
       const catalogCategory = catalog.category ?? catalog.categoryRaw ?? null;
+      const overlayImageUrl = (await getOverlayClaimsForBarcode())?.imageUrl ?? null;
       let finalProductInfo = {
         brand: resolveBrand(
           workingAnalysisPayload.brandExtraction,
@@ -17220,7 +17282,12 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
         ),
         name: pickText(catalog.productName, workingAnalysisPayload.productInfo?.name, workingSnapshot.product.name),
         category: pickText(catalogCategory, workingAnalysisPayload.productInfo?.category, workingSnapshot.product.category),
-        image: pickText(catalog.imageUrl, workingAnalysisPayload.productInfo?.image, workingSnapshot.product.imageUrl),
+        image: pickPreferredProductImageUrl(
+          overlayImageUrl,
+          catalog.imageUrl,
+          workingAnalysisPayload.productInfo?.image,
+          workingSnapshot.product.imageUrl,
+        ),
       };
 
       workingSnapshot = {
@@ -17299,7 +17366,12 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
         ),
         name: pickText(workingSnapshot.product.name, catalog.productName, workingAnalysisPayload.productInfo?.name),
         category: pickText(catalogCategory, workingAnalysisPayload.productInfo?.category, workingSnapshot.product.category),
-        image: pickText(catalog.imageUrl, workingAnalysisPayload.productInfo?.image, workingSnapshot.product.imageUrl),
+        image: pickPreferredProductImageUrl(
+          overlayImageUrl,
+          catalog.imageUrl,
+          workingAnalysisPayload.productInfo?.image,
+          workingSnapshot.product.imageUrl,
+        ),
       };
 
       workingSnapshot = {
@@ -18462,7 +18534,14 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
           }
         }
 
-        emitCachedSnapshot(after, null, streamAnalysisBundleOnly ? { mode: "analysis_bundle_only" } : undefined);
+        emitCachedSnapshot(
+          after,
+          null,
+          {
+            mode: streamAnalysisBundleOnly ? "analysis_bundle_only" : undefined,
+            overlayClaims: await getOverlayClaimsForBarcode(),
+          },
+        );
         await awaitAnalysisBundle();
         finalizeStream("wait_inflight_snapshot_complete");
         const timingTotalMs = Math.round(performance.now() - startedAt);
