@@ -7,6 +7,9 @@ type ProductOverviewFallbackInput = {
   keyIngredients: Array<{ name: string; dose?: string | null }>;
   sourceContextHint: string | null;
   chemicalFormHint: string | null;
+  allIngredientRows?: Array<{ name: string; dose?: string | null }>;
+  descriptionHighlights?: string[];
+  warningHighlights?: string[];
   isLikelySingleIngredient: boolean;
 };
 
@@ -136,7 +139,11 @@ const buildLeadActiveMultiIngredientFallback = (
   }
 
   const productTypeHint = stripSupportClaims(params.productTypeHint) ?? "multi-ingredient supplement";
-  const otherIngredients = dedupeStrings(params.keyIngredients.map((item) => item.name)).filter(
+  const allNamedIngredients = dedupeStrings([
+    ...params.keyIngredients.map((item) => item.name),
+    ...(params.allIngredientRows ?? []).map((item) => item.name),
+  ]);
+  const otherIngredients = allNamedIngredients.filter(
     (name) => name.toLowerCase() !== leadActive.toLowerCase(),
   );
   const supportingActives = otherIngredients.filter((name) => !isCompanionOverviewIngredient(name)).slice(0, 3);
@@ -175,7 +182,10 @@ const buildLeadActiveMultiIngredientFallback = (
 
 const buildGenericMultiIngredientFallback = (params: ProductOverviewFallbackInput): ProductOverviewWhatIsIt => {
   const productTypeHint = stripSupportClaims(params.productTypeHint) ?? "multi-ingredient supplement";
-  const names = dedupeStrings(params.keyIngredients.map((item) => item.name)).slice(0, 3);
+  const names = dedupeStrings([
+    ...params.keyIngredients.map((item) => item.name),
+    ...(params.allIngredientRows ?? []).map((item) => item.name),
+  ]).slice(0, 3);
   const namedContext = names.length > 0 ? ` with named components such as ${listToEnglish(names)}` : "";
 
   return {
@@ -197,6 +207,7 @@ export const buildProductOverviewWhatIsItFallback = (
   const ingredientTokens = dedupeStrings([
     params.primaryIngredient,
     ...params.keyIngredients.map((item) => item.name),
+    ...(params.allIngredientRows ?? []).map((item) => item.name),
   ]).map((value) => value.toLowerCase());
 
   if (params.isLikelySingleIngredient) {

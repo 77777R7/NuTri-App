@@ -8218,7 +8218,7 @@ const trackEnsureOverviewStart = (inflightKey: string): number => {
 const MY_SUPP_OVERVIEW_V2_PROMPT_VERSION = "my_supp_overview_v2:v1";
 const MY_SUPP_OVERVIEW_V2_GATE_SECTION = "my_supp_overview_v2_gate";
 const MY_SUPP_OVERVIEW_V2_GATE_TTL_MS = 6 * 60 * 60 * 1000; // 6 hours
-const PRODUCT_OVERVIEW_WHAT_IS_IT_PROMPT_VERSION = "product_overview_what_is_it:v1";
+const PRODUCT_OVERVIEW_WHAT_IS_IT_PROMPT_VERSION = "product_overview_what_is_it:v2";
 
 // Ensure-overview (Facts-first) budgets: facts must return fast even on cache miss.
 const ENSURE_OVERVIEW_FACTS_BUDGET_MS = 1800;
@@ -10226,6 +10226,7 @@ const scientificBackgroundBodySchema = z.object({
   authoritativeIdentityType: z.string().trim().min(1).nullable().optional(),
   authoritativeIdentityValue: z.string().trim().min(1).nullable().optional(),
   selectedIngredientName: z.string().trim().min(1),
+  revalidateFallback: z.boolean().optional(),
 }).strict();
 
 const INGREDIENT_OVERVIEW_SIDECAR_TIMEOUT_MS = 8_500;
@@ -10995,8 +10996,20 @@ app.post("/api/scientific-background/v1", verifySupabaseToken, async (req: Reque
       SCIENTIFIC_BACKGROUND_PROMPT_VERSION,
     ].join("|");
     const cached = readScientificBackgroundSidecarCache(cacheKey);
-    if (cached) {
+    const shouldBypassFallbackCache =
+      parsedBody.revalidateFallback === true && cached?.source === "fallback";
+    if (cached && !shouldBypassFallbackCache) {
       return res.json(cached);
+    }
+    if (shouldBypassFallbackCache) {
+      const existingBackgroundRefresh = scientificBackgroundSidecarBackgroundRefresh.get(cacheKey);
+      if (existingBackgroundRefresh) {
+        await existingBackgroundRefresh.catch(() => null);
+        const refreshedCached = readScientificBackgroundSidecarCache(cacheKey);
+        if (refreshedCached && refreshedCached.source === "api") {
+          return res.json(refreshedCached);
+        }
+      }
     }
 
     const existingInflight = scientificBackgroundSidecarInflight.get(cacheKey);
@@ -11153,6 +11166,14 @@ const productOverviewAiBodySchema = z.object({
   ).max(6),
   sourceContextHint: z.string().nullable().optional(),
   chemicalFormHint: z.string().nullable().optional(),
+  allIngredientRows: z.array(
+    z.object({
+      name: z.string().min(1),
+      dose: z.string().nullable().optional(),
+    }),
+  ).max(12).optional(),
+  descriptionHighlights: z.array(z.string().min(1)).max(4).optional(),
+  warningHighlights: z.array(z.string().min(1)).max(4).optional(),
   strengthClaim: z.string().nullable().optional(),
   servingStrength: z.string().nullable().optional(),
   form: z.string().nullable().optional(),
@@ -11184,6 +11205,7 @@ const passesProductOverviewWhatIsItGate = (params: {
   primaryIngredient: string | null;
   productTypeHint: string | null;
   keyIngredients: Array<{ name: string; dose?: string | null }>;
+  allIngredientRows?: Array<{ name: string; dose?: string | null }>;
   servingStrength: string | null;
   form: string | null;
   count: string | null;
@@ -11199,6 +11221,7 @@ const passesProductOverviewWhatIsItGate = (params: {
     params.primaryIngredient,
     params.productTypeHint,
     ...params.keyIngredients.map((item) => item.name),
+    ...(params.allIngredientRows ?? []).map((item) => item.name),
   ]
     .map((value) => normalizeOverviewAiToken(value))
     .filter((value) => value.length >= 4);
@@ -11235,6 +11258,9 @@ app.post("/api/product-overview-ai/v1", verifySupabaseToken, async (req: Request
     keyIngredients: parsedBody.keyIngredients,
     sourceContextHint: parsedBody.sourceContextHint ?? null,
     chemicalFormHint: parsedBody.chemicalFormHint ?? null,
+    allIngredientRows: parsedBody.allIngredientRows ?? [],
+    descriptionHighlights: parsedBody.descriptionHighlights ?? [],
+    warningHighlights: parsedBody.warningHighlights ?? [],
     isLikelySingleIngredient: parsedBody.isLikelySingleIngredient ?? false,
   });
 
@@ -11263,6 +11289,12 @@ app.post("/api/product-overview-ai/v1", verifySupabaseToken, async (req: Request
     })),
     sourceContextHint: parsedBody.sourceContextHint ?? null,
     chemicalFormHint: parsedBody.chemicalFormHint ?? null,
+    allIngredientRows: (parsedBody.allIngredientRows ?? []).map((item) => ({
+      name: item.name,
+      dose: item.dose ?? null,
+    })),
+    descriptionHighlights: parsedBody.descriptionHighlights ?? [],
+    warningHighlights: parsedBody.warningHighlights ?? [],
     strengthClaim: parsedBody.strengthClaim ?? null,
     servingStrength: parsedBody.servingStrength ?? null,
     form: parsedBody.form ?? null,
@@ -11305,6 +11337,7 @@ app.post("/api/product-overview-ai/v1", verifySupabaseToken, async (req: Request
         primaryIngredient: parsedBody.primaryIngredient ?? null,
         productTypeHint: parsedBody.productTypeHint ?? null,
         keyIngredients: parsedBody.keyIngredients,
+        allIngredientRows: parsedBody.allIngredientRows ?? [],
         servingStrength: parsedBody.servingStrength ?? null,
         form: parsedBody.form ?? null,
         count: parsedBody.count ?? null,
