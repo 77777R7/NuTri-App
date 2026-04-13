@@ -43,6 +43,9 @@ const listToEnglish = (rows: string[]): string => {
 };
 
 const lower = (value?: string | null): string => normalizeText(value)?.toLowerCase() ?? "";
+const PRODUCT_OVERVIEW_BLEND_PATTERN = /\b(blend|complex|matrix|formula|proprietary)\b/i;
+const PRODUCT_OVERVIEW_COMPANION_PATTERN =
+  /\b(vitamin\s*b(?:3|6|12)\b|\bb(?:3|6|12)\b|niacin(?:amide)?\b|nicotinamide\b|pyridoxine\b|pyridoxal(?:\s|-)?5(?:\s|-)?phosphate\b|p-?5-?p\b|folate\b|folic acid\b|methylfolate\b|zinc\b|magnesium\b|calcium\b|selenium\b|copper\b|chromium\b|iodine\b)\b/i;
 
 const stripSupportClaims = (value?: string | null): string | null => {
   const normalized = normalizeText(value);
@@ -121,6 +124,55 @@ const buildVitaminCFallback = (): ProductOverviewWhatIsIt => ({
     "People usually choose products like this for direct vitamin C supplementation and to compare the named ingredient, label clarity, and any supporting nutrients included in the formula.",
 });
 
+const isCompanionOverviewIngredient = (value?: string | null): boolean =>
+  PRODUCT_OVERVIEW_COMPANION_PATTERN.test(normalizeText(value) ?? "");
+
+const buildLeadActiveMultiIngredientFallback = (
+  params: ProductOverviewFallbackInput,
+): ProductOverviewWhatIsIt | null => {
+  const leadActive = normalizeText(params.primaryIngredient);
+  if (!leadActive || leadActive === "Multi-ingredient formula" || PRODUCT_OVERVIEW_BLEND_PATTERN.test(leadActive)) {
+    return null;
+  }
+
+  const productTypeHint = stripSupportClaims(params.productTypeHint) ?? "multi-ingredient supplement";
+  const otherIngredients = dedupeStrings(params.keyIngredients.map((item) => item.name)).filter(
+    (name) => name.toLowerCase() !== leadActive.toLowerCase(),
+  );
+  const supportingActives = otherIngredients.filter((name) => !isCompanionOverviewIngredient(name)).slice(0, 3);
+  const companionNutrients = otherIngredients.filter((name) => isCompanionOverviewIngredient(name)).slice(0, 2);
+
+  const whatItIs = (() => {
+    if (supportingActives.length > 0 && companionNutrients.length > 0) {
+      return toSentence(
+        `The label keeps ${leadActive} as the main named active while supporting components such as ${listToEnglish(supportingActives)} sit alongside companion nutrient lines like ${listToEnglish(companionNutrients)}`
+      );
+    }
+    if (supportingActives.length > 0) {
+      return toSentence(
+        `The label keeps ${leadActive} as the main named active while additional disclosed components such as ${listToEnglish(supportingActives)} shape the rest of the formula`
+      );
+    }
+    if (companionNutrients.length > 0) {
+      return toSentence(
+        `The label keeps ${leadActive} as the main named active while companion nutrient lines such as ${listToEnglish(companionNutrients)} support the broader formula setup`
+      );
+    }
+    return toSentence(
+      `The formula is organized around ${leadActive} as the lead active rather than treating every disclosed line as equally central`
+    );
+  })();
+
+  return {
+    mode: "rich",
+    lead: toSentence(`This is a ${leadActive}-led ${productTypeHint.toLowerCase()} formula`),
+    whatItIs,
+    whyPeopleTakeIt: toSentence(
+      `People usually choose products like this to compare whether ${leadActive} stays clearly disclosed as the main active and how the supporting lines are arranged around it`
+    ),
+  };
+};
+
 const buildGenericMultiIngredientFallback = (params: ProductOverviewFallbackInput): ProductOverviewWhatIsIt => {
   const productTypeHint = stripSupportClaims(params.productTypeHint) ?? "multi-ingredient supplement";
   const names = dedupeStrings(params.keyIngredients.map((item) => item.name)).slice(0, 3);
@@ -187,6 +239,11 @@ export const buildProductOverviewWhatIsItFallback = (
 
   if (ingredientTokens.some((token) => token.includes("vitamin c")) || productTypeHint.includes("vitamin c")) {
     return buildVitaminCFallback();
+  }
+
+  const leadActiveMultiFallback = buildLeadActiveMultiIngredientFallback(params);
+  if (leadActiveMultiFallback) {
+    return leadActiveMultiFallback;
   }
 
   return buildGenericMultiIngredientFallback(params);

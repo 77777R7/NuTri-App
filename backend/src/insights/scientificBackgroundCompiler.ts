@@ -214,6 +214,12 @@ const buildReferenceLabel = (plan: ScientificBackgroundPlan): string => {
   if (plan.family === "ashwagandha") return "Ashwagandha";
   if (plan.family === "ginseng") return "Ginseng";
   if (plan.family === "green_tea_extract") return "Green tea extract";
+  if (plan.family === "5htp") return "5-HTP";
+  if (plan.family === "b3_niacinamide" && /\bniacinamide\b|\bnicotinamide\b/i.test(plan.selectedLabel)) return "Niacinamide";
+  if (plan.family === "b3_niacinamide") return "Vitamin B3";
+  if (plan.family === "glycine") return "Glycine";
+  if (plan.family === "taurine") return "Taurine";
+  if (plan.family === "inositol") return "Inositol";
   if (plan.family === "vitamin_d") return "Vitamin D";
   if (plan.family === "b12") return "Vitamin B12";
   if (plan.family === "folate") return "Folate";
@@ -438,6 +444,111 @@ const buildResearchPlan = (
         ["Extract concentration can change comparison value", "Named EGCG or catechin detail improves label reading", "Do not turn concentration detail into a universal superiority story"],
         "Keep this section practical and comparison-focused.",
         "Help the shopper understand why a detailed extract line is often more useful than a generic green tea label.",
+      ),
+    ];
+  }
+
+  if (descriptor.ingredientFamily === "5htp") {
+    return [
+      buildSectionPlan(
+        "serotonin_precursor_context",
+        "Serotonin-precursor context",
+        "Explain the main serotonin-precursor lane that makes 5-HTP easier to interpret than generic mood or sleep marketing.",
+        ["Serotonin-precursor context is the clearest lane", "Mood or sleep positioning should stay narrower than broad wellness claims", "Interpretation still depends on dose and formula setting"],
+        "Keep this lane specific and product-aware rather than turning it into a blanket claim.",
+        "Help the shopper compare 5-HTP products through the exact active line and the disclosed amount.",
+      ),
+      buildSectionPlan(
+        "formula_pairing_and_dose_context",
+        "Formula pairing and dose context",
+        "Explain how B-vitamin, glycine, taurine, or inositol pairings can change the way 5-HTP is read on the label without replacing it as the lead active.",
+        ["Supporting lines can change formula interpretation", "The main 5-HTP line still does most of the comparison work", "Amount and co-formulation both matter"],
+        "Use this section to explain formula reading rather than to pad the card with generic caution language.",
+        "Tell the shopper what to compare before assuming two 5-HTP formulas are interchangeable.",
+      ),
+    ];
+  }
+
+  if (descriptor.ingredientFamily === "b3_niacinamide") {
+    return [
+      buildSectionPlan(
+        "b3_coenzyme_context",
+        "B3 coenzyme context",
+        "Explain the coenzyme and metabolism-related lane that makes niacinamide or vitamin B3 easier to interpret than broad energy copy.",
+        ["Coenzyme context is the clearest lane", "Broad energy language is looser than the main interpretation lane", "The stated amount still matters"],
+        "Keep this lane practical and shopper-safe rather than generic.",
+        "Help the shopper read B3 through the actual ingredient line and amount instead of broad category language.",
+      ),
+      buildSectionPlan(
+        "companion_role_on_the_label",
+        "Companion role on the label",
+        "Explain why niacinamide often acts like a supporting nutrient in multi-ingredient formulas even when it is clearly disclosed.",
+        ["B3 can be central or supportive depending on the formula", "Supporting nutrient rows should not be over-read as the whole product story", "The rest of the formula changes comparison value"],
+        "Use this section to explain formula role, not to flatten every B3 product into the same narrative.",
+        "Help the shopper decide whether the B3 row is the main thing to compare or just one part of a broader formula.",
+      ),
+    ];
+  }
+
+  if (descriptor.ingredientFamily === "glycine") {
+    return [
+      buildSectionPlan(
+        "glycine_formula_context",
+        "Glycine formula context",
+        "Explain the amino-acid and formula-support lane that makes glycine easier to interpret than generic calm or sleep filler.",
+        ["Glycine often shows up as a formula-support ingredient", "Its role can shift between lead-active and supporting contexts", "The exact amount changes how much weight to give it"],
+        "Keep this section practical and ingredient-specific.",
+        "Help the shopper understand whether glycine is the story of the product or part of a broader formula setup.",
+      ),
+      buildSectionPlan(
+        "coformulation_changes_reading",
+        "How co-formulation changes the reading",
+        "Explain how glycine behaves differently when it appears next to ingredients like 5-HTP or taurine versus when it stands more on its own.",
+        ["Co-formulation changes interpretation", "Supporting roles should not be mistaken for the main active", "Comparison still depends on the rest of the disclosed formula"],
+        "Keep this grounded in label interpretation rather than generic caveats.",
+        "Tell the shopper why the same glycine row can mean different things in different products.",
+      ),
+    ];
+  }
+
+  if (descriptor.ingredientFamily === "taurine") {
+    return [
+      buildSectionPlan(
+        "taurine_physiology_context",
+        "Taurine physiology context",
+        "Explain the main physiology and formulation lane that makes taurine easier to interpret than broad energy or performance slogans.",
+        ["Taurine has recognizable physiology-related context", "Front-label performance wording can be broader than the clearest lane", "Dose and formula setting still shape interpretation"],
+        "Keep this lane narrow and product-aware rather than hypey.",
+        "Help the shopper compare taurine products through the actual row and amount instead of broad category language.",
+      ),
+      buildSectionPlan(
+        "taurine_formula_role",
+        "Taurine formula role",
+        "Explain why taurine can act as either a lead active or a supporting line depending on the rest of the formula.",
+        ["Formula role matters", "Supporting taurine rows should not automatically be treated like the headline story", "The co-ingredients change comparison value"],
+        "Use this section to explain the row's job on the label.",
+        "Help the shopper decide whether taurine is central to the comparison or mainly part of a broader blend.",
+      ),
+    ];
+  }
+
+  if (descriptor.ingredientFamily === "inositol") {
+    return [
+      buildSectionPlan(
+        "inositol_signaling_context",
+        "Inositol signaling context",
+        "Explain the signaling and formula-context lane that makes inositol more specific than broad mood or hormone-adjacent marketing.",
+        ["Signaling-related context is the clearest lane", "Broad mood or hormone language can stretch past the cleanest interpretation", "The exact formula setting still matters"],
+        "Keep this section product-aware and shopper-safe.",
+        "Help the shopper understand what makes an inositol row more or less central to comparison.",
+      ),
+      buildSectionPlan(
+        "inositol_amount_and_pairing",
+        "Amount and pairing context",
+        "Explain why disclosed amount and co-formulation matter so much when shoppers compare inositol formulas.",
+        ["Amount changes interpretation", "Pairing with other actives changes the role of the row", "Not every inositol line deserves the same comparison weight"],
+        "Use this section for practical comparison, not for padding with generic caution.",
+        "Tell the shopper what to read before assuming two inositol products belong in the same comparison set.",
       ),
     ];
   }
@@ -1192,6 +1303,41 @@ const buildPrompt = (params: {
         "Use shopper-facing language that explains why extract concentration and exact labeling matter for comparison.",
       ];
     }
+    if (params.plan.family === "5htp") {
+      return [
+        "Keep 5-HTP anchored to serotonin-precursor and formula-positioning context rather than generic mood or sleep promises.",
+        "Treat glycine, taurine, inositol, or B-vitamin lines as context that can change formula interpretation without replacing 5-HTP as the main active.",
+        "Use shopper-facing language that explains why the main active line and the disclosed amount still do most of the comparison work.",
+      ];
+    }
+    if (params.plan.family === "b3_niacinamide") {
+      return [
+        "Keep niacinamide or vitamin B3 grounded in coenzyme and formula-role context rather than generic energy or skin hype.",
+        "Do not flatten every B3 line into the same research story when the surrounding formula makes it a supporting nutrient.",
+        "Make comparison meaning practical by tying it to disclosed amount and whether the B3 row is central or supportive.",
+      ];
+    }
+    if (params.plan.family === "glycine") {
+      return [
+        "Keep glycine grounded in amino-acid and formula-support context rather than generic relaxation filler.",
+        "Do not pretend glycine carries the same role in every multi-ingredient formula.",
+        "Explain how shoppers should read glycine differently when it appears as a supporting formula line versus a lead active.",
+      ];
+    }
+    if (params.plan.family === "taurine") {
+      return [
+        "Keep taurine grounded in physiology and formula-support context rather than generic energy or performance hype.",
+        "Do not imply taurine is always the lead active just because it is named prominently on the label.",
+        "Make comparison meaning practical by tying it to disclosed amount and the rest of the formula.",
+      ];
+    }
+    if (params.plan.family === "inositol") {
+      return [
+        "Keep inositol grounded in signaling and formula-context interpretation rather than broad hormone or mood promises.",
+        "Do not treat every inositol line as the same when the exact type and formula setting may differ.",
+        "Use shopper-facing language that explains why the disclosed amount and co-formulation still matter.",
+      ];
+    }
     if (params.plan.family === "vitamin_c") {
       return [
         "Keep the immune lane outcome-specific and avoid prevention-style phrasing.",
@@ -1736,6 +1882,126 @@ const buildSectionFallback = (
         ],
         evidenceRead: "This section is about practical comparison and interpretation, not about promising that one B6 product always does more.",
         shopperMeaning: "Read the amount, form, and formula role together before assuming two B6 products belong in the same comparison set.",
+      };
+    case "serotonin_precursor_context":
+      return {
+        heading: section.heading,
+        summary: `${label} is easiest to interpret through serotonin-precursor context, which is a cleaner and more specific lane than broad mood or sleep marketing by itself.`,
+        bullets: [
+          "This is the clearest lane for understanding why 5-HTP appears in supplement formulas.",
+          "Broad mood or sleep wording can sound bigger than the most grounded interpretation lane.",
+          "The disclosed amount still matters when shoppers compare one 5-HTP product with another.",
+        ],
+        evidenceRead: "This is the clearest and most practical 5-HTP lane, but it should still be read through the exact label line and amount.",
+        shopperMeaning: "Compare 5-HTP products through the named active and the disclosed dose before giving extra weight to broader packaging claims.",
+      };
+    case "formula_pairing_and_dose_context":
+      return {
+        heading: section.heading,
+        summary: `Supporting lines around ${label}, such as B vitamins or companion amino-acid ingredients, can change how the formula is read without replacing the main 5-HTP line as the core comparison anchor.`,
+        bullets: [
+          "The supporting ingredients can change formula positioning and shopper expectations.",
+          "They do not replace the main 5-HTP row when the shopper is deciding how central the active really is.",
+          "Amount and co-formulation both matter before two formulas can be treated as close substitutes.",
+        ],
+        evidenceRead: "This is mainly a formula-interpretation section rather than a stand-alone research claim section.",
+        shopperMeaning: "Use it to read the rest of the formula in context after checking the main 5-HTP line and dose.",
+      };
+    case "b3_coenzyme_context":
+      return {
+        heading: section.heading,
+        summary: `${label} is easiest to read through coenzyme and metabolism-related context, which is more useful than generic energy copy when the shopper is comparing formulas.`,
+        bullets: [
+          "This is the clearest lane for understanding why B3 or niacinamide appears on the label.",
+          "Broad energy language is looser than the actual ingredient-and-dose reading.",
+          "The disclosed amount still changes how much weight the shopper should give the row.",
+        ],
+        evidenceRead: "This is the cleanest practical lane for B3 interpretation, and it is narrower than generic front-label energy messaging.",
+        shopperMeaning: "Compare B3 products through the exact ingredient line and amount before leaning on broader category language.",
+      };
+    case "companion_role_on_the_label":
+      return {
+        heading: section.heading,
+        summary: `${label} often behaves like a supporting nutrient in multi-ingredient formulas, which means the shopper has to judge whether it is central to the product or mainly part of the surrounding setup.`,
+        bullets: [
+          "A clearly disclosed B3 row can still be a supporting line rather than the main story of the formula.",
+          "The rest of the formula changes how much comparison value the B3 line really carries.",
+          "That is why two products that both list niacinamide can still feel very different once the full label is read.",
+        ],
+        evidenceRead: "This is a formula-role section: it explains what the B3 row is doing on the label rather than turning every B3 line into the same research story.",
+        shopperMeaning: "Use it to decide whether the B3 row deserves primary comparison weight or should be read as a supporting nutrient.",
+      };
+    case "glycine_formula_context":
+      return {
+        heading: section.heading,
+        summary: `${label} is often easiest to interpret as an amino-acid formula line whose importance depends on whether it is acting as a lead active or supporting a broader product story.`,
+        bullets: [
+          "Glycine can be central in some formulas and clearly supportive in others.",
+          "The disclosed amount changes how much weight the shopper should give the row.",
+          "It is more useful to read glycine through the full formula context than through generic calm or sleep language alone.",
+        ],
+        evidenceRead: "This is a product-context section rather than a broad umbrella claim about glycine.",
+        shopperMeaning: "It helps the shopper decide whether glycine is the reason to compare the product or one supporting part of a broader formula.",
+      };
+    case "coformulation_changes_reading":
+      return {
+        heading: section.heading,
+        summary: `How much ${label} matters in practice can change a lot once the shopper sees what it is paired with and whether it is carrying a supporting role instead of the lead-active role.`,
+        bullets: [
+          "Pairing with ingredients like 5-HTP or taurine can change what glycine is doing on the label.",
+          "Supporting roles should not be mistaken for the headline story of the product.",
+          "Formula context changes comparability even when the ingredient name stays the same.",
+        ],
+        evidenceRead: "This is about formula reading and comparison, not about claiming that glycine always means the same thing across products.",
+        shopperMeaning: "Read glycine together with the rest of the active lines before assuming two products are directly comparable.",
+      };
+    case "taurine_physiology_context":
+      return {
+        heading: section.heading,
+        summary: `${label} has a recognizable physiology-related context, but broad energy or performance language can easily sound wider than the clearest label-reading interpretation.`,
+        bullets: [
+          "This is the clearest lane for understanding why taurine is present on the label.",
+          "Front-label performance wording can overstate how central taurine really is in a mixed formula.",
+          "Dose and formula setting still shape how much comparison value the taurine row carries.",
+        ],
+        evidenceRead: "This is a real taurine lane, but it should stay narrower and more product-aware than generic performance marketing.",
+        shopperMeaning: "Use the taurine row and amount as the comparison anchor before giving too much weight to broad category copy.",
+      };
+    case "taurine_formula_role":
+      return {
+        heading: section.heading,
+        summary: `${label} can act as either a lead active or a supporting formula line, so the shopper has to judge its role in the context of the whole disclosed ingredient setup.`,
+        bullets: [
+          "A named taurine row does not automatically mean taurine is the main thing being sold.",
+          "The co-ingredients and the dose change whether taurine is central or supporting.",
+          "That role difference can make two taurine-containing products feel less directly comparable than they first appear.",
+        ],
+        evidenceRead: "This is mainly a formula-role interpretation section rather than a broad taurine claim section.",
+        shopperMeaning: "It helps the shopper decide whether taurine deserves primary comparison weight or should be read as part of a broader formula.",
+      };
+    case "inositol_signaling_context":
+      return {
+        heading: section.heading,
+        summary: `${label} is easiest to interpret through signaling and formula-context language, which is more useful than broad mood or hormone-adjacent marketing when products are compared.`,
+        bullets: [
+          "This is the clearest lane for understanding what an inositol row is doing on the label.",
+          "Broad mood or hormone wording can stretch further than the most grounded interpretation lane.",
+          "The product context still matters because inositol can be central in some formulas and supportive in others.",
+        ],
+        evidenceRead: "This is a practical inositol lane, but it should stay narrower and more product-aware than generic front-label promises.",
+        shopperMeaning: "Use it to anchor the inositol row in a concrete comparison frame before relying on broader packaging language.",
+      };
+    case "inositol_amount_and_pairing":
+      return {
+        heading: section.heading,
+        summary: `Amount and co-formulation matter a lot for ${label}, because the same ingredient line can carry very different comparison value depending on what else surrounds it in the formula.`,
+        bullets: [
+          "The disclosed amount changes interpretation more than the category label alone.",
+          "Pairing with other actives can shift inositol from lead-active territory into a supporting role.",
+          "That is why two inositol products may not belong in the same comparison set even if the ingredient name matches.",
+        ],
+        evidenceRead: "This section is about practical comparison and formula reading, not about turning inositol into a generic umbrella claim.",
+        shopperMeaning: "Read the amount and the surrounding actives together before assuming two inositol formulas are interchangeable.",
       };
     case "immune_function_context":
       return {
