@@ -1246,6 +1246,84 @@ const deriveProductTypeLabel = (params: {
     return 'Dietary supplement';
 };
 
+type OverviewScienceIngredientRow = {
+    key?: string | null;
+    name: string;
+    baseName?: string | null;
+    dose?: string | null;
+    formValue?: string | null;
+};
+
+const OVERVIEW_BLEND_LIKE_PATTERN = /\b(blend|complex|matrix|formula|proprietary)\b/i;
+const OVERVIEW_COMPANION_NUTRIENT_PATTERN =
+    /\b(vitamin\s*b(?:3|6|12)\b|\bb(?:3|6|12)\b|niacin(?:amide)?\b|nicotinamide\b|pyridoxine\b|pyridoxal(?:\s|-)?5(?:\s|-)?phosphate\b|p-?5-?p\b|folate\b|folic acid\b|methylfolate\b|zinc\b|selenium\b|copper\b|chromium\b|iodine\b|calcium\b|magnesium\b|manganese\b|molybdenum\b)\b/i;
+const OVERVIEW_PRIMARY_ACTIVE_PATTERN =
+    /\b(5[\s-]*htp|5[\s-]*hydroxytryptophan|griffonia|ashwagandha|curcumin|turmeric|creatine|theanine|taurine|glycine|inositol|melatonin|coq10|ubiquinol|omega[\s-]*3|fish oil|epa|dha|vitamin c|ascorbic acid|vitamin d|cholecalciferol|ergocalciferol)\b/i;
+
+const normalizeOverviewIngredientKey = (value?: string | null): string =>
+    normalizeText(value)
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '')
+        .trim();
+
+const parseOverviewDoseMagnitude = (value?: string | null): number => {
+    const normalized = normalizeText(value).toLowerCase().replace(/,/g, '');
+    if (!normalized) return 0;
+    const match = normalized.match(/(\d+(?:\.\d+)?)/);
+    if (!match?.[1]) return 0;
+    const amount = Number(match[1]);
+    if (!Number.isFinite(amount) || amount <= 0) return 0;
+    if (/\b(mcg|µg|μg)\b/.test(normalized)) return amount / 1000;
+    if (/\b(g|gram|grams)\b/.test(normalized)) return amount * 1000;
+    if (/\bmg\b/.test(normalized)) return amount;
+    return amount / 10;
+};
+
+const scoreOverviewLeadIngredient = (
+    row: OverviewScienceIngredientRow,
+    index: number,
+    productTitleKey: string,
+): number => {
+    const displayName = normalizeText(row.baseName || row.name);
+    if (!displayName) return Number.NEGATIVE_INFINITY;
+    const rowKey = normalizeOverviewIngredientKey(row.key || displayName);
+    const isBlendLike = OVERVIEW_BLEND_LIKE_PATTERN.test(displayName);
+    const isCompanionNutrient = OVERVIEW_COMPANION_NUTRIENT_PATTERN.test(displayName);
+    const titleMatch = rowKey.length >= 3 && productTitleKey.includes(rowKey);
+    const hasDose = normalizeText(row.dose).length > 0;
+    const doseMagnitude = parseOverviewDoseMagnitude(row.dose);
+
+    return (
+        (titleMatch ? 160 : 0) +
+        (!isCompanionNutrient && OVERVIEW_PRIMARY_ACTIVE_PATTERN.test(displayName) ? 28 : 0) +
+        (hasDose ? 18 : 0) +
+        Math.min(doseMagnitude, 1200) / 24 -
+        (isCompanionNutrient ? 60 : 0) -
+        (isBlendLike ? 120 : 0) -
+        index * 0.5
+    );
+};
+
+const pickOverviewLeadIngredientRow = (
+    rows: OverviewScienceIngredientRow[],
+    productTitle: string | null,
+): OverviewScienceIngredientRow | null => {
+    if (!Array.isArray(rows) || rows.length === 0) return null;
+    const productTitleKey = normalizeOverviewIngredientKey(productTitle);
+    let bestRow: OverviewScienceIngredientRow | null = null;
+    let bestScore = Number.NEGATIVE_INFINITY;
+
+    rows.forEach((row, index) => {
+        const score = scoreOverviewLeadIngredient(row, index, productTitleKey);
+        if (score > bestScore) {
+            bestScore = score;
+            bestRow = row;
+        }
+    });
+
+    return bestRow ?? rows[0] ?? null;
+};
+
 function ensurePeriod(value: string) {
     const trimmed = value.trim();
     if (!trimmed) return '';
@@ -6404,7 +6482,10 @@ const AnalysisBundleDashboard: React.FC<{
         decisionTemplatePayload
             ? normalizeText(decisionTemplatePayload?.digest ?? bundleState.meta.factsDigestHash ?? null) || null
             : null;
-    const overviewPrimaryScienceRow = scienceIngredientsAll[0] ?? null;
+    const overviewPrimaryScienceRow = useMemo(
+        () => pickOverviewLeadIngredientRow(scienceIngredientsAll, productTitle),
+        [productTitle, scienceIngredientsAll],
+    );
     const overviewPrimaryIngredientLabel = useMemo(() => {
         if (!overviewPrimaryScienceRow) return null;
         const baseName = normalizeText(overviewPrimaryScienceRow.baseName || overviewPrimaryScienceRow.name);
@@ -6413,6 +6494,13 @@ const AnalysisBundleDashboard: React.FC<{
             return 'Multi-ingredient formula';
         }
         return baseName;
+    }, [overviewPrimaryScienceRow, scienceIngredientsAll]);
+    const overviewOrderedScienceRows = useMemo(() => {
+        if (!overviewPrimaryScienceRow) return scienceIngredientsAll;
+        return [
+            overviewPrimaryScienceRow,
+            ...scienceIngredientsAll.filter((row) => row.key !== overviewPrimaryScienceRow.key),
+        ];
     }, [overviewPrimaryScienceRow, scienceIngredientsAll]);
     const overviewServingUnitSingular = useMemo(
         () => singularizeServingUnit(decisionProvides?.servingSize ?? decisionProvides?.dosageForm ?? null),
@@ -6566,7 +6654,7 @@ const AnalysisBundleDashboard: React.FC<{
             brandName: normalizeText(overviewFacts?.product?.brand ?? brandForSubtitle) || null,
             productTypeHint: overviewProductType,
             primaryIngredient: overviewPrimaryIngredientLabel,
-            keyIngredients: scienceIngredientsAll.slice(0, 4).map((row) => ({
+            keyIngredients: overviewOrderedScienceRows.slice(0, 6).map((row) => ({
                 name: row.baseName || row.name,
                 dose: row.dose ?? null,
             })),
@@ -6589,13 +6677,13 @@ const AnalysisBundleDashboard: React.FC<{
         overviewFacts?.product?.brand,
         overviewFacts?.product?.name,
         overviewFormValue,
+        overviewOrderedScienceRows,
         overviewPrimaryIngredientLabel,
         overviewProductType,
         overviewServingStrength,
         overviewSourceContextHint,
         overviewStrengthClaim,
         productTitle,
-        scienceIngredientsAll,
     ]);
     const overviewAiRequestFingerprint = useMemo(
         () => (productOverviewAiRequestPayload ? JSON.stringify(productOverviewAiRequestPayload) : null),
