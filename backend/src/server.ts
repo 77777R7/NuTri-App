@@ -11241,6 +11241,7 @@ app.post("/api/product-overview-ai/v1", verifySupabaseToken, async (req: Request
   const respondWithOverviewFallback = (reason: string) => res.json({
     status: "ok",
     digest: parsedBody.digest,
+    source: "fallback",
     promptVersion: `${PRODUCT_OVERVIEW_WHAT_IS_IT_PROMPT_VERSION}:fallback`,
     fallbackUsed: true,
     fallbackReason: reason,
@@ -11315,6 +11316,7 @@ app.post("/api/product-overview-ai/v1", verifySupabaseToken, async (req: Request
     return res.json({
       status: "ok",
       digest: parsedBody.digest,
+      source: "api",
       promptVersion: PRODUCT_OVERVIEW_WHAT_IS_IT_PROMPT_VERSION,
       fallbackUsed: false,
       overviewAi: ai,
