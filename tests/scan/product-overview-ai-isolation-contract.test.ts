@@ -46,6 +46,10 @@ test('product overview AI stays sidecar-only on the frontend', () => {
   assert.ok(dashboardSource.includes('/api/product-overview-ai/v1'));
   assert.ok(dashboardSource.includes("right={<GlassPill label={resolveSimpleTaxonomyLabel('AI summary')} />}"));
   assert.ok(dashboardSource.includes('AI summary unavailable'));
+  assert.ok(dashboardSource.includes("source !== 'api' && currentOverviewAiState.source !== 'server-fallback'"));
+  assert.ok(dashboardSource.includes("status: 'loading'"));
+  assert.ok(dashboardSource.includes("status: 'idle'"));
+  assert.equal(dashboardSource.includes('client-fallback'), false);
 });
 
 test('decision-support fetch waits out transient web skeleton state before calling the authority route', () => {
@@ -62,6 +66,8 @@ test('product overview AI route is isolated from shared decision-support authori
   assert.ok(serverSource.includes('app.post("/api/product-overview-ai/v1", verifySupabaseToken, async (req: Request, res: Response) => {'));
   assert.ok(serverSource.includes('fetchProductOverviewWhatIsIt'));
   assert.ok(serverSource.includes('buildProductOverviewWhatIsItFallback'));
+  assert.ok(serverSource.includes('source: "fallback"'));
+  assert.ok(serverSource.includes('source: "api"'));
   assert.ok(serverSource.includes('fallbackUsed: true'));
   assert.ok(serverSource.includes('fallbackReason: reason'));
 });

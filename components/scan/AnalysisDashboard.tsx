@@ -9,6 +9,7 @@ import {
     CheckCircle2,
     ChevronRight,
     Clock,
+    Lock,
     Pill,
     Shield,
     TrendingUp,
@@ -54,6 +55,7 @@ import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
 import { Config } from '@/constants/Config';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOnboarding } from '@/contexts/OnboardingContext';
+import { useSubscription } from '@/contexts/SubscriptionContext';
 import { withAuthHeaders } from '@/lib/auth-token';
 import { useTranslation } from '@/lib/i18n';
 import { lookupFoundationForIngredient, summarizeFoundationHits } from '@/lib/knowledge/foundationLookup';
@@ -96,6 +98,8 @@ type ScoreState = 'active' | 'muted' | 'loading';
 type SourceType = string;
 
 type TileType = 'overview' | 'science' | 'usage' | 'safety';
+type AnalysisAccessLevel = 'full' | 'preview_locked';
+type PaywallSource = TileType | 'score' | 'comparison';
 
 type CoverStatus = 'complete' | 'partial' | 'limited';
 
@@ -378,6 +382,7 @@ type DecisionSupportPersonalizedResultLane = {
 type DecisionSupportTemplatePayload = {
     digest?: string;
     decisionInputsHash?: string;
+    personalizationScopeHash?: string;
     decisionContractVersion?: string;
     overlayClaimsHash?: string | null;
     overlayAugmentationVersion?: string | null;
@@ -567,11 +572,34 @@ type TileConfig = {
     };
     showDataStatusCard?: boolean;
     content: React.ReactNode;
+    locked?: boolean;
 };
 
 type WidgetTileProps = {
     tile: TileConfig;
     onPress: () => void;
+};
+
+const LockedPreviewBody: React.FC<{
+    accent: string;
+    tint: React.ComponentProps<typeof BlurView>['tint'];
+}> = ({ accent, tint }) => {
+    return (
+        <View style={styles.lockedPreviewBody}>
+            <View style={styles.lockedPreviewSkeleton}>
+                <View style={[styles.lockedPreviewLine, styles.lockedPreviewLineWide]} />
+                <View style={[styles.lockedPreviewLine, styles.lockedPreviewLineMedium]} />
+                <View style={[styles.lockedPreviewLine, styles.lockedPreviewLineShort]} />
+            </View>
+            <View style={styles.lockedPreviewOverlay}>
+                <DashboardBlur intensity={22} tint={tint} style={StyleSheet.absoluteFillObject} />
+                <View style={[styles.lockedPreviewBadge, { borderColor: `${accent}40` }]}>
+                    <Lock size={14} color="#0F172A" />
+                    <Text style={styles.lockedPreviewBadgeText}>Premium</Text>
+                </View>
+            </View>
+        </View>
+    );
 };
 
 export type AnalysisDashboardSaveItem = {
@@ -763,8 +791,51 @@ const getDecisionPayloadFactsDigestHash = (payload: Record<string, unknown> | nu
 const getDecisionPayloadDigest = (payload: Record<string, unknown> | null | undefined): string =>
     normalizeText(payload && typeof payload.digest === 'string' ? payload.digest : null);
 
+const getDecisionPayloadPersonalizationScopeHash = (
+    payload: Record<string, unknown> | null | undefined,
+): string => normalizeText(payload && typeof payload.personalizationScopeHash === 'string' ? payload.personalizationScopeHash : null);
+
 const isDecisionPayloadExplicitlyStale = (payload: Record<string, unknown> | null | undefined): boolean =>
     Boolean(payload && typeof payload === 'object' && payload.staleDigest === true);
+
+const doesGoalFitReadAsEvidenceThin = (params: {
+    heroMode?: 'dominant_goal' | 'mixed_goals' | 'limited_goals' | 'single_goal' | 'insufficient_signal' | null;
+    labelCompleteness?: 'high' | 'medium' | 'low' | null;
+    goalNarrativeConfidence?: 'high' | 'medium' | 'low' | null;
+}): boolean =>
+    params.heroMode === 'insufficient_signal'
+    || params.labelCompleteness === 'low'
+    || params.goalNarrativeConfidence === 'low';
+
+const GOAL_COVERAGE_SIGNAL_PRIORITY: Record<'strong' | 'some' | 'limited' | 'none' | 'unknown', number> = {
+    strong: 5,
+    some: 4,
+    limited: 3,
+    none: 2,
+    unknown: 1,
+};
+
+const pickDominantGoalCoverageLabel = (
+    coverage: Array<{
+        goalLabel: string;
+        state: 'strong' | 'some' | 'limited' | 'none' | 'unknown';
+        score?: number | null;
+    }>,
+): string | null => {
+    const ranked = coverage
+        .map((entry) => ({
+            goalLabel: normalizeText(entry.goalLabel),
+            statePriority: GOAL_COVERAGE_SIGNAL_PRIORITY[entry.state] ?? 0,
+            score: typeof entry.score === 'number' ? entry.score : -1,
+        }))
+        .filter((entry) => entry.goalLabel.length > 0)
+        .sort((a, b) => {
+            if (b.statePriority !== a.statePriority) return b.statePriority - a.statePriority;
+            if (b.score !== a.score) return b.score - a.score;
+            return a.goalLabel.localeCompare(b.goalLabel);
+        });
+    return ranked[0]?.goalLabel ?? null;
+};
 
 const getV2ModulesFromPayload = (payload: Record<string, unknown> | null | undefined): Record<string, unknown>[] => {
     const card = payload?.nutriScoreCardV2;
@@ -2091,6 +2162,7 @@ const WidgetTile: React.FC<WidgetTileProps> = ({ tile, onPress }) => {
     const base = tile.backgroundColor || '#FFFFFF';
     const tColor = tile.textColor || '#0F172A';
     const label = tile.labelColor || accent;
+    const isLocked = tile.locked === true;
 
     const isDarkBase = luminance(base) < 0.28;
     const eyebrowColor =
@@ -2134,6 +2206,10 @@ const WidgetTile: React.FC<WidgetTileProps> = ({ tile, onPress }) => {
     ) : null;
 
     const renderContent = () => {
+        if (isLocked) {
+            return <LockedPreviewBody accent={accent} tint={TILE_GLASS_TINT} />;
+        }
+
         if (tile.loading) {
             return (
                 <View style={styles.tileSection}>
@@ -2367,7 +2443,7 @@ const WidgetTile: React.FC<WidgetTileProps> = ({ tile, onPress }) => {
                                 </View>
                             </View>
 
-                            {!tile.loading && (
+                            {!tile.loading && !isLocked ? (
                                 <View style={styles.viewPillShadow}>
                                     <View style={styles.viewPill}>
                                         <DashboardBlur intensity={18} tint={TILE_GLASS_TINT} style={StyleSheet.absoluteFillObject} />
@@ -2388,7 +2464,13 @@ const WidgetTile: React.FC<WidgetTileProps> = ({ tile, onPress }) => {
                                         </Text>
                                     </View>
                                 </View>
-                            )}
+                            ) : null}
+                            {isLocked ? (
+                                <View style={styles.tileLockedPill}>
+                                    <Lock size={12} color={tColor} />
+                                    <Text style={[styles.tileLockedPillText, { color: tColor }]}>Locked</Text>
+                                </View>
+                            ) : null}
                         </View>
 
                         {renderContent()}
@@ -2496,6 +2578,263 @@ const GlassCard: React.FC<GlassCardProps> = ({ title, subtitle, right, accentCol
                 {children}
             </View>
         </View>
+    );
+};
+
+const LockedSectionPreviewCard: React.FC<{
+    title: string;
+    body: string;
+    onPress?: () => void;
+}> = ({ title, body, onPress }) => {
+    const content = (
+        <View style={styles.lockedSectionCard}>
+            <DashboardBlur intensity={22} tint="light" style={StyleSheet.absoluteFillObject} />
+            <View style={styles.lockedSectionCardContent}>
+                <Text style={styles.lockedSectionTitle}>{title}</Text>
+                <View style={styles.lockedSectionBodyWrap}>
+                    <View style={styles.lockedSectionBodyScrim}>
+                        <View style={[styles.lockedPreviewLine, styles.lockedPreviewLineWide]} />
+                        <View style={[styles.lockedPreviewLine, styles.lockedPreviewLineMedium]} />
+                    </View>
+                    <View style={styles.lockedSectionBodyOverlay}>
+                        <DashboardBlur intensity={18} tint="light" style={StyleSheet.absoluteFillObject} />
+                        <Text style={styles.lockedSectionBodyText}>{body}</Text>
+                    </View>
+                </View>
+            </View>
+        </View>
+    );
+
+    if (!onPress) return content;
+
+    return (
+        <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={title}>
+            {content}
+        </Pressable>
+    );
+};
+
+const getPaywallCopy = (source: PaywallSource | null) => {
+    switch (source) {
+        case 'score':
+            return {
+                title: 'Unlock the full NuTri Score',
+                body: 'Open the full score breakdown, decision details, and product fit before you buy.',
+            };
+        case 'overview':
+            return {
+                title: 'Unlock Product Overview',
+                body: 'See what this supplement is, what it provides, and the key gaps to check before you commit.',
+            };
+        case 'science':
+            return {
+                title: 'Unlock Science & Ingredients',
+                body: 'Read ingredient-by-ingredient science, dose context, and the formal evidence behind the formula.',
+            };
+        case 'usage':
+            return {
+                title: 'Unlock Usage Guidance',
+                body: 'Get product-specific routine guidance, best-fit timing, and the next steps for this supplement.',
+            };
+        case 'safety':
+            return {
+                title: 'Unlock Safety Notes',
+                body: 'Review warnings, upper-limit context, and the watch-outs that matter before adding this product.',
+            };
+        case 'comparison':
+            return {
+                title: 'Unlock Better Alternatives',
+                body: 'Compare this product with stronger options and see whether a better fit already exists.',
+            };
+        default:
+            return {
+                title: 'Unlock Premium',
+                body: 'Get personalized fit, ingredient science, and better alternatives in one place.',
+            };
+    }
+};
+
+type PaywallPlanCard = {
+    id: 'annual' | 'monthly';
+    title: string;
+    priceLine: string;
+    detailLine: string;
+    metaLine?: string | null;
+    badge?: string | null;
+    selected: boolean;
+};
+
+const ScanPaywallModal: React.FC<{
+    visible: boolean;
+    source: PaywallSource | null;
+    signedIn: boolean;
+    planCards: PaywallPlanCard[];
+    primaryLabel: string;
+    primaryBusy?: boolean;
+    primaryDisabled?: boolean;
+    supportingText?: string | null;
+    footerText?: string | null;
+    errorText?: string | null;
+    restoreBusy?: boolean;
+    onClose: () => void;
+    onPrimaryPress: () => void;
+    onRestorePress?: () => void;
+}> = ({
+    visible,
+    source,
+    signedIn,
+    planCards,
+    primaryLabel,
+    primaryBusy = false,
+    primaryDisabled = false,
+    supportingText = null,
+    footerText = null,
+    errorText = null,
+    restoreBusy = false,
+    onClose,
+    onPrimaryPress,
+    onRestorePress,
+}) => {
+    const copy = getPaywallCopy(source);
+
+    return (
+        <Modal
+            visible={visible}
+            transparent
+            animationType="none"
+            onRequestClose={onClose}
+            statusBarTranslucent
+        >
+            <View style={styles.modalOverlayGlass}>
+                <Pressable style={StyleSheet.absoluteFill} onPress={onClose}>
+                    <DashboardBlur intensity={22} tint="dark" style={StyleSheet.absoluteFill} />
+                    <View style={styles.modalBackdropTint} />
+                </Pressable>
+
+                <Animated.View
+                    entering={FadeInUp.duration(240).easing(Easing.out(Easing.cubic))}
+                    exiting={FadeOutDown.duration(180).easing(Easing.in(Easing.cubic))}
+                    style={styles.paywallSheet}
+                >
+                    <DashboardBlur intensity={26} tint="light" style={StyleSheet.absoluteFill} />
+
+                    <View style={styles.modalHandle} />
+
+                    <View style={styles.paywallHeader}>
+                        <View style={styles.paywallBadge}>
+                            <Lock size={14} color="#0F172A" />
+                            <Text style={styles.paywallBadgeText}>Premium</Text>
+                        </View>
+                        <Pressable style={styles.modalCloseButtonNew} onPress={onClose} accessibilityLabel="Close">
+                            <DashboardBlur intensity={18} tint="light" style={StyleSheet.absoluteFill} />
+                            <X size={18} color="#111827" />
+                        </Pressable>
+                    </View>
+
+                    <View style={styles.paywallBody}>
+                        <Text style={styles.paywallTitle}>{copy.title}</Text>
+                        <Text style={styles.paywallText}>{copy.body}</Text>
+
+                        <View style={styles.paywallBulletList}>
+                            <View style={styles.paywallBulletRow}>
+                                <View style={styles.paywallBulletDot} />
+                                <Text style={styles.paywallBulletText}>Personalized fit for your goals</Text>
+                            </View>
+                            <View style={styles.paywallBulletRow}>
+                                <View style={styles.paywallBulletDot} />
+                                <Text style={styles.paywallBulletText}>Ingredient science that is easier to trust</Text>
+                            </View>
+                            <View style={styles.paywallBulletRow}>
+                                <View style={styles.paywallBulletDot} />
+                                <Text style={styles.paywallBulletText}>Compare with better alternatives before checkout</Text>
+                            </View>
+                        </View>
+
+                        <View style={styles.paywallPlanList}>
+                            {planCards.map((plan) => (
+                                <View
+                                    key={plan.id}
+                                    style={[
+                                        styles.paywallPlanCard,
+                                        plan.selected ? styles.paywallPlanCardSelected : styles.paywallPlanCardMuted,
+                                    ]}
+                                >
+                                    <View style={styles.paywallPlanHeaderRow}>
+                                        <Text
+                                            style={[
+                                                styles.paywallPlanTitle,
+                                                plan.selected ? styles.paywallPlanTitleSelected : null,
+                                            ]}
+                                        >
+                                            {plan.title}
+                                        </Text>
+                                        {plan.badge ? (
+                                            <View style={styles.paywallPlanBadge}>
+                                                <Text style={styles.paywallPlanBadgeText}>{plan.badge}</Text>
+                                            </View>
+                                        ) : null}
+                                    </View>
+                                    <Text
+                                        style={[
+                                            styles.paywallPlanPrice,
+                                            plan.selected ? styles.paywallPlanPriceSelected : null,
+                                        ]}
+                                    >
+                                        {plan.priceLine}
+                                    </Text>
+                                    <Text style={styles.paywallPlanDetail}>{plan.detailLine}</Text>
+                                    {plan.metaLine ? (
+                                        <Text style={styles.paywallPlanMeta}>{plan.metaLine}</Text>
+                                    ) : null}
+                                </View>
+                            ))}
+                        </View>
+                    </View>
+
+                    <View style={styles.paywallFooter}>
+                        <Pressable
+                            style={[
+                                styles.paywallPrimaryButton,
+                                (primaryDisabled || primaryBusy) ? styles.paywallPrimaryButtonDisabled : null,
+                            ]}
+                            onPress={onPrimaryPress}
+                            disabled={primaryDisabled || primaryBusy}
+                        >
+                            {primaryBusy ? (
+                                <ActivityIndicator size="small" color="#FFFFFF" />
+                            ) : (
+                                <Text style={styles.paywallPrimaryButtonText}>{primaryLabel}</Text>
+                            )}
+                        </Pressable>
+                        {supportingText ? (
+                            <Text style={styles.paywallSupportingText}>{supportingText}</Text>
+                        ) : null}
+                        {errorText ? (
+                            <Text style={styles.paywallErrorText}>{errorText}</Text>
+                        ) : null}
+                        {footerText ? (
+                            <Text style={styles.paywallFooterText}>{footerText}</Text>
+                        ) : null}
+                        {signedIn && onRestorePress ? (
+                            <Pressable
+                                style={styles.paywallRestoreButton}
+                                onPress={onRestorePress}
+                                disabled={restoreBusy}
+                            >
+                                {restoreBusy ? (
+                                    <ActivityIndicator size="small" color="#0F172A" />
+                                ) : (
+                                    <Text style={styles.paywallRestoreButtonText}>Restore Purchases</Text>
+                                )}
+                            </Pressable>
+                        ) : null}
+                        <Pressable style={styles.paywallSecondaryButton} onPress={onClose}>
+                            <Text style={styles.paywallSecondaryButtonText}>Not now</Text>
+                        </Pressable>
+                    </View>
+                </Animated.View>
+            </View>
+        </Modal>
     );
 };
 
@@ -2997,7 +3336,7 @@ const buildUnifiedTileDataStatus = (
 
 type IngredientOverviewSidecarState = {
     status: 'idle' | 'loading' | 'ok' | 'error';
-    source?: 'api' | 'fallback';
+    source?: 'api' | 'server-fallback';
     fallbackUsed?: boolean;
     promptVersion?: string;
     data?: IngredientOverviewBlock;
@@ -3118,57 +3457,6 @@ type ScienceSidecarIngredientRow = {
     key: string;
     name: string;
     dose: string | null;
-};
-
-const buildIngredientOverviewFallbackClient = (
-    rows: ScienceSidecarIngredientRow[],
-): IngredientOverviewBlock => {
-    const anchor = rows[0] ?? null;
-    const hasOpaqueBlend = rows.some((row) => isBlendLikeName(row.name));
-    const hasOmega3Breakdown = rows.some((row) => isOmega3BreakdownLineName(row.name));
-    const formulaMode: IngredientOverviewBlock['mode'] =
-        rows.length <= 1 && !hasOpaqueBlend
-            ? 'single_anchor'
-            : hasOpaqueBlend
-                ? 'blend_anchor'
-                : 'multi_anchor';
-
-    if (formulaMode === 'single_anchor') {
-        return {
-            mode: 'single_anchor',
-            titleLine: anchor?.name ?? 'Ingredient',
-            paragraph1: `${anchor?.name ?? 'This ingredient'} is the main disclosed active in this product rather than one part of a broader multi-ingredient formula.`,
-            paragraph2: 'That makes the label easier to read because the core ingredient identity stands on its own instead of being buried inside a blend or total line.',
-            compareHint: 'When comparing products, focus on the named ingredient, the stated amount per serving, and whether the label clearly states the form or source.',
-        };
-    }
-
-    if (formulaMode === 'multi_anchor') {
-        if (rows.some((row) => isOmega3SourceLineName(row.name)) && hasOmega3Breakdown) {
-            return {
-                mode: 'multi_anchor',
-                titleLine: 'Omega-3 formula',
-                paragraph1: 'This omega-3 formula is organized around a source-oil line plus separate rows that break out the specific fatty acids underneath it.',
-                paragraph2: 'That structure helps distinguish the source material from the EPA and DHA amounts that matter most when comparing products side by side.',
-                compareHint: 'When comparing omega-3 products, focus on total omega-3 plus the stated EPA and DHA amounts, not just the fish-oil total.',
-            };
-        }
-        return {
-            mode: 'multi_anchor',
-            titleLine: anchor?.name ?? 'Multi-ingredient formula',
-            paragraph1: 'This product uses a multi-part formula instead of relying on only one disclosed active ingredient.',
-            paragraph2: 'Some rows identify the main actives, while others add supporting nutrients or extra disclosure that helps explain how the formula is structured.',
-            compareHint: 'When comparing products, focus on the named primary actives first and then check whether the rest of the formula is itemized clearly enough to compare.',
-        };
-    }
-
-    return {
-        mode: 'blend_anchor',
-        titleLine: 'Blend-style formula',
-        paragraph1: 'This product is organized around broad blend-style label lines rather than a fully itemized ingredient list.',
-        paragraph2: 'That can describe the formula category at a glance, but it gives less precision about which components are doing the work and in what amounts.',
-        compareHint: 'When comparing products, look for item-level naming and whether the label provides more than a single broad blend total.',
-    };
 };
 
 const buildProductOverviewFallbackClient = (
@@ -3603,6 +3891,7 @@ const MiniScoreHeader: React.FC<{
 const AnalysisBundleDashboard: React.FC<{
     bundle: AnalysisBundle;
     analysis: Analysis;
+    accessLevel?: AnalysisAccessLevel;
     isStreaming?: boolean;
     scoreBadge?: string;
     scoreState?: ScoreState;
@@ -3614,9 +3903,11 @@ const AnalysisBundleDashboard: React.FC<{
     onMiniScoreTriggerChange?: (trigger: { start: number; range: number }) => void;
     onCoreReadyChange?: (ready: boolean) => void;
     saveItem?: AnalysisDashboardSaveItem | null;
+    onboardingDraftOverride?: ProfileDraft | null;
 }> = ({
     bundle,
     analysis,
+    accessLevel = 'full',
     isStreaming = false,
     scoreBadge,
     scoreState = 'active',
@@ -3628,11 +3919,16 @@ const AnalysisBundleDashboard: React.FC<{
     onMiniScoreTriggerChange,
     onCoreReadyChange,
     saveItem = null,
+    onboardingDraftOverride = null,
 }) => {
     const { t } = useTranslation();
-    const { loading: authLoading, token: authToken } = useAuth();
+    const { loading: authLoading, token: authToken, session, setPostAuthRedirect } = useAuth();
     const { draft: onboardingDraft, loading: onboardingLoading } = useOnboarding();
+    const effectiveOnboardingDraft = onboardingDraftOverride ?? onboardingDraft;
+    const subscription = useSubscription();
+    const isPreviewLocked = accessLevel === 'preview_locked';
     const [selectedTileType, setSelectedTileType] = useState<TileType | null>(null);
+    const [paywallSource, setPaywallSource] = useState<PaywallSource | null>(null);
     const [bundleState, setBundleState] = useState<AnalysisBundle>(bundle);
     const [detailLoading, setDetailLoading] = useState(false);
     const [detailError, setDetailError] = useState<string | null>(null);
@@ -3673,6 +3969,146 @@ const AnalysisBundleDashboard: React.FC<{
         coreCardsVisibleLogged: false,
     });
     const analysisBarcodeRaw = normalizeText((analysis as { barcode?: string | null })?.barcode ?? null);
+    const annualProduct = subscription.annualPackage?.product ?? null;
+    const monthlyProduct = subscription.monthlyPackage?.product ?? null;
+    const annualPriceLine = annualProduct?.priceString ?? '$59.99/year';
+    const monthlyPriceLine = monthlyProduct?.priceString ?? '$10.99/month';
+    const annualMetaLine = annualProduct?.pricePerMonthString ?? '$5.00/month';
+    const paywallPlanCards = useMemo<PaywallPlanCard[]>(() => ([
+        {
+            id: 'annual',
+            title: 'Annual',
+            priceLine: annualPriceLine,
+            detailLine: subscription.uiPreviewMode
+                ? 'Billed yearly'
+                : subscription.trialEligibility === 'eligible'
+                    ? '7-day free trial'
+                    : 'Billed yearly',
+            metaLine: annualMetaLine,
+            badge: 'Best value',
+            selected: true,
+        },
+        {
+            id: 'monthly',
+            title: 'Monthly',
+            priceLine: monthlyPriceLine,
+            detailLine: 'Billed monthly',
+            metaLine: null,
+            badge: null,
+            selected: false,
+        },
+    ]), [
+        annualMetaLine,
+        annualPriceLine,
+        monthlyPriceLine,
+        subscription.trialEligibility,
+        subscription.uiPreviewMode,
+    ]);
+    const paywallPrimaryLabel = useMemo(() => {
+        if (!session?.user) {
+            return 'Sign in to continue';
+        }
+
+        if (subscription.uiPreviewMode) {
+            return 'Preview Premium';
+        }
+
+        if (subscription.purchaseBusy) {
+            return 'Starting purchase...';
+        }
+
+        const purchaseProduct = annualProduct ?? subscription.primaryPackage?.product ?? null;
+        const annualPrice = purchaseProduct?.priceString ?? null;
+        if (
+            purchaseProduct?.introPrice
+            && subscription.trialEligibility === 'eligible'
+        ) {
+            return 'Start Free Trial';
+        }
+
+        if (annualPrice && subscription.annualPackage) {
+            return `Continue for ${annualPrice}/year`;
+        }
+
+        if (annualPrice) {
+            return `Continue for ${annualPrice}`;
+        }
+
+        if (subscription.loading) {
+            return 'Loading plans...';
+        }
+
+        return 'Get Premium';
+    }, [
+        session?.user,
+        annualProduct,
+        subscription.annualPackage,
+        subscription.loading,
+        subscription.primaryPackage,
+        subscription.purchaseBusy,
+        subscription.uiPreviewMode,
+        subscription.trialEligibility,
+    ]);
+    const paywallSupportingText = useMemo(() => {
+        if (!session?.user) {
+            return 'Sign in first so we can attach Premium access to your account.';
+        }
+
+        if (subscription.uiPreviewMode) {
+            return 'UI preview mode. Purchase buttons stay local until store keys are configured.';
+        }
+
+        if (subscription.previewMode) {
+            return 'Real purchases work in a development build or production build.';
+        }
+
+        const purchaseProduct = annualProduct ?? subscription.primaryPackage?.product ?? null;
+        if (!purchaseProduct) {
+            return subscription.loading ? 'Loading the latest plans from the store.' : 'Plans are temporarily unavailable.';
+        }
+
+        if (
+            purchaseProduct.introPrice
+            && subscription.trialEligibility === 'eligible'
+            && purchaseProduct.priceString
+        ) {
+            return `Free trial available, then ${purchaseProduct.priceString}/year.`;
+        }
+
+        if (subscription.annualPackage && purchaseProduct.priceString) {
+            return `${purchaseProduct.priceString}/year.`;
+        }
+
+        if (purchaseProduct.priceString) {
+            return `${purchaseProduct.priceString}.`;
+        }
+
+        return null;
+    }, [
+        session?.user,
+        annualProduct,
+        subscription.annualPackage,
+        subscription.loading,
+        subscription.previewMode,
+        subscription.primaryPackage,
+        subscription.uiPreviewMode,
+        subscription.trialEligibility,
+    ]);
+    const paywallFooterText = useMemo(() => {
+        if (subscription.uiPreviewMode) {
+            return '7-day free trial, then $59.99/year. Auto-renews until canceled. Cancel anytime in App Store or Google Play settings.';
+        }
+
+        if (!annualPriceLine) {
+            return 'Auto-renews until canceled. Cancel anytime in App Store or Google Play settings.';
+        }
+
+        if (subscription.trialEligibility === 'eligible' && annualProduct?.introPrice) {
+            return `7-day free trial, then ${annualPriceLine}. Auto-renews until canceled. Cancel anytime in App Store or Google Play settings.`;
+        }
+
+        return `${annualPriceLine}. Auto-renews until canceled. Cancel anytime in App Store or Google Play settings.`;
+    }, [annualPriceLine, annualProduct?.introPrice, subscription.trialEligibility, subscription.uiPreviewMode]);
     const analysisBarcodeDigits = useMemo(() => {
         const digits = analysisBarcodeRaw.replace(/\D/g, '');
         if (digits.length < 8) return null;
@@ -3682,22 +4118,22 @@ const AnalysisBundleDashboard: React.FC<{
     const overlayConsumerMetricLoggedRef = useRef<Set<string>>(new Set());
     const currentRunKeyRef = useRef<string | null>(null);
     const localDecisionSupportProfile = useMemo(
-        () => toLocalDecisionSupportProfilePayload(onboardingDraft),
-        [onboardingDraft],
+        () => toLocalDecisionSupportProfilePayload(effectiveOnboardingDraft),
+        [effectiveOnboardingDraft],
     );
     const localDecisionSupportRequestProfile = useMemo(
         () => buildScanDecisionSupportProfile(localDecisionSupportProfile),
         [localDecisionSupportProfile],
     );
     const localDecisionSupportSignals = useMemo(() => ({
-        hasDraft: Boolean(onboardingDraft),
+        hasDraft: Boolean(effectiveOnboardingDraft),
         goalCount: localDecisionSupportRequestProfile?.goals?.length ?? 0,
         allergyCount: localDecisionSupportRequestProfile?.allergyFlags?.length ?? 0,
         restrictionCount: localDecisionSupportRequestProfile?.ingredientRestrictions?.length ?? 0,
         goalPreview: localDecisionSupportRequestProfile?.goals?.slice(0, 4) ?? [],
         allergyPreview: localDecisionSupportRequestProfile?.allergyFlags?.slice(0, 4) ?? [],
         restrictionPreview: localDecisionSupportRequestProfile?.ingredientRestrictions?.slice(0, 4) ?? [],
-    }), [localDecisionSupportRequestProfile, onboardingDraft]);
+    }), [effectiveOnboardingDraft, localDecisionSupportRequestProfile]);
     const localDecisionSupportHeader = useMemo(
         () => buildLocalDecisionSupportHeader(localDecisionSupportRequestProfile),
         [localDecisionSupportRequestProfile],
@@ -4903,6 +5339,16 @@ const AnalysisBundleDashboard: React.FC<{
         inlineDecisionTemplatePayload,
         shouldUseLocalDecisionSupport,
     ]);
+    const authoritativeDecisionPayload = useMemo<Record<string, unknown> | null>(
+        () =>
+            decisionSupportState.status === 'ready'
+                && decisionSupportState.data
+                && typeof decisionSupportState.data === 'object'
+                && !isDecisionPayloadExplicitlyStale(decisionSupportState.data as Record<string, unknown>)
+                ? decisionSupportState.data as Record<string, unknown>
+                : null,
+        [decisionSupportState.data, decisionSupportState.status],
+    );
     const decisionOverviewBlock = decisionTemplatePayload?.overviewBlock;
     const decisionScienceBlock = decisionTemplatePayload?.scienceBlock;
     const decisionUsageBlock = decisionTemplatePayload?.usageBlock;
@@ -4919,6 +5365,10 @@ const AnalysisBundleDashboard: React.FC<{
             decisionTemplatePayload?.decisionInputsHash
             ?? ((bundleState.meta as { decisionInputsHash?: string | null })?.decisionInputsHash ?? null),
         ) || null;
+    const currentPersonalizationScopeHash =
+        getDecisionPayloadPersonalizationScopeHash(authoritativeDecisionPayload)
+        || normalizeText(decisionTemplatePayload?.personalizationScopeHash ?? null)
+        || null;
     const decisionOverlayUsed = useMemo(() => {
         if (decisionUsageBlock?.directions?.sourceTier === 'overlay_iherb') return true;
         const sourceStrip = Array.isArray(decisionOverviewBlock?.sourceStrip) ? decisionOverviewBlock.sourceStrip : [];
@@ -5742,6 +6192,22 @@ const AnalysisBundleDashboard: React.FC<{
                         action?: string[];
                     } | null;
                 } => Boolean(entry.goalLabel));
+        const goalReadsAsEvidenceThin = doesGoalFitReadAsEvidenceThin({
+            heroMode: goalFit?.heroMode ?? null,
+            labelCompleteness: goalFit?.labelCompleteness ?? null,
+            goalNarrativeConfidence: goalFit?.goalNarrativeConfidence ?? null,
+        });
+        const explicitSupportGoalLabel = (personalInsight?.supports ?? [])
+            .map((signal) => normalizeText(signal.label))
+            .find(Boolean) ?? null;
+        const dominantSupportGoalLabel =
+            pickDominantGoalCoverageLabel(resolvedAllGoalCoverage)
+            ?? getGoalLabel(goalFit?.dominantGoalKey ?? null)
+            ?? null;
+        const resolvedSupportGoalLabel = goalReadsAsEvidenceThin
+            ? explicitSupportGoalLabel ?? dominantSupportGoalLabel
+            : null;
+        const preferSupportSignal = goalReadsAsEvidenceThin && Boolean(resolvedSupportGoalLabel);
 
         return buildAnalysisTopSectionPresentation({
             goal: {
@@ -5775,6 +6241,8 @@ const AnalysisBundleDashboard: React.FC<{
             },
             personalInsight: {
                 supportLabels: (personalInsight?.supports ?? []).map((signal) => signal.label),
+                preferSupportSignal,
+                resolvedSupportGoalLabel,
                 conflictSummary: firstConflict ?? null,
                 fitDecision: goalFit?.fitDecision ?? null,
                 heroMode: goalFit?.heroMode ?? null,
@@ -6714,7 +7182,7 @@ const AnalysisBundleDashboard: React.FC<{
     );
     const overviewAiRenderableData = useMemo<ProductOverviewAiPayload | null>(() => {
         if (!currentOverviewAiState || currentOverviewAiState.status !== 'ok') return null;
-        if (currentOverviewAiState.source !== 'api') return null;
+        if (currentOverviewAiState.source !== 'api' && currentOverviewAiState.source !== 'server-fallback') return null;
         if (!currentOverviewAiMatchesFingerprint) return null;
         return currentOverviewAiState.data ?? null;
     }, [currentOverviewAiMatchesFingerprint, currentOverviewAiState]);
@@ -6889,7 +7357,10 @@ const AnalysisBundleDashboard: React.FC<{
             currentOverviewAiMatchesRequestedFingerprint
             && (
                 currentOverviewAi?.status === 'loading'
-                || currentOverviewAi?.status === 'ok'
+                || (
+                    currentOverviewAi?.status === 'ok'
+                    && (currentOverviewAi?.source === 'api' || currentOverviewAi?.source === 'server-fallback')
+                )
             )
         ) {
             return;
@@ -7124,13 +7595,17 @@ const AnalysisBundleDashboard: React.FC<{
     );
 
     const decisionBarcodeForScience = canonicalDecisionBarcode;
-    const decisionDigestForScience = normalizeText(decisionTemplatePayload?.digest ?? '') || null;
+    const decisionDigestForScience = getDecisionPayloadDigest(authoritativeDecisionPayload)
+        || normalizeText(decisionTemplatePayload?.digest ?? '')
+        || null;
     const shouldLoadScienceSidecars =
         selectedTileType === 'science'
         && decisionSupportState.status === 'ready'
         && decisionTemplatePayload != null
         && Boolean(decisionBarcodeForScience)
-        && Boolean(decisionDigestForScience);
+        && Boolean(decisionDigestForScience)
+        && Boolean(currentDecisionInputsHash)
+        && Boolean(currentPersonalizationScopeHash);
     const scienceSourceFinalKey = bundleSourceTypeFinal ? 'final' : 'nonfinal';
     const decisionScienceIngredientRows = useMemo<ScienceSidecarIngredientRow[]>(
         () =>
@@ -7190,24 +7665,53 @@ const AnalysisBundleDashboard: React.FC<{
 
     const ingredientOverviewRequestKey = useMemo(
         () =>
-            decisionBarcodeForScience && decisionDigestForScience
-                ? ['ingredient_overview', scienceAuthoritativeIdentityKey, decisionBarcodeForScience, decisionDigestForScience, scienceSourceFinalKey].join('|')
+            decisionBarcodeForScience && decisionDigestForScience && currentDecisionInputsHash && currentPersonalizationScopeHash
+                ? [
+                    'ingredient_overview',
+                    scienceAuthoritativeIdentityKey,
+                    decisionBarcodeForScience,
+                    decisionDigestForScience,
+                    currentDecisionInputsHash,
+                    currentPersonalizationScopeHash,
+                    scienceSourceFinalKey,
+                ].join('|')
                 : null,
-        [decisionBarcodeForScience, decisionDigestForScience, scienceAuthoritativeIdentityKey, scienceSourceFinalKey],
+        [
+            currentDecisionInputsHash,
+            currentPersonalizationScopeHash,
+            decisionBarcodeForScience,
+            decisionDigestForScience,
+            scienceAuthoritativeIdentityKey,
+            scienceSourceFinalKey,
+        ],
     );
     const scientificBackgroundRequestKey = useMemo(
         () =>
-            decisionBarcodeForScience && decisionDigestForScience && activeIngredientKey
+            decisionBarcodeForScience
+                && decisionDigestForScience
+                && currentDecisionInputsHash
+                && currentPersonalizationScopeHash
+                && activeIngredientKey
                 ? [
                     'scientific_background',
                     scienceAuthoritativeIdentityKey,
                     decisionBarcodeForScience,
                     decisionDigestForScience,
+                    currentDecisionInputsHash,
+                    currentPersonalizationScopeHash,
                     activeIngredientKey,
                     scienceSourceFinalKey,
                 ].join('|')
                 : null,
-        [activeIngredientKey, decisionBarcodeForScience, decisionDigestForScience, scienceAuthoritativeIdentityKey, scienceSourceFinalKey],
+        [
+            activeIngredientKey,
+            currentDecisionInputsHash,
+            currentPersonalizationScopeHash,
+            decisionBarcodeForScience,
+            decisionDigestForScience,
+            scienceAuthoritativeIdentityKey,
+            scienceSourceFinalKey,
+        ],
     );
     const ingredientOverviewState = ingredientOverviewRequestKey
         ? ingredientOverviewByRequestKey[ingredientOverviewRequestKey]
@@ -7215,18 +7719,14 @@ const AnalysisBundleDashboard: React.FC<{
     const scientificBackgroundState = scientificBackgroundRequestKey
         ? scientificBackgroundByRequestKey[scientificBackgroundRequestKey]
         : undefined;
-    const ingredientOverviewFallbackBlock = useMemo(
-        () => buildIngredientOverviewFallbackClient(decisionScienceIngredientRows),
-        [decisionScienceIngredientRows],
-    );
     const resolvedIngredientOverviewBlock = useMemo(
         () =>
-            ingredientOverviewState?.status === 'ok' && ingredientOverviewState.data
+            ingredientOverviewState?.status === 'ok'
+                && (ingredientOverviewState.source === 'api' || ingredientOverviewState.source === 'server-fallback')
+                && ingredientOverviewState.data
                 ? ingredientOverviewState.data
-                : decisionScienceIngredientRows.length > 0
-                    ? ingredientOverviewFallbackBlock
-                    : null,
-        [decisionScienceIngredientRows.length, ingredientOverviewFallbackBlock, ingredientOverviewState],
+                : null,
+        [ingredientOverviewState],
     );
     const resolvedScientificBackgroundBlock = useMemo(
         () =>
@@ -7250,32 +7750,55 @@ const AnalysisBundleDashboard: React.FC<{
 
     useEffect(() => {
         if (!shouldLoadScienceSidecars) return;
-        if (!ingredientOverviewRequestKey || !decisionBarcodeForScience || !decisionDigestForScience) return;
+        if (
+            !ingredientOverviewRequestKey
+            || !decisionBarcodeForScience
+            || !decisionDigestForScience
+            || !currentDecisionInputsHash
+            || !currentPersonalizationScopeHash
+        ) {
+            return;
+        }
         const current = ingredientOverviewStateRef.current[ingredientOverviewRequestKey];
-        if (current && (current.status === 'loading' || current.status === 'ok')) return;
+        if (
+            current
+            && (
+                current.status === 'loading'
+                || (current.status === 'ok' && (current.source === 'api' || current.source === 'server-fallback'))
+            )
+        ) {
+            return;
+        }
 
         let cancelled = false;
         let settled = false;
         const controller = new AbortController();
-        const fallbackBlock = buildIngredientOverviewFallbackClient(decisionScienceIngredientRows);
 
         const run = async (
             digestParam: string,
+            decisionInputsHashParam: string,
+            personalizationScopeHashParam: string,
             canRetry: boolean,
         ): Promise<void> => {
             try {
                 setIngredientOverviewSidecarState(ingredientOverviewRequestKey, { status: 'loading' });
                 const baseUrl = String(Config.searchApiBaseUrl).replace(/\/$/, '');
+                const headers = await withAuthHeaders({
+                    'Content-Type': 'application/json',
+                });
+                if (localDecisionSupportHeader) {
+                    headers['x-local-personalization'] = localDecisionSupportHeader;
+                    headers['Cache-Control'] = 'no-cache, no-store';
+                    headers.Pragma = 'no-cache';
+                }
                 const response = await fetch(`${baseUrl}/api/ingredient-overview/v1`, {
                     method: 'POST',
-                    headers: {
-                        ...(await withAuthHeaders({
-                            'Content-Type': 'application/json',
-                        })),
-                    },
+                    headers,
                     body: JSON.stringify({
                         barcode: decisionBarcodeForScience,
                         decisionDigest: digestParam,
+                        decisionInputsHash: decisionInputsHashParam,
+                        personalizationScopeHash: personalizationScopeHashParam,
                     }),
                     signal: controller.signal,
                 });
@@ -7285,24 +7808,45 @@ const AnalysisBundleDashboard: React.FC<{
                 if (response.status === 409) {
                     const mismatchPayload = await response.json().catch(() => null);
                     const latestDigest = typeof mismatchPayload?.latestDigest === 'string' ? mismatchPayload.latestDigest : null;
-                    if (canRetry && latestDigest && latestDigest !== digestParam) {
-                        return run(latestDigest, false);
+                    const latestDecisionInputsHash =
+                        typeof mismatchPayload?.latestDecisionInputsHash === 'string'
+                            ? mismatchPayload.latestDecisionInputsHash
+                            : null;
+                    const latestPersonalizationScopeHash =
+                        typeof mismatchPayload?.latestPersonalizationScopeHash === 'string'
+                            ? mismatchPayload.latestPersonalizationScopeHash
+                            : null;
+                    const nextDigest = latestDigest ?? digestParam;
+                    const nextDecisionInputsHash = latestDecisionInputsHash ?? decisionInputsHashParam;
+                    const nextPersonalizationScopeHash = latestPersonalizationScopeHash ?? personalizationScopeHashParam;
+                    const digestChanged = nextDigest !== digestParam;
+                    const inputsHashChanged = nextDecisionInputsHash !== decisionInputsHashParam;
+                    const scopeHashChanged = nextPersonalizationScopeHash !== personalizationScopeHashParam;
+                    if (
+                        canRetry
+                        && nextDigest
+                        && nextDecisionInputsHash
+                        && nextPersonalizationScopeHash
+                        && (digestChanged || inputsHashChanged || scopeHashChanged)
+                    ) {
+                        return run(nextDigest, nextDecisionInputsHash, nextPersonalizationScopeHash, false);
                     }
                 }
 
                 if (!response.ok) {
                     settled = true;
                     setIngredientOverviewSidecarState(ingredientOverviewRequestKey, {
-                        status: 'ok',
-                        source: 'fallback',
-                        fallbackUsed: true,
-                        promptVersion: 'ingredient_overview_client_fallback_v1',
-                        data: fallbackBlock,
+                        status: 'error',
+                        error: `HTTP ${response.status}`,
                     });
                     return;
                 }
 
-                const payload = await response.json() as IngredientOverviewResponse & { latestDigest?: string };
+                const payload = await response.json() as IngredientOverviewResponse & {
+                    latestDigest?: string;
+                    latestDecisionInputsHash?: string;
+                    latestPersonalizationScopeHash?: string;
+                };
                 if (cancelled) return;
                 if (payload?.status !== 'ok' || !payload.ingredientOverview) {
                     throw new Error('ingredient_overview_invalid_payload');
@@ -7311,7 +7855,7 @@ const AnalysisBundleDashboard: React.FC<{
                 settled = true;
                 setIngredientOverviewSidecarState(ingredientOverviewRequestKey, {
                     status: 'ok',
-                    source: payload.source,
+                    source: payload.source === 'fallback' ? 'server-fallback' : 'api',
                     fallbackUsed: payload.fallbackUsed,
                     promptVersion: payload.promptVersion,
                     data: payload.ingredientOverview,
@@ -7320,23 +7864,21 @@ const AnalysisBundleDashboard: React.FC<{
                 if (cancelled) return;
                 settled = true;
                 setIngredientOverviewSidecarState(ingredientOverviewRequestKey, {
-                    status: 'ok',
-                    source: 'fallback',
-                    fallbackUsed: true,
-                    promptVersion: 'ingredient_overview_client_fallback_v1',
-                    data: fallbackBlock,
+                    status: 'error',
                     error: error instanceof Error ? error.message : 'Ingredient overview unavailable',
                 });
             }
         };
 
-        const interactionTask = InteractionManager.runAfterInteractions(() => {
-            void run(decisionDigestForScience, true);
-        });
+        void run(
+            decisionDigestForScience,
+            currentDecisionInputsHash,
+            currentPersonalizationScopeHash,
+            true,
+        );
         return () => {
             cancelled = true;
             controller.abort();
-            interactionTask.cancel();
             if (!settled) {
                 setIngredientOverviewSidecarState(ingredientOverviewRequestKey, (currentState) =>
                     currentState?.status === 'loading' ? undefined : currentState,
@@ -7345,16 +7887,25 @@ const AnalysisBundleDashboard: React.FC<{
         };
     }, [
         shouldLoadScienceSidecars,
+        currentDecisionInputsHash,
+        currentPersonalizationScopeHash,
         decisionBarcodeForScience,
         decisionDigestForScience,
-        decisionScienceIngredientRows,
         ingredientOverviewRequestKey,
+        localDecisionSupportHeader,
         setIngredientOverviewSidecarState,
     ]);
 
     useEffect(() => {
         if (!shouldLoadScienceSidecars) return;
-        if (!decisionBarcodeForScience || !decisionDigestForScience) return;
+        if (
+            !decisionBarcodeForScience
+            || !decisionDigestForScience
+            || !currentDecisionInputsHash
+            || !currentPersonalizationScopeHash
+        ) {
+            return;
+        }
         if (!activeScienceIngredientRow || !scientificBackgroundRequestKey) return;
 
         let cancelled = false;
@@ -7386,6 +7937,8 @@ const AnalysisBundleDashboard: React.FC<{
 
         const run = async (
             digestParam: string,
+            decisionInputsHashParam: string,
+            personalizationScopeHashParam: string,
             canRetry: boolean,
             revalidateFallback: boolean,
         ): Promise<void> => {
@@ -7394,16 +7947,22 @@ const AnalysisBundleDashboard: React.FC<{
                     scientificBackgroundRevalidateAtRef.current[requestKey] = Date.now();
                 }
                 setScientificBackgroundSidecarState(requestKey, { status: 'loading' });
+                const headers = await withAuthHeaders({
+                    'Content-Type': 'application/json',
+                });
+                if (localDecisionSupportHeader) {
+                    headers['x-local-personalization'] = localDecisionSupportHeader;
+                    headers['Cache-Control'] = 'no-cache, no-store';
+                    headers.Pragma = 'no-cache';
+                }
                 const response = await fetch(`${baseUrl}/api/scientific-background/v1`, {
                     method: 'POST',
-                    headers: {
-                        ...(await withAuthHeaders({
-                            'Content-Type': 'application/json',
-                        })),
-                    },
+                    headers,
                     body: JSON.stringify({
                         barcode: decisionBarcodeForScience,
                         decisionDigest: digestParam,
+                        decisionInputsHash: decisionInputsHashParam,
+                        personalizationScopeHash: personalizationScopeHashParam,
                         selectedIngredientName: row.name,
                         revalidateFallback,
                     }),
@@ -7415,8 +7974,34 @@ const AnalysisBundleDashboard: React.FC<{
                 if (response.status === 409) {
                     const mismatchPayload = await response.json().catch(() => null);
                     const latestDigest = typeof mismatchPayload?.latestDigest === 'string' ? mismatchPayload.latestDigest : null;
-                    if (canRetry && latestDigest && latestDigest !== digestParam) {
-                        return run(latestDigest, false, revalidateFallback);
+                    const latestDecisionInputsHash =
+                        typeof mismatchPayload?.latestDecisionInputsHash === 'string'
+                            ? mismatchPayload.latestDecisionInputsHash
+                            : null;
+                    const latestPersonalizationScopeHash =
+                        typeof mismatchPayload?.latestPersonalizationScopeHash === 'string'
+                            ? mismatchPayload.latestPersonalizationScopeHash
+                            : null;
+                    const nextDigest = latestDigest ?? digestParam;
+                    const nextDecisionInputsHash = latestDecisionInputsHash ?? decisionInputsHashParam;
+                    const nextPersonalizationScopeHash = latestPersonalizationScopeHash ?? personalizationScopeHashParam;
+                    const digestChanged = nextDigest !== digestParam;
+                    const inputsHashChanged = nextDecisionInputsHash !== decisionInputsHashParam;
+                    const scopeHashChanged = nextPersonalizationScopeHash !== personalizationScopeHashParam;
+                    if (
+                        canRetry
+                        && nextDigest
+                        && nextDecisionInputsHash
+                        && nextPersonalizationScopeHash
+                        && (digestChanged || inputsHashChanged || scopeHashChanged)
+                    ) {
+                        return run(
+                            nextDigest,
+                            nextDecisionInputsHash,
+                            nextPersonalizationScopeHash,
+                            false,
+                            revalidateFallback,
+                        );
                     }
                 }
 
@@ -7429,7 +8014,11 @@ const AnalysisBundleDashboard: React.FC<{
                     return;
                 }
 
-                const payload = await response.json() as ScientificBackgroundResponse & { latestDigest?: string };
+                const payload = await response.json() as ScientificBackgroundResponse & {
+                    latestDigest?: string;
+                    latestDecisionInputsHash?: string;
+                    latestPersonalizationScopeHash?: string;
+                };
                 if (cancelled || currentRunKeyRef.current !== requestRunKey) return;
                 if (payload?.status !== 'ok' || !payload.scientificBackground) {
                     throw new Error('scientific_background_invalid_payload');
@@ -7453,7 +8042,13 @@ const AnalysisBundleDashboard: React.FC<{
             }
         };
 
-        void run(decisionDigestForScience, true, shouldRevalidateFallback);
+        void run(
+            decisionDigestForScience,
+            currentDecisionInputsHash,
+            currentPersonalizationScopeHash,
+            true,
+            shouldRevalidateFallback,
+        );
         return () => {
             cancelled = true;
             controller.abort();
@@ -7466,9 +8061,12 @@ const AnalysisBundleDashboard: React.FC<{
     }, [
         activeScienceIngredientRow,
         shouldLoadScienceSidecars,
+        currentDecisionInputsHash,
+        currentPersonalizationScopeHash,
         decisionBarcodeForScience,
         decisionDigestForScience,
         decisionScienceIngredientRows,
+        localDecisionSupportHeader,
         scientificBackgroundRequestKey,
         scienceSourceFinalKey,
         setScientificBackgroundSidecarState,
@@ -7497,6 +8095,13 @@ const AnalysisBundleDashboard: React.FC<{
     const ingredientOverviewCompareHint = resolvedIngredientOverviewBlock?.compareHint ?? null;
     const scientificBackgroundIntroLine = resolvedScientificBackgroundBlock?.introLine ?? activeIngredientLabelLine;
     const scientificBackgroundClosingNote = resolvedScientificBackgroundBlock?.closingNote ?? null;
+    const shouldShowIngredientOverviewLoading =
+        shouldLoadScienceSidecars
+        && Boolean(ingredientOverviewRequestKey)
+        && (
+            ingredientOverviewState == null
+            || ingredientOverviewState.status === 'loading'
+        );
     const shouldShowScientificBackgroundLoading =
         shouldLoadScienceSidecars
         && Boolean(scientificBackgroundRequestKey)
@@ -7561,14 +8166,13 @@ const AnalysisBundleDashboard: React.FC<{
                 accentColor="#D97706"
                 right={<GlassPill label={resolveSimpleTaxonomyLabel('AI summary')} />}
             >
-                {resolvedIngredientOverviewBlock ? (
+                {shouldShowIngredientOverviewLoading ? (
+                    <View style={styles.inlineLoadingRow}>
+                        <ActivityIndicator />
+                        <Text style={styles.inlineLoadingText}>Generating overview…</Text>
+                    </View>
+                ) : resolvedIngredientOverviewBlock ? (
                     <View style={{ gap: 12 }}>
-                        {ingredientOverviewState?.status === 'loading' ? (
-                            <View style={styles.inlineLoadingRow}>
-                                <ActivityIndicator />
-                                <Text style={styles.inlineLoadingText}>Generating overview…</Text>
-                            </View>
-                        ) : null}
                         {ingredientOverviewTitleLine ? (
                             <Text style={styles.summarySectionTitle}>{ingredientOverviewTitleLine}</Text>
                         ) : null}
@@ -7583,7 +8187,7 @@ const AnalysisBundleDashboard: React.FC<{
                         ) : null}
                     </View>
                 ) : (
-                    <Text style={styles.detailPlaceholderText}>Ingredient overview is pending.</Text>
+                    <Text style={styles.detailPlaceholderText}>Ingredient overview unavailable right now.</Text>
                 )}
             </GlassCard>
 
@@ -8294,6 +8898,7 @@ const AnalysisBundleDashboard: React.FC<{
             content: overviewContent,
             trustPanel: sharedTrustPanel,
             showDataStatusCard: false,
+            locked: isPreviewLocked,
         },
         {
             id: 2,
@@ -8313,6 +8918,7 @@ const AnalysisBundleDashboard: React.FC<{
             content: ingredientsContent,
             trustPanel: sharedTrustPanel,
             showDataStatusCard: false,
+            locked: isPreviewLocked,
         },
         {
             id: 3,
@@ -8332,6 +8938,7 @@ const AnalysisBundleDashboard: React.FC<{
             content: usageContent,
             trustPanel: sharedTrustPanel,
             showDataStatusCard: false,
+            locked: isPreviewLocked,
         },
         {
             id: 4,
@@ -8351,6 +8958,7 @@ const AnalysisBundleDashboard: React.FC<{
             content: safetyContent,
             trustPanel: sharedTrustPanel,
             showDataStatusCard: false,
+            locked: isPreviewLocked,
         },
     ];
     const selectedTile = useMemo(
@@ -9034,7 +9642,7 @@ const AnalysisBundleDashboard: React.FC<{
             range: MEASURED_MINI_SCORE_TRIGGER_RANGE,
         };
     }, [ingredientSafetyLayoutY, scoreHeroLayoutY, scoreModulesLayoutY, scoreSectionLayoutY]);
-    const shouldRenderInlineMiniHeader = !disableMiniHeader && miniHeaderMode !== 'header';
+    const shouldRenderInlineMiniHeader = !disableMiniHeader && miniHeaderMode !== 'header' && !isPreviewLocked;
 
     useEffect(() => {
         onCoreReadyChange?.(coreResultsReady);
@@ -9054,12 +9662,13 @@ const AnalysisBundleDashboard: React.FC<{
     ]);
 
     useEffect(() => {
+        if (isPreviewLocked) return;
         onMiniScoreMetaChange?.({
             overallScore: displayedOverallScore,
             overallBand: displayedOverallBand,
             muted: ringMuted,
         });
-    }, [displayedOverallBand, displayedOverallScore, onMiniScoreMetaChange, ringMuted]);
+    }, [displayedOverallBand, displayedOverallScore, isPreviewLocked, onMiniScoreMetaChange, ringMuted]);
     useEffect(() => {
         onMiniScoreTriggerChange?.(miniScoreTrigger);
     }, [miniScoreTrigger, onMiniScoreTriggerChange]);
@@ -9091,9 +9700,10 @@ const AnalysisBundleDashboard: React.FC<{
                         insights={topSectionPresentation.insights}
                         secondaryNote={topSectionPresentation.secondaryNote ?? null}
                         productTitle={productTitle}
-                        productSubtitle={productSubtitle}
+                        productSubtitle={isPreviewLocked ? null : productSubtitle}
                         heroImageUri={heroImageUri}
                         verifiedLabelText={verifiedLabelText}
+                        lockedPreview={isPreviewLocked}
                     />
                 ) : null}
 
@@ -9158,7 +9768,13 @@ const AnalysisBundleDashboard: React.FC<{
                             onLayout={(event) => setScoreHeroLayoutY(event.nativeEvent.layout.y)}
                         >
                             <View style={styles.scoreHeroCard}>
-                                {!disableScoreRing ? (
+                                {isPreviewLocked ? (
+                                    <LockedSectionPreviewCard
+                                        title="NuTri Score details"
+                                        body="Full score details unlock after upgrade."
+                                        onPress={() => setPaywallSource('score')}
+                                    />
+                                ) : !disableScoreRing ? (
                                     decisionSupportV2Available ? (
                                         <NutriScoreCardV2
                                             overallScore={displayedOverallScore}
@@ -9202,7 +9818,13 @@ const AnalysisBundleDashboard: React.FC<{
                                     <TileRenderer
                                         key={tile.id}
                                         tile={tile}
-                                        onPress={() => setSelectedTileType(tile.type)}
+                                        onPress={() => {
+                                            if (isPreviewLocked) {
+                                                setPaywallSource(tile.type);
+                                                return;
+                                            }
+                                            setSelectedTileType(tile.type);
+                                        }}
                                         scrollY={scrollY}
                                         viewportHeight={viewportHeight}
                                         tileWidth={tileWidth}
@@ -9226,53 +9848,62 @@ const AnalysisBundleDashboard: React.FC<{
                                 <Text style={styles.sectionTitle}>{t.analysisSectionComparisonTitle}</Text>
                                 <Text style={styles.sectionSubtitle}>{t.analysisSectionComparisonSubtitle}</Text>
                             </View>
-
-                            <View style={styles.comparisonStandingCard}>
-                                <Text style={styles.comparisonStandingSummary}>
-                                    {comparisonSummary || t.analysisComparisonNotEnoughPeers}
-                                </Text>
-                                {comparisonSecondarySummary ? (
-                                    <Text style={styles.comparisonStandingSecondary}>
-                                        {comparisonSecondarySummary}
-                                    </Text>
-                                ) : null}
-                            </View>
-
-                            {comparisonAlternatives.length > 0 ? (
+                            {isPreviewLocked ? (
+                                <LockedSectionPreviewCard
+                                    title="Compare with alternatives"
+                                    body="Alternative picks and product ranking stay behind Premium."
+                                    onPress={() => setPaywallSource('comparison')}
+                                />
+                            ) : (
                                 <>
-                                    <Text style={styles.comparisonAlternativesTitle}>
-                                        {t.analysisComparisonAlternativesTitle}
-                                    </Text>
-                                    <ScrollView
-                                        horizontal
-                                        showsHorizontalScrollIndicator={false}
-                                        decelerationRate="fast"
-                                        snapToAlignment="start"
-                                        snapToInterval={comparisonSnapInterval}
-                                        contentContainerStyle={styles.comparisonRailContent}
-                                    >
-                                        {comparisonAlternatives.map((alternative) => (
-                                            <ComparisonAlternativeCard
-                                                key={`${alternative.productId ?? alternative.title}`}
-                                                alternative={alternative}
-                                                cardWidth={comparisonCardWidth}
-                                            />
-                                        ))}
-                                    </ScrollView>
-                                </>
-                            ) : null}
+                                    <View style={styles.comparisonStandingCard}>
+                                        <Text style={styles.comparisonStandingSummary}>
+                                            {comparisonSummary || t.analysisComparisonNotEnoughPeers}
+                                        </Text>
+                                        {comparisonSecondarySummary ? (
+                                            <Text style={styles.comparisonStandingSecondary}>
+                                                {comparisonSecondarySummary}
+                                            </Text>
+                                        ) : null}
+                                    </View>
 
-                            {showComparisonEmptyState ? (
-                                <Text style={styles.comparisonEmptyState}>
-                                    {t.analysisComparisonAlreadyScoresWell}
-                                </Text>
-                            ) : null}
+                                    {comparisonAlternatives.length > 0 ? (
+                                        <>
+                                            <Text style={styles.comparisonAlternativesTitle}>
+                                                {t.analysisComparisonAlternativesTitle}
+                                            </Text>
+                                            <ScrollView
+                                                horizontal
+                                                showsHorizontalScrollIndicator={false}
+                                                decelerationRate="fast"
+                                                snapToAlignment="start"
+                                                snapToInterval={comparisonSnapInterval}
+                                                contentContainerStyle={styles.comparisonRailContent}
+                                            >
+                                                {comparisonAlternatives.map((alternative) => (
+                                                    <ComparisonAlternativeCard
+                                                        key={`${alternative.productId ?? alternative.title}`}
+                                                        alternative={alternative}
+                                                        cardWidth={comparisonCardWidth}
+                                                    />
+                                                ))}
+                                            </ScrollView>
+                                        </>
+                                    ) : null}
+
+                                    {showComparisonEmptyState ? (
+                                        <Text style={styles.comparisonEmptyState}>
+                                            {t.analysisComparisonAlreadyScoresWell}
+                                        </Text>
+                                    ) : null}
+                                </>
+                            )}
                         </View>
                     ) : null}
                 </>
             </ScrollContainer>
 
-            {!disableModalPane ? (
+            {!disableModalPane && !isPreviewLocked ? (
                 <DashboardModal
                     key={selectedTileType ?? 'closed'}
                     visible={!!selectedTile}
@@ -9282,12 +9913,62 @@ const AnalysisBundleDashboard: React.FC<{
                     sourceTypeFinal={bundleSourceTypeFinal}
                 />
             ) : null}
+            <ScanPaywallModal
+                visible={paywallSource != null}
+                source={paywallSource}
+                signedIn={Boolean(session?.user)}
+                planCards={paywallPlanCards}
+                primaryLabel={paywallPrimaryLabel}
+                primaryBusy={subscription.purchaseBusy}
+                primaryDisabled={
+                    Boolean(session?.user)
+                    && !subscription.uiPreviewMode
+                    && (!subscription.primaryPackage || subscription.loading)
+                }
+                supportingText={paywallSupportingText}
+                footerText={paywallFooterText}
+                errorText={subscription.error}
+                restoreBusy={subscription.restoreBusy}
+                onClose={() => {
+                    subscription.clearError();
+                    setPaywallSource(null);
+                }}
+                onPrimaryPress={async () => {
+                    if (!session?.user) {
+                        setPostAuthRedirect('/main/Home-Page');
+                        subscription.clearError();
+                        setPaywallSource(null);
+                        router.push('/auth/login');
+                        return;
+                    }
+                    if (subscription.uiPreviewMode) {
+                        subscription.clearError();
+                        setPaywallSource(null);
+                        return;
+                    }
+                    const result = await subscription.purchasePrimaryPackage();
+                    if (result.ok) {
+                        setPaywallSource(null);
+                    }
+                }}
+                onRestorePress={async () => {
+                    if (subscription.uiPreviewMode) {
+                        subscription.clearError();
+                        return;
+                    }
+                    const result = await subscription.restorePurchases();
+                    if (result.ok) {
+                        setPaywallSource(null);
+                    }
+                }}
+            />
         </View>
     );
 };
 
 type AnalysisDashboardProps = {
     analysis: Analysis;
+    accessLevel?: AnalysisAccessLevel;
     isStreaming?: boolean;
     scoreBadge?: string;
     scoreState?: ScoreState;
@@ -9300,6 +9981,7 @@ type AnalysisDashboardProps = {
     onMiniScoreTriggerChange?: (trigger: { start: number; range: number }) => void;
     onCoreReadyChange?: (ready: boolean) => void;
     saveItem?: AnalysisDashboardSaveItem | null;
+    onboardingDraftOverride?: ProfileDraft | null;
 };
 
 const ensureModernAnalysisBundle = (
@@ -9348,6 +10030,7 @@ const ensureModernAnalysisBundle = (
 
 export const AnalysisDashboard: React.FC<AnalysisDashboardProps> = ({
     analysis,
+    accessLevel = 'full',
     isStreaming = false,
     scoreBadge,
     scoreState,
@@ -9360,12 +10043,14 @@ export const AnalysisDashboard: React.FC<AnalysisDashboardProps> = ({
     onMiniScoreTriggerChange,
     onCoreReadyChange,
     saveItem = null,
+    onboardingDraftOverride = null,
 }) => {
     const modernBundle = ensureModernAnalysisBundle(analysisBundle, analysis, scanSessionId);
     return (
         <AnalysisBundleDashboard
             bundle={modernBundle}
             analysis={analysis}
+            accessLevel={accessLevel}
             isStreaming={isStreaming}
             scoreBadge={scoreBadge}
             scoreState={scoreState}
@@ -9377,6 +10062,7 @@ export const AnalysisDashboard: React.FC<AnalysisDashboardProps> = ({
             onMiniScoreTriggerChange={onMiniScoreTriggerChange}
             onCoreReadyChange={onCoreReadyChange}
             saveItem={saveItem}
+            onboardingDraftOverride={onboardingDraftOverride}
         />
     );
 };
@@ -9751,10 +10437,77 @@ const styles = StyleSheet.create({
         fontWeight: '700',
         letterSpacing: 0.4,
     },
+    tileLockedPill: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        paddingHorizontal: 10,
+        paddingVertical: 5,
+        borderRadius: 999,
+        borderWidth: 1,
+        borderColor: 'rgba(15,23,42,0.08)',
+        backgroundColor: 'rgba(255,255,255,0.45)',
+    },
+    tileLockedPillText: {
+        fontSize: 11,
+        fontWeight: '700',
+        letterSpacing: 0.2,
+    },
     tileSection: {
         gap: 8,
         marginTop: 16,
         flexGrow: 1,
+    },
+    lockedPreviewBody: {
+        marginTop: 16,
+        flexGrow: 1,
+        borderRadius: 18,
+        overflow: 'hidden',
+        justifyContent: 'center',
+        backgroundColor: 'rgba(255,255,255,0.18)',
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.22)',
+    },
+    lockedPreviewSkeleton: {
+        gap: 10,
+        paddingHorizontal: 14,
+        paddingVertical: 16,
+    },
+    lockedPreviewLine: {
+        height: 12,
+        borderRadius: 999,
+        backgroundColor: 'rgba(255,255,255,0.5)',
+    },
+    lockedPreviewLineWide: {
+        width: '88%',
+    },
+    lockedPreviewLineMedium: {
+        width: '72%',
+    },
+    lockedPreviewLineShort: {
+        width: '54%',
+    },
+    lockedPreviewOverlay: {
+        ...StyleSheet.absoluteFillObject,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: 'rgba(255,255,255,0.14)',
+    },
+    lockedPreviewBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        paddingHorizontal: 14,
+        paddingVertical: 9,
+        borderRadius: 999,
+        borderWidth: 1,
+        backgroundColor: 'rgba(255,255,255,0.8)',
+    },
+    lockedPreviewBadgeText: {
+        fontSize: 13,
+        lineHeight: 16,
+        fontWeight: '700',
+        color: '#0F172A',
     },
     tileEyebrow: {
         fontSize: 9,
@@ -9899,6 +10652,52 @@ const styles = StyleSheet.create({
         fontSize: 12,
         lineHeight: 16,
         fontWeight: '600',
+    },
+    lockedSectionCard: {
+        position: 'relative',
+        overflow: 'hidden',
+        borderRadius: 22,
+        borderWidth: 1,
+        borderColor: 'rgba(15,23,42,0.06)',
+        backgroundColor: 'rgba(255,255,255,0.84)',
+        minHeight: 124,
+    },
+    lockedSectionCardContent: {
+        paddingHorizontal: 16,
+        paddingVertical: 16,
+        gap: 12,
+    },
+    lockedSectionTitle: {
+        fontSize: 15,
+        lineHeight: 19,
+        fontWeight: '700',
+        color: '#111827',
+    },
+    lockedSectionBodyWrap: {
+        position: 'relative',
+        minHeight: 64,
+        borderRadius: 16,
+        overflow: 'hidden',
+        backgroundColor: 'rgba(241,245,249,0.9)',
+    },
+    lockedSectionBodyScrim: {
+        gap: 10,
+        paddingHorizontal: 14,
+        paddingVertical: 16,
+    },
+    lockedSectionBodyOverlay: {
+        ...StyleSheet.absoluteFillObject,
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingHorizontal: 18,
+        backgroundColor: 'rgba(255,255,255,0.28)',
+    },
+    lockedSectionBodyText: {
+        fontSize: 13,
+        lineHeight: 18,
+        fontWeight: '600',
+        color: '#0F172A',
+        textAlign: 'center',
     },
     // Modal Styles
     modalBackdrop: {
@@ -11733,6 +12532,224 @@ const styles = StyleSheet.create({
         borderColor: 'rgba(255,255,255,0.22)',
         backgroundColor: 'rgba(255,255,255,0.28)',
         paddingBottom: 8,
+    },
+    paywallSheet: {
+        width: '100%',
+        minHeight: 420,
+        borderTopLeftRadius: 28,
+        borderTopRightRadius: 28,
+        overflow: 'hidden',
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.22)',
+        backgroundColor: 'rgba(255,255,255,0.28)',
+        paddingBottom: 20,
+    },
+    paywallHeader: {
+        paddingHorizontal: 16,
+        paddingBottom: 12,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: 12,
+    },
+    paywallBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        borderRadius: 999,
+        borderWidth: 1,
+        borderColor: 'rgba(15,23,42,0.08)',
+        backgroundColor: 'rgba(255,255,255,0.62)',
+    },
+    paywallBadgeText: {
+        fontSize: 12,
+        lineHeight: 14,
+        fontWeight: '800',
+        color: '#0F172A',
+    },
+    paywallBody: {
+        paddingHorizontal: 20,
+        paddingTop: 8,
+        gap: 14,
+    },
+    paywallTitle: {
+        fontSize: 24,
+        lineHeight: 29,
+        fontWeight: '800',
+        color: '#0F172A',
+    },
+    paywallText: {
+        fontSize: 14,
+        lineHeight: 21,
+        fontWeight: '500',
+        color: 'rgba(15,23,42,0.72)',
+    },
+    paywallBulletList: {
+        gap: 12,
+        marginTop: 4,
+    },
+    paywallPlanList: {
+        gap: 10,
+        marginTop: 6,
+    },
+    paywallPlanCard: {
+        borderRadius: 8,
+        borderWidth: 1,
+        paddingHorizontal: 14,
+        paddingVertical: 14,
+        gap: 4,
+    },
+    paywallPlanCardSelected: {
+        borderColor: 'rgba(37,99,235,0.35)',
+        backgroundColor: 'rgba(37,99,235,0.08)',
+    },
+    paywallPlanCardMuted: {
+        borderColor: 'rgba(15,23,42,0.08)',
+        backgroundColor: 'rgba(255,255,255,0.45)',
+    },
+    paywallPlanHeaderRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: 10,
+    },
+    paywallPlanTitle: {
+        fontSize: 13,
+        lineHeight: 16,
+        fontWeight: '700',
+        color: 'rgba(15,23,42,0.72)',
+    },
+    paywallPlanTitleSelected: {
+        color: '#0F172A',
+    },
+    paywallPlanBadge: {
+        borderRadius: 999,
+        backgroundColor: '#0F172A',
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+    },
+    paywallPlanBadgeText: {
+        fontSize: 10,
+        lineHeight: 12,
+        fontWeight: '800',
+        color: '#FFFFFF',
+    },
+    paywallPlanPrice: {
+        fontSize: 22,
+        lineHeight: 26,
+        fontWeight: '800',
+        color: '#334155',
+    },
+    paywallPlanPriceSelected: {
+        color: '#0F172A',
+    },
+    paywallPlanDetail: {
+        fontSize: 12,
+        lineHeight: 16,
+        fontWeight: '600',
+        color: 'rgba(15,23,42,0.7)',
+    },
+    paywallPlanMeta: {
+        fontSize: 12,
+        lineHeight: 16,
+        fontWeight: '700',
+        color: '#2563EB',
+    },
+    paywallBulletRow: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        gap: 10,
+    },
+    paywallBulletDot: {
+        width: 8,
+        height: 8,
+        borderRadius: 999,
+        backgroundColor: '#2563EB',
+        marginTop: 6,
+    },
+    paywallBulletText: {
+        flex: 1,
+        fontSize: 14,
+        lineHeight: 20,
+        fontWeight: '600',
+        color: '#111827',
+    },
+    paywallFooter: {
+        paddingHorizontal: 20,
+        paddingTop: 20,
+        gap: 10,
+    },
+    paywallPrimaryButton: {
+        minHeight: 52,
+        borderRadius: 16,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#0F172A',
+        paddingHorizontal: 18,
+    },
+    paywallPrimaryButtonDisabled: {
+        opacity: 0.52,
+    },
+    paywallPrimaryButtonText: {
+        fontSize: 15,
+        lineHeight: 18,
+        fontWeight: '800',
+        color: '#FFFFFF',
+    },
+    paywallSupportingText: {
+        fontSize: 12,
+        lineHeight: 18,
+        fontWeight: '500',
+        color: 'rgba(15,23,42,0.65)',
+        textAlign: 'center',
+    },
+    paywallErrorText: {
+        fontSize: 12,
+        lineHeight: 18,
+        fontWeight: '600',
+        color: '#B91C1C',
+        textAlign: 'center',
+    },
+    paywallFooterText: {
+        fontSize: 11,
+        lineHeight: 16,
+        fontWeight: '500',
+        color: 'rgba(15,23,42,0.58)',
+        textAlign: 'center',
+    },
+    paywallRestoreButton: {
+        minHeight: 44,
+        borderRadius: 14,
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingHorizontal: 18,
+        backgroundColor: 'rgba(255,255,255,0.4)',
+        borderWidth: 1,
+        borderColor: 'rgba(15,23,42,0.08)',
+    },
+    paywallRestoreButtonText: {
+        fontSize: 13,
+        lineHeight: 16,
+        fontWeight: '700',
+        color: '#0F172A',
+    },
+    paywallSecondaryButton: {
+        minHeight: 48,
+        borderRadius: 16,
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingHorizontal: 18,
+        backgroundColor: 'rgba(255,255,255,0.55)',
+        borderWidth: 1,
+        borderColor: 'rgba(15,23,42,0.08)',
+    },
+    paywallSecondaryButtonText: {
+        fontSize: 14,
+        lineHeight: 18,
+        fontWeight: '700',
+        color: '#0F172A',
     },
     modalHeaderNew: {
         paddingHorizontal: 16,

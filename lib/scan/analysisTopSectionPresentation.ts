@@ -39,6 +39,8 @@ export type TopSectionHeroInput = {
 
 export type TopSectionPersonalInsightInput = {
   supportLabels: string[];
+  preferSupportSignal?: boolean;
+  resolvedSupportGoalLabel?: string | null;
   conflictSummary?: string | null;
   fitDecision?: 'fits' | 'mixed' | 'does_not_fit' | 'unknown' | null;
   heroMode?: 'dominant_goal' | 'mixed_goals' | 'limited_goals' | 'single_goal' | 'insufficient_signal' | null;
@@ -419,7 +421,7 @@ const buildGoalCoverageHero = (goal: TopSectionHeroInput): TopSectionHeroPresent
   const shouldUseMultiGoalHero =
     (goal.heroMode !== 'single_goal' && goal.heroMode !== 'insufficient_signal')
     && isGoalCoverageMultiGoal(goal);
-  if (goal.heroMode === 'insufficient_signal' || hasLowNarrativeConfidence(goal)) {
+  if (goal.heroMode === 'insufficient_signal' || goal.labelCompleteness === 'low') {
     return {
       tone: 'neutral',
       chip: goal.allGoalsAnalyzed === true
@@ -552,13 +554,16 @@ const buildSupportAlignedHeroWhenEvidenceIsThin = (
     || goal.labelCompleteness === 'low'
     || hasLowNarrativeConfidence(goal);
   if (!heroReadsAsEvidenceLimited) return null;
+  if (personalInsight.preferSupportSignal === false) return null;
 
   const dominantGoal = getDominantGoalCoverage(personalInsight);
-  const fallbackGoalLabel = dominantGoal?.goalLabel
-    ?? personalInsight.supportLabels
+  const fallbackGoalLabel =
+    normalizeText(personalInsight.resolvedSupportGoalLabel)
+    || dominantGoal?.goalLabel
+    || personalInsight.supportLabels
       .map((label) => normalizeText(label))
       .find(Boolean)
-    ?? null;
+    || null;
   const resolvedGoalLabel = normalizeText(fallbackGoalLabel);
   if (!resolvedGoalLabel) return null;
 
@@ -572,6 +577,15 @@ const buildSupportAlignedHeroWhenEvidenceIsThin = (
       ? `Visible ingredients lean more toward ${loweredGoal} support than other goals we checked.`
       : `Visible ingredients lean more toward ${loweredGoal} support on this label.`,
   };
+};
+
+const findGoalCoverageByLabel = (
+  coverage: TopSectionGoalCoverageInput[],
+  goalLabel: string,
+): TopSectionGoalCoverageInput | null => {
+  const normalizedGoalLabel = normalizeText(goalLabel).toLowerCase();
+  if (!normalizedGoalLabel) return null;
+  return coverage.find((entry) => normalizeText(entry.goalLabel).toLowerCase() === normalizedGoalLabel) ?? null;
 };
 
 const buildBanner = (allergy: TopSectionAllergyInput): TopSectionBannerPresentation | null => {
@@ -700,7 +714,15 @@ const buildGoalCoverageRowDetails = (
 const buildSupportInsight = (
   personalInsight: TopSectionPersonalInsightInput,
 ): TopSectionInsightPresentation | null => {
-  const dominantGoal = getDominantGoalCoverage(personalInsight);
+  const coverage = getSortedGoalCoverage(getPrimaryGoalCoverage(personalInsight));
+  const resolvedSupportGoalLabel = normalizeText(personalInsight.resolvedSupportGoalLabel);
+  const dominantGoal =
+    (
+      personalInsight.preferSupportSignal && resolvedSupportGoalLabel
+        ? findGoalCoverageByLabel(coverage, resolvedSupportGoalLabel)
+        : null
+    )
+    ?? getDominantGoalCoverage(personalInsight);
   if (dominantGoal) {
     const {
       fullItems,
@@ -712,7 +734,9 @@ const buildSupportInsight = (
     const dominantPresentation = toGoalCoveragePresentation(dominantGoal);
     const lowerGoal = lowerFirst(dominantGoal.goalLabel);
     const collapsedTitle =
-      dominantGoal.state === 'strong'
+      personalInsight.preferSupportSignal && resolvedSupportGoalLabel
+        ? buildGoalSupportTitle(dominantGoal.goalLabel)
+        : dominantGoal.state === 'strong'
         ? buildGoalSupportTitle(dominantGoal.goalLabel)
         : `Most aligned with your ${dominantGoal.goalLabel} goal`;
 
@@ -747,6 +771,8 @@ const buildSupportInsight = (
   }
 
   const shouldRenderPrimaryCoverageRow =
+    !personalInsight.preferSupportSignal
+    &&
     isGoalCoverageMultiGoal(personalInsight)
     && (
       personalInsight.heroMode === 'mixed_goals'
@@ -792,9 +818,12 @@ const buildSupportInsight = (
     };
   }
 
-  const supportLabels = personalInsight.supportLabels
+  const supportLabels = Array.from(new Set([
+    personalInsight.preferSupportSignal ? resolvedSupportGoalLabel : null,
+    ...personalInsight.supportLabels,
+  ]
     .map((label) => normalizeText(label))
-    .filter(Boolean);
+    .filter(Boolean)));
   if (supportLabels.length > 0) {
     const collapsedTitle =
       supportLabels.length === 1
@@ -1080,6 +1109,8 @@ export const buildAnalysisTopSectionPresentation = (input: {
 
   const preferredExpandedKey = banner?.kind === 'allergy'
     ? 'allergy_insight'
+    : input.personalInsight.preferSupportSignal
+      ? 'personal_support'
     : input.goal.heroMode === 'dominant_goal'
       ? 'personal_support'
       : input.goal.goalLensMode === 'multi_goal_summary'
