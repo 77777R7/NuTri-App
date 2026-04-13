@@ -170,7 +170,7 @@ export default function ScanResultScreen() {
   const lastSupplementIdRef = useRef<string | null>(null);
 
   // Get session to retrieve barcode
-  const params = useLocalSearchParams<{ sessionId?: string; devBarcode?: string }>();
+  const params = useLocalSearchParams<{ sessionId?: string; devBarcode?: string; source?: string }>();
   const [session, setSession] = useState<ScanSession | null>(null);
   const [sessionResolved, setSessionResolved] = useState(false);
   const [sessionState, setSessionState] = useState<'ok' | 'session_expired'>('ok');
@@ -255,6 +255,18 @@ export default function ScanResultScreen() {
       hiddenLogged: false,
     };
   }, [analysisHeaderScrollY, barcode, params.sessionId]);
+  const resultEntrySource =
+    typeof params.source === 'string' && params.source.trim().length > 0
+      ? params.source.trim().toLowerCase()
+      : null;
+  const returnToSearch = resultEntrySource === 'search';
+  const navigateToOrigin = () => {
+    if (returnToSearch && router.canGoBack()) {
+      router.back();
+      return;
+    }
+    router.replace(returnToSearch ? '/search' : '/scan/barcode');
+  };
   const debugPanelNode = SHOW_SCAN_DEBUG ? (
     <DebugScanPanel
       requestId={requestId}
@@ -592,7 +604,7 @@ export default function ScanResultScreen() {
   }, [appOwnership, bundleRevision, dashboardRenderMode, isExpoGo]);
 
   const handleBack = () => {
-    router.replace('/scan/barcode');
+    navigateToOrigin();
   };
 
   if (!sessionResolved) {
@@ -626,8 +638,8 @@ export default function ScanResultScreen() {
           <Text style={styles.fallbackText}>
             Your scan session is no longer available. Please scan again.
           </Text>
-          <TouchableOpacity style={styles.secondaryActionButton} onPress={() => router.replace('/scan/barcode')}>
-            <Text style={styles.secondaryActionText}>Start New Scan</Text>
+          <TouchableOpacity style={styles.secondaryActionButton} onPress={navigateToOrigin}>
+            <Text style={styles.secondaryActionText}>{returnToSearch ? 'Back to Search' : 'Start New Scan'}</Text>
           </TouchableOpacity>
         </View>
         {debugPanelNode}
@@ -651,8 +663,8 @@ export default function ScanResultScreen() {
           <Text style={styles.fallbackNote}>
             {error || 'Try a clearer barcode image or scan another package side.'}
           </Text>
-          <TouchableOpacity style={styles.secondaryActionButton} onPress={() => router.replace('/scan/barcode')}>
-            <Text style={styles.secondaryActionText}>Retry Scan</Text>
+          <TouchableOpacity style={styles.secondaryActionButton} onPress={navigateToOrigin}>
+            <Text style={styles.secondaryActionText}>{returnToSearch ? 'Back to Search' : 'Retry Scan'}</Text>
           </TouchableOpacity>
         </View>
         {debugPanelNode}
@@ -682,8 +694,8 @@ export default function ScanResultScreen() {
           <FileText size={48} color="#52525b" />
           <Text style={styles.fallbackTitle}>{recoverableTitle}</Text>
           <Text style={styles.fallbackText}>{recoverableText}</Text>
-          <TouchableOpacity style={styles.secondaryActionButton} onPress={() => router.replace('/scan/barcode')}>
-            <Text style={styles.secondaryActionText}>Retry Scan</Text>
+          <TouchableOpacity style={styles.secondaryActionButton} onPress={navigateToOrigin}>
+            <Text style={styles.secondaryActionText}>{returnToSearch ? 'Back to Search' : 'Retry Scan'}</Text>
           </TouchableOpacity>
         </View>
         {debugPanelNode}
@@ -704,8 +716,8 @@ export default function ScanResultScreen() {
           <FileText size={48} color="#52525b" />
           <Text style={styles.fallbackTitle}>Session Expired</Text>
           <Text style={styles.fallbackText}>Please start a new scan.</Text>
-          <TouchableOpacity style={styles.secondaryActionButton} onPress={() => router.replace('/scan/barcode')}>
-            <Text style={styles.secondaryActionText}>Start New Scan</Text>
+          <TouchableOpacity style={styles.secondaryActionButton} onPress={navigateToOrigin}>
+            <Text style={styles.secondaryActionText}>{returnToSearch ? 'Back to Search' : 'Start New Scan'}</Text>
           </TouchableOpacity>
         </View>
         {debugPanelNode}
