@@ -7318,7 +7318,7 @@ const AnalysisBundleDashboard: React.FC<{
     const resolvedScientificBackgroundBlock = useMemo(
         () =>
             scientificBackgroundState?.status === 'ok'
-                && scientificBackgroundState.source === 'api'
+                && (scientificBackgroundState.source === 'api' || scientificBackgroundState.source === 'server-fallback')
                 && scientificBackgroundState.data
                 ? scientificBackgroundState.data
                 : null,

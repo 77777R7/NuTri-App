@@ -543,6 +543,37 @@ const buildHero = (goal: TopSectionHeroInput): TopSectionHeroPresentation => {
   };
 };
 
+const buildSupportAlignedHeroWhenEvidenceIsThin = (
+  goal: TopSectionHeroInput,
+  personalInsight: TopSectionPersonalInsightInput,
+): TopSectionHeroPresentation | null => {
+  const heroReadsAsEvidenceLimited =
+    goal.heroMode === 'insufficient_signal'
+    || goal.labelCompleteness === 'low'
+    || hasLowNarrativeConfidence(goal);
+  if (!heroReadsAsEvidenceLimited) return null;
+
+  const dominantGoal = getDominantGoalCoverage(personalInsight);
+  const fallbackGoalLabel = dominantGoal?.goalLabel
+    ?? personalInsight.supportLabels
+      .map((label) => normalizeText(label))
+      .find(Boolean)
+    ?? null;
+  const resolvedGoalLabel = normalizeText(fallbackGoalLabel);
+  if (!resolvedGoalLabel) return null;
+
+  const loweredGoal = lowerFirst(resolvedGoalLabel);
+  const analyzedGoalCount = personalInsight.analyzedGoalCount ?? getPrimaryGoalCoverage(personalInsight).length;
+
+  return {
+    tone: 'neutral',
+    chip: `Most aligned with your ${resolvedGoalLabel} goal`,
+    summary: analyzedGoalCount > 1
+      ? `Visible ingredients lean more toward ${loweredGoal} support than other goals we checked.`
+      : `Visible ingredients lean more toward ${loweredGoal} support on this label.`,
+  };
+};
+
 const buildBanner = (allergy: TopSectionAllergyInput): TopSectionBannerPresentation | null => {
   if (allergy.matchedLabels.length === 0) return null;
   return {
@@ -1112,7 +1143,8 @@ export const buildAnalysisTopSectionPresentation = (input: {
   safety: TopSectionSafetyInput;
 }): TopSectionPresentation => {
   const banner = buildBanner(input.allergy);
-  const hero = buildHero(input.goal);
+  const hero = buildSupportAlignedHeroWhenEvidenceIsThin(input.goal, input.personalInsight)
+    ?? buildHero(input.goal);
   const supportInsight = buildSupportInsight(input.personalInsight);
   const allergyInsight = buildAllergyInsight(input.allergy);
   const doseInsight = buildDoseInsight(input.dose);

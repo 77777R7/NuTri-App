@@ -890,6 +890,36 @@ test('insufficient-signal multi-goal copy prefers evidence limits over limited-s
   ]);
 });
 
+test('evidence-limited hero aligns with personalized support instead of contradicting it', () => {
+  const result = buildAnalysisTopSectionPresentation({
+    goal: {
+      heroMode: 'insufficient_signal',
+      selectedGoalLabel: 'Sleep',
+      analyzedGoalCount: 3,
+      labelCompleteness: 'low',
+      goalNarrativeConfidence: 'low',
+      goalCoverage: [
+        { goalLabel: 'Sleep', tier: 'related', state: 'some', source: 'goal_match_scoring_preview' },
+        { goalLabel: 'Stress Support', tier: 'weak_match', state: 'limited', source: 'goal_match_scoring_preview' },
+        { goalLabel: 'Recovery', tier: 'no_match', state: 'none', source: 'goal_match_scoring_preview' },
+      ],
+    },
+    personalInsight: {
+      supportLabels: ['Sleep'],
+      heroMode: 'insufficient_signal',
+      labelCompleteness: 'low',
+      goalNarrativeConfidence: 'low',
+    },
+    allergy: { status: 'ready', matchedLabels: [], evidenceTexts: [], summary: 'No allergy-related flags detected.' },
+    dose: { status: 'ready', assessment: 'aligned', productDoseText: '1 capsule daily' },
+    safety: {},
+  });
+
+  assert.equal(result.hero.chip, 'Most aligned with your Sleep goal');
+  assert.equal(result.hero.summary, 'Visible ingredients lean more toward sleep support on this label.');
+  assert.equal(result.insights[0]?.collapsedTitle, 'Supports your Sleep goal');
+});
+
 test('goal insight still renders when the selected goal does not match strongly', () => {
   const result = buildAnalysisTopSectionPresentation({
     goal: {
