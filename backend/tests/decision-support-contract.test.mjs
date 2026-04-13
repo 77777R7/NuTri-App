@@ -75,5 +75,5 @@ test("decision support route exposes 409 digest mismatch contract", async () => 
   assert.match(routeSlice, /latestDecisionInputsHash:\s*decisionSupport\.decisionInputsHash/);
   assert.match(routeSlice, /latestPersonalizationScopeHash:\s*personalizationScopeHash/);
   assert.match(routeSlice, /personalizationScopeHash,/);
-  assert.match(routeSlice, /personalizedResultLane:\s*decisionSupport\.personalizedResultLane/);
+  assert.match(routeSlice, /personalizedResultLane:\s*decisionSupport(?:WithComparison)?\.personalizedResultLane/);
 });
