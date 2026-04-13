@@ -16625,8 +16625,9 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
     let bypassCachedFastPathForAuthority = false;
     let cachedLooksWebOnly = false;
     let prefetchedNameMatchFacts: LnhpdFacts | null = null;
+    let cachedOverlayClaims: DecisionSupportOverlayClaims | null = null;
     if (cachedFast) {
-      const cachedOverlayClaims = await getOverlayClaimsForBarcode();
+      cachedOverlayClaims = await getOverlayClaimsForBarcode();
       const cachedNeedsOverlayRefresh =
         Boolean(cachedOverlayClaims) &&
         !snapshotPayloadUsesIherbOverlaySupport(cachedFast.analysisPayload);
