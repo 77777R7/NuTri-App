@@ -910,14 +910,79 @@ test('evidence-limited hero aligns with personalized support instead of contradi
       labelCompleteness: 'low',
       goalNarrativeConfidence: 'low',
     },
-    allergy: { status: 'ready', matchedLabels: [], evidenceTexts: [], summary: 'No allergy-related flags detected.' },
-    dose: { status: 'ready', assessment: 'aligned', productDoseText: '1 capsule daily' },
+    allergy: {
+      status: 'ready',
+      matchedLabels: [],
+      evidenceTexts: [],
+      summary: 'No allergy-related flags detected.',
+    },
+    dose: {
+      status: 'ready',
+      assessment: 'aligned',
+      productDoseText: '1 capsule daily',
+    },
     safety: {},
   });
 
   assert.equal(result.hero.chip, 'Most aligned with your Sleep goal');
-  assert.equal(result.hero.summary, 'Visible ingredients lean more toward sleep support on this label.');
+  assert.equal(
+    result.hero.summary,
+    'Visible ingredients lean more toward sleep support on this label.',
+  );
+  assert.equal(result.insights[0]?.key, 'personal_support');
+  assert.equal(result.insights[0]?.defaultExpanded, true);
   assert.equal(result.insights[0]?.collapsedTitle, 'Supports your Sleep goal');
+});
+
+test('limited-goals multi-goal copy does not collapse into evidence-limited hero when completeness is medium', () => {
+  const result = buildAnalysisTopSectionPresentation({
+    goal: {
+      heroMode: 'limited_goals',
+      goalLensMode: 'multi_goal_summary',
+      allGoalsAnalyzed: true,
+      labelCompleteness: 'medium',
+      goalNarrativeConfidence: 'low',
+      analyzedGoalCount: 2,
+      surfacedGoalCount: 2,
+      goalCoverage: [
+        { goalLabel: 'Sleep', tier: 'no_match', state: 'none', source: 'selected_goal_evaluation' },
+        { goalLabel: 'Stress Support', tier: 'no_match', state: 'none', source: 'goal_match_scoring_preview' },
+      ],
+    },
+    personalInsight: {
+      supportLabels: [],
+      heroMode: 'limited_goals',
+      goalLensMode: 'multi_goal_summary',
+      allGoalsAnalyzed: true,
+      labelCompleteness: 'medium',
+      goalNarrativeConfidence: 'low',
+      analyzedGoalCount: 2,
+      surfacedGoalCount: 2,
+      goalCoverage: [
+        { goalLabel: 'Sleep', tier: 'no_match', state: 'none', source: 'selected_goal_evaluation' },
+        { goalLabel: 'Stress Support', tier: 'no_match', state: 'none', source: 'goal_match_scoring_preview' },
+      ],
+    },
+    allergy: {
+      status: 'ready',
+      matchedLabels: [],
+      evidenceTexts: [],
+      summary: 'No allergy-related flags detected.',
+    },
+    dose: {
+      status: 'ready',
+      assessment: 'aligned',
+      productDoseText: '1 softgel daily',
+    },
+    safety: {},
+  });
+
+  assert.equal(result.hero.chip, 'Limited support across your selected goals');
+  assert.equal(result.hero.summary, "We don't see clear goal-specific support across the goals we checked.");
+  assert.notEqual(result.hero.chip, 'Not enough evidence to judge all your goals');
+  assert.equal(result.insights[0]?.key, 'goal_coverage');
+  assert.equal(result.insights[0]?.collapsedTitle, 'Goal check');
+  assert.equal(result.insights[0]?.subtitle, '2 goals checked');
 });
 
 test('goal insight still renders when the selected goal does not match strongly', () => {
