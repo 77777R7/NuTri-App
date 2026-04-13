@@ -15,6 +15,14 @@ test('science UI uses new B/C sidecars and removes the legacy ingredient summary
   assert.ok(dashboardSource.includes('/api/ingredient-overview/v1'));
   assert.ok(dashboardSource.includes('/api/scientific-background/v1'));
   assert.equal(dashboardSource.includes('/api/summary/ingredient'), false);
+  assert.ok(
+    dashboardSource.includes('const scienceDecisionPayload = authoritativeDecisionTemplatePayload ?? decisionTemplatePayload;'),
+  );
+  assert.ok(dashboardSource.includes("const decisionScienceBlock = scienceDecisionPayload?.scienceBlock;"));
+  assert.ok(
+    dashboardSource.includes("const decisionPersonalizedResultLane = personalizedDecisionPayload?.personalizedResultLane ?? null;"),
+  );
+  assert.ok(dashboardSource.includes("&& authoritativeDecisionTemplatePayload != null"));
   assert.ok(dashboardSource.includes('if (!shouldLoadScienceSidecars) return;'));
   assert.ok(dashboardSource.includes('!ingredientOverviewRequestKey'));
   assert.ok(dashboardSource.includes('!decisionBarcodeForScience'));

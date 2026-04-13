@@ -934,6 +934,52 @@ test('evidence-limited hero aligns with personalized support instead of contradi
   assert.equal(result.insights[0]?.collapsedTitle, 'Supports your Sleep goal');
 });
 
+test('evidence-limited hero also aligns when support is only visible in goal coverage', () => {
+  const result = buildAnalysisTopSectionPresentation({
+    goal: {
+      heroMode: 'insufficient_signal',
+      selectedGoalLabel: 'Sleep',
+      analyzedGoalCount: 2,
+      labelCompleteness: 'low',
+      goalNarrativeConfidence: 'low',
+      goalCoverage: [
+        { goalLabel: 'Sleep', tier: 'related', state: 'some', source: 'selected_goal_evaluation' },
+        { goalLabel: 'Stress Support', tier: 'weak_match', state: 'limited', source: 'goal_match_scoring_preview' },
+      ],
+    },
+    personalInsight: {
+      supportLabels: [],
+      preferSupportSignal: true,
+      resolvedSupportGoalLabel: 'Sleep',
+      heroMode: 'insufficient_signal',
+      selectedGoalLabel: 'Sleep',
+      labelCompleteness: 'low',
+      goalNarrativeConfidence: 'low',
+      goalCoverage: [
+        { goalLabel: 'Sleep', tier: 'related', state: 'some', source: 'selected_goal_evaluation' },
+        { goalLabel: 'Stress Support', tier: 'weak_match', state: 'limited', source: 'goal_match_scoring_preview' },
+      ],
+    },
+    allergy: {
+      status: 'ready',
+      matchedLabels: [],
+      evidenceTexts: [],
+      summary: 'No allergy-related flags detected.',
+    },
+    dose: {
+      status: 'ready',
+      assessment: 'aligned',
+      productDoseText: '1 capsule daily',
+    },
+    safety: {},
+  });
+
+  assert.equal(result.hero.chip, 'Most aligned with your Sleep goal');
+  assert.equal(result.insights[0]?.key, 'personal_support');
+  assert.equal(result.insights[0]?.collapsedTitle, 'Supports your Sleep goal');
+  assert.equal(result.insights[0]?.defaultExpanded, true);
+});
+
 test('limited-goals multi-goal copy does not collapse into evidence-limited hero when completeness is medium', () => {
   const result = buildAnalysisTopSectionPresentation({
     goal: {
