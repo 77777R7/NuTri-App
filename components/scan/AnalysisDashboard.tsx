@@ -2941,7 +2941,7 @@ type IngredientOverviewSidecarState = {
 
 type ScientificBackgroundSidecarState = {
     status: 'idle' | 'loading' | 'ok' | 'error';
-    source?: 'api' | 'fallback';
+    source?: 'api' | 'server-fallback';
     fallbackUsed?: boolean;
     promptVersion?: string;
     data?: ScientificBackgroundBlock;
@@ -7160,15 +7160,12 @@ const AnalysisBundleDashboard: React.FC<{
     );
     const resolvedScientificBackgroundBlock = useMemo(
         () =>
-            scientificBackgroundState?.status === 'ok' && scientificBackgroundState.data
+            scientificBackgroundState?.status === 'ok'
+                && scientificBackgroundState.source === 'api'
+                && scientificBackgroundState.data
                 ? scientificBackgroundState.data
-                : activeScienceIngredientRow
-                    ? buildScientificBackgroundFallbackClient(
-                        activeScienceIngredientRow.name,
-                        decisionScienceIngredientRows,
-                    )
-                    : null,
-        [activeScienceIngredientRow, decisionScienceIngredientRows, scientificBackgroundState],
+                : null,
+        [scientificBackgroundState],
     );
 
     useEffect(() => {
@@ -7294,96 +7291,90 @@ const AnalysisBundleDashboard: React.FC<{
         const controller = new AbortController();
         let startedRequestKey: string | null = null;
         let settledRequestKey: string | null = null;
-        const interactionTask = InteractionManager.runAfterInteractions(() => {
-            const baseUrl = String(Config.searchApiBaseUrl).replace(/\/$/, '');
-            const requestKey = scientificBackgroundRequestKey;
-            const row = activeScienceIngredientRow;
-            const current = scientificBackgroundStateRef.current[requestKey];
-            if (current && (current.status === 'loading' || current.status === 'ok')) return;
+        const baseUrl = String(Config.searchApiBaseUrl).replace(/\/$/, '');
+        const requestKey = scientificBackgroundRequestKey;
+        const row = activeScienceIngredientRow;
+        const current = scientificBackgroundStateRef.current[requestKey];
+        if (
+            current
+            && (
+                current.status === 'loading'
+                || (current.status === 'ok' && current.source === 'api')
+            )
+        ) {
+            return;
+        }
 
-            startedRequestKey = requestKey;
-            const fallbackBlock = buildScientificBackgroundFallbackClient(
-                row.name,
-                decisionScienceIngredientRows,
-            );
+        startedRequestKey = requestKey;
 
-            const run = async (
-                digestParam: string,
-                canRetry: boolean,
-            ): Promise<void> => {
-                try {
-                    setScientificBackgroundSidecarState(requestKey, { status: 'loading' });
-                    const response = await fetch(`${baseUrl}/api/scientific-background/v1`, {
-                        method: 'POST',
-                        headers: {
-                            ...(await withAuthHeaders({
-                                'Content-Type': 'application/json',
-                            })),
-                        },
-                        body: JSON.stringify({
-                            barcode: decisionBarcodeForScience,
-                            decisionDigest: digestParam,
-                            selectedIngredientName: row.name,
-                        }),
-                        signal: controller.signal,
-                    });
+        const run = async (
+            digestParam: string,
+            canRetry: boolean,
+        ): Promise<void> => {
+            try {
+                setScientificBackgroundSidecarState(requestKey, { status: 'loading' });
+                const response = await fetch(`${baseUrl}/api/scientific-background/v1`, {
+                    method: 'POST',
+                    headers: {
+                        ...(await withAuthHeaders({
+                            'Content-Type': 'application/json',
+                        })),
+                    },
+                    body: JSON.stringify({
+                        barcode: decisionBarcodeForScience,
+                        decisionDigest: digestParam,
+                        selectedIngredientName: row.name,
+                    }),
+                    signal: controller.signal,
+                });
 
-                    if (cancelled || currentRunKeyRef.current !== requestRunKey) return;
+                if (cancelled || currentRunKeyRef.current !== requestRunKey) return;
 
-                    if (response.status === 409) {
-                        const mismatchPayload = await response.json().catch(() => null);
-                        const latestDigest = typeof mismatchPayload?.latestDigest === 'string' ? mismatchPayload.latestDigest : null;
-                        if (canRetry && latestDigest && latestDigest !== digestParam) {
-                            return run(latestDigest, false);
-                        }
+                if (response.status === 409) {
+                    const mismatchPayload = await response.json().catch(() => null);
+                    const latestDigest = typeof mismatchPayload?.latestDigest === 'string' ? mismatchPayload.latestDigest : null;
+                    if (canRetry && latestDigest && latestDigest !== digestParam) {
+                        return run(latestDigest, false);
                     }
-
-                    if (!response.ok) {
-                        settledRequestKey = requestKey;
-                        setScientificBackgroundSidecarState(requestKey, {
-                            status: 'ok',
-                            source: 'fallback',
-                            fallbackUsed: true,
-                            promptVersion: 'scientific_background_client_fallback_v1',
-                            data: fallbackBlock,
-                        });
-                        return;
-                    }
-
-                    const payload = await response.json() as ScientificBackgroundResponse & { latestDigest?: string };
-                    if (cancelled || currentRunKeyRef.current !== requestRunKey) return;
-                    if (payload?.status !== 'ok' || !payload.scientificBackground) {
-                        throw new Error('scientific_background_invalid_payload');
-                    }
-
-                    settledRequestKey = requestKey;
-                    setScientificBackgroundSidecarState(requestKey, {
-                        status: 'ok',
-                        source: payload.source,
-                        fallbackUsed: payload.fallbackUsed,
-                        promptVersion: payload.promptVersion,
-                        data: payload.scientificBackground,
-                    });
-                } catch (error) {
-                    if (cancelled || currentRunKeyRef.current !== requestRunKey) return;
-                    settledRequestKey = requestKey;
-                    setScientificBackgroundSidecarState(requestKey, {
-                        status: 'ok',
-                        source: 'fallback',
-                        fallbackUsed: true,
-                        promptVersion: 'scientific_background_client_fallback_v1',
-                        data: fallbackBlock,
-                        error: error instanceof Error ? error.message : 'Scientific background unavailable',
-                    });
                 }
-            };
 
-            void run(decisionDigestForScience, true);
-        });
+                if (!response.ok) {
+                    settledRequestKey = requestKey;
+                    setScientificBackgroundSidecarState(requestKey, {
+                        status: 'error',
+                        error: `HTTP ${response.status}`,
+                    });
+                    return;
+                }
+
+                const payload = await response.json() as ScientificBackgroundResponse & { latestDigest?: string };
+                if (cancelled || currentRunKeyRef.current !== requestRunKey) return;
+                if (payload?.status !== 'ok' || !payload.scientificBackground) {
+                    throw new Error('scientific_background_invalid_payload');
+                }
+
+                settledRequestKey = requestKey;
+                setScientificBackgroundSidecarState(requestKey, {
+                    status: 'ok',
+                    source: payload.source === 'fallback' ? 'server-fallback' : 'api',
+                    fallbackUsed: payload.fallbackUsed,
+                    promptVersion: payload.promptVersion,
+                    data: payload.scientificBackground,
+                });
+            } catch (error) {
+                if (cancelled || currentRunKeyRef.current !== requestRunKey) return;
+                settledRequestKey = requestKey;
+                setScientificBackgroundSidecarState(requestKey, {
+                    status: 'error',
+                    error: error instanceof Error ? error.message : 'Scientific background unavailable',
+                });
+            }
+        };
+
+        void run(decisionDigestForScience, true);
         return () => {
             cancelled = true;
             controller.abort();
-            interactionTask.cancel();
             if (startedRequestKey && startedRequestKey !== settledRequestKey) {
                 setScientificBackgroundSidecarState(startedRequestKey, (currentState) =>
                     currentState?.status === 'loading' ? undefined : currentState,
@@ -7414,7 +7405,7 @@ const AnalysisBundleDashboard: React.FC<{
             maxScrollRatio: 0,
             summaryVersion: scientificBackgroundState.promptVersion ?? null,
             guardApplied: true,
-            fallbackUsed: scientificBackgroundState.fallbackUsed ?? (scientificBackgroundState.source === 'fallback'),
+            fallbackUsed: scientificBackgroundState.fallbackUsed ?? (scientificBackgroundState.source === 'server-fallback'),
         });
     }, [bundleSourceType, bundleSourceTypeFinal, scientificBackgroundState, selectedTileType]);
 
@@ -7424,6 +7415,13 @@ const AnalysisBundleDashboard: React.FC<{
     const ingredientOverviewCompareHint = resolvedIngredientOverviewBlock?.compareHint ?? null;
     const scientificBackgroundIntroLine = resolvedScientificBackgroundBlock?.introLine ?? activeIngredientLabelLine;
     const scientificBackgroundClosingNote = resolvedScientificBackgroundBlock?.closingNote ?? null;
+    const shouldShowScientificBackgroundLoading =
+        shouldLoadScienceSidecars
+        && Boolean(scientificBackgroundRequestKey)
+        && (
+            scientificBackgroundState == null
+            || scientificBackgroundState.status === 'loading'
+        );
     const ingredientsContent = (
         <View style={styles.detailStack}>
             <GlassCard
@@ -7546,14 +7544,13 @@ const AnalysisBundleDashboard: React.FC<{
                         </View>
                     ) : null}
 
-                    {resolvedScientificBackgroundBlock ? (
+                    {shouldShowScientificBackgroundLoading ? (
+                        <View style={styles.inlineLoadingRow}>
+                            <ActivityIndicator />
+                            <Text style={styles.inlineLoadingText}>Generating scientific background…</Text>
+                        </View>
+                    ) : resolvedScientificBackgroundBlock ? (
                         <View style={{ gap: 16 }}>
-                            {scientificBackgroundState?.status === 'loading' ? (
-                                <View style={styles.inlineLoadingRow}>
-                                    <ActivityIndicator />
-                                    <Text style={styles.inlineLoadingText}>Generating scientific background…</Text>
-                                </View>
-                            ) : null}
                             {!showIngredientSelector ? (
                                 <Text style={styles.detailMetaText}>{scientificBackgroundIntroLine}</Text>
                             ) : null}
@@ -7578,7 +7575,7 @@ const AnalysisBundleDashboard: React.FC<{
                             ) : null}
                         </View>
                     ) : (
-                        <Text style={styles.detailPlaceholderText}>Scientific background is pending.</Text>
+                        <Text style={styles.detailPlaceholderText}>Scientific background unavailable right now.</Text>
                     )}
                 </View>
             </GlassCard>
