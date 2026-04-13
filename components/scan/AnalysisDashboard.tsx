@@ -827,6 +827,10 @@ const doesGoalFitReadAsEvidenceThin = (params: {
     || params.labelCompleteness === 'low'
     || params.goalNarrativeConfidence === 'low';
 
+const isSupportiveGoalCoverageState = (
+    state: 'strong' | 'some' | 'limited' | 'none' | 'unknown' | null | undefined,
+): boolean => state === 'strong' || state === 'some';
+
 const GOAL_COVERAGE_SIGNAL_PRIORITY: Record<'strong' | 'some' | 'limited' | 'none' | 'unknown', number> = {
     strong: 5,
     some: 4,
@@ -5369,12 +5373,21 @@ const AnalysisBundleDashboard: React.FC<{
                 : null,
         [decisionSupportState.data, decisionSupportState.status],
     );
+    const authoritativeDecisionTemplatePayload = useMemo<DecisionSupportTemplatePayload | null>(
+        () =>
+            hasRenderableDecisionTemplate(authoritativeDecisionPayload)
+                ? authoritativeDecisionPayload as DecisionSupportTemplatePayload
+                : null,
+        [authoritativeDecisionPayload],
+    );
+    const personalizedDecisionPayload = authoritativeDecisionTemplatePayload ?? decisionTemplatePayload;
+    const scienceDecisionPayload = authoritativeDecisionTemplatePayload ?? decisionTemplatePayload;
     const decisionOverviewBlock = decisionTemplatePayload?.overviewBlock;
-    const decisionScienceBlock = decisionTemplatePayload?.scienceBlock;
+    const decisionScienceBlock = scienceDecisionPayload?.scienceBlock;
     const decisionUsageBlock = decisionTemplatePayload?.usageBlock;
     const decisionSafetyBlock = decisionTemplatePayload?.safetyBlock;
     const decisionQualityMark = decisionTemplatePayload?.qualityMark;
-    const decisionPersonalizedResultLane = decisionTemplatePayload?.personalizedResultLane ?? null;
+    const decisionPersonalizedResultLane = personalizedDecisionPayload?.personalizedResultLane ?? null;
     const currentDecisionDigest =
         normalizeText(
             decisionTemplatePayload?.digest
@@ -5382,12 +5395,12 @@ const AnalysisBundleDashboard: React.FC<{
         ) || null;
     const currentDecisionInputsHash =
         normalizeText(
-            decisionTemplatePayload?.decisionInputsHash
+            personalizedDecisionPayload?.decisionInputsHash
             ?? ((bundleState.meta as { decisionInputsHash?: string | null })?.decisionInputsHash ?? null),
         ) || null;
     const currentPersonalizationScopeHash =
         getDecisionPayloadPersonalizationScopeHash(authoritativeDecisionPayload)
-        || normalizeText(decisionTemplatePayload?.personalizationScopeHash ?? null)
+        || normalizeText(personalizedDecisionPayload?.personalizationScopeHash ?? null)
         || null;
     const decisionOverlayUsed = useMemo(() => {
         if (decisionUsageBlock?.directions?.sourceTier === 'overlay_iherb') return true;
@@ -6284,17 +6297,34 @@ const AnalysisBundleDashboard: React.FC<{
             labelCompleteness: goalFit?.labelCompleteness ?? null,
             goalNarrativeConfidence: goalFit?.goalNarrativeConfidence ?? null,
         });
+        const supportiveVisibleGoalCoverage = resolvedVisibleGoalCoverage.filter((entry) => isSupportiveGoalCoverageState(entry.state));
+        const supportiveAllGoalCoverage = resolvedAllGoalCoverage.filter((entry) => isSupportiveGoalCoverageState(entry.state));
         const explicitSupportGoalLabel = (personalInsight?.supports ?? [])
             .map((signal) => normalizeText(signal.label))
             .find(Boolean) ?? null;
+        const visibleSupportGoalLabel =
+            pickDominantGoalCoverageLabel(supportiveVisibleGoalCoverage)
+            ?? (
+                supportiveVisibleGoalCoverage.length === 1
+                    ? supportiveVisibleGoalCoverage[0]?.goalLabel ?? null
+                    : null
+            );
         const dominantSupportGoalLabel =
-            pickDominantGoalCoverageLabel(resolvedAllGoalCoverage)
+            pickDominantGoalCoverageLabel(supportiveAllGoalCoverage)
+            ?? pickDominantGoalCoverageLabel(resolvedAllGoalCoverage)
             ?? getGoalLabel(goalFit?.dominantGoalKey ?? null)
             ?? null;
         const resolvedSupportGoalLabel = goalReadsAsEvidenceThin
-            ? explicitSupportGoalLabel ?? dominantSupportGoalLabel
+            ? explicitSupportGoalLabel ?? visibleSupportGoalLabel ?? dominantSupportGoalLabel
             : null;
-        const preferSupportSignal = goalReadsAsEvidenceThin && Boolean(resolvedSupportGoalLabel);
+        const preferSupportSignal =
+            goalReadsAsEvidenceThin
+            && Boolean(
+                resolvedSupportGoalLabel
+                || (personalInsight?.supports?.length ?? 0) > 0
+                || supportiveVisibleGoalCoverage.length > 0
+                || supportiveAllGoalCoverage.length > 0,
+            );
 
         return buildAnalysisTopSectionPresentation({
             goal: {
@@ -7682,13 +7712,11 @@ const AnalysisBundleDashboard: React.FC<{
     );
 
     const decisionBarcodeForScience = canonicalDecisionBarcode;
-    const decisionDigestForScience = getDecisionPayloadDigest(authoritativeDecisionPayload)
-        || normalizeText(decisionTemplatePayload?.digest ?? '')
+    const decisionDigestForScience = normalizeText(authoritativeDecisionTemplatePayload?.digest ?? '')
         || null;
     const shouldLoadScienceSidecars =
         selectedTileType === 'science'
-        && decisionSupportState.status === 'ready'
-        && decisionTemplatePayload != null
+        && authoritativeDecisionTemplatePayload != null
         && Boolean(decisionBarcodeForScience)
         && Boolean(decisionDigestForScience)
         && Boolean(currentDecisionInputsHash)
