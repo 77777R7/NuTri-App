@@ -524,6 +524,8 @@ CRITICAL INSTRUCTIONS:
 7. Do NOT confuse source context with chemical form. Source context may be mentioned as background only.
 8. Use "rich" only when the product is simple, the primary ingredient is clear, and one short mechanism sentence can be explained in plain English without sounding medical.
 9. Keep the tone specific, shopper-friendly, and plain-English. Avoid hype such as "best form", "high absorption", "superior bioavailability", or "clinically proven".
+10. If the input includes allIngredientRows, descriptionHighlights, or warningHighlights, use them to make the overview more product-specific and less generic.
+11. Treat warningHighlights as context only. Do not turn them into medical advice or clinician instructions.
 
 STYLE REFERENCE (do not copy unless it matches the facts):
 - Rich mode can sound like:

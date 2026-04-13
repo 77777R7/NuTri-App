@@ -501,6 +501,12 @@ type ProductOverviewAiRequestPayload = {
     }>;
     sourceContextHint: string | null;
     chemicalFormHint: string | null;
+    allIngredientRows?: Array<{
+        name: string;
+        dose: string | null;
+    }>;
+    descriptionHighlights?: string[];
+    warningHighlights?: string[];
     strengthClaim: string | null;
     servingStrength: string | null;
     form: string | null;
@@ -602,6 +608,7 @@ const FORCE_FULL_DASHBOARD_EFFECTS =
     process.env.EXPO_PUBLIC_FORCE_FULL_DASHBOARD_EFFECTS === '1';
 const PRODUCT_OVERVIEW_AI_TIMEOUT_MS = 8_000;
 const PRODUCT_OVERVIEW_AI_WATCHDOG_MS = 8_800;
+const SCIENTIFIC_BACKGROUND_REVALIDATE_COOLDOWN_MS = 20_000;
 const SHOW_SCAN_DEBUG =
     process.env.EXPO_PUBLIC_SHOW_SCAN_DEBUG === 'true' ||
     process.env.EXPO_PUBLIC_SHOW_SCAN_DEBUG === '1';
@@ -3670,6 +3677,7 @@ const AnalysisBundleDashboard: React.FC<{
     const productOverviewAiStateRef = useRef<Record<string, ProductOverviewAiState>>({});
     const ingredientOverviewStateRef = useRef<Record<string, IngredientOverviewSidecarState>>({});
     const scientificBackgroundStateRef = useRef<Record<string, ScientificBackgroundSidecarState>>({});
+    const scientificBackgroundRevalidateAtRef = useRef<Record<string, number>>({});
     const decisionSupportCacheRef = useRef<Map<string, Record<string, unknown>>>(new Map());
     const decisionSupportByBarcodeRef = useRef<Map<string, Record<string, unknown>>>(decisionSupportWarmCache);
     const [simpleSourcesOpen, setSimpleSourcesOpen] = useState(false);
@@ -6563,6 +6571,61 @@ const AnalysisBundleDashboard: React.FC<{
             overviewStrengthClaim,
         ],
     );
+    const overviewAllIngredientRows = useMemo(
+        () => {
+            const seen = new Set<string>();
+            return overviewOrderedScienceRows
+                .map((row) => ({
+                    name: normalizeText(row.baseName || row.name),
+                    dose: normalizeText(row.dose ?? '') || null,
+                }))
+                .filter((row): row is { name: string; dose: string | null } => {
+                    if (!row.name || isNutritionLabelLikeIngredient(row.name)) return false;
+                    const key = row.name.toLowerCase();
+                    if (seen.has(key)) return false;
+                    seen.add(key);
+                    return true;
+                })
+                .slice(0, 10);
+        },
+        [overviewOrderedScienceRows],
+    );
+    const overviewDescriptionHighlights = useMemo(
+        () => {
+            const seen = new Set<string>();
+            return [
+                normalizeText(overviewSummaryText),
+                ...overviewBullets.map((item) => normalizeText(item?.text ?? null)),
+            ]
+                .filter((value): value is string => {
+                    if (!value) return false;
+                    const key = value.toLowerCase();
+                    if (seen.has(key)) return false;
+                    seen.add(key);
+                    return true;
+                })
+                .slice(0, 4);
+        },
+        [overviewBullets, overviewSummaryText],
+    );
+    const overviewWarningHighlights = useMemo(
+        () => {
+            const seen = new Set<string>();
+            return [
+                ...(decisionSafetyBlock?.labelWarnings ?? []).map((line) => normalizeText(line)),
+                ...(decisionSafetyBlock?.generalWatchouts ?? []).map((line) => normalizeText(line)),
+            ]
+                .filter((value): value is string => {
+                    if (!value) return false;
+                    const key = value.toLowerCase();
+                    if (seen.has(key)) return false;
+                    seen.add(key);
+                    return true;
+                })
+                .slice(0, 4);
+        },
+        [decisionSafetyBlock?.generalWatchouts, decisionSafetyBlock?.labelWarnings],
+    );
     const authoritativeTilePayloadReady = useMemo(
         () => hasRenderableDecisionTemplate(decisionTemplatePayload as Record<string, unknown> | null | undefined),
         [decisionTemplatePayload],
@@ -6660,6 +6723,9 @@ const AnalysisBundleDashboard: React.FC<{
             })),
             sourceContextHint: overviewSourceContextHint,
             chemicalFormHint: overviewChemicalFormHint,
+            allIngredientRows: overviewAllIngredientRows,
+            descriptionHighlights: overviewDescriptionHighlights,
+            warningHighlights: overviewWarningHighlights,
             strengthClaim: overviewStrengthClaim,
             servingStrength: overviewServingStrength,
             form: overviewFormValue,
@@ -6672,8 +6738,10 @@ const AnalysisBundleDashboard: React.FC<{
     }, [
         brandForSubtitle,
         overviewAiDigest,
+        overviewAllIngredientRows,
         overviewChemicalFormHint,
         overviewCountValue,
+        overviewDescriptionHighlights,
         overviewFacts?.product?.brand,
         overviewFacts?.product?.name,
         overviewFormValue,
@@ -6683,6 +6751,7 @@ const AnalysisBundleDashboard: React.FC<{
         overviewServingStrength,
         overviewSourceContextHint,
         overviewStrengthClaim,
+        overviewWarningHighlights,
         productTitle,
     ]);
     const overviewAiRequestFingerprint = useMemo(
@@ -7261,6 +7330,7 @@ const AnalysisBundleDashboard: React.FC<{
         setScientificBackgroundByRequestKey({});
         ingredientOverviewStateRef.current = {};
         scientificBackgroundStateRef.current = {};
+        scientificBackgroundRevalidateAtRef.current = {};
         setActiveIngredientName(keyIngredientsForDetail[0] ?? null);
         setActiveSafetyIngredientName(keyIngredientsForSafety[0] ?? null);
     }, [incomingBundleRunKey, keyIngredientsForDetail, keyIngredientsForSafety]);
@@ -7383,11 +7453,17 @@ const AnalysisBundleDashboard: React.FC<{
         const requestKey = scientificBackgroundRequestKey;
         const row = activeScienceIngredientRow;
         const current = scientificBackgroundStateRef.current[requestKey];
+        const lastRevalidateAt = scientificBackgroundRevalidateAtRef.current[requestKey] ?? 0;
+        const shouldRevalidateFallback =
+            current?.status === 'ok'
+            && current.source === 'server-fallback'
+            && Date.now() - lastRevalidateAt >= SCIENTIFIC_BACKGROUND_REVALIDATE_COOLDOWN_MS;
         if (
             current
             && (
                 current.status === 'loading'
                 || (current.status === 'ok' && current.source === 'api')
+                || (current.status === 'ok' && current.source === 'server-fallback' && !shouldRevalidateFallback)
             )
         ) {
             return;
@@ -7398,8 +7474,12 @@ const AnalysisBundleDashboard: React.FC<{
         const run = async (
             digestParam: string,
             canRetry: boolean,
+            revalidateFallback: boolean,
         ): Promise<void> => {
             try {
+                if (revalidateFallback) {
+                    scientificBackgroundRevalidateAtRef.current[requestKey] = Date.now();
+                }
                 setScientificBackgroundSidecarState(requestKey, { status: 'loading' });
                 const response = await fetch(`${baseUrl}/api/scientific-background/v1`, {
                     method: 'POST',
@@ -7412,6 +7492,7 @@ const AnalysisBundleDashboard: React.FC<{
                         barcode: decisionBarcodeForScience,
                         decisionDigest: digestParam,
                         selectedIngredientName: row.name,
+                        revalidateFallback,
                     }),
                     signal: controller.signal,
                 });
@@ -7422,7 +7503,7 @@ const AnalysisBundleDashboard: React.FC<{
                     const mismatchPayload = await response.json().catch(() => null);
                     const latestDigest = typeof mismatchPayload?.latestDigest === 'string' ? mismatchPayload.latestDigest : null;
                     if (canRetry && latestDigest && latestDigest !== digestParam) {
-                        return run(latestDigest, false);
+                        return run(latestDigest, false, revalidateFallback);
                     }
                 }
 
@@ -7459,7 +7540,7 @@ const AnalysisBundleDashboard: React.FC<{
             }
         };
 
-        void run(decisionDigestForScience, true);
+        void run(decisionDigestForScience, true, shouldRevalidateFallback);
         return () => {
             cancelled = true;
             controller.abort();
