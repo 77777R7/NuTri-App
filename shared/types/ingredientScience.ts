@@ -39,6 +39,6 @@ export type ScientificBackgroundResponse = {
   source: "api" | "fallback";
   fallbackUsed: boolean;
   promptVersion: string;
-  backgroundRefreshPending?: boolean;
-  recommendedRetryAfterMs?: number;
+  backgroundRefreshPending: boolean;
+  recommendedRetryAfterMs: number | null;
 };

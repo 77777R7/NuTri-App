@@ -10353,8 +10353,8 @@ type ScientificBackgroundSidecarResponse = {
   source: Awaited<ReturnType<typeof compileScientificBackgroundAsync>>["source"];
   fallbackUsed: boolean;
   promptVersion: string;
-  backgroundRefreshPending?: boolean;
-  recommendedRetryAfterMs?: number;
+  backgroundRefreshPending: boolean;
+  recommendedRetryAfterMs: number | null;
 };
 
 type ScientificBackgroundSidecarSettled = {
@@ -10414,17 +10414,14 @@ const withScientificBackgroundRefreshHint = (
   payload: ScientificBackgroundSidecarResponse,
   backgroundRefreshPending: boolean,
 ): ScientificBackgroundSidecarResponse =>
-  backgroundRefreshPending && payload.source === "fallback"
-    ? {
-        ...payload,
-        backgroundRefreshPending: true,
-        recommendedRetryAfterMs: SCIENTIFIC_BACKGROUND_REFRESH_RETRY_AFTER_MS,
-      }
-    : {
-        ...payload,
-        backgroundRefreshPending: false,
-        recommendedRetryAfterMs: undefined,
-      };
+  ({
+    ...payload,
+    backgroundRefreshPending: backgroundRefreshPending && payload.source === "fallback",
+    recommendedRetryAfterMs:
+      backgroundRefreshPending && payload.source === "fallback"
+        ? SCIENTIFIC_BACKGROUND_REFRESH_RETRY_AFTER_MS
+        : null,
+  });
 
 const stableStringifyScopeValue = (value: unknown): string => {
   if (value == null) return "null";
@@ -11612,6 +11609,8 @@ app.post("/api/scientific-background/v1", verifySupabaseToken, async (req: Reque
           source: compiled.source,
           fallbackUsed: compiled.fallbackUsed,
           promptVersion: compiled.promptVersion,
+          backgroundRefreshPending: false,
+          recommendedRetryAfterMs: null,
         },
         diagnostics: compiled.diagnostics,
       };
@@ -11660,6 +11659,8 @@ app.post("/api/scientific-background/v1", verifySupabaseToken, async (req: Reque
               source: refreshed.source,
               fallbackUsed: refreshed.fallbackUsed,
               promptVersion: refreshed.promptVersion,
+              backgroundRefreshPending: false,
+              recommendedRetryAfterMs: null,
             },
             diagnostics: refreshed.diagnostics,
           };
