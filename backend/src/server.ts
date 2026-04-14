@@ -10240,6 +10240,7 @@ const SCIENTIFIC_BACKGROUND_RESULT_CACHE_LIMIT = 120;
 const SCIENTIFIC_BACKGROUND_RESEARCH_FALLBACK_CACHE_TTL_MS = 20_000;
 const SCIENTIFIC_BACKGROUND_REFRESH_RETRY_AFTER_MS = 1_500;
 const SCIENTIFIC_BACKGROUND_REFRESH_FAILURE_COOLDOWN_MS = 45_000;
+const SCIENTIFIC_BACKGROUND_REFRESH_FAILURE_RETRY_LIMIT = 3;
 
 type ScientificBackgroundSidecarResponse = {
   status: "ok";
@@ -10261,6 +10262,7 @@ const scientificBackgroundSidecarCache = new Map<string, ScientificBackgroundSid
 const scientificBackgroundSidecarInflight = new Map<string, Promise<ScientificBackgroundSidecarResponse>>();
 const scientificBackgroundSidecarBackgroundRefresh = new Map<string, Promise<void>>();
 const scientificBackgroundSidecarBackgroundRefreshCooldownUntil = new Map<string, number>();
+const scientificBackgroundSidecarBackgroundRefreshFailureCount = new Map<string, number>();
 
 const isScientificBackgroundBackgroundRefreshCoolingDown = (cacheKey: string): boolean => {
   const cooldownUntil = scientificBackgroundSidecarBackgroundRefreshCooldownUntil.get(cacheKey);
@@ -10282,6 +10284,21 @@ const markScientificBackgroundBackgroundRefreshCooldown = (cacheKey: string): vo
   if (typeof oldestKey === "string") {
     scientificBackgroundSidecarBackgroundRefreshCooldownUntil.delete(oldestKey);
   }
+};
+
+const shouldCoolDownScientificBackgroundBackgroundRefresh = (
+  cacheKey: string,
+  diagnostics: Awaited<ReturnType<typeof compileScientificBackgroundAsync>>["diagnostics"],
+): boolean => {
+  const nextFailureCount = (scientificBackgroundSidecarBackgroundRefreshFailureCount.get(cacheKey) ?? 0) + 1;
+  scientificBackgroundSidecarBackgroundRefreshFailureCount.set(cacheKey, nextFailureCount);
+  if (scientificBackgroundSidecarBackgroundRefreshFailureCount.size > SCIENTIFIC_BACKGROUND_RESULT_CACHE_LIMIT) {
+    const oldestKey = scientificBackgroundSidecarBackgroundRefreshFailureCount.keys().next().value;
+    if (typeof oldestKey === "string") {
+      scientificBackgroundSidecarBackgroundRefreshFailureCount.delete(oldestKey);
+    }
+  }
+  return diagnostics.timeoutCount > 0 || nextFailureCount >= SCIENTIFIC_BACKGROUND_REFRESH_FAILURE_RETRY_LIMIT;
 };
 
 const readScientificBackgroundSidecarCache = (
@@ -11251,7 +11268,9 @@ app.post("/api/scientific-background/v1", verifySupabaseToken, async (req: Reque
         };
 
         if (refreshed.source !== "api") {
-          markScientificBackgroundBackgroundRefreshCooldown(cacheKey);
+          if (shouldCoolDownScientificBackgroundBackgroundRefresh(cacheKey, refreshed.diagnostics)) {
+            markScientificBackgroundBackgroundRefreshCooldown(cacheKey);
+          }
           writeScientificBackgroundSidecarCache(
             cacheKey,
             refreshedPayload,
@@ -11261,6 +11280,7 @@ app.post("/api/scientific-background/v1", verifySupabaseToken, async (req: Reque
         }
 
         scientificBackgroundSidecarBackgroundRefreshCooldownUntil.delete(cacheKey);
+        scientificBackgroundSidecarBackgroundRefreshFailureCount.delete(cacheKey);
         writeScientificBackgroundSidecarCache(
           cacheKey,
           refreshedPayload,
