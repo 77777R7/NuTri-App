@@ -84,9 +84,30 @@ test('ingredient overview falls back when the model drifts into shopper-purpose 
 
   assert.equal(result.source, 'fallback');
   assert.equal(result.fallbackUsed, true);
+  assert.equal(result.diagnostics.liveWriterConfigured, true);
+  assert.equal(result.diagnostics.liveWriterAttempted, true);
+  assert.equal(result.diagnostics.liveWriterHit, false);
+  assert.equal(result.diagnostics.fallbackReason, 'quality_gate_rejected');
   assert.equal(result.ingredientOverview.mode, 'multi_anchor');
   assert.match(result.ingredientOverview.paragraph1, /vitamin c/i);
   assert.ok(result.ingredientOverview.compareHint);
+});
+
+test('ingredient overview reports llm_unconfigured when no live writer is available', async () => {
+  const digest = buildDigest({
+    labelId: 'fixture-magnesium',
+    productName: 'Magnesium Glycinate 200 mg',
+    dosageForm: 'Capsule',
+    actives: [{ name: 'Magnesium (as Magnesium Glycinate)', amount: 200, unit: 'mg' }],
+  });
+
+  const context = buildIngredientScienceContext({ digest, overlayClaims: null });
+  const result = await compileIngredientOverviewAsync(context);
+
+  assert.equal(result.source, 'fallback');
+  assert.equal(result.diagnostics.liveWriterConfigured, false);
+  assert.equal(result.diagnostics.liveWriterAttempted, false);
+  assert.equal(result.diagnostics.fallbackReason, 'llm_unconfigured');
 });
 
 test('scientific background falls back when the model writes ingredient identity instead of research context', async () => {
@@ -134,6 +155,10 @@ test('scientific background falls back when the model writes ingredient identity
 
   assert.equal(result.source, 'fallback');
   assert.equal(result.fallbackUsed, true);
+  assert.equal(result.diagnostics.liveWriterConfigured, true);
+  assert.equal(result.diagnostics.liveWriterAttempted, true);
+  assert.equal(result.diagnostics.liveWriterHit, false);
+  assert.equal(result.diagnostics.fallbackReason, 'quality_gate_rejected');
   assert.equal(result.scientificBackground.selectedLabel, 'Astaxanthin');
   assert.deepEqual(
     result.scientificBackground.sections.map((section) => section.heading),
@@ -253,12 +278,42 @@ test('scientific background repairs template-style research prose into family-sp
 
   assert.equal(result.source, 'api');
   assert.equal(result.fallbackUsed, false);
+  assert.equal(result.diagnostics.liveWriterHit, true);
+  assert.equal(result.diagnostics.fallbackReason, null);
   assert.match(result.scientificBackground.sections[0]?.summary ?? '', /clearest evidence lane|triglyceride/i);
   assert.match(result.scientificBackground.sections[0]?.shopperMeaning ?? '', /EPA breakdown line|compare/i);
   assert.equal(
     result.scientificBackground.closingNote,
     'Read the research context as outcome-specific guidance, not as a blanket promise for every claim on the label.',
   );
+});
+
+test('scientific background reports llm_timeout when the live writer misses the budget', async () => {
+  const digest = buildDigest({
+    labelId: 'fixture-timeout-5htp',
+    productName: '5-HTP 200 mg',
+    dosageForm: 'Capsule',
+    actives: [{ name: '5-HTP (5-hydroxytryptophan)', amount: 200, unit: 'mg' }],
+  });
+
+  const context = buildIngredientScienceContext({ digest, overlayClaims: null });
+  const result = await compileScientificBackgroundAsync(context, '5-HTP (5-hydroxytryptophan)', {
+    llmFn: async () => {
+      await new Promise((resolve) => setTimeout(resolve, 15));
+      return JSON.stringify({
+        introLine: '5-HTP • 200 mg',
+        sections: [],
+      });
+    },
+    timeoutMs: 1,
+  });
+
+  assert.equal(result.source, 'fallback');
+  assert.equal(result.diagnostics.liveWriterConfigured, true);
+  assert.equal(result.diagnostics.liveWriterAttempted, true);
+  assert.equal(result.diagnostics.liveWriterHit, false);
+  assert.equal(result.diagnostics.fallbackReason, 'llm_timeout');
+  assert.equal(result.diagnostics.timeoutCount, 1);
 });
 
 test('scientific background repairs near-miss writer output into an api result', async () => {

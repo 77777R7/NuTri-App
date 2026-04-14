@@ -10295,18 +10295,23 @@ type IngredientOverviewSidecarResponse = {
   promptVersion: string;
 };
 
+type IngredientOverviewSidecarSettled = {
+  payload: IngredientOverviewSidecarResponse;
+  diagnostics: Awaited<ReturnType<typeof compileIngredientOverviewAsync>>["diagnostics"];
+};
+
 type IngredientOverviewSidecarCacheEntry = {
   expiresAt: number;
-  payload: IngredientOverviewSidecarResponse;
+  payload: IngredientOverviewSidecarSettled;
 };
 
 const ingredientOverviewSidecarCache = new Map<string, IngredientOverviewSidecarCacheEntry>();
-const ingredientOverviewSidecarInflight = new Map<string, Promise<IngredientOverviewSidecarResponse>>();
+const ingredientOverviewSidecarInflight = new Map<string, Promise<IngredientOverviewSidecarSettled>>();
 const ingredientOverviewSidecarBackgroundRefresh = new Map<string, Promise<void>>();
 
 const readIngredientOverviewSidecarCache = (
   cacheKey: string,
-): IngredientOverviewSidecarResponse | null => {
+): IngredientOverviewSidecarSettled | null => {
   const entry = ingredientOverviewSidecarCache.get(cacheKey);
   if (!entry) return null;
   if (entry.expiresAt <= Date.now()) {
@@ -10318,7 +10323,7 @@ const readIngredientOverviewSidecarCache = (
 
 const writeIngredientOverviewSidecarCache = (
   cacheKey: string,
-  payload: IngredientOverviewSidecarResponse,
+  payload: IngredientOverviewSidecarSettled,
   ttlMs: number,
 ): void => {
   ingredientOverviewSidecarCache.set(cacheKey, {
@@ -10333,10 +10338,10 @@ const writeIngredientOverviewSidecarCache = (
 };
 
 const resolveIngredientOverviewCacheTtlMs = (
-  payload: IngredientOverviewSidecarResponse,
+  payload: IngredientOverviewSidecarSettled,
   cacheTtlMs: number,
 ): number => {
-  if (payload.source === "api") return cacheTtlMs;
+  if (payload.payload.source === "api") return cacheTtlMs;
   return INGREDIENT_OVERVIEW_FALLBACK_CACHE_TTL_MS;
 };
 
@@ -10349,18 +10354,23 @@ type ScientificBackgroundSidecarResponse = {
   promptVersion: string;
 };
 
+type ScientificBackgroundSidecarSettled = {
+  payload: ScientificBackgroundSidecarResponse;
+  diagnostics: Awaited<ReturnType<typeof compileScientificBackgroundAsync>>["diagnostics"];
+};
+
 type ScientificBackgroundSidecarCacheEntry = {
   expiresAt: number;
-  payload: ScientificBackgroundSidecarResponse;
+  payload: ScientificBackgroundSidecarSettled;
 };
 
 const scientificBackgroundSidecarCache = new Map<string, ScientificBackgroundSidecarCacheEntry>();
-const scientificBackgroundSidecarInflight = new Map<string, Promise<ScientificBackgroundSidecarResponse>>();
+const scientificBackgroundSidecarInflight = new Map<string, Promise<ScientificBackgroundSidecarSettled>>();
 const scientificBackgroundSidecarBackgroundRefresh = new Map<string, Promise<void>>();
 
 const readScientificBackgroundSidecarCache = (
   cacheKey: string,
-): ScientificBackgroundSidecarResponse | null => {
+): ScientificBackgroundSidecarSettled | null => {
   const entry = scientificBackgroundSidecarCache.get(cacheKey);
   if (!entry) return null;
   if (entry.expiresAt <= Date.now()) {
@@ -10372,7 +10382,7 @@ const readScientificBackgroundSidecarCache = (
 
 const writeScientificBackgroundSidecarCache = (
   cacheKey: string,
-  payload: ScientificBackgroundSidecarResponse,
+  payload: ScientificBackgroundSidecarSettled,
   ttlMs: number,
 ): void => {
   scientificBackgroundSidecarCache.set(cacheKey, {
@@ -10387,11 +10397,11 @@ const writeScientificBackgroundSidecarCache = (
 };
 
 const resolveScientificBackgroundCacheTtlMs = (
-  payload: ScientificBackgroundSidecarResponse,
+  payload: ScientificBackgroundSidecarSettled,
   executionProfile: ScientificBackgroundExecutionProfile,
 ): number => {
-  if (payload.source === "api") return executionProfile.cacheTtlMs;
-  if (payload.scientificBackground.mode === "research_mode") {
+  if (payload.payload.source === "api") return executionProfile.cacheTtlMs;
+  if (payload.payload.scientificBackground.mode === "research_mode") {
     return SCIENTIFIC_BACKGROUND_RESEARCH_FALLBACK_CACHE_TTL_MS;
   }
   return executionProfile.cacheTtlMs;
@@ -11121,27 +11131,50 @@ app.post("/api/ingredient-overview/v1", verifySupabaseToken, async (req: Request
     const executionProfile = resolveIngredientOverviewExecutionProfile(authority.ingredientScienceContext);
     const requestId = String(res.getHeader("x-request-id") ?? "");
     const routeStartedAt = Date.now();
+    const deepseekKey = process.env.DEEPSEEK_API_KEY?.trim() || null;
+    const deepseekModel = process.env.DEEPSEEK_MODEL?.trim() || "deepseek-chat";
     const logIngredientOverviewResult = (params: {
+      settled?: IngredientOverviewSidecarSettled | null;
       source: "api" | "fallback";
-      cacheHit?: boolean;
-      inflightHit?: boolean;
+      cacheStatus?: "miss" | "hit" | "inflight";
+      fallbackCacheBypassed?: boolean;
       backgroundRefreshScheduled?: boolean;
       phase?: "response" | "background_refresh";
     }) => {
-      console.info("[ingredient-overview]", {
-        requestId,
-        barcode: normalizedBarcode.code.padStart(14, "0"),
-        source: params.source,
-        ingredientCount: authority.ingredientScienceContext.ingredientRows.length,
-        formulaMode: authority.ingredientScienceContext.formulaMode,
-        family: authority.ingredientScienceContext.ingredientFamily,
-        cacheHit: params.cacheHit ?? false,
-        inflightHit: params.inflightHit ?? false,
-        revalidateFallback: parsedBody.revalidateFallback === true,
-        backgroundRefreshScheduled: params.backgroundRefreshScheduled ?? false,
-        latencyMs: Date.now() - routeStartedAt,
-        phase: params.phase ?? "response",
-      });
+      const diagnostics = params.settled?.diagnostics ?? null;
+      console.info(
+        JSON.stringify({
+          event: "ingredient_overview_sidecar",
+          requestId,
+          barcode: normalizedBarcode.code.padStart(14, "0"),
+          source: params.source,
+          phase: params.phase ?? "response",
+          cacheStatus: params.cacheStatus ?? "miss",
+          fallbackCacheBypassed: params.fallbackCacheBypassed ?? false,
+          revalidateFallback: parsedBody.revalidateFallback === true,
+          backgroundRefreshScheduled: params.backgroundRefreshScheduled ?? false,
+          latencyMs: Date.now() - routeStartedAt,
+          ingredientCount: authority.ingredientScienceContext.ingredientRows.length,
+          formulaMode: authority.ingredientScienceContext.formulaMode,
+          family: authority.ingredientScienceContext.ingredientFamily,
+          deepseekConfigured: Boolean(deepseekKey),
+          deepseekModel: deepseekModel || null,
+          liveWriterConfigured: diagnostics?.liveWriterConfigured ?? Boolean(deepseekKey),
+          liveWriterAttempted: diagnostics?.liveWriterAttempted ?? false,
+          liveWriterHit: diagnostics?.liveWriterHit ?? false,
+          attemptCount: diagnostics?.attemptCount ?? 0,
+          timeoutMs: diagnostics?.timeoutMs ?? executionProfile.timeoutMs,
+          backgroundRefreshTimeoutMs: executionProfile.backgroundRefreshTimeoutMs,
+          maxRetries: diagnostics?.maxRetries ?? executionProfile.maxRetries,
+          maxTokens: executionProfile.maxTokens,
+          fallbackReason: diagnostics?.fallbackReason ?? null,
+          lastError: diagnostics?.lastError ?? null,
+          parseFailureCount: diagnostics?.parseFailureCount ?? 0,
+          gateRejectCount: diagnostics?.gateRejectCount ?? 0,
+          timeoutCount: diagnostics?.timeoutCount ?? 0,
+          errorCount: diagnostics?.errorCount ?? 0,
+        }),
+      );
     };
     if (
       parsedBody.decisionDigest &&
@@ -11189,21 +11222,28 @@ app.post("/api/ingredient-overview/v1", verifySupabaseToken, async (req: Request
     ].join("|");
     const cached = readIngredientOverviewSidecarCache(cacheKey);
     const shouldBypassFallbackCache =
-      parsedBody.revalidateFallback === true && cached?.source === "fallback";
+      parsedBody.revalidateFallback === true && cached?.payload.source === "fallback";
     if (cached && !shouldBypassFallbackCache) {
       logIngredientOverviewResult({
-        source: cached.source,
-        cacheHit: true,
+        settled: cached,
+        source: cached.payload.source,
+        cacheStatus: "hit",
       });
-      return res.json(cached);
+      return res.json(cached.payload);
     }
     if (shouldBypassFallbackCache) {
       const existingBackgroundRefresh = ingredientOverviewSidecarBackgroundRefresh.get(cacheKey);
       if (existingBackgroundRefresh) {
         await existingBackgroundRefresh.catch(() => null);
         const refreshedCached = readIngredientOverviewSidecarCache(cacheKey);
-        if (refreshedCached && refreshedCached.source === "api") {
-          return res.json(refreshedCached);
+        if (refreshedCached && refreshedCached.payload.source === "api") {
+          logIngredientOverviewResult({
+            settled: refreshedCached,
+            source: refreshedCached.payload.source,
+            cacheStatus: "hit",
+            fallbackCacheBypassed: true,
+          });
+          return res.json(refreshedCached.payload);
         }
       }
     }
@@ -11212,46 +11252,49 @@ app.post("/api/ingredient-overview/v1", verifySupabaseToken, async (req: Request
     if (existingInflight) {
       const inflightPayload = await existingInflight;
       logIngredientOverviewResult({
-        source: inflightPayload.source,
-        inflightHit: true,
+        settled: inflightPayload,
+        source: inflightPayload.payload.source,
+        cacheStatus: "inflight",
+        fallbackCacheBypassed: shouldBypassFallbackCache,
       });
-      return res.json(inflightPayload);
+      return res.json(inflightPayload.payload);
     }
 
-    const deepseekKey = process.env.DEEPSEEK_API_KEY?.trim() || null;
-    const deepseekModel = process.env.DEEPSEEK_MODEL?.trim() || "deepseek-chat";
     const llmFn = buildDeepseekJsonLlmFn({
       deepseekKey,
       deepseekModel,
       timeoutMs: executionProfile.timeoutMs,
       maxTokens: executionProfile.maxTokens,
     });
-    const compilePromise = (async (): Promise<IngredientOverviewSidecarResponse> => {
+    const compilePromise = (async (): Promise<IngredientOverviewSidecarSettled> => {
       const compiled = await compileIngredientOverviewAsync(authority.ingredientScienceContext, {
         llmFn,
         timeoutMs: executionProfile.timeoutMs,
         maxRetries: executionProfile.maxRetries,
       });
 
-      const payload: IngredientOverviewSidecarResponse = {
-        status: "ok",
-        digest: authority.decisionSupport.digest,
-        ingredientOverview: compiled.ingredientOverview,
-        source: compiled.source,
-        fallbackUsed: compiled.fallbackUsed,
-        promptVersion: compiled.promptVersion,
+      const settled: IngredientOverviewSidecarSettled = {
+        payload: {
+          status: "ok",
+          digest: authority.decisionSupport.digest,
+          ingredientOverview: compiled.ingredientOverview,
+          source: compiled.source,
+          fallbackUsed: compiled.fallbackUsed,
+          promptVersion: compiled.promptVersion,
+        },
+        diagnostics: compiled.diagnostics,
       };
 
       writeIngredientOverviewSidecarCache(
         cacheKey,
-        payload,
-        resolveIngredientOverviewCacheTtlMs(payload, executionProfile.cacheTtlMs),
+        settled,
+        resolveIngredientOverviewCacheTtlMs(settled, executionProfile.cacheTtlMs),
       );
 
       let backgroundRefreshScheduled = false;
 
       if (
-        payload.source === "fallback" &&
+        settled.payload.source === "fallback" &&
         deepseekKey &&
         !ingredientOverviewSidecarBackgroundRefresh.has(cacheKey)
       ) {
@@ -11273,13 +11316,16 @@ app.post("/api/ingredient-overview/v1", verifySupabaseToken, async (req: Request
 
           if (refreshed.source !== "api") return;
 
-          const refreshedPayload: IngredientOverviewSidecarResponse = {
-            status: "ok",
-            digest: authority.decisionSupport.digest,
-            ingredientOverview: refreshed.ingredientOverview,
-            source: refreshed.source,
-            fallbackUsed: refreshed.fallbackUsed,
-            promptVersion: refreshed.promptVersion,
+          const refreshedPayload: IngredientOverviewSidecarSettled = {
+            payload: {
+              status: "ok",
+              digest: authority.decisionSupport.digest,
+              ingredientOverview: refreshed.ingredientOverview,
+              source: refreshed.source,
+              fallbackUsed: refreshed.fallbackUsed,
+              promptVersion: refreshed.promptVersion,
+            },
+            diagnostics: refreshed.diagnostics,
           };
 
           writeIngredientOverviewSidecarCache(
@@ -11288,7 +11334,8 @@ app.post("/api/ingredient-overview/v1", verifySupabaseToken, async (req: Request
             resolveIngredientOverviewCacheTtlMs(refreshedPayload, executionProfile.cacheTtlMs),
           );
           logIngredientOverviewResult({
-            source: refreshedPayload.source,
+            settled: refreshedPayload,
+            source: refreshedPayload.payload.source,
             phase: "background_refresh",
           });
         })()
@@ -11307,17 +11354,20 @@ app.post("/api/ingredient-overview/v1", verifySupabaseToken, async (req: Request
       }
 
       logIngredientOverviewResult({
-        source: payload.source,
+        settled,
+        source: settled.payload.source,
+        fallbackCacheBypassed: shouldBypassFallbackCache,
         backgroundRefreshScheduled,
       });
-      return payload;
+      return settled;
     })()
       .finally(() => {
         ingredientOverviewSidecarInflight.delete(cacheKey);
       });
 
     ingredientOverviewSidecarInflight.set(cacheKey, compilePromise);
-    return res.json(await compilePromise);
+    const settled = await compilePromise;
+    return res.json(settled.payload);
   } catch (error) {
     captureException(error, { route: "/api/ingredient-overview/v1" });
     const detail = error instanceof Error ? `${error.name}: ${error.message}` : String(error);
@@ -11394,27 +11444,51 @@ app.post("/api/scientific-background/v1", verifySupabaseToken, async (req: Reque
     const executionProfile = resolveScientificBackgroundExecutionProfile(plan);
     const requestId = String(res.getHeader("x-request-id") ?? "");
     const routeStartedAt = Date.now();
+    const deepseekKey = process.env.DEEPSEEK_API_KEY?.trim() || null;
+    const deepseekModel = process.env.DEEPSEEK_MODEL?.trim() || "deepseek-chat";
     const logScientificBackgroundResult = (params: {
+      settled?: ScientificBackgroundSidecarSettled | null;
       source: "api" | "fallback";
-      cacheHit?: boolean;
-      inflightHit?: boolean;
+      cacheStatus?: "miss" | "hit" | "inflight";
+      fallbackCacheBypassed?: boolean;
       backgroundRefreshScheduled?: boolean;
       phase?: "response" | "background_refresh";
     }) => {
-      console.info("[scientific-background]", {
-        requestId,
-        barcode: normalizedBarcode,
-        ingredient: selectedDescriptor.name,
-        family: plan.family,
-        mode: plan.mode,
-        source: params.source,
-        cacheHit: params.cacheHit ?? false,
-        inflightHit: params.inflightHit ?? false,
-        revalidateFallback: parsedBody.revalidateFallback === true,
-        backgroundRefreshScheduled: params.backgroundRefreshScheduled ?? false,
-        latencyMs: Date.now() - routeStartedAt,
-        phase: params.phase ?? "response",
-      });
+      const diagnostics = params.settled?.diagnostics ?? null;
+      console.info(
+        JSON.stringify({
+          event: "scientific_background_sidecar",
+          requestId,
+          barcode: normalizedBarcode.code.padStart(14, "0"),
+          ingredient: selectedDescriptor.name,
+          family: plan.family,
+          mode: plan.mode,
+          source: params.source,
+          phase: params.phase ?? "response",
+          cacheStatus: params.cacheStatus ?? "miss",
+          fallbackCacheBypassed: params.fallbackCacheBypassed ?? false,
+          revalidateFallback: parsedBody.revalidateFallback === true,
+          backgroundRefreshScheduled: params.backgroundRefreshScheduled ?? false,
+          latencyMs: Date.now() - routeStartedAt,
+          deepseekConfigured: Boolean(deepseekKey),
+          deepseekModel: deepseekModel || null,
+          preferLiveWriter: executionProfile.preferLiveWriter,
+          liveWriterConfigured: diagnostics?.liveWriterConfigured ?? false,
+          liveWriterAttempted: diagnostics?.liveWriterAttempted ?? false,
+          liveWriterHit: diagnostics?.liveWriterHit ?? false,
+          attemptCount: diagnostics?.attemptCount ?? 0,
+          timeoutMs: diagnostics?.timeoutMs ?? executionProfile.timeoutMs,
+          backgroundRefreshTimeoutMs: executionProfile.backgroundRefreshTimeoutMs,
+          maxRetries: diagnostics?.maxRetries ?? executionProfile.maxRetries,
+          maxTokens: executionProfile.maxTokens,
+          fallbackReason: diagnostics?.fallbackReason ?? null,
+          lastError: diagnostics?.lastError ?? null,
+          parseFailureCount: diagnostics?.parseFailureCount ?? 0,
+          gateRejectCount: diagnostics?.gateRejectCount ?? 0,
+          timeoutCount: diagnostics?.timeoutCount ?? 0,
+          errorCount: diagnostics?.errorCount ?? 0,
+        }),
+      );
     };
     const cacheKey = [
       authority.decisionSupport.digest,
@@ -11426,21 +11500,28 @@ app.post("/api/scientific-background/v1", verifySupabaseToken, async (req: Reque
     ].join("|");
     const cached = readScientificBackgroundSidecarCache(cacheKey);
     const shouldBypassFallbackCache =
-      parsedBody.revalidateFallback === true && cached?.source === "fallback";
+      parsedBody.revalidateFallback === true && cached?.payload.source === "fallback";
     if (cached && !shouldBypassFallbackCache) {
       logScientificBackgroundResult({
-        source: cached.source,
-        cacheHit: true,
+        settled: cached,
+        source: cached.payload.source,
+        cacheStatus: "hit",
       });
-      return res.json(cached);
+      return res.json(cached.payload);
     }
     if (shouldBypassFallbackCache) {
       const existingBackgroundRefresh = scientificBackgroundSidecarBackgroundRefresh.get(cacheKey);
       if (existingBackgroundRefresh) {
         await existingBackgroundRefresh.catch(() => null);
         const refreshedCached = readScientificBackgroundSidecarCache(cacheKey);
-        if (refreshedCached && refreshedCached.source === "api") {
-          return res.json(refreshedCached);
+        if (refreshedCached && refreshedCached.payload.source === "api") {
+          logScientificBackgroundResult({
+            settled: refreshedCached,
+            source: refreshedCached.payload.source,
+            cacheStatus: "hit",
+            fallbackCacheBypassed: true,
+          });
+          return res.json(refreshedCached.payload);
         }
       }
     }
@@ -11449,14 +11530,14 @@ app.post("/api/scientific-background/v1", verifySupabaseToken, async (req: Reque
     if (existingInflight) {
       const inflightPayload = await existingInflight;
       logScientificBackgroundResult({
-        source: inflightPayload.source,
-        inflightHit: true,
+        settled: inflightPayload,
+        source: inflightPayload.payload.source,
+        cacheStatus: "inflight",
+        fallbackCacheBypassed: shouldBypassFallbackCache,
       });
-      return res.json(inflightPayload);
+      return res.json(inflightPayload.payload);
     }
 
-    const deepseekKey = process.env.DEEPSEEK_API_KEY?.trim() || null;
-    const deepseekModel = process.env.DEEPSEEK_MODEL?.trim() || "deepseek-chat";
     const llmFn = executionProfile.preferLiveWriter
       ? buildDeepseekJsonLlmFn({
         deepseekKey,
@@ -11466,7 +11547,7 @@ app.post("/api/scientific-background/v1", verifySupabaseToken, async (req: Reque
       })
       : undefined;
 
-    const compilePromise = (async (): Promise<ScientificBackgroundSidecarResponse> => {
+    const compilePromise = (async (): Promise<ScientificBackgroundSidecarSettled> => {
       const compiled = await compileScientificBackgroundAsync(
         authority.ingredientScienceContext,
         selectedDescriptor.name,
@@ -11477,25 +11558,28 @@ app.post("/api/scientific-background/v1", verifySupabaseToken, async (req: Reque
         },
       );
 
-      const payload: ScientificBackgroundSidecarResponse = {
-        status: "ok",
-        digest: authority.decisionSupport.digest,
-        scientificBackground: compiled.scientificBackground,
-        source: compiled.source,
-        fallbackUsed: compiled.fallbackUsed,
-        promptVersion: compiled.promptVersion,
+      const settled: ScientificBackgroundSidecarSettled = {
+        payload: {
+          status: "ok",
+          digest: authority.decisionSupport.digest,
+          scientificBackground: compiled.scientificBackground,
+          source: compiled.source,
+          fallbackUsed: compiled.fallbackUsed,
+          promptVersion: compiled.promptVersion,
+        },
+        diagnostics: compiled.diagnostics,
       };
 
       writeScientificBackgroundSidecarCache(
         cacheKey,
-        payload,
-        resolveScientificBackgroundCacheTtlMs(payload, executionProfile),
+        settled,
+        resolveScientificBackgroundCacheTtlMs(settled, executionProfile),
       );
 
       let backgroundRefreshScheduled = false;
 
       if (
-        payload.source === "fallback" &&
+        settled.payload.source === "fallback" &&
         executionProfile.preferLiveWriter &&
         deepseekKey &&
         !scientificBackgroundSidecarBackgroundRefresh.has(cacheKey)
@@ -11522,13 +11606,16 @@ app.post("/api/scientific-background/v1", verifySupabaseToken, async (req: Reque
 
           if (refreshed.source !== "api") return;
 
-          const refreshedPayload: ScientificBackgroundSidecarResponse = {
-            status: "ok",
-            digest: authority.decisionSupport.digest,
-            scientificBackground: refreshed.scientificBackground,
-            source: refreshed.source,
-            fallbackUsed: refreshed.fallbackUsed,
-            promptVersion: refreshed.promptVersion,
+          const refreshedPayload: ScientificBackgroundSidecarSettled = {
+            payload: {
+              status: "ok",
+              digest: authority.decisionSupport.digest,
+              scientificBackground: refreshed.scientificBackground,
+              source: refreshed.source,
+              fallbackUsed: refreshed.fallbackUsed,
+              promptVersion: refreshed.promptVersion,
+            },
+            diagnostics: refreshed.diagnostics,
           };
 
           writeScientificBackgroundSidecarCache(
@@ -11537,7 +11624,8 @@ app.post("/api/scientific-background/v1", verifySupabaseToken, async (req: Reque
             resolveScientificBackgroundCacheTtlMs(refreshedPayload, executionProfile),
           );
           logScientificBackgroundResult({
-            source: refreshedPayload.source,
+            settled: refreshedPayload,
+            source: refreshedPayload.payload.source,
             phase: "background_refresh",
           });
         })()
@@ -11556,15 +11644,18 @@ app.post("/api/scientific-background/v1", verifySupabaseToken, async (req: Reque
       }
 
       logScientificBackgroundResult({
-        source: payload.source,
+        settled,
+        source: settled.payload.source,
+        fallbackCacheBypassed: shouldBypassFallbackCache,
         backgroundRefreshScheduled,
       });
-      return payload;
+      return settled;
     })();
 
     scientificBackgroundSidecarInflight.set(cacheKey, compilePromise);
     try {
-      return res.json(await compilePromise);
+      const settled = await compilePromise;
+      return res.json(settled.payload);
     } finally {
       scientificBackgroundSidecarInflight.delete(cacheKey);
     }

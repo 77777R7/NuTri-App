@@ -57,6 +57,22 @@ export type ScientificBackgroundCompileResult = {
   source: "api" | "fallback";
   fallbackUsed: boolean;
   promptVersion: string;
+  diagnostics: ScientificBackgroundCompileDiagnostics;
+};
+
+export type ScientificBackgroundCompileDiagnostics = {
+  liveWriterConfigured: boolean;
+  liveWriterAttempted: boolean;
+  liveWriterHit: boolean;
+  attemptCount: number;
+  timeoutMs: number;
+  maxRetries: number;
+  fallbackReason: string | null;
+  lastError: string | null;
+  parseFailureCount: number;
+  gateRejectCount: number;
+  timeoutCount: number;
+  errorCount: number;
 };
 
 export type CompileScientificBackgroundOpts = {
@@ -181,6 +197,20 @@ const normalizeText = (value: string | null | undefined): string =>
   String(value ?? "")
     .replace(/\s+/g, " ")
     .trim();
+
+const normalizeDiagnosticReason = (value: string | null | undefined): string | null => {
+  const normalized = normalizeText(value)
+    .toLowerCase()
+    .replace(/[^a-z0-9_:-]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+  return normalized || null;
+};
+
+const resolveErrorReason = (error: unknown): string => {
+  if (!(error instanceof Error)) return "unknown_error";
+  const normalized = normalizeDiagnosticReason(error.message);
+  return normalized ?? "unknown_error";
+};
 
 const normalizeHeading = (value: string | null | undefined): string =>
   normalizeText(value)
@@ -2991,6 +3021,22 @@ export const compileScientificBackgroundAsync = async (
     plan,
   });
   const llmFn = opts?.llmFn;
+  const timeoutMs = opts?.timeoutMs ?? LLM_TIMEOUT_MS;
+  const maxRetries = opts?.maxRetries ?? LLM_MAX_RETRIES;
+  const diagnostics: ScientificBackgroundCompileDiagnostics = {
+    liveWriterConfigured: Boolean(llmFn),
+    liveWriterAttempted: false,
+    liveWriterHit: false,
+    attemptCount: 0,
+    timeoutMs,
+    maxRetries,
+    fallbackReason: null,
+    lastError: null,
+    parseFailureCount: 0,
+    gateRejectCount: 0,
+    timeoutCount: 0,
+    errorCount: 0,
+  };
 
   if (!llmFn) {
     return {
@@ -2998,30 +3044,44 @@ export const compileScientificBackgroundAsync = async (
       source: "fallback",
       fallbackUsed: true,
       promptVersion: SCIENTIFIC_BACKGROUND_PROMPT_VERSION,
+      diagnostics: {
+        ...diagnostics,
+        fallbackReason: "llm_unconfigured",
+      },
     };
   }
 
   const selectedDescriptor = getSelectedDescriptor(context, selectedIngredientName);
   const prompt = buildPrompt({ context, plan, selectedDescriptor });
-  const timeoutMs = opts?.timeoutMs ?? LLM_TIMEOUT_MS;
-  const maxRetries = opts?.maxRetries ?? LLM_MAX_RETRIES;
 
   for (let attempt = 0; attempt <= maxRetries; attempt += 1) {
+    diagnostics.liveWriterAttempted = true;
+    diagnostics.attemptCount = attempt + 1;
     try {
       const raw = await withTimeout(llmFn(prompt), timeoutMs);
       const parsed = parseWriterOutput(raw);
-      if (!parsed) continue;
+      if (!parsed) {
+        diagnostics.parseFailureCount += 1;
+        diagnostics.fallbackReason = "parse_failed";
+        continue;
+      }
       const repaired = repairWriterOutput({
         plan,
         parsed,
       });
-      if (!repaired) continue;
+      if (!repaired) {
+        diagnostics.parseFailureCount += 1;
+        diagnostics.fallbackReason = "repair_failed";
+        continue;
+      }
       if (
         !gateScientificBackground({
           requestedIngredientName: plan.selectedLabel,
           repaired,
         })
       ) {
+        diagnostics.gateRejectCount += 1;
+        diagnostics.fallbackReason = "quality_gate_rejected";
         continue;
       }
 
@@ -3030,11 +3090,20 @@ export const compileScientificBackgroundAsync = async (
         source: "api",
         fallbackUsed: false,
         promptVersion: SCIENTIFIC_BACKGROUND_PROMPT_VERSION,
+        diagnostics: {
+          ...diagnostics,
+          liveWriterHit: true,
+          fallbackReason: null,
+          lastError: null,
+        },
       };
     } catch (error) {
-      if (!(error instanceof Error) || error.message !== "llm_timeout") {
-        continue;
-      }
+      const reason = resolveErrorReason(error);
+      diagnostics.lastError = reason;
+      diagnostics.fallbackReason = reason;
+      if (reason === "llm_timeout") diagnostics.timeoutCount += 1;
+      else diagnostics.errorCount += 1;
+      continue;
     }
   }
 
@@ -3043,5 +3112,15 @@ export const compileScientificBackgroundAsync = async (
     source: "fallback",
     fallbackUsed: true,
     promptVersion: SCIENTIFIC_BACKGROUND_PROMPT_VERSION,
+    diagnostics: {
+      ...diagnostics,
+      fallbackReason:
+        diagnostics.fallbackReason ??
+        (diagnostics.parseFailureCount > 0
+          ? "parse_failed"
+          : diagnostics.gateRejectCount > 0
+            ? "quality_gate_rejected"
+            : "exhausted_without_valid_output"),
+    },
   };
 };
