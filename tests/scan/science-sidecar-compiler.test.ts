@@ -1487,10 +1487,14 @@ test('omega-3 research mode keeps both EPA and DHA on the targeted live-writer p
 
   assert.equal(epaPlan.mode, 'research_mode');
   assert.equal(dhaPlan.mode, 'research_mode');
-  assert.ok(epaProfile.timeoutMs > 5_000);
+  assert.ok(epaProfile.timeoutMs >= 3_000);
   assert.ok(dhaProfile.timeoutMs >= epaProfile.timeoutMs);
-  assert.equal(epaProfile.maxRetries, 1);
-  assert.equal(dhaProfile.maxRetries, 1);
+  assert.equal(epaProfile.maxRetries, 0);
+  assert.equal(dhaProfile.maxRetries, 0);
+  assert.equal(epaProfile.backgroundRefreshMaxRetries, 1);
+  assert.equal(dhaProfile.backgroundRefreshMaxRetries, 1);
+  assert.ok(epaProfile.backgroundRefreshTimeoutMs > epaProfile.timeoutMs);
+  assert.ok(dhaProfile.backgroundRefreshTimeoutMs > dhaProfile.timeoutMs);
 });
 
 test('magnesium and vitamin d research mode get longer execution budgets than the generic research profile', () => {
@@ -1599,10 +1603,15 @@ test('melatonin and b-vitamin research mode get longer execution budgets than th
   assert.equal(folatePlan.mode, 'research_mode');
   assert.equal(b6Plan.mode, 'research_mode');
   assert.equal(vitaminCPlan.mode, 'research_mode');
-  assert.ok(melatoninProfile.timeoutMs > vitaminCProfile.timeoutMs);
-  assert.ok(b12Profile.timeoutMs > vitaminCProfile.timeoutMs);
-  assert.ok(folateProfile.timeoutMs > vitaminCProfile.timeoutMs);
-  assert.ok(b6Profile.timeoutMs > vitaminCProfile.timeoutMs);
+  assert.ok(melatoninProfile.backgroundRefreshTimeoutMs > melatoninProfile.timeoutMs);
+  assert.ok(b12Profile.backgroundRefreshTimeoutMs > b12Profile.timeoutMs);
+  assert.ok(folateProfile.backgroundRefreshTimeoutMs > folateProfile.timeoutMs);
+  assert.ok(b6Profile.backgroundRefreshTimeoutMs > b6Profile.timeoutMs);
+  assert.equal(vitaminCProfile.maxRetries, 0);
+  assert.equal(melatoninProfile.backgroundRefreshMaxRetries, 1);
+  assert.equal(b12Profile.backgroundRefreshMaxRetries, 1);
+  assert.equal(folateProfile.backgroundRefreshMaxRetries, 1);
+  assert.equal(b6Profile.backgroundRefreshMaxRetries, 1);
 });
 
 test('botanical families get longer execution budgets than the generic research profile', () => {
@@ -2011,9 +2020,12 @@ test('7-keto, cla, and carnitine get family-specific research plans and longer b
   assert.ok(sevenKetoProfile.timeoutMs > vitaminCProfile.timeoutMs);
   assert.ok(claProfile.timeoutMs > vitaminCProfile.timeoutMs);
   assert.ok(carnitineProfile.timeoutMs > vitaminCProfile.timeoutMs);
-  assert.equal(sevenKetoProfile.maxRetries, 1);
-  assert.equal(claProfile.maxRetries, 1);
-  assert.equal(carnitineProfile.maxRetries, 1);
+  assert.equal(sevenKetoProfile.maxRetries, 0);
+  assert.equal(claProfile.maxRetries, 0);
+  assert.equal(carnitineProfile.maxRetries, 0);
+  assert.equal(sevenKetoProfile.backgroundRefreshMaxRetries, 1);
+  assert.equal(claProfile.backgroundRefreshMaxRetries, 1);
+  assert.equal(carnitineProfile.backgroundRefreshMaxRetries, 1);
   assert.ok(sevenKetoProfile.backgroundRefreshTimeoutMs >= sevenKetoProfile.timeoutMs);
   assert.ok(claProfile.backgroundRefreshTimeoutMs >= claProfile.timeoutMs);
   assert.ok(carnitineProfile.backgroundRefreshTimeoutMs >= carnitineProfile.timeoutMs);
@@ -2049,9 +2061,12 @@ test('5-htp, green tea extract, and omega-3 now use target-family live-writer pr
   assert.ok(htpProfile.timeoutMs > vitaminCProfile.timeoutMs);
   assert.ok(greenTeaProfile.timeoutMs > vitaminCProfile.timeoutMs);
   assert.ok(epaProfile.timeoutMs > vitaminCProfile.timeoutMs);
-  assert.equal(htpProfile.maxRetries, 1);
-  assert.equal(greenTeaProfile.maxRetries, 1);
-  assert.equal(epaProfile.maxRetries, 1);
+  assert.equal(htpProfile.maxRetries, 0);
+  assert.equal(greenTeaProfile.maxRetries, 0);
+  assert.equal(epaProfile.maxRetries, 0);
+  assert.equal(htpProfile.backgroundRefreshMaxRetries, 1);
+  assert.equal(greenTeaProfile.backgroundRefreshMaxRetries, 1);
+  assert.equal(epaProfile.backgroundRefreshMaxRetries, 1);
   assert.ok(htpProfile.maxTokens < vitaminCProfile.maxTokens);
   assert.ok(greenTeaProfile.maxTokens < vitaminCProfile.maxTokens);
   assert.ok(epaProfile.maxTokens < vitaminCProfile.maxTokens);
