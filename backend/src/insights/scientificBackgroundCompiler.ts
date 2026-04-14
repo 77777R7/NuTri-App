@@ -2,7 +2,6 @@ import type {
   IngredientScienceContext,
   IngredientScienceDescriptor,
   IngredientScienceIngredientFamily,
-  IngredientScienceLineRole,
 } from "../ingredientScienceContext.js";
 import { normalizeIngredientScienceKey } from "../ingredientScienceContext.js";
 import { extractJsonObjectLoose } from "./summaryCompiler.js";
@@ -97,13 +96,13 @@ const RESEARCH_MODE_TIMEOUT_MS = 2_500;
 const CURCUMIN_RESEARCH_MODE_TIMEOUT_MS = 2_900;
 const ASHWAGANDHA_RESEARCH_MODE_TIMEOUT_MS = 2_900;
 const GINSENG_RESEARCH_MODE_TIMEOUT_MS = 2_900;
-const OMEGA3_RESEARCH_MODE_TIMEOUT_MS = 3_250;
-const GREEN_TEA_EXTRACT_RESEARCH_MODE_TIMEOUT_MS = 3_250;
-const SEVEN_KETO_RESEARCH_MODE_TIMEOUT_MS = 3_000;
-const CLA_RESEARCH_MODE_TIMEOUT_MS = 3_000;
-const CARNITINE_RESEARCH_MODE_TIMEOUT_MS = 3_000;
+const OMEGA3_RESEARCH_MODE_TIMEOUT_MS = 3_800;
+const GREEN_TEA_EXTRACT_RESEARCH_MODE_TIMEOUT_MS = 3_600;
+const SEVEN_KETO_RESEARCH_MODE_TIMEOUT_MS = 3_500;
+const CLA_RESEARCH_MODE_TIMEOUT_MS = 3_500;
+const CARNITINE_RESEARCH_MODE_TIMEOUT_MS = 3_500;
 const NIACINAMIDE_RESEARCH_MODE_TIMEOUT_MS = 2_750;
-const HTP5_RESEARCH_MODE_TIMEOUT_MS = 3_000;
+const HTP5_RESEARCH_MODE_TIMEOUT_MS = 3_500;
 const VITAMIN_D_RESEARCH_MODE_TIMEOUT_MS = 2_750;
 const B12_RESEARCH_MODE_TIMEOUT_MS = 2_500;
 const FOLATE_RESEARCH_MODE_TIMEOUT_MS = 2_500;
@@ -112,7 +111,7 @@ const MAGNESIUM_RESEARCH_MODE_TIMEOUT_MS = 3_000;
 const CALCIUM_RESEARCH_MODE_TIMEOUT_MS = 2_750;
 const IRON_RESEARCH_MODE_TIMEOUT_MS = 3_000;
 const MELATONIN_RESEARCH_MODE_TIMEOUT_MS = 2_500;
-const DHA_RESEARCH_MODE_TIMEOUT_MS = 3_500;
+const DHA_RESEARCH_MODE_TIMEOUT_MS = 4_200;
 const LABEL_CONTEXT_MODE_TIMEOUT_MS = 1_500;
 const RESEARCH_MODE_BACKGROUND_REFRESH_TIMEOUT_MS = 18_000;
 const LONG_RESEARCH_MODE_BACKGROUND_REFRESH_TIMEOUT_MS = 22_000;
@@ -320,6 +319,9 @@ const resolveScientificBackgroundMode = (
   descriptor: IngredientScienceDescriptor | null,
 ): ScientificBackgroundMode => {
   if (!descriptor) return "research_mode";
+  if (context.productArchetype === "functional_food_like" && descriptor.ingredientFamily === "generic") {
+    return "label_context_mode";
+  }
   if (descriptor.lineRole === "blend_line" || descriptor.lineRole === "aggregate_line") return "label_context_mode";
   if (descriptor.lineRole === "source_line") {
     return hasOtherResearchReadyOmega3Lines(context, descriptor) ? "label_context_mode" : "research_mode";
@@ -1458,6 +1460,7 @@ const buildPrompt = (params: {
     },
     formulaContext: {
       productName: params.context.productName,
+      productArchetype: params.context.productArchetype,
       formulaMode: params.context.formulaMode,
       sourceType: params.context.sourceType,
       ingredientSourceTier: params.context.ingredientSourceTier,
@@ -1668,6 +1671,7 @@ const buildPrompt = (params: {
     "Explain the research map for the selected item, not the product's full ingredient list.",
     "If mode is research_mode, show the main research lane, the narrower or more mixed lanes, and why that distinction matters.",
     "If mode is label_context_mode, explain what the selected line means on the label and why it matters for comparison, without pretending it is a stand-alone research ingredient.",
+    "If productArchetype is functional_food_like, prefer label-reading and formula-role interpretation over stand-alone research storytelling.",
     "Use the selected item's lineRole, categoryHint, sourceContext, formContext, coIngredients, relationshipCandidates, and anchorIngredient to explain this ingredient inside this formula, not in isolation.",
     "Make it clear when the selected line is the lead active versus a companion nutrient, supporting line, source line, total line, or breakdown line.",
     "When surrounding co-ingredients or pairing candidates matter, explain how they change interpretation without turning them into the main active.",

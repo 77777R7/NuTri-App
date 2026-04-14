@@ -37,6 +37,10 @@ test('science UI uses new B/C sidecars and removes the legacy ingredient summary
   assert.equal(dashboardSource.includes('InteractionManager.runAfterInteractions(() => {'), false);
   assert.ok(dashboardSource.includes("isIngredientOverviewRenderableState(currentState)"));
   assert.ok(dashboardSource.includes("isScientificBackgroundRenderableState(currentState)"));
+  assert.ok(dashboardSource.includes('backgroundRefreshPending'));
+  assert.ok(dashboardSource.includes('recommendedRetryAfterMs'));
+  assert.ok(dashboardSource.includes('scientificBackgroundRetryCountRef'));
+  assert.ok(dashboardSource.includes('setScientificBackgroundRetryTick((value) => value + 1);'));
 });
 
 test('server exposes ingredient overview and scientific background sidecars with shared authority helper', () => {
@@ -53,6 +57,10 @@ test('server exposes ingredient overview and scientific background sidecars with
     /const cacheKey = \[\s*authority\.decisionSupport\.digest,\s*authority\.decisionSupport\.decisionInputsHash,\s*authority\.personalizationScopeHash,/,
   );
   assert.ok(serverSource.includes('normalizeIngredientScienceKey(parsedBody.selectedIngredientName)'));
+  assert.ok(serverSource.includes('backgroundRefreshPending?: boolean;'));
+  assert.ok(serverSource.includes('recommendedRetryAfterMs?: number;'));
+  assert.ok(serverSource.includes('withScientificBackgroundRefreshHint'));
+  assert.ok(serverSource.includes('SCIENTIFIC_BACKGROUND_REFRESH_RETRY_AFTER_MS'));
 });
 
 test('shared ingredient science types are additive and explicit', () => {

@@ -3355,6 +3355,8 @@ type ScientificBackgroundSidecarState = {
     source?: 'api' | 'server-fallback';
     fallbackUsed?: boolean;
     promptVersion?: string;
+    backgroundRefreshPending?: boolean;
+    recommendedRetryAfterMs?: number;
     data?: ScientificBackgroundBlock;
     error?: string;
 };
@@ -4029,6 +4031,8 @@ const AnalysisBundleDashboard: React.FC<{
     const scientificBackgroundStateRef = useRef<Record<string, ScientificBackgroundSidecarState>>({});
     const ingredientOverviewRevalidateAtRef = useRef<Record<string, number>>({});
     const scientificBackgroundRevalidateAtRef = useRef<Record<string, number>>({});
+    const scientificBackgroundRetryCountRef = useRef<Record<string, number>>({});
+    const [scientificBackgroundRetryTick, setScientificBackgroundRetryTick] = useState(0);
     const decisionSupportCacheRef = useRef<Map<string, Record<string, unknown>>>(new Map());
     const decisionSupportByBarcodeRef = useRef<Map<string, Record<string, unknown>>>(decisionSupportWarmCache);
     const [simpleSourcesOpen, setSimpleSourcesOpen] = useState(false);
@@ -7938,6 +7942,8 @@ const AnalysisBundleDashboard: React.FC<{
         scientificBackgroundStateRef.current = {};
         ingredientOverviewRevalidateAtRef.current = {};
         scientificBackgroundRevalidateAtRef.current = {};
+        scientificBackgroundRetryCountRef.current = {};
+        setScientificBackgroundRetryTick(0);
         setActiveIngredientName(keyIngredientsForDetail[0] ?? null);
         setActiveSafetyIngredientName(keyIngredientsForSafety[0] ?? null);
     }, [incomingBundleRunKey]);
@@ -8146,12 +8152,20 @@ const AnalysisBundleDashboard: React.FC<{
         const row = activeScienceIngredientRow;
         const current = scientificBackgroundStateRef.current[requestKey];
         const lastRevalidateAt = scientificBackgroundRevalidateAtRef.current[requestKey] ?? 0;
+        const retryDelayMs =
+            current?.backgroundRefreshPending
+                ? Math.max(current.recommendedRetryAfterMs ?? 1500, 750)
+                : SCIENTIFIC_BACKGROUND_REVALIDATE_COOLDOWN_MS;
+        const retryCount = scientificBackgroundRetryCountRef.current[requestKey] ?? 0;
+        const canAutoRetryFallback =
+            current?.backgroundRefreshPending ? retryCount < 2 : true;
         const shouldRevalidateFallback =
             selectedTileType === 'science'
             && shouldRenderScienceSidecars
             && current?.status === 'ok'
             && current.source === 'server-fallback'
-            && Date.now() - lastRevalidateAt >= SCIENTIFIC_BACKGROUND_REVALIDATE_COOLDOWN_MS;
+            && canAutoRetryFallback
+            && Date.now() - lastRevalidateAt >= retryDelayMs;
         if (
             current
             && (
@@ -8175,6 +8189,8 @@ const AnalysisBundleDashboard: React.FC<{
             try {
                 if (revalidateFallback) {
                     scientificBackgroundRevalidateAtRef.current[requestKey] = Date.now();
+                    scientificBackgroundRetryCountRef.current[requestKey] =
+                        (scientificBackgroundRetryCountRef.current[requestKey] ?? 0) + 1;
                 }
                 setScientificBackgroundSidecarState(requestKey, (currentState) =>
                     isScientificBackgroundRenderableState(currentState)
@@ -8243,7 +8259,12 @@ const AnalysisBundleDashboard: React.FC<{
                     settledRequestKey = requestKey;
                     setScientificBackgroundSidecarState(requestKey, (currentState) =>
                         isScientificBackgroundRenderableState(currentState)
-                            ? { ...currentState, status: 'ok' }
+                            ? {
+                                ...currentState,
+                                status: 'ok',
+                                backgroundRefreshPending: false,
+                                recommendedRetryAfterMs: undefined,
+                            }
                             : {
                                 status: 'error',
                                 error: `HTTP ${response.status}`,
@@ -8263,19 +8284,33 @@ const AnalysisBundleDashboard: React.FC<{
                 }
 
                 settledRequestKey = requestKey;
+                const source = payload.source === 'fallback' ? 'server-fallback' : 'api';
+                const backgroundRefreshPending =
+                    source === 'server-fallback' && payload.backgroundRefreshPending === true;
+                if (source === 'api' || !backgroundRefreshPending) {
+                    delete scientificBackgroundRetryCountRef.current[requestKey];
+                }
                 setScientificBackgroundSidecarState(requestKey, {
                     status: 'ok',
-                    source: payload.source === 'fallback' ? 'server-fallback' : 'api',
+                    source,
                     fallbackUsed: payload.fallbackUsed,
                     promptVersion: payload.promptVersion,
+                    backgroundRefreshPending,
+                    recommendedRetryAfterMs: payload.recommendedRetryAfterMs ?? undefined,
                     data: payload.scientificBackground,
                 });
             } catch (error) {
                 if (cancelled || currentRunKeyRef.current !== requestRunKey) return;
                 settledRequestKey = requestKey;
+                delete scientificBackgroundRetryCountRef.current[requestKey];
                 setScientificBackgroundSidecarState(requestKey, (currentState) =>
                     isScientificBackgroundRenderableState(currentState)
-                        ? { ...currentState, status: 'ok' }
+                        ? {
+                            ...currentState,
+                            status: 'ok',
+                            backgroundRefreshPending: false,
+                            recommendedRetryAfterMs: undefined,
+                        }
                         : {
                             status: 'error',
                             error: error instanceof Error ? error.message : 'Scientific background unavailable',
@@ -8315,11 +8350,38 @@ const AnalysisBundleDashboard: React.FC<{
         selectedTileType,
         scienceDecisionInputsHash,
         sciencePersonalizationScopeHash,
+        scientificBackgroundRetryTick,
         scientificBackgroundState?.status,
         scientificBackgroundState?.source,
+        scientificBackgroundState?.backgroundRefreshPending,
+        scientificBackgroundState?.recommendedRetryAfterMs,
         scientificBackgroundRequestKey,
         scienceSourceFinalKey,
         setScientificBackgroundSidecarState,
+    ]);
+
+    useEffect(() => {
+        if (selectedTileType !== 'science') return;
+        if (!shouldRenderScienceSidecars || !scientificBackgroundRequestKey) return;
+        if (scientificBackgroundState?.status !== 'ok' || scientificBackgroundState.source !== 'server-fallback') return;
+        if (!scientificBackgroundState.backgroundRefreshPending) return;
+        const retryCount = scientificBackgroundRetryCountRef.current[scientificBackgroundRequestKey] ?? 0;
+        if (retryCount >= 2) return;
+        const lastRevalidateAt = scientificBackgroundRevalidateAtRef.current[scientificBackgroundRequestKey] ?? 0;
+        const retryAfterMs = Math.max(scientificBackgroundState.recommendedRetryAfterMs ?? 1500, 750);
+        const remainingMs = Math.max(retryAfterMs - (Date.now() - lastRevalidateAt), 0);
+        const timer = setTimeout(() => {
+            setScientificBackgroundRetryTick((value) => value + 1);
+        }, remainingMs);
+        return () => clearTimeout(timer);
+    }, [
+        scientificBackgroundRequestKey,
+        scientificBackgroundState?.backgroundRefreshPending,
+        scientificBackgroundState?.recommendedRetryAfterMs,
+        scientificBackgroundState?.source,
+        scientificBackgroundState?.status,
+        selectedTileType,
+        shouldRenderScienceSidecars,
     ]);
 
     useEffect(() => {

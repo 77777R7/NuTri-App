@@ -2067,9 +2067,38 @@ test('5-htp, green tea extract, and omega-3 now use target-family live-writer pr
   assert.equal(htpProfile.backgroundRefreshMaxRetries, 1);
   assert.equal(greenTeaProfile.backgroundRefreshMaxRetries, 1);
   assert.equal(epaProfile.backgroundRefreshMaxRetries, 1);
+  assert.ok(htpProfile.timeoutMs >= 3_500);
+  assert.ok(greenTeaProfile.timeoutMs >= 3_600);
+  assert.ok(epaProfile.timeoutMs >= 3_800);
   assert.ok(htpProfile.maxTokens < vitaminCProfile.maxTokens);
   assert.ok(greenTeaProfile.maxTokens < vitaminCProfile.maxTokens);
   assert.ok(epaProfile.maxTokens < vitaminCProfile.maxTokens);
+});
+
+test('functional food-like generic rows downgrade scientific background to label-context mode', () => {
+  const context = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-functional-food-like-gum',
+      productName: 'Xylitol Gum, Green Tea, 100 Pieces',
+      dosageForm: 'Gum',
+      actives: [{ name: 'Xylitol', amount: 1000, unit: 'mg' }],
+    }),
+    overlayClaims: null,
+  });
+
+  const plan = planScientificBackgroundSections({
+    context,
+    selectedIngredientName: 'Xylitol',
+  });
+  const profile = resolveScientificBackgroundExecutionProfile(plan);
+
+  assert.equal(context.productArchetype, 'functional_food_like');
+  assert.equal(plan.mode, 'label_context_mode');
+  assert.deepEqual(
+    plan.sections.map((section) => section.heading),
+    ['What this line means on the label', 'Why it matters for comparison'],
+  );
+  assert.equal(profile.preferLiveWriter, false);
 });
 
 test('new metabolic families fall back with product-specific copy instead of generic research-direction prose', async () => {

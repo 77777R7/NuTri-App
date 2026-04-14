@@ -13,6 +13,7 @@ type OverlayClaimsLike = {
 
 export type IngredientScienceSourceType = "dsld" | "iherb_overlay" | "other";
 export type IngredientScienceFormulaMode = "single_ingredient" | "multi_ingredient" | "blend";
+export type IngredientScienceProductArchetype = "standard_supplement" | "functional_food_like";
 export type IngredientScienceIngredientFamily =
   | "astaxanthin_carotenoid"
   | "curcumin"
@@ -70,6 +71,7 @@ export type IngredientScienceDescriptor = {
 
 export type IngredientScienceContext = {
   productName: string;
+  productArchetype: IngredientScienceProductArchetype;
   ingredientSourceTier: "overlay_iherb" | "official_record";
   sourceType: IngredientScienceSourceType;
   ingredientRows: ScienceIngredientRow[];
@@ -129,6 +131,11 @@ const CALCIUM_PATTERN =
   /\bcalcium\b|\bcalcium\s+(?:carbonate|citrate|ascorbate|malate|lactate|hydroxyapatite)\b/i;
 const IRON_PATTERN = /\biron\b|\bferrous\b|\bferric\b/i;
 const MELATONIN_PATTERN = /\bmelatonin\b/i;
+const FUNCTIONAL_FOOD_LIKE_TITLE_PATTERN =
+  /\b(?:gum|gums|mints?|lozenge|lozenges|freeze\s+dried|juice\s+powder|fruit\s+powder|dragon\s+fruit|smoothie|drink\s+mix)\b/i;
+const FUNCTIONAL_FOOD_LIKE_INGREDIENT_PATTERN =
+  /\b(?:xylitol|erythritol|fiber|dragon\s+fruit|fruit\s+powder|juice\s+powder)\b/i;
+const FUNCTIONAL_FOOD_LIKE_FORM_PATTERN = /\b(?:gum|mint|lozenge)\b/i;
 
 const normalizeText = (value: string | null | undefined): string =>
   String(value ?? "")
@@ -502,6 +509,33 @@ const buildRelationshipCandidates = (
   return candidates.slice(0, 2);
 };
 
+const classifyProductArchetype = (params: {
+  productName: string;
+  dosageForm: string | null | undefined;
+  rows: ScienceIngredientRow[];
+  families: IngredientScienceIngredientFamily[];
+}): IngredientScienceProductArchetype => {
+  const productName = normalizeText(params.productName);
+  const dosageForm = normalizeText(params.dosageForm);
+  const hasStrongSupplementFamily = params.families.some((family) =>
+    PRIMARY_ACTIVE_FAMILIES.has(family) || COMPANION_FAMILIES.has(family),
+  );
+  const genericCount = params.families.filter((family) => family === "generic").length;
+  const genericDominant =
+    params.rows.length > 0 && genericCount / params.rows.length >= 0.6;
+  const titleLooksFoodLike = FUNCTIONAL_FOOD_LIKE_TITLE_PATTERN.test(productName);
+  const formLooksFoodLike = FUNCTIONAL_FOOD_LIKE_FORM_PATTERN.test(dosageForm);
+  const rowLooksFoodLike = params.rows.some((row) =>
+    FUNCTIONAL_FOOD_LIKE_INGREDIENT_PATTERN.test(normalizeText(row.name)),
+  );
+
+  if ((titleLooksFoodLike || formLooksFoodLike || rowLooksFoodLike) && !hasStrongSupplementFamily && genericDominant) {
+    return "functional_food_like";
+  }
+
+  return "standard_supplement";
+};
+
 export const buildIngredientScienceContext = (params: {
   digest: FactsDigest;
   overlayClaims: OverlayClaimsLike;
@@ -522,6 +556,12 @@ export const buildIngredientScienceContext = (params: {
       productName,
     }),
   );
+  const productArchetype = classifyProductArchetype({
+    productName,
+    dosageForm: params.digest?.product?.dosageForm ?? null,
+    rows: ingredientRows,
+    families: ingredientFamilies,
+  });
   const primaryIndex = pickPrimaryActiveRowIndex(ingredientRows, ingredientFamilies, productName);
   const lineRoles = buildLineRoles(ingredientRows, ingredientFamilies, primaryIndex);
   const anchorRow = primaryIndex >= 0 ? ingredientRows[primaryIndex] ?? null : ingredientRows[0] ?? null;
@@ -591,6 +631,7 @@ export const buildIngredientScienceContext = (params: {
 
   return {
     productName,
+    productArchetype,
     ingredientSourceTier: selection.ingredientSourceTier,
     sourceType,
     ingredientRows: orderedIngredientRows,

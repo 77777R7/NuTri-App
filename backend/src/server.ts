@@ -10285,6 +10285,7 @@ const INGREDIENT_OVERVIEW_RESULT_CACHE_LIMIT = 120;
 const INGREDIENT_OVERVIEW_FALLBACK_CACHE_TTL_MS = 20_000;
 const SCIENTIFIC_BACKGROUND_RESULT_CACHE_LIMIT = 120;
 const SCIENTIFIC_BACKGROUND_RESEARCH_FALLBACK_CACHE_TTL_MS = 20_000;
+const SCIENTIFIC_BACKGROUND_REFRESH_RETRY_AFTER_MS = 1_500;
 
 type IngredientOverviewSidecarResponse = {
   status: "ok";
@@ -10352,6 +10353,8 @@ type ScientificBackgroundSidecarResponse = {
   source: Awaited<ReturnType<typeof compileScientificBackgroundAsync>>["source"];
   fallbackUsed: boolean;
   promptVersion: string;
+  backgroundRefreshPending?: boolean;
+  recommendedRetryAfterMs?: number;
 };
 
 type ScientificBackgroundSidecarSettled = {
@@ -10406,6 +10409,22 @@ const resolveScientificBackgroundCacheTtlMs = (
   }
   return executionProfile.cacheTtlMs;
 };
+
+const withScientificBackgroundRefreshHint = (
+  payload: ScientificBackgroundSidecarResponse,
+  backgroundRefreshPending: boolean,
+): ScientificBackgroundSidecarResponse =>
+  backgroundRefreshPending && payload.source === "fallback"
+    ? {
+        ...payload,
+        backgroundRefreshPending: true,
+        recommendedRetryAfterMs: SCIENTIFIC_BACKGROUND_REFRESH_RETRY_AFTER_MS,
+      }
+    : {
+        ...payload,
+        backgroundRefreshPending: false,
+        recommendedRetryAfterMs: undefined,
+      };
 
 const stableStringifyScopeValue = (value: unknown): string => {
   if (value == null) return "null";
@@ -11453,6 +11472,7 @@ app.post("/api/scientific-background/v1", verifySupabaseToken, async (req: Reque
       cacheStatus?: "miss" | "hit" | "inflight";
       fallbackCacheBypassed?: boolean;
       backgroundRefreshScheduled?: boolean;
+      backgroundRefreshPending?: boolean;
       phase?: "response" | "background_refresh";
     }) => {
       const diagnostics = params.settled?.diagnostics ?? null;
@@ -11464,12 +11484,18 @@ app.post("/api/scientific-background/v1", verifySupabaseToken, async (req: Reque
           ingredient: selectedDescriptor.name,
           family: plan.family,
           mode: plan.mode,
+          productArchetype: authority.ingredientScienceContext.productArchetype,
           source: params.source,
           phase: params.phase ?? "response",
           cacheStatus: params.cacheStatus ?? "miss",
           fallbackCacheBypassed: params.fallbackCacheBypassed ?? false,
           revalidateFallback: parsedBody.revalidateFallback === true,
           backgroundRefreshScheduled: params.backgroundRefreshScheduled ?? false,
+          backgroundRefreshPending: params.backgroundRefreshPending ?? false,
+          recommendedRetryAfterMs:
+            params.backgroundRefreshPending ?? false
+              ? SCIENTIFIC_BACKGROUND_REFRESH_RETRY_AFTER_MS
+              : null,
           latencyMs: Date.now() - routeStartedAt,
           deepseekConfigured: Boolean(deepseekKey),
           deepseekModel: deepseekModel || null,
@@ -11503,27 +11529,41 @@ app.post("/api/scientific-background/v1", verifySupabaseToken, async (req: Reque
     const cached = readScientificBackgroundSidecarCache(cacheKey);
     const shouldBypassFallbackCache =
       parsedBody.revalidateFallback === true && cached?.payload.source === "fallback";
+    const backgroundRefreshInFlight = scientificBackgroundSidecarBackgroundRefresh.has(cacheKey);
     if (cached && !shouldBypassFallbackCache) {
+      const backgroundRefreshPending =
+        cached.payload.source === "fallback" && backgroundRefreshInFlight;
       logScientificBackgroundResult({
         settled: cached,
         source: cached.payload.source,
         cacheStatus: "hit",
+        backgroundRefreshPending,
       });
-      return res.json(cached.payload);
+      return res.json(withScientificBackgroundRefreshHint(cached.payload, backgroundRefreshPending));
     }
     if (shouldBypassFallbackCache) {
       const existingBackgroundRefresh = scientificBackgroundSidecarBackgroundRefresh.get(cacheKey);
       if (existingBackgroundRefresh) {
-        await existingBackgroundRefresh.catch(() => null);
         const refreshedCached = readScientificBackgroundSidecarCache(cacheKey);
-        if (refreshedCached && refreshedCached.payload.source === "api") {
+        if (refreshedCached?.payload.source === "api") {
           logScientificBackgroundResult({
             settled: refreshedCached,
             source: refreshedCached.payload.source,
             cacheStatus: "hit",
             fallbackCacheBypassed: true,
           });
-          return res.json(refreshedCached.payload);
+          return res.json(withScientificBackgroundRefreshHint(refreshedCached.payload, false));
+        }
+        if (cached) {
+          logScientificBackgroundResult({
+            settled: cached,
+            source: cached.payload.source,
+            cacheStatus: "hit",
+            fallbackCacheBypassed: true,
+            backgroundRefreshScheduled: true,
+            backgroundRefreshPending: true,
+          });
+          return res.json(withScientificBackgroundRefreshHint(cached.payload, true));
         }
       }
     }
@@ -11531,13 +11571,17 @@ app.post("/api/scientific-background/v1", verifySupabaseToken, async (req: Reque
     const existingInflight = scientificBackgroundSidecarInflight.get(cacheKey);
     if (existingInflight) {
       const inflightPayload = await existingInflight;
+      const backgroundRefreshPending =
+        inflightPayload.payload.source === "fallback"
+        && scientificBackgroundSidecarBackgroundRefresh.has(cacheKey);
       logScientificBackgroundResult({
         settled: inflightPayload,
         source: inflightPayload.payload.source,
         cacheStatus: "inflight",
         fallbackCacheBypassed: shouldBypassFallbackCache,
+        backgroundRefreshPending,
       });
-      return res.json(inflightPayload.payload);
+      return res.json(withScientificBackgroundRefreshHint(inflightPayload.payload, backgroundRefreshPending));
     }
 
     const llmFn = executionProfile.preferLiveWriter
@@ -11650,6 +11694,7 @@ app.post("/api/scientific-background/v1", verifySupabaseToken, async (req: Reque
         source: settled.payload.source,
         fallbackCacheBypassed: shouldBypassFallbackCache,
         backgroundRefreshScheduled,
+        backgroundRefreshPending: backgroundRefreshScheduled,
       });
       return settled;
     })();
@@ -11657,7 +11702,7 @@ app.post("/api/scientific-background/v1", verifySupabaseToken, async (req: Reque
     scientificBackgroundSidecarInflight.set(cacheKey, compilePromise);
     try {
       const settled = await compilePromise;
-      return res.json(settled.payload);
+      return res.json(withScientificBackgroundRefreshHint(settled.payload, Boolean(settled.payload.source === "fallback" && scientificBackgroundSidecarBackgroundRefresh.has(cacheKey))));
     } finally {
       scientificBackgroundSidecarInflight.delete(cacheKey);
     }
