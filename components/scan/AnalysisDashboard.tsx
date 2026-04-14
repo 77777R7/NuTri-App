@@ -20,7 +20,6 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
     ActivityIndicator,
     Image,
-    InteractionManager,
     Modal,
     Platform,
     Pressable,
@@ -61,9 +60,11 @@ import { useTranslation } from '@/lib/i18n';
 import { lookupFoundationForIngredient, summarizeFoundationHits } from '@/lib/knowledge/foundationLookup';
 import { normalizeAvoidItemsSelection } from '@/lib/onboarding-v2';
 import { getGoalDisplayLabel } from '@/lib/personalization/uiLabels';
+import { choosePreferredProductImageUrl } from '@/lib/productImagePreference';
 import { resolveDataCeilingSignal } from '@/lib/scan/dataCeiling';
 import { buildGapActionSentences } from '@/lib/scan/gapActionSentenceLibrary';
 import { buildAnalysisTopSectionPresentation } from '@/lib/scan/analysisTopSectionPresentation';
+import type { TopSectionResolvedGoalSignalInput } from '@/lib/scan/analysisTopSectionPresentation';
 import { isNutritionLabelLikeIngredient } from '@/lib/scan/isNutritionLabelLikeIngredient';
 import { enforceNeverBlank, isPlaceholderText, sanitizeCoverBullets, sanitizeCoverLine } from '@/lib/scan/neverBlank';
 import { buildRecordFactsViewModel } from '@/lib/scan/recordFactsViewModel';
@@ -266,26 +267,6 @@ type DecisionSupportGoalCoverageSummaryItem = {
     };
     graphEvidence?: DecisionSupportGoalCoverageGraphEvidence[];
     stackAdjustment?: DecisionSupportGoalCoverageStackAdjustment;
-};
-type DecisionSupportGoalCoverageSummary = {
-    selectedGoalCount: number;
-    analyzedGoalCount: number;
-    surfacedGoalCount: number;
-    hiddenGoalsCount: number;
-    allGoalsAnalyzed: boolean;
-    sortedBy: 'decision_relevance' | 'fit_strength' | 'profile_order';
-    dominantGoalKey?: GoalKey | null;
-    secondaryGoalKey?: GoalKey | null;
-    items: DecisionSupportGoalCoverageSummaryItem[];
-};
-type DecisionSupportGoalCoverageSummaryItem = {
-    goalKey: GoalKey;
-    goalLabel: string;
-    fitLevel: DecisionSupportPersonalizedGoalCoverageState;
-    rank: number;
-    reasonCodes: string[];
-    confidenceBucket: 'high' | 'medium' | 'low';
-    shortReason?: string;
 };
 type DecisionSupportGoalCoverageSummary = {
     selectedGoalCount: number;
@@ -637,6 +618,10 @@ const FORCE_FULL_DASHBOARD_EFFECTS =
 const PRODUCT_OVERVIEW_AI_TIMEOUT_MS = 8_000;
 const PRODUCT_OVERVIEW_AI_WATCHDOG_MS = 8_800;
 const SCIENTIFIC_BACKGROUND_REVALIDATE_COOLDOWN_MS = 20_000;
+const SCIENTIFIC_BACKGROUND_REFRESH_POLL_MIN_DELAY_MS = 1_500;
+const SCIENTIFIC_BACKGROUND_REFRESH_POLL_MAX_DELAY_MS = 4_000;
+const SCIENTIFIC_BACKGROUND_REFRESH_POLL_MAX_ATTEMPTS = 12;
+const SCIENTIFIC_BACKGROUND_REFRESH_POLL_MAX_WINDOW_MS = 35_000;
 const SHOW_SCAN_DEBUG =
     process.env.EXPO_PUBLIC_SHOW_SCAN_DEBUG === 'true' ||
     process.env.EXPO_PUBLIC_SHOW_SCAN_DEBUG === '1';
@@ -802,6 +787,17 @@ const SIMPLE_TAXONOMY_WHITELIST = new Set(
 );
 const decisionSupportWarmCache = new Map<string, Record<string, unknown>>();
 
+const clampScientificBackgroundRefreshDelay = (value?: number | null): number => {
+    const base =
+        typeof value === 'number' && Number.isFinite(value)
+            ? value
+            : SCIENTIFIC_BACKGROUND_REFRESH_POLL_MIN_DELAY_MS;
+    return Math.min(
+        Math.max(base, SCIENTIFIC_BACKGROUND_REFRESH_POLL_MIN_DELAY_MS),
+        SCIENTIFIC_BACKGROUND_REFRESH_POLL_MAX_DELAY_MS,
+    );
+};
+
 const getPayloadSourceType = (payload: Record<string, unknown> | null | undefined): string =>
     normalizeText(payload && typeof payload.sourceType === 'string' ? payload.sourceType : null).toLowerCase();
 
@@ -819,11 +815,13 @@ const isDecisionPayloadExplicitlyStale = (payload: Record<string, unknown> | nul
     Boolean(payload && typeof payload === 'object' && payload.staleDigest === true);
 
 const doesGoalFitReadAsEvidenceThin = (params: {
+    status?: 'ready' | 'pending' | 'unavailable' | 'hidden' | null;
     heroMode?: 'dominant_goal' | 'mixed_goals' | 'limited_goals' | 'single_goal' | 'insufficient_signal' | null;
     labelCompleteness?: 'high' | 'medium' | 'low' | null;
     goalNarrativeConfidence?: 'high' | 'medium' | 'low' | null;
 }): boolean =>
-    params.heroMode === 'insufficient_signal'
+    params.status === 'pending'
+    || params.heroMode === 'insufficient_signal'
     || params.labelCompleteness === 'low'
     || params.goalNarrativeConfidence === 'low';
 
@@ -3372,6 +3370,8 @@ type ScientificBackgroundSidecarState = {
     source?: 'api' | 'server-fallback';
     fallbackUsed?: boolean;
     promptVersion?: string;
+    backgroundRefreshPending?: boolean;
+    recommendedRetryAfterMs?: number;
     data?: ScientificBackgroundBlock;
     error?: string;
 };
@@ -3383,6 +3383,28 @@ type IngredientOverviewSidecarStateUpdater =
 type ScientificBackgroundSidecarStateUpdater =
     | ScientificBackgroundSidecarState
     | ((current: ScientificBackgroundSidecarState | undefined) => ScientificBackgroundSidecarState | undefined);
+
+const isIngredientOverviewRenderableState = (
+    state: IngredientOverviewSidecarState | undefined,
+): state is IngredientOverviewSidecarState & {
+    source: 'api' | 'server-fallback';
+    data: IngredientOverviewBlock;
+} =>
+    Boolean(
+        state?.data
+        && (state.source === 'api' || state.source === 'server-fallback'),
+    );
+
+const isScientificBackgroundRenderableState = (
+    state: ScientificBackgroundSidecarState | undefined,
+): state is ScientificBackgroundSidecarState & {
+    source: 'api' | 'server-fallback';
+    data: ScientificBackgroundBlock;
+} =>
+    Boolean(
+        state?.data
+        && (state.source === 'api' || state.source === 'server-fallback'),
+    );
 
 type ProductOverviewAiState = {
     status: 'idle' | 'loading' | 'ok' | 'unavailable' | 'error';
@@ -3800,9 +3822,54 @@ const isResearchModeScienceRow = (
 
 const pickResearchModeScienceRows = (
     rows: ScienceSidecarIngredientRow[],
+    productTitle?: string | null,
 ): ScienceSidecarIngredientRow[] => {
     const filtered = rows.filter((row) => isResearchModeScienceRow(row, rows));
-    return filtered.length > 0 ? filtered : rows;
+    const baseRows = filtered.length > 0 ? filtered : rows;
+    const productTitleKey = normalizeIngredientNameForBackground(productTitle);
+    return [...baseRows].sort((left, right) => {
+        const scoreDiff =
+            scoreScienceModalIngredientRow(right, baseRows, productTitleKey)
+            - scoreScienceModalIngredientRow(left, baseRows, productTitleKey);
+        if (scoreDiff !== 0) return scoreDiff;
+        return baseRows.findIndex((row) => row.key === left.key) - baseRows.findIndex((row) => row.key === right.key);
+    });
+};
+
+const SCIENCE_MODAL_BLEND_LIKE_PATTERN = /\b(blend|complex|matrix|formula|proprietary)\b/i;
+const SCIENCE_MODAL_COMPANION_NUTRIENT_PATTERN =
+    /\b(vitamin\s*b(?:3|6|12)\b|\bb(?:3|6|12)\b|niacin(?:amide)?\b|nicotinamide\b|pyridoxine\b|pyridoxal(?:\s|-)?5(?:\s|-)?phosphate\b|p-?5-?p\b|folate\b|folic acid\b|methylfolate\b|zinc\b|selenium\b|copper\b|chromium\b|iodine\b|calcium\b|magnesium\b|manganese\b|molybdenum\b)\b/i;
+const SCIENCE_MODAL_PRIMARY_ACTIVE_PATTERN =
+    /\b(5[\s-]*htp|5[\s-]*hydroxytryptophan|griffonia|green tea|camellia sinensis|egcg|catechins?|conjugated linoleic acid|\bcla\b|carnitine|acetyl[\s-]*l[\s-]*carnitine|alcar|7[\s-]*keto|dhea acetate[\s-]*7[\s-]*one|omega[\s-]*3|fish oil|krill oil|algal oil|\bepa\b|\bdha\b|ashwagandha|curcumin|turmeric|ginseng|theanine|taurine|glycine|inositol|melatonin|coq10|ubiquinol|vitamin c|ascorbic acid|vitamin d|cholecalciferol|ergocalciferol)\b/i;
+
+const scoreScienceModalIngredientRow = (
+    row: ScienceSidecarIngredientRow,
+    rows: ScienceSidecarIngredientRow[],
+    productTitleKey: string,
+): number => {
+    const displayName = normalizeText(row.name);
+    const rowKey = normalizeIngredientNameForBackground(displayName);
+    const isBlendLike = SCIENCE_MODAL_BLEND_LIKE_PATTERN.test(displayName);
+    const isCompanionNutrient = SCIENCE_MODAL_COMPANION_NUTRIENT_PATTERN.test(displayName);
+    const titleMatch = rowKey.length >= 3 && productTitleKey.includes(rowKey);
+    const hasDose = normalizeText(row.dose).length > 0;
+    const doseMagnitude = parseOverviewDoseMagnitude(row.dose);
+    const hasOmegaBreakdownPeers = rows.some((candidate) => isOmega3BreakdownLineName(candidate.name));
+    const isOmegaSourceLine = isOmega3SourceLineName(displayName) && hasOmegaBreakdownPeers;
+    const isOmegaAggregateLine = isOmega3AggregateLineName(displayName);
+    const isOmegaBreakdownLine = isOmega3BreakdownLineName(displayName);
+
+    return (
+        (titleMatch ? 180 : 0) +
+        (!isCompanionNutrient && SCIENCE_MODAL_PRIMARY_ACTIVE_PATTERN.test(displayName) ? 40 : 0) +
+        (isOmegaBreakdownLine ? 34 : 0) +
+        (hasDose ? 16 : 0) +
+        Math.min(doseMagnitude, 1200) / 24 -
+        (isCompanionNutrient ? 62 : 0) -
+        (isBlendLike ? 140 : 0) -
+        (isOmegaSourceLine ? 120 : 0) -
+        (isOmegaAggregateLine ? 90 : 0)
+    );
 };
 
 const pickKeyIngredientsForBackground = (items: IngredientCoverItemLike[] | null | undefined): string[] => {
@@ -3977,7 +4044,11 @@ const AnalysisBundleDashboard: React.FC<{
     const productOverviewAiStateRef = useRef<Record<string, ProductOverviewAiState>>({});
     const ingredientOverviewStateRef = useRef<Record<string, IngredientOverviewSidecarState>>({});
     const scientificBackgroundStateRef = useRef<Record<string, ScientificBackgroundSidecarState>>({});
+    const ingredientOverviewRevalidateAtRef = useRef<Record<string, number>>({});
     const scientificBackgroundRevalidateAtRef = useRef<Record<string, number>>({});
+    const scientificBackgroundRetryCountRef = useRef<Record<string, number>>({});
+    const scientificBackgroundFallbackStartedAtRef = useRef<Record<string, number>>({});
+    const [scientificBackgroundRetryTick, setScientificBackgroundRetryTick] = useState(0);
     const decisionSupportCacheRef = useRef<Map<string, Record<string, unknown>>>(new Map());
     const decisionSupportByBarcodeRef = useRef<Map<string, Record<string, unknown>>>(decisionSupportWarmCache);
     const [simpleSourcesOpen, setSimpleSourcesOpen] = useState(false);
@@ -5382,6 +5453,14 @@ const AnalysisBundleDashboard: React.FC<{
     );
     const personalizedDecisionPayload = authoritativeDecisionTemplatePayload ?? decisionTemplatePayload;
     const scienceDecisionPayload = authoritativeDecisionTemplatePayload ?? decisionTemplatePayload;
+    const scienceSidecarDecisionPayload = useMemo<DecisionSupportTemplatePayload | null>(
+        () =>
+            scienceDecisionPayload
+            && !isDecisionPayloadExplicitlyStale(scienceDecisionPayload as Record<string, unknown>)
+                ? scienceDecisionPayload
+                : null,
+        [scienceDecisionPayload],
+    );
     const decisionOverviewBlock = decisionTemplatePayload?.overviewBlock;
     const decisionScienceBlock = scienceDecisionPayload?.scienceBlock;
     const decisionUsageBlock = decisionTemplatePayload?.usageBlock;
@@ -5401,6 +5480,12 @@ const AnalysisBundleDashboard: React.FC<{
     const currentPersonalizationScopeHash =
         getDecisionPayloadPersonalizationScopeHash(authoritativeDecisionPayload)
         || normalizeText(personalizedDecisionPayload?.personalizationScopeHash ?? null)
+        || null;
+    const scienceDecisionInputsHash =
+        normalizeText(scienceSidecarDecisionPayload?.decisionInputsHash ?? null)
+        || null;
+    const sciencePersonalizationScopeHash =
+        normalizeText(scienceSidecarDecisionPayload?.personalizationScopeHash ?? null)
         || null;
     const decisionOverlayUsed = useMemo(() => {
         if (decisionUsageBlock?.directions?.sourceTier === 'overlay_iherb') return true;
@@ -5472,30 +5557,24 @@ const AnalysisBundleDashboard: React.FC<{
             || sourceAttribution === 'label_record'
         );
     }, [bundleState.meta, canonicalDecisionBarcode, trustedDisplayIdentity.displayIdentityMode, trustedDisplayIdentity.sourceAttributionUsed]);
-    const normalizedComparisonSection = useMemo(() => {
-        const standing = decisionPersonalizedResultLane?.productStanding ?? null;
-        if (!standing || standing.status !== 'ready' || !canonicalIdentityConfidenceHigh) {
-            return null;
-        }
-
-        const alternatives = Array.isArray(standing.betterAlternatives)
-            ? standing.betterAlternatives.filter((item) => Boolean(item?.title))
-            : [];
-        const summary = normalizeText(standing.summary ?? null);
-        const secondarySummary = normalizeText(standing.secondarySummary ?? null);
-
-        if (!summary && alternatives.length === 0) {
-            return null;
-        }
-
-        return {
-            standing,
-            alternatives,
-            summary,
-            secondarySummary,
-            showEmptyState: alternatives.length === 0 && standing.standing !== 'unknown',
-        };
-    }, [canonicalIdentityConfidenceHigh, decisionPersonalizedResultLane?.productStanding]);
+    const comparisonStanding = decisionPersonalizedResultLane?.productStanding ?? null;
+    const comparisonAlternatives = Array.isArray(comparisonStanding?.betterAlternatives)
+        ? comparisonStanding.betterAlternatives.filter((item) => Boolean(item?.title))
+        : [];
+    const comparisonSummary = normalizeText(comparisonStanding?.summary ?? null);
+    const comparisonSecondarySummary = normalizeText(comparisonStanding?.secondarySummary ?? null);
+    const showComparisonSection =
+        Boolean(comparisonStanding)
+        && canonicalIdentityConfidenceHigh
+        && comparisonStanding?.status === 'ready'
+        && (
+            Boolean(comparisonSummary)
+            || comparisonAlternatives.length > 0
+        );
+    const showComparisonEmptyState =
+        showComparisonSection
+        && comparisonAlternatives.length === 0
+        && comparisonStanding?.standing !== 'unknown';
     const bundleSourceTypeFinal = bundleState.meta.sourceTypeFinal !== false && Number(bundleState.meta.revision) >= 1;
     const bundleSourceType = typeof bundleState.meta.sourceType === 'string' ? bundleState.meta.sourceType : null;
     const verificationPresentation = useMemo(
@@ -6058,84 +6137,23 @@ const AnalysisBundleDashboard: React.FC<{
         scienceIngredientsAll,
     ]);
     const topSectionPresentation = useMemo(() => {
-        const rawGoalFit = decisionPersonalizedResultLane?.goalFit;
-        const rawPersonalInsight = decisionPersonalizedResultLane?.personalInsight;
-        const rawAllergyInsight = decisionPersonalizedResultLane?.allergyInsight;
-        const rawDosageContext = decisionPersonalizedResultLane?.dosageContext;
+        const goalFit = decisionPersonalizedResultLane?.goalFit;
+        const personalInsight = decisionPersonalizedResultLane?.personalInsight;
         const hasSavedAllergyPreferences =
             localDecisionSupportSignals.allergyCount > 0 || localDecisionSupportSignals.restrictionCount > 0;
-        const goalCoverageSummary = rawGoalFit?.goalCoverageSummary ?? null;
-        const analyzedGoalCount = goalCoverageSummary?.analyzedGoalCount ?? rawGoalFit?.analyzedGoalCount ?? 0;
-        const hasGoalCoverage =
-            analyzedGoalCount > 0
-            || (rawGoalFit?.goalCoverageSummary?.items?.length ?? 0) > 0
-            || (rawGoalFit?.goalCoverage?.length ?? 0) > 0
-            || (rawGoalFit?.allGoalCoverage?.length ?? 0) > 0;
-        const goalFit =
-            rawGoalFit?.status === 'pending' && !hasGoalCoverage
+        const allergyInsight =
+            decisionPersonalizedResultLane?.allergyInsight
+            ?? (hasSavedAllergyPreferences
                 ? {
-                    ...rawGoalFit,
-                    selectedGoalKey: null,
-                    previewTopGoalKey: null,
-                    dominantGoalKey: null,
-                    secondaryGoalKey: null,
-                    selectedGoalKeys: [],
-                    allSelectedGoalKeys: [],
-                    candidateGoalKeys: [],
-                    defaultVisibleGoalKeys: [],
-                    goalCoverage: [],
-                    allGoalCoverage: [],
-                    goalCoverageSummary: rawGoalFit.goalCoverageSummary
-                        ? {
-                            ...rawGoalFit.goalCoverageSummary,
-                            analyzedGoalCount: 0,
-                            surfacedGoalCount: 0,
-                            hiddenGoalsCount: 0,
-                            allGoalsAnalyzed: false,
-                            items: [],
-                          }
-                        : undefined,
-                    selectedGoalCount: 0,
-                    analyzedGoalCount: 0,
-                    surfacedGoalCount: 0,
-                    allGoalsAnalyzed: false,
-                    fitDecision: 'unknown' as const,
-                    fitTier: 'unknown' as const,
-                    previewTopTier: 'unknown' as const,
-                    heroMode: undefined,
-                }
-                : rawGoalFit;
-        const personalInsight = rawPersonalInsight?.status === 'ready' ? rawPersonalInsight : null;
-        const allergyInsight = (() => {
-            if (rawAllergyInsight?.status === 'ready' || rawAllergyInsight?.status === 'unavailable') {
-                return rawAllergyInsight;
-            }
-
-            if (hasSavedAllergyPreferences) {
-                return {
-                    status: 'unavailable' as const,
-                    reasonCode: rawAllergyInsight?.reasonCode ?? 'ALLERGY_PROFILE_NOT_ATTACHED',
-                    summary: normalizeText(rawAllergyInsight?.summary ?? null) || 'Allergy check unavailable for this scan.',
-                    matchedAllergyFlags: rawAllergyInsight?.matchedAllergyFlags ?? [],
-                    matchedRestrictions: rawAllergyInsight?.matchedRestrictions ?? [],
-                    details: rawAllergyInsight?.details ?? [],
-                };
-            }
-
-            return null;
-        })();
-        const dosageContext =
-            rawDosageContext?.status === 'pending'
-                ? {
-                    ...rawDosageContext,
-                    status: 'unavailable' as const,
-                    reasonCode: rawDosageContext.reasonCode ?? 'RECOMMENDED_DOSE_COMPARISON_NOT_ATTACHED',
-                    summary: normalizeText(rawDosageContext.summary ?? null) || 'Dose guidance unavailable for this scan.',
-                    comparisonMode: rawDosageContext.comparisonMode === 'not_attached'
-                        ? rawDosageContext.comparisonMode
-                        : 'not_attached',
-                }
-                : rawDosageContext;
+                    status: 'pending' as const,
+                    reasonCode: 'LOCAL_PROFILE_ALLERGY_CONTEXT_PENDING',
+                    summary: 'Saved allergy preferences are still attaching to this scan.',
+                    matchedAllergyFlags: [],
+                    matchedRestrictions: [],
+                    details: [],
+                  }
+                : null);
+        const dosageContext = decisionPersonalizedResultLane?.dosageContext;
         const firstConflict = (personalInsight?.conflicts ?? [])
             .map((conflict) => normalizeText(conflict.summary))
             .find(Boolean);
@@ -6293,15 +6311,19 @@ const AnalysisBundleDashboard: React.FC<{
                     } | null;
                 } => Boolean(entry.goalLabel));
         const goalReadsAsEvidenceThin = doesGoalFitReadAsEvidenceThin({
+            status: goalFit?.status ?? null,
             heroMode: goalFit?.heroMode ?? null,
             labelCompleteness: goalFit?.labelCompleteness ?? null,
             goalNarrativeConfidence: goalFit?.goalNarrativeConfidence ?? null,
         });
         const supportiveVisibleGoalCoverage = resolvedVisibleGoalCoverage.filter((entry) => isSupportiveGoalCoverageState(entry.state));
         const supportiveAllGoalCoverage = resolvedAllGoalCoverage.filter((entry) => isSupportiveGoalCoverageState(entry.state));
-        const explicitSupportGoalLabel = (personalInsight?.supports ?? [])
-            .map((signal) => normalizeText(signal.label))
-            .find(Boolean) ?? null;
+        const supportGoalLabels = Array.from(new Set(
+            (personalInsight?.supports ?? [])
+                .map((signal) => normalizeText(signal.label))
+                .filter(Boolean),
+        ));
+        const explicitSupportGoalLabel = supportGoalLabels.length === 1 ? supportGoalLabels[0] ?? null : null;
         const visibleSupportGoalLabel =
             pickDominantGoalCoverageLabel(supportiveVisibleGoalCoverage)
             ?? (
@@ -6317,14 +6339,93 @@ const AnalysisBundleDashboard: React.FC<{
         const resolvedSupportGoalLabel = goalReadsAsEvidenceThin
             ? explicitSupportGoalLabel ?? visibleSupportGoalLabel ?? dominantSupportGoalLabel
             : null;
+        const preferredSupportGoalLabel =
+            explicitSupportGoalLabel
+            ?? visibleSupportGoalLabel
+            ?? dominantSupportGoalLabel;
+        const goalFitResolvedGoalLabel =
+            getGoalLabel(goalFit?.selectedGoalKey ?? null)
+            ?? getGoalLabel(goalFit?.dominantGoalKey ?? null)
+            ?? visibleSupportGoalLabel
+            ?? getGoalLabel(goalFit?.previewTopGoalKey ?? null)
+            ?? dominantSupportGoalLabel
+            ?? null;
+        const resolvedGoalCoverageMatch = goalFitResolvedGoalLabel
+            ? findGoalCoverageByLabel(resolvedAllGoalCoverage, goalFitResolvedGoalLabel)
+            : null;
+        const resolvedGoalTone: 'neutral' | 'positive' =
+            resolvedGoalCoverageMatch?.state === 'strong' ? 'positive' : 'neutral';
+        const analyzedGoalCount =
+            goalFit?.goalCoverageSummary?.analyzedGoalCount
+            ?? goalFit?.analyzedGoalCount
+            ?? resolvedAllGoalCoverage.length;
+        const buildResolvedHeroSummary = (goalLabel: string): string =>
+            analyzedGoalCount > 1
+                ? `Visible ingredients lean more toward ${lowerFirst(goalLabel)} support than other goals we checked.`
+                : `Visible ingredients lean more toward ${lowerFirst(goalLabel)} support on this label.`;
+        const hasConflictingSupportSignals = supportGoalLabels.length > 1;
         const preferSupportSignal =
-            goalReadsAsEvidenceThin
+            !hasConflictingSupportSignals
             && Boolean(
-                resolvedSupportGoalLabel
-                || (personalInsight?.supports?.length ?? 0) > 0
-                || supportiveVisibleGoalCoverage.length > 0
-                || supportiveAllGoalCoverage.length > 0,
+                preferredSupportGoalLabel
+                && (
+                    goalReadsAsEvidenceThin
+                    || goalFit?.heroMode === 'dominant_goal'
+                    || goalFit?.heroMode === 'single_goal'
+                    || goalFit?.heroMode === 'limited_goals'
+                ),
             );
+        const resolvedGoalSignal: TopSectionResolvedGoalSignalInput = preferSupportSignal && preferredSupportGoalLabel
+            ? {
+                mode: 'support_override',
+                goalLabel: preferredSupportGoalLabel,
+                heroTone: resolvedGoalTone,
+                heroChip: `Most aligned with your ${preferredSupportGoalLabel} goal`,
+                heroSummary: buildResolvedHeroSummary(preferredSupportGoalLabel),
+                primaryInsightKey: 'personal_support',
+                preferredExpandedKey: 'personal_support',
+              }
+            : (
+                goalFit?.status === 'ready'
+                && goalFitResolvedGoalLabel
+                && goalFit?.heroMode !== 'mixed_goals'
+                && !hasConflictingSupportSignals
+            )
+                ? {
+                    mode: 'goal_fit',
+                    goalLabel: goalFitResolvedGoalLabel,
+                    heroTone: resolvedGoalTone,
+                    heroChip: `Most aligned with your ${goalFitResolvedGoalLabel} goal`,
+                    heroSummary: buildResolvedHeroSummary(goalFitResolvedGoalLabel),
+                    primaryInsightKey: 'personal_support',
+                    preferredExpandedKey: 'personal_support',
+                  }
+                : (resolvedAllGoalCoverage.length > 0
+                    && (
+                        goalFit?.goalLensMode === 'multi_goal_summary'
+                        || goalFit?.heroMode === 'mixed_goals'
+                        || goalFit?.heroMode === 'limited_goals'
+                        || goalReadsAsEvidenceThin
+                    ))
+                    ? {
+                        mode: 'coverage_only',
+                        goalLabel: null,
+                        primaryInsightKey: 'goal_coverage',
+                        preferredExpandedKey: 'goal_coverage',
+                      }
+                    : goalFit?.status === 'ready'
+                    ? {
+                        mode: 'goal_fit',
+                        goalLabel: goalFitResolvedGoalLabel,
+                        primaryInsightKey: goalFitResolvedGoalLabel ? 'personal_support' : 'goal_coverage',
+                        preferredExpandedKey: goalFitResolvedGoalLabel ? 'personal_support' : 'goal_coverage',
+                      }
+                    : {
+                        mode: 'insufficient',
+                        goalLabel: null,
+                        primaryInsightKey: resolvedAllGoalCoverage.length > 0 ? 'goal_coverage' : 'personal_support',
+                        preferredExpandedKey: resolvedAllGoalCoverage.length > 0 ? 'goal_coverage' : 'personal_support',
+                      };
 
         return buildAnalysisTopSectionPresentation({
             goal: {
@@ -6405,19 +6506,20 @@ const AnalysisBundleDashboard: React.FC<{
                 warningText: safetyWarningCoverText ?? null,
                 watchoutText: safetyTipCoverText ?? null,
             },
+            resolvedGoalSignal,
         });
     }, [
-        decisionPersonalizedResultLane?.goalFit,
-        decisionPersonalizedResultLane?.personalInsight,
         decisionPersonalizedResultLane?.allergyInsight,
         decisionPersonalizedResultLane?.dosageContext,
+        decisionPersonalizedResultLane?.goalFit,
+        decisionPersonalizedResultLane?.personalInsight,
         localDecisionSupportSignals.allergyCount,
         localDecisionSupportSignals.restrictionCount,
         safetyTipCoverText,
         safetyWarningCoverText,
         topSectionDosePreviewText,
     ]);
-    const heroImageUri = saveItem?.imageUrl ?? productInfo?.image ?? null;
+    const heroImageUri = choosePreferredProductImageUrl(productInfo?.image, saveItem?.imageUrl);
     const verifiedLabelText = normalizeText(sourceBadgeLabel) || 'Verified Label Data';
 
     const overviewDataStatus = useMemo(() => {
@@ -7712,15 +7814,15 @@ const AnalysisBundleDashboard: React.FC<{
     );
 
     const decisionBarcodeForScience = canonicalDecisionBarcode;
-    const decisionDigestForScience = normalizeText(authoritativeDecisionTemplatePayload?.digest ?? '')
+    const decisionDigestForScience = normalizeText(scienceSidecarDecisionPayload?.digest ?? '')
         || null;
-    const shouldLoadScienceSidecars =
-        selectedTileType === 'science'
-        && authoritativeDecisionTemplatePayload != null
+    const shouldPrimeScienceSidecars =
+        scienceSidecarDecisionPayload != null
         && Boolean(decisionBarcodeForScience)
         && Boolean(decisionDigestForScience)
-        && Boolean(currentDecisionInputsHash)
-        && Boolean(currentPersonalizationScopeHash);
+        && Boolean(scienceDecisionInputsHash)
+        && Boolean(sciencePersonalizationScopeHash);
+    const shouldRenderScienceSidecars = selectedTileType === 'science' && shouldPrimeScienceSidecars;
     const scienceSourceFinalKey = bundleSourceTypeFinal ? 'final' : 'nonfinal';
     const decisionScienceIngredientRows = useMemo<ScienceSidecarIngredientRow[]>(
         () =>
@@ -7735,10 +7837,10 @@ const AnalysisBundleDashboard: React.FC<{
     );
     const scientificBackgroundIngredientRows = useMemo(
         () => {
-            const researchRows = pickResearchModeScienceRows(decisionScienceIngredientRows);
+            const researchRows = pickResearchModeScienceRows(decisionScienceIngredientRows, productTitle);
             return researchRows.length > 0 ? researchRows : decisionScienceIngredientRows;
         },
-        [decisionScienceIngredientRows],
+        [decisionScienceIngredientRows, productTitle],
     );
     const keyIngredientsForDetail = useMemo(
         () => scientificBackgroundIngredientRows.map((row) => row.name),
@@ -7780,23 +7882,23 @@ const AnalysisBundleDashboard: React.FC<{
 
     const ingredientOverviewRequestKey = useMemo(
         () =>
-            decisionBarcodeForScience && decisionDigestForScience && currentDecisionInputsHash && currentPersonalizationScopeHash
+            decisionBarcodeForScience && decisionDigestForScience && scienceDecisionInputsHash && sciencePersonalizationScopeHash
                 ? [
                     'ingredient_overview',
                     scienceAuthoritativeIdentityKey,
                     decisionBarcodeForScience,
                     decisionDigestForScience,
-                    currentDecisionInputsHash,
-                    currentPersonalizationScopeHash,
+                    scienceDecisionInputsHash,
+                    sciencePersonalizationScopeHash,
                     scienceSourceFinalKey,
                 ].join('|')
                 : null,
         [
-            currentDecisionInputsHash,
-            currentPersonalizationScopeHash,
             decisionBarcodeForScience,
             decisionDigestForScience,
             scienceAuthoritativeIdentityKey,
+            scienceDecisionInputsHash,
+            sciencePersonalizationScopeHash,
             scienceSourceFinalKey,
         ],
     );
@@ -7804,27 +7906,27 @@ const AnalysisBundleDashboard: React.FC<{
         () =>
             decisionBarcodeForScience
                 && decisionDigestForScience
-                && currentDecisionInputsHash
-                && currentPersonalizationScopeHash
+                && scienceDecisionInputsHash
+                && sciencePersonalizationScopeHash
                 && activeIngredientKey
                 ? [
                     'scientific_background',
                     scienceAuthoritativeIdentityKey,
                     decisionBarcodeForScience,
                     decisionDigestForScience,
-                    currentDecisionInputsHash,
-                    currentPersonalizationScopeHash,
+                    scienceDecisionInputsHash,
+                    sciencePersonalizationScopeHash,
                     activeIngredientKey,
                     scienceSourceFinalKey,
                 ].join('|')
                 : null,
         [
             activeIngredientKey,
-            currentDecisionInputsHash,
-            currentPersonalizationScopeHash,
             decisionBarcodeForScience,
             decisionDigestForScience,
             scienceAuthoritativeIdentityKey,
+            scienceDecisionInputsHash,
+            sciencePersonalizationScopeHash,
             scienceSourceFinalKey,
         ],
     );
@@ -7836,18 +7938,14 @@ const AnalysisBundleDashboard: React.FC<{
         : undefined;
     const resolvedIngredientOverviewBlock = useMemo(
         () =>
-            ingredientOverviewState?.status === 'ok'
-                && (ingredientOverviewState.source === 'api' || ingredientOverviewState.source === 'server-fallback')
-                && ingredientOverviewState.data
+            isIngredientOverviewRenderableState(ingredientOverviewState)
                 ? ingredientOverviewState.data
                 : null,
         [ingredientOverviewState],
     );
     const resolvedScientificBackgroundBlock = useMemo(
         () =>
-            scientificBackgroundState?.status === 'ok'
-                && (scientificBackgroundState.source === 'api' || scientificBackgroundState.source === 'server-fallback')
-                && scientificBackgroundState.data
+            isScientificBackgroundRenderableState(scientificBackgroundState)
                 ? scientificBackgroundState.data
                 : null,
         [scientificBackgroundState],
@@ -7858,28 +7956,40 @@ const AnalysisBundleDashboard: React.FC<{
         setScientificBackgroundByRequestKey({});
         ingredientOverviewStateRef.current = {};
         scientificBackgroundStateRef.current = {};
+        ingredientOverviewRevalidateAtRef.current = {};
         scientificBackgroundRevalidateAtRef.current = {};
+        scientificBackgroundRetryCountRef.current = {};
+        scientificBackgroundFallbackStartedAtRef.current = {};
+        setScientificBackgroundRetryTick(0);
         setActiveIngredientName(keyIngredientsForDetail[0] ?? null);
         setActiveSafetyIngredientName(keyIngredientsForSafety[0] ?? null);
-    }, [incomingBundleRunKey, keyIngredientsForDetail, keyIngredientsForSafety]);
+    }, [incomingBundleRunKey]);
 
     useEffect(() => {
-        if (!shouldLoadScienceSidecars) return;
+        if (!shouldPrimeScienceSidecars) return;
         if (
             !ingredientOverviewRequestKey
             || !decisionBarcodeForScience
             || !decisionDigestForScience
-            || !currentDecisionInputsHash
-            || !currentPersonalizationScopeHash
+            || !scienceDecisionInputsHash
+            || !sciencePersonalizationScopeHash
         ) {
             return;
         }
         const current = ingredientOverviewStateRef.current[ingredientOverviewRequestKey];
+        const lastRevalidateAt = ingredientOverviewRevalidateAtRef.current[ingredientOverviewRequestKey] ?? 0;
+        const shouldRevalidateFallback =
+            selectedTileType === 'science'
+            && shouldRenderScienceSidecars
+            && current?.status === 'ok'
+            && current.source === 'server-fallback'
+            && Date.now() - lastRevalidateAt >= SCIENTIFIC_BACKGROUND_REVALIDATE_COOLDOWN_MS;
         if (
             current
             && (
                 current.status === 'loading'
-                || (current.status === 'ok' && (current.source === 'api' || current.source === 'server-fallback'))
+                || (current.status === 'ok' && current.source === 'api')
+                || (current.status === 'ok' && current.source === 'server-fallback' && !shouldRevalidateFallback)
             )
         ) {
             return;
@@ -7894,9 +8004,17 @@ const AnalysisBundleDashboard: React.FC<{
             decisionInputsHashParam: string,
             personalizationScopeHashParam: string,
             canRetry: boolean,
+            revalidateFallback: boolean,
         ): Promise<void> => {
             try {
-                setIngredientOverviewSidecarState(ingredientOverviewRequestKey, { status: 'loading' });
+                if (revalidateFallback) {
+                    ingredientOverviewRevalidateAtRef.current[ingredientOverviewRequestKey] = Date.now();
+                }
+                setIngredientOverviewSidecarState(ingredientOverviewRequestKey, (currentState) =>
+                    isIngredientOverviewRenderableState(currentState)
+                        ? { ...currentState, status: 'loading' }
+                        : { status: 'loading' },
+                );
                 const baseUrl = String(Config.searchApiBaseUrl).replace(/\/$/, '');
                 const headers = await withAuthHeaders({
                     'Content-Type': 'application/json',
@@ -7914,6 +8032,7 @@ const AnalysisBundleDashboard: React.FC<{
                         decisionDigest: digestParam,
                         decisionInputsHash: decisionInputsHashParam,
                         personalizationScopeHash: personalizationScopeHashParam,
+                        revalidateFallback,
                     }),
                     signal: controller.signal,
                 });
@@ -7944,16 +8063,20 @@ const AnalysisBundleDashboard: React.FC<{
                         && nextPersonalizationScopeHash
                         && (digestChanged || inputsHashChanged || scopeHashChanged)
                     ) {
-                        return run(nextDigest, nextDecisionInputsHash, nextPersonalizationScopeHash, false);
+                        return run(nextDigest, nextDecisionInputsHash, nextPersonalizationScopeHash, false, revalidateFallback);
                     }
                 }
 
                 if (!response.ok) {
                     settled = true;
-                    setIngredientOverviewSidecarState(ingredientOverviewRequestKey, {
-                        status: 'error',
-                        error: `HTTP ${response.status}`,
-                    });
+                    setIngredientOverviewSidecarState(ingredientOverviewRequestKey, (currentState) =>
+                        isIngredientOverviewRenderableState(currentState)
+                            ? { ...currentState, status: 'ok' }
+                            : {
+                                status: 'error',
+                                error: `HTTP ${response.status}`,
+                            },
+                    );
                     return;
                 }
 
@@ -7978,46 +8101,59 @@ const AnalysisBundleDashboard: React.FC<{
             } catch (error) {
                 if (cancelled) return;
                 settled = true;
-                setIngredientOverviewSidecarState(ingredientOverviewRequestKey, {
-                    status: 'error',
-                    error: error instanceof Error ? error.message : 'Ingredient overview unavailable',
-                });
+                setIngredientOverviewSidecarState(ingredientOverviewRequestKey, (currentState) =>
+                    isIngredientOverviewRenderableState(currentState)
+                        ? { ...currentState, status: 'ok' }
+                        : {
+                            status: 'error',
+                            error: error instanceof Error ? error.message : 'Ingredient overview unavailable',
+                        },
+                );
             }
         };
 
         void run(
             decisionDigestForScience,
-            currentDecisionInputsHash,
-            currentPersonalizationScopeHash,
+            scienceDecisionInputsHash,
+            sciencePersonalizationScopeHash,
             true,
+            shouldRevalidateFallback,
         );
         return () => {
             cancelled = true;
             controller.abort();
             if (!settled) {
                 setIngredientOverviewSidecarState(ingredientOverviewRequestKey, (currentState) =>
-                    currentState?.status === 'loading' ? undefined : currentState,
+                    currentState?.status === 'loading'
+                        ? (isIngredientOverviewRenderableState(currentState)
+                            ? { ...currentState, status: 'ok' }
+                            : undefined)
+                        : currentState,
                 );
             }
         };
     }, [
-        shouldLoadScienceSidecars,
-        currentDecisionInputsHash,
-        currentPersonalizationScopeHash,
+        shouldPrimeScienceSidecars,
         decisionBarcodeForScience,
         decisionDigestForScience,
+        ingredientOverviewState?.status,
+        ingredientOverviewState?.source,
         ingredientOverviewRequestKey,
         localDecisionSupportHeader,
+        scienceDecisionInputsHash,
+        sciencePersonalizationScopeHash,
+        selectedTileType,
         setIngredientOverviewSidecarState,
+        shouldRenderScienceSidecars,
     ]);
 
     useEffect(() => {
-        if (!shouldLoadScienceSidecars) return;
+        if (!shouldPrimeScienceSidecars) return;
         if (
             !decisionBarcodeForScience
             || !decisionDigestForScience
-            || !currentDecisionInputsHash
-            || !currentPersonalizationScopeHash
+            || !scienceDecisionInputsHash
+            || !sciencePersonalizationScopeHash
         ) {
             return;
         }
@@ -8033,10 +8169,27 @@ const AnalysisBundleDashboard: React.FC<{
         const row = activeScienceIngredientRow;
         const current = scientificBackgroundStateRef.current[requestKey];
         const lastRevalidateAt = scientificBackgroundRevalidateAtRef.current[requestKey] ?? 0;
+        const retryCount = scientificBackgroundRetryCountRef.current[requestKey] ?? 0;
+        const fallbackStartedAt = scientificBackgroundFallbackStartedAtRef.current[requestKey] ?? 0;
+        const withinRefreshWindow =
+            !current?.backgroundRefreshPending
+            || !fallbackStartedAt
+            || (Date.now() - fallbackStartedAt) <= SCIENTIFIC_BACKGROUND_REFRESH_POLL_MAX_WINDOW_MS;
+        const retryDelayMs =
+            current?.backgroundRefreshPending
+                ? clampScientificBackgroundRefreshDelay(current.recommendedRetryAfterMs)
+                : SCIENTIFIC_BACKGROUND_REVALIDATE_COOLDOWN_MS;
+        const canAutoRetryFallback =
+            current?.backgroundRefreshPending
+                ? retryCount < SCIENTIFIC_BACKGROUND_REFRESH_POLL_MAX_ATTEMPTS && withinRefreshWindow
+                : true;
         const shouldRevalidateFallback =
-            current?.status === 'ok'
+            selectedTileType === 'science'
+            && shouldRenderScienceSidecars
+            && current?.status === 'ok'
             && current.source === 'server-fallback'
-            && Date.now() - lastRevalidateAt >= SCIENTIFIC_BACKGROUND_REVALIDATE_COOLDOWN_MS;
+            && canAutoRetryFallback
+            && Date.now() - lastRevalidateAt >= retryDelayMs;
         if (
             current
             && (
@@ -8060,8 +8213,23 @@ const AnalysisBundleDashboard: React.FC<{
             try {
                 if (revalidateFallback) {
                     scientificBackgroundRevalidateAtRef.current[requestKey] = Date.now();
+                    scientificBackgroundRetryCountRef.current[requestKey] =
+                        (scientificBackgroundRetryCountRef.current[requestKey] ?? 0) + 1;
                 }
-                setScientificBackgroundSidecarState(requestKey, { status: 'loading' });
+                setScientificBackgroundSidecarState(requestKey, (currentState) =>
+                    revalidateFallback && isScientificBackgroundRenderableState(currentState)
+                        ? currentState
+                        : isScientificBackgroundRenderableState(currentState)
+                            ? { ...currentState, status: 'loading' }
+                            : { status: 'loading' },
+                );
+                if (
+                    scientificBackgroundFallbackStartedAtRef.current[requestKey] == null
+                    && current?.status === 'ok'
+                    && current.source === 'server-fallback'
+                ) {
+                    scientificBackgroundFallbackStartedAtRef.current[requestKey] = Date.now();
+                }
                 const headers = await withAuthHeaders({
                     'Content-Type': 'application/json',
                 });
@@ -8122,10 +8290,21 @@ const AnalysisBundleDashboard: React.FC<{
 
                 if (!response.ok) {
                     settledRequestKey = requestKey;
-                    setScientificBackgroundSidecarState(requestKey, {
-                        status: 'error',
-                        error: `HTTP ${response.status}`,
-                    });
+                    delete scientificBackgroundFallbackStartedAtRef.current[requestKey];
+                    delete scientificBackgroundRevalidateAtRef.current[requestKey];
+                    setScientificBackgroundSidecarState(requestKey, (currentState) =>
+                        isScientificBackgroundRenderableState(currentState)
+                            ? {
+                                ...currentState,
+                                status: 'ok',
+                                backgroundRefreshPending: false,
+                                recommendedRetryAfterMs: undefined,
+                            }
+                            : {
+                                status: 'error',
+                                error: `HTTP ${response.status}`,
+                            },
+                    );
                     return;
                 }
 
@@ -8140,27 +8319,54 @@ const AnalysisBundleDashboard: React.FC<{
                 }
 
                 settledRequestKey = requestKey;
+                const source = payload.source === 'fallback' ? 'server-fallback' : 'api';
+                const backgroundRefreshPending =
+                    source === 'server-fallback' && payload.backgroundRefreshPending === true;
+                if (backgroundRefreshPending) {
+                    scientificBackgroundFallbackStartedAtRef.current[requestKey] ??= Date.now();
+                    scientificBackgroundRevalidateAtRef.current[requestKey] ??= Date.now();
+                } else {
+                    delete scientificBackgroundFallbackStartedAtRef.current[requestKey];
+                    delete scientificBackgroundRevalidateAtRef.current[requestKey];
+                }
+                if (source === 'api' || !backgroundRefreshPending) {
+                    delete scientificBackgroundRetryCountRef.current[requestKey];
+                }
                 setScientificBackgroundSidecarState(requestKey, {
                     status: 'ok',
-                    source: payload.source === 'fallback' ? 'server-fallback' : 'api',
+                    source,
                     fallbackUsed: payload.fallbackUsed,
                     promptVersion: payload.promptVersion,
+                    backgroundRefreshPending,
+                    recommendedRetryAfterMs: payload.recommendedRetryAfterMs ?? undefined,
                     data: payload.scientificBackground,
                 });
             } catch (error) {
                 if (cancelled || currentRunKeyRef.current !== requestRunKey) return;
                 settledRequestKey = requestKey;
-                setScientificBackgroundSidecarState(requestKey, {
-                    status: 'error',
-                    error: error instanceof Error ? error.message : 'Scientific background unavailable',
-                });
+                delete scientificBackgroundRetryCountRef.current[requestKey];
+                delete scientificBackgroundFallbackStartedAtRef.current[requestKey];
+                delete scientificBackgroundRevalidateAtRef.current[requestKey];
+                setScientificBackgroundSidecarState(requestKey, (currentState) =>
+                    isScientificBackgroundRenderableState(currentState)
+                        ? {
+                            ...currentState,
+                            status: 'ok',
+                            backgroundRefreshPending: false,
+                            recommendedRetryAfterMs: undefined,
+                        }
+                        : {
+                            status: 'error',
+                            error: error instanceof Error ? error.message : 'Scientific background unavailable',
+                        },
+                );
             }
         };
 
         void run(
             decisionDigestForScience,
-            currentDecisionInputsHash,
-            currentPersonalizationScopeHash,
+            scienceDecisionInputsHash,
+            sciencePersonalizationScopeHash,
             true,
             shouldRevalidateFallback,
         );
@@ -8169,22 +8375,66 @@ const AnalysisBundleDashboard: React.FC<{
             controller.abort();
             if (startedRequestKey && startedRequestKey !== settledRequestKey) {
                 setScientificBackgroundSidecarState(startedRequestKey, (currentState) =>
-                    currentState?.status === 'loading' ? undefined : currentState,
+                    currentState?.status === 'loading'
+                        ? (isScientificBackgroundRenderableState(currentState)
+                            ? { ...currentState, status: 'ok' }
+                            : undefined)
+                        : currentState,
                 );
             }
         };
     }, [
         activeScienceIngredientRow,
-        shouldLoadScienceSidecars,
-        currentDecisionInputsHash,
-        currentPersonalizationScopeHash,
+        shouldPrimeScienceSidecars,
+        shouldRenderScienceSidecars,
         decisionBarcodeForScience,
         decisionDigestForScience,
         decisionScienceIngredientRows,
         localDecisionSupportHeader,
+        selectedTileType,
+        scienceDecisionInputsHash,
+        sciencePersonalizationScopeHash,
+        scientificBackgroundRetryTick,
+        scientificBackgroundState?.status,
+        scientificBackgroundState?.source,
+        scientificBackgroundState?.backgroundRefreshPending,
+        scientificBackgroundState?.recommendedRetryAfterMs,
         scientificBackgroundRequestKey,
         scienceSourceFinalKey,
         setScientificBackgroundSidecarState,
+    ]);
+
+    useEffect(() => {
+        if (selectedTileType !== 'science') return;
+        if (!shouldRenderScienceSidecars || !scientificBackgroundRequestKey) return;
+        if (scientificBackgroundState?.status !== 'ok' || scientificBackgroundState.source !== 'server-fallback') return;
+        if (!scientificBackgroundState.backgroundRefreshPending) return;
+        const retryCount = scientificBackgroundRetryCountRef.current[scientificBackgroundRequestKey] ?? 0;
+        const fallbackStartedAt = scientificBackgroundFallbackStartedAtRef.current[scientificBackgroundRequestKey] ?? 0;
+        if (retryCount >= SCIENTIFIC_BACKGROUND_REFRESH_POLL_MAX_ATTEMPTS) return;
+        if (
+            fallbackStartedAt
+            && Date.now() - fallbackStartedAt > SCIENTIFIC_BACKGROUND_REFRESH_POLL_MAX_WINDOW_MS
+        ) {
+            return;
+        }
+        const lastRevalidateAt = scientificBackgroundRevalidateAtRef.current[scientificBackgroundRequestKey] ?? 0;
+        const retryAfterMs = clampScientificBackgroundRefreshDelay(
+            scientificBackgroundState.recommendedRetryAfterMs,
+        );
+        const remainingMs = Math.max(retryAfterMs - (Date.now() - lastRevalidateAt), 0);
+        const timer = setTimeout(() => {
+            setScientificBackgroundRetryTick((value) => value + 1);
+        }, remainingMs);
+        return () => clearTimeout(timer);
+    }, [
+        scientificBackgroundRequestKey,
+        scientificBackgroundState?.backgroundRefreshPending,
+        scientificBackgroundState?.recommendedRetryAfterMs,
+        scientificBackgroundState?.source,
+        scientificBackgroundState?.status,
+        selectedTileType,
+        shouldRenderScienceSidecars,
     ]);
 
     useEffect(() => {
@@ -8211,18 +8461,18 @@ const AnalysisBundleDashboard: React.FC<{
     const scientificBackgroundIntroLine = resolvedScientificBackgroundBlock?.introLine ?? activeIngredientLabelLine;
     const scientificBackgroundClosingNote = resolvedScientificBackgroundBlock?.closingNote ?? null;
     const shouldShowIngredientOverviewLoading =
-        shouldLoadScienceSidecars
+        shouldRenderScienceSidecars
         && Boolean(ingredientOverviewRequestKey)
         && (
             ingredientOverviewState == null
-            || ingredientOverviewState.status === 'loading'
+            || (ingredientOverviewState.status === 'loading' && !isIngredientOverviewRenderableState(ingredientOverviewState))
         );
     const shouldShowScientificBackgroundLoading =
-        shouldLoadScienceSidecars
+        shouldRenderScienceSidecars
         && Boolean(scientificBackgroundRequestKey)
         && (
             scientificBackgroundState == null
-            || scientificBackgroundState.status === 'loading'
+            || (scientificBackgroundState.status === 'loading' && !isScientificBackgroundRenderableState(scientificBackgroundState))
         );
     const ingredientsContent = (
         <View style={styles.detailStack}>
@@ -9919,58 +10169,6 @@ const AnalysisBundleDashboard: React.FC<{
                     </View>
                     {/* SCORE_SECTION_FROZEN_RENDER_END */}
 
-                    {normalizedComparisonSection ? <View style={styles.sectionDivider} /> : null}
-
-                    {normalizedComparisonSection ? (
-                        <View style={styles.sectionBlock}>
-                            <View style={styles.sectionHeader}>
-                                <Text style={styles.sectionTitle}>{t.analysisSectionComparisonTitle}</Text>
-                                <Text style={styles.sectionSubtitle}>{t.analysisSectionComparisonSubtitle}</Text>
-                            </View>
-
-                            <View style={styles.comparisonStandingCard}>
-                                <Text style={styles.comparisonStandingSummary}>
-                                    {normalizedComparisonSection.summary || t.analysisComparisonNotEnoughPeers}
-                                </Text>
-                                {normalizedComparisonSection.secondarySummary ? (
-                                    <Text style={styles.comparisonStandingSecondary}>
-                                        {normalizedComparisonSection.secondarySummary}
-                                    </Text>
-                                ) : null}
-                            </View>
-
-                            {normalizedComparisonSection.alternatives.length > 0 ? (
-                                <>
-                                    <Text style={styles.comparisonAlternativesTitle}>
-                                        {t.analysisComparisonAlternativesTitle}
-                                    </Text>
-                                    <ScrollView
-                                        horizontal
-                                        showsHorizontalScrollIndicator={false}
-                                        decelerationRate="fast"
-                                        snapToAlignment="start"
-                                        snapToInterval={comparisonSnapInterval}
-                                        contentContainerStyle={styles.comparisonRailContent}
-                                    >
-                                        {normalizedComparisonSection.alternatives.map((alternative) => (
-                                            <ComparisonAlternativeCard
-                                                key={`${alternative.productId ?? alternative.title}`}
-                                                alternative={alternative}
-                                                cardWidth={comparisonCardWidth}
-                                            />
-                                        ))}
-                                    </ScrollView>
-                                </>
-                            ) : null}
-
-                            {normalizedComparisonSection.showEmptyState ? (
-                                <Text style={styles.comparisonEmptyState}>
-                                    {t.analysisComparisonAlreadyScoresWell}
-                                </Text>
-                            ) : null}
-                        </View>
-                    ) : null}
-
                     <View style={styles.sectionDivider} />
 
                     {!disableTilesGrid ? (
@@ -10007,6 +10205,66 @@ const AnalysisBundleDashboard: React.FC<{
                         </View>
                     )}
 
+                    {showComparisonSection ? <View style={styles.sectionDivider} /> : null}
+
+                    {showComparisonSection ? (
+                        <View style={styles.sectionBlock}>
+                            <View style={styles.sectionHeader}>
+                                <Text style={styles.sectionTitle}>{t.analysisSectionComparisonTitle}</Text>
+                                <Text style={styles.sectionSubtitle}>{t.analysisSectionComparisonSubtitle}</Text>
+                            </View>
+                            {isPreviewLocked ? (
+                                <LockedSectionPreviewCard
+                                    title="Compare with alternatives"
+                                    body="Alternative picks and product ranking stay behind Premium."
+                                    onPress={() => setPaywallSource('comparison')}
+                                />
+                            ) : (
+                                <>
+                                    <View style={styles.comparisonStandingCard}>
+                                        <Text style={styles.comparisonStandingSummary}>
+                                            {comparisonSummary || t.analysisComparisonNotEnoughPeers}
+                                        </Text>
+                                        {comparisonSecondarySummary ? (
+                                            <Text style={styles.comparisonStandingSecondary}>
+                                                {comparisonSecondarySummary}
+                                            </Text>
+                                        ) : null}
+                                    </View>
+
+                                    {comparisonAlternatives.length > 0 ? (
+                                        <>
+                                            <Text style={styles.comparisonAlternativesTitle}>
+                                                {t.analysisComparisonAlternativesTitle}
+                                            </Text>
+                                            <ScrollView
+                                                horizontal
+                                                showsHorizontalScrollIndicator={false}
+                                                decelerationRate="fast"
+                                                snapToAlignment="start"
+                                                snapToInterval={comparisonSnapInterval}
+                                                contentContainerStyle={styles.comparisonRailContent}
+                                            >
+                                                {comparisonAlternatives.map((alternative) => (
+                                                    <ComparisonAlternativeCard
+                                                        key={`${alternative.productId ?? alternative.title}`}
+                                                        alternative={alternative}
+                                                        cardWidth={comparisonCardWidth}
+                                                    />
+                                                ))}
+                                            </ScrollView>
+                                        </>
+                                    ) : null}
+
+                                    {showComparisonEmptyState ? (
+                                        <Text style={styles.comparisonEmptyState}>
+                                            {t.analysisComparisonAlreadyScoresWell}
+                                        </Text>
+                                    ) : null}
+                                </>
+                            )}
+                        </View>
+                    ) : null}
                 </>
             </ScrollContainer>
 

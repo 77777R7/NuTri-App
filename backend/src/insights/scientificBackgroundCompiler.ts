@@ -2,7 +2,6 @@ import type {
   IngredientScienceContext,
   IngredientScienceDescriptor,
   IngredientScienceIngredientFamily,
-  IngredientScienceLineRole,
 } from "../ingredientScienceContext.js";
 import { normalizeIngredientScienceKey } from "../ingredientScienceContext.js";
 import { extractJsonObjectLoose } from "./summaryCompiler.js";
@@ -57,6 +56,22 @@ export type ScientificBackgroundCompileResult = {
   source: "api" | "fallback";
   fallbackUsed: boolean;
   promptVersion: string;
+  diagnostics: ScientificBackgroundCompileDiagnostics;
+};
+
+export type ScientificBackgroundCompileDiagnostics = {
+  liveWriterConfigured: boolean;
+  liveWriterAttempted: boolean;
+  liveWriterHit: boolean;
+  attemptCount: number;
+  timeoutMs: number;
+  maxRetries: number;
+  fallbackReason: string | null;
+  lastError: string | null;
+  parseFailureCount: number;
+  gateRejectCount: number;
+  timeoutCount: number;
+  errorCount: number;
 };
 
 export type CompileScientificBackgroundOpts = {
@@ -68,31 +83,45 @@ export type CompileScientificBackgroundOpts = {
 export type ScientificBackgroundExecutionProfile = {
   preferLiveWriter: boolean;
   timeoutMs: number;
+  backgroundRefreshTimeoutMs: number;
   maxRetries: number;
+  backgroundRefreshMaxRetries: number;
   maxTokens: number;
   cacheTtlMs: number;
 };
 
-export const SCIENTIFIC_BACKGROUND_PROMPT_VERSION = "scientific_background_v12";
+export const SCIENTIFIC_BACKGROUND_PROMPT_VERSION = "scientific_background_v16";
 
-const RESEARCH_MODE_TIMEOUT_MS = 14_000;
-const CURCUMIN_RESEARCH_MODE_TIMEOUT_MS = 15_750;
-const ASHWAGANDHA_RESEARCH_MODE_TIMEOUT_MS = 15_750;
-const GINSENG_RESEARCH_MODE_TIMEOUT_MS = 15_750;
-const GREEN_TEA_EXTRACT_RESEARCH_MODE_TIMEOUT_MS = 15_750;
-const VITAMIN_D_RESEARCH_MODE_TIMEOUT_MS = 16_500;
-const B12_RESEARCH_MODE_TIMEOUT_MS = 15_500;
-const FOLATE_RESEARCH_MODE_TIMEOUT_MS = 15_500;
-const B6_RESEARCH_MODE_TIMEOUT_MS = 15_250;
-const MAGNESIUM_RESEARCH_MODE_TIMEOUT_MS = 17_000;
-const CALCIUM_RESEARCH_MODE_TIMEOUT_MS = 16_000;
-const IRON_RESEARCH_MODE_TIMEOUT_MS = 16_750;
-const MELATONIN_RESEARCH_MODE_TIMEOUT_MS = 15_500;
-const DHA_RESEARCH_MODE_TIMEOUT_MS = 18_500;
+const RESEARCH_MODE_TIMEOUT_MS = 2_500;
+const CURCUMIN_RESEARCH_MODE_TIMEOUT_MS = 2_900;
+const ASHWAGANDHA_RESEARCH_MODE_TIMEOUT_MS = 2_900;
+const GINSENG_RESEARCH_MODE_TIMEOUT_MS = 2_900;
+const OMEGA3_RESEARCH_MODE_TIMEOUT_MS = 3_800;
+const GREEN_TEA_EXTRACT_RESEARCH_MODE_TIMEOUT_MS = 3_600;
+const SEVEN_KETO_RESEARCH_MODE_TIMEOUT_MS = 3_500;
+const CLA_RESEARCH_MODE_TIMEOUT_MS = 3_500;
+const CARNITINE_RESEARCH_MODE_TIMEOUT_MS = 3_500;
+const NIACINAMIDE_RESEARCH_MODE_TIMEOUT_MS = 2_750;
+const HTP5_RESEARCH_MODE_TIMEOUT_MS = 3_500;
+const VITAMIN_D_RESEARCH_MODE_TIMEOUT_MS = 2_750;
+const B12_RESEARCH_MODE_TIMEOUT_MS = 2_500;
+const FOLATE_RESEARCH_MODE_TIMEOUT_MS = 2_500;
+const B6_RESEARCH_MODE_TIMEOUT_MS = 2_500;
+const MAGNESIUM_RESEARCH_MODE_TIMEOUT_MS = 3_000;
+const CALCIUM_RESEARCH_MODE_TIMEOUT_MS = 2_750;
+const IRON_RESEARCH_MODE_TIMEOUT_MS = 3_000;
+const MELATONIN_RESEARCH_MODE_TIMEOUT_MS = 2_500;
+const DHA_RESEARCH_MODE_TIMEOUT_MS = 4_200;
 const LABEL_CONTEXT_MODE_TIMEOUT_MS = 1_500;
+const RESEARCH_MODE_BACKGROUND_REFRESH_TIMEOUT_MS = 18_000;
+const LONG_RESEARCH_MODE_BACKGROUND_REFRESH_TIMEOUT_MS = 22_000;
+const DHA_RESEARCH_MODE_BACKGROUND_REFRESH_TIMEOUT_MS = 24_000;
 const LLM_TIMEOUT_MS = RESEARCH_MODE_TIMEOUT_MS;
 const LLM_MAX_RETRIES = 0;
+const BACKGROUND_REFRESH_MAX_RETRIES = 1;
 const RESEARCH_MODE_MAX_TOKENS = 750;
+const TARGETED_RESEARCH_MODE_MAX_TOKENS = 650;
+const TARGETED_RESEARCH_MODE_MAX_RETRIES = 0;
 const LABEL_CONTEXT_MODE_MAX_TOKENS = 400;
 const RESEARCH_MODE_CACHE_TTL_MS = 10 * 60_000;
 const LABEL_CONTEXT_MODE_CACHE_TTL_MS = 20 * 60_000;
@@ -169,6 +198,21 @@ const normalizeText = (value: string | null | undefined): string =>
   String(value ?? "")
     .replace(/\s+/g, " ")
     .trim();
+
+const normalizeDiagnosticReason = (value: string | null | undefined): string | null => {
+  const normalized = normalizeText(value)
+    .toLowerCase()
+    .replace(/[^a-z0-9_:-]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+  return normalized || null;
+};
+
+const resolveErrorReason = (error: unknown): string => {
+  if (!(error instanceof Error)) return "unknown_error";
+  if (error.name === "AbortError" || /aborted/i.test(error.message)) return "llm_timeout";
+  const normalized = normalizeDiagnosticReason(error.message);
+  return normalized ?? "unknown_error";
+};
 
 const normalizeHeading = (value: string | null | undefined): string =>
   normalizeText(value)
@@ -275,6 +319,16 @@ const resolveScientificBackgroundMode = (
   descriptor: IngredientScienceDescriptor | null,
 ): ScientificBackgroundMode => {
   if (!descriptor) return "research_mode";
+  if (context.productArchetype === "functional_food_like") {
+    if (
+      descriptor.ingredientFamily === "generic" ||
+      descriptor.ingredientFamily === "green_tea_extract" ||
+      descriptor.ingredientFamily === "probiotic_or_blend" ||
+      descriptor.lineRole !== "primary_active"
+    ) {
+      return "label_context_mode";
+    }
+  }
   if (descriptor.lineRole === "blend_line" || descriptor.lineRole === "aggregate_line") return "label_context_mode";
   if (descriptor.lineRole === "source_line") {
     return hasOtherResearchReadyOmega3Lines(context, descriptor) ? "label_context_mode" : "research_mode";
@@ -444,6 +498,69 @@ const buildResearchPlan = (
         ["Extract concentration can change comparison value", "Named EGCG or catechin detail improves label reading", "Do not turn concentration detail into a universal superiority story"],
         "Keep this section practical and comparison-focused.",
         "Help the shopper understand why a detailed extract line is often more useful than a generic green tea label.",
+      ),
+    ];
+  }
+
+  if (descriptor.ingredientFamily === "7keto_dhea_metabolite") {
+    return [
+      buildSectionPlan(
+        "metabolic_and_body_composition_context",
+        "Metabolic and body-composition context",
+        "Explain the body-composition and metabolic-rate lane that makes 7-Keto easier to interpret than generic fat-loss marketing.",
+        ["Metabolic and body-composition context is the clearest lane", "Broad fat-loss language is looser than the best comparison lane", "Amount and formula setting still matter"],
+        "Keep this lane practical and product-aware rather than hypey.",
+        "Help the shopper compare 7-Keto labels through the exact disclosed active and the rest of the formula.",
+      ),
+      buildSectionPlan(
+        "why_it_reads_differently_from_dhea",
+        "Why it reads differently from DHEA",
+        "Explain why 7-Keto is usually interpreted through its own metabolite lane instead of being treated like ordinary DHEA marketing shorthand.",
+        ["The shopper should not flatten 7-Keto into a generic DHEA story", "Formula context still changes comparison value", "The exact row and amount matter more than broad category language"],
+        "Use this section to keep interpretation specific and comparison-oriented.",
+        "Help the shopper understand why 7-Keto products should be compared through the exact metabolite line, not through broad category assumptions.",
+      ),
+    ];
+  }
+
+  if (descriptor.ingredientFamily === "cla") {
+    return [
+      buildSectionPlan(
+        "body_composition_context",
+        "Body-composition context",
+        "Explain the body-composition and fat-metabolism lane that makes CLA easier to interpret than generic slimming copy.",
+        ["Body-composition context is the clearest CLA lane", "Generic slimming or weight-loss language can overreach", "The exact formula and disclosed amount still matter"],
+        "Keep this lane specific and shopper-safe.",
+        "Help the shopper compare CLA products through the exact fatty-acid line and disclosed amount.",
+      ),
+      buildSectionPlan(
+        "source_oil_and_isomer_detail",
+        "Source oil and isomer detail",
+        "Explain why safflower-oil source detail or CLA isomer wording can change how directly one CLA label compares with another.",
+        ["Source-oil detail can change comparison value", "Isomer or source wording helps separate similar-sounding CLA labels", "Do not turn this into a universal superiority claim"],
+        "Keep this section label-aware and comparison-focused.",
+        "Tell the shopper why the source line matters before treating two CLA formulas as close substitutes.",
+      ),
+    ];
+  }
+
+  if (descriptor.ingredientFamily === "carnitine") {
+    return [
+      buildSectionPlan(
+        "energy_transport_and_exercise_context",
+        "Energy transport and exercise context",
+        "Explain the energy-transport and exercise-context lane that makes carnitine easier to interpret than generic performance slogans.",
+        ["Energy-transport context is the clearest lane", "Broad performance language can sound bigger than the main evidence lane", "Amount and formula setting still shape interpretation"],
+        "Keep this lane product-aware and comparison-friendly.",
+        "Help the shopper compare carnitine products through the exact active line and the disclosed amount.",
+      ),
+      buildSectionPlan(
+        "what_form_disclosure_changes_for_carnitine",
+        "What form disclosure changes",
+        "Explain why acetyl-L-carnitine, L-carnitine tartrate, or other form wording changes how shoppers compare carnitine formulas.",
+        ["Form disclosure changes comparison value", "Different carnitine forms often live in different shopping contexts", "Do not turn this into a best-form ranking"],
+        "Keep this section precise and label-aware.",
+        "Help the shopper understand why carnitine form detail often matters more than broad performance packaging language.",
       ),
     ];
   }
@@ -1077,18 +1194,22 @@ export const resolveScientificBackgroundExecutionProfile = (
     return {
       preferLiveWriter: false,
       timeoutMs: LABEL_CONTEXT_MODE_TIMEOUT_MS,
+      backgroundRefreshTimeoutMs: LABEL_CONTEXT_MODE_TIMEOUT_MS,
       maxRetries: 0,
+      backgroundRefreshMaxRetries: 0,
       maxTokens: LABEL_CONTEXT_MODE_MAX_TOKENS,
       cacheTtlMs: LABEL_CONTEXT_MODE_CACHE_TTL_MS,
     };
   }
 
-  if (plan.family === "omega_3" && isOmega3Dha(plan.selectedLabel)) {
+  if (plan.family === "omega_3") {
     return {
       preferLiveWriter: true,
-      timeoutMs: DHA_RESEARCH_MODE_TIMEOUT_MS,
-      maxRetries: LLM_MAX_RETRIES,
-      maxTokens: RESEARCH_MODE_MAX_TOKENS,
+      timeoutMs: isOmega3Dha(plan.selectedLabel) ? DHA_RESEARCH_MODE_TIMEOUT_MS : OMEGA3_RESEARCH_MODE_TIMEOUT_MS,
+      backgroundRefreshTimeoutMs: DHA_RESEARCH_MODE_BACKGROUND_REFRESH_TIMEOUT_MS,
+      maxRetries: TARGETED_RESEARCH_MODE_MAX_RETRIES,
+      backgroundRefreshMaxRetries: BACKGROUND_REFRESH_MAX_RETRIES,
+      maxTokens: TARGETED_RESEARCH_MODE_MAX_TOKENS,
       cacheTtlMs: RESEARCH_MODE_CACHE_TTL_MS,
     };
   }
@@ -1097,7 +1218,9 @@ export const resolveScientificBackgroundExecutionProfile = (
     return {
       preferLiveWriter: true,
       timeoutMs: MAGNESIUM_RESEARCH_MODE_TIMEOUT_MS,
+      backgroundRefreshTimeoutMs: LONG_RESEARCH_MODE_BACKGROUND_REFRESH_TIMEOUT_MS,
       maxRetries: LLM_MAX_RETRIES,
+      backgroundRefreshMaxRetries: BACKGROUND_REFRESH_MAX_RETRIES,
       maxTokens: RESEARCH_MODE_MAX_TOKENS,
       cacheTtlMs: RESEARCH_MODE_CACHE_TTL_MS,
     };
@@ -1107,7 +1230,9 @@ export const resolveScientificBackgroundExecutionProfile = (
     return {
       preferLiveWriter: true,
       timeoutMs: CURCUMIN_RESEARCH_MODE_TIMEOUT_MS,
+      backgroundRefreshTimeoutMs: LONG_RESEARCH_MODE_BACKGROUND_REFRESH_TIMEOUT_MS,
       maxRetries: LLM_MAX_RETRIES,
+      backgroundRefreshMaxRetries: BACKGROUND_REFRESH_MAX_RETRIES,
       maxTokens: RESEARCH_MODE_MAX_TOKENS,
       cacheTtlMs: RESEARCH_MODE_CACHE_TTL_MS,
     };
@@ -1117,7 +1242,9 @@ export const resolveScientificBackgroundExecutionProfile = (
     return {
       preferLiveWriter: true,
       timeoutMs: ASHWAGANDHA_RESEARCH_MODE_TIMEOUT_MS,
+      backgroundRefreshTimeoutMs: LONG_RESEARCH_MODE_BACKGROUND_REFRESH_TIMEOUT_MS,
       maxRetries: LLM_MAX_RETRIES,
+      backgroundRefreshMaxRetries: BACKGROUND_REFRESH_MAX_RETRIES,
       maxTokens: RESEARCH_MODE_MAX_TOKENS,
       cacheTtlMs: RESEARCH_MODE_CACHE_TTL_MS,
     };
@@ -1127,7 +1254,9 @@ export const resolveScientificBackgroundExecutionProfile = (
     return {
       preferLiveWriter: true,
       timeoutMs: GINSENG_RESEARCH_MODE_TIMEOUT_MS,
+      backgroundRefreshTimeoutMs: LONG_RESEARCH_MODE_BACKGROUND_REFRESH_TIMEOUT_MS,
       maxRetries: LLM_MAX_RETRIES,
+      backgroundRefreshMaxRetries: BACKGROUND_REFRESH_MAX_RETRIES,
       maxTokens: RESEARCH_MODE_MAX_TOKENS,
       cacheTtlMs: RESEARCH_MODE_CACHE_TTL_MS,
     };
@@ -1137,8 +1266,70 @@ export const resolveScientificBackgroundExecutionProfile = (
     return {
       preferLiveWriter: true,
       timeoutMs: GREEN_TEA_EXTRACT_RESEARCH_MODE_TIMEOUT_MS,
+      backgroundRefreshTimeoutMs: LONG_RESEARCH_MODE_BACKGROUND_REFRESH_TIMEOUT_MS,
+      maxRetries: TARGETED_RESEARCH_MODE_MAX_RETRIES,
+      backgroundRefreshMaxRetries: BACKGROUND_REFRESH_MAX_RETRIES,
+      maxTokens: TARGETED_RESEARCH_MODE_MAX_TOKENS,
+      cacheTtlMs: RESEARCH_MODE_CACHE_TTL_MS,
+    };
+  }
+
+  if (plan.family === "7keto_dhea_metabolite") {
+    return {
+      preferLiveWriter: true,
+      timeoutMs: SEVEN_KETO_RESEARCH_MODE_TIMEOUT_MS,
+      backgroundRefreshTimeoutMs: LONG_RESEARCH_MODE_BACKGROUND_REFRESH_TIMEOUT_MS,
+      maxRetries: TARGETED_RESEARCH_MODE_MAX_RETRIES,
+      backgroundRefreshMaxRetries: BACKGROUND_REFRESH_MAX_RETRIES,
+      maxTokens: TARGETED_RESEARCH_MODE_MAX_TOKENS,
+      cacheTtlMs: RESEARCH_MODE_CACHE_TTL_MS,
+    };
+  }
+
+  if (plan.family === "cla") {
+    return {
+      preferLiveWriter: true,
+      timeoutMs: CLA_RESEARCH_MODE_TIMEOUT_MS,
+      backgroundRefreshTimeoutMs: LONG_RESEARCH_MODE_BACKGROUND_REFRESH_TIMEOUT_MS,
+      maxRetries: TARGETED_RESEARCH_MODE_MAX_RETRIES,
+      backgroundRefreshMaxRetries: BACKGROUND_REFRESH_MAX_RETRIES,
+      maxTokens: TARGETED_RESEARCH_MODE_MAX_TOKENS,
+      cacheTtlMs: RESEARCH_MODE_CACHE_TTL_MS,
+    };
+  }
+
+  if (plan.family === "carnitine") {
+    return {
+      preferLiveWriter: true,
+      timeoutMs: CARNITINE_RESEARCH_MODE_TIMEOUT_MS,
+      backgroundRefreshTimeoutMs: LONG_RESEARCH_MODE_BACKGROUND_REFRESH_TIMEOUT_MS,
+      maxRetries: TARGETED_RESEARCH_MODE_MAX_RETRIES,
+      backgroundRefreshMaxRetries: BACKGROUND_REFRESH_MAX_RETRIES,
+      maxTokens: TARGETED_RESEARCH_MODE_MAX_TOKENS,
+      cacheTtlMs: RESEARCH_MODE_CACHE_TTL_MS,
+    };
+  }
+
+  if (plan.family === "b3_niacinamide") {
+    return {
+      preferLiveWriter: true,
+      timeoutMs: NIACINAMIDE_RESEARCH_MODE_TIMEOUT_MS,
+      backgroundRefreshTimeoutMs: RESEARCH_MODE_BACKGROUND_REFRESH_TIMEOUT_MS,
       maxRetries: LLM_MAX_RETRIES,
+      backgroundRefreshMaxRetries: BACKGROUND_REFRESH_MAX_RETRIES,
       maxTokens: RESEARCH_MODE_MAX_TOKENS,
+      cacheTtlMs: RESEARCH_MODE_CACHE_TTL_MS,
+    };
+  }
+
+  if (plan.family === "5htp") {
+    return {
+      preferLiveWriter: true,
+      timeoutMs: HTP5_RESEARCH_MODE_TIMEOUT_MS,
+      backgroundRefreshTimeoutMs: LONG_RESEARCH_MODE_BACKGROUND_REFRESH_TIMEOUT_MS,
+      maxRetries: TARGETED_RESEARCH_MODE_MAX_RETRIES,
+      backgroundRefreshMaxRetries: BACKGROUND_REFRESH_MAX_RETRIES,
+      maxTokens: TARGETED_RESEARCH_MODE_MAX_TOKENS,
       cacheTtlMs: RESEARCH_MODE_CACHE_TTL_MS,
     };
   }
@@ -1147,7 +1338,9 @@ export const resolveScientificBackgroundExecutionProfile = (
     return {
       preferLiveWriter: true,
       timeoutMs: B12_RESEARCH_MODE_TIMEOUT_MS,
+      backgroundRefreshTimeoutMs: RESEARCH_MODE_BACKGROUND_REFRESH_TIMEOUT_MS,
       maxRetries: LLM_MAX_RETRIES,
+      backgroundRefreshMaxRetries: BACKGROUND_REFRESH_MAX_RETRIES,
       maxTokens: RESEARCH_MODE_MAX_TOKENS,
       cacheTtlMs: RESEARCH_MODE_CACHE_TTL_MS,
     };
@@ -1157,7 +1350,9 @@ export const resolveScientificBackgroundExecutionProfile = (
     return {
       preferLiveWriter: true,
       timeoutMs: FOLATE_RESEARCH_MODE_TIMEOUT_MS,
+      backgroundRefreshTimeoutMs: RESEARCH_MODE_BACKGROUND_REFRESH_TIMEOUT_MS,
       maxRetries: LLM_MAX_RETRIES,
+      backgroundRefreshMaxRetries: BACKGROUND_REFRESH_MAX_RETRIES,
       maxTokens: RESEARCH_MODE_MAX_TOKENS,
       cacheTtlMs: RESEARCH_MODE_CACHE_TTL_MS,
     };
@@ -1167,7 +1362,9 @@ export const resolveScientificBackgroundExecutionProfile = (
     return {
       preferLiveWriter: true,
       timeoutMs: B6_RESEARCH_MODE_TIMEOUT_MS,
+      backgroundRefreshTimeoutMs: RESEARCH_MODE_BACKGROUND_REFRESH_TIMEOUT_MS,
       maxRetries: LLM_MAX_RETRIES,
+      backgroundRefreshMaxRetries: BACKGROUND_REFRESH_MAX_RETRIES,
       maxTokens: RESEARCH_MODE_MAX_TOKENS,
       cacheTtlMs: RESEARCH_MODE_CACHE_TTL_MS,
     };
@@ -1177,7 +1374,9 @@ export const resolveScientificBackgroundExecutionProfile = (
     return {
       preferLiveWriter: true,
       timeoutMs: VITAMIN_D_RESEARCH_MODE_TIMEOUT_MS,
+      backgroundRefreshTimeoutMs: RESEARCH_MODE_BACKGROUND_REFRESH_TIMEOUT_MS,
       maxRetries: LLM_MAX_RETRIES,
+      backgroundRefreshMaxRetries: BACKGROUND_REFRESH_MAX_RETRIES,
       maxTokens: RESEARCH_MODE_MAX_TOKENS,
       cacheTtlMs: RESEARCH_MODE_CACHE_TTL_MS,
     };
@@ -1187,7 +1386,9 @@ export const resolveScientificBackgroundExecutionProfile = (
     return {
       preferLiveWriter: true,
       timeoutMs: CALCIUM_RESEARCH_MODE_TIMEOUT_MS,
+      backgroundRefreshTimeoutMs: RESEARCH_MODE_BACKGROUND_REFRESH_TIMEOUT_MS,
       maxRetries: LLM_MAX_RETRIES,
+      backgroundRefreshMaxRetries: BACKGROUND_REFRESH_MAX_RETRIES,
       maxTokens: RESEARCH_MODE_MAX_TOKENS,
       cacheTtlMs: RESEARCH_MODE_CACHE_TTL_MS,
     };
@@ -1197,7 +1398,9 @@ export const resolveScientificBackgroundExecutionProfile = (
     return {
       preferLiveWriter: true,
       timeoutMs: IRON_RESEARCH_MODE_TIMEOUT_MS,
+      backgroundRefreshTimeoutMs: LONG_RESEARCH_MODE_BACKGROUND_REFRESH_TIMEOUT_MS,
       maxRetries: LLM_MAX_RETRIES,
+      backgroundRefreshMaxRetries: BACKGROUND_REFRESH_MAX_RETRIES,
       maxTokens: RESEARCH_MODE_MAX_TOKENS,
       cacheTtlMs: RESEARCH_MODE_CACHE_TTL_MS,
     };
@@ -1207,7 +1410,9 @@ export const resolveScientificBackgroundExecutionProfile = (
     return {
       preferLiveWriter: true,
       timeoutMs: MELATONIN_RESEARCH_MODE_TIMEOUT_MS,
+      backgroundRefreshTimeoutMs: RESEARCH_MODE_BACKGROUND_REFRESH_TIMEOUT_MS,
       maxRetries: LLM_MAX_RETRIES,
+      backgroundRefreshMaxRetries: BACKGROUND_REFRESH_MAX_RETRIES,
       maxTokens: RESEARCH_MODE_MAX_TOKENS,
       cacheTtlMs: RESEARCH_MODE_CACHE_TTL_MS,
     };
@@ -1216,7 +1421,9 @@ export const resolveScientificBackgroundExecutionProfile = (
   return {
     preferLiveWriter: true,
     timeoutMs: RESEARCH_MODE_TIMEOUT_MS,
+    backgroundRefreshTimeoutMs: RESEARCH_MODE_BACKGROUND_REFRESH_TIMEOUT_MS,
     maxRetries: LLM_MAX_RETRIES,
+    backgroundRefreshMaxRetries: BACKGROUND_REFRESH_MAX_RETRIES,
     maxTokens: RESEARCH_MODE_MAX_TOKENS,
     cacheTtlMs: RESEARCH_MODE_CACHE_TTL_MS,
   };
@@ -1227,6 +1434,25 @@ const buildPrompt = (params: {
   plan: ScientificBackgroundPlan;
   selectedDescriptor: IngredientScienceDescriptor | null;
 }): string => {
+  const selectedRoleLabel = (() => {
+    switch (params.selectedDescriptor?.lineRole) {
+      case "primary_active":
+        return "lead active";
+      case "companion_nutrient":
+        return "supporting nutrient";
+      case "source_line":
+        return "source line";
+      case "aggregate_line":
+        return "total line";
+      case "breakdown_line":
+        return "breakdown line";
+      case "blend_line":
+        return "blend-style line";
+      default:
+        return "supporting formula line";
+    }
+  })();
+
   const payload = {
     selectedItem: {
       name: params.plan.selectedLabel,
@@ -1234,10 +1460,20 @@ const buildPrompt = (params: {
       family: params.plan.family,
       mode: params.plan.mode,
       lineRole: params.selectedDescriptor?.lineRole ?? "generic_line",
+      roleLabel: selectedRoleLabel,
+      categoryHint: params.selectedDescriptor?.categoryHint ?? null,
+      sourceContext: params.selectedDescriptor?.sourceContext ?? null,
+      formContext: params.selectedDescriptor?.formContext ?? null,
     },
     formulaContext: {
       productName: params.context.productName,
+      productArchetype: params.context.productArchetype,
       formulaMode: params.context.formulaMode,
+      sourceType: params.context.sourceType,
+      ingredientSourceTier: params.context.ingredientSourceTier,
+      anchorIngredient: params.context.anchorIngredient,
+      coIngredients: params.context.coIngredients.slice(0, 4),
+      relationshipCandidates: params.context.relationshipCandidates.slice(0, 3),
       labelConstraints: params.context.labelConstraints,
     },
     sectionPlan: params.plan.sections.map((section) => ({
@@ -1442,6 +1678,10 @@ const buildPrompt = (params: {
     "Explain the research map for the selected item, not the product's full ingredient list.",
     "If mode is research_mode, show the main research lane, the narrower or more mixed lanes, and why that distinction matters.",
     "If mode is label_context_mode, explain what the selected line means on the label and why it matters for comparison, without pretending it is a stand-alone research ingredient.",
+    "If productArchetype is functional_food_like, prefer label-reading and formula-role interpretation over stand-alone research storytelling.",
+    "Use the selected item's lineRole, categoryHint, sourceContext, formContext, coIngredients, relationshipCandidates, and anchorIngredient to explain this ingredient inside this formula, not in isolation.",
+    "Make it clear when the selected line is the lead active versus a companion nutrient, supporting line, source line, total line, or breakdown line.",
+    "When surrounding co-ingredients or pairing candidates matter, explain how they change interpretation without turning them into the main active.",
     "Do not redefine ingredient identity, rewrite the factual ingredient list, or write support-claim marketing copy.",
     "Do not open sections with 'X is studied' or 'X is discussed'. Start with the evidence lane, outcome cluster, or label-reading takeaway instead.",
     "Each section summary should read like an interpretation for a shopper, not a textbook intro or a restatement of the heading.",
@@ -1454,6 +1694,31 @@ const buildPrompt = (params: {
     'Return JSON only with this shape: {"introLine":"...","sections":[{"headingId":"...","heading":"...","summary":"...","bullets":["...","..."],"evidenceRead":"...","shopperMeaning":"..."}],"closingNote":"..."}',
     `INPUT_JSON: ${JSON.stringify(payload)}`,
   ].join("\n");
+};
+
+const lineRoleNarrative = (value: string | null | undefined): string => {
+  switch (value) {
+    case "primary_active":
+      return "lead active";
+    case "companion_nutrient":
+      return "supporting nutrient";
+    case "source_line":
+      return "source line";
+    case "aggregate_line":
+      return "total line";
+    case "breakdown_line":
+      return "breakdown line";
+    case "blend_line":
+      return "blend-style line";
+    default:
+      return "supporting formula line";
+  }
+};
+
+const joinReadableList = (values: string[]): string => {
+  if (values.length <= 1) return values[0] ?? "";
+  if (values.length === 2) return `${values[0]} and ${values[1]}`;
+  return `${values.slice(0, -1).join(", ")}, and ${values[values.length - 1]}`;
 };
 
 const parseWriterOutput = (raw: string): ScientificBackgroundWriterOutput | null => {
@@ -1663,9 +1928,18 @@ const gateScientificBackground = (params: {
 const buildSectionFallback = (
   plan: ScientificBackgroundPlan,
   section: ScientificBackgroundSectionPlan,
+  context?: IngredientScienceContext,
 ): ScientificBackgroundSection => {
   const label = buildReferenceLabel(plan);
   const narrativeLabel = buildNarrativeLabel(plan);
+  const selectedDescriptor = context ? getSelectedDescriptor(context, plan.selectedLabel) : null;
+  const anchorName = context?.anchorIngredient?.name ?? null;
+  const companionNames =
+    context?.coIngredients
+      .filter((row) => normalizeIngredientScienceKey(row.name) !== normalizeIngredientScienceKey(plan.selectedLabel))
+      .map((row) => row.name)
+      .slice(0, 2) ?? [];
+  const relationshipStatement = context?.relationshipCandidates[0]?.safeStatement ?? null;
   switch (section.headingId) {
     case "antioxidant_activity":
       return {
@@ -2318,6 +2592,78 @@ const buildSectionFallback = (
         evidenceRead: "This is a comparison lane first: concentration detail sharpens interpretation even when it does not settle every efficacy question.",
         shopperMeaning: "When comparing green tea extract products, exact concentration detail is often one of the best clues to whether two labels actually belong in the same comparison set.",
       };
+    case "metabolic_and_body_composition_context":
+      return {
+        heading: section.heading,
+        summary: `${label} is easiest to read through metabolic-rate and body-composition context rather than through generic fat-loss language, because that is the clearest lane for comparing 7-Keto formulas.`,
+        bullets: [
+          "This is the tightest comparison lane for 7-Keto because it stays closer to the actual disclosed active than broad slimming copy.",
+          "The stated amount and the rest of the formula still shape how much weight the shopper should give the row.",
+          "That keeps the card useful for comparison without turning it into a blanket weight-loss promise.",
+        ],
+        evidenceRead: "This is the clearest and most comparison-friendly 7-Keto lane, but it should still stay narrower than broad metabolic marketing.",
+        shopperMeaning: "Use the exact 7-Keto row and disclosed amount as the comparison anchor before giving extra weight to generic body-composition packaging language.",
+      };
+    case "why_it_reads_differently_from_dhea":
+      return {
+        heading: section.heading,
+        summary: `${label} should usually be read through its own metabolite-specific lane rather than being flattened into ordinary DHEA-style category language, because that shortcut makes the label harder to compare accurately.`,
+        bullets: [
+          "A 7-Keto row is not the same thing as a generic DHEA headline, even when shoppers may loosely associate the two.",
+          "The exact ingredient wording helps the shopper compare like with like instead of relying on category shorthand.",
+          "Formula setting still matters because 7-Keto can be central in some products and just one active in others.",
+        ],
+        evidenceRead: "This section keeps interpretation specific and comparison-oriented rather than letting the card collapse back into generic hormone-adjacent language.",
+        shopperMeaning: "Compare products through the exact metabolite line before assuming they belong in the same bucket as broader DHEA-style formulas.",
+      };
+    case "body_composition_context":
+      return {
+        heading: section.heading,
+        summary: `${label} is easiest to read through body-composition and fatty-acid context rather than through generic slimming language, because that is the clearest lane for comparing CLA labels.`,
+        bullets: [
+          "This lane keeps the shopper focused on the disclosed CLA row instead of broad weight-loss packaging copy.",
+          "The stated amount and the rest of the formula still change how central the CLA line really is.",
+          "That makes label detail more useful than broad category wording when products are compared.",
+        ],
+        evidenceRead: "This is the cleanest CLA lane, but it should stay narrower and more label-aware than generic slimming claims.",
+        shopperMeaning: "Compare CLA products through the exact row and amount before treating broad body-composition wording as the whole story.",
+      };
+    case "source_oil_and_isomer_detail":
+      return {
+        heading: section.heading,
+        summary: `Source-oil and isomer detail matter for ${label} because safflower-oil wording or more explicit CLA disclosure can change how directly one label compares with another.`,
+        bullets: [
+          "A source-oil line can carry real comparison value when the top-level category wording is broad.",
+          "More explicit fatty-acid wording often makes the label easier to compare than generic CLA shorthand alone.",
+          "This is most useful as a precision and label-reading tool, not as a universal best-source claim.",
+        ],
+        evidenceRead: "This section is about comparison precision: source and isomer detail can matter even when two products both sound like CLA formulas at the top level.",
+        shopperMeaning: "Read the source-oil line before assuming two CLA labels are close substitutes.",
+      };
+    case "energy_transport_and_exercise_context":
+      return {
+        heading: section.heading,
+        summary: `${label} is easiest to interpret through energy-transport and exercise-context language rather than through generic performance slogans, because that is the clearest lane for reading carnitine on a supplement label.`,
+        bullets: [
+          "This keeps the shopper anchored to the actual carnitine row instead of broad performance marketing.",
+          "The amount and the rest of the formula still affect how central the carnitine line is to the purchase decision.",
+          "That makes the exact active line more useful than top-level category language when products are compared.",
+        ],
+        evidenceRead: "This is the clearest carnitine lane, but it should stay narrower and more product-aware than broad performance copy.",
+        shopperMeaning: "Compare carnitine products through the named active and amount before treating broad performance wording as the main evidence lane.",
+      };
+    case "what_form_disclosure_changes_for_carnitine":
+      return {
+        heading: section.heading,
+        summary: `Form disclosure matters for ${label} because acetyl-L-carnitine, L-carnitine tartrate, and other carnitine lines can change how directly one formula compares with another.`,
+        bullets: [
+          "Form wording often changes product comparison value more than broad performance language alone.",
+          "Different carnitine forms can live in different shopping contexts even when the category name sounds similar.",
+          "This is most useful as a label-reading distinction, not as a blanket best-form ranking.",
+        ],
+        evidenceRead: "This section is about precision and comparison rather than about declaring one carnitine form universally superior.",
+        shopperMeaning: "Check the exact carnitine form before assuming two formulas belong in the same comparison set.",
+      };
     case "lipid_and_triglyceride_research":
       return {
         heading: section.heading,
@@ -2451,9 +2797,31 @@ const buildSectionFallback = (
         shopperMeaning: "It helps the shopper understand why two probiotic products in the same category may not be equally comparable.",
       };
     case "most_studied_roles":
+      if (context && selectedDescriptor) {
+        const roleText = lineRoleNarrative(selectedDescriptor.lineRole);
+        const companionText = companionNames.length
+          ? `It appears alongside ${joinReadableList(companionNames)}, so the surrounding formula changes which research lane should carry the most weight.`
+          : "The surrounding formula still changes which research lane should carry the most weight.";
+        return {
+          heading: section.heading,
+          summary: `${label} is more useful to read through the specific role it plays as a ${roleText} in this formula than through a broad umbrella of unrelated research directions.`,
+          bullets: [
+            companionText,
+            selectedDescriptor.formContext
+              ? `The line also includes ${selectedDescriptor.formContext} wording, which changes how directly it can be compared with simpler labels.`
+              : "Exact ingredient identity and dose still shape which lane is most central.",
+            "Not every broad claim deserves the same weight once the label role and co-ingredients are visible.",
+          ]
+            .map((bullet) => normalizeText(bullet))
+            .filter(Boolean)
+            .slice(0, 3),
+          evidenceRead: "This section is an orientation tool for the ingredient inside this formula, not a blanket endorsement of every broad claim associated with the category.",
+          shopperMeaning: `Use ${label} as part of the full formula map, then compare how clearly the label separates the lead active from supporting or structural lines.`,
+        };
+      }
       return {
         heading: section.heading,
-        summary: `${label} appears in several research directions, but some outcomes are usually more central than others depending on the exact ingredient identity and dose.`,
+        summary: `${label} is easier to interpret when the shopper focuses on the exact ingredient role, amount, and label detail instead of treating every broad research direction as equally central.`,
         bullets: [
           "Research emphasis changes with the exact ingredient and formula setting.",
           "Not every broad claim is equally central to the evidence.",
@@ -2597,6 +2965,37 @@ const buildSectionFallback = (
         shopperMeaning: "It helps the shopper understand why a more itemized label is usually easier to compare than a broad blend line by itself.",
       };
     default:
+      if (context && selectedDescriptor) {
+        const roleText = lineRoleNarrative(selectedDescriptor.lineRole);
+        const anchorContext =
+          anchorName && normalizeIngredientScienceKey(anchorName) !== normalizeIngredientScienceKey(plan.selectedLabel)
+            ? ` around ${anchorName}`
+            : "";
+        const formBullet = selectedDescriptor.formContext
+          ? `The line includes ${selectedDescriptor.formContext} wording, which changes how directly it can be compared with simpler labels.`
+          : `This row behaves like a ${roleText}${anchorContext}, so the formula context matters as much as the ingredient family.`;
+        const companionBullet = companionNames.length
+          ? `${label} appears alongside ${joinReadableList(companionNames)}, so shoppers should read it in the context of the surrounding formula rather than as an isolated ingredient story.`
+          : dedupe(section.bulletThemes)[0] ?? "Amount, identity, and surrounding formula context all affect interpretation.";
+        const relationshipBullet =
+          relationshipStatement ??
+          dedupe(section.bulletThemes)[1] ??
+          "The rest of the label can change how central this ingredient really is for product comparison.";
+        return {
+          heading: section.heading,
+          summary: `The useful way to read ${label} in this formula depends on its role as a ${roleText}${anchorContext}, not just on the broad category it belongs to.`,
+          bullets: [
+            formBullet,
+            companionBullet,
+            relationshipBullet,
+          ]
+            .map((bullet) => normalizeText(bullet))
+            .filter(Boolean)
+            .slice(0, 3),
+          evidenceRead: "This is a formula-aware orientation section, not a universal claim about the ingredient in every product.",
+          shopperMeaning: `Use ${label} as one part of the formula map, then compare how clearly the label separates the lead active from companion or structural lines.`,
+        };
+      }
       return {
         heading: section.heading,
         summary: `The useful way to read ${label} still depends on the exact ingredient identity, amount, and label detail, not just on the broad category it belongs to.`,
@@ -2624,11 +3023,11 @@ export const buildScientificBackgroundDeterministicFallback = (params: {
     selectedLabel: plan.selectedLabel,
     selectedDose: plan.selectedDose,
     introLine: plan.selectedDose ? `${buildReferenceLabel(plan)} • ${plan.selectedDose}` : buildReferenceLabel(plan),
-    sections: plan.sections.map((section) => buildSectionFallback(plan, section)),
+    sections: plan.sections.map((section) => buildSectionFallback(plan, section, params.context)),
     closingNote:
       plan.mode === "research_mode"
-        ? "Read the research context as outcome-specific guidance, not as a blanket promise for every claim on the label."
-        : "Read this line as label context first, then compare it with the more specific ingredient rows that carry the strongest decision value.",
+        ? "Read the research context as outcome-specific guidance within this formula, not as a blanket promise for every claim on the label."
+        : "Read this line as label context first, then compare it with the more specific ingredient rows and the lead active that carry the strongest decision value.",
   };
 };
 
@@ -2656,6 +3055,22 @@ export const compileScientificBackgroundAsync = async (
     plan,
   });
   const llmFn = opts?.llmFn;
+  const timeoutMs = opts?.timeoutMs ?? LLM_TIMEOUT_MS;
+  const maxRetries = opts?.maxRetries ?? LLM_MAX_RETRIES;
+  const diagnostics: ScientificBackgroundCompileDiagnostics = {
+    liveWriterConfigured: Boolean(llmFn),
+    liveWriterAttempted: false,
+    liveWriterHit: false,
+    attemptCount: 0,
+    timeoutMs,
+    maxRetries,
+    fallbackReason: null,
+    lastError: null,
+    parseFailureCount: 0,
+    gateRejectCount: 0,
+    timeoutCount: 0,
+    errorCount: 0,
+  };
 
   if (!llmFn) {
     return {
@@ -2663,30 +3078,44 @@ export const compileScientificBackgroundAsync = async (
       source: "fallback",
       fallbackUsed: true,
       promptVersion: SCIENTIFIC_BACKGROUND_PROMPT_VERSION,
+      diagnostics: {
+        ...diagnostics,
+        fallbackReason: "llm_unconfigured",
+      },
     };
   }
 
   const selectedDescriptor = getSelectedDescriptor(context, selectedIngredientName);
   const prompt = buildPrompt({ context, plan, selectedDescriptor });
-  const timeoutMs = opts?.timeoutMs ?? LLM_TIMEOUT_MS;
-  const maxRetries = opts?.maxRetries ?? LLM_MAX_RETRIES;
 
   for (let attempt = 0; attempt <= maxRetries; attempt += 1) {
+    diagnostics.liveWriterAttempted = true;
+    diagnostics.attemptCount = attempt + 1;
     try {
       const raw = await withTimeout(llmFn(prompt), timeoutMs);
       const parsed = parseWriterOutput(raw);
-      if (!parsed) continue;
+      if (!parsed) {
+        diagnostics.parseFailureCount += 1;
+        diagnostics.fallbackReason = "parse_failed";
+        continue;
+      }
       const repaired = repairWriterOutput({
         plan,
         parsed,
       });
-      if (!repaired) continue;
+      if (!repaired) {
+        diagnostics.parseFailureCount += 1;
+        diagnostics.fallbackReason = "repair_failed";
+        continue;
+      }
       if (
         !gateScientificBackground({
           requestedIngredientName: plan.selectedLabel,
           repaired,
         })
       ) {
+        diagnostics.gateRejectCount += 1;
+        diagnostics.fallbackReason = "quality_gate_rejected";
         continue;
       }
 
@@ -2695,11 +3124,20 @@ export const compileScientificBackgroundAsync = async (
         source: "api",
         fallbackUsed: false,
         promptVersion: SCIENTIFIC_BACKGROUND_PROMPT_VERSION,
+        diagnostics: {
+          ...diagnostics,
+          liveWriterHit: true,
+          fallbackReason: null,
+          lastError: null,
+        },
       };
     } catch (error) {
-      if (!(error instanceof Error) || error.message !== "llm_timeout") {
-        continue;
-      }
+      const reason = resolveErrorReason(error);
+      diagnostics.lastError = reason;
+      diagnostics.fallbackReason = reason;
+      if (reason === "llm_timeout") diagnostics.timeoutCount += 1;
+      else diagnostics.errorCount += 1;
+      continue;
     }
   }
 
@@ -2708,5 +3146,15 @@ export const compileScientificBackgroundAsync = async (
     source: "fallback",
     fallbackUsed: true,
     promptVersion: SCIENTIFIC_BACKGROUND_PROMPT_VERSION,
+    diagnostics: {
+      ...diagnostics,
+      fallbackReason:
+        diagnostics.fallbackReason ??
+        (diagnostics.parseFailureCount > 0
+          ? "parse_failed"
+          : diagnostics.gateRejectCount > 0
+            ? "quality_gate_rejected"
+            : "exhausted_without_valid_output"),
+    },
   };
 };

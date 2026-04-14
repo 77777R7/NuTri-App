@@ -13,12 +13,16 @@ type OverlayClaimsLike = {
 
 export type IngredientScienceSourceType = "dsld" | "iherb_overlay" | "other";
 export type IngredientScienceFormulaMode = "single_ingredient" | "multi_ingredient" | "blend";
+export type IngredientScienceProductArchetype = "standard_supplement" | "functional_food_like";
 export type IngredientScienceIngredientFamily =
   | "astaxanthin_carotenoid"
   | "curcumin"
   | "ashwagandha"
   | "ginseng"
   | "green_tea_extract"
+  | "7keto_dhea_metabolite"
+  | "cla"
+  | "carnitine"
   | "5htp"
   | "b3_niacinamide"
   | "glycine"
@@ -67,6 +71,7 @@ export type IngredientScienceDescriptor = {
 
 export type IngredientScienceContext = {
   productName: string;
+  productArchetype: IngredientScienceProductArchetype;
   ingredientSourceTier: "overlay_iherb" | "official_record";
   sourceType: IngredientScienceSourceType;
   ingredientRows: ScienceIngredientRow[];
@@ -77,13 +82,20 @@ export type IngredientScienceContext = {
   anchorIngredient: {
     name: string;
     dose: string | null;
+    ingredientFamily: IngredientScienceIngredientFamily;
+    lineRole: IngredientScienceLineRole;
     categoryHint: string | null;
     sourceContext: string | null;
+    formContext: string | null;
   } | null;
   coIngredients: Array<{
     name: string;
     dose: string | null;
+    ingredientFamily: IngredientScienceIngredientFamily;
+    lineRole: IngredientScienceLineRole;
     categoryHint: string | null;
+    sourceContext: string | null;
+    formContext: string | null;
   }>;
   relationshipCandidates: IngredientScienceRelationshipCandidate[];
   labelConstraints: {
@@ -106,6 +118,9 @@ const B3_PATTERN = /\bvitamin\s*b3\b|\bb3\b|\bniacinamide\b|\bniacin\b|\bnicotin
 const GLYCINE_PATTERN = /\bglycine\b/i;
 const TAURINE_PATTERN = /\btaurine\b/i;
 const INOSITOL_PATTERN = /\b(?:myo[\s-]*)?inositol\b|\bd[\s-]*chiro[\s-]*inositol\b/i;
+const SEVEN_KETO_PATTERN = /\b7[\s-]*keto\b|\bacetate[\s-]*7[\s-]*one\b|\bdhea[\s-]*acetate[\s-]*7[\s-]*one\b/i;
+const CLA_PATTERN = /\bcla\b|\bconjugated\s+linoleic\s+acid\b/i;
+const CARNITINE_PATTERN = /\bacetyl[\s-]*l[\s-]*carnitine\b|\bl[\s-]*carnitine\b|\bcarnitine\b|\balcar\b/i;
 const CURCUMIN_PATTERN = /\bcurcumin\b|\bturmeric\s+extract\b|\bcurcuminoids?\b/i;
 const ASHWAGANDHA_PATTERN = /\bashwagandha\b|\bwithania\s+somnifera\b|\bksm-?66\b|\bsensoril\b/i;
 const GINSENG_PATTERN = /\bginseng\b|\bpanax\b|\bamerican\s+ginseng\b|\bred\s+ginseng\b/i;
@@ -116,6 +131,15 @@ const CALCIUM_PATTERN =
   /\bcalcium\b|\bcalcium\s+(?:carbonate|citrate|ascorbate|malate|lactate|hydroxyapatite)\b/i;
 const IRON_PATTERN = /\biron\b|\bferrous\b|\bferric\b/i;
 const MELATONIN_PATTERN = /\bmelatonin\b/i;
+const FUNCTIONAL_FOOD_LIKE_TITLE_PATTERN =
+  /\b(?:gum|gums|mints?|lozenge|lozenges|freeze\s+dried|juice\s+powder|fruit\s+powder|dragon\s+fruit|smoothie|drink\s+mix|tea\s+bags?|herbal\s+slimming\s+tea|greens\b|green\s+superfood|superfood|vegetable\s+powder)\b/i;
+const FUNCTIONAL_FOOD_LIKE_INGREDIENT_PATTERN =
+  /\b(?:xylitol|erythritol|fiber|dragon\s+fruit|fruit\s+powder|juice\s+powder|spirulina|chlorella|barley\s+grass|wheat\s+grass|digestive\s+enzyme|enzyme\s+assimilation|greens\b|green\s+superfood|superfood)\b/i;
+const FUNCTIONAL_FOOD_LIKE_FORM_PATTERN = /\b(?:gum|mint|lozenge|tea|powder|drink\s*mix)\b/i;
+const GENERIC_FORMULA_LINE_PATTERN =
+  /\b(?:supplement|nutritional|nutrition(?:al)?|proprietary)\s+formula\b|\bmatrix\b/i;
+const ENZYME_SUPPORT_LINE_PATTERN =
+  /\b(?:digestive\s+enzyme|enzyme\s+assimilation|cytozymes?|enzyme\s+blend)\b/i;
 
 const normalizeText = (value: string | null | undefined): string =>
   String(value ?? "")
@@ -151,6 +175,9 @@ const inferFamilyFromText = (combined: string): IngredientScienceIngredientFamil
   if (ASHWAGANDHA_PATTERN.test(combined)) return "ashwagandha";
   if (GINSENG_PATTERN.test(combined)) return "ginseng";
   if (GREEN_TEA_EXTRACT_PATTERN.test(combined)) return "green_tea_extract";
+  if (SEVEN_KETO_PATTERN.test(combined)) return "7keto_dhea_metabolite";
+  if (CLA_PATTERN.test(combined)) return "cla";
+  if (CARNITINE_PATTERN.test(combined)) return "carnitine";
   if (HTP5_PATTERN.test(combined)) return "5htp";
   if (B3_PATTERN.test(combined)) return "b3_niacinamide";
   if (GLYCINE_PATTERN.test(combined)) return "glycine";
@@ -224,6 +251,9 @@ const categoryHintForFamily = (
   if (family === "ashwagandha") return "botanical extract";
   if (family === "ginseng") return "botanical extract";
   if (family === "green_tea_extract") return "botanical extract";
+  if (family === "7keto_dhea_metabolite") return "metabolite";
+  if (family === "cla") return "fatty acid";
+  if (family === "carnitine") return "amino acid derivative";
   if (family === "5htp") return "amino acid derivative";
   if (family === "b3_niacinamide") return "vitamin";
   if (family === "glycine") return "amino acid";
@@ -261,6 +291,33 @@ const isBlendLike = (
   return !isBotanicalExtractFamily(family ?? null);
 };
 
+const inferFormContext = (
+  name: string | null | undefined,
+  family: IngredientScienceIngredientFamily,
+  lineRole: IngredientScienceLineRole,
+): string | null => {
+  const normalized = normalizeText(name);
+  if (!normalized) return null;
+
+  const parenthetical = normalized.match(/\(([^)]+)\)/)?.[1]?.trim() ?? null;
+  if (parenthetical) return parenthetical;
+
+  if (lineRole === "source_line") return "source line";
+  if (lineRole === "aggregate_line") return "total line";
+  if (lineRole === "breakdown_line") return "breakdown line";
+  if (lineRole === "blend_line") return "blend-style line";
+  if (/\bextract\b/i.test(normalized)) return "extract line";
+  if (/\boil\b/i.test(normalized)) return "oil line";
+  if (/\bchelate\b|\bcitrate\b|\bglycinate\b|\bmalate\b|\boxide\b|\btaurate\b|\bthreonate\b/i.test(normalized)) {
+    return "named form line";
+  }
+  if (family === "5htp") return "amino-acid derivative line";
+  if (family === "b3_niacinamide" || family === "b6" || family === "b12" || family === "folate") {
+    return "vitamin-form line";
+  }
+  return null;
+};
+
 const COMPANION_FAMILIES = new Set<IngredientScienceIngredientFamily>([
   "b3_niacinamide",
   "b6",
@@ -272,12 +329,50 @@ const COMPANION_FAMILIES = new Set<IngredientScienceIngredientFamily>([
   "iron",
 ]);
 
+const SUPPORTING_MICRONUTRIENT_FAMILIES = new Set<IngredientScienceIngredientFamily>([
+  "vitamin_c",
+  "vitamin_d",
+  "b3_niacinamide",
+  "b6",
+  "b12",
+  "folate",
+  "zinc",
+  "calcium",
+  "iron",
+]);
+
+const MINERAL_STACK_FAMILIES = new Set<IngredientScienceIngredientFamily>([
+  "magnesium",
+  "calcium",
+  "zinc",
+  "iron",
+]);
+
+const STRONG_LEAD_ACTIVE_FAMILIES = new Set<IngredientScienceIngredientFamily>([
+  "5htp",
+  "curcumin",
+  "ashwagandha",
+  "ginseng",
+  "green_tea_extract",
+  "7keto_dhea_metabolite",
+  "cla",
+  "carnitine",
+  "glycine",
+  "taurine",
+  "inositol",
+  "melatonin",
+  "omega_3",
+]);
+
 const PRIMARY_ACTIVE_FAMILIES = new Set<IngredientScienceIngredientFamily>([
   "5htp",
   "curcumin",
   "ashwagandha",
   "ginseng",
   "green_tea_extract",
+  "7keto_dhea_metabolite",
+  "cla",
+  "carnitine",
   "glycine",
   "taurine",
   "inositol",
@@ -286,6 +381,25 @@ const PRIMARY_ACTIVE_FAMILIES = new Set<IngredientScienceIngredientFamily>([
   "melatonin",
   "omega_3",
 ]);
+
+const FAMILY_TITLE_HINTS: Array<{ family: IngredientScienceIngredientFamily; pattern: RegExp }> = [
+  { family: "5htp", pattern: /\b5[\s-]*htp\b|\bgriffonia\b/i },
+  { family: "cla", pattern: /\bcla\b|\bconjugated\s+linoleic\s+acid\b/i },
+  { family: "carnitine", pattern: /\bcarnitine\b|\balcar\b/i },
+  { family: "green_tea_extract", pattern: /\bgreen\s+tea\b|\begcg\b/i },
+  { family: "omega_3", pattern: /\bomega\s*-?\s*3\b|\bfish\s*oil\b|\bepa\b|\bdha\b/i },
+  { family: "7keto_dhea_metabolite", pattern: /\b7[\s-]*keto\b/i },
+  { family: "curcumin", pattern: /\bcurcumin\b|\bturmeric\b/i },
+  { family: "ashwagandha", pattern: /\bashwagandha\b/i },
+  { family: "ginseng", pattern: /\bginseng\b/i },
+  { family: "melatonin", pattern: /\bmelatonin\b/i },
+  { family: "magnesium", pattern: /\bmagnesium\b/i },
+  { family: "calcium", pattern: /\bcalcium\b/i },
+  { family: "zinc", pattern: /\bzinc\b/i },
+  { family: "iron", pattern: /\biron\b/i },
+  { family: "vitamin_d", pattern: /\bvitamin\s*d\b|\bd3\b|\bd2\b/i },
+  { family: "vitamin_c", pattern: /\bvitamin\s*c\b|\bascorbic\b/i },
+];
 
 const parseDoseMagnitude = (value: string | null | undefined): number => {
   const normalized = normalizeText(value).toLowerCase().replace(/,/g, "");
@@ -313,23 +427,69 @@ const matchesProductTitle = (rowName: string, productName: string): boolean => {
   return variants.some((value) => productKey.includes(value));
 };
 
+const getFamilyTitleBoost = (
+  family: IngredientScienceIngredientFamily,
+  rowName: string,
+  productName: string,
+): number => {
+  const familyPattern = FAMILY_TITLE_HINTS.find((entry) => entry.family === family)?.pattern;
+  if (!familyPattern) return matchesProductTitle(rowName, productName) ? 40 : 0;
+  const titleBoost = familyPattern.test(productName) ? 150 : 0;
+  const rowBoost = matchesProductTitle(rowName, productName) ? 40 : 0;
+  return titleBoost + rowBoost;
+};
+
+const hasMineralStackLeadSignal = (
+  rows: ScienceIngredientRow[],
+  families: IngredientScienceIngredientFamily[],
+  productName: string,
+): boolean => {
+  const mineralFamilyCount = families.filter((family) => MINERAL_STACK_FAMILIES.has(family)).length;
+  if (mineralFamilyCount >= 2) return true;
+  const mineralTitleHits = ["calcium", "magnesium", "zinc", "iron"].filter((token) =>
+    new RegExp(`\\b${token}\\b`, "i").test(productName),
+  ).length;
+  if (mineralTitleHits >= 2) return true;
+  return rows.some((row) => /\bcalcium\b/i.test(row.name)) && rows.some((row) => /\bmagnesium\b/i.test(row.name));
+};
+
+const hasStrongLeadActiveSignal = (families: IngredientScienceIngredientFamily[]): boolean =>
+  families.some((family) => STRONG_LEAD_ACTIVE_FAMILIES.has(family));
+
 const pickPrimaryActiveRowIndex = (
   rows: ScienceIngredientRow[],
   families: IngredientScienceIngredientFamily[],
   productName: string,
 ): number => {
   if (rows.length === 0) return -1;
+  const hasStrongLeadActive = hasStrongLeadActiveSignal(families);
+  const hasMineralStackLead = hasMineralStackLeadSignal(rows, families, productName);
   let bestIndex = 0;
   let bestScore = Number.NEGATIVE_INFINITY;
 
   rows.forEach((row, index) => {
     const family = families[index] ?? "generic";
+    const familyTitleBoost = getFamilyTitleBoost(family, row.name, productName);
+    const supportingPenalty =
+      hasStrongLeadActive && SUPPORTING_MICRONUTRIENT_FAMILIES.has(family) ? 96 : 0;
+    const vitaminDInMineralStackPenalty =
+      hasMineralStackLead && family === "vitamin_d" ? 145 : 0;
+    const genericFormulaPenalty =
+      GENERIC_FORMULA_LINE_PATTERN.test(row.name) ? 220 : 0;
+    const enzymeSupportPenalty =
+      ENZYME_SUPPORT_LINE_PATTERN.test(row.name) ? 190 : 0;
     const score =
-      (matchesProductTitle(row.name, productName) ? 160 : 0) +
+      (matchesProductTitle(row.name, productName) ? 120 : 0) +
+      familyTitleBoost +
+      (STRONG_LEAD_ACTIVE_FAMILIES.has(family) ? 86 : 0) +
       (PRIMARY_ACTIVE_FAMILIES.has(family) ? 24 : 0) +
       Math.min(parseDoseMagnitude(row.dose), 1200) / 24 +
       (row.dose ? 18 : 0) -
-      (COMPANION_FAMILIES.has(family) ? 60 : 0) -
+      (COMPANION_FAMILIES.has(family) ? 48 : 0) -
+      supportingPenalty -
+      vitaminDInMineralStackPenalty -
+      genericFormulaPenalty -
+      enzymeSupportPenalty -
       (isBlendLike(row.name, family) ? 120 : 0) -
       index * 0.5;
 
@@ -342,14 +502,69 @@ const pickPrimaryActiveRowIndex = (
   return bestIndex;
 };
 
+const scoreIngredientDescriptorForDisplay = (params: {
+  row: ScienceIngredientRow;
+  descriptor: IngredientScienceDescriptor;
+  index: number;
+  productName: string;
+  anchorKey: string | null;
+  hasStrongLeadActive: boolean;
+  hasMineralStackLead: boolean;
+}): number => {
+  const {
+    row,
+    descriptor,
+    index,
+    productName,
+    anchorKey,
+    hasStrongLeadActive,
+    hasMineralStackLead,
+  } = params;
+  const rowKey = normalizeIngredientScienceKey(row.name);
+  const doseMagnitude = parseDoseMagnitude(row.dose);
+  const titleMatch = matchesProductTitle(row.name, productName);
+  const isAnchor = Boolean(anchorKey && rowKey === anchorKey);
+  const familyTitleBoost = getFamilyTitleBoost(descriptor.ingredientFamily, row.name, productName);
+  const genericFormulaPenalty = GENERIC_FORMULA_LINE_PATTERN.test(row.name) ? 180 : 0;
+  const enzymeSupportPenalty = ENZYME_SUPPORT_LINE_PATTERN.test(row.name) ? 170 : 0;
+  const supportingPenalty =
+    hasStrongLeadActive && SUPPORTING_MICRONUTRIENT_FAMILIES.has(descriptor.ingredientFamily) ? 96 : 0;
+  const vitaminDInMineralStackPenalty =
+    hasMineralStackLead && descriptor.ingredientFamily === "vitamin_d" ? 130 : 0;
+
+  return (
+    (isAnchor ? 260 : 0) +
+    (descriptor.lineRole === "primary_active" ? 180 : 0) +
+    (descriptor.lineRole === "breakdown_line" ? 42 : 0) +
+    (titleMatch ? 120 : 0) +
+    familyTitleBoost +
+    (STRONG_LEAD_ACTIVE_FAMILIES.has(descriptor.ingredientFamily) ? 68 : 0) +
+    (PRIMARY_ACTIVE_FAMILIES.has(descriptor.ingredientFamily) ? 34 : 0) +
+    (row.dose ? 16 : 0) +
+    Math.min(doseMagnitude, 1200) / 24 -
+    (descriptor.lineRole === "companion_nutrient" ? 62 : 0) -
+    supportingPenalty -
+    vitaminDInMineralStackPenalty -
+    (descriptor.lineRole === "aggregate_line" ? 90 : 0) -
+    (descriptor.lineRole === "source_line" ? 120 : 0) -
+    (descriptor.lineRole === "blend_line" ? 140 : 0) -
+    genericFormulaPenalty -
+    enzymeSupportPenalty -
+    index * 0.5
+  );
+};
+
 const buildLineRoles = (
   rows: ScienceIngredientRow[],
   families: IngredientScienceIngredientFamily[],
   primaryIndex: number,
+  productName: string,
 ): IngredientScienceLineRole[] => {
   const deduped = dedupeIngredientRows(rows);
   const hasOmega3Breakdown = deduped.some((row) => OMEGA3_BREAKDOWN_PATTERN.test(row.name));
   const hasOmega3Aggregate = deduped.some((row) => OMEGA3_TOTAL_PATTERN.test(row.name));
+  const hasStrongLeadActive = hasStrongLeadActiveSignal(families);
+  const hasMineralStackLead = hasMineralStackLeadSignal(deduped, families, productName);
 
   return deduped.map((row, index) => {
     const family = families[index] ?? "generic";
@@ -360,7 +575,16 @@ const buildLineRoles = (
       return "source_line";
     }
     if (index === primaryIndex) return "primary_active";
-    if (/\bvitamin\b|\bb3\b|\bb6\b|\bniacin(?:amide)?\b|\bnicotinamide\b|\bpyridoxine\b|\bpyridoxal(?:\s|-)?5(?:\s|-)?phosphate\b|\bp-?5-?p\b|\bzinc\b|\bcalcium\b|\bmagnesium\b|\bselenium\b|\bcopper\b|\bchromium\b|\biodine\b/i.test(row.name)) {
+    if (hasMineralStackLead && family === "vitamin_d") {
+      return "companion_nutrient";
+    }
+    if (
+      hasStrongLeadActive
+      && (
+        SUPPORTING_MICRONUTRIENT_FAMILIES.has(family)
+        || /\bvitamin\b|\bb3\b|\bb6\b|\bniacin(?:amide)?\b|\bnicotinamide\b|\bpyridoxine\b|\bpyridoxal(?:\s|-)?5(?:\s|-)?phosphate\b|\bp-?5-?p\b|\bzinc\b|\bcalcium\b|\bselenium\b|\bcopper\b|\bchromium\b|\biodine\b/i.test(row.name)
+      )
+    ) {
       return "companion_nutrient";
     }
     return "generic_line";
@@ -424,6 +648,55 @@ const buildRelationshipCandidates = (
   return candidates.slice(0, 2);
 };
 
+const classifyProductArchetype = (params: {
+  productName: string;
+  dosageForm: string | null | undefined;
+  rows: ScienceIngredientRow[];
+  families: IngredientScienceIngredientFamily[];
+}): IngredientScienceProductArchetype => {
+  const productName = normalizeText(params.productName);
+  const dosageForm = normalizeText(params.dosageForm);
+  const hasHardSupplementLead = params.families.some((family) =>
+    family === "5htp" ||
+    family === "omega_3" ||
+    family === "curcumin" ||
+    family === "ashwagandha" ||
+    family === "ginseng" ||
+    family === "7keto_dhea_metabolite" ||
+    family === "cla" ||
+    family === "carnitine" ||
+    family === "melatonin" ||
+    family === "magnesium" ||
+    family === "calcium" ||
+    family === "zinc" ||
+    family === "iron" ||
+    family === "vitamin_d" ||
+    family === "vitamin_c",
+  );
+  const hasFoodLikeEligibleFamily = params.families.some((family) =>
+    family === "generic" || family === "green_tea_extract" || family === "probiotic_or_blend",
+  );
+  const genericCount = params.families.filter((family) => family === "generic").length;
+  const genericDominant =
+    params.rows.length > 0 && genericCount / params.rows.length >= 0.6;
+  const titleLooksFoodLike = FUNCTIONAL_FOOD_LIKE_TITLE_PATTERN.test(productName);
+  const formLooksFoodLike = FUNCTIONAL_FOOD_LIKE_FORM_PATTERN.test(dosageForm);
+  const rowLooksFoodLike = params.rows.some((row) =>
+    FUNCTIONAL_FOOD_LIKE_INGREDIENT_PATTERN.test(normalizeText(row.name)),
+  );
+  const strongFoodPresentation = titleLooksFoodLike || formLooksFoodLike || rowLooksFoodLike;
+
+  if (
+    strongFoodPresentation
+    && (!hasHardSupplementLead || hasFoodLikeEligibleFamily)
+    && (genericDominant || hasFoodLikeEligibleFamily || rowLooksFoodLike)
+  ) {
+    return "functional_food_like";
+  }
+
+  return "standard_supplement";
+};
+
 export const buildIngredientScienceContext = (params: {
   digest: FactsDigest;
   overlayClaims: OverlayClaimsLike;
@@ -433,7 +706,6 @@ export const buildIngredientScienceContext = (params: {
     overlayClaims: params.overlayClaims,
   });
   const ingredientRows = dedupeIngredientRows(selection.ingredientRows);
-  const ingredientSnapshotNames = ingredientRows.map((row) => row.name);
   const productName = normalizeText(params.digest?.product?.name) || "Supplement formula";
   const sourceContext =
     selection.ingredientSourceTier === "overlay_iherb"
@@ -445,36 +717,82 @@ export const buildIngredientScienceContext = (params: {
       productName,
     }),
   );
+  const productArchetype = classifyProductArchetype({
+    productName,
+    dosageForm: params.digest?.product?.dosageForm ?? null,
+    rows: ingredientRows,
+    families: ingredientFamilies,
+  });
   const primaryIndex = pickPrimaryActiveRowIndex(ingredientRows, ingredientFamilies, productName);
-  const lineRoles = buildLineRoles(ingredientRows, ingredientFamilies, primaryIndex);
-  const anchorRow = primaryIndex >= 0 ? ingredientRows[primaryIndex] ?? null : ingredientRows[0] ?? null;
+  const lineRoles = buildLineRoles(ingredientRows, ingredientFamilies, primaryIndex, productName);
+  const initialAnchorRow = primaryIndex >= 0 ? ingredientRows[primaryIndex] ?? null : ingredientRows[0] ?? null;
   const ingredientDescriptors = ingredientRows.map((row, index) => {
     const ingredientFamily = ingredientFamilies[index] ?? "generic";
+    const lineRole = lineRoles[index] ?? (index === primaryIndex ? "primary_active" : "generic_line");
     return {
       key: normalizeIngredientScienceKey(row.name),
       name: row.name,
       dose: row.dose ?? null,
       ingredientFamily,
-      lineRole: lineRoles[index] ?? (index === primaryIndex ? "primary_active" : "generic_line"),
+      lineRole,
       categoryHint: categoryHintForFamily(ingredientFamily, row.name),
       sourceContext,
-      formContext: null,
+      formContext: inferFormContext(row.name, ingredientFamily, lineRole),
       isBlendLike: isBlendLike(row.name, ingredientFamily),
     } satisfies IngredientScienceDescriptor;
   });
+  const anchorKey = initialAnchorRow ? normalizeIngredientScienceKey(initialAnchorRow.name) : null;
+  const hasStrongLeadActive = hasStrongLeadActiveSignal(ingredientFamilies);
+  const hasMineralStackLead = hasMineralStackLeadSignal(ingredientRows, ingredientFamilies, productName);
+  const orderedEntries = ingredientRows
+    .map((row, index) => ({
+      row,
+      descriptor: ingredientDescriptors[index]!,
+      index,
+    }))
+    .sort((left, right) => {
+      const scoreDiff =
+        scoreIngredientDescriptorForDisplay({
+          row: right.row,
+          descriptor: right.descriptor,
+          index: right.index,
+          productName,
+          anchorKey,
+          hasStrongLeadActive,
+          hasMineralStackLead,
+        }) -
+        scoreIngredientDescriptorForDisplay({
+          row: left.row,
+          descriptor: left.descriptor,
+          index: left.index,
+          productName,
+          anchorKey,
+          hasStrongLeadActive,
+          hasMineralStackLead,
+        });
+      if (scoreDiff !== 0) return scoreDiff;
+      return left.index - right.index;
+    });
+  const anchorEntry = orderedEntries[0] ?? null;
+  const anchorRow = anchorEntry?.row ?? null;
+  const anchorDescriptor = anchorEntry?.descriptor ?? null;
+  const finalAnchorKey = anchorRow ? normalizeIngredientScienceKey(anchorRow.name) : anchorKey;
+  const orderedIngredientRows = orderedEntries.map((entry) => entry.row);
+  const orderedIngredientDescriptors = orderedEntries.map((entry) => entry.descriptor);
+  const ingredientSnapshotNames = orderedIngredientRows.map((row) => row.name);
   const formulaMode = determineFormulaMode(ingredientRows, ingredientFamilies);
   const ingredientFamily = inferContextIngredientFamily({
     seedText: anchorRow?.name ?? null,
     productName,
     rows: ingredientRows,
   });
-  const hasOpaqueBlend = ingredientDescriptors.some((descriptor) => descriptor.isBlendLike);
-  const disclosedDoseCount = ingredientRows.filter((row) => normalizeText(row.dose).length > 0).length;
+  const hasOpaqueBlend = orderedIngredientDescriptors.some((descriptor) => descriptor.isBlendLike);
+  const disclosedDoseCount = orderedIngredientRows.filter((row) => normalizeText(row.dose).length > 0).length;
   const ingredientDisclosureLimited =
     formulaMode === "blend" ||
-    ingredientRows.length === 0 ||
+    orderedIngredientRows.length === 0 ||
     disclosedDoseCount === 0 ||
-    (hasOpaqueBlend && disclosedDoseCount < ingredientRows.length);
+    (hasOpaqueBlend && disclosedDoseCount < orderedIngredientRows.length);
   const sourceType: IngredientScienceSourceType =
     selection.ingredientSourceTier === "overlay_iherb"
       ? "iherb_overlay"
@@ -484,27 +802,35 @@ export const buildIngredientScienceContext = (params: {
 
   return {
     productName,
+    productArchetype,
     ingredientSourceTier: selection.ingredientSourceTier,
     sourceType,
-    ingredientRows,
+    ingredientRows: orderedIngredientRows,
     ingredientSnapshotNames,
-    ingredientDescriptors,
+    ingredientDescriptors: orderedIngredientDescriptors,
     formulaMode,
     ingredientFamily,
     anchorIngredient: anchorRow
       ? {
           name: anchorRow.name,
           dose: anchorRow.dose ?? null,
-          categoryHint: categoryHintForFamily(ingredientFamilies[primaryIndex] ?? ingredientFamily, anchorRow.name),
+          ingredientFamily: anchorDescriptor?.ingredientFamily ?? ingredientFamily,
+          lineRole: anchorDescriptor?.lineRole ?? "primary_active",
+          categoryHint: anchorDescriptor?.categoryHint ?? categoryHintForFamily(ingredientFamily, anchorRow.name),
           sourceContext,
+          formContext: anchorDescriptor?.formContext ?? inferFormContext(anchorRow.name, ingredientFamily, "primary_active"),
         }
       : null,
-    coIngredients: ingredientDescriptors
-      .filter((_, index) => index !== primaryIndex)
+    coIngredients: orderedIngredientDescriptors
+      .filter((row) => row.key !== finalAnchorKey)
       .map((row) => ({
       name: row.name,
       dose: row.dose ?? null,
+      ingredientFamily: row.ingredientFamily,
+      lineRole: row.lineRole,
       categoryHint: row.categoryHint,
+      sourceContext: row.sourceContext,
+      formContext: row.formContext,
     })),
     relationshipCandidates: buildRelationshipCandidates(ingredientRows, ingredientFamilies),
     labelConstraints: {

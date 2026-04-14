@@ -84,9 +84,30 @@ test('ingredient overview falls back when the model drifts into shopper-purpose 
 
   assert.equal(result.source, 'fallback');
   assert.equal(result.fallbackUsed, true);
+  assert.equal(result.diagnostics.liveWriterConfigured, true);
+  assert.equal(result.diagnostics.liveWriterAttempted, true);
+  assert.equal(result.diagnostics.liveWriterHit, false);
+  assert.equal(result.diagnostics.fallbackReason, 'quality_gate_rejected');
   assert.equal(result.ingredientOverview.mode, 'multi_anchor');
   assert.match(result.ingredientOverview.paragraph1, /vitamin c/i);
   assert.ok(result.ingredientOverview.compareHint);
+});
+
+test('ingredient overview reports llm_unconfigured when no live writer is available', async () => {
+  const digest = buildDigest({
+    labelId: 'fixture-magnesium',
+    productName: 'Magnesium Glycinate 200 mg',
+    dosageForm: 'Capsule',
+    actives: [{ name: 'Magnesium (as Magnesium Glycinate)', amount: 200, unit: 'mg' }],
+  });
+
+  const context = buildIngredientScienceContext({ digest, overlayClaims: null });
+  const result = await compileIngredientOverviewAsync(context);
+
+  assert.equal(result.source, 'fallback');
+  assert.equal(result.diagnostics.liveWriterConfigured, false);
+  assert.equal(result.diagnostics.liveWriterAttempted, false);
+  assert.equal(result.diagnostics.fallbackReason, 'llm_unconfigured');
 });
 
 test('scientific background falls back when the model writes ingredient identity instead of research context', async () => {
@@ -134,6 +155,10 @@ test('scientific background falls back when the model writes ingredient identity
 
   assert.equal(result.source, 'fallback');
   assert.equal(result.fallbackUsed, true);
+  assert.equal(result.diagnostics.liveWriterConfigured, true);
+  assert.equal(result.diagnostics.liveWriterAttempted, true);
+  assert.equal(result.diagnostics.liveWriterHit, false);
+  assert.equal(result.diagnostics.fallbackReason, 'quality_gate_rejected');
   assert.equal(result.scientificBackground.selectedLabel, 'Astaxanthin');
   assert.deepEqual(
     result.scientificBackground.sections.map((section) => section.heading),
@@ -253,12 +278,42 @@ test('scientific background repairs template-style research prose into family-sp
 
   assert.equal(result.source, 'api');
   assert.equal(result.fallbackUsed, false);
+  assert.equal(result.diagnostics.liveWriterHit, true);
+  assert.equal(result.diagnostics.fallbackReason, null);
   assert.match(result.scientificBackground.sections[0]?.summary ?? '', /clearest evidence lane|triglyceride/i);
   assert.match(result.scientificBackground.sections[0]?.shopperMeaning ?? '', /EPA breakdown line|compare/i);
   assert.equal(
     result.scientificBackground.closingNote,
     'Read the research context as outcome-specific guidance, not as a blanket promise for every claim on the label.',
   );
+});
+
+test('scientific background reports llm_timeout when the live writer misses the budget', async () => {
+  const digest = buildDigest({
+    labelId: 'fixture-timeout-5htp',
+    productName: '5-HTP 200 mg',
+    dosageForm: 'Capsule',
+    actives: [{ name: '5-HTP (5-hydroxytryptophan)', amount: 200, unit: 'mg' }],
+  });
+
+  const context = buildIngredientScienceContext({ digest, overlayClaims: null });
+  const result = await compileScientificBackgroundAsync(context, '5-HTP (5-hydroxytryptophan)', {
+    llmFn: async () => {
+      await new Promise((resolve) => setTimeout(resolve, 15));
+      return JSON.stringify({
+        introLine: '5-HTP • 200 mg',
+        sections: [],
+      });
+    },
+    timeoutMs: 1,
+  });
+
+  assert.equal(result.source, 'fallback');
+  assert.equal(result.diagnostics.liveWriterConfigured, true);
+  assert.equal(result.diagnostics.liveWriterAttempted, true);
+  assert.equal(result.diagnostics.liveWriterHit, false);
+  assert.equal(result.diagnostics.fallbackReason, 'llm_timeout');
+  assert.equal(result.diagnostics.timeoutCount, 1);
 });
 
 test('scientific background repairs near-miss writer output into an api result', async () => {
@@ -1405,7 +1460,7 @@ test('vitamin c fallback keeps iron context as a specific lane instead of a gene
   assert.match(ironSection?.shopperMeaning ?? '', /paired nutrient use|iron context/i);
 });
 
-test('dha research mode gets a longer execution budget than epa', () => {
+test('omega-3 research mode keeps both EPA and DHA on the targeted live-writer profile', () => {
   const digest = buildDigest({
     labelId: 'fixture-omega3-timeout',
     productName: 'Omega-3 1040 mg Fish Oil 1250 mg',
@@ -1432,7 +1487,14 @@ test('dha research mode gets a longer execution budget than epa', () => {
 
   assert.equal(epaPlan.mode, 'research_mode');
   assert.equal(dhaPlan.mode, 'research_mode');
-  assert.ok(dhaProfile.timeoutMs > epaProfile.timeoutMs);
+  assert.ok(epaProfile.timeoutMs >= 3_000);
+  assert.ok(dhaProfile.timeoutMs >= epaProfile.timeoutMs);
+  assert.equal(epaProfile.maxRetries, 0);
+  assert.equal(dhaProfile.maxRetries, 0);
+  assert.equal(epaProfile.backgroundRefreshMaxRetries, 1);
+  assert.equal(dhaProfile.backgroundRefreshMaxRetries, 1);
+  assert.ok(epaProfile.backgroundRefreshTimeoutMs > epaProfile.timeoutMs);
+  assert.ok(dhaProfile.backgroundRefreshTimeoutMs > dhaProfile.timeoutMs);
 });
 
 test('magnesium and vitamin d research mode get longer execution budgets than the generic research profile', () => {
@@ -1541,10 +1603,15 @@ test('melatonin and b-vitamin research mode get longer execution budgets than th
   assert.equal(folatePlan.mode, 'research_mode');
   assert.equal(b6Plan.mode, 'research_mode');
   assert.equal(vitaminCPlan.mode, 'research_mode');
-  assert.ok(melatoninProfile.timeoutMs > vitaminCProfile.timeoutMs);
-  assert.ok(b12Profile.timeoutMs > vitaminCProfile.timeoutMs);
-  assert.ok(folateProfile.timeoutMs > vitaminCProfile.timeoutMs);
-  assert.ok(b6Profile.timeoutMs > vitaminCProfile.timeoutMs);
+  assert.ok(melatoninProfile.backgroundRefreshTimeoutMs > melatoninProfile.timeoutMs);
+  assert.ok(b12Profile.backgroundRefreshTimeoutMs > b12Profile.timeoutMs);
+  assert.ok(folateProfile.backgroundRefreshTimeoutMs > folateProfile.timeoutMs);
+  assert.ok(b6Profile.backgroundRefreshTimeoutMs > b6Profile.timeoutMs);
+  assert.equal(vitaminCProfile.maxRetries, 0);
+  assert.equal(melatoninProfile.backgroundRefreshMaxRetries, 1);
+  assert.equal(b12Profile.backgroundRefreshMaxRetries, 1);
+  assert.equal(folateProfile.backgroundRefreshMaxRetries, 1);
+  assert.equal(b6Profile.backgroundRefreshMaxRetries, 1);
 });
 
 test('botanical families get longer execution budgets than the generic research profile', () => {
@@ -1910,4 +1977,235 @@ test('magnesium complex uses label-context mode instead of pretending to be a si
     plan.sections.map((section) => section.heading),
     ['What this line means on the label', 'Why it matters for comparison'],
   );
+});
+
+test('7-keto, cla, and carnitine get family-specific research plans and longer budgets than generic research mode', () => {
+  const context = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-7keto-cla-carnitine',
+      productName: '7-Keto CLA Carnitine Formula',
+      dosageForm: 'Capsule',
+      actives: [
+        { name: '7-Keto (DHEA Acetate-7-one)', amount: 100, unit: 'mg' },
+        { name: 'Conjugated Linoleic Acid (CLA) (from Safflower Oil)', amount: 800, unit: 'mg' },
+        { name: 'Acetyl-L-Carnitine HCl', amount: 500, unit: 'mg' },
+        { name: 'Vitamin C', amount: 250, unit: 'mg' },
+      ],
+    }),
+    overlayClaims: null,
+  });
+
+  const sevenKetoPlan = planScientificBackgroundSections({ context, selectedIngredientName: '7-Keto (DHEA Acetate-7-one)' });
+  const claPlan = planScientificBackgroundSections({ context, selectedIngredientName: 'Conjugated Linoleic Acid (CLA) (from Safflower Oil)' });
+  const carnitinePlan = planScientificBackgroundSections({ context, selectedIngredientName: 'Acetyl-L-Carnitine HCl' });
+  const vitaminCPlan = planScientificBackgroundSections({ context, selectedIngredientName: 'Vitamin C' });
+
+  const sevenKetoProfile = resolveScientificBackgroundExecutionProfile(sevenKetoPlan);
+  const claProfile = resolveScientificBackgroundExecutionProfile(claPlan);
+  const carnitineProfile = resolveScientificBackgroundExecutionProfile(carnitinePlan);
+  const vitaminCProfile = resolveScientificBackgroundExecutionProfile(vitaminCPlan);
+
+  assert.deepEqual(
+    sevenKetoPlan.sections.map((section) => section.heading),
+    ['Metabolic and body-composition context', 'Why it reads differently from DHEA'],
+  );
+  assert.deepEqual(
+    claPlan.sections.map((section) => section.heading),
+    ['Body-composition context', 'Source oil and isomer detail'],
+  );
+  assert.deepEqual(
+    carnitinePlan.sections.map((section) => section.heading),
+    ['Energy transport and exercise context', 'What form disclosure changes'],
+  );
+  assert.ok(sevenKetoProfile.timeoutMs > vitaminCProfile.timeoutMs);
+  assert.ok(claProfile.timeoutMs > vitaminCProfile.timeoutMs);
+  assert.ok(carnitineProfile.timeoutMs > vitaminCProfile.timeoutMs);
+  assert.equal(sevenKetoProfile.maxRetries, 0);
+  assert.equal(claProfile.maxRetries, 0);
+  assert.equal(carnitineProfile.maxRetries, 0);
+  assert.equal(sevenKetoProfile.backgroundRefreshMaxRetries, 1);
+  assert.equal(claProfile.backgroundRefreshMaxRetries, 1);
+  assert.equal(carnitineProfile.backgroundRefreshMaxRetries, 1);
+  assert.ok(sevenKetoProfile.backgroundRefreshTimeoutMs >= sevenKetoProfile.timeoutMs);
+  assert.ok(claProfile.backgroundRefreshTimeoutMs >= claProfile.timeoutMs);
+  assert.ok(carnitineProfile.backgroundRefreshTimeoutMs >= carnitineProfile.timeoutMs);
+});
+
+test('5-htp, green tea extract, and omega-3 now use target-family live-writer profiles instead of the generic budget', () => {
+  const context = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-5htp-green-tea-omega3-profiles',
+      productName: '5-HTP Green Tea and Omega-3 Formula',
+      dosageForm: 'Softgel',
+      actives: [
+        { name: '5-HTP (5-hydroxytryptophan)', amount: 200, unit: 'mg' },
+        { name: 'Green Tea Extract (Camellia sinensis) (Leaf)', amount: 250, unit: 'mg' },
+        { name: 'EPA (Eicosapentaenoic Acid)', amount: 690, unit: 'mg' },
+        { name: 'DHA (Docosahexaenoic Acid)', amount: 260, unit: 'mg' },
+        { name: 'Vitamin C', amount: 250, unit: 'mg' },
+      ],
+    }),
+    overlayClaims: null,
+  });
+
+  const htpPlan = planScientificBackgroundSections({ context, selectedIngredientName: '5-HTP (5-hydroxytryptophan)' });
+  const greenTeaPlan = planScientificBackgroundSections({ context, selectedIngredientName: 'Green Tea Extract (Camellia sinensis) (Leaf)' });
+  const epaPlan = planScientificBackgroundSections({ context, selectedIngredientName: 'EPA (Eicosapentaenoic Acid)' });
+  const vitaminCPlan = planScientificBackgroundSections({ context, selectedIngredientName: 'Vitamin C' });
+
+  const htpProfile = resolveScientificBackgroundExecutionProfile(htpPlan);
+  const greenTeaProfile = resolveScientificBackgroundExecutionProfile(greenTeaPlan);
+  const epaProfile = resolveScientificBackgroundExecutionProfile(epaPlan);
+  const vitaminCProfile = resolveScientificBackgroundExecutionProfile(vitaminCPlan);
+
+  assert.ok(htpProfile.timeoutMs > vitaminCProfile.timeoutMs);
+  assert.ok(greenTeaProfile.timeoutMs > vitaminCProfile.timeoutMs);
+  assert.ok(epaProfile.timeoutMs > vitaminCProfile.timeoutMs);
+  assert.equal(htpProfile.maxRetries, 0);
+  assert.equal(greenTeaProfile.maxRetries, 0);
+  assert.equal(epaProfile.maxRetries, 0);
+  assert.equal(htpProfile.backgroundRefreshMaxRetries, 1);
+  assert.equal(greenTeaProfile.backgroundRefreshMaxRetries, 1);
+  assert.equal(epaProfile.backgroundRefreshMaxRetries, 1);
+  assert.ok(htpProfile.timeoutMs >= 3_500);
+  assert.ok(greenTeaProfile.timeoutMs >= 3_600);
+  assert.ok(epaProfile.timeoutMs >= 3_800);
+  assert.ok(htpProfile.maxTokens < vitaminCProfile.maxTokens);
+  assert.ok(greenTeaProfile.maxTokens < vitaminCProfile.maxTokens);
+  assert.ok(epaProfile.maxTokens < vitaminCProfile.maxTokens);
+});
+
+test('functional food-like generic rows downgrade scientific background to label-context mode', () => {
+  const context = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-functional-food-like-gum',
+      productName: 'Xylitol Gum, Green Tea, 100 Pieces',
+      dosageForm: 'Gum',
+      actives: [{ name: 'Xylitol', amount: 1000, unit: 'mg' }],
+    }),
+    overlayClaims: null,
+  });
+
+  const plan = planScientificBackgroundSections({
+    context,
+    selectedIngredientName: 'Xylitol',
+  });
+  const profile = resolveScientificBackgroundExecutionProfile(plan);
+
+  assert.equal(context.productArchetype, 'functional_food_like');
+  assert.equal(plan.mode, 'label_context_mode');
+  assert.deepEqual(
+    plan.sections.map((section) => section.heading),
+    ['What this line means on the label', 'Why it matters for comparison'],
+  );
+  assert.equal(profile.preferLiveWriter, false);
+});
+
+test('science context reorders supporting vitamins behind 5-HTP lead actives', () => {
+  const context = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-5htp-with-supporting-vitamins',
+      productName: '5-HTP with Vitamin B6 & Vitamin C',
+      dosageForm: 'Capsule',
+      actives: [
+        { name: 'Vitamin C (as Ascorbic Acid)', amount: 100, unit: 'mg' },
+        { name: 'Vitamin B-6 (from Pyridoxine HCl)', amount: 2, unit: 'mg' },
+        { name: '5-HTP (5-hydroxytryptophan)', amount: 200, unit: 'mg' },
+      ],
+    }),
+    overlayClaims: null,
+  });
+
+  assert.match(context.ingredientRows[0]?.name ?? '', /5-HTP/i);
+  assert.match(context.anchorIngredient?.name ?? '', /5-HTP/i);
+  assert.equal(context.anchorIngredient?.ingredientFamily, '5htp');
+});
+
+test('mineral-stack products do not default to vitamin D over calcium or magnesium', () => {
+  const context = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-mineral-stack-d3',
+      productName: 'Calcium Magnesium Zinc + D3',
+      dosageForm: 'Tablet',
+      actives: [
+        { name: 'Vitamin D3 (as Cholecalciferol)', amount: 25, unit: 'mcg' },
+        { name: 'Calcium (as Calcium Carbonate)', amount: 1000, unit: 'mg' },
+        { name: 'Magnesium (as Magnesium Oxide)', amount: 400, unit: 'mg' },
+        { name: 'Zinc (as Zinc Oxide)', amount: 15, unit: 'mg' },
+      ],
+    }),
+    overlayClaims: null,
+  });
+
+  assert.doesNotMatch(context.ingredientRows[0]?.name ?? '', /vitamin d/i);
+  assert.ok(['calcium', 'magnesium', 'zinc'].includes(context.anchorIngredient?.ingredientFamily ?? ''));
+});
+
+test('food-like green tea products downgrade to label-context mode instead of research mode', () => {
+  const context = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-food-like-green-tea',
+      productName: 'Herbal Slimming Tea, Green Tea, 24 Tea Bags',
+      dosageForm: 'Tea',
+      actives: [{ name: 'Green Tea Extract', amount: 500, unit: 'mg' }],
+    }),
+    overlayClaims: null,
+  });
+
+  const plan = planScientificBackgroundSections({
+    context,
+    selectedIngredientName: 'Green Tea Extract',
+  });
+
+  assert.equal(context.productArchetype, 'functional_food_like');
+  assert.equal(plan.mode, 'label_context_mode');
+  assert.deepEqual(
+    plan.sections.map((section) => section.heading),
+    ['What this line means on the label', 'Why it matters for comparison'],
+  );
+});
+
+test('greens-style formulas avoid enzyme support lines as the default science ingredient', () => {
+  const context = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-greens-enzyme-ranking',
+      productName: 'CytoGreens Premium Green Superfood with Green Tea',
+      dosageForm: 'Powder',
+      actives: [
+        { name: 'Cytozymes Digestive Enzyme Assimilation', amount: 100, unit: 'mg' },
+        { name: 'Green Tea Extract', amount: 75, unit: 'mg' },
+        { name: 'Spirulina', amount: 500, unit: 'mg' },
+      ],
+    }),
+    overlayClaims: null,
+  });
+
+  assert.doesNotMatch(context.ingredientRows[0]?.name ?? '', /cytozymes|digestive enzyme/i);
+});
+
+test('new metabolic families fall back with product-specific copy instead of generic research-direction prose', async () => {
+  const context = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-metabolic-fallback-families',
+      productName: '7-Keto CLA Carnitine Formula',
+      dosageForm: 'Capsule',
+      actives: [
+        { name: '7-Keto (DHEA Acetate-7-one)', amount: 100, unit: 'mg' },
+        { name: 'Conjugated Linoleic Acid (CLA) (from Safflower Oil)', amount: 800, unit: 'mg' },
+        { name: 'Acetyl-L-Carnitine HCl', amount: 500, unit: 'mg' },
+      ],
+    }),
+    overlayClaims: null,
+  });
+
+  const sevenKetoResult = await compileScientificBackgroundAsync(context, '7-Keto (DHEA Acetate-7-one)');
+  const claResult = await compileScientificBackgroundAsync(context, 'Conjugated Linoleic Acid (CLA) (from Safflower Oil)');
+  const carnitineResult = await compileScientificBackgroundAsync(context, 'Acetyl-L-Carnitine HCl');
+
+  assert.match(sevenKetoResult.scientificBackground.sections[0]?.summary ?? '', /7-keto|metabolic-rate|body-composition/i);
+  assert.doesNotMatch(sevenKetoResult.scientificBackground.sections[0]?.summary ?? '', /appears in several research directions/i);
+  assert.match(claResult.scientificBackground.sections[0]?.summary ?? '', /body-composition|fatty-acid|cla/i);
+  assert.doesNotMatch(claResult.scientificBackground.sections[0]?.summary ?? '', /appears in several research directions/i);
+  assert.match(carnitineResult.scientificBackground.sections[0]?.summary ?? '', /energy-transport|exercise-context|carnitine/i);
+  assert.doesNotMatch(carnitineResult.scientificBackground.sections[0]?.summary ?? '', /appears in several research directions/i);
 });
