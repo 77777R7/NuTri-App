@@ -1531,6 +1531,8 @@ test('magnesium and vitamin d research mode get longer execution budgets than th
   assert.equal(vitaminDPlan.mode, 'research_mode');
   assert.equal(vitaminCPlan.mode, 'research_mode');
   assert.ok(magnesiumProfile.timeoutMs > vitaminCProfile.timeoutMs);
+  assert.ok(magnesiumProfile.backgroundRefreshTimeoutMs < vitaminDProfile.backgroundRefreshTimeoutMs);
+  assert.equal(magnesiumProfile.backgroundRefreshMaxRetries, 0);
   assert.ok(vitaminDProfile.timeoutMs > vitaminCProfile.timeoutMs);
 });
 

@@ -10239,7 +10239,7 @@ const SCIENCE_SIDECAR_MAX_RETRIES = 0;
 const SCIENTIFIC_BACKGROUND_RESULT_CACHE_LIMIT = 120;
 const SCIENTIFIC_BACKGROUND_RESEARCH_FALLBACK_CACHE_TTL_MS = 20_000;
 const SCIENTIFIC_BACKGROUND_REFRESH_RETRY_AFTER_MS = 1_500;
-const SCIENTIFIC_BACKGROUND_BACKGROUND_REFRESH_TIMEOUT_MS = 24_000;
+const SCIENTIFIC_BACKGROUND_REFRESH_FAILURE_COOLDOWN_MS = 45_000;
 
 type ScientificBackgroundSidecarResponse = {
   status: "ok";
@@ -10260,6 +10260,29 @@ type ScientificBackgroundSidecarCacheEntry = {
 const scientificBackgroundSidecarCache = new Map<string, ScientificBackgroundSidecarCacheEntry>();
 const scientificBackgroundSidecarInflight = new Map<string, Promise<ScientificBackgroundSidecarResponse>>();
 const scientificBackgroundSidecarBackgroundRefresh = new Map<string, Promise<void>>();
+const scientificBackgroundSidecarBackgroundRefreshCooldownUntil = new Map<string, number>();
+
+const isScientificBackgroundBackgroundRefreshCoolingDown = (cacheKey: string): boolean => {
+  const cooldownUntil = scientificBackgroundSidecarBackgroundRefreshCooldownUntil.get(cacheKey);
+  if (!cooldownUntil) return false;
+  if (cooldownUntil <= Date.now()) {
+    scientificBackgroundSidecarBackgroundRefreshCooldownUntil.delete(cacheKey);
+    return false;
+  }
+  return true;
+};
+
+const markScientificBackgroundBackgroundRefreshCooldown = (cacheKey: string): void => {
+  scientificBackgroundSidecarBackgroundRefreshCooldownUntil.set(
+    cacheKey,
+    Date.now() + SCIENTIFIC_BACKGROUND_REFRESH_FAILURE_COOLDOWN_MS,
+  );
+  if (scientificBackgroundSidecarBackgroundRefreshCooldownUntil.size <= SCIENTIFIC_BACKGROUND_RESULT_CACHE_LIMIT) return;
+  const oldestKey = scientificBackgroundSidecarBackgroundRefreshCooldownUntil.keys().next().value;
+  if (typeof oldestKey === "string") {
+    scientificBackgroundSidecarBackgroundRefreshCooldownUntil.delete(oldestKey);
+  }
+};
 
 const readScientificBackgroundSidecarCache = (
   cacheKey: string,
@@ -11195,12 +11218,13 @@ app.post("/api/scientific-background/v1", verifySupabaseToken, async (req: Reque
     const ensureScientificBackgroundBackgroundRefresh = (): boolean => {
       if (!executionProfile.preferLiveWriter || !deepseekKey) return false;
       if (scientificBackgroundSidecarBackgroundRefresh.has(cacheKey)) return true;
+      if (isScientificBackgroundBackgroundRefreshCoolingDown(cacheKey)) return false;
 
       const backgroundRefresh = (async (): Promise<void> => {
         const backgroundLlmFn = buildDeepseekJsonLlmFn({
           deepseekKey,
           deepseekModel,
-          timeoutMs: SCIENTIFIC_BACKGROUND_BACKGROUND_REFRESH_TIMEOUT_MS,
+          timeoutMs: executionProfile.backgroundRefreshTimeoutMs,
           maxTokens: executionProfile.maxTokens,
         });
         if (!backgroundLlmFn) return;
@@ -11210,12 +11234,10 @@ app.post("/api/scientific-background/v1", verifySupabaseToken, async (req: Reque
           selectedDescriptor.name,
           {
             llmFn: backgroundLlmFn,
-            timeoutMs: SCIENTIFIC_BACKGROUND_BACKGROUND_REFRESH_TIMEOUT_MS,
-            maxRetries: executionProfile.maxRetries ?? SCIENCE_SIDECAR_MAX_RETRIES,
+            timeoutMs: executionProfile.backgroundRefreshTimeoutMs,
+            maxRetries: executionProfile.backgroundRefreshMaxRetries ?? SCIENCE_SIDECAR_MAX_RETRIES,
           },
         );
-
-        if (refreshed.source !== "api") return;
 
         const refreshedPayload: ScientificBackgroundSidecarResponse = {
           status: "ok",
@@ -11228,6 +11250,17 @@ app.post("/api/scientific-background/v1", verifySupabaseToken, async (req: Reque
           recommendedRetryAfterMs: null,
         };
 
+        if (refreshed.source !== "api") {
+          markScientificBackgroundBackgroundRefreshCooldown(cacheKey);
+          writeScientificBackgroundSidecarCache(
+            cacheKey,
+            refreshedPayload,
+            resolveScientificBackgroundCacheTtlMs(refreshedPayload, executionProfile),
+          );
+          return;
+        }
+
+        scientificBackgroundSidecarBackgroundRefreshCooldownUntil.delete(cacheKey);
         writeScientificBackgroundSidecarCache(
           cacheKey,
           refreshedPayload,
