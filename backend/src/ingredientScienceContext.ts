@@ -566,12 +566,29 @@ const deriveScienceTitleRescueRows = (params: {
   const coveredMineralFamilies = existingFamilies.filter(
     (family) => MINERAL_STACK_FAMILIES.has(family) || family === "vitamin_d",
   );
+  const hasMeaningfulCoverage =
+    params.existingRows.length > 0 &&
+    existingFamilies.some((family) => family !== "generic");
+
   if (titleMineralFamilies.length >= 2 && coveredMineralFamilies.length < titleMineralFamilies.length) {
     if (titleMineralFamilies.includes("magnesium") && !hasDedicatedMineralRow("magnesium")) pushRow("Magnesium");
     if (titleMineralFamilies.includes("zinc") && !hasDedicatedMineralRow("zinc")) pushRow("Zinc");
     if (titleMineralFamilies.includes("calcium") && !hasDedicatedMineralRow("calcium")) pushRow("Calcium");
     if (titleMineralFamilies.includes("iron") && !hasDedicatedMineralRow("iron")) pushRow("Iron");
     if (titleMineralFamilies.includes("vitamin_d") && !hasDedicatedMineralRow("vitamin_d")) {
+      pushRow(
+        extractTitleMatch(titleWithoutBrand, /\bvitamin\s*d(?:2|3)?\b|\bd3\b|\bd2\b/i) ?? "Vitamin D3",
+      );
+    }
+  }
+
+  if (!hasMeaningfulCoverage && titleMineralFamilies.length === 1) {
+    const [family] = titleMineralFamilies;
+    if (family === "magnesium") pushRow("Magnesium");
+    if (family === "zinc") pushRow("Zinc");
+    if (family === "calcium") pushRow("Calcium");
+    if (family === "iron") pushRow("Iron");
+    if (family === "vitamin_d") {
       pushRow(
         extractTitleMatch(titleWithoutBrand, /\bvitamin\s*d(?:2|3)?\b|\bd3\b|\bd2\b/i) ?? "Vitamin D3",
       );
@@ -594,9 +611,6 @@ const deriveScienceTitleRescueRows = (params: {
     pushRow("Vitamin C");
   }
 
-  const hasMeaningfulCoverage =
-    params.existingRows.length > 0 &&
-    existingFamilies.some((family) => family !== "generic");
   const isFoodLikeTitle =
     GREENS_TITLE_PATTERN.test(titleWithoutBrand) ||
     TEA_BAG_TITLE_PATTERN.test(titleWithoutBrand) ||
@@ -680,11 +694,11 @@ const pickPrimaryActiveRowIndex = (
     const mineralStackPriorityBoost =
       hasMineralStackLead
         ? family === "magnesium"
-          ? 42
+          ? 145
           : family === "zinc"
-            ? 32
+            ? 120
             : family === "calcium"
-              ? 18
+              ? 36
               : 0
         : 0;
     const score =
@@ -744,11 +758,11 @@ const scoreIngredientDescriptorForDisplay = (params: {
   const mineralStackPriorityBoost =
     hasMineralStackLead
       ? descriptor.ingredientFamily === "magnesium"
-        ? 42
+        ? 145
         : descriptor.ingredientFamily === "zinc"
-          ? 32
+          ? 120
           : descriptor.ingredientFamily === "calcium"
-            ? 18
+            ? 36
             : 0
       : 0;
 

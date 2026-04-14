@@ -1534,13 +1534,14 @@ test('magnesium and vitamin d research mode get longer execution budgets than th
   assert.ok(vitaminDProfile.timeoutMs > vitaminCProfile.timeoutMs);
 });
 
-test('calcium and iron research mode get longer execution budgets than the generic research profile', () => {
+test('calcium, zinc, and iron research mode get dedicated execution budgets', () => {
   const digest = buildDigest({
     labelId: 'fixture-calcium-iron-timeout',
-    productName: 'Calcium Citrate with Iron',
+    productName: 'Calcium Citrate with Zinc and Iron',
     dosageForm: 'Capsule',
     actives: [
       { name: 'Calcium (as Calcium Citrate)', amount: 250, unit: 'mg' },
+      { name: 'Zinc (as Zinc Chelate)', amount: 30, unit: 'mg' },
       { name: 'Iron (as Ferrous Bisglycinate Chelate)', amount: 18, unit: 'mg' },
       { name: 'Vitamin C', amount: 500, unit: 'mg' },
     ],
@@ -1555,6 +1556,10 @@ test('calcium and iron research mode get longer execution budgets than the gener
     context,
     selectedIngredientName: 'Iron (as Ferrous Bisglycinate Chelate)',
   });
+  const zincPlan = planScientificBackgroundSections({
+    context,
+    selectedIngredientName: 'Zinc (as Zinc Chelate)',
+  });
   const vitaminCPlan = planScientificBackgroundSections({
     context,
     selectedIngredientName: 'Vitamin C',
@@ -1562,12 +1567,17 @@ test('calcium and iron research mode get longer execution budgets than the gener
 
   const calciumProfile = resolveScientificBackgroundExecutionProfile(calciumPlan);
   const ironProfile = resolveScientificBackgroundExecutionProfile(ironPlan);
+  const zincProfile = resolveScientificBackgroundExecutionProfile(zincPlan);
   const vitaminCProfile = resolveScientificBackgroundExecutionProfile(vitaminCPlan);
 
   assert.equal(calciumPlan.mode, 'research_mode');
   assert.equal(ironPlan.mode, 'research_mode');
+  assert.equal(zincPlan.mode, 'research_mode');
   assert.equal(vitaminCPlan.mode, 'research_mode');
   assert.ok(calciumProfile.timeoutMs > vitaminCProfile.timeoutMs);
+  assert.ok(zincProfile.timeoutMs > vitaminCProfile.timeoutMs);
+  assert.ok(zincProfile.backgroundRefreshTimeoutMs < ironProfile.backgroundRefreshTimeoutMs);
+  assert.equal(zincProfile.backgroundRefreshMaxRetries, 0);
   assert.ok(ironProfile.timeoutMs > vitaminCProfile.timeoutMs);
 });
 
@@ -2121,7 +2131,7 @@ test('science context reorders supporting vitamins behind 5-HTP lead actives', (
   assert.equal(context.anchorIngredient?.ingredientFamily, '5htp');
 });
 
-test('mineral-stack products do not default to vitamin D over calcium or magnesium', () => {
+test('mineral-stack products prioritize magnesium and zinc over vitamin D or high-dose calcium noise', () => {
   const context = buildIngredientScienceContext({
     digest: buildDigest({
       labelId: 'fixture-mineral-stack-d3',
@@ -2138,7 +2148,8 @@ test('mineral-stack products do not default to vitamin D over calcium or magnesi
   });
 
   assert.doesNotMatch(context.ingredientRows[0]?.name ?? '', /vitamin d/i);
-  assert.ok(['calcium', 'magnesium', 'zinc'].includes(context.anchorIngredient?.ingredientFamily ?? ''));
+  assert.match(context.ingredientRows[0]?.name ?? '', /magnesium/i);
+  assert.equal(context.anchorIngredient?.ingredientFamily, 'magnesium');
 });
 
 test('food-like green tea products downgrade to label-context mode instead of research mode', () => {
@@ -2220,12 +2231,23 @@ test('title rescue rows recover higher-value science anchors for CLA, tea bags, 
     }),
     overlayClaims: null,
   });
+  const singleMineralContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-single-magnesium-title-rescue',
+      productName: '21st Century, Magnesium, 250 mg, 250 Tablets',
+      dosageForm: 'Tablet',
+      actives: [],
+    }),
+    overlayClaims: null,
+  });
 
   assert.match(claContext.ingredientRows[0]?.name ?? '', /\bcla\b/i);
   assert.match(teaContext.ingredientRows[0]?.name ?? '', /\bgreen tea\b/i);
   assert.match(probioticContext.ingredientRows[0]?.name ?? '', /\bprobiotic/i);
   assert.equal(probioticContext.anchorIngredient?.ingredientFamily, 'probiotic_or_blend');
   assert.match(mineralStackContext.ingredientRows[0]?.name ?? '', /\bmagnesium\b/i);
+  assert.match(singleMineralContext.ingredientRows[0]?.name ?? '', /\bmagnesium\b/i);
+  assert.equal(singleMineralContext.anchorIngredient?.ingredientFamily, 'magnesium');
   assert.ok(
     mineralStackContext.ingredientRows.some((row) => /\bcalcium\b/i.test(row.name)),
   );
