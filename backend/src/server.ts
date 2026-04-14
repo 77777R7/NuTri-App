@@ -11190,6 +11190,64 @@ app.post("/api/scientific-background/v1", verifySupabaseToken, async (req: Reque
       plan.mode,
       SCIENTIFIC_BACKGROUND_PROMPT_VERSION,
     ].join("|");
+    const deepseekKey = process.env.DEEPSEEK_API_KEY?.trim() || null;
+    const deepseekModel = process.env.DEEPSEEK_MODEL?.trim() || "deepseek-chat";
+    const ensureScientificBackgroundBackgroundRefresh = (): boolean => {
+      if (!executionProfile.preferLiveWriter || !deepseekKey) return false;
+      if (scientificBackgroundSidecarBackgroundRefresh.has(cacheKey)) return true;
+
+      const backgroundRefresh = (async (): Promise<void> => {
+        const backgroundLlmFn = buildDeepseekJsonLlmFn({
+          deepseekKey,
+          deepseekModel,
+          timeoutMs: SCIENTIFIC_BACKGROUND_BACKGROUND_REFRESH_TIMEOUT_MS,
+          maxTokens: executionProfile.maxTokens,
+        });
+        if (!backgroundLlmFn) return;
+
+        const refreshed = await compileScientificBackgroundAsync(
+          authority.ingredientScienceContext,
+          selectedDescriptor.name,
+          {
+            llmFn: backgroundLlmFn,
+            timeoutMs: SCIENTIFIC_BACKGROUND_BACKGROUND_REFRESH_TIMEOUT_MS,
+            maxRetries: executionProfile.maxRetries ?? SCIENCE_SIDECAR_MAX_RETRIES,
+          },
+        );
+
+        if (refreshed.source !== "api") return;
+
+        const refreshedPayload: ScientificBackgroundSidecarResponse = {
+          status: "ok",
+          digest: authority.decisionSupport.digest,
+          scientificBackground: refreshed.scientificBackground,
+          source: refreshed.source,
+          fallbackUsed: refreshed.fallbackUsed,
+          promptVersion: refreshed.promptVersion,
+          backgroundRefreshPending: false,
+          recommendedRetryAfterMs: null,
+        };
+
+        writeScientificBackgroundSidecarCache(
+          cacheKey,
+          refreshedPayload,
+          resolveScientificBackgroundCacheTtlMs(refreshedPayload, executionProfile),
+        );
+      })()
+        .catch((error) => {
+          captureException(error, {
+            route: "/api/scientific-background/v1",
+            phase: "background_refresh",
+            cacheKey,
+          });
+        })
+        .finally(() => {
+          scientificBackgroundSidecarBackgroundRefresh.delete(cacheKey);
+        });
+
+      scientificBackgroundSidecarBackgroundRefresh.set(cacheKey, backgroundRefresh);
+      return true;
+    };
     const cached = readScientificBackgroundSidecarCache(cacheKey);
     const shouldBypassFallbackCache =
       parsedBody.revalidateFallback === true && cached?.source === "fallback";
@@ -11197,13 +11255,13 @@ app.post("/api/scientific-background/v1", verifySupabaseToken, async (req: Reque
       return res.json(cached);
     }
     if (shouldBypassFallbackCache) {
-      const existingBackgroundRefresh = scientificBackgroundSidecarBackgroundRefresh.get(cacheKey);
-      if (existingBackgroundRefresh) {
-        await existingBackgroundRefresh.catch(() => null);
-        const refreshedCached = readScientificBackgroundSidecarCache(cacheKey);
-        if (refreshedCached && refreshedCached.source === "api") {
-          return res.json(refreshedCached);
-        }
+      const refreshedCached = readScientificBackgroundSidecarCache(cacheKey);
+      if (refreshedCached && refreshedCached.source === "api") {
+        return res.json(refreshedCached);
+      }
+      if (cached) {
+        const backgroundRefreshPending = ensureScientificBackgroundBackgroundRefresh();
+        return res.json(withScientificBackgroundRefreshHint(cached, backgroundRefreshPending));
       }
     }
 
@@ -11211,9 +11269,6 @@ app.post("/api/scientific-background/v1", verifySupabaseToken, async (req: Reque
     if (existingInflight) {
       return res.json(await existingInflight);
     }
-
-    const deepseekKey = process.env.DEEPSEEK_API_KEY?.trim() || null;
-    const deepseekModel = process.env.DEEPSEEK_MODEL?.trim() || "deepseek-chat";
     const llmFn = executionProfile.preferLiveWriter
       ? buildDeepseekJsonLlmFn({
         deepseekKey,
@@ -11251,62 +11306,8 @@ app.post("/api/scientific-background/v1", verifySupabaseToken, async (req: Reque
         resolveScientificBackgroundCacheTtlMs(payload, executionProfile),
       );
 
-      if (
-        payload.source === "fallback" &&
-        executionProfile.preferLiveWriter &&
-        deepseekKey &&
-        !scientificBackgroundSidecarBackgroundRefresh.has(cacheKey)
-      ) {
-        const backgroundRefresh = (async (): Promise<void> => {
-          const backgroundLlmFn = buildDeepseekJsonLlmFn({
-            deepseekKey,
-            deepseekModel,
-            timeoutMs: SCIENTIFIC_BACKGROUND_BACKGROUND_REFRESH_TIMEOUT_MS,
-            maxTokens: executionProfile.maxTokens,
-          });
-          if (!backgroundLlmFn) return;
-
-          const refreshed = await compileScientificBackgroundAsync(
-            authority.ingredientScienceContext,
-            selectedDescriptor.name,
-            {
-              llmFn: backgroundLlmFn,
-              timeoutMs: SCIENTIFIC_BACKGROUND_BACKGROUND_REFRESH_TIMEOUT_MS,
-              maxRetries: executionProfile.maxRetries ?? SCIENCE_SIDECAR_MAX_RETRIES,
-            },
-          );
-
-          if (refreshed.source !== "api") return;
-
-          const refreshedPayload: ScientificBackgroundSidecarResponse = {
-            status: "ok",
-            digest: authority.decisionSupport.digest,
-            scientificBackground: refreshed.scientificBackground,
-            source: refreshed.source,
-            fallbackUsed: refreshed.fallbackUsed,
-            promptVersion: refreshed.promptVersion,
-            backgroundRefreshPending: false,
-            recommendedRetryAfterMs: null,
-          };
-
-          writeScientificBackgroundSidecarCache(
-            cacheKey,
-            refreshedPayload,
-            resolveScientificBackgroundCacheTtlMs(refreshedPayload, executionProfile),
-          );
-        })()
-          .catch((error) => {
-            captureException(error, {
-              route: "/api/scientific-background/v1",
-              phase: "background_refresh",
-              cacheKey,
-            });
-          })
-          .finally(() => {
-            scientificBackgroundSidecarBackgroundRefresh.delete(cacheKey);
-          });
-
-        scientificBackgroundSidecarBackgroundRefresh.set(cacheKey, backgroundRefresh);
+      if (payload.source === "fallback") {
+        ensureScientificBackgroundBackgroundRefresh();
       }
 
       return withScientificBackgroundRefreshHint(
