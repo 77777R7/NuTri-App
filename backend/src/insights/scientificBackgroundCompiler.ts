@@ -208,6 +208,7 @@ const normalizeDiagnosticReason = (value: string | null | undefined): string | n
 
 const resolveErrorReason = (error: unknown): string => {
   if (!(error instanceof Error)) return "unknown_error";
+  if (error.name === "AbortError" || /aborted/i.test(error.message)) return "llm_timeout";
   const normalized = normalizeDiagnosticReason(error.message);
   return normalized ?? "unknown_error";
 };
