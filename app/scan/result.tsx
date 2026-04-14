@@ -183,6 +183,7 @@ export default function ScanResultScreen() {
     DEFAULT_HEADER_MINI_SCORE_TRIGGER,
   );
   const [dashboardCoreReady, setDashboardCoreReady] = useState(false);
+  const searchResultSeed = session?.mode === 'barcode' ? session.searchResultSeed ?? null : null;
   const loadingBadgeTimingRef = useRef({
     startedAt: 0,
     seen: false,
@@ -211,7 +212,13 @@ export default function ScanResultScreen() {
     analysisMeta,
     snapshot,
     analysisBundle,
-  } = useStreamAnalysis(barcode);
+  } = useStreamAnalysis(barcode, {
+    launchSource:
+      typeof params.source === 'string' && params.source.trim().length > 0
+        ? params.source.trim()
+        : null,
+    searchSeed: searchResultSeed,
+  });
   const barcodeQuality = useMemo(
     () => getBarcodeQuality({
       status,

@@ -5,6 +5,7 @@ import { Config } from '@/constants/Config';
 import { withAuthHeaders } from '@/lib/auth-token';
 import { AUTH_DISABLED } from '@/lib/auth-mode';
 import { resolveBrand } from '@/lib/brand/resolveBrand';
+import type { SearchResultSeed } from '@/lib/scan/session';
 import {
     resolveTrustedDisplayIdentity,
     type DisplayIdentityMode,
@@ -42,6 +43,11 @@ type ProductInfo = {
     name: string | null;
     category?: string | null;
     image?: string | null;
+};
+
+type StreamLaunchOptions = {
+    launchSource?: string | null;
+    searchSeed?: SearchResultSeed | null;
 };
 
 // Ingredient analysis from enhanced efficacy
@@ -229,6 +235,64 @@ const EXPECTED_DEGRADED_REASON_CODES = new Set([
     'REV1_WATCHDOG_TIMEOUT',
 ]);
 
+const normalizeSeedText = (value?: string | null): string | null => {
+    if (typeof value !== 'string') return null;
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed : null;
+};
+
+const buildSeededProductInfo = (seed?: SearchResultSeed | null): ProductInfo | null => {
+    if (!seed) return null;
+    const name = normalizeSeedText(seed.name);
+    const brand = normalizeSeedText(seed.brand);
+    const category = normalizeSeedText(seed.category);
+    const image = normalizeSeedText(seed.imageUrl ?? null);
+    if (!name && !brand && !category && !image) return null;
+    return {
+        brand,
+        name,
+        category,
+        image,
+    };
+};
+
+const buildInitialAnalysisState = (seed?: SearchResultSeed | null): AnalysisState => ({
+    brandExtraction: null,
+    productInfo: buildSeededProductInfo(seed),
+    sources: [],
+    efficacy: null,
+    safety: null,
+    usage: null,
+    value: null,
+    social: null,
+    meta: null,
+    analysisMeta: null,
+    analysisBundle: null,
+    status: 'idle',
+    errorKind: 'none',
+    reasonCode: null,
+    stage: null,
+    requestId: null,
+    lastSseEventType: null,
+    watchdogReason: null,
+    error: null,
+});
+
+const buildSearchSeedFingerprint = (seed?: SearchResultSeed | null): string => {
+    if (!seed) return '';
+    return [
+        normalizeSeedText(seed.productId),
+        normalizeSeedText(seed.barcode ?? null),
+        normalizeSeedText(seed.upcCode ?? null),
+        normalizeSeedText(seed.name),
+        normalizeSeedText(seed.brand),
+        normalizeSeedText(seed.category),
+        normalizeSeedText(seed.imageUrl ?? null),
+        normalizeSeedText(seed.factsStatus ?? null),
+        normalizeSeedText(seed.coverageStatus ?? null),
+    ].join('|');
+};
+
 export const resolveTerminalStatus = (params: {
     previousStatus: AnalysisStatus;
     nextStatus: AnalysisStatus;
@@ -366,28 +430,13 @@ export const parseStreamErrorEvent = (params: {
     };
 };
 
-export function useStreamAnalysis(barcode: string): AnalysisStateWithSnapshot {
-    const [state, setState] = useState<AnalysisState>({
-        brandExtraction: null,
-        productInfo: null,
-        sources: [],
-        efficacy: null,
-        safety: null,
-        usage: null,
-        value: null,
-        social: null,
-        meta: null,
-        analysisMeta: null,
-        analysisBundle: null,
-        status: 'idle',
-        errorKind: 'none',
-        reasonCode: null,
-        stage: null,
-        requestId: null,
-        lastSseEventType: null,
-        watchdogReason: null,
-        error: null,
-    });
+export function useStreamAnalysis(barcode: string, options?: StreamLaunchOptions): AnalysisStateWithSnapshot {
+    const normalizedLaunchSource = typeof options?.launchSource === 'string'
+        ? options.launchSource.trim().toLowerCase()
+        : '';
+    const searchSeed = options?.searchSeed ?? null;
+    const searchSeedFingerprint = buildSearchSeedFingerprint(searchSeed);
+    const [state, setState] = useState<AnalysisState>(() => buildInitialAnalysisState(searchSeed));
     const [serverSnapshot, setServerSnapshot] = useState<SupplementSnapshot | null>(null);
 
     const eventSourceRef = useRef<RNEventSource | null>(null);
@@ -397,22 +446,18 @@ export function useStreamAnalysis(barcode: string): AnalysisStateWithSnapshot {
     const rev1DoneWatchdogRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     useEffect(() => {
-        if (!barcode) return;
+        if (!barcode) {
+            setState(buildInitialAnalysisState(searchSeed));
+            setServerSnapshot(null);
+            return;
+        }
 
         let sawAnyActivity = false;
 
-        setState(prev => ({
-            ...prev,
+        setState({
+            ...buildInitialAnalysisState(searchSeed),
             status: 'loading',
-            errorKind: 'none',
-            reasonCode: null,
-            stage: null,
-            requestId: null,
-            lastSseEventType: null,
-            watchdogReason: null,
-            error: null,
-            analysisBundle: null,
-        }));
+        });
         setServerSnapshot(null);
         hasBundleRef.current = false;
         rev1SeenRef.current = false;
@@ -451,6 +496,8 @@ export function useStreamAnalysis(barcode: string): AnalysisStateWithSnapshot {
                 return next;
             });
         };
+        const canSettleSearchLaunchAsPartial = (prev: AnalysisState): boolean =>
+            normalizedLaunchSource === 'search' && hasMeaningfulPartialData(prev);
 
         const armRev1DoneWatchdog = () => {
             clearRev1DoneWatchdog();
@@ -502,6 +549,17 @@ export function useStreamAnalysis(barcode: string): AnalysisStateWithSnapshot {
             if (sawAnyActivity) return;
             applyStateUpdate((prev) => {
                 if (prev.status !== 'loading') return prev;
+                if (canSettleSearchLaunchAsPartial(prev)) {
+                    return {
+                        ...prev,
+                        status: 'complete',
+                        errorKind: 'none',
+                        reasonCode: prev.reasonCode ?? 'SEARCH_SEED_CONNECT_TIMEOUT',
+                        stage: prev.stage ?? 'connect',
+                        lastSseEventType: prev.lastSseEventType ?? 'connect_timeout',
+                        error: null,
+                    };
+                }
                 return {
                     ...prev,
                     status: 'error',
@@ -524,6 +582,17 @@ export function useStreamAnalysis(barcode: string): AnalysisStateWithSnapshot {
                         ? prev.analysisBundle.meta.revision
                         : null;
                 if (revision != null && revision >= 1) return prev;
+                if (canSettleSearchLaunchAsPartial(prev)) {
+                    return {
+                        ...prev,
+                        status: 'complete',
+                        errorKind: 'none',
+                        reasonCode: prev.reasonCode ?? 'SEARCH_SEED_REV1_TIMEOUT',
+                        stage: prev.stage ?? 'stream',
+                        lastSseEventType: prev.lastSseEventType ?? 'rev1_timeout',
+                        error: null,
+                    };
+                }
                 return {
                     ...prev,
                     status: 'error',
@@ -550,9 +619,24 @@ export function useStreamAnalysis(barcode: string): AnalysisStateWithSnapshot {
                 hasBearer: Boolean(headers.Authorization),
             });
 
-            const streamPayload = USE_BUNDLE_ONLY_STREAM_MODE
+            const streamPayload: Record<string, unknown> = USE_BUNDLE_ONLY_STREAM_MODE
                 ? { barcode, streamMode: 'analysis_bundle_only' as const }
                 : { barcode };
+            if (normalizedLaunchSource) {
+                streamPayload.launchSource = normalizedLaunchSource;
+            }
+            if (searchSeed) {
+                streamPayload.searchContext = {
+                    productId: searchSeed.productId,
+                    barcode: searchSeed.barcode ?? null,
+                    upcCode: searchSeed.upcCode ?? null,
+                    productName: searchSeed.name,
+                    brandName: searchSeed.brand,
+                    category: searchSeed.category,
+                    factsStatus: searchSeed.factsStatus ?? null,
+                    coverageStatus: searchSeed.coverageStatus ?? null,
+                };
+            }
 
             // Initialize SSE connection (POST method)
             const es = new RNEventSource(`${API_URL}/api/enrich-stream`, {
@@ -909,6 +993,18 @@ export function useStreamAnalysis(barcode: string): AnalysisStateWithSnapshot {
                                     error: null,
                                 };
                             }
+                            if (parsed.kind !== 'unauthorized' && canSettleSearchLaunchAsPartial(prev)) {
+                                return {
+                                    ...prev,
+                                    status: 'complete',
+                                    errorKind: 'none',
+                                    reasonCode: parsed.reasonCode ?? prev.reasonCode ?? 'SEARCH_SEED_PARTIAL',
+                                    stage: parsed.stage ?? prev.stage ?? 'stream',
+                                    requestId: parsed.requestId ?? prev.requestId,
+                                    watchdogReason: prev.watchdogReason,
+                                    error: null,
+                                };
+                            }
                             if (rev1SeenRef.current && (isUsableResultBundle(prev.analysisBundle) || hasMeaningfulPartialData(prev))) {
                                 return {
                                     ...prev,
@@ -950,6 +1046,17 @@ export function useStreamAnalysis(barcode: string): AnalysisStateWithSnapshot {
                             fallbackMessage: event?.message ?? 'Connection failed',
                         });
                         applyStateUpdate((prev) => {
+                            if (parsed.kind !== 'unauthorized' && canSettleSearchLaunchAsPartial(prev)) {
+                                return {
+                                    ...prev,
+                                    status: 'complete',
+                                    errorKind: 'none',
+                                    reasonCode: prev.reasonCode ?? 'SEARCH_SEED_PARTIAL',
+                                    stage: prev.stage ?? 'stream',
+                                    watchdogReason: prev.watchdogReason,
+                                    error: null,
+                                };
+                            }
                             if (rev1SeenRef.current && (isUsableResultBundle(prev.analysisBundle) || hasMeaningfulPartialData(prev))) {
                                 return {
                                     ...prev,
@@ -1008,6 +1115,18 @@ export function useStreamAnalysis(barcode: string): AnalysisStateWithSnapshot {
                                     : 'Could not connect to the server',
                     });
                     applyStateUpdate((prev) => {
+                        if (parsed.kind !== 'unauthorized' && canSettleSearchLaunchAsPartial(prev)) {
+                            return {
+                                ...prev,
+                                status: 'complete',
+                                errorKind: 'none',
+                                reasonCode: parsed.reasonCode ?? prev.reasonCode ?? 'SEARCH_SEED_PARTIAL',
+                                stage: parsed.stage ?? prev.stage ?? 'stream',
+                                requestId: parsed.requestId ?? prev.requestId,
+                                watchdogReason: prev.watchdogReason,
+                                error: null,
+                            };
+                        }
                         if (rev1SeenRef.current && (isUsableResultBundle(prev.analysisBundle) || hasMeaningfulPartialData(prev))) {
                             return {
                                 ...prev,
@@ -1049,15 +1168,28 @@ export function useStreamAnalysis(barcode: string): AnalysisStateWithSnapshot {
 
         startStream().catch((error) => {
             console.warn('[SSE] Stream init failed', error);
-            applyStateUpdate(prev => ({
-                ...prev,
-                status: 'error',
-                errorKind: 'network',
-                reasonCode: prev.reasonCode,
-                stage: prev.stage,
-                watchdogReason: prev.watchdogReason,
-                error: 'Connection failed',
-            }));
+            applyStateUpdate(prev => {
+                if (canSettleSearchLaunchAsPartial(prev)) {
+                    return {
+                        ...prev,
+                        status: 'complete',
+                        errorKind: 'none',
+                        reasonCode: prev.reasonCode ?? 'SEARCH_SEED_CONNECTION_FAILED',
+                        stage: prev.stage ?? 'stream',
+                        watchdogReason: prev.watchdogReason,
+                        error: null,
+                    };
+                }
+                return {
+                    ...prev,
+                    status: 'error',
+                    errorKind: 'network',
+                    reasonCode: prev.reasonCode,
+                    stage: prev.stage,
+                    watchdogReason: prev.watchdogReason,
+                    error: 'Connection failed',
+                };
+            });
         });
 
         return () => {
@@ -1066,7 +1198,7 @@ export function useStreamAnalysis(barcode: string): AnalysisStateWithSnapshot {
             clearTimeout(rev1Guard);
             closeStream();
         };
-    }, [barcode]);
+    }, [barcode, normalizedLaunchSource, searchSeedFingerprint]);
 
     const snapshot = useMemo(
         () => serverSnapshot ?? buildBarcodeSnapshot({ barcode, analysis: state }),

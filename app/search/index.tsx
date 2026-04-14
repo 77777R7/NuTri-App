@@ -443,6 +443,19 @@ const SearchPage = () => {
       input: { barcode: scanCode },
       isLoading: true,
       source: 'search',
+      searchResultSeed: {
+        productId: item.productId,
+        barcode: item.barcode ?? null,
+        upcCode: item.upcCode ?? null,
+        name: item.name,
+        brand: item.brand,
+        category: item.category,
+        benefit: item.benefit,
+        dose: item.dose,
+        imageUrl: item.imageUrl ?? null,
+        factsStatus: item.factsStatus,
+        coverageStatus: item.coverageStatus,
+      },
     });
 
     router.push({

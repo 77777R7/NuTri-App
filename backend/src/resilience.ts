@@ -52,6 +52,7 @@ export const isAbortError = (error: unknown): boolean => {
     // Expected internal cancels (avoid noisy error logs).
     if (message === "fast_bundle_replaced") return true;
     if (message === "fallback_rev1_locked") return true;
+    if (message === "stream_finalized") return true;
   }
   return false;
 };
