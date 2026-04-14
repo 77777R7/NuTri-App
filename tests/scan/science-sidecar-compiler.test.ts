@@ -2077,7 +2077,7 @@ test('5-htp, green tea extract, and omega-3 now use target-family live-writer pr
   assert.equal(greenTeaProfile.maxRetries, 0);
   assert.equal(epaProfile.maxRetries, 0);
   assert.equal(htpProfile.backgroundRefreshMaxRetries, 1);
-  assert.equal(greenTeaProfile.backgroundRefreshMaxRetries, 1);
+  assert.equal(greenTeaProfile.backgroundRefreshMaxRetries, 0);
   assert.equal(epaProfile.backgroundRefreshMaxRetries, 1);
   assert.ok(htpProfile.timeoutMs >= 3_500);
   assert.ok(greenTeaProfile.timeoutMs >= 3_600);
