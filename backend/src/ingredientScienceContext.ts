@@ -142,11 +142,15 @@ const FUNCTIONAL_FOOD_LIKE_INGREDIENT_PATTERN =
 const FUNCTIONAL_FOOD_LIKE_FORM_PATTERN = /\b(?:gum|mint|lozenge|tea|powder|drink\s*mix)\b/i;
 const PROBIOTIC_TITLE_PATTERN =
   /\b(?:probiotic|probiotics|pro-bio|flora|microbiome|live cultures?|digestive support)\b/i;
+const PROBIOTIC_SPECIFIC_ROW_PATTERN =
+  /\b(?:probiotic|probiotics|acidophilus|lactobacillus|bifidobacterium|saccharomyces|bacillus|cfu|live cultures?)\b/i;
 const GREENS_TITLE_PATTERN =
   /\b(?:greens\b|green\s+superfood|superfood|vegetable\s+powder|daily\s+greens?|greens?\s+powder)\b/i;
 const TEA_BAG_TITLE_PATTERN = /\b(?:tea\s+bags?|herbal\s+tea|slimming\s+tea)\b/i;
 const FOOD_LIKE_POWDER_TITLE_PATTERN =
   /\b(?:juice\s+powder|fruit\s+powder|smoothie|drink\s+mix|vegetable\s+powder|greens?\s+powder)\b/i;
+const IMMUNE_BLEND_TITLE_PATTERN =
+  /\b(?:immune|immunity|sambucus|elderberry|children'?s|chewable)\b/i;
 const GENERIC_FORMULA_LINE_PATTERN =
   /\b(?:supplement|nutritional|nutrition(?:al)?|proprietary)\s+formula\b|\bmatrix\b/i;
 const ENZYME_SUPPORT_LINE_PATTERN =
@@ -535,10 +539,10 @@ const deriveScienceTitleRescueRows = (params: {
     );
   }
 
-  if (
-    PROBIOTIC_TITLE_PATTERN.test(titleWithoutBrand)
-    && !existingFamilies.includes("probiotic_or_blend")
-  ) {
+  const hasDedicatedProbioticRow = params.existingRows.some((row) =>
+    PROBIOTIC_SPECIFIC_ROW_PATTERN.test(row.name),
+  );
+  if (PROBIOTIC_TITLE_PATTERN.test(titleWithoutBrand) && !hasDedicatedProbioticRow) {
     pushRow("Probiotics");
   }
 
@@ -572,6 +576,22 @@ const deriveScienceTitleRescueRows = (params: {
         extractTitleMatch(titleWithoutBrand, /\bvitamin\s*d(?:2|3)?\b|\bd3\b|\bd2\b/i) ?? "Vitamin D3",
       );
     }
+  }
+
+  if (
+    hasTitleFamily("zinc", titleWithoutBrand) &&
+    IMMUNE_BLEND_TITLE_PATTERN.test(titleWithoutBrand) &&
+    !hasDedicatedMineralRow("zinc")
+  ) {
+    pushRow("Zinc");
+  }
+
+  if (
+    hasTitleFamily("vitamin_c", titleWithoutBrand) &&
+    IMMUNE_BLEND_TITLE_PATTERN.test(titleWithoutBrand) &&
+    !params.existingRows.some((row) => inferRowIngredientFamily({ rowName: row.name, productName: titleWithoutBrand }) === "vitamin_c")
+  ) {
+    pushRow("Vitamin C");
   }
 
   const hasMeaningfulCoverage =
@@ -885,9 +905,17 @@ const classifyProductArchetype = (params: {
   const rowLooksFoodLike = params.rows.some((row) =>
     FUNCTIONAL_FOOD_LIKE_INGREDIENT_PATTERN.test(normalizeText(row.name)),
   );
+  const foodLikeTitleDominant =
+    GREENS_TITLE_PATTERN.test(productName) ||
+    TEA_BAG_TITLE_PATTERN.test(productName) ||
+    FOOD_LIKE_POWDER_TITLE_PATTERN.test(productName);
   const strongFoodPresentation = titleLooksFoodLike || formLooksFoodLike || rowLooksFoodLike;
   const definitelyFoodLikeFromTitle =
     titleLooksFoodLike && (formLooksFoodLike || rowLooksFoodLike);
+
+  if (foodLikeTitleDominant) {
+    return "functional_food_like";
+  }
 
   if (definitelyFoodLikeFromTitle) {
     return "functional_food_like";

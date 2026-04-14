@@ -2269,6 +2269,71 @@ test('greens and tea-bag products stay in label-context mode even when the rescu
   assert.equal(teaPlan.mode, 'label_context_mode');
 });
 
+test('opaque probiotic blends and children immune blends rescue user-visible anchors from title context', () => {
+  const probioticContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-opaque-probiotic-blend',
+      productName: '21st Century, Acidophilus Probiotic Blend, 100 Capsules',
+      dosageForm: 'Capsule',
+      actives: [{ name: 'Proprietary Blend', amount: 175, unit: 'mg' }],
+    }),
+    overlayClaims: null,
+  });
+  const immuneContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-children-immune-zinc-blend',
+      productName: 'Chewable Immune Blend with Vitamin A, Vitamin C, Vitamin E, and Zinc for Children',
+      dosageForm: 'Chewable Tablet',
+      actives: [],
+    }),
+    overlayClaims: null,
+  });
+
+  assert.match(probioticContext.ingredientRows[0]?.name ?? '', /probiotic/i);
+  assert.equal(probioticContext.anchorIngredient?.ingredientFamily, 'probiotic_or_blend');
+  assert.ok(
+    immuneContext.ingredientRows.some((row) => /\bzinc\b/i.test(row.name)),
+  );
+  assert.ok(
+    immuneContext.ingredientRows.some((row) => /vitamin c/i.test(row.name)),
+  );
+});
+
+test('greens, tea bags, and juice powders are treated as label-context products from title alone', () => {
+  const juicePowderContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-juice-powder-title-only',
+      productName: 'Organic Dragon Fruit Juice Powder with Magnesium',
+      dosageForm: 'Capsule',
+      actives: [{ name: 'Magnesium (as Magnesium Citrate)', amount: 50, unit: 'mg' }],
+    }),
+    overlayClaims: null,
+  });
+  const teaBagContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-tea-bag-title-only',
+      productName: 'Green Tea, 24 Tea Bags',
+      dosageForm: 'Capsule',
+      actives: [{ name: 'Green Tea Extract', amount: 150, unit: 'mg' }],
+    }),
+    overlayClaims: null,
+  });
+
+  const juicePowderPlan = planScientificBackgroundSections({
+    context: juicePowderContext,
+    selectedIngredientName: juicePowderContext.anchorIngredient?.name ?? 'Magnesium',
+  });
+  const teaBagPlan = planScientificBackgroundSections({
+    context: teaBagContext,
+    selectedIngredientName: teaBagContext.anchorIngredient?.name ?? 'Green Tea Extract',
+  });
+
+  assert.equal(juicePowderContext.productArchetype, 'functional_food_like');
+  assert.equal(juicePowderPlan.mode, 'label_context_mode');
+  assert.equal(teaBagContext.productArchetype, 'functional_food_like');
+  assert.equal(teaBagPlan.mode, 'label_context_mode');
+});
+
 test('new metabolic families fall back with product-specific copy instead of generic research-direction prose', async () => {
   const context = buildIngredientScienceContext({
     digest: buildDigest({
