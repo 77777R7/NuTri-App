@@ -302,6 +302,37 @@ test('ingredient overview rejects factual A-card restatement and falls back to f
   assert.match(result.ingredientOverview.compareHint ?? '', /EPA and DHA|total omega-3/i);
 });
 
+test('ingredient overview repairs a near-miss writer response into an api result when the anchor and compare hint can be normalized', async () => {
+  const digest = buildDigest({
+    labelId: 'fixture-5htp-companions',
+    productName: '5-HTP with Glycine Taurine and Inositol',
+    dosageForm: 'Capsule',
+    actives: [
+      { name: '5-HTP (5-hydroxytryptophan)', amount: 200, unit: 'mg' },
+      { name: 'Glycine', amount: 100, unit: 'mg' },
+      { name: 'Taurine', amount: 100, unit: 'mg' },
+      { name: 'Inositol', amount: 100, unit: 'mg' },
+    ],
+  });
+
+  const context = buildIngredientScienceContext({ digest, overlayClaims: null });
+  const result = await compileIngredientOverviewAsync(context, {
+    llmFn: async () => JSON.stringify({
+      titleLine: 'Formula structure',
+      paragraph1: 'The label keeps one main active and then arranges the surrounding lines as supporting formula components.',
+      paragraph2: 'Glycine, taurine, and inositol read more like companion rows than equal co-headliners.',
+      compareHint: 'Compare how clearly the label discloses the main active line and the supporting formula lines.',
+    }),
+    timeoutMs: 200,
+    maxRetries: 0,
+  });
+
+  assert.equal(result.source, 'api');
+  assert.equal(result.fallbackUsed, false);
+  assert.match(result.ingredientOverview.paragraph1, /5-HTP/i);
+  assert.match(result.ingredientOverview.compareHint ?? '', /label|supporting formula lines/i);
+});
+
 test('single-anchor ingredient overview still allows identity copy when it adds label meaning', async () => {
   const digest = buildDigest({
     labelId: 'fixture-astaxanthin',

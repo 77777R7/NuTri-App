@@ -27,7 +27,7 @@ export type CompileIngredientOverviewOpts = {
   maxRetries?: number;
 };
 
-export const INGREDIENT_OVERVIEW_PROMPT_VERSION = "ingredient_overview_v6";
+export const INGREDIENT_OVERVIEW_PROMPT_VERSION = "ingredient_overview_v7";
 
 const LLM_TIMEOUT_MS = 9_000;
 const LLM_MAX_RETRIES = 1;
@@ -72,6 +72,12 @@ const normalizeComparable = (value: string | null | undefined): string =>
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, " ")
     .trim();
+
+const lowerFirst = (value: string | null | undefined): string => {
+  const normalized = normalizeText(value);
+  if (!normalized) return "";
+  return normalized.charAt(0).toLowerCase() + normalized.slice(1);
+};
 
 const lineRoleLabel = (value: string | null | undefined): string => {
   switch (value) {
@@ -415,6 +421,38 @@ const normalizeTitleLine = (context: IngredientScienceContext, titleLine: string
   return normalized;
 };
 
+const repairBlock = (
+  context: IngredientScienceContext,
+  candidate: IngredientOverviewBlock,
+  fallbackBlock: IngredientOverviewBlock,
+): IngredientOverviewBlock => {
+  const anchorName = normalizeText(context.anchorIngredient?.name);
+  const normalizedParagraphOne = normalizeText(candidate.paragraph1);
+  const repairedParagraphOne = (() => {
+    if (!anchorName || !normalizedParagraphOne) return normalizedParagraphOne;
+    const existing = normalizeComparable(normalizedParagraphOne);
+    if (existing.includes(normalizeComparable(anchorName))) return normalizedParagraphOne;
+    return `${anchorName} anchors this formula, and ${lowerFirst(normalizedParagraphOne)}`;
+  })();
+
+  const repaired: IngredientOverviewBlock = {
+    mode: candidate.mode ?? fallbackBlock.mode,
+    titleLine: normalizeTitleLine(context, candidate.titleLine ?? fallbackBlock.titleLine),
+    paragraph1: asSentence(repairedParagraphOne || fallbackBlock.paragraph1),
+    paragraph2: candidate.paragraph2 ? asSentence(candidate.paragraph2) : (fallbackBlock.paragraph2 ?? null),
+    compareHint:
+      candidate.compareHint && hasSpecificCompareHint(candidate.compareHint)
+        ? asSentence(candidate.compareHint)
+        : fallbackBlock.compareHint,
+  };
+
+  if (!addsFormulaMeaning(repaired) && fallbackBlock.paragraph2) {
+    repaired.paragraph2 = fallbackBlock.paragraph2;
+  }
+
+  return repaired;
+};
+
 const gateBlock = (context: IngredientScienceContext, block: IngredientOverviewBlock): boolean => {
   if (!block.mode) return false;
   if (!block.paragraph1) return false;
@@ -473,17 +511,18 @@ export const compileIngredientOverviewAsync = async (
     try {
       const raw = await withTimeout(llmFn(prompt), timeoutMs);
       const parsed = parseBlock(raw);
-      if (!parsed?.mode) continue;
+      if (!parsed) continue;
       const candidate: IngredientOverviewBlock = {
-        mode: parsed.mode,
+        mode: parsed.mode ?? fallbackBlock.mode,
         titleLine: normalizeTitleLine(context, parsed.titleLine ?? null),
         paragraph1: asSentence(parsed.paragraph1),
         paragraph2: parsed.paragraph2 ? asSentence(parsed.paragraph2) : null,
         compareHint: parsed.compareHint ? asSentence(parsed.compareHint) : null,
       };
-      if (!gateBlock(context, candidate)) continue;
+      const repairedCandidate = repairBlock(context, candidate, fallbackBlock);
+      if (!gateBlock(context, repairedCandidate)) continue;
       return {
-        ingredientOverview: candidate,
+        ingredientOverview: repairedCandidate,
         source: "api",
         fallbackUsed: false,
         promptVersion: INGREDIENT_OVERVIEW_PROMPT_VERSION,

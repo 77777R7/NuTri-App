@@ -16,6 +16,10 @@ type OverlayNutritionalFactRow = {
 
 type OverlayClaimsLike = {
   nutritionalFacts?: OverlayNutritionalFactRow[] | null;
+  title?: string | null;
+  brandName?: string | null;
+  description?: string | null;
+  suggestedUse?: string | null;
 } | null | undefined;
 
 type TitleFallbackParams = {
@@ -87,6 +91,8 @@ const GENERIC_OCR_INGREDIENT_RESIDUE = new Set([
 ]);
 const OCR_INSTRUCTIONAL_RESIDUE_PATTERN =
   /\b(suggested\s*u(?:se)?|serving\s*(?:size|per|container)|daily\s*value|%daily|take\s+with\s+food|healthcare\s+pro(?:fessional|vider)|planned\s+pregnan|capsules?\b|tablet\b|days?\b|per\s+serving)\b/i;
+const EXPLICIT_NUTRITION_LABEL_PATTERN =
+  /^(?:calories?|total fats?|saturated fats?|trans fats?|cholesterol|sodium|total carbohydrates?|dietary fib(?:er|re)|total sugars?|added sugars?|protein)$/i;
 
 const isHeaderLike = (value: string | null | undefined): boolean => {
   const normalized = normalizeDisplayText(value).replace(/[%*†‡]+/g, "");
@@ -95,7 +101,7 @@ const isHeaderLike = (value: string | null | undefined): boolean => {
 
 const isNutritionLabelLike = (value: string | null | undefined): boolean => {
   const normalized = normalizeDisplayText(value);
-  return isNutritionLabelLikeIngredientName(normalized);
+  return isNutritionLabelLikeIngredientName(normalized) || EXPLICIT_NUTRITION_LABEL_PATTERN.test(normalized);
 };
 
 const COMPOUND_INGREDIENT_EXEMPT_PATTERN =
@@ -1308,19 +1314,74 @@ const buildNormalizedScienceIngredientRow = (params: {
 };
 
 const toOfficialRows = (digest: FactsDigest): NormalizedScienceIngredientRow[] =>
-  (digest.actives ?? [])
-    .map((active) => {
-      const dose =
-        normalizeDose(active?.amountText) ??
-        (active?.amount != null && normalizeWhitespace(active?.unit)
-          ? normalizeDisplayText(`${active.amount} ${active.unit ?? ""}`)
-          : null);
-      return buildNormalizedScienceIngredientRow({
-        name: active?.name,
-        dose,
-      });
-    })
-    .filter((row): row is NormalizedScienceIngredientRow => row !== null);
+  pruneNutritionLabelLikeRowsIfAlternatives(
+    (digest.actives ?? [])
+      .map((active) => {
+        const dose =
+          normalizeDose(active?.amountText) ??
+          (active?.amount != null && normalizeWhitespace(active?.unit)
+            ? normalizeDisplayText(`${active.amount} ${active.unit ?? ""}`)
+            : null);
+        return buildNormalizedScienceIngredientRow({
+          name: active?.name,
+          dose,
+        });
+      })
+      .filter((row): row is NormalizedScienceIngredientRow => row !== null),
+  );
+
+const toNormalizedScienceIngredientRows = (
+  rows: ScienceIngredientRow[],
+): NormalizedScienceIngredientRow[] =>
+  pruneNutritionLabelLikeRowsIfAlternatives(
+    rows
+      .map((row) => buildNormalizedScienceIngredientRow(row))
+      .filter((row): row is NormalizedScienceIngredientRow => row !== null),
+  );
+
+const buildOverlayFallbackDescription = (overlayClaims: OverlayClaimsLike): string | null => {
+  const parts = [
+    normalizeWhitespace(overlayClaims?.description),
+    normalizeWhitespace(overlayClaims?.suggestedUse),
+  ].filter(Boolean);
+  return parts.length > 0 ? parts.join(" ") : null;
+};
+
+const deriveOverlayFallbackRows = (
+  overlayClaims: OverlayClaimsLike,
+): NormalizedScienceIngredientRow[] =>
+  toNormalizedScienceIngredientRows(
+    normalizeIherbSupplementFactsRowsWithTitleFallback({
+      rows: overlayClaims?.nutritionalFacts,
+      title: overlayClaims?.title,
+      brandName: overlayClaims?.brandName,
+      servingSize: null,
+      servingsPerContainer: null,
+      sourceZipPath: null,
+      descriptionText: buildOverlayFallbackDescription(overlayClaims),
+    }),
+  );
+
+const deriveDigestTitleFallbackRows = (
+  digest: FactsDigest,
+): NormalizedScienceIngredientRow[] =>
+  toNormalizedScienceIngredientRows(
+    normalizeIherbSupplementFactsRowsWithTitleFallback({
+      rows: null,
+      title: digest.product.name,
+      brandName: digest.product.brandDisplay ?? digest.product.brandLegal ?? null,
+      servingSize: digest.serving.servingSize,
+      servingsPerContainer:
+        digest.serving.servingsPerContainer != null
+          ? String(digest.serving.servingsPerContainer)
+          : null,
+      sourceZipPath: null,
+      descriptionText: [
+        ...(digest.claims.labelPurposes ?? []),
+        ...(digest.claims.webClaims ?? []),
+      ].join(" "),
+    }),
+  );
 
 const mergeRowMatchKeys = (
   preferred: NormalizedScienceIngredientRow,
@@ -1391,6 +1452,15 @@ const pruneOverlappingDoseRows = (
   }
 
   return kept;
+};
+
+const pruneNutritionLabelLikeRowsIfAlternatives = (
+  rows: NormalizedScienceIngredientRow[],
+): NormalizedScienceIngredientRow[] => {
+  if (rows.length <= 1) return rows;
+  const hasNonNutritionRow = rows.some((row) => !isNutritionLabelLike(row.name));
+  if (!hasNonNutritionRow) return rows;
+  return rows.filter((row) => !isNutritionLabelLike(row.name));
 };
 
 const normalizeIherbSupplementFactsRowsInternal = (
@@ -1703,25 +1773,46 @@ export const selectScienceIngredientRows = (params: {
   ingredientRows: ScienceIngredientRow[];
 } => {
   const officialRows = toOfficialRows(params.digest);
+  const digestTitleFallbackRows = deriveDigestTitleFallbackRows(params.digest);
+  const officialFallbackRows = officialRows.length > 0 ? officialRows : digestTitleFallbackRows;
   const fallback = {
     ingredientSourceTier: "official_record" as const,
-    ingredientRows: officialRows.map((row) => ({ name: row.name, dose: row.dose })),
+    ingredientRows: officialFallbackRows.map((row) => ({ name: row.name, dose: row.dose })),
   };
 
-  if (params.digest.sourceType !== "dsld") return fallback;
+  const overlayRows = deriveOverlayFallbackRows(params.overlayClaims);
 
-  const overlayRows = normalizeIherbSupplementFactsRowsInternal(params.overlayClaims?.nutritionalFacts);
+  if (params.digest.sourceType !== "dsld") {
+    if (overlayRows.length > 0) {
+      return {
+        ingredientSourceTier: "overlay_iherb",
+        ingredientRows: overlayRows.map((row) => ({ name: row.name, dose: row.dose })),
+      };
+    }
+    return fallback;
+  }
+
   if (overlayRows.length === 0) return fallback;
 
   const officialCoverageRows = selectOfficialCoverageRows(officialRows);
-  if (officialCoverageRows.length === 0) return fallback;
+  if (officialCoverageRows.length === 0) {
+    return {
+      ingredientSourceTier: "overlay_iherb",
+      ingredientRows: overlayRows.map((row) => ({ name: row.name, dose: row.dose })),
+    };
+  }
 
   const bestCoverage = findBestCoverageAssignment(officialCoverageRows, overlayRows);
   if (
     bestCoverage.matchedCount < requiredCoverageMatches(officialCoverageRows.length) ||
     bestCoverage.matchedDoseCount < 1
   ) {
-    return fallback;
+    return fallback.ingredientRows.length > 0
+      ? fallback
+      : {
+        ingredientSourceTier: "overlay_iherb",
+        ingredientRows: overlayRows.map((row) => ({ name: row.name, dose: row.dose })),
+      };
   }
 
   return {

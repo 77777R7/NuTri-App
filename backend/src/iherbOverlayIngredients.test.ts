@@ -1,10 +1,103 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
+import type { FactsDigest } from "./factsDigest.js";
 import {
   iherbOverlayIngredientInternals,
   normalizeIherbSupplementFactsRowsForGoalNavigatorCoverage,
+  selectScienceIngredientRows,
 } from "./iherbOverlayIngredients";
+
+const buildScienceDigest = (params: {
+  sourceType?: FactsDigest["sourceType"];
+  productName: string;
+  actives?: Array<{ name: string; amount: number | null; unit: string | null }>;
+}): FactsDigest => ({
+  sourceType: params.sourceType ?? "web",
+  identity: {
+    type: params.sourceType === "dsld" ? "dsldLabelId" : "gtin14",
+    value: "fixture-id",
+    regionTags: ["US"],
+  },
+  product: {
+    brandDisplay: "Fixture Brand",
+    name: params.productName,
+    dosageForm: "Capsule",
+    route: null,
+  },
+  actives: (params.actives ?? []).map((active) => ({
+    name: active.name,
+    amount: active.amount,
+    unit: active.unit,
+    source: params.sourceType === "dsld" ? "dsld" : "web",
+    confidence: 1,
+  })),
+  inactives: [],
+  serving: {
+    servingSize: "1 Capsule",
+    servingsPerContainer: 60,
+  },
+  labelDosing: [],
+  warnings: {
+    warnings: [],
+    consultDoctorIf: [],
+    redFlags: [],
+    missingFlag: false,
+  },
+  claims: {
+    labelPurposes: [],
+    webClaims: [],
+  },
+  quality: {
+    isComplete: true,
+    missingFields: [],
+    completenessScore: 80,
+  },
+});
+
+test("science row selection rescues overlay title fallback when web facts have no actives", () => {
+  const selection = selectScienceIngredientRows({
+    digest: buildScienceDigest({
+      productName: "Placeholder Product",
+    }),
+    overlayClaims: {
+      nutritionalFacts: [],
+      brandName: "Natural Factors",
+      title: "Natural Factors, Curcumin & Berberine with Black Pepper, 60 Capsules",
+      description: "Curcumin and berberine formula with black pepper extract.",
+      suggestedUse: null,
+    },
+  });
+
+  assert.equal(selection.ingredientSourceTier, "overlay_iherb");
+  assert.deepEqual(selection.ingredientRows, [
+    {
+      name: "Curcumin & Berberine with Black Pepper",
+      dose: null,
+    },
+  ]);
+});
+
+test("science row selection drops nutrition-label rows when a disclosed active alternative exists", () => {
+  const selection = selectScienceIngredientRows({
+    digest: buildScienceDigest({
+      sourceType: "dsld",
+      productName: "Fish Oil 1000 mg 300 mg Omega-3",
+      actives: [
+        { name: "Total Carbohydrates", amount: 1, unit: "g" },
+        { name: "Fish Oil concentrate", amount: 2000, unit: "mg" },
+      ],
+    }),
+    overlayClaims: null,
+  });
+
+  assert.deepEqual(selection.ingredientRows, [
+    {
+      name: "Fish Oil concentrate",
+      dose: "2000 mg",
+    },
+  ]);
+});
 
 test("title fallback prefers the ingredient segment over package count segments", () => {
   const segment = iherbOverlayIngredientInternals.pickTitleFallbackIngredientSegment({

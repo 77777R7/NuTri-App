@@ -11060,6 +11060,23 @@ app.post("/api/ingredient-overview/v1", verifySupabaseToken, async (req: Request
 
   try {
     const authority = await buildDecisionSupportAuthorityBundle(normalizedBarcode, { req });
+    const requestId = String(res.getHeader("x-request-id") ?? "");
+    const routeStartedAt = Date.now();
+    const logIngredientOverviewResult = (params: {
+      source: "api" | "fallback";
+      phase?: "response";
+    }) => {
+      console.info("[ingredient-overview]", {
+        requestId,
+        barcode: normalizedBarcode.code.padStart(14, "0"),
+        source: params.source,
+        ingredientCount: authority.ingredientScienceContext.ingredientRows.length,
+        formulaMode: authority.ingredientScienceContext.formulaMode,
+        family: authority.ingredientScienceContext.ingredientFamily,
+        latencyMs: Date.now() - routeStartedAt,
+        phase: params.phase ?? "response",
+      });
+    };
     if (
       parsedBody.decisionDigest &&
       parsedBody.decisionDigest !== authority.decisionSupport.digest
@@ -11110,6 +11127,7 @@ app.post("/api/ingredient-overview/v1", verifySupabaseToken, async (req: Request
       timeoutMs: INGREDIENT_OVERVIEW_SIDECAR_TIMEOUT_MS,
       maxRetries: SCIENCE_SIDECAR_MAX_RETRIES,
     });
+    logIngredientOverviewResult({ source: compiled.source });
 
     return res.json({
       status: "ok",
