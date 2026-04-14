@@ -319,8 +319,15 @@ const resolveScientificBackgroundMode = (
   descriptor: IngredientScienceDescriptor | null,
 ): ScientificBackgroundMode => {
   if (!descriptor) return "research_mode";
-  if (context.productArchetype === "functional_food_like" && descriptor.ingredientFamily === "generic") {
-    return "label_context_mode";
+  if (context.productArchetype === "functional_food_like") {
+    if (
+      descriptor.ingredientFamily === "generic" ||
+      descriptor.ingredientFamily === "green_tea_extract" ||
+      descriptor.ingredientFamily === "probiotic_or_blend" ||
+      descriptor.lineRole !== "primary_active"
+    ) {
+      return "label_context_mode";
+    }
   }
   if (descriptor.lineRole === "blend_line" || descriptor.lineRole === "aggregate_line") return "label_context_mode";
   if (descriptor.lineRole === "source_line") {

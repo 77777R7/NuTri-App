@@ -2101,6 +2101,88 @@ test('functional food-like generic rows downgrade scientific background to label
   assert.equal(profile.preferLiveWriter, false);
 });
 
+test('science context reorders supporting vitamins behind 5-HTP lead actives', () => {
+  const context = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-5htp-with-supporting-vitamins',
+      productName: '5-HTP with Vitamin B6 & Vitamin C',
+      dosageForm: 'Capsule',
+      actives: [
+        { name: 'Vitamin C (as Ascorbic Acid)', amount: 100, unit: 'mg' },
+        { name: 'Vitamin B-6 (from Pyridoxine HCl)', amount: 2, unit: 'mg' },
+        { name: '5-HTP (5-hydroxytryptophan)', amount: 200, unit: 'mg' },
+      ],
+    }),
+    overlayClaims: null,
+  });
+
+  assert.match(context.ingredientRows[0]?.name ?? '', /5-HTP/i);
+  assert.match(context.anchorIngredient?.name ?? '', /5-HTP/i);
+  assert.equal(context.anchorIngredient?.ingredientFamily, '5htp');
+});
+
+test('mineral-stack products do not default to vitamin D over calcium or magnesium', () => {
+  const context = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-mineral-stack-d3',
+      productName: 'Calcium Magnesium Zinc + D3',
+      dosageForm: 'Tablet',
+      actives: [
+        { name: 'Vitamin D3 (as Cholecalciferol)', amount: 25, unit: 'mcg' },
+        { name: 'Calcium (as Calcium Carbonate)', amount: 1000, unit: 'mg' },
+        { name: 'Magnesium (as Magnesium Oxide)', amount: 400, unit: 'mg' },
+        { name: 'Zinc (as Zinc Oxide)', amount: 15, unit: 'mg' },
+      ],
+    }),
+    overlayClaims: null,
+  });
+
+  assert.doesNotMatch(context.ingredientRows[0]?.name ?? '', /vitamin d/i);
+  assert.ok(['calcium', 'magnesium', 'zinc'].includes(context.anchorIngredient?.ingredientFamily ?? ''));
+});
+
+test('food-like green tea products downgrade to label-context mode instead of research mode', () => {
+  const context = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-food-like-green-tea',
+      productName: 'Herbal Slimming Tea, Green Tea, 24 Tea Bags',
+      dosageForm: 'Tea',
+      actives: [{ name: 'Green Tea Extract', amount: 500, unit: 'mg' }],
+    }),
+    overlayClaims: null,
+  });
+
+  const plan = planScientificBackgroundSections({
+    context,
+    selectedIngredientName: 'Green Tea Extract',
+  });
+
+  assert.equal(context.productArchetype, 'functional_food_like');
+  assert.equal(plan.mode, 'label_context_mode');
+  assert.deepEqual(
+    plan.sections.map((section) => section.heading),
+    ['What this line means on the label', 'Why it matters for comparison'],
+  );
+});
+
+test('greens-style formulas avoid enzyme support lines as the default science ingredient', () => {
+  const context = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-greens-enzyme-ranking',
+      productName: 'CytoGreens Premium Green Superfood with Green Tea',
+      dosageForm: 'Powder',
+      actives: [
+        { name: 'Cytozymes Digestive Enzyme Assimilation', amount: 100, unit: 'mg' },
+        { name: 'Green Tea Extract', amount: 75, unit: 'mg' },
+        { name: 'Spirulina', amount: 500, unit: 'mg' },
+      ],
+    }),
+    overlayClaims: null,
+  });
+
+  assert.doesNotMatch(context.ingredientRows[0]?.name ?? '', /cytozymes|digestive enzyme/i);
+});
+
 test('new metabolic families fall back with product-specific copy instead of generic research-direction prose', async () => {
   const context = buildIngredientScienceContext({
     digest: buildDigest({

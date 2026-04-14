@@ -618,6 +618,10 @@ const FORCE_FULL_DASHBOARD_EFFECTS =
 const PRODUCT_OVERVIEW_AI_TIMEOUT_MS = 8_000;
 const PRODUCT_OVERVIEW_AI_WATCHDOG_MS = 8_800;
 const SCIENTIFIC_BACKGROUND_REVALIDATE_COOLDOWN_MS = 20_000;
+const SCIENTIFIC_BACKGROUND_REFRESH_POLL_MIN_DELAY_MS = 1_500;
+const SCIENTIFIC_BACKGROUND_REFRESH_POLL_MAX_DELAY_MS = 4_000;
+const SCIENTIFIC_BACKGROUND_REFRESH_POLL_MAX_ATTEMPTS = 12;
+const SCIENTIFIC_BACKGROUND_REFRESH_POLL_MAX_WINDOW_MS = 35_000;
 const SHOW_SCAN_DEBUG =
     process.env.EXPO_PUBLIC_SHOW_SCAN_DEBUG === 'true' ||
     process.env.EXPO_PUBLIC_SHOW_SCAN_DEBUG === '1';
@@ -782,6 +786,17 @@ const SIMPLE_TAXONOMY_WHITELIST = new Set(
     ].map((label) => normalizeTaxonomyLabel(label)),
 );
 const decisionSupportWarmCache = new Map<string, Record<string, unknown>>();
+
+const clampScientificBackgroundRefreshDelay = (value?: number | null): number => {
+    const base =
+        typeof value === 'number' && Number.isFinite(value)
+            ? value
+            : SCIENTIFIC_BACKGROUND_REFRESH_POLL_MIN_DELAY_MS;
+    return Math.min(
+        Math.max(base, SCIENTIFIC_BACKGROUND_REFRESH_POLL_MIN_DELAY_MS),
+        SCIENTIFIC_BACKGROUND_REFRESH_POLL_MAX_DELAY_MS,
+    );
+};
 
 const getPayloadSourceType = (payload: Record<string, unknown> | null | undefined): string =>
     normalizeText(payload && typeof payload.sourceType === 'string' ? payload.sourceType : null).toLowerCase();
@@ -4032,6 +4047,7 @@ const AnalysisBundleDashboard: React.FC<{
     const ingredientOverviewRevalidateAtRef = useRef<Record<string, number>>({});
     const scientificBackgroundRevalidateAtRef = useRef<Record<string, number>>({});
     const scientificBackgroundRetryCountRef = useRef<Record<string, number>>({});
+    const scientificBackgroundFallbackStartedAtRef = useRef<Record<string, number>>({});
     const [scientificBackgroundRetryTick, setScientificBackgroundRetryTick] = useState(0);
     const decisionSupportCacheRef = useRef<Map<string, Record<string, unknown>>>(new Map());
     const decisionSupportByBarcodeRef = useRef<Map<string, Record<string, unknown>>>(decisionSupportWarmCache);
@@ -7943,6 +7959,7 @@ const AnalysisBundleDashboard: React.FC<{
         ingredientOverviewRevalidateAtRef.current = {};
         scientificBackgroundRevalidateAtRef.current = {};
         scientificBackgroundRetryCountRef.current = {};
+        scientificBackgroundFallbackStartedAtRef.current = {};
         setScientificBackgroundRetryTick(0);
         setActiveIngredientName(keyIngredientsForDetail[0] ?? null);
         setActiveSafetyIngredientName(keyIngredientsForSafety[0] ?? null);
@@ -8152,13 +8169,20 @@ const AnalysisBundleDashboard: React.FC<{
         const row = activeScienceIngredientRow;
         const current = scientificBackgroundStateRef.current[requestKey];
         const lastRevalidateAt = scientificBackgroundRevalidateAtRef.current[requestKey] ?? 0;
+        const retryCount = scientificBackgroundRetryCountRef.current[requestKey] ?? 0;
+        const fallbackStartedAt = scientificBackgroundFallbackStartedAtRef.current[requestKey] ?? 0;
+        const withinRefreshWindow =
+            !current?.backgroundRefreshPending
+            || !fallbackStartedAt
+            || (Date.now() - fallbackStartedAt) <= SCIENTIFIC_BACKGROUND_REFRESH_POLL_MAX_WINDOW_MS;
         const retryDelayMs =
             current?.backgroundRefreshPending
-                ? Math.max(current.recommendedRetryAfterMs ?? 1500, 750)
+                ? clampScientificBackgroundRefreshDelay(current.recommendedRetryAfterMs)
                 : SCIENTIFIC_BACKGROUND_REVALIDATE_COOLDOWN_MS;
-        const retryCount = scientificBackgroundRetryCountRef.current[requestKey] ?? 0;
         const canAutoRetryFallback =
-            current?.backgroundRefreshPending ? retryCount < 2 : true;
+            current?.backgroundRefreshPending
+                ? retryCount < SCIENTIFIC_BACKGROUND_REFRESH_POLL_MAX_ATTEMPTS && withinRefreshWindow
+                : true;
         const shouldRevalidateFallback =
             selectedTileType === 'science'
             && shouldRenderScienceSidecars
@@ -8193,10 +8217,19 @@ const AnalysisBundleDashboard: React.FC<{
                         (scientificBackgroundRetryCountRef.current[requestKey] ?? 0) + 1;
                 }
                 setScientificBackgroundSidecarState(requestKey, (currentState) =>
-                    isScientificBackgroundRenderableState(currentState)
-                        ? { ...currentState, status: 'loading' }
-                        : { status: 'loading' },
+                    revalidateFallback && isScientificBackgroundRenderableState(currentState)
+                        ? currentState
+                        : isScientificBackgroundRenderableState(currentState)
+                            ? { ...currentState, status: 'loading' }
+                            : { status: 'loading' },
                 );
+                if (
+                    scientificBackgroundFallbackStartedAtRef.current[requestKey] == null
+                    && current?.status === 'ok'
+                    && current.source === 'server-fallback'
+                ) {
+                    scientificBackgroundFallbackStartedAtRef.current[requestKey] = Date.now();
+                }
                 const headers = await withAuthHeaders({
                     'Content-Type': 'application/json',
                 });
@@ -8257,6 +8290,8 @@ const AnalysisBundleDashboard: React.FC<{
 
                 if (!response.ok) {
                     settledRequestKey = requestKey;
+                    delete scientificBackgroundFallbackStartedAtRef.current[requestKey];
+                    delete scientificBackgroundRevalidateAtRef.current[requestKey];
                     setScientificBackgroundSidecarState(requestKey, (currentState) =>
                         isScientificBackgroundRenderableState(currentState)
                             ? {
@@ -8287,6 +8322,13 @@ const AnalysisBundleDashboard: React.FC<{
                 const source = payload.source === 'fallback' ? 'server-fallback' : 'api';
                 const backgroundRefreshPending =
                     source === 'server-fallback' && payload.backgroundRefreshPending === true;
+                if (backgroundRefreshPending) {
+                    scientificBackgroundFallbackStartedAtRef.current[requestKey] ??= Date.now();
+                    scientificBackgroundRevalidateAtRef.current[requestKey] ??= Date.now();
+                } else {
+                    delete scientificBackgroundFallbackStartedAtRef.current[requestKey];
+                    delete scientificBackgroundRevalidateAtRef.current[requestKey];
+                }
                 if (source === 'api' || !backgroundRefreshPending) {
                     delete scientificBackgroundRetryCountRef.current[requestKey];
                 }
@@ -8303,6 +8345,8 @@ const AnalysisBundleDashboard: React.FC<{
                 if (cancelled || currentRunKeyRef.current !== requestRunKey) return;
                 settledRequestKey = requestKey;
                 delete scientificBackgroundRetryCountRef.current[requestKey];
+                delete scientificBackgroundFallbackStartedAtRef.current[requestKey];
+                delete scientificBackgroundRevalidateAtRef.current[requestKey];
                 setScientificBackgroundSidecarState(requestKey, (currentState) =>
                     isScientificBackgroundRenderableState(currentState)
                         ? {
@@ -8366,9 +8410,18 @@ const AnalysisBundleDashboard: React.FC<{
         if (scientificBackgroundState?.status !== 'ok' || scientificBackgroundState.source !== 'server-fallback') return;
         if (!scientificBackgroundState.backgroundRefreshPending) return;
         const retryCount = scientificBackgroundRetryCountRef.current[scientificBackgroundRequestKey] ?? 0;
-        if (retryCount >= 2) return;
+        const fallbackStartedAt = scientificBackgroundFallbackStartedAtRef.current[scientificBackgroundRequestKey] ?? 0;
+        if (retryCount >= SCIENTIFIC_BACKGROUND_REFRESH_POLL_MAX_ATTEMPTS) return;
+        if (
+            fallbackStartedAt
+            && Date.now() - fallbackStartedAt > SCIENTIFIC_BACKGROUND_REFRESH_POLL_MAX_WINDOW_MS
+        ) {
+            return;
+        }
         const lastRevalidateAt = scientificBackgroundRevalidateAtRef.current[scientificBackgroundRequestKey] ?? 0;
-        const retryAfterMs = Math.max(scientificBackgroundState.recommendedRetryAfterMs ?? 1500, 750);
+        const retryAfterMs = clampScientificBackgroundRefreshDelay(
+            scientificBackgroundState.recommendedRetryAfterMs,
+        );
         const remainingMs = Math.max(retryAfterMs - (Date.now() - lastRevalidateAt), 0);
         const timer = setTimeout(() => {
             setScientificBackgroundRetryTick((value) => value + 1);
