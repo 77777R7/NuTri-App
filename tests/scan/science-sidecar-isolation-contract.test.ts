@@ -23,18 +23,20 @@ test('science UI uses new B/C sidecars and removes the legacy ingredient summary
   assert.ok(
     dashboardSource.includes("const decisionPersonalizedResultLane = personalizedDecisionPayload?.personalizedResultLane ?? null;"),
   );
-  assert.ok(dashboardSource.includes("&& scienceSidecarDecisionPayload != null"));
+  assert.ok(dashboardSource.includes("scienceSidecarDecisionPayload != null"));
   assert.ok(dashboardSource.includes("const decisionDigestForScience = normalizeText(scienceSidecarDecisionPayload?.digest ?? '')"));
   assert.ok(dashboardSource.includes("const scienceDecisionInputsHash ="));
   assert.ok(dashboardSource.includes("const sciencePersonalizationScopeHash ="));
-  assert.ok(dashboardSource.includes('if (!shouldLoadScienceSidecars) return;'));
+  assert.ok(dashboardSource.includes('const shouldPrimeScienceSidecars ='));
+  assert.ok(dashboardSource.includes('const shouldRenderScienceSidecars = selectedTileType === \'science\' && shouldPrimeScienceSidecars;'));
+  assert.ok(dashboardSource.includes('if (!shouldPrimeScienceSidecars) return;'));
   assert.ok(dashboardSource.includes('!ingredientOverviewRequestKey'));
   assert.ok(dashboardSource.includes('!decisionBarcodeForScience'));
   assert.ok(dashboardSource.includes('decisionInputsHash: decisionInputsHashParam'));
   assert.ok(dashboardSource.includes('personalizationScopeHash: personalizationScopeHashParam'));
   assert.equal(dashboardSource.includes('InteractionManager.runAfterInteractions(() => {'), false);
-  assert.ok(dashboardSource.includes("ingredientOverviewState.source === 'api' || ingredientOverviewState.source === 'server-fallback'"));
-  assert.ok(dashboardSource.includes("scientificBackgroundState.source === 'api' || scientificBackgroundState.source === 'server-fallback'"));
+  assert.ok(dashboardSource.includes("isIngredientOverviewRenderableState(currentState)"));
+  assert.ok(dashboardSource.includes("isScientificBackgroundRenderableState(currentState)"));
 });
 
 test('server exposes ingredient overview and scientific background sidecars with shared authority helper', () => {

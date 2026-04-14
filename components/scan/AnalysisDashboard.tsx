@@ -65,6 +65,7 @@ import { choosePreferredProductImageUrl } from '@/lib/productImagePreference';
 import { resolveDataCeilingSignal } from '@/lib/scan/dataCeiling';
 import { buildGapActionSentences } from '@/lib/scan/gapActionSentenceLibrary';
 import { buildAnalysisTopSectionPresentation } from '@/lib/scan/analysisTopSectionPresentation';
+import type { TopSectionResolvedGoalSignalInput } from '@/lib/scan/analysisTopSectionPresentation';
 import { isNutritionLabelLikeIngredient } from '@/lib/scan/isNutritionLabelLikeIngredient';
 import { enforceNeverBlank, isPlaceholderText, sanitizeCoverBullets, sanitizeCoverLine } from '@/lib/scan/neverBlank';
 import { buildRecordFactsViewModel } from '@/lib/scan/recordFactsViewModel';
@@ -800,11 +801,13 @@ const isDecisionPayloadExplicitlyStale = (payload: Record<string, unknown> | nul
     Boolean(payload && typeof payload === 'object' && payload.staleDigest === true);
 
 const doesGoalFitReadAsEvidenceThin = (params: {
+    status?: 'ready' | 'pending' | 'unavailable' | 'hidden' | null;
     heroMode?: 'dominant_goal' | 'mixed_goals' | 'limited_goals' | 'single_goal' | 'insufficient_signal' | null;
     labelCompleteness?: 'high' | 'medium' | 'low' | null;
     goalNarrativeConfidence?: 'high' | 'medium' | 'low' | null;
 }): boolean =>
-    params.heroMode === 'insufficient_signal'
+    params.status === 'pending'
+    || params.heroMode === 'insufficient_signal'
     || params.labelCompleteness === 'low'
     || params.goalNarrativeConfidence === 'low';
 
@@ -3364,6 +3367,28 @@ type IngredientOverviewSidecarStateUpdater =
 type ScientificBackgroundSidecarStateUpdater =
     | ScientificBackgroundSidecarState
     | ((current: ScientificBackgroundSidecarState | undefined) => ScientificBackgroundSidecarState | undefined);
+
+const isIngredientOverviewRenderableState = (
+    state: IngredientOverviewSidecarState | undefined,
+): state is IngredientOverviewSidecarState & {
+    source: 'api' | 'server-fallback';
+    data: IngredientOverviewBlock;
+} =>
+    Boolean(
+        state?.data
+        && (state.source === 'api' || state.source === 'server-fallback'),
+    );
+
+const isScientificBackgroundRenderableState = (
+    state: ScientificBackgroundSidecarState | undefined,
+): state is ScientificBackgroundSidecarState & {
+    source: 'api' | 'server-fallback';
+    data: ScientificBackgroundBlock;
+} =>
+    Boolean(
+        state?.data
+        && (state.source === 'api' || state.source === 'server-fallback'),
+    );
 
 type ProductOverviewAiState = {
     status: 'idle' | 'loading' | 'ok' | 'unavailable' | 'error';
@@ -6221,6 +6246,7 @@ const AnalysisBundleDashboard: React.FC<{
                     } | null;
                 } => Boolean(entry.goalLabel));
         const goalReadsAsEvidenceThin = doesGoalFitReadAsEvidenceThin({
+            status: goalFit?.status ?? null,
             heroMode: goalFit?.heroMode ?? null,
             labelCompleteness: goalFit?.labelCompleteness ?? null,
             goalNarrativeConfidence: goalFit?.goalNarrativeConfidence ?? null,
@@ -6253,6 +6279,55 @@ const AnalysisBundleDashboard: React.FC<{
                 || supportiveVisibleGoalCoverage.length > 0
                 || supportiveAllGoalCoverage.length > 0,
             );
+        const defaultGoalFitInsightKey: 'personal_support' | 'goal_coverage' =
+            goalFit?.goalLensMode === 'multi_goal_summary'
+            || goalFit?.heroMode === 'mixed_goals'
+            || goalFit?.heroMode === 'limited_goals'
+            || goalFit?.heroMode === 'insufficient_signal'
+                ? 'goal_coverage'
+                : 'personal_support';
+        const resolvedGoalSignal: TopSectionResolvedGoalSignalInput = preferSupportSignal && resolvedSupportGoalLabel
+            ? {
+                mode: 'support_override',
+                goalLabel: resolvedSupportGoalLabel,
+                heroTone: 'neutral',
+                heroChip: `Most aligned with your ${resolvedSupportGoalLabel} goal`,
+                heroSummary: (goalFit?.goalCoverageSummary?.analyzedGoalCount ?? goalFit?.analyzedGoalCount ?? resolvedAllGoalCoverage.length) > 1
+                    ? `Visible ingredients lean more toward ${lowerFirst(resolvedSupportGoalLabel)} support than other goals we checked.`
+                    : `Visible ingredients lean more toward ${lowerFirst(resolvedSupportGoalLabel)} support on this label.`,
+                primaryInsightKey: 'personal_support',
+                preferredExpandedKey: 'personal_support',
+              }
+            : (resolvedAllGoalCoverage.length > 0
+                && (
+                    goalFit?.goalLensMode === 'multi_goal_summary'
+                    || goalFit?.heroMode === 'mixed_goals'
+                    || goalFit?.heroMode === 'limited_goals'
+                    || goalReadsAsEvidenceThin
+                ))
+                ? {
+                    mode: 'coverage_only',
+                    goalLabel: null,
+                    primaryInsightKey: 'goal_coverage',
+                    preferredExpandedKey: 'goal_coverage',
+                  }
+                : goalFit?.status === 'ready'
+                    ? {
+                        mode: 'goal_fit',
+                        goalLabel:
+                            getGoalLabel(goalFit?.selectedGoalKey ?? null)
+                            ?? getGoalLabel(goalFit?.dominantGoalKey ?? null)
+                            ?? getGoalLabel(goalFit?.previewTopGoalKey ?? null)
+                            ?? null,
+                        primaryInsightKey: defaultGoalFitInsightKey,
+                        preferredExpandedKey: defaultGoalFitInsightKey,
+                      }
+                    : {
+                        mode: 'insufficient',
+                        goalLabel: null,
+                        primaryInsightKey: resolvedAllGoalCoverage.length > 0 ? 'goal_coverage' : 'personal_support',
+                        preferredExpandedKey: resolvedAllGoalCoverage.length > 0 ? 'goal_coverage' : 'personal_support',
+                      };
 
         return buildAnalysisTopSectionPresentation({
             goal: {
@@ -6333,6 +6408,7 @@ const AnalysisBundleDashboard: React.FC<{
                 warningText: safetyWarningCoverText ?? null,
                 watchoutText: safetyTipCoverText ?? null,
             },
+            resolvedGoalSignal,
         });
     }, [
         decisionPersonalizedResultLane?.allergyInsight,
@@ -7642,13 +7718,13 @@ const AnalysisBundleDashboard: React.FC<{
     const decisionBarcodeForScience = canonicalDecisionBarcode;
     const decisionDigestForScience = normalizeText(scienceSidecarDecisionPayload?.digest ?? '')
         || null;
-    const shouldLoadScienceSidecars =
-        selectedTileType === 'science'
-        && scienceSidecarDecisionPayload != null
+    const shouldPrimeScienceSidecars =
+        scienceSidecarDecisionPayload != null
         && Boolean(decisionBarcodeForScience)
         && Boolean(decisionDigestForScience)
         && Boolean(scienceDecisionInputsHash)
         && Boolean(sciencePersonalizationScopeHash);
+    const shouldRenderScienceSidecars = selectedTileType === 'science' && shouldPrimeScienceSidecars;
     const scienceSourceFinalKey = bundleSourceTypeFinal ? 'final' : 'nonfinal';
     const decisionScienceIngredientRows = useMemo<ScienceSidecarIngredientRow[]>(
         () =>
@@ -7764,18 +7840,14 @@ const AnalysisBundleDashboard: React.FC<{
         : undefined;
     const resolvedIngredientOverviewBlock = useMemo(
         () =>
-            ingredientOverviewState?.status === 'ok'
-                && (ingredientOverviewState.source === 'api' || ingredientOverviewState.source === 'server-fallback')
-                && ingredientOverviewState.data
+            isIngredientOverviewRenderableState(ingredientOverviewState)
                 ? ingredientOverviewState.data
                 : null,
         [ingredientOverviewState],
     );
     const resolvedScientificBackgroundBlock = useMemo(
         () =>
-            scientificBackgroundState?.status === 'ok'
-                && (scientificBackgroundState.source === 'api' || scientificBackgroundState.source === 'server-fallback')
-                && scientificBackgroundState.data
+            isScientificBackgroundRenderableState(scientificBackgroundState)
                 ? scientificBackgroundState.data
                 : null,
         [scientificBackgroundState],
@@ -7789,10 +7861,10 @@ const AnalysisBundleDashboard: React.FC<{
         scientificBackgroundRevalidateAtRef.current = {};
         setActiveIngredientName(keyIngredientsForDetail[0] ?? null);
         setActiveSafetyIngredientName(keyIngredientsForSafety[0] ?? null);
-    }, [incomingBundleRunKey, keyIngredientsForDetail, keyIngredientsForSafety]);
+    }, [incomingBundleRunKey]);
 
     useEffect(() => {
-        if (!shouldLoadScienceSidecars) return;
+        if (!shouldPrimeScienceSidecars) return;
         if (
             !ingredientOverviewRequestKey
             || !decisionBarcodeForScience
@@ -7824,7 +7896,11 @@ const AnalysisBundleDashboard: React.FC<{
             canRetry: boolean,
         ): Promise<void> => {
             try {
-                setIngredientOverviewSidecarState(ingredientOverviewRequestKey, { status: 'loading' });
+                setIngredientOverviewSidecarState(ingredientOverviewRequestKey, (currentState) =>
+                    isIngredientOverviewRenderableState(currentState)
+                        ? { ...currentState, status: 'loading' }
+                        : { status: 'loading' },
+                );
                 const baseUrl = String(Config.searchApiBaseUrl).replace(/\/$/, '');
                 const headers = await withAuthHeaders({
                     'Content-Type': 'application/json',
@@ -7878,10 +7954,14 @@ const AnalysisBundleDashboard: React.FC<{
 
                 if (!response.ok) {
                     settled = true;
-                    setIngredientOverviewSidecarState(ingredientOverviewRequestKey, {
-                        status: 'error',
-                        error: `HTTP ${response.status}`,
-                    });
+                    setIngredientOverviewSidecarState(ingredientOverviewRequestKey, (currentState) =>
+                        isIngredientOverviewRenderableState(currentState)
+                            ? { ...currentState, status: 'ok' }
+                            : {
+                                status: 'error',
+                                error: `HTTP ${response.status}`,
+                            },
+                    );
                     return;
                 }
 
@@ -7906,10 +7986,14 @@ const AnalysisBundleDashboard: React.FC<{
             } catch (error) {
                 if (cancelled) return;
                 settled = true;
-                setIngredientOverviewSidecarState(ingredientOverviewRequestKey, {
-                    status: 'error',
-                    error: error instanceof Error ? error.message : 'Ingredient overview unavailable',
-                });
+                setIngredientOverviewSidecarState(ingredientOverviewRequestKey, (currentState) =>
+                    isIngredientOverviewRenderableState(currentState)
+                        ? { ...currentState, status: 'ok' }
+                        : {
+                            status: 'error',
+                            error: error instanceof Error ? error.message : 'Ingredient overview unavailable',
+                        },
+                );
             }
         };
 
@@ -7924,12 +8008,16 @@ const AnalysisBundleDashboard: React.FC<{
             controller.abort();
             if (!settled) {
                 setIngredientOverviewSidecarState(ingredientOverviewRequestKey, (currentState) =>
-                    currentState?.status === 'loading' ? undefined : currentState,
+                    currentState?.status === 'loading'
+                        ? (isIngredientOverviewRenderableState(currentState)
+                            ? { ...currentState, status: 'ok' }
+                            : undefined)
+                        : currentState,
                 );
             }
         };
     }, [
-        shouldLoadScienceSidecars,
+        shouldPrimeScienceSidecars,
         decisionBarcodeForScience,
         decisionDigestForScience,
         ingredientOverviewRequestKey,
@@ -7940,7 +8028,7 @@ const AnalysisBundleDashboard: React.FC<{
     ]);
 
     useEffect(() => {
-        if (!shouldLoadScienceSidecars) return;
+        if (!shouldPrimeScienceSidecars) return;
         if (
             !decisionBarcodeForScience
             || !decisionDigestForScience
@@ -7962,7 +8050,9 @@ const AnalysisBundleDashboard: React.FC<{
         const current = scientificBackgroundStateRef.current[requestKey];
         const lastRevalidateAt = scientificBackgroundRevalidateAtRef.current[requestKey] ?? 0;
         const shouldRevalidateFallback =
-            current?.status === 'ok'
+            selectedTileType === 'science'
+            && shouldRenderScienceSidecars
+            && current?.status === 'ok'
             && current.source === 'server-fallback'
             && Date.now() - lastRevalidateAt >= SCIENTIFIC_BACKGROUND_REVALIDATE_COOLDOWN_MS;
         if (
@@ -7989,7 +8079,11 @@ const AnalysisBundleDashboard: React.FC<{
                 if (revalidateFallback) {
                     scientificBackgroundRevalidateAtRef.current[requestKey] = Date.now();
                 }
-                setScientificBackgroundSidecarState(requestKey, { status: 'loading' });
+                setScientificBackgroundSidecarState(requestKey, (currentState) =>
+                    isScientificBackgroundRenderableState(currentState)
+                        ? { ...currentState, status: 'loading' }
+                        : { status: 'loading' },
+                );
                 const headers = await withAuthHeaders({
                     'Content-Type': 'application/json',
                 });
@@ -8050,10 +8144,14 @@ const AnalysisBundleDashboard: React.FC<{
 
                 if (!response.ok) {
                     settledRequestKey = requestKey;
-                    setScientificBackgroundSidecarState(requestKey, {
-                        status: 'error',
-                        error: `HTTP ${response.status}`,
-                    });
+                    setScientificBackgroundSidecarState(requestKey, (currentState) =>
+                        isScientificBackgroundRenderableState(currentState)
+                            ? { ...currentState, status: 'ok' }
+                            : {
+                                status: 'error',
+                                error: `HTTP ${response.status}`,
+                            },
+                    );
                     return;
                 }
 
@@ -8078,10 +8176,14 @@ const AnalysisBundleDashboard: React.FC<{
             } catch (error) {
                 if (cancelled || currentRunKeyRef.current !== requestRunKey) return;
                 settledRequestKey = requestKey;
-                setScientificBackgroundSidecarState(requestKey, {
-                    status: 'error',
-                    error: error instanceof Error ? error.message : 'Scientific background unavailable',
-                });
+                setScientificBackgroundSidecarState(requestKey, (currentState) =>
+                    isScientificBackgroundRenderableState(currentState)
+                        ? { ...currentState, status: 'ok' }
+                        : {
+                            status: 'error',
+                            error: error instanceof Error ? error.message : 'Scientific background unavailable',
+                        },
+                );
             }
         };
 
@@ -8097,17 +8199,23 @@ const AnalysisBundleDashboard: React.FC<{
             controller.abort();
             if (startedRequestKey && startedRequestKey !== settledRequestKey) {
                 setScientificBackgroundSidecarState(startedRequestKey, (currentState) =>
-                    currentState?.status === 'loading' ? undefined : currentState,
+                    currentState?.status === 'loading'
+                        ? (isScientificBackgroundRenderableState(currentState)
+                            ? { ...currentState, status: 'ok' }
+                            : undefined)
+                        : currentState,
                 );
             }
         };
     }, [
         activeScienceIngredientRow,
-        shouldLoadScienceSidecars,
+        shouldPrimeScienceSidecars,
+        shouldRenderScienceSidecars,
         decisionBarcodeForScience,
         decisionDigestForScience,
         decisionScienceIngredientRows,
         localDecisionSupportHeader,
+        selectedTileType,
         scienceDecisionInputsHash,
         sciencePersonalizationScopeHash,
         scientificBackgroundRequestKey,
@@ -8139,18 +8247,18 @@ const AnalysisBundleDashboard: React.FC<{
     const scientificBackgroundIntroLine = resolvedScientificBackgroundBlock?.introLine ?? activeIngredientLabelLine;
     const scientificBackgroundClosingNote = resolvedScientificBackgroundBlock?.closingNote ?? null;
     const shouldShowIngredientOverviewLoading =
-        shouldLoadScienceSidecars
+        shouldRenderScienceSidecars
         && Boolean(ingredientOverviewRequestKey)
         && (
             ingredientOverviewState == null
-            || ingredientOverviewState.status === 'loading'
+            || (ingredientOverviewState.status === 'loading' && !isIngredientOverviewRenderableState(ingredientOverviewState))
         );
     const shouldShowScientificBackgroundLoading =
-        shouldLoadScienceSidecars
+        shouldRenderScienceSidecars
         && Boolean(scientificBackgroundRequestKey)
         && (
             scientificBackgroundState == null
-            || scientificBackgroundState.status === 'loading'
+            || (scientificBackgroundState.status === 'loading' && !isScientificBackgroundRenderableState(scientificBackgroundState))
         );
     const ingredientsContent = (
         <View style={styles.detailStack}>

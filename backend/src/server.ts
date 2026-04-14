@@ -10281,7 +10281,6 @@ const INGREDIENT_OVERVIEW_SIDECAR_TIMEOUT_MS = 8_500;
 const SCIENCE_SIDECAR_MAX_RETRIES = 0;
 const SCIENTIFIC_BACKGROUND_RESULT_CACHE_LIMIT = 120;
 const SCIENTIFIC_BACKGROUND_RESEARCH_FALLBACK_CACHE_TTL_MS = 20_000;
-const SCIENTIFIC_BACKGROUND_BACKGROUND_REFRESH_TIMEOUT_MS = 24_000;
 
 type ScientificBackgroundSidecarResponse = {
   status: "ok";
@@ -11194,6 +11193,30 @@ app.post("/api/scientific-background/v1", verifySupabaseToken, async (req: Reque
       selectedIngredientName: selectedDescriptor.name,
     });
     const executionProfile = resolveScientificBackgroundExecutionProfile(plan);
+    const requestId = String(res.getHeader("x-request-id") ?? "");
+    const routeStartedAt = Date.now();
+    const logScientificBackgroundResult = (params: {
+      source: "api" | "fallback";
+      cacheHit?: boolean;
+      inflightHit?: boolean;
+      backgroundRefreshScheduled?: boolean;
+      phase?: "response" | "background_refresh";
+    }) => {
+      console.info("[scientific-background]", {
+        requestId,
+        barcode: normalizedBarcode,
+        ingredient: selectedDescriptor.name,
+        family: plan.family,
+        mode: plan.mode,
+        source: params.source,
+        cacheHit: params.cacheHit ?? false,
+        inflightHit: params.inflightHit ?? false,
+        revalidateFallback: parsedBody.revalidateFallback === true,
+        backgroundRefreshScheduled: params.backgroundRefreshScheduled ?? false,
+        latencyMs: Date.now() - routeStartedAt,
+        phase: params.phase ?? "response",
+      });
+    };
     const cacheKey = [
       authority.decisionSupport.digest,
       authority.decisionSupport.decisionInputsHash,
@@ -11206,6 +11229,10 @@ app.post("/api/scientific-background/v1", verifySupabaseToken, async (req: Reque
     const shouldBypassFallbackCache =
       parsedBody.revalidateFallback === true && cached?.source === "fallback";
     if (cached && !shouldBypassFallbackCache) {
+      logScientificBackgroundResult({
+        source: cached.source,
+        cacheHit: true,
+      });
       return res.json(cached);
     }
     if (shouldBypassFallbackCache) {
@@ -11221,7 +11248,12 @@ app.post("/api/scientific-background/v1", verifySupabaseToken, async (req: Reque
 
     const existingInflight = scientificBackgroundSidecarInflight.get(cacheKey);
     if (existingInflight) {
-      return res.json(await existingInflight);
+      const inflightPayload = await existingInflight;
+      logScientificBackgroundResult({
+        source: inflightPayload.source,
+        inflightHit: true,
+      });
+      return res.json(inflightPayload);
     }
 
     const deepseekKey = process.env.DEEPSEEK_API_KEY?.trim() || null;
@@ -11261,17 +11293,20 @@ app.post("/api/scientific-background/v1", verifySupabaseToken, async (req: Reque
         resolveScientificBackgroundCacheTtlMs(payload, executionProfile),
       );
 
+      let backgroundRefreshScheduled = false;
+
       if (
         payload.source === "fallback" &&
         executionProfile.preferLiveWriter &&
         deepseekKey &&
         !scientificBackgroundSidecarBackgroundRefresh.has(cacheKey)
       ) {
+        backgroundRefreshScheduled = true;
         const backgroundRefresh = (async (): Promise<void> => {
           const backgroundLlmFn = buildDeepseekJsonLlmFn({
             deepseekKey,
             deepseekModel,
-            timeoutMs: SCIENTIFIC_BACKGROUND_BACKGROUND_REFRESH_TIMEOUT_MS,
+            timeoutMs: executionProfile.backgroundRefreshTimeoutMs,
             maxTokens: executionProfile.maxTokens,
           });
           if (!backgroundLlmFn) return;
@@ -11281,7 +11316,7 @@ app.post("/api/scientific-background/v1", verifySupabaseToken, async (req: Reque
             selectedDescriptor.name,
             {
               llmFn: backgroundLlmFn,
-              timeoutMs: SCIENTIFIC_BACKGROUND_BACKGROUND_REFRESH_TIMEOUT_MS,
+              timeoutMs: executionProfile.backgroundRefreshTimeoutMs,
               maxRetries: executionProfile.maxRetries ?? SCIENCE_SIDECAR_MAX_RETRIES,
             },
           );
@@ -11302,6 +11337,10 @@ app.post("/api/scientific-background/v1", verifySupabaseToken, async (req: Reque
             refreshedPayload,
             resolveScientificBackgroundCacheTtlMs(refreshedPayload, executionProfile),
           );
+          logScientificBackgroundResult({
+            source: refreshedPayload.source,
+            phase: "background_refresh",
+          });
         })()
           .catch((error) => {
             captureException(error, {
@@ -11317,6 +11356,10 @@ app.post("/api/scientific-background/v1", verifySupabaseToken, async (req: Reque
         scientificBackgroundSidecarBackgroundRefresh.set(cacheKey, backgroundRefresh);
       }
 
+      logScientificBackgroundResult({
+        source: payload.source,
+        backgroundRefreshScheduled,
+      });
       return payload;
     })();
 

@@ -100,6 +100,16 @@ export type TopSectionSafetyInput = {
   watchoutText?: string | null;
 };
 
+export type TopSectionResolvedGoalSignalInput = {
+  mode: 'goal_fit' | 'support_override' | 'coverage_only' | 'insufficient';
+  goalLabel?: string | null;
+  heroTone?: TopSectionTone | null;
+  heroChip?: string | null;
+  heroSummary?: string | null;
+  primaryInsightKey?: 'personal_support' | 'goal_coverage' | null;
+  preferredExpandedKey?: 'personal_support' | 'goal_coverage' | null;
+};
+
 export type TopSectionBannerKind = 'allergy';
 export type TopSectionInsightTopic = 'support' | 'allergy' | 'dose' | 'overlap' | 'safety';
 
@@ -602,37 +612,18 @@ const buildHero = (goal: TopSectionHeroInput): TopSectionHeroPresentation => {
   };
 };
 
-const buildSupportAlignedHeroWhenEvidenceIsThin = (
+const buildHeroFromResolvedGoalSignal = (
   goal: TopSectionHeroInput,
-  personalInsight: TopSectionPersonalInsightInput,
+  resolvedGoalSignal?: TopSectionResolvedGoalSignalInput | null,
 ): TopSectionHeroPresentation | null => {
-  const heroReadsAsEvidenceLimited =
-    goal.heroMode === 'insufficient_signal'
-    || goal.labelCompleteness === 'low'
-    || hasLowNarrativeConfidence(goal);
-  if (!heroReadsAsEvidenceLimited) return null;
-  if (personalInsight.preferSupportSignal === false) return null;
-
-  const dominantGoal = getDominantGoalCoverage(personalInsight);
-  const fallbackGoalLabel =
-    normalizeText(personalInsight.resolvedSupportGoalLabel)
-    || dominantGoal?.goalLabel
-    || personalInsight.supportLabels
-      .map((label) => normalizeText(label))
-      .find(Boolean)
-    || null;
-  const resolvedGoalLabel = normalizeText(fallbackGoalLabel);
-  if (!resolvedGoalLabel) return null;
-
-  const loweredGoal = lowerFirst(resolvedGoalLabel);
-  const analyzedGoalCount = personalInsight.analyzedGoalCount ?? getPrimaryGoalCoverage(personalInsight).length;
-
+  if (!resolvedGoalSignal || resolvedGoalSignal.mode !== 'support_override') return null;
+  const heroChip = normalizeText(resolvedGoalSignal.heroChip);
+  const heroSummary = normalizeText(resolvedGoalSignal.heroSummary);
+  if (!heroChip || !heroSummary) return null;
   return {
-    tone: 'neutral',
-    chip: `Most aligned with your ${resolvedGoalLabel} goal`,
-    summary: analyzedGoalCount > 1
-      ? `Visible ingredients lean more toward ${loweredGoal} support than other goals we checked.`
-      : `Visible ingredients lean more toward ${loweredGoal} support on this label.`,
+    tone: resolvedGoalSignal.heroTone ?? 'neutral',
+    chip: heroChip,
+    summary: heroSummary,
   };
 };
 
@@ -771,17 +762,21 @@ const buildGoalCoverageRowDetails = (
 
 const buildSupportInsight = (
   personalInsight: TopSectionPersonalInsightInput,
+  resolvedGoalSignal?: TopSectionResolvedGoalSignalInput | null,
 ): TopSectionInsightPresentation | null => {
+  const forceCoveragePrimary = resolvedGoalSignal?.primaryInsightKey === 'goal_coverage';
   const coverage = getSortedGoalCoverage(getPrimaryGoalCoverage(personalInsight));
   const resolvedSupportGoalLabel = normalizeText(personalInsight.resolvedSupportGoalLabel);
   const dominantGoal =
     (
-      personalInsight.preferSupportSignal && resolvedSupportGoalLabel
-        ? findGoalCoverageByLabel(coverage, resolvedSupportGoalLabel)
-        : null
+      !forceCoveragePrimary && (
+        personalInsight.preferSupportSignal && resolvedSupportGoalLabel
+          ? findGoalCoverageByLabel(coverage, resolvedSupportGoalLabel)
+          : null
+      )
     )
     ?? getDominantGoalCoverage(personalInsight);
-  if (dominantGoal) {
+  if (!forceCoveragePrimary && dominantGoal) {
     const {
       fullItems,
       analyzedCount,
@@ -829,15 +824,19 @@ const buildSupportInsight = (
   }
 
   const shouldRenderPrimaryCoverageRow =
-    !personalInsight.preferSupportSignal
-    &&
-    isGoalCoverageMultiGoal(personalInsight)
-    && (
-      personalInsight.heroMode === 'mixed_goals'
-      || personalInsight.heroMode === 'limited_goals'
-      || personalInsight.heroMode === 'insufficient_signal'
-      || (personalInsight.heroMode === 'dominant_goal' && !dominantGoal)
-      || !personalInsight.heroMode
+    (
+      forceCoveragePrimary
+      || (
+        !personalInsight.preferSupportSignal
+        && isGoalCoverageMultiGoal(personalInsight)
+        && (
+          personalInsight.heroMode === 'mixed_goals'
+          || personalInsight.heroMode === 'limited_goals'
+          || personalInsight.heroMode === 'insufficient_signal'
+          || (personalInsight.heroMode === 'dominant_goal' && !dominantGoal)
+          || !personalInsight.heroMode
+        )
+      )
     );
   if (shouldRenderPrimaryCoverageRow) {
     const {
@@ -882,7 +881,7 @@ const buildSupportInsight = (
   ]
     .map((label) => normalizeText(label))
     .filter(Boolean)));
-  if (supportLabels.length > 0) {
+  if (!forceCoveragePrimary && supportLabels.length > 0) {
     const collapsedTitle =
       supportLabels.length === 1
         ? buildGoalSupportTitle(supportLabels[0])
@@ -1151,22 +1150,32 @@ export const buildAnalysisTopSectionPresentation = (input: {
   allergy: TopSectionAllergyInput;
   dose: TopSectionDoseInput;
   safety: TopSectionSafetyInput;
+  resolvedGoalSignal?: TopSectionResolvedGoalSignalInput | null;
 }): TopSectionPresentation => {
   const banner = buildBanner(input.allergy);
-  const hero = buildSupportAlignedHeroWhenEvidenceIsThin(input.goal, input.personalInsight)
+  const hero = buildHeroFromResolvedGoalSignal(input.goal, input.resolvedGoalSignal)
     ?? buildHero(input.goal);
-  const insights = [
-    buildSupportInsight(input.personalInsight),
+  const unorderedInsights = [
+    buildSupportInsight(input.personalInsight, input.resolvedGoalSignal),
     buildAllergyInsight(input.allergy),
     buildDoseInsight(input.dose),
     buildSafetyInsight(input.safety),
     buildOverlapInsight(input.personalInsight),
   ]
-    .filter((row): row is TopSectionInsightPresentation => Boolean(row))
-    .slice(0, 4);
+    .filter((row): row is TopSectionInsightPresentation => Boolean(row));
+  const primaryInsightKey = input.resolvedGoalSignal?.primaryInsightKey ?? null;
+  const insights =
+    primaryInsightKey && unorderedInsights.some((row) => row.key === primaryInsightKey)
+      ? [
+          unorderedInsights.find((row) => row.key === primaryInsightKey)!,
+          ...unorderedInsights.filter((row) => row.key !== primaryInsightKey),
+        ].slice(0, 4)
+      : unorderedInsights.slice(0, 4);
 
   const preferredExpandedKey = banner?.kind === 'allergy'
     ? 'allergy_insight'
+    : input.resolvedGoalSignal?.preferredExpandedKey
+      ? input.resolvedGoalSignal.preferredExpandedKey
     : input.personalInsight.preferSupportSignal
       ? 'personal_support'
     : input.goal.heroMode === 'dominant_goal'

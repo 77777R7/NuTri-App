@@ -1911,3 +1911,76 @@ test('magnesium complex uses label-context mode instead of pretending to be a si
     ['What this line means on the label', 'Why it matters for comparison'],
   );
 });
+
+test('7-keto, cla, and carnitine get family-specific research plans and longer budgets than generic research mode', () => {
+  const context = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-7keto-cla-carnitine',
+      productName: '7-Keto CLA Carnitine Formula',
+      dosageForm: 'Capsule',
+      actives: [
+        { name: '7-Keto (DHEA Acetate-7-one)', amount: 100, unit: 'mg' },
+        { name: 'Conjugated Linoleic Acid (CLA) (from Safflower Oil)', amount: 800, unit: 'mg' },
+        { name: 'Acetyl-L-Carnitine HCl', amount: 500, unit: 'mg' },
+        { name: 'Vitamin C', amount: 250, unit: 'mg' },
+      ],
+    }),
+    overlayClaims: null,
+  });
+
+  const sevenKetoPlan = planScientificBackgroundSections({ context, selectedIngredientName: '7-Keto (DHEA Acetate-7-one)' });
+  const claPlan = planScientificBackgroundSections({ context, selectedIngredientName: 'Conjugated Linoleic Acid (CLA) (from Safflower Oil)' });
+  const carnitinePlan = planScientificBackgroundSections({ context, selectedIngredientName: 'Acetyl-L-Carnitine HCl' });
+  const vitaminCPlan = planScientificBackgroundSections({ context, selectedIngredientName: 'Vitamin C' });
+
+  const sevenKetoProfile = resolveScientificBackgroundExecutionProfile(sevenKetoPlan);
+  const claProfile = resolveScientificBackgroundExecutionProfile(claPlan);
+  const carnitineProfile = resolveScientificBackgroundExecutionProfile(carnitinePlan);
+  const vitaminCProfile = resolveScientificBackgroundExecutionProfile(vitaminCPlan);
+
+  assert.deepEqual(
+    sevenKetoPlan.sections.map((section) => section.heading),
+    ['Metabolic and body-composition context', 'Why it reads differently from DHEA'],
+  );
+  assert.deepEqual(
+    claPlan.sections.map((section) => section.heading),
+    ['Body-composition context', 'Source oil and isomer detail'],
+  );
+  assert.deepEqual(
+    carnitinePlan.sections.map((section) => section.heading),
+    ['Energy transport and exercise context', 'What form disclosure changes'],
+  );
+  assert.ok(sevenKetoProfile.timeoutMs > vitaminCProfile.timeoutMs);
+  assert.ok(claProfile.timeoutMs > vitaminCProfile.timeoutMs);
+  assert.ok(carnitineProfile.timeoutMs > vitaminCProfile.timeoutMs);
+  assert.ok(sevenKetoProfile.backgroundRefreshTimeoutMs >= sevenKetoProfile.timeoutMs);
+  assert.ok(claProfile.backgroundRefreshTimeoutMs >= claProfile.timeoutMs);
+  assert.ok(carnitineProfile.backgroundRefreshTimeoutMs >= carnitineProfile.timeoutMs);
+});
+
+test('new metabolic families fall back with product-specific copy instead of generic research-direction prose', async () => {
+  const context = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-metabolic-fallback-families',
+      productName: '7-Keto CLA Carnitine Formula',
+      dosageForm: 'Capsule',
+      actives: [
+        { name: '7-Keto (DHEA Acetate-7-one)', amount: 100, unit: 'mg' },
+        { name: 'Conjugated Linoleic Acid (CLA) (from Safflower Oil)', amount: 800, unit: 'mg' },
+        { name: 'Acetyl-L-Carnitine HCl', amount: 500, unit: 'mg' },
+      ],
+    }),
+    overlayClaims: null,
+  });
+
+  const sevenKetoResult = await compileScientificBackgroundAsync(context, '7-Keto (DHEA Acetate-7-one)');
+  const claResult = await compileScientificBackgroundAsync(context, 'Conjugated Linoleic Acid (CLA) (from Safflower Oil)');
+  const carnitineResult = await compileScientificBackgroundAsync(context, 'Acetyl-L-Carnitine HCl');
+
+  assert.match(sevenKetoResult.scientificBackground.sections[0]?.summary ?? '', /7-keto|metabolic-rate|body-composition/i);
+  assert.doesNotMatch(sevenKetoResult.scientificBackground.sections[0]?.summary ?? '', /appears in several research directions/i);
+  assert.match(claResult.scientificBackground.sections[0]?.summary ?? '', /body-composition|fatty-acid|cla/i);
+  assert.doesNotMatch(claResult.scientificBackground.sections[0]?.summary ?? '', /appears in several research directions/i);
+  assert.match(carnitineResult.scientificBackground.sections[0]?.summary ?? '', /energy-transport|exercise-context|carnitine/i);
+  assert.doesNotMatch(carnitineResult.scientificBackground.sections[0]?.summary ?? '', /appears in several research directions/i);
+});

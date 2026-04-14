@@ -19,6 +19,9 @@ export type IngredientScienceIngredientFamily =
   | "ashwagandha"
   | "ginseng"
   | "green_tea_extract"
+  | "7keto_dhea_metabolite"
+  | "cla"
+  | "carnitine"
   | "5htp"
   | "b3_niacinamide"
   | "glycine"
@@ -113,6 +116,9 @@ const B3_PATTERN = /\bvitamin\s*b3\b|\bb3\b|\bniacinamide\b|\bniacin\b|\bnicotin
 const GLYCINE_PATTERN = /\bglycine\b/i;
 const TAURINE_PATTERN = /\btaurine\b/i;
 const INOSITOL_PATTERN = /\b(?:myo[\s-]*)?inositol\b|\bd[\s-]*chiro[\s-]*inositol\b/i;
+const SEVEN_KETO_PATTERN = /\b7[\s-]*keto\b|\bacetate[\s-]*7[\s-]*one\b|\bdhea[\s-]*acetate[\s-]*7[\s-]*one\b/i;
+const CLA_PATTERN = /\bcla\b|\bconjugated\s+linoleic\s+acid\b/i;
+const CARNITINE_PATTERN = /\bacetyl[\s-]*l[\s-]*carnitine\b|\bl[\s-]*carnitine\b|\bcarnitine\b|\balcar\b/i;
 const CURCUMIN_PATTERN = /\bcurcumin\b|\bturmeric\s+extract\b|\bcurcuminoids?\b/i;
 const ASHWAGANDHA_PATTERN = /\bashwagandha\b|\bwithania\s+somnifera\b|\bksm-?66\b|\bsensoril\b/i;
 const GINSENG_PATTERN = /\bginseng\b|\bpanax\b|\bamerican\s+ginseng\b|\bred\s+ginseng\b/i;
@@ -158,6 +164,9 @@ const inferFamilyFromText = (combined: string): IngredientScienceIngredientFamil
   if (ASHWAGANDHA_PATTERN.test(combined)) return "ashwagandha";
   if (GINSENG_PATTERN.test(combined)) return "ginseng";
   if (GREEN_TEA_EXTRACT_PATTERN.test(combined)) return "green_tea_extract";
+  if (SEVEN_KETO_PATTERN.test(combined)) return "7keto_dhea_metabolite";
+  if (CLA_PATTERN.test(combined)) return "cla";
+  if (CARNITINE_PATTERN.test(combined)) return "carnitine";
   if (HTP5_PATTERN.test(combined)) return "5htp";
   if (B3_PATTERN.test(combined)) return "b3_niacinamide";
   if (GLYCINE_PATTERN.test(combined)) return "glycine";
@@ -231,6 +240,9 @@ const categoryHintForFamily = (
   if (family === "ashwagandha") return "botanical extract";
   if (family === "ginseng") return "botanical extract";
   if (family === "green_tea_extract") return "botanical extract";
+  if (family === "7keto_dhea_metabolite") return "metabolite";
+  if (family === "cla") return "fatty acid";
+  if (family === "carnitine") return "amino acid derivative";
   if (family === "5htp") return "amino acid derivative";
   if (family === "b3_niacinamide") return "vitamin";
   if (family === "glycine") return "amino acid";
@@ -312,6 +324,9 @@ const PRIMARY_ACTIVE_FAMILIES = new Set<IngredientScienceIngredientFamily>([
   "ashwagandha",
   "ginseng",
   "green_tea_extract",
+  "7keto_dhea_metabolite",
+  "cla",
+  "carnitine",
   "glycine",
   "taurine",
   "inositol",

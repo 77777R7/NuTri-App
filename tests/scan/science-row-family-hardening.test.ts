@@ -222,6 +222,54 @@ test('row-level family inference keeps botanical extracts distinct inside a mixe
   );
 });
 
+test('row-level family inference keeps 7-keto, cla, and carnitine distinct inside a metabolic formula', () => {
+  const digest = buildDigest({
+    labelId: 'fixture-metabolic-formula',
+    productName: '7-Keto CLA Carnitine Metabolic Formula',
+    dosageForm: 'Capsule',
+    actives: [
+      { name: '7-Keto (DHEA Acetate-7-one)', amount: 100, unit: 'mg' },
+      { name: 'Conjugated Linoleic Acid (CLA) (from Safflower Oil)', amount: 800, unit: 'mg' },
+      { name: 'Acetyl-L-Carnitine HCl', amount: 500, unit: 'mg' },
+      { name: 'Green Tea Extract (Camellia sinensis) (Leaf)', amount: 250, unit: 'mg' },
+    ],
+  });
+
+  const context = buildIngredientScienceContext({ digest, overlayClaims: null });
+  const familyByName = new Map(context.ingredientDescriptors.map((descriptor) => [descriptor.name, descriptor.ingredientFamily]));
+
+  assert.equal(familyByName.get('7-Keto (DHEA Acetate-7-one)'), '7keto_dhea_metabolite');
+  assert.equal(familyByName.get('Conjugated Linoleic Acid (CLA) (from Safflower Oil)'), 'cla');
+  assert.equal(familyByName.get('Acetyl-L-Carnitine HCl'), 'carnitine');
+  assert.equal(familyByName.get('Green Tea Extract (Camellia sinensis) (Leaf)'), 'green_tea_extract');
+
+  const sevenKetoPlan = planScientificBackgroundSections({
+    context,
+    selectedIngredientName: '7-Keto (DHEA Acetate-7-one)',
+  });
+  const claPlan = planScientificBackgroundSections({
+    context,
+    selectedIngredientName: 'Conjugated Linoleic Acid (CLA) (from Safflower Oil)',
+  });
+  const carnitinePlan = planScientificBackgroundSections({
+    context,
+    selectedIngredientName: 'Acetyl-L-Carnitine HCl',
+  });
+
+  assert.deepEqual(
+    sevenKetoPlan.sections.map((section) => section.heading),
+    ['Metabolic and body-composition context', 'Why it reads differently from DHEA'],
+  );
+  assert.deepEqual(
+    claPlan.sections.map((section) => section.heading),
+    ['Body-composition context', 'Source oil and isomer detail'],
+  );
+  assert.deepEqual(
+    carnitinePlan.sections.map((section) => section.heading),
+    ['Energy transport and exercise context', 'What form disclosure changes'],
+  );
+});
+
 test('ingredient overview rejects factual A-card restatement and falls back to formula-reading copy', async () => {
   const digest = buildDigest({
     labelId: 'fixture-omega3',

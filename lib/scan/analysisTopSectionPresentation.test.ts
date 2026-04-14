@@ -196,7 +196,7 @@ test('multi-goal mixed coverage renders a mixed-fit hero and goal coverage row',
   assert.equal(result.insights[0]?.key, 'goal_coverage');
   assert.equal(result.insights[0]?.collapsedTitle, 'Goal check');
   assert.equal(result.insights[0]?.subtitle, '3 goals checked');
-  assert.deepEqual(result.insights[0]?.expandedBullets, [
+  assert.deepEqual(result.insights[0]?.visibleGoalCoverageItems?.map((item) => item.description), [
     'Energy — Limited support',
     'Immunity — Some support',
     'Recovery — Strong support',
@@ -251,7 +251,7 @@ test('goal coverage keeps unknown states separate from no-support copy', () => {
   });
 
   assert.equal(result.insights[0]?.key, 'goal_coverage');
-  assert.deepEqual(result.insights[0]?.expandedBullets, [
+  assert.deepEqual(result.insights[0]?.visibleGoalCoverageItems?.map((item) => item.description), [
     'Immunity — Strong support',
     'Recovery — Limited support',
     'Sleep — Not enough label detail',
@@ -883,7 +883,7 @@ test('insufficient-signal multi-goal copy prefers evidence limits over limited-s
   assert.equal(result.hero.chip, 'Not enough evidence to judge all your goals');
   assert.equal(result.hero.summary, 'We need more label detail to judge this product well.');
   assert.equal(result.insights[0]?.key, 'goal_coverage');
-  assert.deepEqual(result.insights[0]?.expandedBullets, [
+  assert.deepEqual(result.insights[0]?.visibleGoalCoverageItems?.map((item) => item.description), [
     'Sleep — Not enough label detail',
     'Stress Support — Not enough label detail',
     'Recovery — No clear support',
@@ -922,6 +922,15 @@ test('evidence-limited hero aligns with personalized support instead of contradi
       productDoseText: '1 capsule daily',
     },
     safety: {},
+    resolvedGoalSignal: {
+      mode: 'support_override',
+      goalLabel: 'Sleep',
+      heroTone: 'positive',
+      heroChip: 'Most aligned with your Sleep goal',
+      heroSummary: 'Visible ingredients lean more toward sleep support on this label.',
+      primaryInsightKey: 'personal_support',
+      preferredExpandedKey: 'personal_support',
+    },
   });
 
   assert.equal(result.hero.chip, 'Most aligned with your Sleep goal');
@@ -972,6 +981,15 @@ test('evidence-limited hero also aligns when support is only visible in goal cov
       productDoseText: '1 capsule daily',
     },
     safety: {},
+    resolvedGoalSignal: {
+      mode: 'support_override',
+      goalLabel: 'Sleep',
+      heroTone: 'positive',
+      heroChip: 'Most aligned with your Sleep goal',
+      heroSummary: 'Visible ingredients lean more toward sleep support on this label.',
+      primaryInsightKey: 'personal_support',
+      preferredExpandedKey: 'personal_support',
+    },
   });
 
   assert.equal(result.hero.chip, 'Most aligned with your Sleep goal');
