@@ -333,6 +333,31 @@ test('ingredient overview repairs a near-miss writer response into an api result
   assert.match(result.ingredientOverview.compareHint ?? '', /label|supporting formula lines/i);
 });
 
+test('science context orders lead active rows ahead of companion nutrients for 5-HTP formulas', () => {
+  const digest = buildDigest({
+    labelId: 'fixture-5htp-with-b6-companions',
+    productName: 'Double Strength 5-HTP 200 mg',
+    dosageForm: 'Capsule',
+    actives: [
+      { name: 'Niacin (as Niacinamide) (Vitamin B-3)', amount: 20, unit: 'mg' },
+      { name: 'Vitamin B-6 (from Pyridoxine HCl)', amount: 2, unit: 'mg' },
+      { name: '5-HTP (5-hydroxytryptophan) (From Griffonia simplicifolia Extract) (Seed)', amount: 200, unit: 'mg' },
+      { name: 'Glycine', amount: 100, unit: 'mg' },
+      { name: 'Taurine (Free-Form)', amount: 100, unit: 'mg' },
+      { name: 'Inositol', amount: 100, unit: 'mg' },
+    ],
+  });
+
+  const context = buildIngredientScienceContext({ digest, overlayClaims: null });
+
+  assert.equal(context.anchorIngredient?.name, '5-HTP (5-hydroxytryptophan) (From Griffonia simplicifolia Extract) (Seed)');
+  assert.equal(context.ingredientRows[0]?.name, '5-HTP (5-hydroxytryptophan) (From Griffonia simplicifolia Extract) (Seed)');
+  assert.equal(context.ingredientDescriptors[0]?.lineRole, 'primary_active');
+  assert.equal(context.ingredientDescriptors[0]?.ingredientFamily, '5htp');
+  assert.equal(context.ingredientDescriptors[1]?.ingredientFamily, 'glycine');
+  assert.notEqual(context.ingredientRows[1]?.name, 'Vitamin B-6 (from Pyridoxine HCl)');
+});
+
 test('single-anchor ingredient overview still allows identity copy when it adds label meaning', async () => {
   const digest = buildDigest({
     labelId: 'fixture-astaxanthin',

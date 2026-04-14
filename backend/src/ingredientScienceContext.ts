@@ -391,6 +391,35 @@ const pickPrimaryActiveRowIndex = (
   return bestIndex;
 };
 
+const scoreIngredientDescriptorForDisplay = (params: {
+  row: ScienceIngredientRow;
+  descriptor: IngredientScienceDescriptor;
+  index: number;
+  productName: string;
+  anchorKey: string | null;
+}): number => {
+  const { row, descriptor, index, productName, anchorKey } = params;
+  const rowKey = normalizeIngredientScienceKey(row.name);
+  const doseMagnitude = parseDoseMagnitude(row.dose);
+  const titleMatch = matchesProductTitle(row.name, productName);
+  const isAnchor = Boolean(anchorKey && rowKey === anchorKey);
+
+  return (
+    (isAnchor ? 260 : 0) +
+    (descriptor.lineRole === "primary_active" ? 180 : 0) +
+    (descriptor.lineRole === "breakdown_line" ? 42 : 0) +
+    (titleMatch ? 140 : 0) +
+    (PRIMARY_ACTIVE_FAMILIES.has(descriptor.ingredientFamily) ? 34 : 0) +
+    (row.dose ? 16 : 0) +
+    Math.min(doseMagnitude, 1200) / 24 -
+    (descriptor.lineRole === "companion_nutrient" ? 62 : 0) -
+    (descriptor.lineRole === "aggregate_line" ? 90 : 0) -
+    (descriptor.lineRole === "source_line" ? 120 : 0) -
+    (descriptor.lineRole === "blend_line" ? 140 : 0) -
+    index * 0.5
+  );
+};
+
 const buildLineRoles = (
   rows: ScienceIngredientRow[],
   families: IngredientScienceIngredientFamily[],
@@ -482,7 +511,6 @@ export const buildIngredientScienceContext = (params: {
     overlayClaims: params.overlayClaims,
   });
   const ingredientRows = dedupeIngredientRows(selection.ingredientRows);
-  const ingredientSnapshotNames = ingredientRows.map((row) => row.name);
   const productName = normalizeText(params.digest?.product?.name) || "Supplement formula";
   const sourceContext =
     selection.ingredientSourceTier === "overlay_iherb"
@@ -512,19 +540,48 @@ export const buildIngredientScienceContext = (params: {
       isBlendLike: isBlendLike(row.name, ingredientFamily),
     } satisfies IngredientScienceDescriptor;
   });
+  const anchorKey = anchorRow ? normalizeIngredientScienceKey(anchorRow.name) : null;
+  const orderedEntries = ingredientRows
+    .map((row, index) => ({
+      row,
+      descriptor: ingredientDescriptors[index]!,
+      index,
+    }))
+    .sort((left, right) => {
+      const scoreDiff =
+        scoreIngredientDescriptorForDisplay({
+          row: right.row,
+          descriptor: right.descriptor,
+          index: right.index,
+          productName,
+          anchorKey,
+        }) -
+        scoreIngredientDescriptorForDisplay({
+          row: left.row,
+          descriptor: left.descriptor,
+          index: left.index,
+          productName,
+          anchorKey,
+        });
+      if (scoreDiff !== 0) return scoreDiff;
+      return left.index - right.index;
+    });
+  const orderedIngredientRows = orderedEntries.map((entry) => entry.row);
+  const orderedIngredientDescriptors = orderedEntries.map((entry) => entry.descriptor);
+  const ingredientSnapshotNames = orderedIngredientRows.map((row) => row.name);
   const formulaMode = determineFormulaMode(ingredientRows, ingredientFamilies);
   const ingredientFamily = inferContextIngredientFamily({
     seedText: anchorRow?.name ?? null,
     productName,
     rows: ingredientRows,
   });
-  const hasOpaqueBlend = ingredientDescriptors.some((descriptor) => descriptor.isBlendLike);
-  const disclosedDoseCount = ingredientRows.filter((row) => normalizeText(row.dose).length > 0).length;
+  const hasOpaqueBlend = orderedIngredientDescriptors.some((descriptor) => descriptor.isBlendLike);
+  const disclosedDoseCount = orderedIngredientRows.filter((row) => normalizeText(row.dose).length > 0).length;
   const ingredientDisclosureLimited =
     formulaMode === "blend" ||
-    ingredientRows.length === 0 ||
+    orderedIngredientRows.length === 0 ||
     disclosedDoseCount === 0 ||
-    (hasOpaqueBlend && disclosedDoseCount < ingredientRows.length);
+    (hasOpaqueBlend && disclosedDoseCount < orderedIngredientRows.length);
   const sourceType: IngredientScienceSourceType =
     selection.ingredientSourceTier === "overlay_iherb"
       ? "iherb_overlay"
@@ -536,9 +593,9 @@ export const buildIngredientScienceContext = (params: {
     productName,
     ingredientSourceTier: selection.ingredientSourceTier,
     sourceType,
-    ingredientRows,
+    ingredientRows: orderedIngredientRows,
     ingredientSnapshotNames,
-    ingredientDescriptors,
+    ingredientDescriptors: orderedIngredientDescriptors,
     formulaMode,
     ingredientFamily,
     anchorIngredient: anchorRow
@@ -554,8 +611,8 @@ export const buildIngredientScienceContext = (params: {
             inferFormContext(anchorRow.name, ingredientFamilies[primaryIndex] ?? ingredientFamily, "primary_active"),
         }
       : null,
-    coIngredients: ingredientDescriptors
-      .filter((_, index) => index !== primaryIndex)
+    coIngredients: orderedIngredientDescriptors
+      .filter((row) => row.key !== anchorKey)
       .map((row) => ({
       name: row.name,
       dose: row.dose ?? null,

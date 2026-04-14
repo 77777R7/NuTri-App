@@ -3805,9 +3805,54 @@ const isResearchModeScienceRow = (
 
 const pickResearchModeScienceRows = (
     rows: ScienceSidecarIngredientRow[],
+    productTitle?: string | null,
 ): ScienceSidecarIngredientRow[] => {
     const filtered = rows.filter((row) => isResearchModeScienceRow(row, rows));
-    return filtered.length > 0 ? filtered : rows;
+    const baseRows = filtered.length > 0 ? filtered : rows;
+    const productTitleKey = normalizeIngredientNameForBackground(productTitle);
+    return [...baseRows].sort((left, right) => {
+        const scoreDiff =
+            scoreScienceModalIngredientRow(right, baseRows, productTitleKey)
+            - scoreScienceModalIngredientRow(left, baseRows, productTitleKey);
+        if (scoreDiff !== 0) return scoreDiff;
+        return baseRows.findIndex((row) => row.key === left.key) - baseRows.findIndex((row) => row.key === right.key);
+    });
+};
+
+const SCIENCE_MODAL_BLEND_LIKE_PATTERN = /\b(blend|complex|matrix|formula|proprietary)\b/i;
+const SCIENCE_MODAL_COMPANION_NUTRIENT_PATTERN =
+    /\b(vitamin\s*b(?:3|6|12)\b|\bb(?:3|6|12)\b|niacin(?:amide)?\b|nicotinamide\b|pyridoxine\b|pyridoxal(?:\s|-)?5(?:\s|-)?phosphate\b|p-?5-?p\b|folate\b|folic acid\b|methylfolate\b|zinc\b|selenium\b|copper\b|chromium\b|iodine\b|calcium\b|magnesium\b|manganese\b|molybdenum\b)\b/i;
+const SCIENCE_MODAL_PRIMARY_ACTIVE_PATTERN =
+    /\b(5[\s-]*htp|5[\s-]*hydroxytryptophan|griffonia|green tea|camellia sinensis|egcg|catechins?|conjugated linoleic acid|\bcla\b|carnitine|acetyl[\s-]*l[\s-]*carnitine|alcar|7[\s-]*keto|dhea acetate[\s-]*7[\s-]*one|omega[\s-]*3|fish oil|krill oil|algal oil|\bepa\b|\bdha\b|ashwagandha|curcumin|turmeric|ginseng|theanine|taurine|glycine|inositol|melatonin|coq10|ubiquinol|vitamin c|ascorbic acid|vitamin d|cholecalciferol|ergocalciferol)\b/i;
+
+const scoreScienceModalIngredientRow = (
+    row: ScienceSidecarIngredientRow,
+    rows: ScienceSidecarIngredientRow[],
+    productTitleKey: string,
+): number => {
+    const displayName = normalizeText(row.name);
+    const rowKey = normalizeIngredientNameForBackground(displayName);
+    const isBlendLike = SCIENCE_MODAL_BLEND_LIKE_PATTERN.test(displayName);
+    const isCompanionNutrient = SCIENCE_MODAL_COMPANION_NUTRIENT_PATTERN.test(displayName);
+    const titleMatch = rowKey.length >= 3 && productTitleKey.includes(rowKey);
+    const hasDose = normalizeText(row.dose).length > 0;
+    const doseMagnitude = parseOverviewDoseMagnitude(row.dose);
+    const hasOmegaBreakdownPeers = rows.some((candidate) => isOmega3BreakdownLineName(candidate.name));
+    const isOmegaSourceLine = isOmega3SourceLineName(displayName) && hasOmegaBreakdownPeers;
+    const isOmegaAggregateLine = isOmega3AggregateLineName(displayName);
+    const isOmegaBreakdownLine = isOmega3BreakdownLineName(displayName);
+
+    return (
+        (titleMatch ? 180 : 0) +
+        (!isCompanionNutrient && SCIENCE_MODAL_PRIMARY_ACTIVE_PATTERN.test(displayName) ? 40 : 0) +
+        (isOmegaBreakdownLine ? 34 : 0) +
+        (hasDose ? 16 : 0) +
+        Math.min(doseMagnitude, 1200) / 24 -
+        (isCompanionNutrient ? 62 : 0) -
+        (isBlendLike ? 140 : 0) -
+        (isOmegaSourceLine ? 120 : 0) -
+        (isOmegaAggregateLine ? 90 : 0)
+    );
 };
 
 const pickKeyIngredientsForBackground = (items: IngredientCoverItemLike[] | null | undefined): string[] => {
@@ -7772,10 +7817,10 @@ const AnalysisBundleDashboard: React.FC<{
     );
     const scientificBackgroundIngredientRows = useMemo(
         () => {
-            const researchRows = pickResearchModeScienceRows(decisionScienceIngredientRows);
+            const researchRows = pickResearchModeScienceRows(decisionScienceIngredientRows, productTitle);
             return researchRows.length > 0 ? researchRows : decisionScienceIngredientRows;
         },
-        [decisionScienceIngredientRows],
+        [decisionScienceIngredientRows, productTitle],
     );
     const keyIngredientsForDetail = useMemo(
         () => scientificBackgroundIngredientRows.map((row) => row.name),

@@ -1405,7 +1405,7 @@ test('vitamin c fallback keeps iron context as a specific lane instead of a gene
   assert.match(ironSection?.shopperMeaning ?? '', /paired nutrient use|iron context/i);
 });
 
-test('dha research mode gets a longer execution budget than epa', () => {
+test('omega-3 research mode keeps both EPA and DHA on the targeted live-writer profile', () => {
   const digest = buildDigest({
     labelId: 'fixture-omega3-timeout',
     productName: 'Omega-3 1040 mg Fish Oil 1250 mg',
@@ -1432,7 +1432,10 @@ test('dha research mode gets a longer execution budget than epa', () => {
 
   assert.equal(epaPlan.mode, 'research_mode');
   assert.equal(dhaPlan.mode, 'research_mode');
-  assert.ok(dhaProfile.timeoutMs > epaProfile.timeoutMs);
+  assert.ok(epaProfile.timeoutMs > 5_000);
+  assert.ok(dhaProfile.timeoutMs >= epaProfile.timeoutMs);
+  assert.equal(epaProfile.maxRetries, 1);
+  assert.equal(dhaProfile.maxRetries, 1);
 });
 
 test('magnesium and vitamin d research mode get longer execution budgets than the generic research profile', () => {
@@ -1953,9 +1956,50 @@ test('7-keto, cla, and carnitine get family-specific research plans and longer b
   assert.ok(sevenKetoProfile.timeoutMs > vitaminCProfile.timeoutMs);
   assert.ok(claProfile.timeoutMs > vitaminCProfile.timeoutMs);
   assert.ok(carnitineProfile.timeoutMs > vitaminCProfile.timeoutMs);
+  assert.equal(sevenKetoProfile.maxRetries, 1);
+  assert.equal(claProfile.maxRetries, 1);
+  assert.equal(carnitineProfile.maxRetries, 1);
   assert.ok(sevenKetoProfile.backgroundRefreshTimeoutMs >= sevenKetoProfile.timeoutMs);
   assert.ok(claProfile.backgroundRefreshTimeoutMs >= claProfile.timeoutMs);
   assert.ok(carnitineProfile.backgroundRefreshTimeoutMs >= carnitineProfile.timeoutMs);
+});
+
+test('5-htp, green tea extract, and omega-3 now use target-family live-writer profiles instead of the generic budget', () => {
+  const context = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-5htp-green-tea-omega3-profiles',
+      productName: '5-HTP Green Tea and Omega-3 Formula',
+      dosageForm: 'Softgel',
+      actives: [
+        { name: '5-HTP (5-hydroxytryptophan)', amount: 200, unit: 'mg' },
+        { name: 'Green Tea Extract (Camellia sinensis) (Leaf)', amount: 250, unit: 'mg' },
+        { name: 'EPA (Eicosapentaenoic Acid)', amount: 690, unit: 'mg' },
+        { name: 'DHA (Docosahexaenoic Acid)', amount: 260, unit: 'mg' },
+        { name: 'Vitamin C', amount: 250, unit: 'mg' },
+      ],
+    }),
+    overlayClaims: null,
+  });
+
+  const htpPlan = planScientificBackgroundSections({ context, selectedIngredientName: '5-HTP (5-hydroxytryptophan)' });
+  const greenTeaPlan = planScientificBackgroundSections({ context, selectedIngredientName: 'Green Tea Extract (Camellia sinensis) (Leaf)' });
+  const epaPlan = planScientificBackgroundSections({ context, selectedIngredientName: 'EPA (Eicosapentaenoic Acid)' });
+  const vitaminCPlan = planScientificBackgroundSections({ context, selectedIngredientName: 'Vitamin C' });
+
+  const htpProfile = resolveScientificBackgroundExecutionProfile(htpPlan);
+  const greenTeaProfile = resolveScientificBackgroundExecutionProfile(greenTeaPlan);
+  const epaProfile = resolveScientificBackgroundExecutionProfile(epaPlan);
+  const vitaminCProfile = resolveScientificBackgroundExecutionProfile(vitaminCPlan);
+
+  assert.ok(htpProfile.timeoutMs > vitaminCProfile.timeoutMs);
+  assert.ok(greenTeaProfile.timeoutMs > vitaminCProfile.timeoutMs);
+  assert.ok(epaProfile.timeoutMs > vitaminCProfile.timeoutMs);
+  assert.equal(htpProfile.maxRetries, 1);
+  assert.equal(greenTeaProfile.maxRetries, 1);
+  assert.equal(epaProfile.maxRetries, 1);
+  assert.ok(htpProfile.maxTokens < vitaminCProfile.maxTokens);
+  assert.ok(greenTeaProfile.maxTokens < vitaminCProfile.maxTokens);
+  assert.ok(epaProfile.maxTokens < vitaminCProfile.maxTokens);
 });
 
 test('new metabolic families fall back with product-specific copy instead of generic research-direction prose', async () => {

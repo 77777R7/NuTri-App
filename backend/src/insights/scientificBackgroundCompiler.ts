@@ -74,18 +74,19 @@ export type ScientificBackgroundExecutionProfile = {
   cacheTtlMs: number;
 };
 
-export const SCIENTIFIC_BACKGROUND_PROMPT_VERSION = "scientific_background_v15";
+export const SCIENTIFIC_BACKGROUND_PROMPT_VERSION = "scientific_background_v16";
 
 const RESEARCH_MODE_TIMEOUT_MS = 4_250;
 const CURCUMIN_RESEARCH_MODE_TIMEOUT_MS = 4_750;
 const ASHWAGANDHA_RESEARCH_MODE_TIMEOUT_MS = 4_750;
 const GINSENG_RESEARCH_MODE_TIMEOUT_MS = 4_750;
-const GREEN_TEA_EXTRACT_RESEARCH_MODE_TIMEOUT_MS = 5_250;
-const SEVEN_KETO_RESEARCH_MODE_TIMEOUT_MS = 5_000;
-const CLA_RESEARCH_MODE_TIMEOUT_MS = 5_000;
-const CARNITINE_RESEARCH_MODE_TIMEOUT_MS = 5_000;
+const OMEGA3_RESEARCH_MODE_TIMEOUT_MS = 6_250;
+const GREEN_TEA_EXTRACT_RESEARCH_MODE_TIMEOUT_MS = 6_500;
+const SEVEN_KETO_RESEARCH_MODE_TIMEOUT_MS = 6_000;
+const CLA_RESEARCH_MODE_TIMEOUT_MS = 6_000;
+const CARNITINE_RESEARCH_MODE_TIMEOUT_MS = 6_000;
 const NIACINAMIDE_RESEARCH_MODE_TIMEOUT_MS = 4_750;
-const HTP5_RESEARCH_MODE_TIMEOUT_MS = 4_750;
+const HTP5_RESEARCH_MODE_TIMEOUT_MS = 6_000;
 const VITAMIN_D_RESEARCH_MODE_TIMEOUT_MS = 4_750;
 const B12_RESEARCH_MODE_TIMEOUT_MS = 4_500;
 const FOLATE_RESEARCH_MODE_TIMEOUT_MS = 4_500;
@@ -94,7 +95,7 @@ const MAGNESIUM_RESEARCH_MODE_TIMEOUT_MS = 5_250;
 const CALCIUM_RESEARCH_MODE_TIMEOUT_MS = 4_750;
 const IRON_RESEARCH_MODE_TIMEOUT_MS = 5_000;
 const MELATONIN_RESEARCH_MODE_TIMEOUT_MS = 4_500;
-const DHA_RESEARCH_MODE_TIMEOUT_MS = 5_500;
+const DHA_RESEARCH_MODE_TIMEOUT_MS = 6_750;
 const LABEL_CONTEXT_MODE_TIMEOUT_MS = 1_500;
 const RESEARCH_MODE_BACKGROUND_REFRESH_TIMEOUT_MS = 18_000;
 const LONG_RESEARCH_MODE_BACKGROUND_REFRESH_TIMEOUT_MS = 22_000;
@@ -102,6 +103,8 @@ const DHA_RESEARCH_MODE_BACKGROUND_REFRESH_TIMEOUT_MS = 24_000;
 const LLM_TIMEOUT_MS = RESEARCH_MODE_TIMEOUT_MS;
 const LLM_MAX_RETRIES = 0;
 const RESEARCH_MODE_MAX_TOKENS = 750;
+const TARGETED_RESEARCH_MODE_MAX_TOKENS = 650;
+const TARGETED_RESEARCH_MODE_MAX_RETRIES = 1;
 const LABEL_CONTEXT_MODE_MAX_TOKENS = 400;
 const RESEARCH_MODE_CACHE_TTL_MS = 10 * 60_000;
 const LABEL_CONTEXT_MODE_CACHE_TTL_MS = 20 * 60_000;
@@ -1156,13 +1159,13 @@ export const resolveScientificBackgroundExecutionProfile = (
     };
   }
 
-  if (plan.family === "omega_3" && isOmega3Dha(plan.selectedLabel)) {
+  if (plan.family === "omega_3") {
     return {
       preferLiveWriter: true,
-      timeoutMs: DHA_RESEARCH_MODE_TIMEOUT_MS,
+      timeoutMs: isOmega3Dha(plan.selectedLabel) ? DHA_RESEARCH_MODE_TIMEOUT_MS : OMEGA3_RESEARCH_MODE_TIMEOUT_MS,
       backgroundRefreshTimeoutMs: DHA_RESEARCH_MODE_BACKGROUND_REFRESH_TIMEOUT_MS,
-      maxRetries: LLM_MAX_RETRIES,
-      maxTokens: RESEARCH_MODE_MAX_TOKENS,
+      maxRetries: TARGETED_RESEARCH_MODE_MAX_RETRIES,
+      maxTokens: TARGETED_RESEARCH_MODE_MAX_TOKENS,
       cacheTtlMs: RESEARCH_MODE_CACHE_TTL_MS,
     };
   }
@@ -1216,8 +1219,8 @@ export const resolveScientificBackgroundExecutionProfile = (
       preferLiveWriter: true,
       timeoutMs: GREEN_TEA_EXTRACT_RESEARCH_MODE_TIMEOUT_MS,
       backgroundRefreshTimeoutMs: LONG_RESEARCH_MODE_BACKGROUND_REFRESH_TIMEOUT_MS,
-      maxRetries: LLM_MAX_RETRIES,
-      maxTokens: RESEARCH_MODE_MAX_TOKENS,
+      maxRetries: TARGETED_RESEARCH_MODE_MAX_RETRIES,
+      maxTokens: TARGETED_RESEARCH_MODE_MAX_TOKENS,
       cacheTtlMs: RESEARCH_MODE_CACHE_TTL_MS,
     };
   }
@@ -1227,8 +1230,8 @@ export const resolveScientificBackgroundExecutionProfile = (
       preferLiveWriter: true,
       timeoutMs: SEVEN_KETO_RESEARCH_MODE_TIMEOUT_MS,
       backgroundRefreshTimeoutMs: LONG_RESEARCH_MODE_BACKGROUND_REFRESH_TIMEOUT_MS,
-      maxRetries: LLM_MAX_RETRIES,
-      maxTokens: RESEARCH_MODE_MAX_TOKENS,
+      maxRetries: TARGETED_RESEARCH_MODE_MAX_RETRIES,
+      maxTokens: TARGETED_RESEARCH_MODE_MAX_TOKENS,
       cacheTtlMs: RESEARCH_MODE_CACHE_TTL_MS,
     };
   }
@@ -1238,8 +1241,8 @@ export const resolveScientificBackgroundExecutionProfile = (
       preferLiveWriter: true,
       timeoutMs: CLA_RESEARCH_MODE_TIMEOUT_MS,
       backgroundRefreshTimeoutMs: LONG_RESEARCH_MODE_BACKGROUND_REFRESH_TIMEOUT_MS,
-      maxRetries: LLM_MAX_RETRIES,
-      maxTokens: RESEARCH_MODE_MAX_TOKENS,
+      maxRetries: TARGETED_RESEARCH_MODE_MAX_RETRIES,
+      maxTokens: TARGETED_RESEARCH_MODE_MAX_TOKENS,
       cacheTtlMs: RESEARCH_MODE_CACHE_TTL_MS,
     };
   }
@@ -1249,8 +1252,8 @@ export const resolveScientificBackgroundExecutionProfile = (
       preferLiveWriter: true,
       timeoutMs: CARNITINE_RESEARCH_MODE_TIMEOUT_MS,
       backgroundRefreshTimeoutMs: LONG_RESEARCH_MODE_BACKGROUND_REFRESH_TIMEOUT_MS,
-      maxRetries: LLM_MAX_RETRIES,
-      maxTokens: RESEARCH_MODE_MAX_TOKENS,
+      maxRetries: TARGETED_RESEARCH_MODE_MAX_RETRIES,
+      maxTokens: TARGETED_RESEARCH_MODE_MAX_TOKENS,
       cacheTtlMs: RESEARCH_MODE_CACHE_TTL_MS,
     };
   }
@@ -1270,9 +1273,9 @@ export const resolveScientificBackgroundExecutionProfile = (
     return {
       preferLiveWriter: true,
       timeoutMs: HTP5_RESEARCH_MODE_TIMEOUT_MS,
-      backgroundRefreshTimeoutMs: RESEARCH_MODE_BACKGROUND_REFRESH_TIMEOUT_MS,
-      maxRetries: LLM_MAX_RETRIES,
-      maxTokens: RESEARCH_MODE_MAX_TOKENS,
+      backgroundRefreshTimeoutMs: LONG_RESEARCH_MODE_BACKGROUND_REFRESH_TIMEOUT_MS,
+      maxRetries: TARGETED_RESEARCH_MODE_MAX_RETRIES,
+      maxTokens: TARGETED_RESEARCH_MODE_MAX_TOKENS,
       cacheTtlMs: RESEARCH_MODE_CACHE_TTL_MS,
     };
   }
