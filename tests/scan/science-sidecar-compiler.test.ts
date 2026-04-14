@@ -2037,7 +2037,7 @@ test('7-keto, cla, and carnitine get family-specific research plans and longer b
   assert.equal(carnitineProfile.maxRetries, 0);
   assert.equal(sevenKetoProfile.backgroundRefreshMaxRetries, 1);
   assert.equal(claProfile.backgroundRefreshMaxRetries, 1);
-  assert.equal(carnitineProfile.backgroundRefreshMaxRetries, 1);
+  assert.equal(carnitineProfile.backgroundRefreshMaxRetries, 0);
   assert.ok(sevenKetoProfile.backgroundRefreshTimeoutMs >= sevenKetoProfile.timeoutMs);
   assert.ok(claProfile.backgroundRefreshTimeoutMs >= claProfile.timeoutMs);
   assert.ok(carnitineProfile.backgroundRefreshTimeoutMs >= carnitineProfile.timeoutMs);

@@ -10289,6 +10289,7 @@ const markScientificBackgroundBackgroundRefreshCooldown = (cacheKey: string): vo
 const shouldCoolDownScientificBackgroundBackgroundRefresh = (
   cacheKey: string,
   diagnostics: Awaited<ReturnType<typeof compileScientificBackgroundAsync>>["diagnostics"],
+  retryLimit: number = SCIENTIFIC_BACKGROUND_REFRESH_FAILURE_RETRY_LIMIT,
 ): boolean => {
   const nextFailureCount = (scientificBackgroundSidecarBackgroundRefreshFailureCount.get(cacheKey) ?? 0) + 1;
   scientificBackgroundSidecarBackgroundRefreshFailureCount.set(cacheKey, nextFailureCount);
@@ -10298,7 +10299,7 @@ const shouldCoolDownScientificBackgroundBackgroundRefresh = (
       scientificBackgroundSidecarBackgroundRefreshFailureCount.delete(oldestKey);
     }
   }
-  return diagnostics.timeoutCount > 0 || nextFailureCount >= SCIENTIFIC_BACKGROUND_REFRESH_FAILURE_RETRY_LIMIT;
+  return diagnostics.timeoutCount > 0 || nextFailureCount >= retryLimit;
 };
 
 const readScientificBackgroundSidecarCache = (
@@ -11268,7 +11269,15 @@ app.post("/api/scientific-background/v1", verifySupabaseToken, async (req: Reque
         };
 
         if (refreshed.source !== "api") {
-          if (shouldCoolDownScientificBackgroundBackgroundRefresh(cacheKey, refreshed.diagnostics)) {
+          const refreshFailureRetryLimit =
+            plan.family === "zinc" || plan.family === "carnitine"
+              ? 1
+              : SCIENTIFIC_BACKGROUND_REFRESH_FAILURE_RETRY_LIMIT;
+          if (shouldCoolDownScientificBackgroundBackgroundRefresh(
+            cacheKey,
+            refreshed.diagnostics,
+            refreshFailureRetryLimit,
+          )) {
             markScientificBackgroundBackgroundRefreshCooldown(cacheKey);
           }
           writeScientificBackgroundSidecarCache(
