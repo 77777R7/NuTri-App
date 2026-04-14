@@ -487,6 +487,7 @@ const deriveScienceTitleRescueRows = (params: {
   if (!productName) return [];
 
   const titleWithoutBrand = stripBrandPrefix(productName, params.brandName);
+  const titleWithBrandContext = normalizeText(`${titleWithoutBrand} ${productName}`);
   const existingFamilies = params.existingRows.map((row) =>
     inferRowIngredientFamily({
       rowName: row.name,
@@ -542,7 +543,7 @@ const deriveScienceTitleRescueRows = (params: {
   const hasDedicatedProbioticRow = params.existingRows.some((row) =>
     PROBIOTIC_SPECIFIC_ROW_PATTERN.test(row.name),
   );
-  if (PROBIOTIC_TITLE_PATTERN.test(titleWithoutBrand) && !hasDedicatedProbioticRow) {
+  if (PROBIOTIC_TITLE_PATTERN.test(titleWithBrandContext) && !hasDedicatedProbioticRow) {
     pushRow("Probiotics");
   }
 
@@ -634,7 +635,7 @@ const deriveScienceTitleRescueRows = (params: {
     if (hasTitleFamily("cla", titleWithoutBrand)) pushRow("CLA");
     else if (hasTitleFamily("carnitine", titleWithoutBrand)) pushRow("L-Carnitine");
     else if (hasTitleFamily("green_tea_extract", titleWithoutBrand)) pushRow("Green Tea");
-    else if (PROBIOTIC_TITLE_PATTERN.test(titleWithoutBrand)) pushRow("Probiotics");
+    else if (PROBIOTIC_TITLE_PATTERN.test(titleWithBrandContext)) pushRow("Probiotics");
   }
 
   return rescueRows;

@@ -2222,6 +2222,22 @@ test('title rescue rows recover higher-value science anchors for CLA, tea bags, 
     }),
     overlayClaims: null,
   });
+  const brandBorneProbioticDigest = buildDigest({
+    labelId: 'fixture-brand-borne-probiotic-title-rescue',
+    productName: 'Align Probiotics, Gut Health + Immune Support, 28 Capsules',
+    dosageForm: 'Capsule',
+    actives: [],
+  });
+  const brandBorneProbioticContext = buildIngredientScienceContext({
+    digest: {
+      ...brandBorneProbioticDigest,
+      product: {
+        ...brandBorneProbioticDigest.product,
+        brandDisplay: 'Align Probiotics',
+      },
+    },
+    overlayClaims: null,
+  });
   const mineralStackContext = buildIngredientScienceContext({
     digest: buildDigest({
       labelId: 'fixture-mineral-stack-title-rescue',
@@ -2245,6 +2261,8 @@ test('title rescue rows recover higher-value science anchors for CLA, tea bags, 
   assert.match(teaContext.ingredientRows[0]?.name ?? '', /\bgreen tea\b/i);
   assert.match(probioticContext.ingredientRows[0]?.name ?? '', /\bprobiotic/i);
   assert.equal(probioticContext.anchorIngredient?.ingredientFamily, 'probiotic_or_blend');
+  assert.match(brandBorneProbioticContext.ingredientRows[0]?.name ?? '', /\bprobiotic/i);
+  assert.equal(brandBorneProbioticContext.anchorIngredient?.ingredientFamily, 'probiotic_or_blend');
   assert.match(mineralStackContext.ingredientRows[0]?.name ?? '', /\bmagnesium\b/i);
   assert.match(singleMineralContext.ingredientRows[0]?.name ?? '', /\bmagnesium\b/i);
   assert.equal(singleMineralContext.anchorIngredient?.ingredientFamily, 'magnesium');
