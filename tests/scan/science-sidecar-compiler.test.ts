@@ -2183,6 +2183,92 @@ test('greens-style formulas avoid enzyme support lines as the default science in
   assert.doesNotMatch(context.ingredientRows[0]?.name ?? '', /cytozymes|digestive enzyme/i);
 });
 
+test('title rescue rows recover higher-value science anchors for CLA, tea bags, probiotics, and mineral stacks', () => {
+  const claContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-cla95-title-rescue',
+      productName: 'ALLMAX, Essentials, CLA95™, 30 Softgels',
+      dosageForm: 'Softgel',
+      actives: [],
+    }),
+    overlayClaims: null,
+  });
+  const teaContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-green-tea-title-rescue',
+      productName: '21st Century, Herbal Slimming Tea, Green Tea, 24 Tea Bags',
+      dosageForm: 'Tea',
+      actives: [],
+    }),
+    overlayClaims: null,
+  });
+  const probioticContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-probiotic-title-rescue',
+      productName: 'Align Probiotics, Gut Health + Immune Support, 28 Capsules',
+      dosageForm: 'Capsule',
+      actives: [],
+    }),
+    overlayClaims: null,
+  });
+  const mineralStackContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-mineral-stack-title-rescue',
+      productName: '21st Century, Calcium Magnesium Zinc + D3, 250 Tablets',
+      dosageForm: 'Tablet',
+      actives: [],
+    }),
+    overlayClaims: null,
+  });
+
+  assert.match(claContext.ingredientRows[0]?.name ?? '', /\bcla\b/i);
+  assert.match(teaContext.ingredientRows[0]?.name ?? '', /\bgreen tea\b/i);
+  assert.match(probioticContext.ingredientRows[0]?.name ?? '', /\bprobiotic/i);
+  assert.equal(probioticContext.anchorIngredient?.ingredientFamily, 'probiotic_or_blend');
+  assert.match(mineralStackContext.ingredientRows[0]?.name ?? '', /\bmagnesium\b/i);
+  assert.ok(
+    mineralStackContext.ingredientRows.some((row) => /\bcalcium\b/i.test(row.name)),
+  );
+  assert.ok(
+    mineralStackContext.ingredientRows.some((row) => /\bzinc\b/i.test(row.name)),
+  );
+});
+
+test('greens and tea-bag products stay in label-context mode even when the rescued anchor looks supplement-like', () => {
+  const greensContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-greens-magnesium-powder',
+      productName: 'Daily Greens Powder with Magnesium & Superfoods',
+      dosageForm: 'Powder',
+      actives: [{ name: 'Magnesium (as Magnesium Citrate)', amount: 120, unit: 'mg' }],
+    }),
+    overlayClaims: null,
+  });
+  const teaContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-tea-bag-green-tea-mode',
+      productName: 'Herbal Slimming Tea, Green Tea, 24 Tea Bags',
+      dosageForm: 'Tea',
+      actives: [{ name: 'Green Tea Extract', amount: 500, unit: 'mg' }],
+    }),
+    overlayClaims: null,
+  });
+
+  const greensPlan = planScientificBackgroundSections({
+    context: greensContext,
+    selectedIngredientName: greensContext.anchorIngredient?.name ?? 'Magnesium (as Magnesium Citrate)',
+  });
+  const teaPlan = planScientificBackgroundSections({
+    context: teaContext,
+    selectedIngredientName: teaContext.anchorIngredient?.name ?? 'Green Tea Extract',
+  });
+
+  assert.equal(greensContext.productArchetype, 'functional_food_like');
+  assert.equal(greensPlan.mode, 'label_context_mode');
+  assert.equal(teaContext.productArchetype, 'functional_food_like');
+  assert.equal(teaPlan.mode, 'label_context_mode');
+});
+
 test('new metabolic families fall back with product-specific copy instead of generic research-direction prose', async () => {
   const context = buildIngredientScienceContext({
     digest: buildDigest({

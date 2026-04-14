@@ -47,6 +47,10 @@ test('server exposes ingredient overview and scientific background sidecars with
     /const cacheKey = \[\s*authority\.decisionSupport\.digest,\s*authority\.decisionSupport\.decisionInputsHash,\s*authority\.personalizationScopeHash,/,
   );
   assert.ok(serverSource.includes('normalizeIngredientScienceKey(parsedBody.selectedIngredientName)'));
+  assert.ok(serverSource.includes('backgroundRefreshPending: boolean;'));
+  assert.ok(serverSource.includes('recommendedRetryAfterMs: number | null;'));
+  assert.ok(serverSource.includes('withScientificBackgroundRefreshHint'));
+  assert.ok(serverSource.includes('SCIENTIFIC_BACKGROUND_REFRESH_RETRY_AFTER_MS'));
 });
 
 test('shared ingredient science types are additive and explicit', () => {

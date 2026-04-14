@@ -10247,6 +10247,8 @@ type ScientificBackgroundSidecarResponse = {
   source: Awaited<ReturnType<typeof compileScientificBackgroundAsync>>["source"];
   fallbackUsed: boolean;
   promptVersion: string;
+  backgroundRefreshPending: boolean;
+  recommendedRetryAfterMs: number | null;
 };
 
 type ScientificBackgroundSidecarCacheEntry = {
@@ -10297,6 +10299,18 @@ const resolveScientificBackgroundCacheTtlMs = (
   return executionProfile.cacheTtlMs;
 };
 
+const withScientificBackgroundRefreshHint = (
+  payload: ScientificBackgroundSidecarResponse,
+  backgroundRefreshPending: boolean,
+): ScientificBackgroundSidecarResponse =>
+  ({
+    ...payload,
+    backgroundRefreshPending: backgroundRefreshPending && payload.source === "fallback",
+    recommendedRetryAfterMs:
+      backgroundRefreshPending && payload.source === "fallback"
+        ? SCIENTIFIC_BACKGROUND_REFRESH_RETRY_AFTER_MS
+        : null,
+  });
 const stableStringifyScopeValue = (value: unknown): string => {
   if (value == null) return "null";
   if (typeof value === "number" || typeof value === "boolean") return JSON.stringify(value);
@@ -11226,6 +11240,8 @@ app.post("/api/scientific-background/v1", verifySupabaseToken, async (req: Reque
         source: compiled.source,
         fallbackUsed: compiled.fallbackUsed,
         promptVersion: compiled.promptVersion,
+        backgroundRefreshPending: false,
+        recommendedRetryAfterMs: null,
       };
 
       writeScientificBackgroundSidecarCache(
@@ -11268,6 +11284,8 @@ app.post("/api/scientific-background/v1", verifySupabaseToken, async (req: Reque
             source: refreshed.source,
             fallbackUsed: refreshed.fallbackUsed,
             promptVersion: refreshed.promptVersion,
+            backgroundRefreshPending: false,
+            recommendedRetryAfterMs: null,
           };
 
           writeScientificBackgroundSidecarCache(
@@ -11290,7 +11308,10 @@ app.post("/api/scientific-background/v1", verifySupabaseToken, async (req: Reque
         scientificBackgroundSidecarBackgroundRefresh.set(cacheKey, backgroundRefresh);
       }
 
-      return payload;
+      return withScientificBackgroundRefreshHint(
+        payload,
+        Boolean(payload.source === "fallback" && scientificBackgroundSidecarBackgroundRefresh.has(cacheKey)),
+      );
     })();
 
     scientificBackgroundSidecarInflight.set(cacheKey, compilePromise);

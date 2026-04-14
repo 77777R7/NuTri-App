@@ -3371,7 +3371,7 @@ type ScientificBackgroundSidecarState = {
     fallbackUsed?: boolean;
     promptVersion?: string;
     backgroundRefreshPending?: boolean;
-    recommendedRetryAfterMs?: number;
+    recommendedRetryAfterMs?: number | null;
     data?: ScientificBackgroundBlock;
     error?: string;
 };
@@ -8298,10 +8298,10 @@ const AnalysisBundleDashboard: React.FC<{
                                 ...currentState,
                                 status: 'ok',
                                 backgroundRefreshPending: false,
-                                recommendedRetryAfterMs: undefined,
+                                recommendedRetryAfterMs: null,
                             }
-                            : {
-                                status: 'error',
+                        : {
+                            status: 'error',
                                 error: `HTTP ${response.status}`,
                             },
                     );
@@ -8338,7 +8338,7 @@ const AnalysisBundleDashboard: React.FC<{
                     fallbackUsed: payload.fallbackUsed,
                     promptVersion: payload.promptVersion,
                     backgroundRefreshPending,
-                    recommendedRetryAfterMs: payload.recommendedRetryAfterMs ?? undefined,
+                    recommendedRetryAfterMs: payload.recommendedRetryAfterMs ?? null,
                     data: payload.scientificBackground,
                 });
             } catch (error) {
@@ -8353,7 +8353,7 @@ const AnalysisBundleDashboard: React.FC<{
                             ...currentState,
                             status: 'ok',
                             backgroundRefreshPending: false,
-                            recommendedRetryAfterMs: undefined,
+                            recommendedRetryAfterMs: null,
                         }
                         : {
                             status: 'error',
