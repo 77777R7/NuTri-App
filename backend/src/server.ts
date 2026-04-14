@@ -115,6 +115,8 @@ import {
 } from "./insights/sectionSummaryCompiler.js";
 import {
   compileIngredientOverviewAsync,
+  INGREDIENT_OVERVIEW_PROMPT_VERSION,
+  resolveIngredientOverviewExecutionProfile,
 } from "./insights/ingredientOverviewCompiler.js";
 import {
   compileScientificBackgroundAsync,
@@ -10264,6 +10266,7 @@ const ingredientOverviewBodySchema = z.object({
   personalizationScopeHash: z.string().trim().min(1).nullable().optional(),
   authoritativeIdentityType: z.string().trim().min(1).nullable().optional(),
   authoritativeIdentityValue: z.string().trim().min(1).nullable().optional(),
+  revalidateFallback: z.boolean().optional(),
 }).strict();
 
 const scientificBackgroundBodySchema = z.object({
@@ -10277,10 +10280,65 @@ const scientificBackgroundBodySchema = z.object({
   revalidateFallback: z.boolean().optional(),
 }).strict();
 
-const INGREDIENT_OVERVIEW_SIDECAR_TIMEOUT_MS = 8_500;
 const SCIENCE_SIDECAR_MAX_RETRIES = 0;
+const INGREDIENT_OVERVIEW_RESULT_CACHE_LIMIT = 120;
+const INGREDIENT_OVERVIEW_FALLBACK_CACHE_TTL_MS = 20_000;
 const SCIENTIFIC_BACKGROUND_RESULT_CACHE_LIMIT = 120;
 const SCIENTIFIC_BACKGROUND_RESEARCH_FALLBACK_CACHE_TTL_MS = 20_000;
+
+type IngredientOverviewSidecarResponse = {
+  status: "ok";
+  digest: string;
+  ingredientOverview: Awaited<ReturnType<typeof compileIngredientOverviewAsync>>["ingredientOverview"];
+  source: Awaited<ReturnType<typeof compileIngredientOverviewAsync>>["source"];
+  fallbackUsed: boolean;
+  promptVersion: string;
+};
+
+type IngredientOverviewSidecarCacheEntry = {
+  expiresAt: number;
+  payload: IngredientOverviewSidecarResponse;
+};
+
+const ingredientOverviewSidecarCache = new Map<string, IngredientOverviewSidecarCacheEntry>();
+const ingredientOverviewSidecarInflight = new Map<string, Promise<IngredientOverviewSidecarResponse>>();
+const ingredientOverviewSidecarBackgroundRefresh = new Map<string, Promise<void>>();
+
+const readIngredientOverviewSidecarCache = (
+  cacheKey: string,
+): IngredientOverviewSidecarResponse | null => {
+  const entry = ingredientOverviewSidecarCache.get(cacheKey);
+  if (!entry) return null;
+  if (entry.expiresAt <= Date.now()) {
+    ingredientOverviewSidecarCache.delete(cacheKey);
+    return null;
+  }
+  return entry.payload;
+};
+
+const writeIngredientOverviewSidecarCache = (
+  cacheKey: string,
+  payload: IngredientOverviewSidecarResponse,
+  ttlMs: number,
+): void => {
+  ingredientOverviewSidecarCache.set(cacheKey, {
+    expiresAt: Date.now() + ttlMs,
+    payload,
+  });
+  if (ingredientOverviewSidecarCache.size <= INGREDIENT_OVERVIEW_RESULT_CACHE_LIMIT) return;
+  const oldestKey = ingredientOverviewSidecarCache.keys().next().value;
+  if (typeof oldestKey === "string") {
+    ingredientOverviewSidecarCache.delete(oldestKey);
+  }
+};
+
+const resolveIngredientOverviewCacheTtlMs = (
+  payload: IngredientOverviewSidecarResponse,
+  cacheTtlMs: number,
+): number => {
+  if (payload.source === "api") return cacheTtlMs;
+  return INGREDIENT_OVERVIEW_FALLBACK_CACHE_TTL_MS;
+};
 
 type ScientificBackgroundSidecarResponse = {
   status: "ok";
@@ -11060,11 +11118,15 @@ app.post("/api/ingredient-overview/v1", verifySupabaseToken, async (req: Request
 
   try {
     const authority = await buildDecisionSupportAuthorityBundle(normalizedBarcode, { req });
+    const executionProfile = resolveIngredientOverviewExecutionProfile(authority.ingredientScienceContext);
     const requestId = String(res.getHeader("x-request-id") ?? "");
     const routeStartedAt = Date.now();
     const logIngredientOverviewResult = (params: {
       source: "api" | "fallback";
-      phase?: "response";
+      cacheHit?: boolean;
+      inflightHit?: boolean;
+      backgroundRefreshScheduled?: boolean;
+      phase?: "response" | "background_refresh";
     }) => {
       console.info("[ingredient-overview]", {
         requestId,
@@ -11073,6 +11135,10 @@ app.post("/api/ingredient-overview/v1", verifySupabaseToken, async (req: Request
         ingredientCount: authority.ingredientScienceContext.ingredientRows.length,
         formulaMode: authority.ingredientScienceContext.formulaMode,
         family: authority.ingredientScienceContext.ingredientFamily,
+        cacheHit: params.cacheHit ?? false,
+        inflightHit: params.inflightHit ?? false,
+        revalidateFallback: parsedBody.revalidateFallback === true,
+        backgroundRefreshScheduled: params.backgroundRefreshScheduled ?? false,
         latencyMs: Date.now() - routeStartedAt,
         phase: params.phase ?? "response",
       });
@@ -11114,29 +11180,144 @@ app.post("/api/ingredient-overview/v1", verifySupabaseToken, async (req: Request
       );
     }
 
+    const cacheKey = [
+      authority.decisionSupport.digest,
+      authority.decisionSupport.decisionInputsHash,
+      authority.personalizationScopeHash,
+      executionProfile.cacheTtlMs,
+      INGREDIENT_OVERVIEW_PROMPT_VERSION,
+    ].join("|");
+    const cached = readIngredientOverviewSidecarCache(cacheKey);
+    const shouldBypassFallbackCache =
+      parsedBody.revalidateFallback === true && cached?.source === "fallback";
+    if (cached && !shouldBypassFallbackCache) {
+      logIngredientOverviewResult({
+        source: cached.source,
+        cacheHit: true,
+      });
+      return res.json(cached);
+    }
+    if (shouldBypassFallbackCache) {
+      const existingBackgroundRefresh = ingredientOverviewSidecarBackgroundRefresh.get(cacheKey);
+      if (existingBackgroundRefresh) {
+        await existingBackgroundRefresh.catch(() => null);
+        const refreshedCached = readIngredientOverviewSidecarCache(cacheKey);
+        if (refreshedCached && refreshedCached.source === "api") {
+          return res.json(refreshedCached);
+        }
+      }
+    }
+
+    const existingInflight = ingredientOverviewSidecarInflight.get(cacheKey);
+    if (existingInflight) {
+      const inflightPayload = await existingInflight;
+      logIngredientOverviewResult({
+        source: inflightPayload.source,
+        inflightHit: true,
+      });
+      return res.json(inflightPayload);
+    }
+
     const deepseekKey = process.env.DEEPSEEK_API_KEY?.trim() || null;
     const deepseekModel = process.env.DEEPSEEK_MODEL?.trim() || "deepseek-chat";
     const llmFn = buildDeepseekJsonLlmFn({
       deepseekKey,
       deepseekModel,
-      timeoutMs: INGREDIENT_OVERVIEW_SIDECAR_TIMEOUT_MS,
-      maxTokens: 450,
+      timeoutMs: executionProfile.timeoutMs,
+      maxTokens: executionProfile.maxTokens,
     });
-    const compiled = await compileIngredientOverviewAsync(authority.ingredientScienceContext, {
-      llmFn,
-      timeoutMs: INGREDIENT_OVERVIEW_SIDECAR_TIMEOUT_MS,
-      maxRetries: SCIENCE_SIDECAR_MAX_RETRIES,
-    });
-    logIngredientOverviewResult({ source: compiled.source });
+    const compilePromise = (async (): Promise<IngredientOverviewSidecarResponse> => {
+      const compiled = await compileIngredientOverviewAsync(authority.ingredientScienceContext, {
+        llmFn,
+        timeoutMs: executionProfile.timeoutMs,
+        maxRetries: executionProfile.maxRetries,
+      });
 
-    return res.json({
-      status: "ok",
-      digest: authority.decisionSupport.digest,
-      ingredientOverview: compiled.ingredientOverview,
-      source: compiled.source,
-      fallbackUsed: compiled.fallbackUsed,
-      promptVersion: compiled.promptVersion,
-    });
+      const payload: IngredientOverviewSidecarResponse = {
+        status: "ok",
+        digest: authority.decisionSupport.digest,
+        ingredientOverview: compiled.ingredientOverview,
+        source: compiled.source,
+        fallbackUsed: compiled.fallbackUsed,
+        promptVersion: compiled.promptVersion,
+      };
+
+      writeIngredientOverviewSidecarCache(
+        cacheKey,
+        payload,
+        resolveIngredientOverviewCacheTtlMs(payload, executionProfile.cacheTtlMs),
+      );
+
+      let backgroundRefreshScheduled = false;
+
+      if (
+        payload.source === "fallback" &&
+        deepseekKey &&
+        !ingredientOverviewSidecarBackgroundRefresh.has(cacheKey)
+      ) {
+        backgroundRefreshScheduled = true;
+        const backgroundRefresh = (async (): Promise<void> => {
+          const backgroundLlmFn = buildDeepseekJsonLlmFn({
+            deepseekKey,
+            deepseekModel,
+            timeoutMs: executionProfile.backgroundRefreshTimeoutMs,
+            maxTokens: executionProfile.maxTokens,
+          });
+          if (!backgroundLlmFn) return;
+
+          const refreshed = await compileIngredientOverviewAsync(authority.ingredientScienceContext, {
+            llmFn: backgroundLlmFn,
+            timeoutMs: executionProfile.backgroundRefreshTimeoutMs,
+            maxRetries: executionProfile.backgroundRefreshMaxRetries,
+          });
+
+          if (refreshed.source !== "api") return;
+
+          const refreshedPayload: IngredientOverviewSidecarResponse = {
+            status: "ok",
+            digest: authority.decisionSupport.digest,
+            ingredientOverview: refreshed.ingredientOverview,
+            source: refreshed.source,
+            fallbackUsed: refreshed.fallbackUsed,
+            promptVersion: refreshed.promptVersion,
+          };
+
+          writeIngredientOverviewSidecarCache(
+            cacheKey,
+            refreshedPayload,
+            resolveIngredientOverviewCacheTtlMs(refreshedPayload, executionProfile.cacheTtlMs),
+          );
+          logIngredientOverviewResult({
+            source: refreshedPayload.source,
+            phase: "background_refresh",
+          });
+        })()
+          .catch((error) => {
+            captureException(error, {
+              route: "/api/ingredient-overview/v1",
+              phase: "background_refresh",
+              cacheKey,
+            });
+          })
+          .finally(() => {
+            ingredientOverviewSidecarBackgroundRefresh.delete(cacheKey);
+          });
+
+        ingredientOverviewSidecarBackgroundRefresh.set(cacheKey, backgroundRefresh);
+      }
+
+      logIngredientOverviewResult({
+        source: payload.source,
+        backgroundRefreshScheduled,
+      });
+      return payload;
+    })()
+      .finally(() => {
+        ingredientOverviewSidecarInflight.delete(cacheKey);
+      });
+
+    ingredientOverviewSidecarInflight.set(cacheKey, compilePromise);
+    return res.json(await compilePromise);
   } catch (error) {
     captureException(error, { route: "/api/ingredient-overview/v1" });
     const detail = error instanceof Error ? `${error.name}: ${error.message}` : String(error);

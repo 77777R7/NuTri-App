@@ -74,16 +74,18 @@ export type ScientificBackgroundExecutionProfile = {
   cacheTtlMs: number;
 };
 
-export const SCIENTIFIC_BACKGROUND_PROMPT_VERSION = "scientific_background_v14";
+export const SCIENTIFIC_BACKGROUND_PROMPT_VERSION = "scientific_background_v15";
 
-const RESEARCH_MODE_TIMEOUT_MS = 3_500;
-const CURCUMIN_RESEARCH_MODE_TIMEOUT_MS = 4_250;
-const ASHWAGANDHA_RESEARCH_MODE_TIMEOUT_MS = 4_250;
-const GINSENG_RESEARCH_MODE_TIMEOUT_MS = 4_250;
-const GREEN_TEA_EXTRACT_RESEARCH_MODE_TIMEOUT_MS = 4_500;
-const SEVEN_KETO_RESEARCH_MODE_TIMEOUT_MS = 4_250;
-const CLA_RESEARCH_MODE_TIMEOUT_MS = 4_250;
-const CARNITINE_RESEARCH_MODE_TIMEOUT_MS = 4_250;
+const RESEARCH_MODE_TIMEOUT_MS = 4_250;
+const CURCUMIN_RESEARCH_MODE_TIMEOUT_MS = 4_750;
+const ASHWAGANDHA_RESEARCH_MODE_TIMEOUT_MS = 4_750;
+const GINSENG_RESEARCH_MODE_TIMEOUT_MS = 4_750;
+const GREEN_TEA_EXTRACT_RESEARCH_MODE_TIMEOUT_MS = 5_250;
+const SEVEN_KETO_RESEARCH_MODE_TIMEOUT_MS = 5_000;
+const CLA_RESEARCH_MODE_TIMEOUT_MS = 5_000;
+const CARNITINE_RESEARCH_MODE_TIMEOUT_MS = 5_000;
+const NIACINAMIDE_RESEARCH_MODE_TIMEOUT_MS = 4_750;
+const HTP5_RESEARCH_MODE_TIMEOUT_MS = 4_750;
 const VITAMIN_D_RESEARCH_MODE_TIMEOUT_MS = 4_750;
 const B12_RESEARCH_MODE_TIMEOUT_MS = 4_500;
 const FOLATE_RESEARCH_MODE_TIMEOUT_MS = 4_500;
@@ -1247,6 +1249,28 @@ export const resolveScientificBackgroundExecutionProfile = (
       preferLiveWriter: true,
       timeoutMs: CARNITINE_RESEARCH_MODE_TIMEOUT_MS,
       backgroundRefreshTimeoutMs: LONG_RESEARCH_MODE_BACKGROUND_REFRESH_TIMEOUT_MS,
+      maxRetries: LLM_MAX_RETRIES,
+      maxTokens: RESEARCH_MODE_MAX_TOKENS,
+      cacheTtlMs: RESEARCH_MODE_CACHE_TTL_MS,
+    };
+  }
+
+  if (plan.family === "b3_niacinamide") {
+    return {
+      preferLiveWriter: true,
+      timeoutMs: NIACINAMIDE_RESEARCH_MODE_TIMEOUT_MS,
+      backgroundRefreshTimeoutMs: RESEARCH_MODE_BACKGROUND_REFRESH_TIMEOUT_MS,
+      maxRetries: LLM_MAX_RETRIES,
+      maxTokens: RESEARCH_MODE_MAX_TOKENS,
+      cacheTtlMs: RESEARCH_MODE_CACHE_TTL_MS,
+    };
+  }
+
+  if (plan.family === "5htp") {
+    return {
+      preferLiveWriter: true,
+      timeoutMs: HTP5_RESEARCH_MODE_TIMEOUT_MS,
+      backgroundRefreshTimeoutMs: RESEARCH_MODE_BACKGROUND_REFRESH_TIMEOUT_MS,
       maxRetries: LLM_MAX_RETRIES,
       maxTokens: RESEARCH_MODE_MAX_TOKENS,
       cacheTtlMs: RESEARCH_MODE_CACHE_TTL_MS,

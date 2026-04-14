@@ -27,10 +27,27 @@ export type CompileIngredientOverviewOpts = {
   maxRetries?: number;
 };
 
-export const INGREDIENT_OVERVIEW_PROMPT_VERSION = "ingredient_overview_v7";
+export type IngredientOverviewExecutionProfile = {
+  timeoutMs: number;
+  backgroundRefreshTimeoutMs: number;
+  maxRetries: number;
+  backgroundRefreshMaxRetries: number;
+  maxTokens: number;
+  cacheTtlMs: number;
+};
+
+export const INGREDIENT_OVERVIEW_PROMPT_VERSION = "ingredient_overview_v8";
 
 const LLM_TIMEOUT_MS = 9_000;
 const LLM_MAX_RETRIES = 1;
+const SINGLE_ANCHOR_TIMEOUT_MS = 3_000;
+const MULTI_ANCHOR_TIMEOUT_MS = 3_750;
+const BLEND_ANCHOR_TIMEOUT_MS = 3_250;
+const COMPLEX_FORMULA_TIMEOUT_MS = 4_250;
+const BACKGROUND_REFRESH_TIMEOUT_MS = 14_000;
+const COMPLEX_BACKGROUND_REFRESH_TIMEOUT_MS = 18_000;
+const INGREDIENT_OVERVIEW_MAX_TOKENS = 450;
+const INGREDIENT_OVERVIEW_CACHE_TTL_MS = 10 * 60_000;
 
 const BANNED_PATTERNS = [
   /people take this/i,
@@ -142,6 +159,19 @@ const splitSentences = (value: string): string[] =>
     .split(/(?<=[.!?])\s+/)
     .map((part) => normalizeText(part))
     .filter(Boolean);
+
+const removeWeakOrUnsafeSentences = (
+  context: IngredientScienceContext,
+  value: string | null | undefined,
+): string => {
+  const kept = splitSentences(String(value ?? "")).filter((sentence) => {
+    if (BANNED_PATTERNS.some((pattern) => pattern.test(sentence))) return false;
+    if (FACTUAL_RESTATEMENT_PATTERNS.some((pattern) => pattern.test(sentence))) return false;
+    if (countDoseMentions(context, sentence) > 0) return false;
+    return true;
+  });
+  return normalizeText(kept.join(" "));
+};
 
 const isSentenceLikeTitle = (value: string | null | undefined): boolean => {
   const normalized = normalizeText(value);
@@ -427,7 +457,9 @@ const repairBlock = (
   fallbackBlock: IngredientOverviewBlock,
 ): IngredientOverviewBlock => {
   const anchorName = normalizeText(context.anchorIngredient?.name);
-  const normalizedParagraphOne = normalizeText(candidate.paragraph1);
+  const normalizedParagraphOne = removeWeakOrUnsafeSentences(context, candidate.paragraph1);
+  const normalizedParagraphTwo = removeWeakOrUnsafeSentences(context, candidate.paragraph2);
+  const normalizedCompareHint = removeWeakOrUnsafeSentences(context, candidate.compareHint);
   const repairedParagraphOne = (() => {
     if (!anchorName || !normalizedParagraphOne) return normalizedParagraphOne;
     const existing = normalizeComparable(normalizedParagraphOne);
@@ -439,10 +471,10 @@ const repairBlock = (
     mode: candidate.mode ?? fallbackBlock.mode,
     titleLine: normalizeTitleLine(context, candidate.titleLine ?? fallbackBlock.titleLine),
     paragraph1: asSentence(repairedParagraphOne || fallbackBlock.paragraph1),
-    paragraph2: candidate.paragraph2 ? asSentence(candidate.paragraph2) : (fallbackBlock.paragraph2 ?? null),
+    paragraph2: normalizedParagraphTwo ? asSentence(normalizedParagraphTwo) : (fallbackBlock.paragraph2 ?? null),
     compareHint:
-      candidate.compareHint && hasSpecificCompareHint(candidate.compareHint)
-        ? asSentence(candidate.compareHint)
+      normalizedCompareHint && hasSpecificCompareHint(normalizedCompareHint)
+        ? asSentence(normalizedCompareHint)
         : fallbackBlock.compareHint,
   };
 
@@ -485,6 +517,56 @@ const withTimeout = async <T>(promise: Promise<T>, timeoutMs: number): Promise<T
   } finally {
     if (timeoutId) clearTimeout(timeoutId);
   }
+};
+
+export const resolveIngredientOverviewExecutionProfile = (
+  context: IngredientScienceContext,
+): IngredientOverviewExecutionProfile => {
+  const mode = getMode(context);
+  const family = context.ingredientFamily;
+  const companionCount = context.coIngredients.length;
+
+  if (family === "omega_3") {
+    return {
+      timeoutMs: COMPLEX_FORMULA_TIMEOUT_MS,
+      backgroundRefreshTimeoutMs: COMPLEX_BACKGROUND_REFRESH_TIMEOUT_MS,
+      maxRetries: 0,
+      backgroundRefreshMaxRetries: 1,
+      maxTokens: INGREDIENT_OVERVIEW_MAX_TOKENS,
+      cacheTtlMs: INGREDIENT_OVERVIEW_CACHE_TTL_MS,
+    };
+  }
+
+  if (mode === "single_anchor") {
+    return {
+      timeoutMs: SINGLE_ANCHOR_TIMEOUT_MS,
+      backgroundRefreshTimeoutMs: BACKGROUND_REFRESH_TIMEOUT_MS,
+      maxRetries: 0,
+      backgroundRefreshMaxRetries: 1,
+      maxTokens: INGREDIENT_OVERVIEW_MAX_TOKENS,
+      cacheTtlMs: INGREDIENT_OVERVIEW_CACHE_TTL_MS,
+    };
+  }
+
+  if (mode === "blend_anchor") {
+    return {
+      timeoutMs: BLEND_ANCHOR_TIMEOUT_MS,
+      backgroundRefreshTimeoutMs: BACKGROUND_REFRESH_TIMEOUT_MS,
+      maxRetries: 0,
+      backgroundRefreshMaxRetries: 1,
+      maxTokens: INGREDIENT_OVERVIEW_MAX_TOKENS,
+      cacheTtlMs: INGREDIENT_OVERVIEW_CACHE_TTL_MS,
+    };
+  }
+
+  return {
+    timeoutMs: companionCount >= 3 ? COMPLEX_FORMULA_TIMEOUT_MS : MULTI_ANCHOR_TIMEOUT_MS,
+    backgroundRefreshTimeoutMs: companionCount >= 3 ? COMPLEX_BACKGROUND_REFRESH_TIMEOUT_MS : BACKGROUND_REFRESH_TIMEOUT_MS,
+    maxRetries: 0,
+    backgroundRefreshMaxRetries: 1,
+    maxTokens: INGREDIENT_OVERVIEW_MAX_TOKENS,
+    cacheTtlMs: INGREDIENT_OVERVIEW_CACHE_TTL_MS,
+  };
 };
 
 export const compileIngredientOverviewAsync = async (

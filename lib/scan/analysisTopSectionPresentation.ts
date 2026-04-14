@@ -616,7 +616,7 @@ const buildHeroFromResolvedGoalSignal = (
   goal: TopSectionHeroInput,
   resolvedGoalSignal?: TopSectionResolvedGoalSignalInput | null,
 ): TopSectionHeroPresentation | null => {
-  if (!resolvedGoalSignal || resolvedGoalSignal.mode !== 'support_override') return null;
+  if (!resolvedGoalSignal) return null;
   const heroChip = normalizeText(resolvedGoalSignal.heroChip);
   const heroSummary = normalizeText(resolvedGoalSignal.heroSummary);
   if (!heroChip || !heroSummary) return null;

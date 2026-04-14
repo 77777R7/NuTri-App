@@ -20,7 +20,6 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
     ActivityIndicator,
     Image,
-    InteractionManager,
     Modal,
     Platform,
     Pressable,
@@ -3983,6 +3982,7 @@ const AnalysisBundleDashboard: React.FC<{
     const productOverviewAiStateRef = useRef<Record<string, ProductOverviewAiState>>({});
     const ingredientOverviewStateRef = useRef<Record<string, IngredientOverviewSidecarState>>({});
     const scientificBackgroundStateRef = useRef<Record<string, ScientificBackgroundSidecarState>>({});
+    const ingredientOverviewRevalidateAtRef = useRef<Record<string, number>>({});
     const scientificBackgroundRevalidateAtRef = useRef<Record<string, number>>({});
     const decisionSupportCacheRef = useRef<Map<string, Record<string, unknown>>>(new Map());
     const decisionSupportByBarcodeRef = useRef<Map<string, Record<string, unknown>>>(decisionSupportWarmCache);
@@ -6253,9 +6253,12 @@ const AnalysisBundleDashboard: React.FC<{
         });
         const supportiveVisibleGoalCoverage = resolvedVisibleGoalCoverage.filter((entry) => isSupportiveGoalCoverageState(entry.state));
         const supportiveAllGoalCoverage = resolvedAllGoalCoverage.filter((entry) => isSupportiveGoalCoverageState(entry.state));
-        const explicitSupportGoalLabel = (personalInsight?.supports ?? [])
-            .map((signal) => normalizeText(signal.label))
-            .find(Boolean) ?? null;
+        const supportGoalLabels = Array.from(new Set(
+            (personalInsight?.supports ?? [])
+                .map((signal) => normalizeText(signal.label))
+                .filter(Boolean),
+        ));
+        const explicitSupportGoalLabel = supportGoalLabels.length === 1 ? supportGoalLabels[0] ?? null : null;
         const visibleSupportGoalLabel =
             pickDominantGoalCoverageLabel(supportiveVisibleGoalCoverage)
             ?? (
@@ -6271,56 +6274,86 @@ const AnalysisBundleDashboard: React.FC<{
         const resolvedSupportGoalLabel = goalReadsAsEvidenceThin
             ? explicitSupportGoalLabel ?? visibleSupportGoalLabel ?? dominantSupportGoalLabel
             : null;
+        const preferredSupportGoalLabel =
+            explicitSupportGoalLabel
+            ?? visibleSupportGoalLabel
+            ?? dominantSupportGoalLabel;
+        const goalFitResolvedGoalLabel =
+            getGoalLabel(goalFit?.selectedGoalKey ?? null)
+            ?? getGoalLabel(goalFit?.dominantGoalKey ?? null)
+            ?? visibleSupportGoalLabel
+            ?? getGoalLabel(goalFit?.previewTopGoalKey ?? null)
+            ?? dominantSupportGoalLabel
+            ?? null;
+        const resolvedGoalCoverageMatch = goalFitResolvedGoalLabel
+            ? findGoalCoverageByLabel(resolvedAllGoalCoverage, goalFitResolvedGoalLabel)
+            : null;
+        const resolvedGoalTone: 'neutral' | 'positive' =
+            resolvedGoalCoverageMatch?.state === 'strong' ? 'positive' : 'neutral';
+        const analyzedGoalCount =
+            goalFit?.goalCoverageSummary?.analyzedGoalCount
+            ?? goalFit?.analyzedGoalCount
+            ?? resolvedAllGoalCoverage.length;
+        const buildResolvedHeroSummary = (goalLabel: string): string =>
+            analyzedGoalCount > 1
+                ? `Visible ingredients lean more toward ${lowerFirst(goalLabel)} support than other goals we checked.`
+                : `Visible ingredients lean more toward ${lowerFirst(goalLabel)} support on this label.`;
+        const hasConflictingSupportSignals = supportGoalLabels.length > 1;
         const preferSupportSignal =
-            goalReadsAsEvidenceThin
+            !hasConflictingSupportSignals
             && Boolean(
-                resolvedSupportGoalLabel
-                || (personalInsight?.supports?.length ?? 0) > 0
-                || supportiveVisibleGoalCoverage.length > 0
-                || supportiveAllGoalCoverage.length > 0,
+                preferredSupportGoalLabel
+                && (
+                    goalReadsAsEvidenceThin
+                    || goalFit?.heroMode === 'dominant_goal'
+                    || goalFit?.heroMode === 'single_goal'
+                    || goalFit?.heroMode === 'limited_goals'
+                ),
             );
-        const defaultGoalFitInsightKey: 'personal_support' | 'goal_coverage' =
-            goalFit?.goalLensMode === 'multi_goal_summary'
-            || goalFit?.heroMode === 'mixed_goals'
-            || goalFit?.heroMode === 'limited_goals'
-            || goalFit?.heroMode === 'insufficient_signal'
-                ? 'goal_coverage'
-                : 'personal_support';
-        const resolvedGoalSignal: TopSectionResolvedGoalSignalInput = preferSupportSignal && resolvedSupportGoalLabel
+        const resolvedGoalSignal: TopSectionResolvedGoalSignalInput = preferSupportSignal && preferredSupportGoalLabel
             ? {
                 mode: 'support_override',
-                goalLabel: resolvedSupportGoalLabel,
-                heroTone: 'neutral',
-                heroChip: `Most aligned with your ${resolvedSupportGoalLabel} goal`,
-                heroSummary: (goalFit?.goalCoverageSummary?.analyzedGoalCount ?? goalFit?.analyzedGoalCount ?? resolvedAllGoalCoverage.length) > 1
-                    ? `Visible ingredients lean more toward ${lowerFirst(resolvedSupportGoalLabel)} support than other goals we checked.`
-                    : `Visible ingredients lean more toward ${lowerFirst(resolvedSupportGoalLabel)} support on this label.`,
+                goalLabel: preferredSupportGoalLabel,
+                heroTone: resolvedGoalTone,
+                heroChip: `Most aligned with your ${preferredSupportGoalLabel} goal`,
+                heroSummary: buildResolvedHeroSummary(preferredSupportGoalLabel),
                 primaryInsightKey: 'personal_support',
                 preferredExpandedKey: 'personal_support',
               }
-            : (resolvedAllGoalCoverage.length > 0
-                && (
-                    goalFit?.goalLensMode === 'multi_goal_summary'
-                    || goalFit?.heroMode === 'mixed_goals'
-                    || goalFit?.heroMode === 'limited_goals'
-                    || goalReadsAsEvidenceThin
-                ))
+            : (
+                goalFit?.status === 'ready'
+                && goalFitResolvedGoalLabel
+                && goalFit?.heroMode !== 'mixed_goals'
+                && !hasConflictingSupportSignals
+            )
                 ? {
-                    mode: 'coverage_only',
-                    goalLabel: null,
-                    primaryInsightKey: 'goal_coverage',
-                    preferredExpandedKey: 'goal_coverage',
+                    mode: 'goal_fit',
+                    goalLabel: goalFitResolvedGoalLabel,
+                    heroTone: resolvedGoalTone,
+                    heroChip: `Most aligned with your ${goalFitResolvedGoalLabel} goal`,
+                    heroSummary: buildResolvedHeroSummary(goalFitResolvedGoalLabel),
+                    primaryInsightKey: 'personal_support',
+                    preferredExpandedKey: 'personal_support',
                   }
-                : goalFit?.status === 'ready'
+                : (resolvedAllGoalCoverage.length > 0
+                    && (
+                        goalFit?.goalLensMode === 'multi_goal_summary'
+                        || goalFit?.heroMode === 'mixed_goals'
+                        || goalFit?.heroMode === 'limited_goals'
+                        || goalReadsAsEvidenceThin
+                    ))
+                    ? {
+                        mode: 'coverage_only',
+                        goalLabel: null,
+                        primaryInsightKey: 'goal_coverage',
+                        preferredExpandedKey: 'goal_coverage',
+                      }
+                    : goalFit?.status === 'ready'
                     ? {
                         mode: 'goal_fit',
-                        goalLabel:
-                            getGoalLabel(goalFit?.selectedGoalKey ?? null)
-                            ?? getGoalLabel(goalFit?.dominantGoalKey ?? null)
-                            ?? getGoalLabel(goalFit?.previewTopGoalKey ?? null)
-                            ?? null,
-                        primaryInsightKey: defaultGoalFitInsightKey,
-                        preferredExpandedKey: defaultGoalFitInsightKey,
+                        goalLabel: goalFitResolvedGoalLabel,
+                        primaryInsightKey: goalFitResolvedGoalLabel ? 'personal_support' : 'goal_coverage',
+                        preferredExpandedKey: goalFitResolvedGoalLabel ? 'personal_support' : 'goal_coverage',
                       }
                     : {
                         mode: 'insufficient',
@@ -7858,6 +7891,7 @@ const AnalysisBundleDashboard: React.FC<{
         setScientificBackgroundByRequestKey({});
         ingredientOverviewStateRef.current = {};
         scientificBackgroundStateRef.current = {};
+        ingredientOverviewRevalidateAtRef.current = {};
         scientificBackgroundRevalidateAtRef.current = {};
         setActiveIngredientName(keyIngredientsForDetail[0] ?? null);
         setActiveSafetyIngredientName(keyIngredientsForSafety[0] ?? null);
@@ -7875,11 +7909,19 @@ const AnalysisBundleDashboard: React.FC<{
             return;
         }
         const current = ingredientOverviewStateRef.current[ingredientOverviewRequestKey];
+        const lastRevalidateAt = ingredientOverviewRevalidateAtRef.current[ingredientOverviewRequestKey] ?? 0;
+        const shouldRevalidateFallback =
+            selectedTileType === 'science'
+            && shouldRenderScienceSidecars
+            && current?.status === 'ok'
+            && current.source === 'server-fallback'
+            && Date.now() - lastRevalidateAt >= SCIENTIFIC_BACKGROUND_REVALIDATE_COOLDOWN_MS;
         if (
             current
             && (
                 current.status === 'loading'
-                || (current.status === 'ok' && (current.source === 'api' || current.source === 'server-fallback'))
+                || (current.status === 'ok' && current.source === 'api')
+                || (current.status === 'ok' && current.source === 'server-fallback' && !shouldRevalidateFallback)
             )
         ) {
             return;
@@ -7894,8 +7936,12 @@ const AnalysisBundleDashboard: React.FC<{
             decisionInputsHashParam: string,
             personalizationScopeHashParam: string,
             canRetry: boolean,
+            revalidateFallback: boolean,
         ): Promise<void> => {
             try {
+                if (revalidateFallback) {
+                    ingredientOverviewRevalidateAtRef.current[ingredientOverviewRequestKey] = Date.now();
+                }
                 setIngredientOverviewSidecarState(ingredientOverviewRequestKey, (currentState) =>
                     isIngredientOverviewRenderableState(currentState)
                         ? { ...currentState, status: 'loading' }
@@ -7918,6 +7964,7 @@ const AnalysisBundleDashboard: React.FC<{
                         decisionDigest: digestParam,
                         decisionInputsHash: decisionInputsHashParam,
                         personalizationScopeHash: personalizationScopeHashParam,
+                        revalidateFallback,
                     }),
                     signal: controller.signal,
                 });
@@ -7948,7 +7995,7 @@ const AnalysisBundleDashboard: React.FC<{
                         && nextPersonalizationScopeHash
                         && (digestChanged || inputsHashChanged || scopeHashChanged)
                     ) {
-                        return run(nextDigest, nextDecisionInputsHash, nextPersonalizationScopeHash, false);
+                        return run(nextDigest, nextDecisionInputsHash, nextPersonalizationScopeHash, false, revalidateFallback);
                     }
                 }
 
@@ -8002,6 +8049,7 @@ const AnalysisBundleDashboard: React.FC<{
             scienceDecisionInputsHash,
             sciencePersonalizationScopeHash,
             true,
+            shouldRevalidateFallback,
         );
         return () => {
             cancelled = true;
@@ -8024,7 +8072,9 @@ const AnalysisBundleDashboard: React.FC<{
         localDecisionSupportHeader,
         scienceDecisionInputsHash,
         sciencePersonalizationScopeHash,
+        selectedTileType,
         setIngredientOverviewSidecarState,
+        shouldRenderScienceSidecars,
     ]);
 
     useEffect(() => {

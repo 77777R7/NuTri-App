@@ -358,7 +358,7 @@ test('single-anchor ingredient overview still allows identity copy when it adds 
   assert.equal(result.ingredientOverview.titleLine, 'Astaxanthin');
 });
 
-test('single-anchor ingredient overview rejects exact-dose factual echo and falls back to identity-first copy', async () => {
+test('single-anchor ingredient overview strips exact-dose factual echo before returning copy', async () => {
   const digest = buildDigest({
     labelId: 'fixture-vitamin-c-single',
     productName: 'Vitamin C 1000 mg',
@@ -378,9 +378,10 @@ test('single-anchor ingredient overview rejects exact-dose factual echo and fall
       }),
   });
 
-  assert.equal(result.source, 'fallback');
-  assert.equal(result.fallbackUsed, true);
-  assert.equal(result.ingredientOverview.titleLine, 'Vitamin C');
+  assert.equal(result.source, 'api');
+  assert.equal(result.fallbackUsed, false);
+  assert.equal(result.ingredientOverview.titleLine, 'Vitamin C Supplement');
   assert.doesNotMatch(result.ingredientOverview.paragraph1, /1000 mg/i);
   assert.doesNotMatch(result.ingredientOverview.paragraph2 ?? '', /1000 mg/i);
+  assert.match(result.ingredientOverview.compareHint ?? '', /form/i);
 });
