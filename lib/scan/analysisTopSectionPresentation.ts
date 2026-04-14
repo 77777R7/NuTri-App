@@ -141,6 +141,7 @@ export type TopSectionGoalCoveragePresentation = {
   goalLabel: string;
   state: TopSectionGoalCoverageInput['state'];
   description: string;
+  stateLabel: string;
   tone: TopSectionTone;
   explanation?: TopSectionGoalCoverageInput['explanation'];
 };
@@ -303,6 +304,14 @@ const GOAL_COVERAGE_TONE_BY_STATE: Record<TopSectionGoalCoverageInput['state'], 
   none: 'neutral',
 };
 
+const GOAL_COVERAGE_STATE_LABELS: Record<TopSectionGoalCoverageInput['state'], string> = {
+  strong: 'Strong support',
+  some: 'Some support',
+  limited: 'Limited support',
+  none: 'No clear support',
+  unknown: 'Not enough detail',
+};
+
 const getPrimaryGoalCoverage = (
   goal: TopSectionHeroInput | TopSectionPersonalInsightInput,
 ): TopSectionGoalCoverageInput[] => {
@@ -329,8 +338,56 @@ const isMixedGoalMode = (
   goal.heroMode === 'mixed_goals'
   && isGoalCoverageMultiGoal(goal);
 
+const hasGoalCoverageExplanation = (
+  entry: TopSectionGoalCoverageInput,
+): boolean =>
+  Boolean(
+    normalizeText(entry.explanation?.summary)
+    || (entry.explanation?.why?.length ?? 0) > 0
+    || (entry.explanation?.evidence?.length ?? 0) > 0
+    || (entry.explanation?.provenance?.length ?? 0) > 0
+    || (entry.explanation?.action?.length ?? 0) > 0,
+  );
+
+const shouldReplaceGoalCoverageEntry = (
+  current: TopSectionGoalCoverageInput,
+  candidate: TopSectionGoalCoverageInput,
+): boolean => {
+  const currentPriority = GOAL_COVERAGE_STATE_PRIORITY[current.state];
+  const candidatePriority = GOAL_COVERAGE_STATE_PRIORITY[candidate.state];
+  if (candidatePriority !== currentPriority) return candidatePriority > currentPriority;
+
+  const currentHasExplanation = hasGoalCoverageExplanation(current);
+  const candidateHasExplanation = hasGoalCoverageExplanation(candidate);
+  if (candidateHasExplanation !== currentHasExplanation) return candidateHasExplanation;
+
+  const currentScore = current.score ?? Number.NEGATIVE_INFINITY;
+  const candidateScore = candidate.score ?? Number.NEGATIVE_INFINITY;
+  if (candidateScore !== currentScore) return candidateScore > currentScore;
+
+  if (candidate.source !== current.source) {
+    return candidate.source === 'selected_goal_evaluation';
+  }
+
+  return false;
+};
+
 const getSortedGoalCoverage = (coverage: TopSectionGoalCoverageInput[] = []): TopSectionGoalCoverageInput[] =>
-  coverage.filter((entry) => normalizeText(entry.goalLabel).length > 0);
+  Array.from(
+    coverage.reduce((map, entry) => {
+      const normalizedLabel = normalizeText(entry.goalLabel);
+      if (!normalizedLabel) return map;
+      const existing = map.get(normalizedLabel);
+      if (!existing) {
+        map.set(normalizedLabel, entry);
+        return map;
+      }
+      if (shouldReplaceGoalCoverageEntry(existing, entry)) {
+        map.set(normalizedLabel, entry);
+      }
+      return map;
+    }, new Map<string, TopSectionGoalCoverageInput>()).values(),
+  );
 
 const getBestAndWeakestGoalCoverage = (coverage: TopSectionGoalCoverageInput[]) => {
   const ordered = getSortedGoalCoverage(coverage);
@@ -618,6 +675,7 @@ const toGoalCoveragePresentation = (
   goalLabel: entry.goalLabel,
   state: entry.state,
   description: buildGoalNarrativeRowCopy(entry.goalLabel, entry.state),
+  stateLabel: GOAL_COVERAGE_STATE_LABELS[entry.state],
   tone: GOAL_COVERAGE_TONE_BY_STATE[entry.state],
   explanation: entry.explanation ?? null,
 });
@@ -806,7 +864,7 @@ const buildSupportInsight = (
       collapsedTitle: 'Goal check',
       subtitle,
       expandedSubtitle,
-      expandedBullets: fullItems.map((entry) => entry.description),
+      expandedBullets: [],
       goalCoverageItems: fullItems,
       visibleGoalCoverageItems: visibleItems,
       hiddenGoalCoverageItems: hiddenItems,

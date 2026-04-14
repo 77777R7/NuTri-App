@@ -27,7 +27,7 @@ export type CompileIngredientOverviewOpts = {
   maxRetries?: number;
 };
 
-export const INGREDIENT_OVERVIEW_PROMPT_VERSION = "ingredient_overview_v5";
+export const INGREDIENT_OVERVIEW_PROMPT_VERSION = "ingredient_overview_v6";
 
 const LLM_TIMEOUT_MS = 9_000;
 const LLM_MAX_RETRIES = 1;
@@ -72,6 +72,58 @@ const normalizeComparable = (value: string | null | undefined): string =>
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, " ")
     .trim();
+
+const lineRoleLabel = (value: string | null | undefined): string => {
+  switch (value) {
+    case "primary_active":
+      return "lead active";
+    case "companion_nutrient":
+      return "supporting nutrient";
+    case "source_line":
+      return "source line";
+    case "aggregate_line":
+      return "total line";
+    case "breakdown_line":
+      return "breakdown line";
+    case "blend_line":
+      return "blend-style line";
+    default:
+      return "supporting formula line";
+  }
+};
+
+const joinNames = (values: string[]): string => {
+  if (values.length <= 1) return values[0] ?? "";
+  if (values.length === 2) return `${values[0]} and ${values[1]}`;
+  return `${values.slice(0, -1).join(", ")}, and ${values[values.length - 1]}`;
+};
+
+const buildFormulaRoleSummary = (context: IngredientScienceContext): string | null => {
+  const anchorName = normalizeText(context.anchorIngredient?.name);
+  if (!anchorName) return null;
+  const companionNames = context.coIngredients
+    .filter((row) => row.lineRole === "companion_nutrient" || row.lineRole === "generic_line")
+    .map((row) => row.name)
+    .slice(0, 3);
+  const structuralNames = context.coIngredients
+    .filter((row) => row.lineRole !== "companion_nutrient" && row.lineRole !== "generic_line")
+    .map((row) => `${row.name} (${lineRoleLabel(row.lineRole)})`)
+    .slice(0, 2);
+  const relationships = context.relationshipCandidates.map((candidate) => candidate.safeStatement).slice(0, 2);
+
+  const parts = [
+    `${anchorName} is the lead active in this formula.`,
+    companionNames.length
+      ? `${joinNames(companionNames)} appear as companion or supporting lines around that anchor.`
+      : null,
+    structuralNames.length
+      ? `The label also includes ${joinNames(structuralNames)} that shape how the formula should be read.`
+      : null,
+    relationships[0] ?? null,
+  ].filter(Boolean);
+
+  return parts.length > 0 ? parts.join(" ") : null;
+};
 
 const asSentence = (value: string | null | undefined): string => {
   const normalized = normalizeText(value);
@@ -195,6 +247,32 @@ const buildMultiAnchorFallback = (context: IngredientScienceContext): Ingredient
     };
   }
 
+  if (context.anchorIngredient?.name) {
+    const anchorName = context.anchorIngredient.name;
+    const companionNames = context.coIngredients
+      .filter((row) => row.lineRole === "companion_nutrient" || row.lineRole === "generic_line")
+      .map((row) => row.name)
+      .slice(0, 3);
+    const structuralNames = context.coIngredients
+      .filter((row) => row.lineRole !== "companion_nutrient" && row.lineRole !== "generic_line")
+      .map((row) => `${row.name} as a ${lineRoleLabel(row.lineRole)}`)
+      .slice(0, 2);
+    const companionSummary = companionNames.length
+      ? `${joinNames(companionNames)} appear as supporting formula lines around that lead active.`
+      : "The surrounding rows work more as supporting formula lines than as equal co-headliners.";
+    const structureSummary = structuralNames.length
+      ? `The label also uses ${joinNames(structuralNames)}, which changes how the formula should be compared.`
+      : "That makes the most useful reading start with the lead active and then move outward to the supporting lines.";
+
+    return {
+      mode: "multi_anchor",
+      titleLine: buildTitleLineFallback(context),
+      paragraph1: `${anchorName} stays as the main named active in this multi-part formula rather than reading like one ingredient among equals.`,
+      paragraph2: `${companionSummary} ${structureSummary}`,
+      compareHint: "When comparing products, start with the lead active line and then check whether the companion and structural rows are disclosed clearly enough to show what role they actually play.",
+    };
+  }
+
   return {
     mode: "multi_anchor",
     titleLine: buildTitleLineFallback(context),
@@ -234,13 +312,21 @@ const buildFallbackBlock = (context: IngredientScienceContext): IngredientOvervi
 const buildPrompt = (context: IngredientScienceContext): string => {
   const payload = {
     productName: context.productName,
+    sourceType: context.sourceType,
+    ingredientSourceTier: context.ingredientSourceTier,
     formulaMode: getMode(context),
     anchorIngredient: context.anchorIngredient,
+    formulaRoleSummary: buildFormulaRoleSummary(context),
+    coIngredients: context.coIngredients.slice(0, 4),
+    relationshipCandidates: context.relationshipCandidates.slice(0, 3),
     ingredientRows: context.ingredientDescriptors.map((descriptor) => ({
       name: descriptor.name,
       dose: descriptor.dose,
       ingredientFamily: descriptor.ingredientFamily,
       lineRole: descriptor.lineRole,
+      categoryHint: descriptor.categoryHint,
+      sourceContext: descriptor.sourceContext,
+      formContext: descriptor.formContext,
     })),
     labelConstraints: context.labelConstraints,
   };
@@ -250,6 +336,10 @@ const buildPrompt = (context: IngredientScienceContext): string => {
     "Your job is to decode the formula in plain English, not to rewrite the ingredient list and not to summarize research.",
     "Explain what kind of ingredient or formula this product centers on and how the label is structured.",
     "Add one short comparison-oriented hint that tells the shopper what matters most when comparing products.",
+    "Use the anchor ingredient as the lead active unless the payload makes clear that the label is acting like a source line, total line, or blend line.",
+    "Use coIngredients, relationshipCandidates, categoryHint, sourceContext, formContext, and lineRole to explain how the selected formula is arranged.",
+    "Distinguish the lead active from companion nutrients or supporting formula lines so the shopper can tell which rows are central and which are contextual.",
+    "Keep the explanation tied to this specific formula. Do not drift into general ingredient encyclopedia copy.",
     'Do not start with phrases like "This supplement provides", "This formula delivers", or "This product contains".',
     "Do not turn the factual ingredient rows into prose and do not enumerate multiple ingredient amounts line by line.",
     "Do not repeat the exact milligram amount or exact per-serving dose from the factual card above.",

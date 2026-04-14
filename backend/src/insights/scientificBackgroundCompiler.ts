@@ -73,7 +73,7 @@ export type ScientificBackgroundExecutionProfile = {
   cacheTtlMs: number;
 };
 
-export const SCIENTIFIC_BACKGROUND_PROMPT_VERSION = "scientific_background_v12";
+export const SCIENTIFIC_BACKGROUND_PROMPT_VERSION = "scientific_background_v13";
 
 const RESEARCH_MODE_TIMEOUT_MS = 14_000;
 const CURCUMIN_RESEARCH_MODE_TIMEOUT_MS = 15_750;
@@ -1227,6 +1227,25 @@ const buildPrompt = (params: {
   plan: ScientificBackgroundPlan;
   selectedDescriptor: IngredientScienceDescriptor | null;
 }): string => {
+  const selectedRoleLabel = (() => {
+    switch (params.selectedDescriptor?.lineRole) {
+      case "primary_active":
+        return "lead active";
+      case "companion_nutrient":
+        return "supporting nutrient";
+      case "source_line":
+        return "source line";
+      case "aggregate_line":
+        return "total line";
+      case "breakdown_line":
+        return "breakdown line";
+      case "blend_line":
+        return "blend-style line";
+      default:
+        return "supporting formula line";
+    }
+  })();
+
   const payload = {
     selectedItem: {
       name: params.plan.selectedLabel,
@@ -1234,10 +1253,19 @@ const buildPrompt = (params: {
       family: params.plan.family,
       mode: params.plan.mode,
       lineRole: params.selectedDescriptor?.lineRole ?? "generic_line",
+      roleLabel: selectedRoleLabel,
+      categoryHint: params.selectedDescriptor?.categoryHint ?? null,
+      sourceContext: params.selectedDescriptor?.sourceContext ?? null,
+      formContext: params.selectedDescriptor?.formContext ?? null,
     },
     formulaContext: {
       productName: params.context.productName,
       formulaMode: params.context.formulaMode,
+      sourceType: params.context.sourceType,
+      ingredientSourceTier: params.context.ingredientSourceTier,
+      anchorIngredient: params.context.anchorIngredient,
+      coIngredients: params.context.coIngredients.slice(0, 4),
+      relationshipCandidates: params.context.relationshipCandidates.slice(0, 3),
       labelConstraints: params.context.labelConstraints,
     },
     sectionPlan: params.plan.sections.map((section) => ({
@@ -1442,6 +1470,9 @@ const buildPrompt = (params: {
     "Explain the research map for the selected item, not the product's full ingredient list.",
     "If mode is research_mode, show the main research lane, the narrower or more mixed lanes, and why that distinction matters.",
     "If mode is label_context_mode, explain what the selected line means on the label and why it matters for comparison, without pretending it is a stand-alone research ingredient.",
+    "Use the selected item's lineRole, categoryHint, sourceContext, formContext, coIngredients, relationshipCandidates, and anchorIngredient to explain this ingredient inside this formula, not in isolation.",
+    "Make it clear when the selected line is the lead active versus a companion nutrient, supporting line, source line, total line, or breakdown line.",
+    "When surrounding co-ingredients or pairing candidates matter, explain how they change interpretation without turning them into the main active.",
     "Do not redefine ingredient identity, rewrite the factual ingredient list, or write support-claim marketing copy.",
     "Do not open sections with 'X is studied' or 'X is discussed'. Start with the evidence lane, outcome cluster, or label-reading takeaway instead.",
     "Each section summary should read like an interpretation for a shopper, not a textbook intro or a restatement of the heading.",
@@ -1454,6 +1485,31 @@ const buildPrompt = (params: {
     'Return JSON only with this shape: {"introLine":"...","sections":[{"headingId":"...","heading":"...","summary":"...","bullets":["...","..."],"evidenceRead":"...","shopperMeaning":"..."}],"closingNote":"..."}',
     `INPUT_JSON: ${JSON.stringify(payload)}`,
   ].join("\n");
+};
+
+const lineRoleNarrative = (value: string | null | undefined): string => {
+  switch (value) {
+    case "primary_active":
+      return "lead active";
+    case "companion_nutrient":
+      return "supporting nutrient";
+    case "source_line":
+      return "source line";
+    case "aggregate_line":
+      return "total line";
+    case "breakdown_line":
+      return "breakdown line";
+    case "blend_line":
+      return "blend-style line";
+    default:
+      return "supporting formula line";
+  }
+};
+
+const joinReadableList = (values: string[]): string => {
+  if (values.length <= 1) return values[0] ?? "";
+  if (values.length === 2) return `${values[0]} and ${values[1]}`;
+  return `${values.slice(0, -1).join(", ")}, and ${values[values.length - 1]}`;
 };
 
 const parseWriterOutput = (raw: string): ScientificBackgroundWriterOutput | null => {
@@ -1663,9 +1719,18 @@ const gateScientificBackground = (params: {
 const buildSectionFallback = (
   plan: ScientificBackgroundPlan,
   section: ScientificBackgroundSectionPlan,
+  context?: IngredientScienceContext,
 ): ScientificBackgroundSection => {
   const label = buildReferenceLabel(plan);
   const narrativeLabel = buildNarrativeLabel(plan);
+  const selectedDescriptor = context ? getSelectedDescriptor(context, plan.selectedLabel) : null;
+  const anchorName = context?.anchorIngredient?.name ?? null;
+  const companionNames =
+    context?.coIngredients
+      .filter((row) => normalizeIngredientScienceKey(row.name) !== normalizeIngredientScienceKey(plan.selectedLabel))
+      .map((row) => row.name)
+      .slice(0, 2) ?? [];
+  const relationshipStatement = context?.relationshipCandidates[0]?.safeStatement ?? null;
   switch (section.headingId) {
     case "antioxidant_activity":
       return {
@@ -2597,6 +2662,37 @@ const buildSectionFallback = (
         shopperMeaning: "It helps the shopper understand why a more itemized label is usually easier to compare than a broad blend line by itself.",
       };
     default:
+      if (context && selectedDescriptor) {
+        const roleText = lineRoleNarrative(selectedDescriptor.lineRole);
+        const anchorContext =
+          anchorName && normalizeIngredientScienceKey(anchorName) !== normalizeIngredientScienceKey(plan.selectedLabel)
+            ? ` around ${anchorName}`
+            : "";
+        const formBullet = selectedDescriptor.formContext
+          ? `The line includes ${selectedDescriptor.formContext} wording, which changes how directly it can be compared with simpler labels.`
+          : `This row behaves like a ${roleText}${anchorContext}, so the formula context matters as much as the ingredient family.`;
+        const companionBullet = companionNames.length
+          ? `${label} appears alongside ${joinReadableList(companionNames)}, so shoppers should read it in the context of the surrounding formula rather than as an isolated ingredient story.`
+          : dedupe(section.bulletThemes)[0] ?? "Amount, identity, and surrounding formula context all affect interpretation.";
+        const relationshipBullet =
+          relationshipStatement ??
+          dedupe(section.bulletThemes)[1] ??
+          "The rest of the label can change how central this ingredient really is for product comparison.";
+        return {
+          heading: section.heading,
+          summary: `The useful way to read ${label} in this formula depends on its role as a ${roleText}${anchorContext}, not just on the broad category it belongs to.`,
+          bullets: [
+            formBullet,
+            companionBullet,
+            relationshipBullet,
+          ]
+            .map((bullet) => normalizeText(bullet))
+            .filter(Boolean)
+            .slice(0, 3),
+          evidenceRead: "This is a formula-aware orientation section, not a universal claim about the ingredient in every product.",
+          shopperMeaning: `Use ${label} as one part of the formula map, then compare how clearly the label separates the lead active from companion or structural lines.`,
+        };
+      }
       return {
         heading: section.heading,
         summary: `The useful way to read ${label} still depends on the exact ingredient identity, amount, and label detail, not just on the broad category it belongs to.`,
@@ -2624,11 +2720,11 @@ export const buildScientificBackgroundDeterministicFallback = (params: {
     selectedLabel: plan.selectedLabel,
     selectedDose: plan.selectedDose,
     introLine: plan.selectedDose ? `${buildReferenceLabel(plan)} • ${plan.selectedDose}` : buildReferenceLabel(plan),
-    sections: plan.sections.map((section) => buildSectionFallback(plan, section)),
+    sections: plan.sections.map((section) => buildSectionFallback(plan, section, params.context)),
     closingNote:
       plan.mode === "research_mode"
-        ? "Read the research context as outcome-specific guidance, not as a blanket promise for every claim on the label."
-        : "Read this line as label context first, then compare it with the more specific ingredient rows that carry the strongest decision value.",
+        ? "Read the research context as outcome-specific guidance within this formula, not as a blanket promise for every claim on the label."
+        : "Read this line as label context first, then compare it with the more specific ingredient rows and the lead active that carry the strongest decision value.",
   };
 };
 

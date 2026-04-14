@@ -77,13 +77,20 @@ export type IngredientScienceContext = {
   anchorIngredient: {
     name: string;
     dose: string | null;
+    ingredientFamily: IngredientScienceIngredientFamily;
+    lineRole: IngredientScienceLineRole;
     categoryHint: string | null;
     sourceContext: string | null;
+    formContext: string | null;
   } | null;
   coIngredients: Array<{
     name: string;
     dose: string | null;
+    ingredientFamily: IngredientScienceIngredientFamily;
+    lineRole: IngredientScienceLineRole;
     categoryHint: string | null;
+    sourceContext: string | null;
+    formContext: string | null;
   }>;
   relationshipCandidates: IngredientScienceRelationshipCandidate[];
   labelConstraints: {
@@ -259,6 +266,33 @@ const isBlendLike = (
   if (HARD_BLEND_LIKE_PATTERN.test(normalized)) return true;
   if (!SOFT_BLEND_LIKE_PATTERN.test(normalized)) return false;
   return !isBotanicalExtractFamily(family ?? null);
+};
+
+const inferFormContext = (
+  name: string | null | undefined,
+  family: IngredientScienceIngredientFamily,
+  lineRole: IngredientScienceLineRole,
+): string | null => {
+  const normalized = normalizeText(name);
+  if (!normalized) return null;
+
+  const parenthetical = normalized.match(/\(([^)]+)\)/)?.[1]?.trim() ?? null;
+  if (parenthetical) return parenthetical;
+
+  if (lineRole === "source_line") return "source line";
+  if (lineRole === "aggregate_line") return "total line";
+  if (lineRole === "breakdown_line") return "breakdown line";
+  if (lineRole === "blend_line") return "blend-style line";
+  if (/\bextract\b/i.test(normalized)) return "extract line";
+  if (/\boil\b/i.test(normalized)) return "oil line";
+  if (/\bchelate\b|\bcitrate\b|\bglycinate\b|\bmalate\b|\boxide\b|\btaurate\b|\bthreonate\b/i.test(normalized)) {
+    return "named form line";
+  }
+  if (family === "5htp") return "amino-acid derivative line";
+  if (family === "b3_niacinamide" || family === "b6" || family === "b12" || family === "folate") {
+    return "vitamin-form line";
+  }
+  return null;
 };
 
 const COMPANION_FAMILIES = new Set<IngredientScienceIngredientFamily>([
@@ -450,15 +484,16 @@ export const buildIngredientScienceContext = (params: {
   const anchorRow = primaryIndex >= 0 ? ingredientRows[primaryIndex] ?? null : ingredientRows[0] ?? null;
   const ingredientDescriptors = ingredientRows.map((row, index) => {
     const ingredientFamily = ingredientFamilies[index] ?? "generic";
+    const lineRole = lineRoles[index] ?? (index === primaryIndex ? "primary_active" : "generic_line");
     return {
       key: normalizeIngredientScienceKey(row.name),
       name: row.name,
       dose: row.dose ?? null,
       ingredientFamily,
-      lineRole: lineRoles[index] ?? (index === primaryIndex ? "primary_active" : "generic_line"),
+      lineRole,
       categoryHint: categoryHintForFamily(ingredientFamily, row.name),
       sourceContext,
-      formContext: null,
+      formContext: inferFormContext(row.name, ingredientFamily, lineRole),
       isBlendLike: isBlendLike(row.name, ingredientFamily),
     } satisfies IngredientScienceDescriptor;
   });
@@ -495,8 +530,13 @@ export const buildIngredientScienceContext = (params: {
       ? {
           name: anchorRow.name,
           dose: anchorRow.dose ?? null,
+          ingredientFamily: ingredientFamilies[primaryIndex] ?? ingredientFamily,
+          lineRole: lineRoles[primaryIndex] ?? "primary_active",
           categoryHint: categoryHintForFamily(ingredientFamilies[primaryIndex] ?? ingredientFamily, anchorRow.name),
           sourceContext,
+          formContext:
+            ingredientDescriptors[primaryIndex]?.formContext ??
+            inferFormContext(anchorRow.name, ingredientFamilies[primaryIndex] ?? ingredientFamily, "primary_active"),
         }
       : null,
     coIngredients: ingredientDescriptors
@@ -504,7 +544,11 @@ export const buildIngredientScienceContext = (params: {
       .map((row) => ({
       name: row.name,
       dose: row.dose ?? null,
+      ingredientFamily: row.ingredientFamily,
+      lineRole: row.lineRole,
       categoryHint: row.categoryHint,
+      sourceContext: row.sourceContext,
+      formContext: row.formContext,
     })),
     relationshipCandidates: buildRelationshipCandidates(ingredientRows, ingredientFamilies),
     labelConstraints: {
