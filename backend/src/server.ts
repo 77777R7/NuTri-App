@@ -116,6 +116,7 @@ import {
 } from "./insights/sectionSummaryCompiler.js";
 import {
   compileIngredientOverviewAsync,
+  resolveIngredientOverviewExecutionProfile,
 } from "./insights/ingredientOverviewCompiler.js";
 import {
   compileScientificBackgroundAsync,
