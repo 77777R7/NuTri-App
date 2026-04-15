@@ -138,7 +138,7 @@ const CALCIUM_PATTERN =
 const IRON_PATTERN = /\biron\b|\bferrous\b|\bferric\b/i;
 const MELATONIN_PATTERN = /\bmelatonin\b/i;
 const FUNCTIONAL_FOOD_LIKE_TITLE_PATTERN =
-  /\b(?:gum|gums|mints?|lozenge|lozenges|freeze\s+dried|juice\s+powder|fruit\s+powder|dragon\s+fruit|smoothie|drink\s+mix|tea\s+bags?|herbal\s+slimming\s+tea|greens\b|green\s+superfood|superfood|vegetable\s+powder)\b/i;
+  /\b(?:gum|gums|mints?|lozenge|lozenges|freeze\s+dried|juice\s+powder|fruit\s+powder|dragon\s+fruit|smoothie|drink\s+mix|tea\s+bags?|iced\s+tea|protein\s+(?:iced\s+)?tea|matcha(?:\s+green\s+tea)?\s+powder|herbal\s+slimming\s+tea|greens\b|green\s+superfood|superfood|vegetable\s+powder)\b/i;
 const FUNCTIONAL_FOOD_LIKE_INGREDIENT_PATTERN =
   /\b(?:xylitol|erythritol|fiber|dragon\s+fruit|fruit\s+powder|juice\s+powder|spirulina|chlorella|barley\s+grass|wheat\s+grass|digestive\s+enzyme|enzyme\s+assimilation|greens\b|green\s+superfood|superfood)\b/i;
 const FUNCTIONAL_FOOD_LIKE_FORM_PATTERN = /\b(?:gum|mint|lozenge|tea|powder|drink\s*mix)\b/i;
@@ -150,7 +150,7 @@ const GREENS_TITLE_PATTERN =
   /\b(?:greens\b|green\s+superfood|superfood|vegetable\s+powder|daily\s+greens?|greens?\s+powder)\b/i;
 const TEA_BAG_TITLE_PATTERN = /\b(?:tea\s+bags?|herbal\s+tea|slimming\s+tea)\b/i;
 const FOOD_LIKE_POWDER_TITLE_PATTERN =
-  /\b(?:juice\s+powder|fruit\s+powder|smoothie|drink\s+mix|vegetable\s+powder|greens?\s+powder)\b/i;
+  /\b(?:juice\s+powder|fruit\s+powder|smoothie|drink\s+mix|iced\s+tea|protein\s+(?:iced\s+)?tea|matcha(?:\s+green\s+tea)?\s+powder|vegetable\s+powder|greens?\s+powder)\b/i;
 const IMMUNE_BLEND_TITLE_PATTERN =
   /\b(?:immune|immunity|sambucus|elderberry|children'?s|chewable)\b/i;
 const GENERIC_FORMULA_LINE_PATTERN =
@@ -697,7 +697,9 @@ const titleStartsWithFamily = (
   const familyPattern = FAMILY_TITLE_HINTS.find((entry) => entry.family === family)?.pattern;
   if (!familyPattern) return false;
   const titleWithoutBrand = normalizeText(productName.replace(/^[^,]{1,40},\s*/, ""));
-  return familyPattern.test(titleWithoutBrand.slice(0, 48));
+  const leadingTitle = titleWithoutBrand.slice(0, 64).replace(/^[^a-z0-9]+/i, "");
+  const match = leadingTitle.match(familyPattern);
+  return typeof match?.index === "number" && match.index <= 6;
 };
 
 const hasMineralStackLeadSignal = (
@@ -713,6 +715,13 @@ const hasMineralStackLeadSignal = (
   if (mineralTitleHits >= 2) return true;
   return rows.some((row) => /\bcalcium\b/i.test(row.name)) && rows.some((row) => /\bmagnesium\b/i.test(row.name));
 };
+
+const hasCalciumMagnesiumZincStackTitle = (productName: string): boolean =>
+  hasTitleFamily("calcium", productName)
+  && hasTitleFamily("magnesium", productName)
+  && hasTitleFamily("zinc", productName)
+  && !titleStartsWithFamily("zinc", productName)
+  && !IMMUNE_BLEND_TITLE_PATTERN.test(productName);
 
 const hasExplicitFamilyRow = (
   rows: ScienceIngredientRow[],
@@ -738,6 +747,7 @@ const pickPrimaryActiveRowIndex = (
   if (rows.length === 0) return -1;
   const hasStrongLeadActive = hasStrongLeadActiveSignal(families);
   const hasMineralStackLead = hasMineralStackLeadSignal(rows, families, productName);
+  const hasCalMagZincStackTitle = hasCalciumMagnesiumZincStackTitle(productName);
   const hasExplicitMagnesiumRow = hasExplicitFamilyRow(rows, families, "magnesium");
   const hasOmega3BreakdownOrAggregate = hasOmega3BreakdownOrAggregateRow(rows);
   let bestIndex = 0;
@@ -764,11 +774,40 @@ const pickPrimaryActiveRowIndex = (
       family === "zinc"
       && hasTitleFamily("zinc", productName)
       && IMMUNE_BLEND_TITLE_PATTERN.test(productName)
+        ? 230
+        : 0;
+    const magnesiumTitleLeadBoost =
+      family === "magnesium"
+      && titleStartsWithFamily("magnesium", productName)
+        ? 260
+        : 0;
+    const calMagZincStackMagnesiumBoost =
+      hasCalMagZincStackTitle && family === "magnesium"
+        ? 120
+        : 0;
+    const calMagZincStackCalciumPenalty =
+      hasCalMagZincStackTitle && family === "calcium"
+        ? 120
+        : 0;
+    const magnesiumTitleLeadCompanionPenalty =
+      titleStartsWithFamily("magnesium", productName)
+      && (family === "zinc" || family === "calcium" || family === "vitamin_d" || family === "vitamin_c")
         ? 150
+        : 0;
+    const zincTitleLeadBoost =
+      family === "zinc"
+      && titleStartsWithFamily("zinc", productName)
+        ? 280
+        : 0;
+    const zincTitleLeadCompanionPenalty =
+      titleStartsWithFamily("zinc", productName)
+      && (family === "magnesium" || family === "calcium" || family === "vitamin_d" || family === "vitamin_c")
+        ? 160
         : 0;
     const zincNamedStackBoost =
       family === "zinc"
       && hasTitleFamily("zinc", productName)
+      && !hasCalMagZincStackTitle
       && (
         hasMineralStackLead
         || /\bvitamin\s*c\b|\bvitamin\s*d(?:2|3)?\b|\bd3\b|\bd2\b/i.test(productName)
@@ -777,6 +816,7 @@ const pickPrimaryActiveRowIndex = (
         : 0;
     const zincNamedStackCompanionPenalty =
       hasTitleFamily("zinc", productName)
+      && !hasCalMagZincStackTitle
       && (
         hasMineralStackLead
         || /\bvitamin\s*c\b|\bvitamin\s*d(?:2|3)?\b|\bd3\b|\bd2\b/i.test(productName)
@@ -845,6 +885,9 @@ const pickPrimaryActiveRowIndex = (
       mineralStackPriorityBoost +
       probioticLeadBoost +
       zincImmuneBlendBoost +
+      magnesiumTitleLeadBoost +
+      calMagZincStackMagnesiumBoost +
+      zincTitleLeadBoost +
       zincNamedStackBoost +
       elderberryTitleBoost +
       carnitineClaMatrixBoost +
@@ -857,6 +900,9 @@ const pickPrimaryActiveRowIndex = (
       supportingPenalty -
       vitaminDInMineralStackPenalty -
       vitaminCImmuneCompanionPenalty -
+      magnesiumTitleLeadCompanionPenalty -
+      calMagZincStackCalciumPenalty -
+      zincTitleLeadCompanionPenalty -
       zincNamedStackCompanionPenalty -
       probioticComboZincPenalty -
       productTitleEchoPenalty -
@@ -912,6 +958,7 @@ const scoreIngredientDescriptorForDisplay = (params: {
     });
     return candidateFamily === "magnesium" && /\bmagnesium\b/i.test(candidate.name);
   });
+  const hasCalMagZincStackTitle = hasCalciumMagnesiumZincStackTitle(productName);
   const hasOmega3BreakdownOrAggregate = hasOmega3BreakdownOrAggregateRow(rows);
   const productTitleEchoPenalty =
     normalizeIngredientScienceKey(row.name) === normalizeIngredientScienceKey(productName) ? 280 : 0;
@@ -933,11 +980,50 @@ const scoreIngredientDescriptorForDisplay = (params: {
     descriptor.ingredientFamily === "zinc"
     && hasTitleFamily("zinc", productName)
     && IMMUNE_BLEND_TITLE_PATTERN.test(productName)
+      ? 220
+      : 0;
+  const magnesiumTitleLeadBoost =
+    descriptor.ingredientFamily === "magnesium"
+    && titleStartsWithFamily("magnesium", productName)
+      ? 240
+      : 0;
+  const calMagZincStackMagnesiumBoost =
+    hasCalMagZincStackTitle && descriptor.ingredientFamily === "magnesium"
+      ? 110
+      : 0;
+  const calMagZincStackCalciumPenalty =
+    hasCalMagZincStackTitle && descriptor.ingredientFamily === "calcium"
+      ? 110
+      : 0;
+  const magnesiumTitleLeadCompanionPenalty =
+    titleStartsWithFamily("magnesium", productName)
+    && (
+      descriptor.ingredientFamily === "zinc"
+      || descriptor.ingredientFamily === "calcium"
+      || descriptor.ingredientFamily === "vitamin_d"
+      || descriptor.ingredientFamily === "vitamin_c"
+    )
       ? 140
+      : 0;
+  const zincTitleLeadBoost =
+    descriptor.ingredientFamily === "zinc"
+    && titleStartsWithFamily("zinc", productName)
+      ? 260
+      : 0;
+  const zincTitleLeadCompanionPenalty =
+    titleStartsWithFamily("zinc", productName)
+    && (
+      descriptor.ingredientFamily === "magnesium"
+      || descriptor.ingredientFamily === "calcium"
+      || descriptor.ingredientFamily === "vitamin_d"
+      || descriptor.ingredientFamily === "vitamin_c"
+    )
+      ? 145
       : 0;
   const zincNamedStackBoost =
     descriptor.ingredientFamily === "zinc"
     && hasTitleFamily("zinc", productName)
+    && !hasCalMagZincStackTitle
     && (
       hasMineralStackLead
       || /\bvitamin\s*c\b|\bvitamin\s*d(?:2|3)?\b|\bd3\b|\bd2\b/i.test(productName)
@@ -946,6 +1032,7 @@ const scoreIngredientDescriptorForDisplay = (params: {
       : 0;
   const zincNamedStackCompanionPenalty =
     hasTitleFamily("zinc", productName)
+    && !hasCalMagZincStackTitle
     && (
       hasMineralStackLead
       || /\bvitamin\s*c\b|\bvitamin\s*d(?:2|3)?\b|\bd3\b|\bd2\b/i.test(productName)
@@ -1029,6 +1116,9 @@ const scoreIngredientDescriptorForDisplay = (params: {
     mineralStackPriorityBoost +
     probioticLeadBoost +
     zincImmuneBlendBoost +
+    magnesiumTitleLeadBoost +
+    calMagZincStackMagnesiumBoost +
+    zincTitleLeadBoost +
     zincNamedStackBoost +
     elderberryTitleBoost +
     carnitineClaMatrixBoost +
@@ -1041,6 +1131,9 @@ const scoreIngredientDescriptorForDisplay = (params: {
     supportingPenalty -
     vitaminDInMineralStackPenalty -
     vitaminCImmuneCompanionPenalty -
+    magnesiumTitleLeadCompanionPenalty -
+    calMagZincStackCalciumPenalty -
+    zincTitleLeadCompanionPenalty -
     zincNamedStackCompanionPenalty -
     probioticComboZincPenalty -
     productTitleEchoPenalty -

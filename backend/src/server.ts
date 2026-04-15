@@ -11112,29 +11112,6 @@ app.post("/api/ingredient-overview/v1", verifySupabaseToken, async (req: Request
   }
 
   try {
-    const fastSelectedIngredientKey = normalizeIngredientScienceKey(parsedBody.selectedIngredientName);
-    const fastCached =
-      parsedBody.revalidateFallback === true
-      && parsedBody.decisionDigest
-      && parsedBody.decisionInputsHash
-      && parsedBody.personalizationScopeHash
-      && fastSelectedIngredientKey
-        ? findScientificBackgroundSidecarCacheByRequest({
-          decisionDigest: parsedBody.decisionDigest,
-          decisionInputsHash: parsedBody.decisionInputsHash,
-          personalizationScopeHash: parsedBody.personalizationScopeHash,
-          selectedIngredientKey: fastSelectedIngredientKey,
-        })
-        : null;
-    if (fastCached) {
-      return res.json(
-        withScientificBackgroundRefreshHint(
-          fastCached.payload,
-          scientificBackgroundSidecarBackgroundRefresh.has(fastCached.cacheKey),
-        ),
-      );
-    }
-
     const authority = await buildDecisionSupportAuthorityBundle(normalizedBarcode, { req });
     if (
       parsedBody.decisionDigest &&
@@ -11177,6 +11154,7 @@ app.post("/api/ingredient-overview/v1", verifySupabaseToken, async (req: Request
     const deepseekModel = process.env.DEEPSEEK_MODEL?.trim() || "deepseek-chat";
     const executionProfile = resolveIngredientOverviewExecutionProfile(authority.ingredientScienceContext);
     const shouldUseLiveWriter =
+      parsedBody.revalidateFallback !== true &&
       authority.ingredientScienceContext.productArchetype !== "functional_food_like";
     const llmFn = shouldUseLiveWriter
       ? buildDeepseekJsonLlmFn({
@@ -11219,6 +11197,29 @@ app.post("/api/scientific-background/v1", verifySupabaseToken, async (req: Reque
   }
 
   try {
+    const fastSelectedIngredientKey = normalizeIngredientScienceKey(parsedBody.selectedIngredientName);
+    const fastCached =
+      parsedBody.revalidateFallback === true
+      && parsedBody.decisionDigest
+      && parsedBody.decisionInputsHash
+      && parsedBody.personalizationScopeHash
+      && fastSelectedIngredientKey
+        ? findScientificBackgroundSidecarCacheByRequest({
+          decisionDigest: parsedBody.decisionDigest,
+          decisionInputsHash: parsedBody.decisionInputsHash,
+          personalizationScopeHash: parsedBody.personalizationScopeHash,
+          selectedIngredientKey: fastSelectedIngredientKey,
+        })
+        : null;
+    if (fastCached) {
+      return res.json(
+        withScientificBackgroundRefreshHint(
+          fastCached.payload,
+          scientificBackgroundSidecarBackgroundRefresh.has(fastCached.cacheKey),
+        ),
+      );
+    }
+
     const authority = await buildDecisionSupportAuthorityBundle(normalizedBarcode, { req });
     if (
       parsedBody.decisionDigest &&

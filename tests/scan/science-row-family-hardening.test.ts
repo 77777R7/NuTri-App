@@ -308,7 +308,7 @@ test('science context lets zinc-led mineral stack titles outrank higher-dose mag
   assert.equal(context.anchorIngredient?.ingredientFamily, 'zinc');
 });
 
-test('science context prioritizes zinc in zinc-named mineral and immune companion stacks', () => {
+test('science context keeps mineral-stack defaults on magnesium while preserving zinc-led vitamin stacks', () => {
   const mineralStackDigest = buildDigest({
     labelId: 'fixture-calcium-magnesium-zinc-d3',
     productName: 'Calcium Magnesium Zinc + D3',
@@ -334,8 +334,8 @@ test('science context prioritizes zinc in zinc-named mineral and immune companio
   const mineralStackContext = buildIngredientScienceContext({ digest: mineralStackDigest, overlayClaims: null });
   const vitaminStackContext = buildIngredientScienceContext({ digest: vitaminStackDigest, overlayClaims: null });
 
-  assert.match(mineralStackContext.ingredientRows[0]?.name ?? '', /\bzinc\b/i);
-  assert.equal(mineralStackContext.anchorIngredient?.ingredientFamily, 'zinc');
+  assert.match(mineralStackContext.ingredientRows[0]?.name ?? '', /\bmagnesium\b/i);
+  assert.equal(mineralStackContext.anchorIngredient?.ingredientFamily, 'magnesium');
   assert.match(vitaminStackContext.ingredientRows[0]?.name ?? '', /\bzinc\b/i);
   assert.equal(vitaminStackContext.anchorIngredient?.ingredientFamily, 'zinc');
 });
