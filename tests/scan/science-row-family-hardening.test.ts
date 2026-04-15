@@ -308,6 +308,88 @@ test('science context lets zinc-led mineral stack titles outrank higher-dose mag
   assert.equal(context.anchorIngredient?.ingredientFamily, 'zinc');
 });
 
+test('science context rescues elderberry rows from syrup and tea product titles', () => {
+  const syrupDigest = buildDigest({
+    labelId: 'fixture-elderberry-syrup-title-only',
+    productName: "Children's Sambucus Elderberry Syrup",
+    dosageForm: 'Syrup',
+    actives: [],
+  });
+  const teaDigest = buildDigest({
+    labelId: 'fixture-elderberry-tea-title-only',
+    productName: 'Organic Herbal Tea, Elderberry, Caffeine Free, 18 Tea Bags',
+    dosageForm: 'Tea Bag',
+    actives: [{ name: 'Tea blend', amount: null, unit: null }],
+  });
+
+  const syrupContext = buildIngredientScienceContext({ digest: syrupDigest, overlayClaims: null });
+  const teaContext = buildIngredientScienceContext({ digest: teaDigest, overlayClaims: null });
+
+  assert.match(syrupContext.ingredientRows[0]?.name ?? '', /elderberry|sambucus/i);
+  assert.doesNotMatch(syrupContext.ingredientRows[0]?.name ?? '', /syrup|children/i);
+  assert.match(teaContext.ingredientRows[0]?.name ?? '', /elderberry|sambucus/i);
+  assert.notEqual(teaContext.ingredientRows[0]?.name, 'Tea blend');
+});
+
+test('science context keeps zinc ahead of vitamin C in elderberry immune formulas', () => {
+  const digest = buildDigest({
+    labelId: 'fixture-sambucus-vitamin-c-zinc',
+    productName: 'Sambucus Elderberry With Vitamin C & Zinc Gummies',
+    dosageForm: 'Gummy',
+    actives: [
+      { name: 'Vitamin C', amount: 90, unit: 'mg' },
+      { name: 'Zinc', amount: 5, unit: 'mg' },
+    ],
+  });
+
+  const context = buildIngredientScienceContext({ digest, overlayClaims: null });
+
+  assert.match(context.ingredientRows[0]?.name ?? '', /\bzinc\b/i);
+  assert.notEqual(context.ingredientRows[0]?.name, 'Vitamin C');
+  assert.ok(context.ingredientRows.some((row) => /elderberry|sambucus/i.test(row.name)));
+});
+
+test('science context does not let audience or sugar rows beat title-rescued actives', () => {
+  const zincDigest = buildDigest({
+    labelId: 'fixture-zinc-audience-row',
+    productName: 'Zinc For Immune Support',
+    dosageForm: 'Liquid',
+    actives: [{ name: 'Men', amount: null, unit: null }],
+  });
+  const elderberryDigest = buildDigest({
+    labelId: 'fixture-elderberry-sugar-row',
+    productName: 'Kids Elderberry Super-Immune SoftChew Gummies',
+    dosageForm: 'Gummy',
+    actives: [{ name: 'Sugar Alcohol', amount: 2, unit: 'g' }],
+  });
+
+  const zincContext = buildIngredientScienceContext({ digest: zincDigest, overlayClaims: null });
+  const elderberryContext = buildIngredientScienceContext({ digest: elderberryDigest, overlayClaims: null });
+
+  assert.match(zincContext.ingredientRows[0]?.name ?? '', /\bzinc\b/i);
+  assert.notEqual(zincContext.ingredientRows[0]?.name, 'Men');
+  assert.match(elderberryContext.ingredientRows[0]?.name ?? '', /elderberry|sambucus/i);
+  assert.notEqual(elderberryContext.ingredientRows[0]?.name, 'Sugar Alcohol');
+});
+
+test('science context keeps carnitine ahead of broad CLA matrix rows in carnitine combo products', () => {
+  const digest = buildDigest({
+    labelId: 'fixture-cla-carnitine-matrix',
+    productName: 'CLA + Carnitine, Fruit Punch',
+    dosageForm: 'Powder',
+    actives: [
+      { name: 'Omega 6 Fatty Acids & CLA Matrix', amount: 3000, unit: 'mg' },
+      { name: 'L-Carnitine Tartrate', amount: 1500, unit: 'mg' },
+    ],
+  });
+
+  const context = buildIngredientScienceContext({ digest, overlayClaims: null });
+
+  assert.match(context.ingredientRows[0]?.name ?? '', /\bcarnitine\b/i);
+  assert.doesNotMatch(context.ingredientRows[0]?.name ?? '', /matrix/i);
+  assert.equal(context.anchorIngredient?.ingredientFamily, 'carnitine');
+});
+
 test('single-anchor ingredient overview still allows identity copy when it adds label meaning', async () => {
   const digest = buildDigest({
     labelId: 'fixture-astaxanthin',

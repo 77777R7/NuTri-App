@@ -129,6 +129,7 @@ const CURCUMIN_PATTERN = /\bcurcumin\b|\bturmeric\s+extract\b|\bcurcuminoids?\b/
 const ASHWAGANDHA_PATTERN = /\bashwagandha\b|\bwithania\s+somnifera\b|\bksm-?66\b|\bsensoril\b/i;
 const GINSENG_PATTERN = /\bginseng\b|\bpanax\b|\bamerican\s+ginseng\b|\bred\s+ginseng\b/i;
 const GREEN_TEA_EXTRACT_PATTERN = /\bgreen\s+tea(?:\s+extract)?\b|\begcg\b|\bcatechins?\b|\bcamellia\s+sinensis\b/i;
+const ELDERBERRY_PATTERN = /\belderberry\b|\bsambucus\b/i;
 const MAGNESIUM_PATTERN =
   /\bmagnesium\b|\bmagnesium\s+(?:glycinate|citrate|oxide|malate|taurate|threonate|chloride|l-threonate)\b/i;
 const CALCIUM_PATTERN =
@@ -156,7 +157,8 @@ const GENERIC_FORMULA_LINE_PATTERN =
 const ENZYME_SUPPORT_LINE_PATTERN =
   /\b(?:digestive\s+enzyme|enzyme\s+assimilation|cytozymes?|enzyme\s+blend)\b/i;
 const NUTRITION_FACTS_MACRO_PATTERN =
-  /\b(?:calories|total\s+carbohydrates?|total\s+sugars?|added\s+sugars?|dietary\s+fiber|fiber|sodium)\b/i;
+  /\b(?:calories|total\s+carbohydrates?|total\s+sugars?|added\s+sugars?|sugar\s+alcohols?|dietary\s+fiber|fiber|sodium)\b/i;
+const NON_INGREDIENT_AUDIENCE_ROW_PATTERN = /^(?:men|women|adults?|children|kids?|teens?)$/i;
 const BRAND_PREFIX_SEGMENT_PATTERN = /^[a-z0-9][a-z0-9 '&.+-]{1,24}$/i;
 
 const normalizeText = (value: string | null | undefined): string =>
@@ -457,6 +459,17 @@ const matchesProductTitle = (rowName: string, productName: string): boolean => {
   return variants.some((value) => productKey.includes(value));
 };
 
+const isDedicatedElderberryRow = (rowName: string | null | undefined): boolean => {
+  const normalized = normalizeText(rowName);
+  if (!ELDERBERRY_PATTERN.test(normalized)) return false;
+  if (/\b(?:syrup|gumm(?:y|ies)|tea|children|kids?|lollipops?|softchew|immune|immunity|support)\b/i.test(normalized)) {
+    return false;
+  }
+  const wordCount = normalized.split(/\s+/).filter(Boolean).length;
+  if (wordCount <= 4) return true;
+  return /^(?:black\s+)?elderberry\b|^sambucus\b/i.test(normalized);
+};
+
 const hasTitleFamily = (
   family: IngredientScienceIngredientFamily,
   productName: string,
@@ -534,6 +547,11 @@ const deriveScienceTitleRescueRows = (params: {
       extractTitleMatch(titleWithoutBrand, /\bgreen tea(?:\s+extract)?\b/i) ??
         (/\bextract\b/i.test(titleWithoutBrand) ? "Green Tea Extract" : "Green Tea"),
     );
+  }
+
+  const hasDedicatedElderberryRow = params.existingRows.some((row) => isDedicatedElderberryRow(row.name));
+  if (ELDERBERRY_PATTERN.test(titleWithBrandContext) && !hasDedicatedElderberryRow) {
+    pushRow(/\belderberry\b/i.test(titleWithoutBrand) ? "Elderberry" : "Sambucus elderberry");
   }
 
   if (hasTitleFamily("omega_3", titleWithoutBrand) && !existingFamilies.includes("omega_3")) {
@@ -713,7 +731,14 @@ const pickPrimaryActiveRowIndex = (
     const family = families[index] ?? "generic";
     const familyTitleBoost = getFamilyTitleBoost(family, row.name, productName);
     const familyTitlePositionBoost = getFamilyTitlePositionBoost(family, productName);
+    const productTitleEchoPenalty =
+      normalizeIngredientScienceKey(row.name) === normalizeIngredientScienceKey(productName) ? 300 : 0;
     const macroPenalty = NUTRITION_FACTS_MACRO_PATTERN.test(row.name) ? 260 : 0;
+    const audienceRowPenalty = NON_INGREDIENT_AUDIENCE_ROW_PATTERN.test(normalizeText(row.name)) ? 260 : 0;
+    const elderberryTitleBoost =
+      ELDERBERRY_PATTERN.test(productName) && ELDERBERRY_PATTERN.test(row.name)
+        ? 190
+        : 0;
     const probioticLeadBoost =
       PROBIOTIC_TITLE_PATTERN.test(productName)
       && (family === "probiotic_or_blend" || PROBIOTIC_SPECIFIC_ROW_PATTERN.test(row.name))
@@ -730,7 +755,15 @@ const pickPrimaryActiveRowIndex = (
       && hasTitleFamily("zinc", productName)
       && IMMUNE_BLEND_TITLE_PATTERN.test(productName)
       && !titleStartsWithFamily("vitamin_c", productName)
-        ? 130
+        ? 210
+        : 0;
+    const carnitineClaMatrixBoost =
+      family === "carnitine" && CARNITINE_PATTERN.test(productName) && CLA_PATTERN.test(productName)
+        ? 170
+        : 0;
+    const claMatrixPenalty =
+      family === "cla" && CARNITINE_PATTERN.test(productName) && HARD_BLEND_LIKE_PATTERN.test(row.name)
+        ? 180
         : 0;
     const supportingPenalty =
       hasStrongLeadActive && SUPPORTING_MICRONUTRIENT_FAMILIES.has(family) ? 96 : 0;
@@ -757,6 +790,8 @@ const pickPrimaryActiveRowIndex = (
       mineralStackPriorityBoost +
       probioticLeadBoost +
       zincImmuneBlendBoost +
+      elderberryTitleBoost +
+      carnitineClaMatrixBoost +
       (STRONG_LEAD_ACTIVE_FAMILIES.has(family) ? 86 : 0) +
       (PRIMARY_ACTIVE_FAMILIES.has(family) ? 24 : 0) +
       Math.min(parseDoseMagnitude(row.dose), 1200) / 24 +
@@ -765,7 +800,10 @@ const pickPrimaryActiveRowIndex = (
       supportingPenalty -
       vitaminDInMineralStackPenalty -
       vitaminCImmuneCompanionPenalty -
+      productTitleEchoPenalty -
       macroPenalty -
+      audienceRowPenalty -
+      claMatrixPenalty -
       genericFormulaPenalty -
       enzymeSupportPenalty -
       (isBlendLike(row.name, family) ? 120 : 0) -
@@ -804,7 +842,14 @@ const scoreIngredientDescriptorForDisplay = (params: {
   const isAnchor = Boolean(anchorKey && rowKey === anchorKey);
   const familyTitleBoost = getFamilyTitleBoost(descriptor.ingredientFamily, row.name, productName);
   const familyTitlePositionBoost = getFamilyTitlePositionBoost(descriptor.ingredientFamily, productName);
+  const productTitleEchoPenalty =
+    normalizeIngredientScienceKey(row.name) === normalizeIngredientScienceKey(productName) ? 280 : 0;
   const macroPenalty = NUTRITION_FACTS_MACRO_PATTERN.test(row.name) ? 240 : 0;
+  const audienceRowPenalty = NON_INGREDIENT_AUDIENCE_ROW_PATTERN.test(normalizeText(row.name)) ? 240 : 0;
+  const elderberryTitleBoost =
+    ELDERBERRY_PATTERN.test(productName) && ELDERBERRY_PATTERN.test(row.name)
+      ? 180
+      : 0;
   const probioticLeadBoost =
     PROBIOTIC_TITLE_PATTERN.test(productName)
     && (
@@ -824,7 +869,15 @@ const scoreIngredientDescriptorForDisplay = (params: {
     && hasTitleFamily("zinc", productName)
     && IMMUNE_BLEND_TITLE_PATTERN.test(productName)
     && !titleStartsWithFamily("vitamin_c", productName)
-      ? 120
+      ? 190
+      : 0;
+  const carnitineClaMatrixBoost =
+    descriptor.ingredientFamily === "carnitine" && CARNITINE_PATTERN.test(productName) && CLA_PATTERN.test(productName)
+      ? 160
+      : 0;
+  const claMatrixPenalty =
+    descriptor.ingredientFamily === "cla" && CARNITINE_PATTERN.test(productName) && HARD_BLEND_LIKE_PATTERN.test(row.name)
+      ? 160
       : 0;
   const genericFormulaPenalty = GENERIC_FORMULA_LINE_PATTERN.test(row.name) ? 180 : 0;
   const enzymeSupportPenalty = ENZYME_SUPPORT_LINE_PATTERN.test(row.name) ? 170 : 0;
@@ -853,6 +906,8 @@ const scoreIngredientDescriptorForDisplay = (params: {
     mineralStackPriorityBoost +
     probioticLeadBoost +
     zincImmuneBlendBoost +
+    elderberryTitleBoost +
+    carnitineClaMatrixBoost +
     (STRONG_LEAD_ACTIVE_FAMILIES.has(descriptor.ingredientFamily) ? 68 : 0) +
     (PRIMARY_ACTIVE_FAMILIES.has(descriptor.ingredientFamily) ? 34 : 0) +
     (row.dose ? 16 : 0) +
@@ -861,7 +916,10 @@ const scoreIngredientDescriptorForDisplay = (params: {
     supportingPenalty -
     vitaminDInMineralStackPenalty -
     vitaminCImmuneCompanionPenalty -
+    productTitleEchoPenalty -
     macroPenalty -
+    audienceRowPenalty -
+    claMatrixPenalty -
     (descriptor.lineRole === "aggregate_line" ? 90 : 0) -
     (descriptor.lineRole === "source_line" ? 120 : 0) -
     (descriptor.lineRole === "blend_line" ? 140 : 0) -
