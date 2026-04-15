@@ -10235,7 +10235,6 @@ const scientificBackgroundBodySchema = z.object({
   revalidateFallback: z.boolean().optional(),
 }).strict();
 
-const INGREDIENT_OVERVIEW_SIDECAR_TIMEOUT_MS = 6_000;
 const SCIENCE_SIDECAR_MAX_RETRIES = 0;
 const SCIENTIFIC_BACKGROUND_RESULT_CACHE_LIMIT = 120;
 const SCIENTIFIC_BACKGROUND_RESEARCH_FALLBACK_CACHE_TTL_MS = 90_000;
@@ -11175,16 +11174,21 @@ app.post("/api/ingredient-overview/v1", verifySupabaseToken, async (req: Request
 
     const deepseekKey = process.env.DEEPSEEK_API_KEY?.trim() || null;
     const deepseekModel = process.env.DEEPSEEK_MODEL?.trim() || "deepseek-chat";
-    const llmFn = buildDeepseekJsonLlmFn({
-      deepseekKey,
-      deepseekModel,
-      timeoutMs: INGREDIENT_OVERVIEW_SIDECAR_TIMEOUT_MS,
-      maxTokens: 450,
-    });
+    const executionProfile = resolveIngredientOverviewExecutionProfile(authority.ingredientScienceContext);
+    const shouldUseLiveWriter =
+      authority.ingredientScienceContext.productArchetype !== "functional_food_like";
+    const llmFn = shouldUseLiveWriter
+      ? buildDeepseekJsonLlmFn({
+        deepseekKey,
+        deepseekModel,
+        timeoutMs: executionProfile.timeoutMs,
+        maxTokens: executionProfile.maxTokens,
+      })
+      : undefined;
     const compiled = await compileIngredientOverviewAsync(authority.ingredientScienceContext, {
       llmFn,
-      timeoutMs: INGREDIENT_OVERVIEW_SIDECAR_TIMEOUT_MS,
-      maxRetries: SCIENCE_SIDECAR_MAX_RETRIES,
+      timeoutMs: executionProfile.timeoutMs,
+      maxRetries: executionProfile.maxRetries ?? SCIENCE_SIDECAR_MAX_RETRIES,
     });
 
     return res.json({
