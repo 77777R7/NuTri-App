@@ -1414,9 +1414,10 @@ export const buildIngredientScienceContext = (params: {
     digest: params.digest,
     overlayClaims: params.overlayClaims,
   });
+  const digestProductName = normalizeText(params.digest?.product?.name);
+  const overlayProductTitle = normalizeText(params.overlayClaims?.title);
   const productName =
-    normalizeText(params.digest?.product?.name) ||
-    normalizeText(params.overlayClaims?.title) ||
+    Array.from(new Set([digestProductName, overlayProductTitle].filter(Boolean))).join(" ") ||
     "Supplement formula";
   const brandName =
     normalizeText(params.digest?.product?.brandDisplay) ||
