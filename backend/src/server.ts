@@ -11270,7 +11270,10 @@ app.post("/api/scientific-background/v1", verifySupabaseToken, async (req: Reque
 
         if (refreshed.source !== "api") {
           const refreshFailureRetryLimit =
-            plan.family === "zinc" || plan.family === "carnitine" || plan.family === "green_tea_extract"
+            plan.family === "magnesium"
+              || plan.family === "zinc"
+              || plan.family === "carnitine"
+              || plan.family === "green_tea_extract"
               ? 1
               : SCIENTIFIC_BACKGROUND_REFRESH_FAILURE_RETRY_LIMIT;
           if (shouldCoolDownScientificBackgroundBackgroundRefresh(
