@@ -10314,6 +10314,29 @@ const readScientificBackgroundSidecarCache = (
   return entry.payload;
 };
 
+const findScientificBackgroundSidecarCacheByRequest = (params: {
+  decisionDigest: string;
+  decisionInputsHash: string;
+  personalizationScopeHash: string;
+  selectedIngredientKey: string;
+}): { cacheKey: string; payload: ScientificBackgroundSidecarResponse } | null => {
+  const prefix = [
+    params.decisionDigest,
+    params.decisionInputsHash,
+    params.personalizationScopeHash,
+    params.selectedIngredientKey,
+  ].join("|") + "|";
+  for (const [cacheKey, entry] of scientificBackgroundSidecarCache.entries()) {
+    if (!cacheKey.startsWith(prefix)) continue;
+    if (entry.expiresAt <= Date.now()) {
+      scientificBackgroundSidecarCache.delete(cacheKey);
+      continue;
+    }
+    return { cacheKey, payload: entry.payload };
+  }
+  return null;
+};
+
 const writeScientificBackgroundSidecarCache = (
   cacheKey: string,
   payload: ScientificBackgroundSidecarResponse,
@@ -11089,6 +11112,29 @@ app.post("/api/ingredient-overview/v1", verifySupabaseToken, async (req: Request
   }
 
   try {
+    const fastSelectedIngredientKey = normalizeIngredientScienceKey(parsedBody.selectedIngredientName);
+    const fastCached =
+      parsedBody.revalidateFallback === true
+      && parsedBody.decisionDigest
+      && parsedBody.decisionInputsHash
+      && parsedBody.personalizationScopeHash
+      && fastSelectedIngredientKey
+        ? findScientificBackgroundSidecarCacheByRequest({
+          decisionDigest: parsedBody.decisionDigest,
+          decisionInputsHash: parsedBody.decisionInputsHash,
+          personalizationScopeHash: parsedBody.personalizationScopeHash,
+          selectedIngredientKey: fastSelectedIngredientKey,
+        })
+        : null;
+    if (fastCached) {
+      return res.json(
+        withScientificBackgroundRefreshHint(
+          fastCached.payload,
+          scientificBackgroundSidecarBackgroundRefresh.has(fastCached.cacheKey),
+        ),
+      );
+    }
+
     const authority = await buildDecisionSupportAuthorityBundle(normalizedBarcode, { req });
     if (
       parsedBody.decisionDigest &&
