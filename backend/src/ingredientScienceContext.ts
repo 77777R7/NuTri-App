@@ -131,7 +131,8 @@ const GINSENG_PATTERN = /\bginseng\b|\bpanax\b|\bamerican\s+ginseng\b|\bred\s+gi
 const GREEN_TEA_EXTRACT_PATTERN = /\bgreen\s+tea(?:\s+extract)?\b|\begcg\b|\bcatechins?\b|\bcamellia\s+sinensis\b/i;
 const ELDERBERRY_PATTERN = /\belderberry\b|\bsambucus\b/i;
 const MAGNESIUM_PATTERN =
-  /\bmagnesium\b|\bmagnesium\s+(?:glycinate|citrate|oxide|malate|taurate|threonate|chloride|l-threonate)\b/i;
+  /\bmagnesium\b|\bmagtein\b|\bmagnesium\s+(?:glycinate|citrate|oxide|malate|taurate|threonate|chloride|l-threonate)\b/i;
+const MAGNESIUM_BRANDED_SOURCE_PATTERN = /\bmagtein\b/i;
 const CALCIUM_PATTERN =
   /\bcalcium\b|\bcalcium\s+(?:carbonate|citrate|ascorbate|malate|lactate|hydroxyapatite)\b/i;
 const IRON_PATTERN = /\biron\b|\bferrous\b|\bferric\b/i;
@@ -713,6 +714,19 @@ const hasMineralStackLeadSignal = (
   return rows.some((row) => /\bcalcium\b/i.test(row.name)) && rows.some((row) => /\bmagnesium\b/i.test(row.name));
 };
 
+const hasExplicitFamilyRow = (
+  rows: ScienceIngredientRow[],
+  families: IngredientScienceIngredientFamily[],
+  family: IngredientScienceIngredientFamily,
+): boolean => {
+  const familyPattern = FAMILY_TITLE_HINTS.find((entry) => entry.family === family)?.pattern;
+  if (!familyPattern) return false;
+  return rows.some((row, index) => (families[index] ?? "generic") === family && familyPattern.test(row.name));
+};
+
+const hasOmega3BreakdownOrAggregateRow = (rows: ScienceIngredientRow[]): boolean =>
+  rows.some((row) => OMEGA3_BREAKDOWN_PATTERN.test(row.name) || OMEGA3_TOTAL_PATTERN.test(row.name));
+
 const hasStrongLeadActiveSignal = (families: IngredientScienceIngredientFamily[]): boolean =>
   families.some((family) => STRONG_LEAD_ACTIVE_FAMILIES.has(family));
 
@@ -724,6 +738,8 @@ const pickPrimaryActiveRowIndex = (
   if (rows.length === 0) return -1;
   const hasStrongLeadActive = hasStrongLeadActiveSignal(families);
   const hasMineralStackLead = hasMineralStackLeadSignal(rows, families, productName);
+  const hasExplicitMagnesiumRow = hasExplicitFamilyRow(rows, families, "magnesium");
+  const hasOmega3BreakdownOrAggregate = hasOmega3BreakdownOrAggregateRow(rows);
   let bestIndex = 0;
   let bestScore = Number.NEGATIVE_INFINITY;
 
@@ -750,6 +766,33 @@ const pickPrimaryActiveRowIndex = (
       && IMMUNE_BLEND_TITLE_PATTERN.test(productName)
         ? 150
         : 0;
+    const zincNamedStackBoost =
+      family === "zinc"
+      && hasTitleFamily("zinc", productName)
+      && (
+        hasMineralStackLead
+        || /\bvitamin\s*c\b|\bvitamin\s*d(?:2|3)?\b|\bd3\b|\bd2\b/i.test(productName)
+      )
+        ? 240
+        : 0;
+    const zincNamedStackCompanionPenalty =
+      hasTitleFamily("zinc", productName)
+      && (
+        hasMineralStackLead
+        || /\bvitamin\s*c\b|\bvitamin\s*d(?:2|3)?\b|\bd3\b|\bd2\b/i.test(productName)
+      )
+      && (family === "calcium" || family === "magnesium" || family === "vitamin_c" || family === "vitamin_d")
+        ? 92
+        : 0;
+    const probioticComboZincPenalty =
+      family === "zinc"
+      && PROBIOTIC_TITLE_PATTERN.test(productName)
+      && rows.some((candidate, candidateIndex) =>
+        (families[candidateIndex] ?? "generic") === "probiotic_or_blend"
+        || PROBIOTIC_SPECIFIC_ROW_PATTERN.test(candidate.name),
+      )
+        ? 210
+        : 0;
     const vitaminCImmuneCompanionPenalty =
       family === "vitamin_c"
       && hasTitleFamily("zinc", productName)
@@ -764,6 +807,18 @@ const pickPrimaryActiveRowIndex = (
     const claMatrixPenalty =
       family === "cla" && CARNITINE_PATTERN.test(productName) && HARD_BLEND_LIKE_PATTERN.test(row.name)
         ? 180
+        : 0;
+    const magnesiumBrandedSourcePenalty =
+      family === "magnesium" && hasExplicitMagnesiumRow && MAGNESIUM_BRANDED_SOURCE_PATTERN.test(row.name)
+        ? 190
+        : 0;
+    const omega3SourcePenalty =
+      family === "omega_3" && hasOmega3BreakdownOrAggregate && OMEGA3_SOURCE_PATTERN.test(row.name)
+        ? 210
+        : 0;
+    const omega3BreakdownBoost =
+      family === "omega_3" && (OMEGA3_TOTAL_PATTERN.test(row.name) || OMEGA3_BREAKDOWN_PATTERN.test(row.name))
+        ? 140
         : 0;
     const supportingPenalty =
       hasStrongLeadActive && SUPPORTING_MICRONUTRIENT_FAMILIES.has(family) ? 96 : 0;
@@ -790,8 +845,10 @@ const pickPrimaryActiveRowIndex = (
       mineralStackPriorityBoost +
       probioticLeadBoost +
       zincImmuneBlendBoost +
+      zincNamedStackBoost +
       elderberryTitleBoost +
       carnitineClaMatrixBoost +
+      omega3BreakdownBoost +
       (STRONG_LEAD_ACTIVE_FAMILIES.has(family) ? 86 : 0) +
       (PRIMARY_ACTIVE_FAMILIES.has(family) ? 24 : 0) +
       Math.min(parseDoseMagnitude(row.dose), 1200) / 24 +
@@ -800,10 +857,14 @@ const pickPrimaryActiveRowIndex = (
       supportingPenalty -
       vitaminDInMineralStackPenalty -
       vitaminCImmuneCompanionPenalty -
+      zincNamedStackCompanionPenalty -
+      probioticComboZincPenalty -
       productTitleEchoPenalty -
       macroPenalty -
       audienceRowPenalty -
       claMatrixPenalty -
+      magnesiumBrandedSourcePenalty -
+      omega3SourcePenalty -
       genericFormulaPenalty -
       enzymeSupportPenalty -
       (isBlendLike(row.name, family) ? 120 : 0) -
@@ -819,6 +880,7 @@ const pickPrimaryActiveRowIndex = (
 };
 
 const scoreIngredientDescriptorForDisplay = (params: {
+  rows: ScienceIngredientRow[];
   row: ScienceIngredientRow;
   descriptor: IngredientScienceDescriptor;
   index: number;
@@ -828,6 +890,7 @@ const scoreIngredientDescriptorForDisplay = (params: {
   hasMineralStackLead: boolean;
 }): number => {
   const {
+    rows,
     row,
     descriptor,
     index,
@@ -842,6 +905,14 @@ const scoreIngredientDescriptorForDisplay = (params: {
   const isAnchor = Boolean(anchorKey && rowKey === anchorKey);
   const familyTitleBoost = getFamilyTitleBoost(descriptor.ingredientFamily, row.name, productName);
   const familyTitlePositionBoost = getFamilyTitlePositionBoost(descriptor.ingredientFamily, productName);
+  const hasExplicitMagnesiumRow = rows.some((candidate) => {
+    const candidateFamily = inferRowIngredientFamily({
+      rowName: candidate.name,
+      productName,
+    });
+    return candidateFamily === "magnesium" && /\bmagnesium\b/i.test(candidate.name);
+  });
+  const hasOmega3BreakdownOrAggregate = hasOmega3BreakdownOrAggregateRow(rows);
   const productTitleEchoPenalty =
     normalizeIngredientScienceKey(row.name) === normalizeIngredientScienceKey(productName) ? 280 : 0;
   const macroPenalty = NUTRITION_FACTS_MACRO_PATTERN.test(row.name) ? 240 : 0;
@@ -864,6 +935,41 @@ const scoreIngredientDescriptorForDisplay = (params: {
     && IMMUNE_BLEND_TITLE_PATTERN.test(productName)
       ? 140
       : 0;
+  const zincNamedStackBoost =
+    descriptor.ingredientFamily === "zinc"
+    && hasTitleFamily("zinc", productName)
+    && (
+      hasMineralStackLead
+      || /\bvitamin\s*c\b|\bvitamin\s*d(?:2|3)?\b|\bd3\b|\bd2\b/i.test(productName)
+    )
+      ? 220
+      : 0;
+  const zincNamedStackCompanionPenalty =
+    hasTitleFamily("zinc", productName)
+    && (
+      hasMineralStackLead
+      || /\bvitamin\s*c\b|\bvitamin\s*d(?:2|3)?\b|\bd3\b|\bd2\b/i.test(productName)
+    )
+    && (
+      descriptor.ingredientFamily === "calcium"
+      || descriptor.ingredientFamily === "magnesium"
+      || descriptor.ingredientFamily === "vitamin_c"
+      || descriptor.ingredientFamily === "vitamin_d"
+    )
+      ? 86
+      : 0;
+  const probioticComboZincPenalty =
+    descriptor.ingredientFamily === "zinc"
+    && PROBIOTIC_TITLE_PATTERN.test(productName)
+    && rows.some((candidate) => {
+      const candidateFamily = inferRowIngredientFamily({
+        rowName: candidate.name,
+        productName,
+      });
+      return candidateFamily === "probiotic_or_blend" || PROBIOTIC_SPECIFIC_ROW_PATTERN.test(candidate.name);
+    })
+      ? 190
+      : 0;
   const vitaminCImmuneCompanionPenalty =
     descriptor.ingredientFamily === "vitamin_c"
     && hasTitleFamily("zinc", productName)
@@ -878,6 +984,23 @@ const scoreIngredientDescriptorForDisplay = (params: {
   const claMatrixPenalty =
     descriptor.ingredientFamily === "cla" && CARNITINE_PATTERN.test(productName) && HARD_BLEND_LIKE_PATTERN.test(row.name)
       ? 160
+      : 0;
+  const magnesiumBrandedSourcePenalty =
+    descriptor.ingredientFamily === "magnesium"
+    && hasExplicitMagnesiumRow
+    && MAGNESIUM_BRANDED_SOURCE_PATTERN.test(row.name)
+      ? 175
+      : 0;
+  const omega3SourcePenalty =
+    descriptor.ingredientFamily === "omega_3"
+    && hasOmega3BreakdownOrAggregate
+    && OMEGA3_SOURCE_PATTERN.test(row.name)
+      ? 190
+      : 0;
+  const omega3BreakdownBoost =
+    descriptor.ingredientFamily === "omega_3"
+    && (OMEGA3_TOTAL_PATTERN.test(row.name) || OMEGA3_BREAKDOWN_PATTERN.test(row.name))
+      ? 130
       : 0;
   const genericFormulaPenalty = GENERIC_FORMULA_LINE_PATTERN.test(row.name) ? 180 : 0;
   const enzymeSupportPenalty = ENZYME_SUPPORT_LINE_PATTERN.test(row.name) ? 170 : 0;
@@ -906,8 +1029,10 @@ const scoreIngredientDescriptorForDisplay = (params: {
     mineralStackPriorityBoost +
     probioticLeadBoost +
     zincImmuneBlendBoost +
+    zincNamedStackBoost +
     elderberryTitleBoost +
     carnitineClaMatrixBoost +
+    omega3BreakdownBoost +
     (STRONG_LEAD_ACTIVE_FAMILIES.has(descriptor.ingredientFamily) ? 68 : 0) +
     (PRIMARY_ACTIVE_FAMILIES.has(descriptor.ingredientFamily) ? 34 : 0) +
     (row.dose ? 16 : 0) +
@@ -916,10 +1041,14 @@ const scoreIngredientDescriptorForDisplay = (params: {
     supportingPenalty -
     vitaminDInMineralStackPenalty -
     vitaminCImmuneCompanionPenalty -
+    zincNamedStackCompanionPenalty -
+    probioticComboZincPenalty -
     productTitleEchoPenalty -
     macroPenalty -
     audienceRowPenalty -
     claMatrixPenalty -
+    magnesiumBrandedSourcePenalty -
+    omega3SourcePenalty -
     (descriptor.lineRole === "aggregate_line" ? 90 : 0) -
     (descriptor.lineRole === "source_line" ? 120 : 0) -
     (descriptor.lineRole === "blend_line" ? 140 : 0) -
@@ -1156,6 +1285,7 @@ export const buildIngredientScienceContext = (params: {
     .sort((left, right) => {
       const scoreDiff =
         scoreIngredientDescriptorForDisplay({
+          rows: ingredientRows,
           row: right.row,
           descriptor: right.descriptor,
           index: right.index,
@@ -1165,6 +1295,7 @@ export const buildIngredientScienceContext = (params: {
           hasMineralStackLead,
         }) -
         scoreIngredientDescriptorForDisplay({
+          rows: ingredientRows,
           row: left.row,
           descriptor: left.descriptor,
           index: left.index,

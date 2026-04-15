@@ -308,6 +308,76 @@ test('science context lets zinc-led mineral stack titles outrank higher-dose mag
   assert.equal(context.anchorIngredient?.ingredientFamily, 'zinc');
 });
 
+test('science context prioritizes zinc in zinc-named mineral and immune companion stacks', () => {
+  const mineralStackDigest = buildDigest({
+    labelId: 'fixture-calcium-magnesium-zinc-d3',
+    productName: 'Calcium Magnesium Zinc + D3',
+    dosageForm: 'Tablet',
+    actives: [
+      { name: 'Calcium (as Calcium Carbonate)', amount: 1000, unit: 'mg' },
+      { name: 'Magnesium (as Magnesium Oxide)', amount: 400, unit: 'mg' },
+      { name: 'Zinc (as Zinc Oxide)', amount: 15, unit: 'mg' },
+      { name: 'Vitamin D3 (as Cholecalciferol)', amount: 10, unit: 'mcg' },
+    ],
+  });
+  const vitaminStackDigest = buildDigest({
+    labelId: 'fixture-vitamin-c-d3-zinc',
+    productName: 'Vitamin C, D3 & Zinc',
+    dosageForm: 'Capsule',
+    actives: [
+      { name: 'Vitamin C (as L-ascorbic acid)', amount: 250, unit: 'mg' },
+      { name: 'Zinc (as bisglycinate chelate)', amount: 50, unit: 'mg' },
+      { name: 'Vitamin D3 (as cholecalciferol from lanolin)', amount: 50, unit: 'mcg' },
+    ],
+  });
+
+  const mineralStackContext = buildIngredientScienceContext({ digest: mineralStackDigest, overlayClaims: null });
+  const vitaminStackContext = buildIngredientScienceContext({ digest: vitaminStackDigest, overlayClaims: null });
+
+  assert.match(mineralStackContext.ingredientRows[0]?.name ?? '', /\bzinc\b/i);
+  assert.equal(mineralStackContext.anchorIngredient?.ingredientFamily, 'zinc');
+  assert.match(vitaminStackContext.ingredientRows[0]?.name ?? '', /\bzinc\b/i);
+  assert.equal(vitaminStackContext.anchorIngredient?.ingredientFamily, 'zinc');
+});
+
+test('science context keeps explicit magnesium ahead of branded Magtein source rows', () => {
+  const digest = buildDigest({
+    labelId: 'fixture-magtein-magnesium',
+    productName: 'Magtein Magnesium L-Threonate',
+    dosageForm: 'Capsule',
+    actives: [
+      { name: 'Magtein', amount: 1.3, unit: 'g' },
+      { name: 'Magnesium', amount: 98, unit: 'mg' },
+    ],
+  });
+
+  const context = buildIngredientScienceContext({ digest, overlayClaims: null });
+
+  assert.equal(context.ingredientRows[0]?.name, 'Magnesium');
+  assert.equal(context.anchorIngredient?.ingredientFamily, 'magnesium');
+});
+
+test('science context keeps omega-3 breakdown rows ahead of krill oil source rows', () => {
+  const digest = buildDigest({
+    labelId: 'fixture-krill-oil-omega3',
+    productName: 'Antarctic Krill Oil Omega-3 Phospholipids Complex with EPA, DHA, and Astaxanthin',
+    dosageForm: 'Softgel',
+    actives: [
+      { name: 'Krill Oil', amount: 500, unit: 'mg' },
+      { name: 'EPA (eicosapentaenoic acid)', amount: 60, unit: 'mg' },
+      { name: 'DHA (docosahexaenoic acid)', amount: 30, unit: 'mg' },
+      { name: 'Omega-3 Fatty Acids', amount: 120, unit: 'mg' },
+      { name: 'Astaxanthin (from krill oil)', amount: 150, unit: 'mcg' },
+    ],
+  });
+
+  const context = buildIngredientScienceContext({ digest, overlayClaims: null });
+
+  assert.match(context.ingredientRows[0]?.name ?? '', /\bomega[\s-]*3\b|\bepa\b|\bdha\b/i);
+  assert.doesNotMatch(context.ingredientRows[0]?.name ?? '', /krill oil/i);
+  assert.equal(context.anchorIngredient?.ingredientFamily, 'omega_3');
+});
+
 test('science context rescues elderberry rows from syrup and tea product titles', () => {
   const syrupDigest = buildDigest({
     labelId: 'fixture-elderberry-syrup-title-only',
