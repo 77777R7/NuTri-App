@@ -11155,7 +11155,8 @@ app.post("/api/ingredient-overview/v1", verifySupabaseToken, async (req: Request
     const executionProfile = resolveIngredientOverviewExecutionProfile(authority.ingredientScienceContext);
     const shouldUseLiveWriter =
       parsedBody.revalidateFallback !== true &&
-      authority.ingredientScienceContext.productArchetype !== "functional_food_like";
+      authority.ingredientScienceContext.productArchetype !== "functional_food_like" &&
+      authority.ingredientScienceContext.ingredientFamily !== "green_tea_extract";
     const llmFn = shouldUseLiveWriter
       ? buildDeepseekJsonLlmFn({
         deepseekKey,

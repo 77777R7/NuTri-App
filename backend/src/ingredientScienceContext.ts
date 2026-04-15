@@ -146,6 +146,7 @@ const PROBIOTIC_TITLE_PATTERN =
   /\b(?:probiotic|probiotics|pro-bio|flora|microbiome|live cultures?|digestive support)\b/i;
 const PROBIOTIC_SPECIFIC_ROW_PATTERN =
   /\b(?:probiotic|probiotics|acidophilus|lactobacillus|bifidobacterium|saccharomyces|bacillus|cfu|live cultures?)\b/i;
+const PROBIOTIC_BRAND_ONLY_ROW_PATTERN = /\b(?:protectis)\b/i;
 const GREENS_TITLE_PATTERN =
   /\b(?:greens\b|green\s+superfood|superfood|vegetable\s+powder|daily\s+greens?|greens?\s+powder)\b/i;
 const TEA_BAG_TITLE_PATTERN = /\b(?:tea\s+bags?|herbal\s+tea|slimming\s+tea)\b/i;
@@ -696,7 +697,12 @@ const titleStartsWithFamily = (
 ): boolean => {
   const familyPattern = FAMILY_TITLE_HINTS.find((entry) => entry.family === family)?.pattern;
   if (!familyPattern) return false;
-  const titleWithoutBrand = normalizeText(productName.replace(/^[^,]{1,40},\s*/, ""));
+  const normalizedProductName = normalizeText(productName);
+  const leadingSegment = normalizeText(normalizedProductName.split(",")[0]);
+  const titleWithoutBrand =
+    leadingSegment && !familyPattern.test(leadingSegment)
+      ? normalizeText(normalizedProductName.replace(/^[^,]{1,40},\s*/, ""))
+      : normalizedProductName;
   const leadingTitle = titleWithoutBrand.slice(0, 64).replace(/^[^a-z0-9]+/i, "");
   const match = leadingTitle.match(familyPattern);
   return typeof match?.index === "number" && match.index <= 6;
@@ -750,6 +756,14 @@ const pickPrimaryActiveRowIndex = (
   const hasCalMagZincStackTitle = hasCalciumMagnesiumZincStackTitle(productName);
   const hasExplicitMagnesiumRow = hasExplicitFamilyRow(rows, families, "magnesium");
   const hasOmega3BreakdownOrAggregate = hasOmega3BreakdownOrAggregateRow(rows);
+  if (titleStartsWithFamily("cla", productName)) {
+    const claIndex = families.findIndex((family) => family === "cla");
+    if (claIndex >= 0) return claIndex;
+  }
+  if (titleStartsWithFamily("carnitine", productName)) {
+    const carnitineIndex = families.findIndex((family) => family === "carnitine");
+    if (carnitineIndex >= 0) return carnitineIndex;
+  }
   let bestIndex = 0;
   let bestScore = Number.NEGATIVE_INFINITY;
 
@@ -770,11 +784,17 @@ const pickPrimaryActiveRowIndex = (
       && (family === "probiotic_or_blend" || PROBIOTIC_SPECIFIC_ROW_PATTERN.test(row.name))
         ? 180
         : 0;
+    const probioticBrandOnlyPenalty =
+      PROBIOTIC_TITLE_PATTERN.test(productName)
+      && PROBIOTIC_BRAND_ONLY_ROW_PATTERN.test(row.name)
+      && !PROBIOTIC_SPECIFIC_ROW_PATTERN.test(row.name)
+        ? 210
+        : 0;
     const zincImmuneBlendBoost =
       family === "zinc"
       && hasTitleFamily("zinc", productName)
       && IMMUNE_BLEND_TITLE_PATTERN.test(productName)
-        ? 230
+        ? 360
         : 0;
     const magnesiumTitleLeadBoost =
       family === "magnesium"
@@ -803,6 +823,16 @@ const pickPrimaryActiveRowIndex = (
       titleStartsWithFamily("zinc", productName)
       && (family === "magnesium" || family === "calcium" || family === "vitamin_d" || family === "vitamin_c")
         ? 160
+        : 0;
+    const claTitleLeadBoost =
+      family === "cla"
+      && titleStartsWithFamily("cla", productName)
+        ? 650
+        : 0;
+    const claTitleLeadCompanionPenalty =
+      titleStartsWithFamily("cla", productName)
+      && family === "carnitine"
+        ? 280
         : 0;
     const zincNamedStackBoost =
       family === "zinc"
@@ -838,10 +868,13 @@ const pickPrimaryActiveRowIndex = (
       && hasTitleFamily("zinc", productName)
       && IMMUNE_BLEND_TITLE_PATTERN.test(productName)
       && !titleStartsWithFamily("vitamin_c", productName)
-        ? 210
+        ? 320
         : 0;
     const carnitineClaMatrixBoost =
-      family === "carnitine" && CARNITINE_PATTERN.test(productName) && CLA_PATTERN.test(productName)
+      family === "carnitine"
+      && CARNITINE_PATTERN.test(productName)
+      && CLA_PATTERN.test(productName)
+      && !titleStartsWithFamily("cla", productName)
         ? 170
         : 0;
     const claMatrixPenalty =
@@ -888,6 +921,7 @@ const pickPrimaryActiveRowIndex = (
       magnesiumTitleLeadBoost +
       calMagZincStackMagnesiumBoost +
       zincTitleLeadBoost +
+      claTitleLeadBoost +
       zincNamedStackBoost +
       elderberryTitleBoost +
       carnitineClaMatrixBoost +
@@ -903,8 +937,10 @@ const pickPrimaryActiveRowIndex = (
       magnesiumTitleLeadCompanionPenalty -
       calMagZincStackCalciumPenalty -
       zincTitleLeadCompanionPenalty -
+      claTitleLeadCompanionPenalty -
       zincNamedStackCompanionPenalty -
       probioticComboZincPenalty -
+      probioticBrandOnlyPenalty -
       productTitleEchoPenalty -
       macroPenalty -
       audienceRowPenalty -
@@ -976,11 +1012,17 @@ const scoreIngredientDescriptorForDisplay = (params: {
     )
       ? 170
       : 0;
+  const probioticBrandOnlyPenalty =
+    PROBIOTIC_TITLE_PATTERN.test(productName)
+    && PROBIOTIC_BRAND_ONLY_ROW_PATTERN.test(row.name)
+    && !PROBIOTIC_SPECIFIC_ROW_PATTERN.test(row.name)
+      ? 190
+      : 0;
   const zincImmuneBlendBoost =
     descriptor.ingredientFamily === "zinc"
     && hasTitleFamily("zinc", productName)
     && IMMUNE_BLEND_TITLE_PATTERN.test(productName)
-      ? 220
+      ? 340
       : 0;
   const magnesiumTitleLeadBoost =
     descriptor.ingredientFamily === "magnesium"
@@ -1019,6 +1061,16 @@ const scoreIngredientDescriptorForDisplay = (params: {
       || descriptor.ingredientFamily === "vitamin_c"
     )
       ? 145
+      : 0;
+  const claTitleLeadBoost =
+    descriptor.ingredientFamily === "cla"
+    && titleStartsWithFamily("cla", productName)
+      ? 620
+      : 0;
+  const claTitleLeadCompanionPenalty =
+    titleStartsWithFamily("cla", productName)
+    && descriptor.ingredientFamily === "carnitine"
+      ? 250
       : 0;
   const zincNamedStackBoost =
     descriptor.ingredientFamily === "zinc"
@@ -1062,10 +1114,13 @@ const scoreIngredientDescriptorForDisplay = (params: {
     && hasTitleFamily("zinc", productName)
     && IMMUNE_BLEND_TITLE_PATTERN.test(productName)
     && !titleStartsWithFamily("vitamin_c", productName)
-      ? 190
+      ? 300
       : 0;
   const carnitineClaMatrixBoost =
-    descriptor.ingredientFamily === "carnitine" && CARNITINE_PATTERN.test(productName) && CLA_PATTERN.test(productName)
+    descriptor.ingredientFamily === "carnitine"
+    && CARNITINE_PATTERN.test(productName)
+    && CLA_PATTERN.test(productName)
+    && !titleStartsWithFamily("cla", productName)
       ? 160
       : 0;
   const claMatrixPenalty =
@@ -1119,6 +1174,7 @@ const scoreIngredientDescriptorForDisplay = (params: {
     magnesiumTitleLeadBoost +
     calMagZincStackMagnesiumBoost +
     zincTitleLeadBoost +
+    claTitleLeadBoost +
     zincNamedStackBoost +
     elderberryTitleBoost +
     carnitineClaMatrixBoost +
@@ -1134,8 +1190,10 @@ const scoreIngredientDescriptorForDisplay = (params: {
     magnesiumTitleLeadCompanionPenalty -
     calMagZincStackCalciumPenalty -
     zincTitleLeadCompanionPenalty -
+    claTitleLeadCompanionPenalty -
     zincNamedStackCompanionPenalty -
     probioticComboZincPenalty -
+    probioticBrandOnlyPenalty -
     productTitleEchoPenalty -
     macroPenalty -
     audienceRowPenalty -

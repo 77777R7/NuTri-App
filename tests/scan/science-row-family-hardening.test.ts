@@ -442,7 +442,7 @@ test('science context does not let audience or sugar rows beat title-rescued act
   assert.notEqual(elderberryContext.ingredientRows[0]?.name, 'Sugar Alcohol');
 });
 
-test('science context keeps carnitine ahead of broad CLA matrix rows in carnitine combo products', () => {
+test('science context follows title-leading CLA ahead of broad carnitine matrix rows', () => {
   const digest = buildDigest({
     labelId: 'fixture-cla-carnitine-matrix',
     productName: 'CLA + Carnitine, Fruit Punch',
@@ -455,9 +455,42 @@ test('science context keeps carnitine ahead of broad CLA matrix rows in carnitin
 
   const context = buildIngredientScienceContext({ digest, overlayClaims: null });
 
+  assert.match(context.ingredientRows[0]?.name ?? '', /\bcla\b|conjugated linoleic/i);
+  assert.equal(context.anchorIngredient?.ingredientFamily, 'cla');
+});
+
+test('science context keeps carnitine ahead when carnitine is the title lead', () => {
+  const digest = buildDigest({
+    labelId: 'fixture-carnitine-cla-matrix',
+    productName: 'L-Carnitine + CLA, Fruit Punch',
+    dosageForm: 'Powder',
+    actives: [
+      { name: 'Omega 6 Fatty Acids & CLA Matrix', amount: 3000, unit: 'mg' },
+      { name: 'L-Carnitine Tartrate', amount: 1500, unit: 'mg' },
+    ],
+  });
+
+  const context = buildIngredientScienceContext({ digest, overlayClaims: null });
+
   assert.match(context.ingredientRows[0]?.name ?? '', /\bcarnitine\b/i);
-  assert.doesNotMatch(context.ingredientRows[0]?.name ?? '', /matrix/i);
   assert.equal(context.anchorIngredient?.ingredientFamily, 'carnitine');
+});
+
+test('science context prefers generic probiotics over Protectis brand-only rows', () => {
+  const digest = buildDigest({
+    labelId: 'fixture-protectis-probiotic',
+    productName: 'BioGaia, Protectis Baby, Immune Active Probiotic Drops',
+    dosageForm: 'Drops',
+    actives: [
+      { name: 'Protectis', amount: 5, unit: 'mg' },
+    ],
+  });
+
+  const context = buildIngredientScienceContext({ digest, overlayClaims: null });
+
+  assert.match(context.ingredientRows[0]?.name ?? '', /\bprobiotic/i);
+  assert.doesNotMatch(context.ingredientRows[0]?.name ?? '', /^protectis$/i);
+  assert.equal(context.anchorIngredient?.ingredientFamily, 'probiotic_or_blend');
 });
 
 test('single-anchor ingredient overview still allows identity copy when it adds label meaning', async () => {
