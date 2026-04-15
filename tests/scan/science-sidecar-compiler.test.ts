@@ -1532,7 +1532,7 @@ test('magnesium and vitamin d research mode get longer execution budgets than th
   assert.equal(vitaminCPlan.mode, 'research_mode');
   assert.ok(magnesiumProfile.timeoutMs > vitaminCProfile.timeoutMs);
   assert.ok(magnesiumProfile.backgroundRefreshTimeoutMs < vitaminDProfile.backgroundRefreshTimeoutMs);
-  assert.equal(magnesiumProfile.backgroundRefreshMaxRetries, 0);
+  assert.equal(magnesiumProfile.backgroundRefreshMaxRetries, 1);
   assert.ok(vitaminDProfile.timeoutMs > vitaminCProfile.timeoutMs);
 });
 
@@ -1579,7 +1579,7 @@ test('calcium, zinc, and iron research mode get dedicated execution budgets', ()
   assert.ok(calciumProfile.timeoutMs > vitaminCProfile.timeoutMs);
   assert.ok(zincProfile.timeoutMs > vitaminCProfile.timeoutMs);
   assert.ok(zincProfile.backgroundRefreshTimeoutMs < ironProfile.backgroundRefreshTimeoutMs);
-  assert.equal(zincProfile.backgroundRefreshMaxRetries, 0);
+  assert.equal(zincProfile.backgroundRefreshMaxRetries, 1);
   assert.ok(ironProfile.timeoutMs > vitaminCProfile.timeoutMs);
 });
 
@@ -2037,7 +2037,7 @@ test('7-keto, cla, and carnitine get family-specific research plans and longer b
   assert.equal(carnitineProfile.maxRetries, 0);
   assert.equal(sevenKetoProfile.backgroundRefreshMaxRetries, 1);
   assert.equal(claProfile.backgroundRefreshMaxRetries, 1);
-  assert.equal(carnitineProfile.backgroundRefreshMaxRetries, 0);
+  assert.equal(carnitineProfile.backgroundRefreshMaxRetries, 1);
   assert.ok(sevenKetoProfile.backgroundRefreshTimeoutMs >= sevenKetoProfile.timeoutMs);
   assert.ok(claProfile.backgroundRefreshTimeoutMs >= claProfile.timeoutMs);
   assert.ok(carnitineProfile.backgroundRefreshTimeoutMs >= carnitineProfile.timeoutMs);
@@ -2077,7 +2077,7 @@ test('5-htp, green tea extract, and omega-3 now use target-family live-writer pr
   assert.equal(greenTeaProfile.maxRetries, 0);
   assert.equal(epaProfile.maxRetries, 0);
   assert.equal(htpProfile.backgroundRefreshMaxRetries, 1);
-  assert.equal(greenTeaProfile.backgroundRefreshMaxRetries, 0);
+  assert.equal(greenTeaProfile.backgroundRefreshMaxRetries, 1);
   assert.equal(epaProfile.backgroundRefreshMaxRetries, 1);
   assert.ok(htpProfile.timeoutMs >= 3_500);
   assert.ok(greenTeaProfile.timeoutMs >= 3_600);

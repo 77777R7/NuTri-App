@@ -22,15 +22,15 @@ test('science UI uses new B/C sidecars and removes the legacy ingredient summary
   assert.ok(
     dashboardSource.includes("const decisionPersonalizedResultLane = personalizedDecisionPayload?.personalizedResultLane ?? null;"),
   );
-  assert.ok(dashboardSource.includes("&& authoritativeDecisionTemplatePayload != null"));
-  assert.ok(dashboardSource.includes('if (!shouldLoadScienceSidecars) return;'));
+  assert.ok(dashboardSource.includes('const scienceSidecarDecisionPayload = useMemo<DecisionSupportTemplatePayload | null>'));
+  assert.ok(dashboardSource.includes('if (!shouldPrimeScienceSidecars) return;'));
   assert.ok(dashboardSource.includes('!ingredientOverviewRequestKey'));
   assert.ok(dashboardSource.includes('!decisionBarcodeForScience'));
   assert.ok(dashboardSource.includes('decisionInputsHash: decisionInputsHashParam'));
   assert.ok(dashboardSource.includes('personalizationScopeHash: personalizationScopeHashParam'));
   assert.equal(dashboardSource.includes('InteractionManager.runAfterInteractions(() => {'), false);
-  assert.ok(dashboardSource.includes("ingredientOverviewState.source === 'api' || ingredientOverviewState.source === 'server-fallback'"));
-  assert.ok(dashboardSource.includes("scientificBackgroundState.source === 'api' || scientificBackgroundState.source === 'server-fallback'"));
+  assert.ok(dashboardSource.includes("state.source === 'api' || state.source === 'server-fallback'"));
+  assert.ok(dashboardSource.includes("source?: 'api' | 'server-fallback'"));
 });
 
 test('server exposes ingredient overview and scientific background sidecars with shared authority helper', () => {
@@ -40,6 +40,7 @@ test('server exposes ingredient overview and scientific background sidecars with
   assert.match(serverSource, /buildDecisionSupportDigestMismatchPayload/);
   assert.match(serverSource, /decisionInputsHash:\s*z\.string\(\)\.trim\(\)\.min\(1\)\.nullable\(\)\.optional\(\)/);
   assert.match(serverSource, /personalizationScopeHash:\s*z\.string\(\)\.trim\(\)\.min\(1\)\.nullable\(\)\.optional\(\)/);
+  assert.match(serverSource, /revalidateFallback:\s*z\.boolean\(\)\.optional\(\)/);
   assert.match(serverSource, /authority\.decisionSupport\.decisionInputsHash/);
   assert.match(serverSource, /authority\.personalizationScopeHash/);
   assert.match(

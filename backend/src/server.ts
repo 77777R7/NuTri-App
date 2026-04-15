@@ -10221,6 +10221,7 @@ const ingredientOverviewBodySchema = z.object({
   personalizationScopeHash: z.string().trim().min(1).nullable().optional(),
   authoritativeIdentityType: z.string().trim().min(1).nullable().optional(),
   authoritativeIdentityValue: z.string().trim().min(1).nullable().optional(),
+  revalidateFallback: z.boolean().optional(),
 }).strict();
 
 const scientificBackgroundBodySchema = z.object({
@@ -10288,7 +10289,6 @@ const markScientificBackgroundBackgroundRefreshCooldown = (cacheKey: string): vo
 
 const shouldCoolDownScientificBackgroundBackgroundRefresh = (
   cacheKey: string,
-  diagnostics: Awaited<ReturnType<typeof compileScientificBackgroundAsync>>["diagnostics"],
   retryLimit: number = SCIENTIFIC_BACKGROUND_REFRESH_FAILURE_RETRY_LIMIT,
 ): boolean => {
   const nextFailureCount = (scientificBackgroundSidecarBackgroundRefreshFailureCount.get(cacheKey) ?? 0) + 1;
@@ -10299,7 +10299,7 @@ const shouldCoolDownScientificBackgroundBackgroundRefresh = (
       scientificBackgroundSidecarBackgroundRefreshFailureCount.delete(oldestKey);
     }
   }
-  return diagnostics.timeoutCount > 0 || nextFailureCount >= retryLimit;
+  return nextFailureCount >= retryLimit;
 };
 
 const readScientificBackgroundSidecarCache = (
@@ -11274,11 +11274,10 @@ app.post("/api/scientific-background/v1", verifySupabaseToken, async (req: Reque
               || plan.family === "zinc"
               || plan.family === "carnitine"
               || plan.family === "green_tea_extract"
-              ? 1
+              ? 3
               : SCIENTIFIC_BACKGROUND_REFRESH_FAILURE_RETRY_LIMIT;
           if (shouldCoolDownScientificBackgroundBackgroundRefresh(
             cacheKey,
-            refreshed.diagnostics,
             refreshFailureRetryLimit,
           )) {
             markScientificBackgroundBackgroundRefreshCooldown(cacheKey);

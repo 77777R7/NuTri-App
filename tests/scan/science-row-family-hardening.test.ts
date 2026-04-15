@@ -254,6 +254,60 @@ test('ingredient overview rejects factual A-card restatement and falls back to f
   assert.match(result.ingredientOverview.compareHint ?? '', /EPA and DHA|total omega-3/i);
 });
 
+test('science context keeps probiotic rows ahead of macro nutrition facts in probiotic products', () => {
+  const digest = buildDigest({
+    labelId: 'fixture-probiotic-drops-with-macros',
+    productName: 'Culturelle, Baby Probiotics, Digestive Calm + Comfort Probiotic Drops',
+    dosageForm: 'Drops',
+    actives: [
+      { name: 'Calories', amount: 5, unit: null },
+      { name: 'Total Carbohydrate', amount: 1, unit: 'g' },
+      { name: 'Bifidobacterium animalis subsp. lactis, BB-12', amount: 10, unit: 'mg' },
+    ],
+  });
+
+  const context = buildIngredientScienceContext({ digest, overlayClaims: null });
+
+  assert.match(context.ingredientRows[0]?.name ?? '', /bifidobacterium|probiotic/i);
+  assert.equal(context.anchorIngredient?.ingredientFamily, 'probiotic_or_blend');
+  assert.doesNotMatch(context.ingredientRows[0]?.name ?? '', /calories|carbohydrate/i);
+});
+
+test('science context rescues zinc as the lead row in children immune blend products', () => {
+  const digest = buildDigest({
+    labelId: 'fixture-children-immune-vitamin-c-zinc',
+    productName: 'Chewable Immune Blend with Vitamin A, Vitamin C, Vitamin E, and Zinc for Children',
+    dosageForm: 'Chewable Tablet',
+    actives: [
+      { name: 'Vitamin C', amount: 90, unit: 'mg' },
+      { name: 'Vitamin E', amount: 13.5, unit: 'mg' },
+      { name: 'Zinc', amount: 5, unit: 'mg' },
+    ],
+  });
+
+  const context = buildIngredientScienceContext({ digest, overlayClaims: null });
+
+  assert.match(context.ingredientRows[0]?.name ?? '', /\bzinc\b/i);
+  assert.equal(context.anchorIngredient?.ingredientFamily, 'zinc');
+});
+
+test('science context lets zinc-led mineral stack titles outrank higher-dose magnesium rows', () => {
+  const digest = buildDigest({
+    labelId: 'fixture-zinc-magnesium-title-order',
+    productName: 'Zinc Magnesium Aspartate',
+    dosageForm: 'Tablet',
+    actives: [
+      { name: 'Magnesium', amount: 450, unit: 'mg' },
+      { name: 'Zinc', amount: 30, unit: 'mg' },
+    ],
+  });
+
+  const context = buildIngredientScienceContext({ digest, overlayClaims: null });
+
+  assert.match(context.ingredientRows[0]?.name ?? '', /\bzinc\b/i);
+  assert.equal(context.anchorIngredient?.ingredientFamily, 'zinc');
+});
+
 test('single-anchor ingredient overview still allows identity copy when it adds label meaning', async () => {
   const digest = buildDigest({
     labelId: 'fixture-astaxanthin',

@@ -155,6 +155,8 @@ const GENERIC_FORMULA_LINE_PATTERN =
   /\b(?:supplement|nutritional|nutrition(?:al)?|proprietary)\s+formula\b|\bmatrix\b/i;
 const ENZYME_SUPPORT_LINE_PATTERN =
   /\b(?:digestive\s+enzyme|enzyme\s+assimilation|cytozymes?|enzyme\s+blend)\b/i;
+const NUTRITION_FACTS_MACRO_PATTERN =
+  /\b(?:calories|total\s+carbohydrates?|total\s+sugars?|added\s+sugars?|dietary\s+fiber|fiber|sodium)\b/i;
 const BRAND_PREFIX_SEGMENT_PATTERN = /^[a-z0-9][a-z0-9 '&.+-]{1,24}$/i;
 
 const normalizeText = (value: string | null | undefined): string =>
@@ -653,6 +655,32 @@ const getFamilyTitleBoost = (
   return titleBoost + rowBoost;
 };
 
+const getFamilyTitlePositionBoost = (
+  family: IngredientScienceIngredientFamily,
+  productName: string,
+): number => {
+  const familyPattern = FAMILY_TITLE_HINTS.find((entry) => entry.family === family)?.pattern;
+  if (!familyPattern) return 0;
+  const match = productName.match(familyPattern);
+  const index = match?.index;
+  if (typeof index !== "number" || index < 0) return 0;
+  if (index <= 2) return 175;
+  if (index <= 18) return 90;
+  if (index <= 44) return 65;
+  if (index <= 88) return 36;
+  return 18;
+};
+
+const titleStartsWithFamily = (
+  family: IngredientScienceIngredientFamily,
+  productName: string,
+): boolean => {
+  const familyPattern = FAMILY_TITLE_HINTS.find((entry) => entry.family === family)?.pattern;
+  if (!familyPattern) return false;
+  const titleWithoutBrand = normalizeText(productName.replace(/^[^,]{1,40},\s*/, ""));
+  return familyPattern.test(titleWithoutBrand.slice(0, 48));
+};
+
 const hasMineralStackLeadSignal = (
   rows: ScienceIngredientRow[],
   families: IngredientScienceIngredientFamily[],
@@ -684,6 +712,26 @@ const pickPrimaryActiveRowIndex = (
   rows.forEach((row, index) => {
     const family = families[index] ?? "generic";
     const familyTitleBoost = getFamilyTitleBoost(family, row.name, productName);
+    const familyTitlePositionBoost = getFamilyTitlePositionBoost(family, productName);
+    const macroPenalty = NUTRITION_FACTS_MACRO_PATTERN.test(row.name) ? 260 : 0;
+    const probioticLeadBoost =
+      PROBIOTIC_TITLE_PATTERN.test(productName)
+      && (family === "probiotic_or_blend" || PROBIOTIC_SPECIFIC_ROW_PATTERN.test(row.name))
+        ? 180
+        : 0;
+    const zincImmuneBlendBoost =
+      family === "zinc"
+      && hasTitleFamily("zinc", productName)
+      && IMMUNE_BLEND_TITLE_PATTERN.test(productName)
+        ? 150
+        : 0;
+    const vitaminCImmuneCompanionPenalty =
+      family === "vitamin_c"
+      && hasTitleFamily("zinc", productName)
+      && IMMUNE_BLEND_TITLE_PATTERN.test(productName)
+      && !titleStartsWithFamily("vitamin_c", productName)
+        ? 130
+        : 0;
     const supportingPenalty =
       hasStrongLeadActive && SUPPORTING_MICRONUTRIENT_FAMILIES.has(family) ? 96 : 0;
     const vitaminDInMineralStackPenalty =
@@ -705,7 +753,10 @@ const pickPrimaryActiveRowIndex = (
     const score =
       (matchesProductTitle(row.name, productName) ? 120 : 0) +
       familyTitleBoost +
+      familyTitlePositionBoost +
       mineralStackPriorityBoost +
+      probioticLeadBoost +
+      zincImmuneBlendBoost +
       (STRONG_LEAD_ACTIVE_FAMILIES.has(family) ? 86 : 0) +
       (PRIMARY_ACTIVE_FAMILIES.has(family) ? 24 : 0) +
       Math.min(parseDoseMagnitude(row.dose), 1200) / 24 +
@@ -713,6 +764,8 @@ const pickPrimaryActiveRowIndex = (
       (COMPANION_FAMILIES.has(family) ? 48 : 0) -
       supportingPenalty -
       vitaminDInMineralStackPenalty -
+      vitaminCImmuneCompanionPenalty -
+      macroPenalty -
       genericFormulaPenalty -
       enzymeSupportPenalty -
       (isBlendLike(row.name, family) ? 120 : 0) -
@@ -750,6 +803,29 @@ const scoreIngredientDescriptorForDisplay = (params: {
   const titleMatch = matchesProductTitle(row.name, productName);
   const isAnchor = Boolean(anchorKey && rowKey === anchorKey);
   const familyTitleBoost = getFamilyTitleBoost(descriptor.ingredientFamily, row.name, productName);
+  const familyTitlePositionBoost = getFamilyTitlePositionBoost(descriptor.ingredientFamily, productName);
+  const macroPenalty = NUTRITION_FACTS_MACRO_PATTERN.test(row.name) ? 240 : 0;
+  const probioticLeadBoost =
+    PROBIOTIC_TITLE_PATTERN.test(productName)
+    && (
+      descriptor.ingredientFamily === "probiotic_or_blend"
+      || PROBIOTIC_SPECIFIC_ROW_PATTERN.test(row.name)
+    )
+      ? 170
+      : 0;
+  const zincImmuneBlendBoost =
+    descriptor.ingredientFamily === "zinc"
+    && hasTitleFamily("zinc", productName)
+    && IMMUNE_BLEND_TITLE_PATTERN.test(productName)
+      ? 140
+      : 0;
+  const vitaminCImmuneCompanionPenalty =
+    descriptor.ingredientFamily === "vitamin_c"
+    && hasTitleFamily("zinc", productName)
+    && IMMUNE_BLEND_TITLE_PATTERN.test(productName)
+    && !titleStartsWithFamily("vitamin_c", productName)
+      ? 120
+      : 0;
   const genericFormulaPenalty = GENERIC_FORMULA_LINE_PATTERN.test(row.name) ? 180 : 0;
   const enzymeSupportPenalty = ENZYME_SUPPORT_LINE_PATTERN.test(row.name) ? 170 : 0;
   const supportingPenalty =
@@ -773,7 +849,10 @@ const scoreIngredientDescriptorForDisplay = (params: {
     (descriptor.lineRole === "breakdown_line" ? 42 : 0) +
     (titleMatch ? 120 : 0) +
     familyTitleBoost +
+    familyTitlePositionBoost +
     mineralStackPriorityBoost +
+    probioticLeadBoost +
+    zincImmuneBlendBoost +
     (STRONG_LEAD_ACTIVE_FAMILIES.has(descriptor.ingredientFamily) ? 68 : 0) +
     (PRIMARY_ACTIVE_FAMILIES.has(descriptor.ingredientFamily) ? 34 : 0) +
     (row.dose ? 16 : 0) +
@@ -781,6 +860,8 @@ const scoreIngredientDescriptorForDisplay = (params: {
     (descriptor.lineRole === "companion_nutrient" ? 62 : 0) -
     supportingPenalty -
     vitaminDInMineralStackPenalty -
+    vitaminCImmuneCompanionPenalty -
+    macroPenalty -
     (descriptor.lineRole === "aggregate_line" ? 90 : 0) -
     (descriptor.lineRole === "source_line" ? 120 : 0) -
     (descriptor.lineRole === "blend_line" ? 140 : 0) -
