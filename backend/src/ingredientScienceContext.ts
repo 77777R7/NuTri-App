@@ -801,9 +801,9 @@ const pickPrimaryActiveRowIndex = (
       && titleStartsWithFamily("magnesium", productName)
         ? 260
         : 0;
-    const calMagZincStackMagnesiumBoost =
-      hasCalMagZincStackTitle && family === "magnesium"
-        ? 120
+    const calMagZincStackZincBoost =
+      hasCalMagZincStackTitle && family === "zinc"
+        ? 150
         : 0;
     const calMagZincStackCalciumPenalty =
       hasCalMagZincStackTitle && family === "calcium"
@@ -919,7 +919,7 @@ const pickPrimaryActiveRowIndex = (
       probioticLeadBoost +
       zincImmuneBlendBoost +
       magnesiumTitleLeadBoost +
-      calMagZincStackMagnesiumBoost +
+      calMagZincStackZincBoost +
       zincTitleLeadBoost +
       claTitleLeadBoost +
       zincNamedStackBoost +
@@ -1029,9 +1029,9 @@ const scoreIngredientDescriptorForDisplay = (params: {
     && titleStartsWithFamily("magnesium", productName)
       ? 240
       : 0;
-  const calMagZincStackMagnesiumBoost =
-    hasCalMagZincStackTitle && descriptor.ingredientFamily === "magnesium"
-      ? 110
+  const calMagZincStackZincBoost =
+    hasCalMagZincStackTitle && descriptor.ingredientFamily === "zinc"
+      ? 140
       : 0;
   const calMagZincStackCalciumPenalty =
     hasCalMagZincStackTitle && descriptor.ingredientFamily === "calcium"
@@ -1172,7 +1172,7 @@ const scoreIngredientDescriptorForDisplay = (params: {
     probioticLeadBoost +
     zincImmuneBlendBoost +
     magnesiumTitleLeadBoost +
-    calMagZincStackMagnesiumBoost +
+    calMagZincStackZincBoost +
     zincTitleLeadBoost +
     claTitleLeadBoost +
     zincNamedStackBoost +

@@ -308,7 +308,7 @@ test('science context lets zinc-led mineral stack titles outrank higher-dose mag
   assert.equal(context.anchorIngredient?.ingredientFamily, 'zinc');
 });
 
-test('science context keeps mineral-stack defaults on magnesium while preserving zinc-led vitamin stacks', () => {
+test('science context keeps calcium-magnesium-zinc stacks on zinc while preserving magnesium-led products', () => {
   const mineralStackDigest = buildDigest({
     labelId: 'fixture-calcium-magnesium-zinc-d3',
     productName: 'Calcium Magnesium Zinc + D3',
@@ -330,14 +330,26 @@ test('science context keeps mineral-stack defaults on magnesium while preserving
       { name: 'Vitamin D3 (as cholecalciferol from lanolin)', amount: 50, unit: 'mcg' },
     ],
   });
+  const magnesiumLeadDigest = buildDigest({
+    labelId: 'fixture-magnesium-glycinate-with-zinc',
+    productName: 'Magnesium Glycinate with Zinc Picolinate',
+    dosageForm: 'Capsule',
+    actives: [
+      { name: 'Magnesium (as Magnesium Glycinate)', amount: 200, unit: 'mg' },
+      { name: 'Zinc (as Zinc Picolinate)', amount: 15, unit: 'mg' },
+    ],
+  });
 
   const mineralStackContext = buildIngredientScienceContext({ digest: mineralStackDigest, overlayClaims: null });
   const vitaminStackContext = buildIngredientScienceContext({ digest: vitaminStackDigest, overlayClaims: null });
+  const magnesiumLeadContext = buildIngredientScienceContext({ digest: magnesiumLeadDigest, overlayClaims: null });
 
-  assert.match(mineralStackContext.ingredientRows[0]?.name ?? '', /\bmagnesium\b/i);
-  assert.equal(mineralStackContext.anchorIngredient?.ingredientFamily, 'magnesium');
+  assert.match(mineralStackContext.ingredientRows[0]?.name ?? '', /\bzinc\b/i);
+  assert.equal(mineralStackContext.anchorIngredient?.ingredientFamily, 'zinc');
   assert.match(vitaminStackContext.ingredientRows[0]?.name ?? '', /\bzinc\b/i);
   assert.equal(vitaminStackContext.anchorIngredient?.ingredientFamily, 'zinc');
+  assert.match(magnesiumLeadContext.ingredientRows[0]?.name ?? '', /\bmagnesium\b/i);
+  assert.equal(magnesiumLeadContext.anchorIngredient?.ingredientFamily, 'magnesium');
 });
 
 test('science context keeps explicit magnesium ahead of branded Magtein source rows', () => {
