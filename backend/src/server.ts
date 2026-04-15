@@ -10026,6 +10026,67 @@ const logIherbOverlayFetchWarningOnce = (message: string) => {
 const toOverlayObjectRecord = (value: unknown): Record<string, unknown> =>
   value && typeof value === "object" ? (value as Record<string, unknown>) : {};
 
+const toOverlayArrayRecord = (value: unknown): Record<string, unknown>[] =>
+  Array.isArray(value)
+    ? value.filter((item): item is Record<string, unknown> => Boolean(item) && typeof item === "object")
+    : [];
+
+const readOverlayServingSize = (
+  row: Record<string, unknown>,
+  supplementFacts: Record<string, unknown>,
+): string | null => {
+  const serving = toOverlayObjectRecord(row.serving);
+  const candidates = [
+    serving.servingSize,
+    serving.serving_size,
+    supplementFacts.servingSize,
+    supplementFacts.serving_size,
+  ];
+  for (const candidate of candidates) {
+    const normalized = String(candidate ?? "").trim();
+    if (normalized && normalized.toLowerCase() !== "n/a") return normalized;
+  }
+  return null;
+};
+
+const readOverlayServingsPerContainer = (
+  row: Record<string, unknown>,
+  supplementFacts: Record<string, unknown>,
+): string | null => {
+  const serving = toOverlayObjectRecord(row.serving);
+  const candidates = [
+    serving.servingsPerContainer,
+    serving.servings_per_container,
+    supplementFacts.servingsPerContainer,
+    supplementFacts.servings_per_container,
+  ];
+  for (const candidate of candidates) {
+    const normalized = String(candidate ?? "").trim();
+    if (normalized && normalized.toLowerCase() !== "n/a") return normalized;
+  }
+  return null;
+};
+
+const readOverlayNutritionalFacts = (
+  rawSupplementFacts: unknown,
+  supplementFacts: Record<string, unknown>,
+): Record<string, unknown>[] => {
+  const directRows = toOverlayArrayRecord(rawSupplementFacts);
+  if (directRows.length > 0) return directRows;
+
+  for (const candidate of [
+    supplementFacts.nutritionalFacts,
+    supplementFacts.nutritional_facts,
+    supplementFacts.rows,
+    supplementFacts.facts,
+  ]) {
+    const rows = toOverlayArrayRecord(candidate);
+    if (rows.length > 0) return rows;
+  }
+
+  return [];
+};
+
 const normalizeOverlaySectionKey = (value: string): string =>
   value
     .toLowerCase()
@@ -10085,12 +10146,9 @@ const toDecisionSupportOverlayClaims = (row: Record<string, unknown>): DecisionS
   const descriptionSections = toOverlayObjectRecord(
     row.allDescriptionSections ?? row.descriptionSections ?? row.description_sections,
   );
-  const supplementFacts = toOverlayObjectRecord(row.supplementFacts ?? row.supplement_facts);
-  const nutritionalFactsRaw = Array.isArray(supplementFacts?.nutritionalFacts)
-    ? (supplementFacts.nutritionalFacts as Record<string, unknown>[])
-    : Array.isArray(supplementFacts?.nutritional_facts)
-      ? (supplementFacts.nutritional_facts as Record<string, unknown>[])
-      : [];
+  const rawSupplementFacts = row.supplementFacts ?? row.supplement_facts;
+  const supplementFacts = toOverlayObjectRecord(rawSupplementFacts);
+  const nutritionalFactsRaw = readOverlayNutritionalFacts(rawSupplementFacts, supplementFacts);
   return {
     provider: "iherb",
     productId:
@@ -10100,9 +10158,16 @@ const toDecisionSupportOverlayClaims = (row: Record<string, unknown>): DecisionS
           ? row.productId
           : typeof row.product_id === "number"
             ? String(row.product_id)
-          : typeof row.product_id === "string"
+            : typeof row.product_id === "string"
               ? row.product_id
               : null,
+    upcCode: typeof row.upc_code === "string" ? row.upc_code : typeof row.upcCode === "string" ? row.upcCode : null,
+    barcodeGtin14:
+      typeof row.barcode_gtin14 === "string"
+        ? row.barcode_gtin14
+        : typeof row.barcodeGtin14 === "string"
+          ? row.barcodeGtin14
+          : null,
     brandName:
       typeof row.brandName === "string"
         ? row.brandName
@@ -10122,6 +10187,14 @@ const toDecisionSupportOverlayClaims = (row: Record<string, unknown>): DecisionS
     otherIngredients: readOverlaySectionText(descriptionSections, ["Other ingredients", "Other Ingredients"]),
     warnings: readOverlaySectionText(descriptionSections, ["Warnings", "Warning"]),
     disclaimer: readOverlaySectionText(descriptionSections, ["Disclaimer"]),
+    servingSize: readOverlayServingSize(row, supplementFacts),
+    servingsPerContainer: readOverlayServingsPerContainer(row, supplementFacts),
+    sourceZipPath:
+      typeof row.source_zip_path === "string"
+        ? row.source_zip_path
+        : typeof row.sourceZipPath === "string"
+          ? row.sourceZipPath
+          : null,
     nutritionalFacts: nutritionalFactsRaw
       .map((item) => ({
         substancy: String(item?.substancy ?? item?.substance ?? item?.substance_name ?? item?.name ?? "").trim(),
@@ -10138,12 +10211,26 @@ const fetchIherbOverlayClaimsByBarcode = async (
 ): Promise<DecisionSupportOverlayClaims | null> => {
   if (!barcodeGtin14) return null;
   try {
+    const barcodeDigits = String(barcodeGtin14).replace(/\D/g, "");
+    const upc12 = barcodeDigits.length >= 12 ? barcodeDigits.slice(-12) : barcodeDigits;
+    const ean13 = barcodeDigits.length >= 13 ? barcodeDigits.slice(-13) : barcodeDigits;
+    const unpadded = barcodeDigits.replace(/^0+/, "") || barcodeDigits;
+    const barcodeFilters = Array.from(
+      new Set([
+        `barcode_gtin14.eq.${barcodeGtin14}`,
+        `barcode_gtin14.eq.${barcodeDigits}`,
+        `upc_code.eq.${barcodeDigits}`,
+        `upc_code.eq.${upc12}`,
+        `upc_code.eq.${ean13}`,
+        `upc_code.eq.${unpadded}`,
+      ]),
+    );
     const { data, error } = await supabase
       .from("iherb_overlay_products")
       .select(
-        "product_id,brand_name,title,link,product_catalog_image,product_images,categories,supplement_facts,description_sections,updated_at",
+        "product_id,upc_code,barcode_gtin14,brand_name,title,link,product_catalog_image,product_images,categories,supplement_facts,serving,description_sections,source_zip_path,updated_at",
       )
-      .eq("barcode_gtin14", barcodeGtin14)
+      .or(barcodeFilters.join(","))
       .order("updated_at", { ascending: false })
       .limit(1)
       .maybeSingle();

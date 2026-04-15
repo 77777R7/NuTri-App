@@ -16,6 +16,13 @@ type OverlayNutritionalFactRow = {
 
 type OverlayClaimsLike = {
   nutritionalFacts?: OverlayNutritionalFactRow[] | null;
+  title?: string | null;
+  brandName?: string | null;
+  description?: string | null;
+  suggestedUse?: string | null;
+  servingSize?: string | null;
+  servingsPerContainer?: string | null;
+  sourceZipPath?: string | null;
 } | null | undefined;
 
 type TitleFallbackParams = {
@@ -86,6 +93,11 @@ const isHeaderLike = (value: string | null | undefined): boolean => {
 const isNutritionLabelLike = (value: string | null | undefined): boolean => {
   const normalized = normalizeDisplayText(value);
   return isNutritionLabelLikeIngredientName(normalized);
+};
+
+const isOverlayNutritionResidueName = (value: string | null | undefined): boolean => {
+  const normalized = normalizeDisplayText(value);
+  return isNutritionLabelLike(normalized) || normalized.toLowerCase() === "fiber";
 };
 
 const COMPOUND_INGREDIENT_EXEMPT_PATTERN =
@@ -344,7 +356,7 @@ const TITLE_MARKETING_PATTERN =
   /^(kids|kid|women'?s|mens?|male performance|female support|innovations?|optimal wellness|once daily|daily|immune|control|advanced|premium|extra strength|original|complete)$/i;
 
 const TITLE_INGREDIENT_SIGNAL_PATTERN =
-  /\b(vitamin|mineral|biotin|probiotic|pro-bio|extract|root|leaf|seed|bark|herb|botanical|oil|acid|citrate|glycinate|orotate|taurate|malate|tribuytrin|tributyrin|konjac|grape seed|olive leaf|oregano|saw palmetto|pumpkin seed|elderberry|melatonin|magnesium|zinc|iron|calcium|d3|vitamin c|b12|nac|collagen|creatine|l-theanine|ashwagandha|rhodiola|garlic|turmeric|curcumin|fiber|protein|enzyme|cfu|ahcc|nattokinase|bacteriophage|phage|saccharomyces boulardii|sodium bicarbonate|sodium citrate)\b/i;
+  /\b(vitamin|mineral|biotin|probiotic|pro-bio|extract|root|beet|leaf|seed|bark|herb|botanical|oil|acid|citrate|glycinate|orotate|taurate|malate|tribuytrin|tributyrin|konjac|grape seed|olive leaf|oregano|saw palmetto|pumpkin seed|elderberry|melatonin|magnesium|zinc|iron|calcium|d3|vitamin c|b12|nac|collagen|creatine|l-theanine|ashwagandha|rhodiola|garlic|turmeric|curcumin|fiber|protein|enzyme|cfu|ahcc|nattokinase|bacteriophage|phage|saccharomyces boulardii|sodium bicarbonate|sodium citrate)\b/i;
 
 const TITLE_DOSE_PATTERN =
   /(\d[\d,]*(?:\.\d+)?)\s*(billion|million)?\s*(mcg|μg|µg|ug|mg|g|gram|grams|iu|ui|cfu|spu|ml|pfu(?:'s|s)?|fu(?:'s|s)?)\b/i;
@@ -492,6 +504,35 @@ const stripBrandPrefix = (title: string, brandName?: string | null): string => {
   return title.replace(new RegExp(`^${escaped}\\s*,\\s*`, "i"), "");
 };
 
+const derivePerServingUnitDoseFromTitle = (params: TitleFallbackParams): string | null => {
+  const servingCount = parseNumericCount(params.servingSize);
+  if (!servingCount || servingCount <= 0) return null;
+
+  const title = cleanTitleSegment(stripBrandPrefix(String(params.title ?? ""), params.brandName));
+  const match = title.match(
+    /\(?\s*(\d[\d,]*(?:\.\d+)?)\s*(mcg|μg|µg|ug|mg|g|gram|grams|iu|ui)\s+per\s+(capsule|cap|tablet|softgel|soft-gel|gummy|chew)\b/i,
+  );
+  if (!match) return null;
+
+  const servingText = normalizeWhitespace(params.servingSize).toLowerCase();
+  const unitForm = normalizeWhitespace(match[3]).toLowerCase();
+  const formMatches =
+    unitForm === "cap"
+      ? /\bcaps?(?:ules?)?\b/i.test(servingText)
+      : unitForm === "soft-gel"
+        ? /\bsoft-?gels?\b/i.test(servingText)
+        : new RegExp(`\\b${unitForm}s?\\b`, "i").test(servingText);
+  if (!formMatches) return null;
+
+  const amount = Number.parseFloat(normalizeWhitespace(match[1]).replace(/,/g, ""));
+  if (!Number.isFinite(amount) || amount <= 0) return null;
+
+  const unit = normalizeWhitespace(match[2]);
+  const total = amount * servingCount;
+  const rounded = Math.round(total * 100) / 100;
+  return normalizeDisplayText(`${Number(rounded.toFixed(2)).toString()} ${unit}`);
+};
+
 const isLikelyPackageSegment = (segment: string): boolean =>
   TITLE_COUNT_OR_PACKAGE_PATTERN.test(segment) ||
   TITLE_SIZE_PATTERN.test(segment) ||
@@ -569,8 +610,11 @@ const pickTitleFallbackDose = (params: TitleFallbackParams): string | null => {
   const title = cleanTitleSegment(stripBrandPrefix(String(params.title ?? ""), params.brandName));
   if (!title) return null;
 
+  const perServingUnitDose = derivePerServingUnitDoseFromTitle(params);
+  if (perServingUnitDose) return perServingUnitDose;
+
   const servingSizeDose = parseStructuredDoseText(params.servingSize);
-  if (servingSizeDose) return servingSizeDose;
+  if (servingSizeDose && !isServingCountDose(params.servingSize)) return servingSizeDose;
 
   if (normalizeWhitespace(params.sourceZipPath).toLowerCase() === "eclectic-herb.json") {
     const eclecticDose = extractEclecticDryHerbStrengthDose(params.descriptionText);
@@ -673,6 +717,31 @@ const deriveTitleFallbackRows = (params: TitleFallbackParams): ScienceIngredient
     },
   ];
 };
+
+const deriveNutritionResidueTitleFallbackRows = (params: TitleFallbackParams): ScienceIngredientRow[] => {
+  const titleWithoutBrand = cleanTitleSegment(stripBrandPrefix(String(params.title ?? ""), params.brandName));
+  const explicitBotanicalTitleMatch =
+    titleWithoutBrand.match(/\bbeet\s+root\b/i)?.[0] ??
+    titleWithoutBrand.match(/\belderberry\b|\bsambucus\b/i)?.[0] ??
+    titleWithoutBrand.match(/\bgreen\s+tea(?:\s+extract)?\b/i)?.[0] ??
+    null;
+  const ingredient =
+    explicitBotanicalTitleMatch ??
+    pickTitleFallbackIngredientSegment(params) ??
+    pickFirstNonPackageTitleSegment(params);
+  if (!ingredient || !hasStrongIngredientSignal(ingredient)) return [];
+
+  const cleanedIngredient = cleanOverlayIngredientName(ingredient);
+  if (!cleanedIngredient) return [];
+
+  const dose = derivePerServingUnitDoseFromTitle(params) ?? pickTitleFallbackDose(params);
+  if (!hasPositiveStructuredDose(dose)) return [];
+
+  return [{ name: cleanedIngredient, dose }];
+};
+
+const hasStructuredFallbackDose = (rows: ScienceIngredientRow[]): boolean =>
+  rows.some((row) => hasPositiveStructuredDose(row.dose));
 
 const extractBlendTail = (value: string): string | null => {
   if (BLEND_PREFIX_PATTERN.test(value)) {
@@ -1108,6 +1177,57 @@ const toOfficialRows = (digest: FactsDigest): NormalizedScienceIngredientRow[] =
     })
     .filter((row): row is NormalizedScienceIngredientRow => row !== null);
 
+const toNormalizedScienceIngredientRows = (
+  rows: ScienceIngredientRow[],
+): NormalizedScienceIngredientRow[] =>
+  rows
+    .map((row) => buildNormalizedScienceIngredientRow(row))
+    .filter((row): row is NormalizedScienceIngredientRow => row !== null);
+
+const buildOverlayFallbackDescription = (overlayClaims: OverlayClaimsLike): string | null => {
+  const parts = [
+    normalizeWhitespace(overlayClaims?.description),
+    normalizeWhitespace(overlayClaims?.suggestedUse),
+  ].filter(Boolean);
+  return parts.length > 0 ? parts.join(" ") : null;
+};
+
+const deriveOverlayFallbackRows = (
+  overlayClaims: OverlayClaimsLike,
+): NormalizedScienceIngredientRow[] =>
+  toNormalizedScienceIngredientRows(
+    normalizeIherbSupplementFactsRowsWithTitleFallback({
+      rows: overlayClaims?.nutritionalFacts,
+      title: overlayClaims?.title,
+      brandName: overlayClaims?.brandName,
+      servingSize: overlayClaims?.servingSize,
+      servingsPerContainer: overlayClaims?.servingsPerContainer,
+      sourceZipPath: overlayClaims?.sourceZipPath,
+      descriptionText: buildOverlayFallbackDescription(overlayClaims),
+    }),
+  );
+
+const deriveDigestTitleFallbackRows = (
+  digest: FactsDigest,
+): NormalizedScienceIngredientRow[] =>
+  toNormalizedScienceIngredientRows(
+    normalizeIherbSupplementFactsRowsWithTitleFallback({
+      rows: null,
+      title: digest.product.name,
+      brandName: digest.product.brandDisplay ?? digest.product.brandLegal ?? null,
+      servingSize: digest.serving.servingSize,
+      servingsPerContainer:
+        digest.serving.servingsPerContainer != null
+          ? String(digest.serving.servingsPerContainer)
+          : null,
+      sourceZipPath: null,
+      descriptionText: [
+        ...(digest.claims.labelPurposes ?? []),
+        ...(digest.claims.webClaims ?? []),
+      ].join(" "),
+    }),
+  );
+
 const mergeRowMatchKeys = (
   preferred: NormalizedScienceIngredientRow,
   alternate: NormalizedScienceIngredientRow,
@@ -1267,20 +1387,48 @@ export const normalizeIherbSupplementFactsRowsWithTitleFallback = (params: {
   const rowsWithAggregate = pruneGenericBlendRowsWhenAggregatePresent(
     mergeFallbackRows(normalizedRows, herbalFormulaAggregateRows),
   );
+  const effectiveTitleFallbackRows =
+    titleFallbackRows.length > 0
+      ? titleFallbackRows
+      : rowsWithAggregate.length > 0 && rowsWithAggregate.every((row) => isOverlayNutritionResidueName(row.name))
+        ? deriveNutritionResidueTitleFallbackRows({
+            title: params.title,
+            brandName: params.brandName,
+            servingSize: params.servingSize,
+            servingsPerContainer: params.servingsPerContainer,
+            sourceZipPath: params.sourceZipPath,
+            descriptionText: params.descriptionText,
+          })
+        : [];
 
   if (rowsWithAggregate.length === 0) {
-    return titleFallbackRows;
+    return effectiveTitleFallbackRows;
+  }
+
+  if (!hasStructuredFallbackDose(effectiveTitleFallbackRows)) {
+    return rowsWithAggregate.map((row) => ({
+      name: row.name,
+      dose: row.dose,
+      ...(row.proprietaryBlendSource ? { proprietaryBlendSource: true } : {}),
+      ...(row.aggregateFormula ? { aggregateFormula: true } : {}),
+    }));
   }
 
   const hasCoverageEligibleDose = rowsWithAggregate.some(
     (row) =>
       hasPositiveStructuredDose(row.dose)
+      && !isOverlayNutritionResidueName(row.name)
       && (row.aggregateFormula === true || (!row.proprietaryBlendSource && !isBlendLike(row.name))),
   );
   const finalRows =
-    hasCoverageEligibleDose || titleFallbackRows.length === 0
+    hasCoverageEligibleDose || effectiveTitleFallbackRows.length === 0
       ? rowsWithAggregate
-      : mergeFallbackRows(rowsWithAggregate, titleFallbackRows);
+      : mergeFallbackRows(
+          effectiveTitleFallbackRows
+            .map((row) => buildNormalizedScienceIngredientRow(row))
+            .filter((row): row is NormalizedScienceIngredientRow => row !== null),
+          rowsWithAggregate,
+        );
 
   return finalRows.map((row) => ({
     name: row.name,
@@ -1397,25 +1545,46 @@ export const selectScienceIngredientRows = (params: {
   ingredientRows: ScienceIngredientRow[];
 } => {
   const officialRows = toOfficialRows(params.digest);
+  const digestTitleFallbackRows = deriveDigestTitleFallbackRows(params.digest);
+  const officialFallbackRows = officialRows.length > 0 ? officialRows : digestTitleFallbackRows;
   const fallback = {
     ingredientSourceTier: "official_record" as const,
-    ingredientRows: officialRows.map((row) => ({ name: row.name, dose: row.dose })),
+    ingredientRows: officialFallbackRows.map((row) => ({ name: row.name, dose: row.dose })),
   };
 
-  if (params.digest.sourceType !== "dsld") return fallback;
+  const overlayRows = deriveOverlayFallbackRows(params.overlayClaims);
 
-  const overlayRows = normalizeIherbSupplementFactsRowsInternal(params.overlayClaims?.nutritionalFacts);
+  if (params.digest.sourceType !== "dsld") {
+    if (overlayRows.length > 0) {
+      return {
+        ingredientSourceTier: "overlay_iherb",
+        ingredientRows: overlayRows.map((row) => ({ name: row.name, dose: row.dose })),
+      };
+    }
+    return fallback;
+  }
+
   if (overlayRows.length === 0) return fallback;
 
   const officialCoverageRows = selectOfficialCoverageRows(officialRows);
-  if (officialCoverageRows.length === 0) return fallback;
+  if (officialCoverageRows.length === 0) {
+    return {
+      ingredientSourceTier: "overlay_iherb",
+      ingredientRows: overlayRows.map((row) => ({ name: row.name, dose: row.dose })),
+    };
+  }
 
   const bestCoverage = findBestCoverageAssignment(officialCoverageRows, overlayRows);
   if (
     bestCoverage.matchedCount < requiredCoverageMatches(officialCoverageRows.length) ||
     bestCoverage.matchedDoseCount < 1
   ) {
-    return fallback;
+    return fallback.ingredientRows.length > 0
+      ? fallback
+      : {
+          ingredientSourceTier: "overlay_iherb",
+          ingredientRows: overlayRows.map((row) => ({ name: row.name, dose: row.dose })),
+        };
   }
 
   return {

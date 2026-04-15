@@ -13,6 +13,9 @@ type OverlayClaimsLike = {
   brandName?: string | null;
   description?: string | null;
   suggestedUse?: string | null;
+  servingSize?: string | null;
+  servingsPerContainer?: string | null;
+  sourceZipPath?: string | null;
 } | null | undefined;
 
 export type IngredientScienceSourceType = "dsld" | "iherb_overlay" | "other";
@@ -154,6 +157,14 @@ const FOOD_LIKE_POWDER_TITLE_PATTERN =
   /\b(?:juice\s+powder|fruit\s+powder|smoothie|drink\s+mix|iced\s+tea|protein\s+(?:iced\s+)?tea|matcha(?:\s+green\s+tea)?\s+powder|vegetable\s+powder|greens?\s+powder)\b/i;
 const IMMUNE_BLEND_TITLE_PATTERN =
   /\b(?:immune|immunity|sambucus|elderberry|children'?s|chewable)\b/i;
+const B_COMPLEX_TITLE_PATTERN =
+  /\bb[\s-]*complex\b|\bb[\s-]*vitamins?\b|\bvitamin\s*b\s*complex\b/i;
+const MULTIVITAMIN_TITLE_PATTERN =
+  /\bmulti[\s-]*(?:vitamin|mineral)s?\b|\bmultivitamin\b|\bmultimineral\b/i;
+const B_COMPLEX_FORMULA_ROW_PATTERN =
+  /\bb[\s-]*complex\b|\bvitamin\s*b\s*complex\b/i;
+const MULTIVITAMIN_FORMULA_ROW_PATTERN =
+  /\bmulti[\s-]*(?:vitamin|mineral)s?\b|\bmultivitamin\b|\bmultimineral\b/i;
 const GENERIC_FORMULA_LINE_PATTERN =
   /\b(?:supplement|nutritional|nutrition(?:al)?|proprietary)\s+formula\b|\bmatrix\b/i;
 const ENZYME_SUPPORT_LINE_PATTERN =
@@ -549,6 +560,14 @@ const deriveScienceTitleRescueRows = (params: {
       extractTitleMatch(titleWithoutBrand, /\bgreen tea(?:\s+extract)?\b/i) ??
         (/\bextract\b/i.test(titleWithoutBrand) ? "Green Tea Extract" : "Green Tea"),
     );
+  }
+
+  if (B_COMPLEX_TITLE_PATTERN.test(titleWithoutBrand)) {
+    pushRow("B-Complex Formula");
+  }
+
+  if (MULTIVITAMIN_TITLE_PATTERN.test(titleWithoutBrand)) {
+    pushRow("Multivitamin & Mineral Formula");
   }
 
   const hasDedicatedElderberryRow = params.existingRows.some((row) => isDedicatedElderberryRow(row.name));
@@ -1168,6 +1187,16 @@ const scoreIngredientDescriptorForDisplay = (params: {
             ? 36
             : 0
       : 0;
+  const bComplexFormulaBoost =
+    B_COMPLEX_TITLE_PATTERN.test(productName) && B_COMPLEX_FORMULA_ROW_PATTERN.test(row.name) ? 860 : 0;
+  const multivitaminFormulaBoost =
+    MULTIVITAMIN_TITLE_PATTERN.test(productName) && MULTIVITAMIN_FORMULA_ROW_PATTERN.test(row.name) ? 900 : 0;
+  const multivitaminSingleActivePenalty =
+    MULTIVITAMIN_TITLE_PATTERN.test(productName)
+    && !MULTIVITAMIN_FORMULA_ROW_PATTERN.test(row.name)
+    && descriptor.ingredientFamily !== "generic"
+      ? 120
+      : 0;
 
   return (
     (isAnchor ? 260 : 0) +
@@ -1177,6 +1206,8 @@ const scoreIngredientDescriptorForDisplay = (params: {
     familyTitleBoost +
     familyTitlePositionBoost +
     mineralStackPriorityBoost +
+    bComplexFormulaBoost +
+    multivitaminFormulaBoost +
     probioticLeadBoost +
     zincImmuneBlendBoost +
     magnesiumTitleLeadBoost +
@@ -1194,6 +1225,7 @@ const scoreIngredientDescriptorForDisplay = (params: {
     (descriptor.lineRole === "companion_nutrient" ? 62 : 0) -
     supportingPenalty -
     vitaminDInMineralStackPenalty -
+    multivitaminSingleActivePenalty -
     vitaminCImmuneCompanionPenalty -
     magnesiumTitleLeadCompanionPenalty -
     calMagZincStackCalciumPenalty -

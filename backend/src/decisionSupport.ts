@@ -327,6 +327,8 @@ export type DecisionSupportNutriScoreCardV2 = {
 export type DecisionSupportOverlayClaims = {
   provider: "iherb";
   productId: string | null;
+  upcCode?: string | null;
+  barcodeGtin14?: string | null;
   brandName: string | null;
   title: string | null;
   link: string | null;
@@ -337,6 +339,9 @@ export type DecisionSupportOverlayClaims = {
   otherIngredients: string | null;
   warnings: string | null;
   disclaimer: string | null;
+  servingSize?: string | null;
+  servingsPerContainer?: string | null;
+  sourceZipPath?: string | null;
   nutritionalFacts: Array<{
     substancy: string;
     amountPerServing: string;
