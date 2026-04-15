@@ -291,6 +291,25 @@ test('science context rescues zinc as the lead row in children immune blend prod
   assert.equal(context.anchorIngredient?.ingredientFamily, 'zinc');
 });
 
+test('science context keeps zinc ahead of low-dose magnesium in immune defense formulas', () => {
+  const digest = buildDigest({
+    labelId: 'fixture-immune-defense-magnesium-zinc',
+    productName: 'Immune Defense with Vitamin C, Elderberry & Zinc',
+    dosageForm: 'Powder',
+    actives: [
+      { name: 'Magnesium (as magnesium citrate)', amount: 21, unit: 'mg' },
+      { name: 'Zinc (as zinc citrate)', amount: 20, unit: 'mg' },
+      { name: 'Vitamin C (as ascorbic acid)', amount: 1000, unit: 'mg' },
+      { name: 'Immunity Superfoods:Prebiotics and Probiotic Blend', amount: 2600, unit: 'mg' },
+    ],
+  });
+
+  const context = buildIngredientScienceContext({ digest, overlayClaims: null });
+
+  assert.match(context.ingredientRows[0]?.name ?? '', /\bzinc\b/i);
+  assert.equal(context.anchorIngredient?.ingredientFamily, 'zinc');
+});
+
 test('science context lets zinc-led mineral stack titles outrank higher-dose magnesium rows', () => {
   const digest = buildDigest({
     labelId: 'fixture-zinc-magnesium-title-order',

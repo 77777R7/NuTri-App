@@ -755,6 +755,7 @@ const pickPrimaryActiveRowIndex = (
   const hasMineralStackLead = hasMineralStackLeadSignal(rows, families, productName);
   const hasCalMagZincStackTitle = hasCalciumMagnesiumZincStackTitle(productName);
   const hasExplicitMagnesiumRow = hasExplicitFamilyRow(rows, families, "magnesium");
+  const hasZincRow = families.some((family) => family === "zinc");
   const hasOmega3BreakdownOrAggregate = hasOmega3BreakdownOrAggregateRow(rows);
   if (titleStartsWithFamily("cla", productName)) {
     const claIndex = families.findIndex((family) => family === "cla");
@@ -792,7 +793,7 @@ const pickPrimaryActiveRowIndex = (
         : 0;
     const zincImmuneBlendBoost =
       family === "zinc"
-      && hasTitleFamily("zinc", productName)
+      && hasZincRow
       && IMMUNE_BLEND_TITLE_PATTERN.test(productName)
         ? 360
         : 0;
@@ -865,7 +866,7 @@ const pickPrimaryActiveRowIndex = (
         : 0;
     const vitaminCImmuneCompanionPenalty =
       family === "vitamin_c"
-      && hasTitleFamily("zinc", productName)
+      && hasZincRow
       && IMMUNE_BLEND_TITLE_PATTERN.test(productName)
       && !titleStartsWithFamily("vitamin_c", productName)
         ? 320
@@ -995,6 +996,13 @@ const scoreIngredientDescriptorForDisplay = (params: {
     return candidateFamily === "magnesium" && /\bmagnesium\b/i.test(candidate.name);
   });
   const hasCalMagZincStackTitle = hasCalciumMagnesiumZincStackTitle(productName);
+  const hasZincRow = rows.some((candidate) => {
+    const candidateFamily = inferRowIngredientFamily({
+      rowName: candidate.name,
+      productName,
+    });
+    return candidateFamily === "zinc";
+  });
   const hasOmega3BreakdownOrAggregate = hasOmega3BreakdownOrAggregateRow(rows);
   const productTitleEchoPenalty =
     normalizeIngredientScienceKey(row.name) === normalizeIngredientScienceKey(productName) ? 280 : 0;
@@ -1020,7 +1028,7 @@ const scoreIngredientDescriptorForDisplay = (params: {
       : 0;
   const zincImmuneBlendBoost =
     descriptor.ingredientFamily === "zinc"
-    && hasTitleFamily("zinc", productName)
+    && hasZincRow
     && IMMUNE_BLEND_TITLE_PATTERN.test(productName)
       ? 340
       : 0;
@@ -1111,7 +1119,7 @@ const scoreIngredientDescriptorForDisplay = (params: {
       : 0;
   const vitaminCImmuneCompanionPenalty =
     descriptor.ingredientFamily === "vitamin_c"
-    && hasTitleFamily("zinc", productName)
+    && hasZincRow
     && IMMUNE_BLEND_TITLE_PATTERN.test(productName)
     && !titleStartsWithFamily("vitamin_c", productName)
       ? 300
