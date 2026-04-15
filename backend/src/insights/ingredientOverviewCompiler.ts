@@ -27,10 +27,48 @@ export type CompileIngredientOverviewOpts = {
   maxRetries?: number;
 };
 
+export type IngredientOverviewExecutionProfile = {
+  timeoutMs: number;
+  maxRetries: number;
+  maxTokens: number;
+};
+
 export const INGREDIENT_OVERVIEW_PROMPT_VERSION = "ingredient_overview_v5";
 
 const LLM_TIMEOUT_MS = 9_000;
 const LLM_MAX_RETRIES = 1;
+const INGREDIENT_OVERVIEW_STANDARD_TIMEOUT_MS = 3_500;
+const INGREDIENT_OVERVIEW_BLEND_TIMEOUT_MS = 2_500;
+const INGREDIENT_OVERVIEW_FOOD_LIKE_TIMEOUT_MS = 1_200;
+const INGREDIENT_OVERVIEW_STANDARD_MAX_TOKENS = 520;
+const INGREDIENT_OVERVIEW_BLEND_MAX_TOKENS = 420;
+const INGREDIENT_OVERVIEW_FOOD_LIKE_MAX_TOKENS = 320;
+
+export const resolveIngredientOverviewExecutionProfile = (
+  context: IngredientScienceContext,
+): IngredientOverviewExecutionProfile => {
+  if (context.productArchetype === "functional_food_like") {
+    return {
+      timeoutMs: INGREDIENT_OVERVIEW_FOOD_LIKE_TIMEOUT_MS,
+      maxRetries: 0,
+      maxTokens: INGREDIENT_OVERVIEW_FOOD_LIKE_MAX_TOKENS,
+    };
+  }
+
+  if (context.formulaMode === "blend") {
+    return {
+      timeoutMs: INGREDIENT_OVERVIEW_BLEND_TIMEOUT_MS,
+      maxRetries: 0,
+      maxTokens: INGREDIENT_OVERVIEW_BLEND_MAX_TOKENS,
+    };
+  }
+
+  return {
+    timeoutMs: INGREDIENT_OVERVIEW_STANDARD_TIMEOUT_MS,
+    maxRetries: 0,
+    maxTokens: INGREDIENT_OVERVIEW_STANDARD_MAX_TOKENS,
+  };
+};
 
 const BANNED_PATTERNS = [
   /people take this/i,
