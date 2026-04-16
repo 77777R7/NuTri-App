@@ -10326,9 +10326,12 @@ const scientificBackgroundBodySchema = z.object({
 const SCIENCE_SIDECAR_MAX_RETRIES = 0;
 const SCIENTIFIC_BACKGROUND_RESULT_CACHE_LIMIT = 120;
 const SCIENTIFIC_BACKGROUND_RESEARCH_FALLBACK_CACHE_TTL_MS = 90_000;
-const SCIENTIFIC_BACKGROUND_REFRESH_RETRY_AFTER_MS = 1_500;
+const SCIENTIFIC_BACKGROUND_REFRESH_RETRY_AFTER_MS = 2_500;
 const SCIENTIFIC_BACKGROUND_REFRESH_FAILURE_COOLDOWN_MS = 45_000;
 const SCIENTIFIC_BACKGROUND_REFRESH_FAILURE_RETRY_LIMIT = 3;
+const SCIENTIFIC_BACKGROUND_REFRESH_MAX_CONCURRENCY = 2;
+const DECISION_SUPPORT_AUTHORITY_BUNDLE_CACHE_TTL_MS = 30_000;
+const DECISION_SUPPORT_AUTHORITY_BUNDLE_CACHE_LIMIT = 180;
 
 type ScientificBackgroundSidecarResponse = {
   status: "ok";
@@ -10351,6 +10354,45 @@ const scientificBackgroundSidecarInflight = new Map<string, Promise<ScientificBa
 const scientificBackgroundSidecarBackgroundRefresh = new Map<string, Promise<void>>();
 const scientificBackgroundSidecarBackgroundRefreshCooldownUntil = new Map<string, number>();
 const scientificBackgroundSidecarBackgroundRefreshFailureCount = new Map<string, number>();
+type DecisionSupportAuthorityBundle = Awaited<ReturnType<typeof buildDecisionSupportAuthorityBundleUncached>>;
+const decisionSupportAuthorityBundleCache = new Map<
+  string,
+  {
+    expiresAt: number;
+    bundle: DecisionSupportAuthorityBundle;
+  }
+>();
+const decisionSupportAuthorityBundleInflight = new Map<string, Promise<DecisionSupportAuthorityBundle>>();
+let activeScientificBackgroundRefreshCount = 0;
+const queuedScientificBackgroundRefreshTasks: Array<() => void> = [];
+
+const runNextScientificBackgroundRefreshTask = (): void => {
+  const next = queuedScientificBackgroundRefreshTasks.shift();
+  if (!next) return;
+  next();
+};
+
+const runWithScientificBackgroundRefreshSlot = async <T>(
+  task: () => Promise<T>,
+): Promise<T> =>
+  new Promise<T>((resolve, reject) => {
+    const run = () => {
+      activeScientificBackgroundRefreshCount += 1;
+      task()
+        .then(resolve, reject)
+        .finally(() => {
+          activeScientificBackgroundRefreshCount = Math.max(0, activeScientificBackgroundRefreshCount - 1);
+          runNextScientificBackgroundRefreshTask();
+        });
+    };
+
+    if (activeScientificBackgroundRefreshCount < SCIENTIFIC_BACKGROUND_REFRESH_MAX_CONCURRENCY) {
+      run();
+      return;
+    }
+
+    queuedScientificBackgroundRefreshTasks.push(run);
+  });
 
 const isScientificBackgroundBackgroundRefreshCoolingDown = (cacheKey: string): boolean => {
   const cooldownUntil = scientificBackgroundSidecarBackgroundRefreshCooldownUntil.get(cacheKey);
@@ -10567,7 +10609,7 @@ const buildDeepseekJsonLlmFn = (params: {
   };
 };
 
-const buildDecisionSupportAuthorityBundle = async (
+const buildDecisionSupportAuthorityBundleUncached = async (
   normalizedBarcode: NormalizedBarcode,
   options?: {
     req?: Request;
@@ -10660,6 +10702,84 @@ const buildDecisionSupportAuthorityBundle = async (
     ingredientScienceContext,
     personalizationScopeHash,
   };
+};
+
+const buildDecisionSupportAuthorityBundleCacheKey = (
+  normalizedBarcode: NormalizedBarcode,
+  options?: {
+    req?: Request;
+    viewMode?: DecisionSupportViewMode;
+  },
+): string => {
+  const authedReq = options?.req as AuthenticatedRequest | undefined;
+  const userId = authedReq?.user?.id ?? "anon";
+  const localDecisionSupportHeader =
+    options?.req && typeof options.req.header === "function"
+      ? String(options.req.header("x-local-personalization") ?? "").trim() || "none"
+      : "none";
+  return createHash("sha256")
+    .update(
+      stableStringifyScopeValue({
+        barcode: normalizedBarcode.code.padStart(14, "0"),
+        userId,
+        localDecisionSupportHeader,
+        viewMode: options?.viewMode ?? DECISION_SUPPORT_DEFAULT_VIEW_MODE,
+      }),
+    )
+    .digest("hex");
+};
+
+const writeDecisionSupportAuthorityBundleCache = (
+  cacheKey: string,
+  bundle: DecisionSupportAuthorityBundle,
+): void => {
+  decisionSupportAuthorityBundleCache.set(cacheKey, {
+    expiresAt: Date.now() + DECISION_SUPPORT_AUTHORITY_BUNDLE_CACHE_TTL_MS,
+    bundle,
+  });
+  if (decisionSupportAuthorityBundleCache.size <= DECISION_SUPPORT_AUTHORITY_BUNDLE_CACHE_LIMIT) return;
+  const oldestKey = decisionSupportAuthorityBundleCache.keys().next().value;
+  if (typeof oldestKey === "string") {
+    decisionSupportAuthorityBundleCache.delete(oldestKey);
+  }
+};
+
+const readDecisionSupportAuthorityBundleCache = (
+  cacheKey: string,
+): DecisionSupportAuthorityBundle | null => {
+  const cached = decisionSupportAuthorityBundleCache.get(cacheKey);
+  if (!cached) return null;
+  if (cached.expiresAt <= Date.now()) {
+    decisionSupportAuthorityBundleCache.delete(cacheKey);
+    return null;
+  }
+  return cached.bundle;
+};
+
+const buildDecisionSupportAuthorityBundle = async (
+  normalizedBarcode: NormalizedBarcode,
+  options?: {
+    req?: Request;
+    viewMode?: DecisionSupportViewMode;
+  },
+): Promise<DecisionSupportAuthorityBundle> => {
+  const cacheKey = buildDecisionSupportAuthorityBundleCacheKey(normalizedBarcode, options);
+  const cached = readDecisionSupportAuthorityBundleCache(cacheKey);
+  if (cached) return cached;
+
+  const existingInflight = decisionSupportAuthorityBundleInflight.get(cacheKey);
+  if (existingInflight) return existingInflight;
+
+  const promise = buildDecisionSupportAuthorityBundleUncached(normalizedBarcode, options)
+    .then((bundle) => {
+      writeDecisionSupportAuthorityBundleCache(cacheKey, bundle);
+      return bundle;
+    })
+    .finally(() => {
+      decisionSupportAuthorityBundleInflight.delete(cacheKey);
+    });
+  decisionSupportAuthorityBundleInflight.set(cacheKey, promise);
+  return promise;
 };
 
 type UserDecisionSupportProfileRow = DecisionSupportProfileRow;
@@ -11378,7 +11498,7 @@ app.post("/api/scientific-background/v1", verifySupabaseToken, async (req: Reque
       if (scientificBackgroundSidecarBackgroundRefresh.has(cacheKey)) return true;
       if (isScientificBackgroundBackgroundRefreshCoolingDown(cacheKey)) return false;
 
-      const backgroundRefresh = (async (): Promise<void> => {
+      const backgroundRefresh = runWithScientificBackgroundRefreshSlot(async (): Promise<void> => {
         const backgroundLlmFn = buildDeepseekJsonLlmFn({
           deepseekKey,
           deepseekModel,
@@ -11437,7 +11557,7 @@ app.post("/api/scientific-background/v1", verifySupabaseToken, async (req: Reque
           refreshedPayload,
           resolveScientificBackgroundCacheTtlMs(refreshedPayload, executionProfile),
         );
-      })()
+      })
         .catch((error) => {
           captureException(error, {
             route: "/api/scientific-background/v1",
