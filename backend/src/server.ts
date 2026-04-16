@@ -11572,6 +11572,36 @@ app.post("/api/scientific-background/v1", verifySupabaseToken, async (req: Reque
       scientificBackgroundSidecarBackgroundRefresh.set(cacheKey, backgroundRefresh);
       return true;
     };
+    const buildScientificBackgroundFastFallbackResponse = async (): Promise<ScientificBackgroundSidecarResponse> => {
+      const compiled = await compileScientificBackgroundAsync(
+        authority.ingredientScienceContext,
+        selectedDescriptor.name,
+        {
+          llmFn: undefined,
+          timeoutMs: executionProfile.timeoutMs,
+          maxRetries: 0,
+        },
+      );
+
+      const payload: ScientificBackgroundSidecarResponse = {
+        status: "ok",
+        digest: authority.decisionSupport.digest,
+        scientificBackground: compiled.scientificBackground,
+        source: "fallback",
+        fallbackUsed: true,
+        promptVersion: compiled.promptVersion,
+        backgroundRefreshPending: false,
+        recommendedRetryAfterMs: null,
+      };
+
+      writeScientificBackgroundSidecarCache(
+        cacheKey,
+        payload,
+        resolveScientificBackgroundCacheTtlMs(payload, executionProfile),
+      );
+
+      return withScientificBackgroundRefreshHint(payload, ensureScientificBackgroundBackgroundRefresh());
+    };
     const cached = readScientificBackgroundSidecarCache(cacheKey);
     const shouldBypassFallbackCache =
       parsedBody.revalidateFallback === true && cached?.source === "fallback";
@@ -11591,7 +11621,13 @@ app.post("/api/scientific-background/v1", verifySupabaseToken, async (req: Reque
 
     const existingInflight = scientificBackgroundSidecarInflight.get(cacheKey);
     if (existingInflight) {
+      if (parsedBody.revalidateFallback === true) {
+        return res.json(await buildScientificBackgroundFastFallbackResponse());
+      }
       return res.json(await existingInflight);
+    }
+    if (parsedBody.revalidateFallback === true) {
+      return res.json(await buildScientificBackgroundFastFallbackResponse());
     }
     const llmFn = executionProfile.preferLiveWriter
       ? buildDeepseekJsonLlmFn({
