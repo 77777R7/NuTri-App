@@ -116,6 +116,7 @@ import {
 } from "./insights/sectionSummaryCompiler.js";
 import {
   compileIngredientOverviewAsync,
+  INGREDIENT_OVERVIEW_PROMPT_VERSION,
   resolveIngredientOverviewExecutionProfile,
 } from "./insights/ingredientOverviewCompiler.js";
 import {
@@ -10324,6 +10325,8 @@ const scientificBackgroundBodySchema = z.object({
 }).strict();
 
 const SCIENCE_SIDECAR_MAX_RETRIES = 0;
+const INGREDIENT_OVERVIEW_RESULT_CACHE_LIMIT = 120;
+const INGREDIENT_OVERVIEW_FALLBACK_CACHE_TTL_MS = 90_000;
 const SCIENTIFIC_BACKGROUND_RESULT_CACHE_LIMIT = 120;
 const SCIENTIFIC_BACKGROUND_RESEARCH_FALLBACK_CACHE_TTL_MS = 90_000;
 const SCIENTIFIC_BACKGROUND_REFRESH_RETRY_AFTER_MS = 2_500;
@@ -10349,6 +10352,21 @@ type ScientificBackgroundSidecarCacheEntry = {
   payload: ScientificBackgroundSidecarResponse;
 };
 
+type IngredientOverviewSidecarResponse = {
+  status: "ok";
+  digest: string;
+  ingredientOverview: Awaited<ReturnType<typeof compileIngredientOverviewAsync>>["ingredientOverview"];
+  source: Awaited<ReturnType<typeof compileIngredientOverviewAsync>>["source"];
+  fallbackUsed: boolean;
+  promptVersion: string;
+};
+
+type IngredientOverviewSidecarCacheEntry = {
+  expiresAt: number;
+  payload: IngredientOverviewSidecarResponse;
+};
+
+const ingredientOverviewSidecarCache = new Map<string, IngredientOverviewSidecarCacheEntry>();
 const scientificBackgroundSidecarCache = new Map<string, ScientificBackgroundSidecarCacheEntry>();
 const scientificBackgroundSidecarInflight = new Map<string, Promise<ScientificBackgroundSidecarResponse>>();
 const scientificBackgroundSidecarBackgroundRefresh = new Map<string, Promise<void>>();
@@ -10365,6 +10383,45 @@ const decisionSupportAuthorityBundleCache = new Map<
 const decisionSupportAuthorityBundleInflight = new Map<string, Promise<DecisionSupportAuthorityBundle>>();
 let activeScientificBackgroundRefreshCount = 0;
 const queuedScientificBackgroundRefreshTasks: Array<() => void> = [];
+
+const buildIngredientOverviewSidecarCacheKey = (params: {
+  decisionDigest: string;
+  decisionInputsHash: string;
+  personalizationScopeHash: string;
+}): string =>
+  [
+    params.decisionDigest,
+    params.decisionInputsHash,
+    params.personalizationScopeHash,
+    INGREDIENT_OVERVIEW_PROMPT_VERSION,
+  ].join("|");
+
+const readIngredientOverviewSidecarCache = (
+  cacheKey: string,
+): IngredientOverviewSidecarResponse | null => {
+  const entry = ingredientOverviewSidecarCache.get(cacheKey);
+  if (!entry) return null;
+  if (entry.expiresAt <= Date.now()) {
+    ingredientOverviewSidecarCache.delete(cacheKey);
+    return null;
+  }
+  return entry.payload;
+};
+
+const writeIngredientOverviewSidecarCache = (
+  cacheKey: string,
+  payload: IngredientOverviewSidecarResponse,
+): void => {
+  ingredientOverviewSidecarCache.set(cacheKey, {
+    expiresAt: Date.now() + INGREDIENT_OVERVIEW_FALLBACK_CACHE_TTL_MS,
+    payload,
+  });
+  if (ingredientOverviewSidecarCache.size <= INGREDIENT_OVERVIEW_RESULT_CACHE_LIMIT) return;
+  const oldestKey = ingredientOverviewSidecarCache.keys().next().value;
+  if (typeof oldestKey === "string") {
+    ingredientOverviewSidecarCache.delete(oldestKey);
+  }
+};
 
 const runNextScientificBackgroundRefreshTask = (): void => {
   const next = queuedScientificBackgroundRefreshTasks.shift();
@@ -11319,6 +11376,23 @@ app.post("/api/ingredient-overview/v1", verifySupabaseToken, async (req: Request
   }
 
   try {
+    if (
+      parsedBody.revalidateFallback === true
+      && parsedBody.decisionDigest
+      && parsedBody.decisionInputsHash
+      && parsedBody.personalizationScopeHash
+    ) {
+      const fastCacheKey = buildIngredientOverviewSidecarCacheKey({
+        decisionDigest: parsedBody.decisionDigest,
+        decisionInputsHash: parsedBody.decisionInputsHash,
+        personalizationScopeHash: parsedBody.personalizationScopeHash,
+      });
+      const fastCached = readIngredientOverviewSidecarCache(fastCacheKey);
+      if (fastCached) {
+        return res.json(fastCached);
+      }
+    }
+
     const authority = await buildDecisionSupportAuthorityBundle(normalizedBarcode, { req });
     if (
       parsedBody.decisionDigest &&
@@ -11378,14 +11452,24 @@ app.post("/api/ingredient-overview/v1", verifySupabaseToken, async (req: Request
       maxRetries: executionProfile.maxRetries ?? SCIENCE_SIDECAR_MAX_RETRIES,
     });
 
-    return res.json({
+    const payload: IngredientOverviewSidecarResponse = {
       status: "ok",
       digest: authority.decisionSupport.digest,
       ingredientOverview: compiled.ingredientOverview,
       source: compiled.source,
       fallbackUsed: compiled.fallbackUsed,
       promptVersion: compiled.promptVersion,
-    });
+    };
+    writeIngredientOverviewSidecarCache(
+      buildIngredientOverviewSidecarCacheKey({
+        decisionDigest: authority.decisionSupport.digest,
+        decisionInputsHash: authority.decisionSupport.decisionInputsHash,
+        personalizationScopeHash: authority.personalizationScopeHash,
+      }),
+      payload,
+    );
+
+    return res.json(payload);
   } catch (error) {
     captureException(error, { route: "/api/ingredient-overview/v1" });
     const detail = error instanceof Error ? `${error.name}: ${error.message}` : String(error);
