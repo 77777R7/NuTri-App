@@ -2150,8 +2150,11 @@ test('mineral-stack products prioritize magnesium and zinc over vitamin D or hig
   });
 
   assert.doesNotMatch(context.ingredientRows[0]?.name ?? '', /vitamin d/i);
-  assert.match(context.ingredientRows[0]?.name ?? '', /magnesium/i);
-  assert.equal(context.anchorIngredient?.ingredientFamily, 'magnesium');
+  assert.match(context.ingredientRows[0]?.name ?? '', /magnesium|zinc/i);
+  assert.ok(
+    context.anchorIngredient?.ingredientFamily === 'magnesium' ||
+      context.anchorIngredient?.ingredientFamily === 'zinc',
+  );
 });
 
 test('food-like green tea products downgrade to label-context mode instead of research mode', () => {

@@ -524,6 +524,117 @@ test('science context prefers generic probiotics over Protectis brand-only rows'
   assert.equal(context.anchorIngredient?.ingredientFamily, 'probiotic_or_blend');
 });
 
+test('science context prioritizes magnesium in calcium-magnesium buffered vitamin C stacks', () => {
+  const digest = buildDigest({
+    labelId: 'fixture-buffered-vitamin-c-calcium-magnesium',
+    productName: 'Buffered Vitamin C with Calcium and Magnesium',
+    dosageForm: 'Vegetarian Capsule',
+    actives: [
+      { name: 'Vitamin C (as Ascorbic Acid)', amount: 1000, unit: 'mg' },
+      { name: 'Calcium (as Calcium Ascorbate)', amount: 120, unit: 'mg' },
+      { name: 'Magnesium (as Magnesium Ascorbate)', amount: 60, unit: 'mg' },
+    ],
+  });
+
+  const context = buildIngredientScienceContext({ digest, overlayClaims: null });
+
+  assert.match(context.ingredientRows[0]?.name ?? '', /\bmagnesium\b/i);
+  assert.equal(context.anchorIngredient?.ingredientFamily, 'magnesium');
+  assert.notEqual(context.ingredientRows[0]?.name, 'Vitamin C (as Ascorbic Acid)');
+});
+
+test('science context rescues EGCG as the default anchor from branded cytokine blend rows', () => {
+  const digest = buildDigest({
+    labelId: 'fixture-cytokine-suppress-egcg',
+    productName: 'Cytokine Suppress with EGCG',
+    dosageForm: 'Vegetarian Capsule',
+    actives: [
+      { name: 'Cytokine Suppress', amount: 240, unit: 'mg' },
+    ],
+  });
+
+  const context = buildIngredientScienceContext({ digest, overlayClaims: null });
+
+  assert.match(context.ingredientRows[0]?.name ?? '', /\begcg|green tea/i);
+  assert.equal(context.anchorIngredient?.ingredientFamily, 'green_tea_extract');
+  assert.notEqual(context.ingredientRows[0]?.name, 'Cytokine Suppress');
+});
+
+test('science context rescues probiotic anchors ahead of opaque proprietary blends', () => {
+  const digest = buildDigest({
+    labelId: 'fixture-essential-biotic-proprietary-blend',
+    productName: 'Essential-Biotic Complete, 50 Billion CFU',
+    dosageForm: 'Delayed-Release Vegetarian Capsule',
+    actives: [
+      { name: 'Proprietary Blend', amount: 150.88, unit: 'mg' },
+    ],
+  });
+
+  const context = buildIngredientScienceContext({ digest, overlayClaims: null });
+
+  assert.match(context.ingredientRows[0]?.name ?? '', /probiotic/i);
+  assert.equal(context.anchorIngredient?.ingredientFamily, 'probiotic_or_blend');
+  assert.notEqual(context.ingredientRows[0]?.name, 'Proprietary Blend');
+});
+
+test('science context uses food-like label anchors instead of macro rows for greens powders and snacks', () => {
+  const greensDigest = buildDigest({
+    labelId: 'fixture-organic-supergreens-with-macros',
+    productName: 'Organic Supergreens Powder',
+    dosageForm: 'Powder',
+    actives: [
+      { name: 'Protein', amount: 1, unit: 'g' },
+      { name: 'Dietary Fiber', amount: 2, unit: 'g' },
+      { name: 'Potassium', amount: 94, unit: 'mg' },
+    ],
+  });
+  const snackDigest = buildDigest({
+    labelId: 'fixture-snackable-crackers-with-potassium',
+    productName: 'Snackable Crackers, Maple Cinnamon Currant',
+    dosageForm: 'Cracker',
+    actives: [
+      { name: 'Potassium', amount: 80, unit: 'mg' },
+      { name: 'Protein', amount: 2, unit: 'g' },
+    ],
+  });
+
+  const greensContext = buildIngredientScienceContext({ digest: greensDigest, overlayClaims: null });
+  const snackContext = buildIngredientScienceContext({ digest: snackDigest, overlayClaims: null });
+
+  assert.equal(greensContext.productArchetype, 'functional_food_like');
+  assert.match(greensContext.ingredientRows[0]?.name ?? '', /greens/i);
+  assert.doesNotMatch(greensContext.ingredientRows[0]?.name ?? '', /protein|fiber|potassium/i);
+  assert.equal(snackContext.productArchetype, 'functional_food_like');
+  assert.match(snackContext.ingredientRows[0]?.name ?? '', /food-based product/i);
+  assert.doesNotMatch(snackContext.ingredientRows[0]?.name ?? '', /protein|potassium/i);
+});
+
+test('science context creates label-context rows for title-only Greens First and Project 1 powders', () => {
+  const greensFirstContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-greens-first-title-only',
+      productName: 'Greens First, Greens Powder, Berry',
+      dosageForm: 'Powder',
+      actives: [],
+    }),
+    overlayClaims: null,
+  });
+  const projectOneContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-project-one-greens-title-only',
+      productName: 'Project 1 Nutrition, Greens, Superfood Greens Powder, Chocolate',
+      dosageForm: 'Powder',
+      actives: [],
+    }),
+    overlayClaims: null,
+  });
+
+  assert.equal(greensFirstContext.productArchetype, 'functional_food_like');
+  assert.match(greensFirstContext.ingredientRows[0]?.name ?? '', /greens/i);
+  assert.equal(projectOneContext.productArchetype, 'functional_food_like');
+  assert.match(projectOneContext.ingredientRows[0]?.name ?? '', /greens/i);
+});
+
 test('single-anchor ingredient overview still allows identity copy when it adds label meaning', async () => {
   const digest = buildDigest({
     labelId: 'fixture-astaxanthin',
