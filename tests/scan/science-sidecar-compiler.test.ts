@@ -2341,7 +2341,7 @@ test('opaque probiotic blends and children immune blends rescue user-visible anc
   );
 });
 
-test('greens, tea bags, and juice powders are treated as label-context products from title alone', () => {
+test('greens, tea bags, juice powders, and food-snack residues are treated as label-context products from title alone', () => {
   const juicePowderContext = buildIngredientScienceContext({
     digest: buildDigest({
       labelId: 'fixture-juice-powder-title-only',
@@ -2360,6 +2360,42 @@ test('greens, tea bags, and juice powders are treated as label-context products 
     }),
     overlayClaims: null,
   });
+  const stroopwafelContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-stroopwafel-food-residue',
+      productName: 'Daelmans Stroopwafels, Caramel, 8 Waffles',
+      dosageForm: 'Waffle',
+      actives: [{ name: 'Total Carbohydrates', amount: 26, unit: 'g' }],
+    }),
+    overlayClaims: null,
+  });
+  const fruitSnackContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-fruit-gummy-snack',
+      productName: 'Fruit Gummy Snack, Apple-Mango-Pumpkin-Chia',
+      dosageForm: 'Snack',
+      actives: [{ name: 'Potassium', amount: 500, unit: 'mg' }],
+    }),
+    overlayClaims: null,
+  });
+  const fiberGummyContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-fiber-gummy-label-context',
+      productName: 'Chapter One, Fiber Gummies, Flavored, 120 Gummies',
+      dosageForm: 'Gummy',
+      actives: [{ name: 'Fiber', amount: 3.3, unit: 'g' }],
+    }),
+    overlayClaims: null,
+  });
+  const supergreensContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-supergreens-powder-label-context',
+      productName: 'Organic Supergreens Powder, 5.29 oz',
+      dosageForm: 'Powder',
+      actives: [{ name: 'Protein', amount: 2, unit: 'g' }],
+    }),
+    overlayClaims: null,
+  });
 
   const juicePowderPlan = planScientificBackgroundSections({
     context: juicePowderContext,
@@ -2369,11 +2405,35 @@ test('greens, tea bags, and juice powders are treated as label-context products 
     context: teaBagContext,
     selectedIngredientName: teaBagContext.anchorIngredient?.name ?? 'Green Tea Extract',
   });
+  const stroopwafelPlan = planScientificBackgroundSections({
+    context: stroopwafelContext,
+    selectedIngredientName: stroopwafelContext.anchorIngredient?.name ?? 'Total Carbohydrates',
+  });
+  const fruitSnackPlan = planScientificBackgroundSections({
+    context: fruitSnackContext,
+    selectedIngredientName: fruitSnackContext.anchorIngredient?.name ?? 'Potassium',
+  });
+  const fiberGummyPlan = planScientificBackgroundSections({
+    context: fiberGummyContext,
+    selectedIngredientName: fiberGummyContext.anchorIngredient?.name ?? 'Fiber',
+  });
+  const supergreensPlan = planScientificBackgroundSections({
+    context: supergreensContext,
+    selectedIngredientName: supergreensContext.anchorIngredient?.name ?? 'Protein',
+  });
 
   assert.equal(juicePowderContext.productArchetype, 'functional_food_like');
   assert.equal(juicePowderPlan.mode, 'label_context_mode');
   assert.equal(teaBagContext.productArchetype, 'functional_food_like');
   assert.equal(teaBagPlan.mode, 'label_context_mode');
+  assert.equal(stroopwafelContext.productArchetype, 'functional_food_like');
+  assert.equal(stroopwafelPlan.mode, 'label_context_mode');
+  assert.equal(fruitSnackContext.productArchetype, 'functional_food_like');
+  assert.equal(fruitSnackPlan.mode, 'label_context_mode');
+  assert.equal(fiberGummyContext.productArchetype, 'functional_food_like');
+  assert.equal(fiberGummyPlan.mode, 'label_context_mode');
+  assert.equal(supergreensContext.productArchetype, 'functional_food_like');
+  assert.equal(supergreensPlan.mode, 'label_context_mode');
 });
 
 test('new metabolic families fall back with product-specific copy instead of generic research-direction prose', async () => {

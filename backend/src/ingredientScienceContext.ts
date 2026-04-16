@@ -141,7 +141,11 @@ const CALCIUM_PATTERN =
 const IRON_PATTERN = /\biron\b|\bferrous\b|\bferric\b/i;
 const MELATONIN_PATTERN = /\bmelatonin\b/i;
 const FUNCTIONAL_FOOD_LIKE_TITLE_PATTERN =
-  /\b(?:gum|gums|mints?|lozenge|lozenges|freeze\s+dried|juice\s+powder|fruit\s+powder|dragon\s+fruit|smoothie|drink\s+mix|tea\s+bags?|iced\s+tea|protein\s+(?:iced\s+)?tea|matcha(?:\s+green\s+tea)?\s+powder|herbal\s+slimming\s+tea|greens\b|green\s+superfood|superfood|vegetable\s+powder)\b/i;
+  /\b(?:gum|gums|mints?|lozenge|lozenges|freeze\s+dried|juice\s+powder|fruit\s+powder|dragon\s+fruit|smoothie|drink\s+mix|tea\s+bags?|iced\s+tea|protein\s+(?:iced\s+)?tea|matcha(?:\s+green\s+tea)?\s+powder|herbal\s+slimming\s+tea|greens\b|super\s*greens?|green\s+superfood|superfood|vegetable\s+powder)\b/i;
+const OUT_OF_SCOPE_FOOD_SNACK_TITLE_PATTERN =
+  /\b(?:stroopwafels?|waffles?|fruit\s+gummy\s+snacks?|fruit\s+snacks?|gummy\s+snacks?)\b/i;
+const FUNCTIONAL_GUMMY_CONTEXT_TITLE_PATTERN =
+  /\b(?:fiber\s+gumm(?:y|ies)|morning\s+sickness\s+relief\s+gumm(?:y|ies)|fruit\s+gumm(?:y|ies))\b/i;
 const FUNCTIONAL_FOOD_LIKE_INGREDIENT_PATTERN =
   /\b(?:xylitol|erythritol|fiber|dragon\s+fruit|fruit\s+powder|juice\s+powder|spirulina|chlorella|barley\s+grass|wheat\s+grass|digestive\s+enzyme|enzyme\s+assimilation|greens\b|green\s+superfood|superfood)\b/i;
 const FUNCTIONAL_FOOD_LIKE_FORM_PATTERN = /\b(?:gum|mint|lozenge|tea|powder|drink\s*mix)\b/i;
@@ -151,7 +155,7 @@ const PROBIOTIC_SPECIFIC_ROW_PATTERN =
   /\b(?:probiotic|probiotics|acidophilus|lactobacillus|bifidobacterium|saccharomyces|bacillus|cfu|live cultures?)\b/i;
 const PROBIOTIC_BRAND_ONLY_ROW_PATTERN = /\b(?:protectis)\b/i;
 const GREENS_TITLE_PATTERN =
-  /\b(?:greens\b|green\s+superfood|superfood|vegetable\s+powder|daily\s+greens?|greens?\s+powder)\b/i;
+  /\b(?:greens\b|super\s*greens?|green\s+superfood|superfood|vegetable\s+powder|daily\s+greens?|greens?\s+powder)\b/i;
 const TEA_BAG_TITLE_PATTERN = /\b(?:tea\s+bags?|herbal\s+tea|slimming\s+tea)\b/i;
 const FOOD_LIKE_POWDER_TITLE_PATTERN =
   /\b(?:juice\s+powder|fruit\s+powder|smoothie|drink\s+mix|iced\s+tea|protein\s+(?:iced\s+)?tea|matcha(?:\s+green\s+tea)?\s+powder|vegetable\s+powder|greens?\s+powder)\b/i;
@@ -1383,11 +1387,13 @@ const classifyProductArchetype = (params: {
     GREENS_TITLE_PATTERN.test(productName) ||
     TEA_BAG_TITLE_PATTERN.test(productName) ||
     FOOD_LIKE_POWDER_TITLE_PATTERN.test(productName);
+  const snackTitleDominant = OUT_OF_SCOPE_FOOD_SNACK_TITLE_PATTERN.test(productName);
+  const functionalGummyContext = FUNCTIONAL_GUMMY_CONTEXT_TITLE_PATTERN.test(productName);
   const strongFoodPresentation = titleLooksFoodLike || formLooksFoodLike || rowLooksFoodLike;
   const definitelyFoodLikeFromTitle =
     titleLooksFoodLike && (formLooksFoodLike || rowLooksFoodLike);
 
-  if (foodLikeTitleDominant) {
+  if (foodLikeTitleDominant || snackTitleDominant || functionalGummyContext) {
     return "functional_food_like";
   }
 
