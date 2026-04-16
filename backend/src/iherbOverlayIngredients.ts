@@ -219,6 +219,12 @@ const truncateBlendLikeTail = (value: string): string => {
 const cleanOverlayIngredientName = (value: string | null | undefined): string | null => {
   const normalized = normalizePunctuationSpacing(String(value ?? ""));
   if (!normalized || isHeaderLike(normalized)) return null;
+  if (
+    PACKAGE_COUNT_OR_FORM_ROW_PATTERN.test(normalized) ||
+    PACKAGE_FORM_ONLY_ROW_PATTERN.test(normalized)
+  ) {
+    return null;
+  }
   const specialRowLabel = SPECIAL_NUTRIENT_ROW_LABELS.get(normalizeDisplayText(normalized).toLowerCase());
   if (specialRowLabel) return specialRowLabel;
   if (isNutritionLabelLike(normalized) && !COMPOUND_INGREDIENT_EXEMPT_PATTERN.test(normalized)) return null;
@@ -236,6 +242,8 @@ const cleanOverlayIngredientName = (value: string | null | undefined): string | 
     !cleaned ||
     !hasAlphaNumericContent(cleaned) ||
     isHeaderLike(cleaned) ||
+    PACKAGE_COUNT_OR_FORM_ROW_PATTERN.test(cleaned) ||
+    PACKAGE_FORM_ONLY_ROW_PATTERN.test(cleaned) ||
     (isNutritionLabelLike(cleaned) && !COMPOUND_INGREDIENT_EXEMPT_PATTERN.test(cleaned))
   ) {
     return null;
@@ -344,7 +352,13 @@ const normalizeMatchKey = (value: string): string =>
     .trim();
 
 const TITLE_COUNT_OR_PACKAGE_PATTERN =
-  /\b\d+(?:\.\d+)?\s*(?:capsules?|tablets?|softgels?|soft-gels?|gummies?|chews?|drops?|sprays?|packets?|sachets?|tea bags?|bags?|count|ct|servings?)\b/i;
+  /\b\d+(?:\.\d+)?\s*(?:(?:liquid|rapid\s+release|delayed\s+release|veggie|vegetarian|vegan)\s+)*(?:capsules?|tablets?|softgels?|soft-gels?|gummies?|chews?|drops?|sprays?|packets?|sachets?|tea bags?|bags?|count|ct|servings?)\b/i;
+
+const PACKAGE_COUNT_OR_FORM_ROW_PATTERN =
+  /^\d+(?:\.\d+)?\s*(?:(?:liquid|rapid\s+release|delayed\s+release|veggie|vegetarian|vegan)\s+)*(?:capsules?|tablets?|softgels?|soft-gels?|gummies?|chews?|drops?|sprays?|packets?|sachets?|tea bags?|bags?|count|ct|servings?)$/i;
+
+const PACKAGE_FORM_ONLY_ROW_PATTERN =
+  /^(?:(?:liquid|rapid\s+release|delayed\s+release|veggie|vegetarian|vegan)\s+)*(?:capsules?|tablets?|softgels?|soft-gels?|gummies?|chews?|drops?|sprays?|packets?|sachets?|tea bags?|bags?)$/i;
 
 const TITLE_SIZE_PATTERN =
   /\b\d+(?:\.\d+)?\s*(?:lb|lbs|oz|fl\s*oz|ml|l|g|kg)\b/i;
@@ -356,7 +370,7 @@ const TITLE_MARKETING_PATTERN =
   /^(kids|kid|women'?s|mens?|male performance|female support|innovations?|optimal wellness|once daily|daily|immune|control|advanced|premium|extra strength|original|complete)$/i;
 
 const TITLE_INGREDIENT_SIGNAL_PATTERN =
-  /\b(vitamin|mineral|biotin|probiotic|pro-bio|extract|root|beet|leaf|seed|bark|herb|botanical|oil|acid|citrate|glycinate|orotate|taurate|malate|tribuytrin|tributyrin|konjac|grape seed|olive leaf|oregano|saw palmetto|pumpkin seed|elderberry|melatonin|magnesium|zinc|iron|calcium|d3|vitamin c|b12|nac|collagen|creatine|l-theanine|ashwagandha|rhodiola|garlic|turmeric|curcumin|fiber|protein|enzyme|cfu|ahcc|nattokinase|bacteriophage|phage|saccharomyces boulardii|sodium bicarbonate|sodium citrate)\b/i;
+  /\b(vitamin|mineral|biotin|probiotic|pro-bio|extract|root|beet|leaf|seed|bark|herb|botanical|oil|acid|citrate|glycinate|orotate|taurate|malate|tribuytrin|tributyrin|konjac|grape seed|olive leaf|oregano|saw palmetto|pumpkin seed|elderberry|melatonin|magnesium|zinc|iron|calcium|d3|vitamin c|b12|nac|collagen|creatine|l-theanine|ashwagandha|rhodiola|garlic|turmeric|curcumin|fiber|protein|enzyme|cfu|ahcc|nattokinase|bacteriophage|phage|saccharomyces boulardii|sodium bicarbonate|sodium citrate|aloe(?:\s+vera)?|akkermansia|berberine)\b/i;
 
 const TITLE_DOSE_PATTERN =
   /(\d[\d,]*(?:\.\d+)?)\s*(billion|million)?\s*(mcg|μg|µg|ug|mg|g|gram|grams|iu|ui|cfu|spu|ml|pfu(?:'s|s)?|fu(?:'s|s)?)\b/i;
@@ -535,6 +549,8 @@ const derivePerServingUnitDoseFromTitle = (params: TitleFallbackParams): string 
 
 const isLikelyPackageSegment = (segment: string): boolean =>
   TITLE_COUNT_OR_PACKAGE_PATTERN.test(segment) ||
+  PACKAGE_COUNT_OR_FORM_ROW_PATTERN.test(segment) ||
+  PACKAGE_FORM_ONLY_ROW_PATTERN.test(segment) ||
   TITLE_SIZE_PATTERN.test(segment) ||
   TITLE_FLAVOR_PATTERN.test(segment);
 
@@ -614,7 +630,7 @@ const pickTitleFallbackDose = (params: TitleFallbackParams): string | null => {
   if (perServingUnitDose) return perServingUnitDose;
 
   const servingSizeDose = parseStructuredDoseText(params.servingSize);
-  if (servingSizeDose && !isServingCountDose(params.servingSize)) return servingSizeDose;
+  if (servingSizeDose) return servingSizeDose;
 
   if (normalizeWhitespace(params.sourceZipPath).toLowerCase() === "eclectic-herb.json") {
     const eclecticDose = extractEclecticDryHerbStrengthDose(params.descriptionText);
@@ -1213,17 +1229,17 @@ const deriveDigestTitleFallbackRows = (
   toNormalizedScienceIngredientRows(
     normalizeIherbSupplementFactsRowsWithTitleFallback({
       rows: null,
-      title: digest.product.name,
-      brandName: digest.product.brandDisplay ?? digest.product.brandLegal ?? null,
-      servingSize: digest.serving.servingSize,
+      title: digest.product?.name ?? null,
+      brandName: digest.product?.brandDisplay ?? digest.product?.brandLegal ?? null,
+      servingSize: digest.serving?.servingSize ?? null,
       servingsPerContainer:
-        digest.serving.servingsPerContainer != null
+        digest.serving?.servingsPerContainer != null
           ? String(digest.serving.servingsPerContainer)
           : null,
       sourceZipPath: null,
       descriptionText: [
-        ...(digest.claims.labelPurposes ?? []),
-        ...(digest.claims.webClaims ?? []),
+        ...(digest.claims?.labelPurposes ?? []),
+        ...(digest.claims?.webClaims ?? []),
       ].join(" "),
     }),
   );

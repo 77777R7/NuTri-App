@@ -9,6 +9,8 @@ const NUTRITION_LABEL_LIKE_PREFIXES = [
   "total carbohydrate",
   "dietary fiber",
   "dietary fibre",
+  "sugar",
+  "sugars",
   "total sugar",
   "total sugars",
   "added sugar",

@@ -1063,6 +1063,52 @@ test("overlay ingredient normalization can rescue sodium citrate powders from ti
   assert.ok(rows.some((row) => row.name === "Sodium Citrate" && row.dose === "2.5 g"));
 });
 
+test("overlay ingredient normalization drops standalone sugar rows and rescues aloe title identity", () => {
+  const rows = normalizeIherbSupplementFactsRowsWithTitleFallback({
+    rows: [
+      {
+        substancy: "Sugars",
+        amountPerServing: "1 g",
+        dailyValuePercent: "2%",
+      },
+    ],
+    title: "NOW Foods, Aloe Vera Concentrate, 4 fl oz (118 ml)",
+    brandName: "NOW Foods",
+    servingSize: "1 teaspoon (5 ml)",
+    sourceZipPath: "now-foods.json",
+  });
+
+  assert.deepEqual(rows, [
+    {
+      name: "Aloe Vera Concentrate",
+      dose: "5 ml",
+    },
+  ]);
+});
+
+test("overlay ingredient normalization drops package-count rows and rescues akkermansia title identity", () => {
+  const rows = normalizeIherbSupplementFactsRowsWithTitleFallback({
+    rows: [
+      {
+        substancy: "60 Veggie Capsules",
+        amountPerServing: "",
+        dailyValuePercent: "",
+      },
+    ],
+    title: "California Gold Nutrition, Akkermansia 30B PLUS, 60 Veggie Capsules",
+    brandName: "California Gold Nutrition",
+    servingSize: "1 Veggie Capsule",
+    sourceZipPath: "california-gold-nutrition.json | iherb-brands.json",
+  });
+
+  assert.deepEqual(rows, [
+    {
+      name: "Akkermansia 30B PLUS",
+      dose: null,
+    },
+  ]);
+});
+
 test("overlay ingredient normalization can rescue header-only probiotic formulas from description dose disclosure", () => {
   const rows = normalizeIherbSupplementFactsRowsWithTitleFallback({
     rows: [
