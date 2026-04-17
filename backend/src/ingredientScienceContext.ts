@@ -243,6 +243,14 @@ const normalizeContextualIngredientRow = (
     name = name.replace(/\bpure\s*algae\s*omega\s*3\b|\bpurealgaeomega3\b/i, "Omega-3 Algal Oil");
   }
 
+  if (
+    OMEGA3_ALGAL_TITLE_PATTERN.test(productName) &&
+    /\b(?:omega\s*-?\s*3\s+)?polyunsaturated\s+fat\b|\bomega\s*-?\s*3\s+fatty\s+acids?\b/i.test(name) &&
+    !/\balgal\s+oil\b|\balgae\b|\bfish\s*oil\b|\bkrill\s*oil\b/i.test(name)
+  ) {
+    name = "Omega-3 Algal Oil";
+  }
+
   if (hasTitleFamily("green_tea_extract", productName) && /\bmatcha\b|\bcamellia\s+sinensis\b/i.test(name) && !/\bgreen\s+tea\b/i.test(name)) {
     name = `Green Tea ${name}`;
   }

@@ -1,0 +1,27 @@
+{
+  "version": "persona-blocker-pack.v0",
+  "sourcePackPath": "data/validation/golden-journey-pack.v1.json",
+  "scenarioIds": [
+    "scan_core_sr_omega3_fish_allergy",
+    "scan_natures_way_algal_oil_vegan",
+    "scan_real_doctorsbest_vegan_dha_algae_sparse",
+    "scan_real_21stcentury_krill_oil_shellfish",
+    "search_origin_real_21stcentury_krill_oil_consistency",
+    "scan_real_alani_whey_protein_dairy",
+    "search_origin_real_alani_whey_dairy_consistency",
+    "scan_real_21stcentury_soy_isoflavones",
+    "search_origin_real_21stcentury_soy_isoflavones_consistency",
+    "scan_core_sr_vitamin_c_immunity_duplicate",
+    "scan_duplicate_magnesium_sleep_counterfactual",
+    "scan_prenatal_folate_counterfactual",
+    "scan_prenatal_multivitamin_counterfactual_b",
+    "scan_kids_omega_dha_counterfactual"
+  ],
+  "releaseBlocker": true,
+  "runner": "persona_gate_reporter",
+  "packRole": "persona_blocker",
+  "notes": [
+    "This pack is the deterministic persona blocker slice: explicit source/allergy, duplicate stack, lifecycle title preservation, and unsafe language boundaries.",
+    "Keep deeper goal-fit nuance out of this blocker slice until runtime wiring is strong enough to make it deterministic."
+  ]
+}

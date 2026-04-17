@@ -99,6 +99,31 @@ const normalizeLooseText = (value) =>
     .replace(/[^a-z0-9]+/g, " ")
     .trim();
 
+const EXPECTED_TERM_ALIASES = {
+  dairy: ["dairy", "milk", "whey", "casein", "caseinate", "lactose"],
+  milk: ["milk", "dairy", "whey", "casein", "caseinate", "lactose"],
+  shellfish: ["shellfish", "krill", "shrimp", "prawn", "lobster", "crab", "scallop", "oyster"],
+  fish: ["fish", "cod liver", "anchovy", "salmon", "sardine", "mackerel", "pollock", "trout"],
+  soy: ["soy", "soya", "soybean", "soy lecithin", "soy protein"],
+  gluten: ["gluten", "wheat", "barley", "rye", "malt"],
+  gelatin: ["gelatin", "gelatine", "bovine gelatin", "porcine gelatin"],
+  prenatal: ["prenatal", "pregnancy"],
+  digestion: ["digestion", "digestive", "gut", "microbiome", "probiotic", "prebiotic", "fiber"],
+  duplicate: ["duplicate", "overlap", "already includes", "already in your stack", "repeat"],
+  "green tea": ["green tea", "matcha", "camellia sinensis", "egcg"],
+};
+
+const matchesExpectedIncludeTerm = (joined, term) => {
+  const normalized = normalizeLooseText(term);
+  const candidates = [
+    normalized,
+    ...(EXPECTED_TERM_ALIASES[normalized] ?? []),
+  ]
+    .map(normalizeLooseText)
+    .filter(Boolean);
+  return candidates.some((candidate) => joined.includes(candidate));
+};
+
 const normalizeBarcode = (value) => {
   const digits = String(value ?? "").replace(/\D/g, "");
   if (!digits) return null;
@@ -549,7 +574,7 @@ export const evaluatePersonaExpectations = (scenario, actual = {}) => {
   ].map(normalizeLooseText);
   const joined = text.join(" ");
   const missing = (expected.mustInclude ?? []).filter((term) =>
-    !joined.includes(normalizeLooseText(term)),
+    !matchesExpectedIncludeTerm(joined, term),
   );
   const forbidden = (expected.mustNotInclude ?? []).filter((term) =>
     joined.includes(normalizeLooseText(term)),

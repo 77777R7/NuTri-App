@@ -1,0 +1,27 @@
+{
+  "version": "persona-nightly-pack.v0",
+  "sourcePackPath": "data/validation/golden-journey-pack.v1.json",
+  "scenarioIds": [
+    "scan_core_gi_phage_digestive_goal",
+    "scan_real_21stcentury_acidophilus_short_panel",
+    "scan_real_biogaia_osfortis_vitamin_d_sparse",
+    "scan_probiotic_prebiotic_counterfactual",
+    "scan_probiotic_sleep_combo_counterfactual",
+    "scan_solaray_matcha_green_tea_stimulant",
+    "scan_real_lifeextension_green_tea_short_panel",
+    "scan_real_21stcentury_ashwagandha_sparse",
+    "scan_sleep_theanine_vs_melatonin_counterfactual",
+    "scan_sleep_5htp_counterfactual",
+    "scan_sleep_magnesium_theanine_counterfactual",
+    "scan_sleep_kids_melatonin_counterfactual",
+    "scan_sparse_prenatal_title_led",
+    "scan_omega3_prenatal_algal_counterfactual"
+  ],
+  "releaseBlocker": false,
+  "runner": "persona_gate_reporter",
+  "packRole": "persona_nightly",
+  "notes": [
+    "This pack keeps partially wired persona slices visible in nightly runs without turning them into release blockers too early.",
+    "Digestion depth, sleep-goal nuance, stimulant nuance, and prenatal copy richness stay here until runtime behavior is consistently deterministic."
+  ]
+}

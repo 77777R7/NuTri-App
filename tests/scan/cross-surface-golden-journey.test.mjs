@@ -167,6 +167,22 @@ test("persona expectation evaluator passes positive warning examples and fails m
   assert.deepEqual(falsePositive[0].details.forbidden, ["fish allergy conflict"]);
 });
 
+test("persona expectation evaluator accepts source-aware allergy aliases for deterministic gates", () => {
+  const dairyScenario = {
+    expected: {
+      profileWarnings: {
+        mustInclude: ["dairy"],
+        mustNotInclude: [],
+      },
+    },
+    severityOnFail: "P1",
+  };
+  const dairyPositive = evaluatePersonaExpectations(dairyScenario, {
+    warnings: ["Contains whey protein as the main source."],
+  });
+  assert.equal(dairyPositive[0].status, "pass");
+});
+
 test("search-origin result consistency evaluator catches seed drift", () => {
   const scenario = byId("search_origin_sr_omega3_consistency");
   const clean = evaluateCrossSurfaceConsistency(scenario, {

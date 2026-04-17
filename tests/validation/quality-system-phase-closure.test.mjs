@@ -38,6 +38,8 @@ test("stable gate baseline freezes source pack, stable curated packs, and expect
     "data/validation/live-replay-release-slice.v1.json",
     "data/validation/consistency-pack.v0.json",
     "data/validation/scan-smoke.v0.json",
+    "data/validation/runtime-result-page-contract.v0.json",
+    "data/validation/persona-blocker-pack.v0.json",
   ]);
 
   assert.equal(baseline.expectationModesBySurface.barcode_scan.identityMode, "exact_product");
@@ -140,6 +142,50 @@ test("scan smoke v0 pins a barcode-only release blocker slice with runtime profi
   assert.ok((smokePack.summary.categories.food_like ?? 0) >= 4);
   assert.ok((smokePack.summary.categories.omega3_source_oil ?? 0) >= 3);
   assert.ok((smokePack.summary.categories.sparse_title_led ?? 0) >= 2);
+});
+
+test("runtime result-page contract pack covers live-capable runtime routes and search-origin detail checks", async () => {
+  const config = await loadCuratedValidationConfig("data/validation/runtime-result-page-contract.v0.json");
+  assert.deepEqual(validateCuratedValidationConfig(config), []);
+
+  const mergedPack = await loadCuratedValidationSourcePack(config);
+  const runtimePack = buildCuratedValidationPack({ pack: mergedPack, config });
+  assert.equal(runtimePack.metadata.releaseBlocker, true);
+  assert.equal(runtimePack.metadata.runner, "runtime_contract_runner");
+  assert.equal(runtimePack.summary.total, 21);
+  assert.ok((runtimePack.summary.surfaces.barcode_scan ?? 0) >= 18);
+  assert.ok((runtimePack.summary.surfaces.search_origin_result ?? 0) >= 3);
+  assert.ok((runtimePack.summary.categories.food_like ?? 0) >= 4);
+  assert.ok(runtimePack.scenarios.some((scenario) => scenario.id === "scan_nightly_barleans_algal_oil_source"));
+  assert.ok(runtimePack.scenarios.some((scenario) => scenario.id === "search_origin_real_alani_whey_dairy_consistency"));
+});
+
+test("persona blocker pack freezes deterministic source, duplicate-stack, and lifecycle blocker slices", async () => {
+  const config = await loadCuratedValidationConfig("data/validation/persona-blocker-pack.v0.json");
+  assert.deepEqual(validateCuratedValidationConfig(config), []);
+
+  const blockerPack = buildCuratedValidationPack({ pack: sourcePack, config });
+  assert.equal(blockerPack.metadata.releaseBlocker, true);
+  assert.equal(blockerPack.summary.total, 14);
+  assert.ok(blockerPack.summary.personas.includes("fish_allergy"));
+  assert.ok(blockerPack.summary.personas.includes("shellfish_allergy"));
+  assert.ok(blockerPack.summary.personas.includes("dairy_allergy"));
+  assert.ok(blockerPack.summary.personas.includes("soy_allergy"));
+  assert.ok(blockerPack.summary.personas.includes("pregnancy_prenatal"));
+  assert.ok(blockerPack.summary.personas.includes("duplicate_zinc_magnesium_d"));
+});
+
+test("persona nightly pack keeps partially wired goal and persona nuance out of blocker scope", async () => {
+  const config = await loadCuratedValidationConfig("data/validation/persona-nightly-pack.v0.json");
+  assert.deepEqual(validateCuratedValidationConfig(config), []);
+
+  const nightlyPersonaPack = buildCuratedValidationPack({ pack: sourcePack, config });
+  assert.equal(nightlyPersonaPack.metadata.releaseBlocker, false);
+  assert.equal(nightlyPersonaPack.summary.total, 14);
+  assert.ok(nightlyPersonaPack.summary.personas.includes("digestion_goal"));
+  assert.ok(nightlyPersonaPack.summary.personas.includes("sleep_goal"));
+  assert.ok(nightlyPersonaPack.summary.personas.includes("stimulant_sensitivity"));
+  assert.ok(nightlyPersonaPack.summary.personas.includes("pregnancy_prenatal"));
 });
 
 test("stratified nightly v2 becomes discovery-first and reserves a hidden holdout", async () => {

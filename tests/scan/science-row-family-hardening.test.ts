@@ -1323,6 +1323,8 @@ test('omega-3 source rescue keeps algal titles out of fish-oil fallback copy eve
   ].join(' ');
 
   assert.match(context.ingredientRows[0]?.name ?? '', /\balgal oil\b|\bplant based omega-3\b|\bomega-3\b/i);
+  assert.match(context.anchorIngredient?.name ?? '', /\balgal oil\b|\bplant based omega-3\b|\bomega-3\b/i);
+  assert.doesNotMatch(context.anchorIngredient?.name ?? '', /polyunsaturated\s+fat/i);
   assert.match(overviewCopy, /\balgal oil\b|\balgae\b/i);
   assert.doesNotMatch(overviewCopy, /fish[-\s]?oil/i);
   assert.doesNotMatch(backgroundCopy, /fish[-\s]?oil/i);

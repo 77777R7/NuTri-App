@@ -1,0 +1,51 @@
+{
+  "version": "runtime-result-page-contract.v0",
+  "sourcePackPath": "data/validation/golden-journey-pack.v1.json",
+  "additionalPackPaths": [
+    "data/validation/stratified-nightly-additions.v1.json"
+  ],
+  "scenarioIds": [
+    "scan_nightly_bpn_go_gel_food_like",
+    "scan_nightly_hydrationup_electrolyte_drink_mix",
+    "scan_nightly_barleans_algal_oil_source",
+    "scan_beet_juice_food_like",
+    "scan_real_alani_energy_drink_mix_food_like",
+    "scan_real_akasha_sea_moss_gel_food_like",
+    "scan_core_sr_omega3_fish_allergy",
+    "scan_natures_way_algal_oil_vegan",
+    "scan_real_doctorsbest_vegan_dha_algae_sparse",
+    "scan_real_21stcentury_krill_oil_shellfish",
+    "search_origin_real_21stcentury_krill_oil_consistency",
+    "scan_real_alani_whey_protein_dairy",
+    "search_origin_real_alani_whey_dairy_consistency",
+    "scan_real_21stcentury_soy_isoflavones",
+    "search_origin_real_21stcentury_soy_isoflavones_consistency",
+    "scan_real_21stcentury_600_d3_short_panel",
+    "scan_core_sr_vitamin_c_immunity_duplicate",
+    "scan_core_gi_phage_digestive_goal",
+    "scan_biogaia_protectis_zero_facts",
+    "scan_solaray_matcha_green_tea_stimulant",
+    "scan_core_nac_sparse_result"
+  ],
+  "runtimeProfiles": [
+    {
+      "id": "authenticated_warm_network",
+      "authState": "authenticated",
+      "networkProfile": "normal",
+      "sessionState": "warm"
+    },
+    {
+      "id": "anonymous_warm_network",
+      "authState": "anonymous",
+      "networkProfile": "normal",
+      "sessionState": "warm"
+    }
+  ],
+  "releaseBlocker": true,
+  "runner": "runtime_contract_runner",
+  "packRole": "result_page_runtime_contract",
+  "notes": [
+    "This pack turns result-page runtime expectations into a blocker without changing the frozen scan UI flow.",
+    "It checks decision-support, analysis_bundle, overview/scientific sidecars, section fallback safety, and main vs mini score consistency on live-capable barcodes."
+  ]
+}

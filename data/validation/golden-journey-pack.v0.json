@@ -1060,7 +1060,7 @@
           "productId": "83220",
           "barcode": "00033674123256",
           "upcCode": "033674123256",
-          "name": "Algal Oil, Omega-3, Cranberry Orange, 6.8 fl oz (200 ml)",
+          "name": "NutraVege Plant-Based Omega-3 1000 mg Cranberry Orange Flavored",
           "brand": "Nature's Way",
           "category": "Essential",
           "benefit": "Algal omega-3 source",
@@ -1072,7 +1072,7 @@
       "product": {
         "productId": "83220",
         "brand": "Nature's Way",
-        "name": "Algal Oil, Omega-3, Cranberry Orange, 6.8 fl oz (200 ml)",
+        "name": "NutraVege Plant-Based Omega-3 1000 mg Cranberry Orange Flavored",
         "barcode": "00033674123256"
       },
       "expected": {

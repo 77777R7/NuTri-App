@@ -98,7 +98,7 @@
       },
       "expected": {
         "defaultAnchor": {
-          "pass": ["Algal Oil", "Plant Based Omega-3", "Omega-3"],
+          "pass": ["Algal Oil", "Omega-3 Algal Oil", "Plant Based Omega-3", "Omega-3"],
           "warn": ["DHA"],
           "fail": ["Fish Oil", "Softgels"]
         },

@@ -4984,6 +4984,17 @@ const buildScienceBlock = (params: {
     dose: row.dose ? normalizeDisplayText(row.dose) : null,
   }));
   const ingredientSnapshotNames = dedupeDisplayValues(ingredientRows.map((row) => row.name), 8);
+  const omegaSourceEvidence = [
+    ...ingredientSnapshotNames,
+    ...((digest.actives ?? []).map((item) => normalizeDisplayText(item?.name))),
+    normalizeDisplayText(overlayClaims?.ingredients),
+    normalizeDisplayText(overlayClaims?.supplementFacts),
+  ]
+    .filter(Boolean)
+    .join(" ");
+  const isAlgalOmegaContext =
+    categoryId === "fish_oil_omega3"
+    && /\balgal\s*oil\b|\balgae\b|\bschizochytrium\b|\bplant\s+based\s+omega\s*-?\s*3\b/i.test(omegaSourceEvidence);
 
   const digestChemicalForm =
     normalizeDisplayText((digest.actives ?? []).find((item) => normalizeText(item?.chemicalForm))?.chemicalForm) || null;
@@ -5002,7 +5013,14 @@ const buildScienceBlock = (params: {
     ingredientSourceTier: selectedIngredients.ingredientSourceTier,
   });
   const odsGeneralScienceBullets = dedupeLines(
-    [safeScienceSignals?.formImpactLine ?? null, ...(safeScienceSignals?.evidenceLines ?? [])],
+    [
+      isAlgalOmegaContext && /\bfish\s*oil\b/i.test(safeScienceSignals?.formImpactLine ?? "")
+        ? null
+        : (safeScienceSignals?.formImpactLine ?? null),
+      ...(safeScienceSignals?.evidenceLines ?? []).filter((line) =>
+        !(isAlgalOmegaContext && /\bfish\s*oil\b/i.test(line)),
+      ),
+    ],
     3,
   );
   const fallbackOdsBullets =

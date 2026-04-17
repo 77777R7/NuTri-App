@@ -1,0 +1,48 @@
+{
+  "version": "mobile-scan-smoke-mini.v0",
+  "description": "Small release-adjacent mobile scan smoke built on the existing mobile-soak runner. This is a pre-device harness for repeated runtime/perf regressions before full camera automation.",
+  "releaseBlocker": false,
+  "barcodes": [
+    { "role": "killer", "barcode": "00665553227870" },
+    { "role": "sports_research_fish_oil", "barcode": "00023249011835" },
+    { "role": "natures_way_algal_oil", "barcode": "00033674123256" },
+    { "role": "whey_protein", "barcode": "00850645008011" },
+    { "role": "probiotic_zero_facts", "barcode": "00602359460537" },
+    { "role": "matcha_green_tea", "barcode": "00076280837643" },
+    { "role": "food_like_gel", "barcode": "00850046337604" },
+    { "role": "food_like_drink_mix", "barcode": "00898220017478" },
+    { "role": "not_found", "barcode": "99999999999999" }
+  ],
+  "runProfile": {
+    "serialRounds": 2,
+    "killerColdRuns": 1,
+    "killerHotRuns": 1,
+    "timeoutMs": 15000,
+    "viewMode": "details",
+    "noOpenResultScreen": true
+  },
+  "thresholds": {
+    "doneSeenRateMin": 0.8,
+    "scoreVisibleRateMin": 0.65,
+    "killerProductClientTimeoutRateMax": 0.25
+  },
+  "roleExpectations": [
+    { "role": "not_found", "doneSeenRateMin": 1, "scoreVisibleRateMin": 1 },
+    { "role": "sports_research_fish_oil", "doneSeenRateMin": 1 },
+    { "role": "natures_way_algal_oil", "doneSeenRateMin": 1 },
+    { "role": "whey_protein", "doneSeenRateMin": 1 },
+    { "role": "food_like_gel", "doneSeenRateMin": 1 },
+    { "role": "food_like_drink_mix", "doneSeenRateMin": 1 }
+  ],
+  "repeatConsistencyRoles": [
+    "sports_research_fish_oil",
+    "natures_way_algal_oil",
+    "whey_protein",
+    "food_like_gel",
+    "food_like_drink_mix"
+  ],
+  "notes": [
+    "This harness is discovery/nightly for now, not a hard release blocker.",
+    "It protects repeatable scan/runtime regressions on the existing mobile-soak lane while true camera/UI automation is still being built."
+  ]
+}

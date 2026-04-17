@@ -84,7 +84,7 @@ test('compileDecisionSupport surfaces attached allergy insight when profile and 
   assert.equal(compiled.personalizedResultLane.allergyInsight.status, 'ready');
   assert.equal(
     compiled.personalizedResultLane.allergyInsight.summary,
-    'May conflict with your allergy settings.',
+    'May conflict with your fish and animal-based gelatin setting.',
   );
   assert.deepEqual(compiled.personalizedResultLane.allergyInsight.matchedAllergyFlags, ['fish']);
   assert.deepEqual(
@@ -109,5 +109,26 @@ test('compileDecisionSupport keeps allergy insight pending when only user settin
   assert.equal(
     compiled.personalizedResultLane.allergyInsight.reasonCode,
     'NORMALIZED_PRODUCT_ALLERGY_FLAGS_NOT_ATTACHED',
+  );
+});
+
+test('compileDecisionSupport names the user allergy setting when product data shows no matching source flags', () => {
+  const compiled = compileDecisionSupport({
+    digest: buildDigest(),
+    factsDigestHash: 'fixture-allergy-hash-clear',
+    viewMode: 'details',
+    allergyContext: {
+      userAllergyFlags: ['fish'],
+      userIngredientRestrictions: [],
+      productAllergyFlags: [],
+      productIngredientRestrictions: [],
+      productCoverageStatus: 'resolved',
+    },
+  });
+
+  assert.equal(compiled.personalizedResultLane.allergyInsight.status, 'ready');
+  assert.equal(
+    compiled.personalizedResultLane.allergyInsight.summary,
+    'No fish-related flags were detected from the current product data.',
   );
 });

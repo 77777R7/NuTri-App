@@ -67,6 +67,39 @@ jobs:
           path: artifacts/kb-integrity
           if-no-files-found: warn
 
+  quality-system-spec:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install Root Dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Install Backend Dependencies
+        run: npm --prefix backend ci
+
+      - name: Run Quality System Spec Tests
+        run: >
+          node --import tsx --test
+          tests/scan/science-row-family-hardening.test.ts
+          tests/scan/decision-support-allergy-insight.test.ts
+          tests/scan/decision-support-algal-source-copy.test.ts
+          tests/scan/cross-surface-golden-journey.test.mjs
+          tests/validation/runtime-contract-runner.test.mjs
+          tests/validation/quality-system-phase-closure.test.mjs
+          tests/validation/mobile-scan-smoke-mini.test.mjs
+          tests/search/search-golden-replay-runner.test.mjs
+          tests/search/golden-journey-pack-v1.test.mjs
+          tests/search/stratified-nightly-pack.test.mjs
+
   maintainer-e2e-gates:
     runs-on: ubuntu-latest
     timeout-minutes: 35
@@ -154,6 +187,15 @@ jobs:
         run: node scripts/maintainer/run-backend-gates-stable.mjs --out-dir artifacts/maintainer-e2e
         env:
           RUN_BACKEND_GATES_MANAGE_BACKEND: "0"
+
+      - name: Run Quality System Release Gates
+        if: steps.gate.outputs.enabled == 'true'
+        run: node scripts/maintainer/run-release-quality-system-gates.mjs --api-base-url http://127.0.0.1:3001 --out-dir artifacts/maintainer-e2e/quality-system-release
+
+      - name: Run Mobile Scan Smoke Mini
+        if: steps.gate.outputs.enabled == 'true'
+        continue-on-error: true
+        run: node scripts/maintainer/run-mobile-scan-smoke-mini.mjs --api-base-url http://127.0.0.1:3001 --out-dir artifacts/maintainer-e2e/mobile-scan-smoke-mini
 
       - name: Generate Reviewed Diff Artifact (Optional)
         if: ${{ always() && steps.gate.outputs.enabled == 'true' && github.event_name == 'workflow_dispatch' && github.event.inputs.reviewed_before_report != '' && github.event.inputs.reviewed_after_report != '' }}
