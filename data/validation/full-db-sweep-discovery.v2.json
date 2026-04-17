@@ -2,7 +2,7 @@
   "version": "full-db-sweep-discovery.v2",
   "taxonomyPath": "data/validation/taxonomy-v0.json",
   "tableName": "iherb_overlay_products",
-  "selectColumns": "product_id,title,brand_name,barcode_gtin14,upc_code,supplement_facts,facts_count,facts_type",
+  "selectColumns": "product_id,title,brand_name,barcode_gtin14,upc_code,supplement_facts",
   "batchSize": 1000,
   "maxExamplesPerLane": 8,
   "maxExamplesPerBucket": 8,

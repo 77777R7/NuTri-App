@@ -1,8 +1,10 @@
 #!/usr/bin/env node
 /* eslint-disable no-console */
 
+import fs from "node:fs/promises";
 import process from "node:process";
 import path from "node:path";
+import { spawnSync } from "node:child_process";
 
 import {
   buildCuratedValidationPack,
@@ -23,6 +25,10 @@ import {
   waitForSearchReplayWarmReady,
   writeSearchReplayReport,
 } from "./lib/search-replay-runner.mjs";
+import {
+  loadMobileScanSmokeConfig,
+  validateMobileScanSmokeConfig,
+} from "./lib/mobile-scan-smoke-mini.mjs";
 import { ROOT_DIR, writeJson, writeText } from "./lib/science-validation-reporting.mjs";
 
 const DEFAULT_API_BASE_URL =
@@ -34,6 +40,7 @@ const DEFAULT_OUT_DIR = "output/quality-system-release";
 const DEFAULT_SEARCH_PACK = "data/validation/golden-journey-pack.v1.json";
 const DEFAULT_BASELINE_PATH = "data/validation/stable-gate-baseline.v1.json";
 const DEFAULT_CURATED_BASELINE_CONFIG = "data/validation/live-replay-release-slice.v1.json";
+const DEFAULT_MOBILE_SCAN_SMOKE_CONFIG = "data/validation/mobile-scan-smoke-mini.v0.json";
 
 const DEFAULT_RUNTIME_CONFIGS = [
   "data/validation/runtime-result-page-contract.v0.json",
@@ -135,6 +142,38 @@ const summarizeCuratedBaseline = (curatedPack, outputs, configPath) => ({
   mdPath: outputs.mdPath,
 });
 
+const summarizeMobileScanReport = (report, outputs, configPath) => ({
+  id: report.version,
+  type: "mobile_scan_smoke",
+  configPath,
+  total: report.summary.total,
+  pass: report.summary.pass,
+  warn: report.summary.warn,
+  fail: report.summary.fail,
+  jsonPath: outputs.jsonPath,
+  mdPath: outputs.mdPath,
+});
+
+const findLatestJsonArtifact = async ({ outDir, prefix }) => {
+  const resolvedDir = path.isAbsolute(outDir) ? outDir : path.join(ROOT_DIR, outDir);
+  const entries = await fs.readdir(resolvedDir, { withFileTypes: true }).catch(() => []);
+  const candidates = [];
+  for (const entry of entries) {
+    if (!entry.isFile()) continue;
+    if (!entry.name.startsWith(prefix) || !entry.name.endsWith(".json")) continue;
+    const fullPath = path.join(resolvedDir, entry.name);
+    const stat = await fs.stat(fullPath).catch(() => null);
+    if (!stat) continue;
+    candidates.push({
+      fullPath,
+      relativePath: path.join(outDir, entry.name),
+      mtimeMs: stat.mtimeMs,
+    });
+  }
+  candidates.sort((left, right) => right.mtimeMs - left.mtimeMs);
+  return candidates[0] ?? null;
+};
+
 const renderAggregateMarkdown = (summary) => {
   const lines = [];
   lines.push(`# Quality System Release Gates`);
@@ -163,6 +202,7 @@ const renderAggregateMarkdown = (summary) => {
   lines.push("");
   lines.push(`- Frozen curated baseline is materialized for PR/handoff evidence, not re-scored as a runtime blocker.`);
   lines.push(`- Runtime/search suites block this runner when any suite reports fail > 0.`);
+  lines.push(`- Mobile scan smoke mini blocks this runner when device preflight or repeated soak thresholds fail.`);
   lines.push(`- Search replay uses warm-index polling unless --skip-search-warm-wait is passed.`);
   return `${lines.join("\n")}\n`;
 };
@@ -180,6 +220,7 @@ const main = async () => {
       baselinePath: args.baselinePath,
       curatedBaselineConfigPath: args.curatedBaselineConfigPath,
       runtimeConfigs: DEFAULT_RUNTIME_CONFIGS,
+      mobileScanSmokeConfigPath: DEFAULT_MOBILE_SCAN_SMOKE_CONFIG,
       searchPackPath: args.searchPackPath,
     }, null, 2));
     return;
@@ -216,6 +257,48 @@ const main = async () => {
     });
     suites.push(summarizeRuntimeReport(report, outputs, configPath));
   }
+
+  const mobileScanConfig = await loadMobileScanSmokeConfig(DEFAULT_MOBILE_SCAN_SMOKE_CONFIG);
+  const mobileScanConfigErrors = validateMobileScanSmokeConfig(mobileScanConfig);
+  if (mobileScanConfigErrors.length > 0) {
+    throw new Error(`invalid mobile scan smoke config: ${JSON.stringify(mobileScanConfigErrors)}`);
+  }
+  const mobileOutDir = path.join(args.outDir, "mobile");
+  const mobileRun = spawnSync(
+    process.execPath,
+    [
+      path.join("scripts", "maintainer", "run-mobile-scan-smoke-mini.mjs"),
+      "--config", DEFAULT_MOBILE_SCAN_SMOKE_CONFIG,
+      "--out-dir", mobileOutDir,
+      "--api-base-url", String(args.apiBaseUrl).replace(/\/+$/, ""),
+      "--enforce",
+    ],
+    {
+      cwd: ROOT_DIR,
+      encoding: "utf8",
+      env: process.env,
+    },
+  );
+  const latestMobileJson = await findLatestJsonArtifact({
+    outDir: mobileOutDir,
+    prefix: "mobile-scan-smoke-mini-",
+  });
+  if (!latestMobileJson) {
+    throw new Error(
+      `mobile scan smoke runner did not emit a report: ${mobileRun.stderr?.trim() || mobileRun.stdout?.trim() || "unknown error"}`,
+    );
+  }
+  const mobileReport = JSON.parse(await fs.readFile(latestMobileJson.fullPath, "utf8"));
+  suites.push(
+    summarizeMobileScanReport(
+      mobileReport,
+      {
+        jsonPath: latestMobileJson.relativePath,
+        mdPath: latestMobileJson.relativePath.replace(/\.json$/, ".md"),
+      },
+      DEFAULT_MOBILE_SCAN_SMOKE_CONFIG,
+    ),
+  );
 
   const searchPack = await loadCuratedValidationSourcePack({
     sourcePackPath: args.searchPackPath,

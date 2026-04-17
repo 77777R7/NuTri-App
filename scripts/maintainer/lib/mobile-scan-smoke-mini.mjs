@@ -11,6 +11,7 @@ const readJson = async (filePath) => {
 const pct = (value) => (Number.isFinite(value) ? Number((value * 100).toFixed(2)) : null);
 
 const normalizeText = (value) => String(value ?? "").replace(/\s+/g, " ").trim();
+const hasText = (value) => normalizeText(value).length > 0;
 
 const stableUnique = (values) =>
   Array.from(
@@ -44,6 +45,30 @@ export const validateMobileScanSmokeConfig = (config) => {
   }
   if (!config.thresholds || typeof config.thresholds !== "object") {
     errors.push({ field: "thresholds", message: "must be an object" });
+  }
+  if (config.devicePreflight != null) {
+    if (typeof config.devicePreflight !== "object" || Array.isArray(config.devicePreflight)) {
+      errors.push({ field: "devicePreflight", message: "must be an object when provided" });
+    } else {
+      if (config.devicePreflight.enabled != null && typeof config.devicePreflight.enabled !== "boolean") {
+        errors.push({ field: "devicePreflight.enabled", message: "must be a boolean when provided" });
+      }
+      if (config.devicePreflight.appUrl != null && !hasText(config.devicePreflight.appUrl)) {
+        errors.push({ field: "devicePreflight.appUrl", message: "must be a non-empty string when provided" });
+      }
+      if (
+        config.devicePreflight.waitSeconds != null
+        && !Number.isFinite(Number(config.devicePreflight.waitSeconds))
+      ) {
+        errors.push({ field: "devicePreflight.waitSeconds", message: "must be numeric when provided" });
+      }
+      if (
+        config.devicePreflight.strictPopupCheck != null
+        && typeof config.devicePreflight.strictPopupCheck !== "boolean"
+      ) {
+        errors.push({ field: "devicePreflight.strictPopupCheck", message: "must be a boolean when provided" });
+      }
+    }
   }
   return errors;
 };
@@ -258,6 +283,98 @@ export const evaluateMobileScanSmokeSummary = ({ config, summary }) => {
   };
 };
 
+const summarizePreflight = (preflight) => ({
+  targetUdid: normalizeText(preflight?.targetUdid) || null,
+  appUrl: normalizeText(preflight?.appUrl) || null,
+  popupBlocked: preflight?.popupBlocked === true,
+  popupSignals: Array.isArray(preflight?.popupSignals) ? preflight.popupSignals.filter((item) => hasText(item)) : [],
+  screenshots: {
+    launch: normalizeText(preflight?.screenshots?.launch) || null,
+    preflight: normalizeText(preflight?.screenshots?.preflight) || null,
+  },
+});
+
+const buildPreflightGate = ({ config, preflight }) => {
+  const requirement = config?.devicePreflight ?? {};
+  const preflightEnabled = requirement.enabled !== false;
+  if (!preflightEnabled) {
+    return buildGate({
+      gate: "device_preflight",
+      status: "warn",
+      reason: "device_preflight_disabled",
+      details: {},
+    });
+  }
+
+  if (!preflight || typeof preflight !== "object") {
+    return buildGate({
+      gate: "device_preflight",
+      status: "fail",
+      reason: "device_preflight_missing",
+      details: {
+        requiredAppUrl: normalizeText(requirement.appUrl) || null,
+      },
+    });
+  }
+
+  const summary = summarizePreflight(preflight);
+  const hasLaunchShot = hasText(summary.screenshots.launch);
+  const hasPreflightShot = hasText(summary.screenshots.preflight);
+
+  if (!summary.targetUdid) {
+    return buildGate({
+      gate: "device_preflight",
+      status: "fail",
+      reason: "device_preflight_missing_udid",
+      details: summary,
+    });
+  }
+
+  if (!hasLaunchShot || !hasPreflightShot) {
+    return buildGate({
+      gate: "device_preflight",
+      status: "fail",
+      reason: "device_preflight_missing_screenshots",
+      details: summary,
+    });
+  }
+
+  if (summary.popupBlocked) {
+    return buildGate({
+      gate: "device_preflight",
+      status: "fail",
+      reason: "device_preflight_blocked",
+      details: summary,
+    });
+  }
+
+  return buildGate({
+    gate: "device_preflight",
+    status: "pass",
+    reason: "device_preflight_ready",
+    details: summary,
+  });
+};
+
+export const evaluateMobileScanSmokeRun = ({ config, summary, preflight = null }) => {
+  const report = evaluateMobileScanSmokeSummary({ config, summary });
+  const gates = [buildPreflightGate({ config, preflight }), ...(report.gates ?? [])];
+  const fail = gates.filter((gate) => gate.status === "fail").length;
+  const pass = gates.filter((gate) => gate.status === "pass").length;
+  const warn = gates.filter((gate) => gate.status === "warn").length;
+  return {
+    ...report,
+    preflight: preflight ? summarizePreflight(preflight) : null,
+    gates,
+    summary: {
+      total: gates.length,
+      pass,
+      warn,
+      fail,
+    },
+  };
+};
+
 export const renderMobileScanSmokeMarkdown = (report) => {
   const lines = [];
   lines.push(`# Mobile Scan Smoke Mini`);
@@ -266,12 +383,23 @@ export const renderMobileScanSmokeMarkdown = (report) => {
   lines.push(`- generatedAt: ${report.generatedAt}`);
   lines.push(`- releaseBlocker: ${report.releaseBlocker}`);
   if (report.summaryPath) lines.push(`- summaryPath: ${report.summaryPath}`);
+  if (report.preflight?.targetUdid) lines.push(`- preflightTargetUdid: ${report.preflight.targetUdid}`);
+  if (report.preflight?.appUrl) lines.push(`- preflightAppUrl: ${report.preflight.appUrl}`);
   lines.push("");
   lines.push(`## Gate Summary`);
   lines.push("");
   lines.push(`- pass: ${report.summary.pass}`);
   lines.push(`- warn: ${report.summary.warn}`);
   lines.push(`- fail: ${report.summary.fail}`);
+  if (report.preflight) {
+    lines.push("");
+    lines.push("## Device Preflight");
+    lines.push("");
+    lines.push(`- popupBlocked: ${report.preflight.popupBlocked}`);
+    lines.push(`- popupSignals: ${(report.preflight.popupSignals ?? []).join(", ") || "none"}`);
+    lines.push(`- launchScreenshot: ${report.preflight.screenshots?.launch ?? "missing"}`);
+    lines.push(`- preflightScreenshot: ${report.preflight.screenshots?.preflight ?? "missing"}`);
+  }
   lines.push("");
   lines.push(`## Gates`);
   lines.push("");

@@ -1,7 +1,13 @@
 {
   "version": "mobile-scan-smoke-mini.v0",
-  "description": "Small release-adjacent mobile scan smoke built on the existing mobile-soak runner. This is a pre-device harness for repeated runtime/perf regressions before full camera automation.",
-  "releaseBlocker": false,
+  "description": "Small device-level scan smoke release evidence built on simulator preflight plus the existing mobile-soak runner. It protects scan stability and score visibility before full camera automation lands.",
+  "releaseBlocker": true,
+  "devicePreflight": {
+    "enabled": true,
+    "appUrl": "nutri://",
+    "waitSeconds": 5,
+    "strictPopupCheck": true
+  },
   "barcodes": [
     { "role": "killer", "barcode": "00665553227870" },
     { "role": "sports_research_fish_oil", "barcode": "00023249011835" },
@@ -42,7 +48,7 @@
     "food_like_drink_mix"
   ],
   "notes": [
-    "This harness is discovery/nightly for now, not a hard release blocker.",
-    "It protects repeatable scan/runtime regressions on the existing mobile-soak lane while true camera/UI automation is still being built."
+    "This harness is now release evidence: simulator/device preflight plus repeated mobile-soak rounds must both stay clean.",
+    "It protects repeatable scan/runtime regressions on the existing mobile-soak lane while full camera/UI automation is still being built."
   ]
 }

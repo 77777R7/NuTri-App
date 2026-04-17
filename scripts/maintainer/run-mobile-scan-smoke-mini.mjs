@@ -7,7 +7,7 @@ import process from "node:process";
 import { spawnSync } from "node:child_process";
 
 import {
-  evaluateMobileScanSmokeSummary,
+  evaluateMobileScanSmokeRun,
   loadMobileScanSmokeConfig,
   validateMobileScanSmokeConfig,
   writeMobileScanSmokeReport,
@@ -22,6 +22,11 @@ const parseArgs = () => {
     apiBaseUrl: process.env.API_BASE_URL || process.env.RENDER_BASE_URL || "http://127.0.0.1:3001",
     enforce: false,
     dryRun: false,
+    skipPreflight: false,
+    preflightUdid: "booted",
+    preflightAppUrl: process.env.MOBILE_PRECHECK_APP_URL || "nutri://",
+    preflightWaitSeconds: null,
+    strictPreflightPopupCheck: true,
   };
   const args = process.argv.slice(2);
   for (let index = 0; index < args.length; index += 1) {
@@ -40,6 +45,19 @@ const parseArgs = () => {
       values.enforce = true;
     } else if (arg === "--dry-run") {
       values.dryRun = true;
+    } else if (arg === "--skip-preflight") {
+      values.skipPreflight = true;
+    } else if (arg === "--preflight-udid" && next) {
+      values.preflightUdid = next;
+      index += 1;
+    } else if (arg === "--preflight-app-url" && next) {
+      values.preflightAppUrl = next;
+      index += 1;
+    } else if (arg === "--preflight-wait-seconds" && next) {
+      values.preflightWaitSeconds = Number(next);
+      index += 1;
+    } else if (arg === "--no-strict-preflight-popup-check") {
+      values.strictPreflightPopupCheck = false;
     }
   }
   return values;
@@ -59,6 +77,7 @@ const main = async () => {
       version: config.version,
       barcodes: config.barcodes.length,
       releaseBlocker: config.releaseBlocker,
+      devicePreflight: config.devicePreflight ?? null,
       outDir: args.outDir,
       apiBaseUrl: args.apiBaseUrl,
     }, null, 2));
@@ -66,6 +85,47 @@ const main = async () => {
   }
 
   const resolvedOutDir = path.isAbsolute(args.outDir) ? args.outDir : path.join(ROOT_DIR, args.outDir);
+  const preflightConfig = config.devicePreflight ?? {};
+  let preflight = null;
+
+  if (!args.skipPreflight && preflightConfig.enabled !== false) {
+    const preflightOutDir = path.join(resolvedOutDir, "preflight");
+    await fs.mkdir(preflightOutDir, { recursive: true });
+    const preflightArgs = [
+      path.join("scripts", "maintainer", "mobile-sim-preflight.sh"),
+      "--udid", String(args.preflightUdid || "booted"),
+      "--out-dir", preflightOutDir,
+      "--app-url", String(args.preflightAppUrl || preflightConfig.appUrl || "nutri://"),
+      "--wait-seconds", String(
+        args.preflightWaitSeconds != null && Number.isFinite(Number(args.preflightWaitSeconds))
+          ? Number(args.preflightWaitSeconds)
+          : Number(preflightConfig.waitSeconds ?? 5),
+      ),
+    ];
+    if (args.strictPreflightPopupCheck && preflightConfig.strictPopupCheck !== false) {
+      // default strict mode
+    } else {
+      preflightArgs.push("--no-strict-popup-check");
+    }
+
+    const preflightRun = spawnSync("bash", preflightArgs, {
+      cwd: ROOT_DIR,
+      encoding: "utf8",
+      env: process.env,
+    });
+    const preflightJsonPath = path.join(preflightOutDir, "preflight.json");
+    try {
+      preflight = JSON.parse(await fs.readFile(preflightJsonPath, "utf8"));
+    } catch {
+      preflight = null;
+    }
+    if (preflightRun.status !== 0 && !preflight) {
+      throw new Error(
+        `mobile-sim-preflight failed with status ${preflightRun.status}: ${preflightRun.stderr?.trim() || preflightRun.stdout?.trim() || "unknown error"}`,
+      );
+    }
+  }
+
   const runDir = path.join(resolvedOutDir, "runner");
   await fs.mkdir(runDir, { recursive: true });
 
@@ -103,7 +163,7 @@ const main = async () => {
   const summaryPath = path.join(runDir, "rounds_summary.json");
   const summary = JSON.parse(await fs.readFile(summaryPath, "utf8"));
   summary.summaryPath = summaryPath;
-  const report = evaluateMobileScanSmokeSummary({ config, summary });
+  const report = evaluateMobileScanSmokeRun({ config, summary, preflight });
   const outputs = await writeMobileScanSmokeReport({
     report,
     outDir: resolvedOutDir,

@@ -109,6 +109,206 @@
       },
       "gates": ["default_anchor", "allergy_sensitivity_relevance", "unsafe_language"],
       "severityOnFail": "P1"
+    },
+    {
+      "id": "scan_nightly_eyebright_sparse_title_led",
+      "surface": "barcode_scan",
+      "origin": "barcode_scan",
+      "category": "sparse_title_led",
+      "personas": [],
+      "input": { "barcode": "00033674125007" },
+      "product": {
+        "productId": "1956",
+        "brand": "Nature's Way",
+        "name": "Nature's Way, Eyebright Herb, 100 Vegan Capsules (280 mg per Capsule)",
+        "barcode": "00033674125007"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": ["Eyebright Herb", "Eyebright"],
+          "warn": ["Botanical Extract"],
+          "fail": ["Serving Size", "Vegan Capsules"]
+        }
+      },
+      "gates": ["default_anchor", "sparse_data_honesty", "unsafe_language"],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "scan_nightly_arjuna_hawthorn_sparse_title_led",
+      "surface": "barcode_scan",
+      "origin": "barcode_scan",
+      "category": "sparse_title_led",
+      "personas": [],
+      "input": { "barcode": "00810078475651" },
+      "product": {
+        "productId": "153978",
+        "brand": "Vitamatic",
+        "name": "Vitamatic, Arjuna + Hawthorn, 120 Vegetable Capsules",
+        "barcode": "00810078475651"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": ["Arjuna + Hawthorn", "Arjuna", "Hawthorn", "Botanical Blend"],
+          "warn": ["Herbal Formula"],
+          "fail": ["Serving Size", "Vegetable Capsules"]
+        }
+      },
+      "gates": ["default_anchor", "sparse_data_honesty", "unsafe_language"],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "scan_nightly_simply_protein_bar_food_like",
+      "surface": "barcode_scan",
+      "origin": "barcode_scan",
+      "category": "food_like",
+      "personas": [],
+      "input": { "barcode": "00686207509135" },
+      "product": {
+        "productId": "156293",
+        "brand": "Simply Protein",
+        "name": "Simply Protein, Crispy Snack Bars, Dark Chocolate Almond, 8 Bars, 1.41 oz (40 g) Each",
+        "barcode": "00686207509135"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": ["Crispy Snack Bar", "Protein Snack Bar", "Snack Bar"],
+          "warn": ["Protein"],
+          "fail": ["Serving Size", "Calories", "Sugars"]
+        }
+      },
+      "gates": ["route_health", "default_anchor", "unsafe_language"],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "scan_nightly_joint_movement_drink_mix_food_like",
+      "surface": "barcode_scan",
+      "origin": "barcode_scan",
+      "category": "food_like",
+      "personas": [],
+      "input": { "barcode": "00033674151211" },
+      "product": {
+        "productId": "150939",
+        "brand": "Nature's Way",
+        "name": "Nature's Way, Joint Movement Glucosamine®, Drink Mix, Ultra Strength, Unflavored, 20 Packets, 0.16 oz (4.56 g) Each",
+        "barcode": "00033674151211"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": ["Joint Movement Drink Mix", "Drink Mix", "Glucosamine Drink Mix"],
+          "warn": ["Glucosamine"],
+          "fail": ["Serving Size", "Calories"]
+        }
+      },
+      "gates": ["route_health", "default_anchor", "unsafe_language"],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "scan_nightly_nutricost_grassfed_whey_dairy",
+      "surface": "barcode_scan",
+      "origin": "barcode_scan",
+      "category": "protein_fiber",
+      "personas": ["dairy_allergy", "fitness_recovery_goal"],
+      "input": { "barcode": "00810014675602" },
+      "product": {
+        "productId": "151013",
+        "brand": "Nutricost",
+        "name": "Nutricost, Grass-Fed Whey Protein, Vanilla, 5 lbs (2,268 g)",
+        "barcode": "00810014675602"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": ["Grass-Fed Whey Protein", "Whey Protein", "Protein"],
+          "warn": ["Protein Powder"],
+          "fail": ["Potassium", "Calories", "Serving Size"]
+        },
+        "profileWarnings": {
+          "mustInclude": ["dairy"],
+          "mustNotInclude": ["safe for you"]
+        }
+      },
+      "gates": ["default_anchor", "allergy_sensitivity_relevance", "goal_relevance", "unsafe_language"],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "scan_nightly_swanson_ps_soyfree_negative",
+      "surface": "barcode_scan",
+      "origin": "barcode_scan",
+      "category": "sparse_title_led",
+      "personas": ["soy_allergy"],
+      "input": { "barcode": "00087614027326" },
+      "product": {
+        "productId": "118604",
+        "brand": "Swanson",
+        "name": "Swanson, Phosphatidylserine, Soy-Free Formula, 100 mg, 90 Softgels",
+        "barcode": "00087614027326"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": ["Phosphatidylserine", "Phosphatidyl Serine"],
+          "warn": ["Phospholipid"],
+          "fail": ["Soy", "Serving Size", "Softgels"]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": ["contains soy", "soy source", "safe for you"]
+        }
+      },
+      "gates": ["default_anchor", "allergy_sensitivity_relevance", "sparse_data_honesty", "unsafe_language"],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "scan_nightly_now_soy_protein_isolate_source",
+      "surface": "barcode_scan",
+      "origin": "barcode_scan",
+      "category": "protein_fiber",
+      "personas": ["soy_allergy", "fitness_recovery_goal"],
+      "input": { "barcode": "00733739021526" },
+      "product": {
+        "productId": "786",
+        "brand": "NOW Foods",
+        "name": "NOW Foods, Sports, Soy Protein Isolate, Pure Unflavored, 2 lbs (907 g)",
+        "barcode": "00733739021526"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": ["Soy Protein Isolate", "Soy Protein", "Protein"],
+          "warn": ["Protein Powder"],
+          "fail": ["Serving Size", "Calories"]
+        },
+        "profileWarnings": {
+          "mustInclude": ["soy"],
+          "mustNotInclude": ["safe for you"]
+        }
+      },
+      "gates": ["default_anchor", "allergy_sensitivity_relevance", "goal_relevance", "unsafe_language"],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "scan_nightly_swanson_krill_curcumin_shellfish",
+      "surface": "barcode_scan",
+      "origin": "barcode_scan",
+      "category": "omega3_source_oil",
+      "personas": ["shellfish_allergy"],
+      "input": { "barcode": "00087614170718" },
+      "product": {
+        "productId": "119483",
+        "brand": "Swanson",
+        "name": "Swanson, Krill Oil & Curcumin, 60 Softgels",
+        "barcode": "00087614170718"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": ["Krill Oil", "Krill Oil & Curcumin", "Omega-3"],
+          "warn": ["Curcumin"],
+          "fail": ["Fish Oil", "Serving Size"]
+        },
+        "profileWarnings": {
+          "mustInclude": ["shellfish"],
+          "mustNotInclude": ["safe for you"]
+        }
+      },
+      "gates": ["default_anchor", "allergy_sensitivity_relevance", "unsafe_language"],
+      "severityOnFail": "P1"
     }
   ]
 }

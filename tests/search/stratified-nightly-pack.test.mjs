@@ -24,6 +24,14 @@ test("stratified nightly config points at the expanded v1 pack and nightly-only 
     "scan_nightly_bpn_go_gel_food_like",
     "scan_nightly_hydrationup_electrolyte_drink_mix",
     "scan_nightly_barleans_algal_oil_source",
+    "scan_nightly_eyebright_sparse_title_led",
+    "scan_nightly_arjuna_hawthorn_sparse_title_led",
+    "scan_nightly_simply_protein_bar_food_like",
+    "scan_nightly_joint_movement_drink_mix_food_like",
+    "scan_nightly_nutricost_grassfed_whey_dairy",
+    "scan_nightly_swanson_ps_soyfree_negative",
+    "scan_nightly_now_soy_protein_isolate_source",
+    "scan_nightly_swanson_krill_curcumin_shellfish",
   ]);
   assert.ok(config.targetSize >= 40);
 

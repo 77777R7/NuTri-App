@@ -101,7 +101,7 @@ jobs:
           tests/search/stratified-nightly-pack.test.mjs
 
   maintainer-e2e-gates:
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     timeout-minutes: 35
     env:
       API_BASE_URL: http://127.0.0.1:3001
@@ -190,12 +190,7 @@ jobs:
 
       - name: Run Quality System Release Gates
         if: steps.gate.outputs.enabled == 'true'
-        run: node scripts/maintainer/run-release-quality-system-gates.mjs --api-base-url http://127.0.0.1:3001 --out-dir artifacts/maintainer-e2e/quality-system-release
-
-      - name: Run Mobile Scan Smoke Mini
-        if: steps.gate.outputs.enabled == 'true'
-        continue-on-error: true
-        run: node scripts/maintainer/run-mobile-scan-smoke-mini.mjs --api-base-url http://127.0.0.1:3001 --out-dir artifacts/maintainer-e2e/mobile-scan-smoke-mini
+        run: node scripts/maintainer/run-release-quality-system-gates.mjs --api-base-url http://127.0.0.1:3001 --out-dir artifacts/maintainer-e2e/quality-system-release --skip-search-warm-wait
 
       - name: Generate Reviewed Diff Artifact (Optional)
         if: ${{ always() && steps.gate.outputs.enabled == 'true' && github.event_name == 'workflow_dispatch' && github.event.inputs.reviewed_before_report != '' && github.event.inputs.reviewed_after_report != '' }}
