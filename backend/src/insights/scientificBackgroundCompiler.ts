@@ -108,6 +108,7 @@ const B12_RESEARCH_MODE_TIMEOUT_MS = 2_500;
 const FOLATE_RESEARCH_MODE_TIMEOUT_MS = 2_500;
 const B6_RESEARCH_MODE_TIMEOUT_MS = 2_500;
 const MAGNESIUM_RESEARCH_MODE_TIMEOUT_MS = 3_000;
+const ZINC_RESEARCH_MODE_TIMEOUT_MS = 2_750;
 const CALCIUM_RESEARCH_MODE_TIMEOUT_MS = 2_750;
 const IRON_RESEARCH_MODE_TIMEOUT_MS = 3_000;
 const MELATONIN_RESEARCH_MODE_TIMEOUT_MS = 2_500;
@@ -116,6 +117,11 @@ const LABEL_CONTEXT_MODE_TIMEOUT_MS = 1_500;
 const RESEARCH_MODE_BACKGROUND_REFRESH_TIMEOUT_MS = 18_000;
 const LONG_RESEARCH_MODE_BACKGROUND_REFRESH_TIMEOUT_MS = 22_000;
 const DHA_RESEARCH_MODE_BACKGROUND_REFRESH_TIMEOUT_MS = 24_000;
+const EXTENDED_RESEARCH_MODE_BACKGROUND_REFRESH_TIMEOUT_MS = 28_000;
+const MAGNESIUM_RESEARCH_MODE_BACKGROUND_REFRESH_TIMEOUT_MS = EXTENDED_RESEARCH_MODE_BACKGROUND_REFRESH_TIMEOUT_MS;
+const ZINC_RESEARCH_MODE_BACKGROUND_REFRESH_TIMEOUT_MS = EXTENDED_RESEARCH_MODE_BACKGROUND_REFRESH_TIMEOUT_MS;
+const CARNITINE_RESEARCH_MODE_BACKGROUND_REFRESH_TIMEOUT_MS = LONG_RESEARCH_MODE_BACKGROUND_REFRESH_TIMEOUT_MS;
+const GREEN_TEA_EXTRACT_RESEARCH_MODE_BACKGROUND_REFRESH_TIMEOUT_MS = EXTENDED_RESEARCH_MODE_BACKGROUND_REFRESH_TIMEOUT_MS;
 const LLM_TIMEOUT_MS = RESEARCH_MODE_TIMEOUT_MS;
 const LLM_MAX_RETRIES = 0;
 const BACKGROUND_REFRESH_MAX_RETRIES = 1;
@@ -252,6 +258,12 @@ const isOmega3Total = (name: string): boolean => /\btotal\b.*\bomega\s*-?\s*3\b|
 const isOmega3Source = (name: string): boolean => /\bfish\s*oil\b|\bkrill\s*oil\b|\balgal\s*oil\b|\boil\s*concentrate\b/i.test(name);
 const isPhageBlend = (name: string): boolean => /phage/i.test(name);
 
+const omega3SourceNarrativeLabel = (name: string): string => {
+  if (/\balgal\s*oil\b|\balgae\b|\bschizochytrium\b/i.test(name)) return "This algal-oil source line";
+  if (/\bkrill\s*oil\b/i.test(name)) return "This krill-oil source line";
+  return "This fish-oil source line";
+};
+
 const buildReferenceLabel = (plan: ScientificBackgroundPlan): string => {
   if (plan.family === "astaxanthin_carotenoid") return "Astaxanthin";
   if (plan.family === "curcumin") return "Curcumin";
@@ -284,7 +296,7 @@ const buildNarrativeLabel = (plan: ScientificBackgroundPlan): string => {
     return "This total omega-3 line";
   }
   if (plan.mode === "label_context_mode" && plan.family === "omega_3" && isOmega3Source(plan.selectedLabel)) {
-    return "This fish-oil source line";
+    return omega3SourceNarrativeLabel(plan.selectedLabel);
   }
   if (plan.mode === "label_context_mode" && isPhageBlend(plan.selectedLabel)) {
     return "This phage blend line";
@@ -1119,7 +1131,7 @@ const buildLabelContextPlan = (
         "Explain that this line identifies the oil source rather than fully breaking out the active omega-3 profile.",
         ["This is a source line", "It tells you where the omega-3s come from", "It is not the same as the EPA and DHA breakdown"],
         "Make clear that source identity and active breakdown are different jobs on the label.",
-        "Help the shopper understand why fish-oil total and fatty-acid profile are not interchangeable.",
+        "Help the shopper understand why source-oil identity and fatty-acid profile are not interchangeable.",
       ),
       buildSectionPlan(
         "how_to_compare_from_here",
@@ -1211,10 +1223,10 @@ export const resolveScientificBackgroundExecutionProfile = (
     return {
       preferLiveWriter: true,
       timeoutMs: MAGNESIUM_RESEARCH_MODE_TIMEOUT_MS,
-      backgroundRefreshTimeoutMs: LONG_RESEARCH_MODE_BACKGROUND_REFRESH_TIMEOUT_MS,
+      backgroundRefreshTimeoutMs: MAGNESIUM_RESEARCH_MODE_BACKGROUND_REFRESH_TIMEOUT_MS,
       maxRetries: LLM_MAX_RETRIES,
       backgroundRefreshMaxRetries: BACKGROUND_REFRESH_MAX_RETRIES,
-      maxTokens: RESEARCH_MODE_MAX_TOKENS,
+      maxTokens: TARGETED_RESEARCH_MODE_MAX_TOKENS,
       cacheTtlMs: RESEARCH_MODE_CACHE_TTL_MS,
     };
   }
@@ -1259,7 +1271,7 @@ export const resolveScientificBackgroundExecutionProfile = (
     return {
       preferLiveWriter: true,
       timeoutMs: GREEN_TEA_EXTRACT_RESEARCH_MODE_TIMEOUT_MS,
-      backgroundRefreshTimeoutMs: LONG_RESEARCH_MODE_BACKGROUND_REFRESH_TIMEOUT_MS,
+      backgroundRefreshTimeoutMs: GREEN_TEA_EXTRACT_RESEARCH_MODE_BACKGROUND_REFRESH_TIMEOUT_MS,
       maxRetries: TARGETED_RESEARCH_MODE_MAX_RETRIES,
       backgroundRefreshMaxRetries: BACKGROUND_REFRESH_MAX_RETRIES,
       maxTokens: TARGETED_RESEARCH_MODE_MAX_TOKENS,
@@ -1295,7 +1307,7 @@ export const resolveScientificBackgroundExecutionProfile = (
     return {
       preferLiveWriter: true,
       timeoutMs: CARNITINE_RESEARCH_MODE_TIMEOUT_MS,
-      backgroundRefreshTimeoutMs: LONG_RESEARCH_MODE_BACKGROUND_REFRESH_TIMEOUT_MS,
+      backgroundRefreshTimeoutMs: CARNITINE_RESEARCH_MODE_BACKGROUND_REFRESH_TIMEOUT_MS,
       maxRetries: TARGETED_RESEARCH_MODE_MAX_RETRIES,
       backgroundRefreshMaxRetries: BACKGROUND_REFRESH_MAX_RETRIES,
       maxTokens: TARGETED_RESEARCH_MODE_MAX_TOKENS,
@@ -1383,6 +1395,18 @@ export const resolveScientificBackgroundExecutionProfile = (
       maxRetries: LLM_MAX_RETRIES,
       backgroundRefreshMaxRetries: BACKGROUND_REFRESH_MAX_RETRIES,
       maxTokens: RESEARCH_MODE_MAX_TOKENS,
+      cacheTtlMs: RESEARCH_MODE_CACHE_TTL_MS,
+    };
+  }
+
+  if (plan.family === "zinc") {
+    return {
+      preferLiveWriter: true,
+      timeoutMs: ZINC_RESEARCH_MODE_TIMEOUT_MS,
+      backgroundRefreshTimeoutMs: ZINC_RESEARCH_MODE_BACKGROUND_REFRESH_TIMEOUT_MS,
+      maxRetries: LLM_MAX_RETRIES,
+      backgroundRefreshMaxRetries: BACKGROUND_REFRESH_MAX_RETRIES,
+      maxTokens: TARGETED_RESEARCH_MODE_MAX_TOKENS,
       cacheTtlMs: RESEARCH_MODE_CACHE_TTL_MS,
     };
   }

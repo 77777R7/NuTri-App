@@ -4,7 +4,10 @@ import test from 'node:test';
 import type { FactsDigest } from '../../backend/src/factsDigest';
 import { buildIngredientScienceContext } from '../../backend/src/ingredientScienceContext';
 import { compileIngredientOverviewAsync } from '../../backend/src/insights/ingredientOverviewCompiler';
-import { planScientificBackgroundSections } from '../../backend/src/insights/scientificBackgroundCompiler';
+import {
+  buildScientificBackgroundDeterministicFallback,
+  planScientificBackgroundSections,
+} from '../../backend/src/insights/scientificBackgroundCompiler';
 
 const buildDigest = (params: {
   labelId: string;
@@ -333,6 +336,68 @@ test('ingredient overview repairs a near-miss writer response into an api result
   assert.match(result.ingredientOverview.compareHint ?? '', /label|supporting formula lines/i);
 });
 
+test('ingredient overview fallback stays aligned to the selected formula row in prenatal DHA multivitamin products', async () => {
+  const digest = buildDigest({
+    labelId: 'fixture-prenatal-multi-dha-overview-alignment',
+    productName: 'Prenatal Multivitamin Plus DHA',
+    dosageForm: 'Tablet / Softgel',
+    actives: [
+      { name: 'Multivitamin & Mineral Formula', amount: null, unit: null },
+      { name: 'DHA', amount: null, unit: null },
+      { name: 'Docosahexaenoic Acid', amount: 200, unit: 'mg' },
+    ],
+  });
+
+  const context = buildIngredientScienceContext({
+    digest,
+    overlayClaims: {
+      title: '21st Century, Prenatal Multivitamin Plus DHA, 2 Bottles, 60 Tablets / 60 Softgels',
+      brandName: '21st Century',
+      nutritionalFacts: null,
+    },
+  });
+  const result = await compileIngredientOverviewAsync(context, {
+    timeoutMs: 50,
+    maxRetries: 0,
+  });
+
+  assert.equal(context.anchorIngredient?.name, 'Multivitamin & Mineral Formula');
+  assert.equal(result.source, 'fallback');
+  assert.match(result.ingredientOverview.titleLine ?? '', /multivitamin/i);
+  assert.doesNotMatch(result.ingredientOverview.titleLine ?? '', /omega-3/i);
+  assert.match(result.ingredientOverview.paragraph1, /multivitamin|formula/i);
+});
+
+test('ingredient overview fallback stays aligned to krill oil instead of drifting to astaxanthin', async () => {
+  const digest = buildDigest({
+    labelId: 'fixture-krill-oil-overview-alignment',
+    productName: 'Antarctic Krill Oil, Omega-3 Phospholipids Complex with EPA, DHA, and Astaxanthin',
+    dosageForm: 'Softgel',
+    actives: [
+      { name: 'Krill Oil', amount: 500, unit: 'mg' },
+    ],
+  });
+
+  const context = buildIngredientScienceContext({
+    digest,
+    overlayClaims: {
+      title: 'California Gold Nutrition, Antarctic Krill Oil, Omega-3 Phospholipids Complex with EPA, DHA, and Astaxanthin, Natural Strawberry and Lemon, 500 mg, 30 Fish Gelatin Softgels',
+      brandName: 'California Gold Nutrition',
+      nutritionalFacts: null,
+    },
+  });
+  const result = await compileIngredientOverviewAsync(context, {
+    timeoutMs: 50,
+    maxRetries: 0,
+  });
+
+  assert.equal(context.anchorIngredient?.name, 'Krill Oil');
+  assert.equal(result.source, 'fallback');
+  assert.match(result.ingredientOverview.titleLine ?? '', /krill oil/i);
+  assert.doesNotMatch(result.ingredientOverview.titleLine ?? '', /astaxanthin/i);
+  assert.match(result.ingredientOverview.paragraph1, /krill|omega-3/i);
+});
+
 test('science context orders lead active rows ahead of companion nutrients for 5-HTP formulas', () => {
   const digest = buildDigest({
     labelId: 'fixture-5htp-with-b6-companions',
@@ -356,6 +421,644 @@ test('science context orders lead active rows ahead of companion nutrients for 5
   assert.equal(context.ingredientDescriptors[0]?.ingredientFamily, '5htp');
   assert.equal(context.ingredientDescriptors[1]?.ingredientFamily, 'glycine');
   assert.notEqual(context.ingredientRows[1]?.name, 'Vitamin B-6 (from Pyridoxine HCl)');
+});
+
+test('science context keeps 5-HTP ahead of melatonin in mixed sleep formulas', () => {
+  const digest = buildDigest({
+    labelId: 'fixture-melatonin-5htp',
+    productName: 'Melatonin + 5-HTP, Time Release',
+    dosageForm: 'Tablet',
+    actives: [
+      { name: 'Melatonin', amount: 6, unit: 'mg' },
+      { name: '5-HTP (5-hydroxytryptophan)', amount: 100, unit: 'mg' },
+    ],
+  });
+
+  const context = buildIngredientScienceContext({ digest, overlayClaims: null });
+
+  assert.match(context.ingredientRows[0]?.name ?? '', /\b5-?HTP\b/i);
+  assert.equal(context.anchorIngredient?.ingredientFamily, '5htp');
+  assert.notEqual(context.ingredientRows[0]?.name, 'Melatonin');
+});
+
+test('science context keeps 5-HTP ahead of melatonin for fresh validation title-order edge cases', () => {
+  const natrolContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-natrol-melatonin-5htp-time-release',
+      productName: 'Melatonin + 5-HTP, Time Release',
+      dosageForm: 'Tablet',
+      actives: [
+        { name: 'Melatonin', amount: 6, unit: 'mg' },
+        { name: '5-HTP (5-Hydroxytryptophan) (from Griffonia simplicifolia) (seed)', amount: 50, unit: 'mg' },
+        { name: 'Calcium (as Dibasic Calcium Phosphate)', amount: 97, unit: 'mg' },
+        { name: 'Vitamin B-6 (as Pyridoxine Hydrochloride)', amount: 10, unit: 'mg' },
+      ],
+    }),
+    overlayClaims: {
+      title: 'Natrol, Melatonin + 5-HTP, Time Release, 60 Bi-Layer Tablets',
+      brandName: 'Natrol',
+      nutritionalFacts: null,
+    },
+  });
+  const swansonContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-swanson-5htp-melatonin',
+      productName: '5-HTP & Melatonin',
+      dosageForm: 'Capsule',
+      actives: [
+        { name: 'Melatonin', amount: 3, unit: 'mg' },
+        { name: 'L-5-Hydroxytryptophan', amount: 50, unit: 'mg' },
+      ],
+    }),
+    overlayClaims: {
+      title: 'Swanson, 5-HTP & Melatonin, 30 Capsules',
+      brandName: 'Swanson',
+      nutritionalFacts: null,
+    },
+  });
+
+  assert.match(natrolContext.ingredientRows[0]?.name ?? '', /\b5-?HTP\b|\bHydroxytryptophan\b/i);
+  assert.equal(natrolContext.anchorIngredient?.ingredientFamily, '5htp');
+  assert.notEqual(natrolContext.ingredientRows[0]?.name, 'Melatonin');
+  assert.match(swansonContext.ingredientRows[0]?.name ?? '', /\b5-?HTP\b|\bHydroxytryptophan\b/i);
+  assert.equal(swansonContext.anchorIngredient?.ingredientFamily, '5htp');
+  assert.notEqual(swansonContext.ingredientRows[0]?.name, 'Melatonin');
+});
+
+test('science context keeps probiotic rows ahead of macro nutrition facts in probiotic products', () => {
+  const digest = buildDigest({
+    labelId: 'fixture-probiotic-drops-with-macros',
+    productName: 'Culturelle, Baby Probiotics, Digestive Calm + Comfort Probiotic Drops',
+    dosageForm: 'Drops',
+    actives: [
+      { name: 'Calories', amount: 5, unit: null },
+      { name: 'Total Carbohydrate', amount: 1, unit: 'g' },
+      { name: 'Bifidobacterium animalis subsp. lactis, BB-12', amount: 10, unit: 'mg' },
+    ],
+  });
+
+  const context = buildIngredientScienceContext({ digest, overlayClaims: null });
+
+  assert.match(context.ingredientRows[0]?.name ?? '', /bifidobacterium|probiotic/i);
+  assert.equal(context.anchorIngredient?.ingredientFamily, 'probiotic_or_blend');
+  assert.doesNotMatch(context.ingredientRows[0]?.name ?? '', /calories|carbohydrate/i);
+});
+
+test('science context normalizes branded probiotic rows so they remain searchable and user-readable', () => {
+  const protectisContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-protectis-vitamin-d',
+      productName: 'Protectis Baby Probiotic Drops with Vitamin D',
+      dosageForm: 'Drops',
+      actives: [
+        { name: 'Vitamin D', amount: 10, unit: 'mcg' },
+        { name: 'Protectis', amount: null, unit: null },
+      ],
+    }),
+    overlayClaims: null,
+  });
+  const floraphageContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-floraphage',
+      productName: 'Floraphage Probiotic Multiplier',
+      dosageForm: 'Capsule',
+      actives: [
+        { name: 'FloraphagePrebiotic Bacteriophage', amount: 1000000, unit: "PFU's" },
+      ],
+    }),
+    overlayClaims: null,
+  });
+
+  assert.match(protectisContext.ingredientRows[0]?.name ?? '', /probiotic/i);
+  assert.equal(protectisContext.anchorIngredient?.ingredientFamily, 'probiotic_or_blend');
+  assert.notEqual(protectisContext.ingredientRows[0]?.name, 'Vitamin D');
+  assert.match(floraphageContext.ingredientRows[0]?.name ?? '', /floraphage probiotic/i);
+  assert.equal(floraphageContext.anchorIngredient?.ingredientFamily, 'probiotic_or_blend');
+});
+
+test('science context rescues zinc as the lead row in children immune blend products', () => {
+  const digest = buildDigest({
+    labelId: 'fixture-children-immune-vitamin-c-zinc',
+    productName: 'Chewable Immune Blend with Vitamin A, Vitamin C, Vitamin E, and Zinc for Children',
+    dosageForm: 'Chewable Tablet',
+    actives: [
+      { name: 'Vitamin C', amount: 90, unit: 'mg' },
+      { name: 'Vitamin E', amount: 13.5, unit: 'mg' },
+      { name: 'Zinc', amount: 5, unit: 'mg' },
+    ],
+  });
+
+  const context = buildIngredientScienceContext({ digest, overlayClaims: null });
+
+  assert.match(context.ingredientRows[0]?.name ?? '', /\bzinc\b/i);
+  assert.equal(context.anchorIngredient?.ingredientFamily, 'zinc');
+});
+
+test('science context lets zinc-led mineral stack titles outrank higher-dose magnesium rows', () => {
+  const digest = buildDigest({
+    labelId: 'fixture-zinc-magnesium-title-order',
+    productName: 'Zinc Magnesium Aspartate',
+    dosageForm: 'Tablet',
+    actives: [
+      { name: 'Magnesium', amount: 450, unit: 'mg' },
+      { name: 'Zinc', amount: 30, unit: 'mg' },
+    ],
+  });
+
+  const context = buildIngredientScienceContext({ digest, overlayClaims: null });
+
+  assert.match(context.ingredientRows[0]?.name ?? '', /\bzinc\b/i);
+  assert.equal(context.anchorIngredient?.ingredientFamily, 'zinc');
+});
+
+test('science context keeps zinc as the anchor in vitamin C/D/elderberry zinc formulas', () => {
+  const digest = buildDigest({
+    labelId: 'fixture-vitamin-c-d-zinc',
+    productName: 'Vitamin C, D3 & Zinc',
+    dosageForm: 'Vegetable Capsule',
+    actives: [
+      { name: 'Vitamin C (as L-ascorbic acid)', amount: 250, unit: 'mg' },
+      { name: 'Vitamin D3', amount: 25, unit: 'mcg' },
+      { name: 'Zinc', amount: 15, unit: 'mg' },
+    ],
+  });
+
+  const context = buildIngredientScienceContext({ digest, overlayClaims: null });
+
+  assert.match(context.ingredientRows[0]?.name ?? '', /\bzinc\b/i);
+  assert.equal(context.anchorIngredient?.ingredientFamily, 'zinc');
+});
+
+test('science context rescues elderberry rows from syrup and tea product titles', () => {
+  const syrupDigest = buildDigest({
+    labelId: 'fixture-elderberry-syrup-title-only',
+    productName: "Children's Sambucus Elderberry Syrup",
+    dosageForm: 'Syrup',
+    actives: [],
+  });
+  const teaDigest = buildDigest({
+    labelId: 'fixture-elderberry-tea-title-only',
+    productName: 'Organic Herbal Tea, Elderberry, Caffeine Free, 18 Tea Bags',
+    dosageForm: 'Tea Bag',
+    actives: [{ name: 'Tea blend', amount: null, unit: null }],
+  });
+
+  const syrupContext = buildIngredientScienceContext({ digest: syrupDigest, overlayClaims: null });
+  const teaContext = buildIngredientScienceContext({ digest: teaDigest, overlayClaims: null });
+
+  assert.match(syrupContext.ingredientRows[0]?.name ?? '', /elderberry|sambucus/i);
+  assert.doesNotMatch(syrupContext.ingredientRows[0]?.name ?? '', /syrup|children/i);
+  assert.match(teaContext.ingredientRows[0]?.name ?? '', /elderberry|sambucus/i);
+  assert.notEqual(teaContext.ingredientRows[0]?.name, 'Tea blend');
+});
+
+test('science context keeps zinc ahead of vitamin C in elderberry immune formulas', () => {
+  const digest = buildDigest({
+    labelId: 'fixture-sambucus-vitamin-c-zinc',
+    productName: 'Sambucus Elderberry With Vitamin C & Zinc Gummies',
+    dosageForm: 'Gummy',
+    actives: [
+      { name: 'Vitamin C', amount: 90, unit: 'mg' },
+      { name: 'Zinc', amount: 5, unit: 'mg' },
+    ],
+  });
+
+  const context = buildIngredientScienceContext({ digest, overlayClaims: null });
+
+  assert.match(context.ingredientRows[0]?.name ?? '', /\bzinc\b/i);
+  assert.notEqual(context.ingredientRows[0]?.name, 'Vitamin C');
+  assert.ok(context.ingredientRows.some((row) => /elderberry|sambucus/i.test(row.name)));
+});
+
+test('science context does not let audience or sugar rows beat title-rescued actives', () => {
+  const zincDigest = buildDigest({
+    labelId: 'fixture-zinc-audience-row',
+    productName: 'Zinc For Immune Support',
+    dosageForm: 'Liquid',
+    actives: [{ name: 'Men', amount: null, unit: null }],
+  });
+  const elderberryDigest = buildDigest({
+    labelId: 'fixture-elderberry-sugar-row',
+    productName: 'Kids Elderberry Super-Immune SoftChew Gummies',
+    dosageForm: 'Gummy',
+    actives: [{ name: 'Sugar Alcohol', amount: 2, unit: 'g' }],
+  });
+
+  const zincContext = buildIngredientScienceContext({ digest: zincDigest, overlayClaims: null });
+  const elderberryContext = buildIngredientScienceContext({ digest: elderberryDigest, overlayClaims: null });
+
+  assert.match(zincContext.ingredientRows[0]?.name ?? '', /\bzinc\b/i);
+  assert.notEqual(zincContext.ingredientRows[0]?.name, 'Men');
+  assert.match(elderberryContext.ingredientRows[0]?.name ?? '', /elderberry|sambucus/i);
+  assert.notEqual(elderberryContext.ingredientRows[0]?.name, 'Sugar Alcohol');
+});
+
+test('science context keeps CLA ahead of carnitine rows in CLA-led combo products', () => {
+  const digest = buildDigest({
+    labelId: 'fixture-cla-carnitine-matrix',
+    productName: 'CLA + Carnitine, Fruit Punch',
+    dosageForm: 'Powder',
+    actives: [
+      { name: 'Omega 6 Fatty Acids & CLA Matrix', amount: 3000, unit: 'mg' },
+      { name: 'L-Carnitine Tartrate', amount: 1500, unit: 'mg' },
+    ],
+  });
+
+  const context = buildIngredientScienceContext({ digest, overlayClaims: null });
+
+  assert.match(context.ingredientRows[0]?.name ?? '', /\bcla\b/i);
+  assert.doesNotMatch(context.ingredientRows[0]?.name ?? '', /matrix/i);
+  assert.equal(context.anchorIngredient?.ingredientFamily, 'cla');
+});
+
+test('science context prioritizes magnesium in calcium-magnesium buffered vitamin C stacks', () => {
+  const digest = buildDigest({
+    labelId: 'fixture-buffered-vitamin-c-calcium-magnesium',
+    productName: 'Buffered Vitamin C with Calcium and Magnesium',
+    dosageForm: 'Vegetarian Capsule',
+    actives: [
+      { name: 'Vitamin C (as Ascorbic Acid)', amount: 1000, unit: 'mg' },
+      { name: 'Calcium (as Calcium Ascorbate)', amount: 120, unit: 'mg' },
+      { name: 'Magnesium (as Magnesium Ascorbate)', amount: 60, unit: 'mg' },
+    ],
+  });
+
+  const context = buildIngredientScienceContext({ digest, overlayClaims: null });
+
+  assert.match(context.ingredientRows[0]?.name ?? '', /\bcalcium\b.*\bmagnesium\b|\bmagnesium\b.*\bcalcium\b/i);
+  assert.equal(context.anchorIngredient?.ingredientFamily, 'magnesium');
+  assert.notEqual(context.ingredientRows[0]?.name, 'Vitamin C (as Ascorbic Acid)');
+});
+
+test('science context strips package-form adjectives from single mineral chewables', () => {
+  const calciumContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-chewable-calcium',
+      productName: 'Chewable Calcium Citrate',
+      dosageForm: 'Chewable Tablet',
+      actives: [
+        { name: 'Chewable Calcium Citrate', amount: 250, unit: 'mg' },
+      ],
+    }),
+    overlayClaims: null,
+  });
+  const ironContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-chewable-iron',
+      productName: 'Chewable Iron',
+      dosageForm: 'Chewable Tablet',
+      actives: [
+        { name: 'Chewable Iron', amount: 30, unit: 'mg' },
+      ],
+    }),
+    overlayClaims: null,
+  });
+
+  assert.equal(calciumContext.ingredientRows[0]?.name, 'Calcium Citrate');
+  assert.equal(ironContext.ingredientRows[0]?.name, 'Iron');
+});
+
+test('science context normalizes omega-3 and matcha rows to retain aligned ingredient names', () => {
+  const omegaContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-vegan-omega3',
+      productName: 'Vegan Omega-3 Power',
+      dosageForm: 'Softgel',
+      actives: [
+        {
+          name: 'PureAlgaeOmega3 Triglyceride Algal Oil (with maximum naturally occurring SPMs, including Resolvins & Protectins)',
+          amount: 2000,
+          unit: 'mg',
+        },
+      ],
+    }),
+    overlayClaims: null,
+  });
+  const greenTeaContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-matcha-green-tea',
+      productName: 'Organic Matcha Green Tea Powder',
+      dosageForm: 'Powder',
+      actives: [
+        { name: 'Organic Matcha Tea (Camellia sinensis) Powder (leaf)', amount: 2, unit: 'g' },
+      ],
+    }),
+    overlayClaims: null,
+  });
+
+  assert.match(omegaContext.ingredientRows[0]?.name ?? '', /omega-3/i);
+  assert.equal(omegaContext.anchorIngredient?.ingredientFamily, 'omega_3');
+  assert.match(greenTeaContext.ingredientRows[0]?.name ?? '', /green tea/i);
+  assert.equal(greenTeaContext.anchorIngredient?.ingredientFamily, 'green_tea_extract');
+});
+
+test('science context rescues common title-led actives from macro residue rows', () => {
+  const aloeContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-aloe-vera',
+      productName: 'Aloe Vera Concentrate',
+      dosageForm: 'Liquid',
+      actives: [
+        { name: 'Sugars', amount: 1, unit: 'g' },
+      ],
+    }),
+    overlayClaims: null,
+  });
+  const aloeTitleWithSizeContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-now-aloe-vera-with-size',
+      productName: 'NOW Foods, Aloe Vera Concentrate, 4 fl oz (118 ml)',
+      brandName: 'NOW Foods',
+      dosageForm: 'Liquid',
+      actives: [
+        { name: 'Sugars', amount: 1, unit: 'g' },
+      ],
+    }),
+    overlayClaims: {
+      title: 'NOW Foods, Aloe Vera Concentrate, 4 fl oz (118 ml)',
+      brandName: 'NOW Foods',
+      nutritionalFacts: null,
+    },
+  });
+  const fiberContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-apple-fiber',
+      productName: 'Apple Fiber Pure Powder',
+      dosageForm: 'Powder',
+      actives: [
+        { name: 'Potassium', amount: 54, unit: 'mg' },
+      ],
+    }),
+    overlayClaims: null,
+  });
+  const potassiumContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-potassium-gluconate',
+      productName: 'Potassium Gluconate 90 mg',
+      dosageForm: 'Tablet',
+      actives: [
+        { name: 'Potassium', amount: 90, unit: 'mg' },
+      ],
+    }),
+    overlayClaims: null,
+  });
+  const proteinContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-whey-protein',
+      productName: '100% Whey Protein Powder',
+      dosageForm: 'Powder',
+      actives: [
+        { name: 'Potassium', amount: 120, unit: 'mg' },
+      ],
+    }),
+    overlayClaims: null,
+  });
+
+  assert.match(aloeContext.ingredientRows[0]?.name ?? '', /aloe vera/i);
+  assert.notEqual(aloeContext.ingredientRows[0]?.name, 'Sugars');
+  assert.match(aloeTitleWithSizeContext.ingredientRows[0]?.name ?? '', /aloe vera/i);
+  assert.notEqual(aloeTitleWithSizeContext.ingredientRows[0]?.name, 'Sugars');
+  assert.match(fiberContext.ingredientRows[0]?.name ?? '', /apple fiber/i);
+  assert.notEqual(fiberContext.ingredientRows[0]?.name, 'Potassium');
+  assert.match(potassiumContext.ingredientRows[0]?.name ?? '', /potassium gluconate/i);
+  assert.match(proteinContext.ingredientRows[0]?.name ?? '', /whey protein/i);
+});
+
+test('science context uses iHerb overlay title as ranking context when official product name is sparse', () => {
+  const digest = buildDigest({
+    labelId: 'fixture-osfortis-short-official-name',
+    productName: 'Osfortis',
+    dosageForm: 'Capsule',
+    actives: [
+      { name: 'Vitamin D', amount: 10, unit: 'mcg' },
+      { name: 'Osfortis', amount: null, unit: null },
+    ],
+  });
+
+  const context = buildIngredientScienceContext({
+    digest,
+    overlayClaims: {
+      title: 'BioGaia, Osfortis with Vitamin D, 60 Probiotic Capsules',
+      brandName: 'BioGaia',
+      nutritionalFacts: null,
+    },
+  });
+
+  assert.match(context.ingredientRows[0]?.name ?? '', /probiotic/i);
+  assert.equal(context.anchorIngredient?.ingredientFamily, 'probiotic_or_blend');
+  assert.notEqual(context.ingredientRows[0]?.name, 'Vitamin D');
+});
+
+test('science context prefers aggregate multivitamin formula rows over trace inositol rows', () => {
+  const bluebonnetContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-multione-iron-free',
+      productName: 'MultiONE®, Single Daily Multiple, Iron-Free',
+      dosageForm: 'Vegetable Capsule',
+      actives: [
+        { name: 'Inositol', amount: 25, unit: 'mg' },
+        { name: 'Magnesium (as magnesium aspartate)', amount: 10, unit: 'mg' },
+        { name: 'Thiamin (as thiamin mononitrate)', amount: 25, unit: 'mg' },
+        { name: 'Biotin', amount: 300, unit: 'mcg' },
+      ],
+    }),
+    overlayClaims: {
+      title: 'Bluebonnet Nutrition, MultiONE®, Single Daily Multiple, Iron-Free, 120 Vegetable Capsules',
+      brandName: 'Bluebonnet Nutrition',
+      nutritionalFacts: null,
+    },
+  });
+  const countryLifeContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-daily-total-one-iron-free',
+      productName: 'Daily Total One®, Iron Free',
+      dosageForm: 'Vegan Capsule',
+      actives: [
+        { name: 'Inositol (as inositol, inositol hexanicotinate)', amount: 20, unit: 'mg' },
+        { name: 'Magnesium (as magnesium citrate)†', amount: 8, unit: 'mg' },
+        { name: 'Biotin (as d-Biotin)', amount: 100, unit: 'mcg' },
+        { name: 'Choline (from choline bitartrate)', amount: 12, unit: 'mg' },
+      ],
+    }),
+    overlayClaims: {
+      title: 'Country Life, Daily Total One®, Iron Free, 60 Vegan Capsules',
+      brandName: 'Country Life',
+      nutritionalFacts: null,
+    },
+  });
+
+  assert.equal(bluebonnetContext.ingredientRows[0]?.name, 'Multivitamin & Mineral Formula');
+  assert.notEqual(bluebonnetContext.ingredientRows[0]?.name, 'Inositol');
+  assert.equal(countryLifeContext.ingredientRows[0]?.name, 'Multivitamin & Mineral Formula');
+  assert.notEqual(countryLifeContext.ingredientRows[0]?.name, 'Inositol (as inositol, inositol hexanicotinate)');
+});
+
+test('science context rescues EGCG as the default anchor from branded cytokine blend rows', () => {
+  const digest = buildDigest({
+    labelId: 'fixture-cytokine-suppress-egcg',
+    productName: 'Cytokine Suppress with EGCG',
+    dosageForm: 'Vegetarian Capsule',
+    actives: [
+      { name: 'Cytokine Suppress', amount: 240, unit: 'mg' },
+    ],
+  });
+
+  const context = buildIngredientScienceContext({ digest, overlayClaims: null });
+
+  assert.match(context.ingredientRows[0]?.name ?? '', /\begcg|green tea/i);
+  assert.equal(context.anchorIngredient?.ingredientFamily, 'green_tea_extract');
+  assert.notEqual(context.ingredientRows[0]?.name, 'Cytokine Suppress');
+});
+
+test('science context rescues probiotic anchors ahead of opaque proprietary blends', () => {
+  const digest = buildDigest({
+    labelId: 'fixture-essential-biotic-proprietary-blend',
+    productName: 'Essential-Biotic Complete, 50 Billion CFU',
+    dosageForm: 'Delayed-Release Vegetarian Capsule',
+    actives: [
+      { name: 'Proprietary Blend', amount: 150.88, unit: 'mg' },
+    ],
+  });
+
+  const context = buildIngredientScienceContext({ digest, overlayClaims: null });
+
+  assert.match(context.ingredientRows[0]?.name ?? '', /probiotic/i);
+  assert.equal(context.anchorIngredient?.ingredientFamily, 'probiotic_or_blend');
+  assert.notEqual(context.ingredientRows[0]?.name, 'Proprietary Blend');
+});
+
+test('science context uses food-like label anchors instead of macro rows for greens powders and snacks', () => {
+  const greensDigest = buildDigest({
+    labelId: 'fixture-organic-supergreens-with-macros',
+    productName: 'Organic Supergreens Powder',
+    dosageForm: 'Powder',
+    actives: [
+      { name: 'Protein', amount: 1, unit: 'g' },
+      { name: 'Dietary Fiber', amount: 2, unit: 'g' },
+      { name: 'Potassium', amount: 94, unit: 'mg' },
+    ],
+  });
+  const snackDigest = buildDigest({
+    labelId: 'fixture-snackable-crackers-with-potassium',
+    productName: 'Snackable Crackers, Maple Cinnamon Currant',
+    dosageForm: 'Cracker',
+    actives: [
+      { name: 'Potassium', amount: 80, unit: 'mg' },
+      { name: 'Protein', amount: 2, unit: 'g' },
+    ],
+  });
+
+  const greensContext = buildIngredientScienceContext({ digest: greensDigest, overlayClaims: null });
+  const snackContext = buildIngredientScienceContext({ digest: snackDigest, overlayClaims: null });
+
+  assert.equal(greensContext.productArchetype, 'functional_food_like');
+  assert.match(greensContext.ingredientRows[0]?.name ?? '', /greens/i);
+  assert.doesNotMatch(greensContext.ingredientRows[0]?.name ?? '', /protein|fiber|potassium/i);
+  assert.equal(snackContext.productArchetype, 'functional_food_like');
+  assert.match(snackContext.ingredientRows[0]?.name ?? '', /food-based product/i);
+  assert.doesNotMatch(snackContext.ingredientRows[0]?.name ?? '', /protein|potassium/i);
+});
+
+test('science context creates label-context rows for title-only Greens First and Project 1 powders', () => {
+  const greensFirstContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-greens-first-title-only',
+      productName: 'Greens First, Greens Powder, Berry',
+      dosageForm: 'Powder',
+      actives: [],
+    }),
+    overlayClaims: null,
+  });
+  const projectOneContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-project-one-greens-title-only',
+      productName: 'Project 1 Nutrition, Greens, Superfood Greens Powder, Chocolate',
+      dosageForm: 'Powder',
+      actives: [],
+    }),
+    overlayClaims: null,
+  });
+
+  assert.equal(greensFirstContext.productArchetype, 'functional_food_like');
+  assert.match(greensFirstContext.ingredientRows[0]?.name ?? '', /greens/i);
+  assert.equal(projectOneContext.productArchetype, 'functional_food_like');
+  assert.match(projectOneContext.ingredientRows[0]?.name ?? '', /greens/i);
+});
+
+test('brand-led food-like greens powders still create science rows for decision-support', () => {
+  const digest = buildDigest({
+    labelId: 'fixture-athletic-greens-brand-only',
+    productName: 'Foundational Nutrition, 30 Servings',
+    dosageForm: 'Powder',
+    actives: [],
+  });
+  const context = buildIngredientScienceContext({
+    digest: {
+      ...digest,
+      product: {
+        ...digest.product,
+        brandDisplay: 'Athletic Greens',
+      },
+    },
+    overlayClaims: null,
+  });
+  const plan = planScientificBackgroundSections({
+    context,
+    selectedIngredientName: context.anchorIngredient?.name ?? 'Greens',
+  });
+
+  assert.equal(context.productArchetype, 'functional_food_like');
+  assert.match(context.ingredientRows[0]?.name ?? '', /greens/i);
+  assert.equal(plan.mode, 'label_context_mode');
+});
+
+test('default science ingredient ordering follows title-led actives over companions and package anchors', () => {
+  const htpContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-5htp-melatonin-title-order',
+      productName: '5-HTP 200 mg with Melatonin',
+      dosageForm: 'Capsule',
+      actives: [
+        { name: 'Melatonin', amount: 3, unit: 'mg' },
+        { name: 'Vitamin B-6 (from Pyridoxine HCl)', amount: 2, unit: 'mg' },
+        { name: '5-HTP (5-hydroxytryptophan)', amount: 200, unit: 'mg' },
+      ],
+    }),
+    overlayClaims: null,
+  });
+  const probioticZincContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-zinc-probiotic-title-order',
+      productName: 'Zinc + Probiotic Immune Gummies',
+      dosageForm: 'Gummy',
+      actives: [
+        { name: 'Total Carbohydrate', amount: 3, unit: 'g' },
+        { name: 'Probiotic Blend', amount: 1, unit: 'Billion CFU' },
+        { name: 'Zinc', amount: 5, unit: 'mg' },
+      ],
+    }),
+    overlayClaims: null,
+  });
+  const packageAnchorContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-package-anchor-noise',
+      productName: 'Magnesium Complex, 120 Capsules',
+      dosageForm: 'Capsule',
+      actives: [
+        { name: '120 Capsules', amount: null, unit: null },
+        { name: 'Calories', amount: 10, unit: null },
+        { name: 'Magnesium (as Magnesium Glycinate)', amount: 200, unit: 'mg' },
+      ],
+    }),
+    overlayClaims: null,
+  });
+
+  assert.match(htpContext.ingredientRows[0]?.name ?? '', /5-HTP/i);
+  assert.notEqual(htpContext.ingredientRows[0]?.name, 'Melatonin');
+  assert.match(probioticZincContext.ingredientRows[0]?.name ?? '', /\bzinc\b/i);
+  assert.doesNotMatch(probioticZincContext.ingredientRows[0]?.name ?? '', /carbohydrate/i);
+  assert.match(packageAnchorContext.ingredientRows[0]?.name ?? '', /\bmagnesium\b/i);
+  assert.doesNotMatch(packageAnchorContext.ingredientRows[0]?.name ?? '', /capsules|calories/i);
 });
 
 test('single-anchor ingredient overview still allows identity copy when it adds label meaning', async () => {
@@ -409,4 +1112,132 @@ test('single-anchor ingredient overview strips exact-dose factual echo before re
   assert.doesNotMatch(result.ingredientOverview.paragraph1, /1000 mg/i);
   assert.doesNotMatch(result.ingredientOverview.paragraph2 ?? '', /1000 mg/i);
   assert.match(result.ingredientOverview.compareHint ?? '', /form/i);
+});
+
+test('blend-anchor ingredient overview fallback names probiotic and tea blend anchors', async () => {
+  const probioticContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-probiotic-blend-overview-fallback',
+      productName: '21st Century, Acidophilus Probiotic Blend, 100 Capsules',
+      dosageForm: 'Capsule',
+      actives: [
+        { name: 'Proprietary Blend', amount: 175, unit: 'mg' },
+      ],
+    }),
+    overlayClaims: null,
+  });
+  const teaContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-tea-blend-overview-fallback',
+      productName: 'Swanson, 100% Organic Chamomile Tea, Caffeine Free, 20 Tea Bags',
+      dosageForm: 'Tea Bag',
+      actives: [
+        { name: 'Tea blend', amount: null, unit: null },
+      ],
+    }),
+    overlayClaims: null,
+  });
+  const genericBlendContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-generic-blend-overview-fallback',
+      productName: 'Eclectic Herb, Beet Juice Powder, 3.2 oz (90 g)',
+      dosageForm: 'Powder',
+      actives: [
+        { name: 'Blend', amount: 3, unit: 'g' },
+      ],
+    }),
+    overlayClaims: null,
+  });
+  const proprietaryBlendContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-proprietary-blend-overview-fallback',
+      productName: '21st Century, Colon Cleanse, 120 Vegetarian Capsules',
+      dosageForm: 'Capsule',
+      actives: [
+        { name: 'Proprietary Blend', amount: 2000, unit: 'mg' },
+      ],
+    }),
+    overlayClaims: null,
+  });
+
+  const probioticResult = await compileIngredientOverviewAsync(probioticContext);
+  const teaResult = await compileIngredientOverviewAsync(teaContext);
+  const genericBlendResult = await compileIngredientOverviewAsync(genericBlendContext);
+  const proprietaryBlendResult = await compileIngredientOverviewAsync(proprietaryBlendContext);
+
+  assert.equal(probioticResult.source, 'fallback');
+  assert.match(probioticResult.ingredientOverview.titleLine ?? '', /probiotic/i);
+  assert.doesNotMatch(probioticResult.ingredientOverview.titleLine ?? '', /^Blend-style formula$/i);
+  assert.doesNotMatch(probioticResult.ingredientOverview.paragraph1, /blend-style formula/i);
+  assert.match(probioticResult.ingredientOverview.paragraph1, /probiotic/i);
+
+  assert.equal(teaResult.source, 'fallback');
+  assert.equal(teaResult.ingredientOverview.titleLine, 'Tea blend');
+  assert.doesNotMatch(teaResult.ingredientOverview.paragraph1, /blend-style formula/i);
+  assert.match(teaResult.ingredientOverview.paragraph1, /tea blend/i);
+
+  assert.equal(genericBlendResult.source, 'fallback');
+  assert.notEqual(genericBlendResult.ingredientOverview.titleLine, 'Blend-style formula');
+  assert.doesNotMatch(genericBlendResult.ingredientOverview.paragraph1, /blend-style formula/i);
+
+  assert.equal(proprietaryBlendResult.source, 'fallback');
+  assert.equal(proprietaryBlendResult.ingredientOverview.titleLine, 'Proprietary Blend');
+  assert.doesNotMatch(proprietaryBlendResult.ingredientOverview.paragraph1, /blend-style formula/i);
+});
+
+test('aloe title rescue does not steal the default anchor from sea moss vitamin C formulas', () => {
+  const context = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-sea-moss-vitamin-c-aloe-companion',
+      productName: 'Codeage, Amen, Sea Moss + Vitamin C, Aloe Vera & Black Pepper, 90 Vegetable Capsules',
+      dosageForm: 'Capsule',
+      actives: [
+        { name: 'Organic Sea Moss', amount: null, unit: null },
+        { name: 'Vitamin C (as Ascorbic Acid)', amount: 90, unit: 'mg' },
+        { name: 'Aloe Vera Extract (Whole Plant)', amount: null, unit: null },
+        { name: 'Black Pepper Extract', amount: null, unit: null },
+      ],
+    }),
+    overlayClaims: null,
+  });
+
+  assert.match(context.ingredientRows[0]?.name ?? '', /vitamin c/i);
+  assert.doesNotMatch(context.ingredientRows[0]?.name ?? '', /^aloe vera$/i);
+});
+
+test('omega-3 fallback copy distinguishes algal oil sources from fish oil sources', async () => {
+  const context = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-algal-oil-source-copy',
+      productName: "Nature's Way, Algal Oil, Omega-3, Cranberry Orange",
+      dosageForm: 'Liquid',
+      actives: [
+        { name: 'Algal oil (Schizochytrium spp.)', amount: 2, unit: 'g' },
+        { name: 'Total Omega-3', amount: 715, unit: 'mg' },
+        { name: 'DHA', amount: 500, unit: 'mg' },
+      ],
+    }),
+    overlayClaims: null,
+  });
+
+  const overview = await compileIngredientOverviewAsync(context);
+  const background = buildScientificBackgroundDeterministicFallback({
+    context,
+    selectedIngredientName: context.anchorIngredient?.name ?? 'Algal oil',
+  });
+  const overviewCopy = [
+    overview.ingredientOverview.titleLine,
+    overview.ingredientOverview.paragraph1,
+    overview.ingredientOverview.paragraph2,
+    overview.ingredientOverview.compareHint,
+  ].join(' ');
+  const backgroundCopy = [
+    background.introLine,
+    ...background.sections.map((section) => section.summary),
+  ].join(' ');
+
+  assert.match(overview.ingredientOverview.titleLine ?? '', /algal oil/i);
+  assert.doesNotMatch(overviewCopy, /fish[-\s]?oil/i);
+  assert.match(background.introLine, /algal oil/i);
+  assert.doesNotMatch(backgroundCopy, /fish[-\s]?oil/i);
 });

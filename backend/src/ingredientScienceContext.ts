@@ -129,28 +129,54 @@ const CURCUMIN_PATTERN = /\bcurcumin\b|\bturmeric\s+extract\b|\bcurcuminoids?\b/
 const ASHWAGANDHA_PATTERN = /\bashwagandha\b|\bwithania\s+somnifera\b|\bksm-?66\b|\bsensoril\b/i;
 const GINSENG_PATTERN = /\bginseng\b|\bpanax\b|\bamerican\s+ginseng\b|\bred\s+ginseng\b/i;
 const GREEN_TEA_EXTRACT_PATTERN = /\bgreen\s+tea(?:\s+extract)?\b|\begcg\b|\bcatechins?\b|\bcamellia\s+sinensis\b/i;
+const ELDERBERRY_PATTERN = /\belderberry\b|\bsambucus\b/i;
 const MAGNESIUM_PATTERN =
   /\bmagnesium\b|\bmagnesium\s+(?:glycinate|citrate|oxide|malate|taurate|threonate|chloride|l-threonate)\b/i;
 const CALCIUM_PATTERN =
   /\bcalcium\b|\bcalcium\s+(?:carbonate|citrate|ascorbate|malate|lactate|hydroxyapatite)\b/i;
 const IRON_PATTERN = /\biron\b|\bferrous\b|\bferric\b/i;
+const POTASSIUM_SUPPLEMENT_PATTERN = /\bpotassium\s+(?:gluconate|citrate|chloride|iodide|bicarbonate)\b/i;
 const MELATONIN_PATTERN = /\bmelatonin\b/i;
 const FUNCTIONAL_FOOD_LIKE_TITLE_PATTERN =
-  /\b(?:gum|gums|mints?|lozenge|lozenges|freeze\s+dried|juice\s+powder|fruit\s+powder|dragon\s+fruit|smoothie|drink\s+mix|tea\s+bags?|herbal\s+slimming\s+tea|greens\b|green\s+superfood|superfood|vegetable\s+powder)\b/i;
+  /\b(?:ag1|athletic\s+greens|gum|gums|gumm(?:y|ies)|mints?|lozenge|lozenges|freeze\s+dried|juice\s+powder|fruit\s+powder|dragon\s+fruit|smoothie|drink\s+mix|tea\s+bags?|herbal\s+slimming\s+tea|greens\b|green\s+superfood|superfood|vegetable\s+powder|whole\s+food\s+powder|snacks?|snackable|crackers?|crisps?)\b/i;
 const FUNCTIONAL_FOOD_LIKE_INGREDIENT_PATTERN =
   /\b(?:xylitol|erythritol|fiber|dragon\s+fruit|fruit\s+powder|juice\s+powder|spirulina|chlorella|barley\s+grass|wheat\s+grass|digestive\s+enzyme|enzyme\s+assimilation|greens\b|green\s+superfood|superfood)\b/i;
 const FUNCTIONAL_FOOD_LIKE_FORM_PATTERN = /\b(?:gum|mint|lozenge|tea|powder|drink\s*mix)\b/i;
 const PROBIOTIC_TITLE_PATTERN =
-  /\b(?:probiotic|probiotics|pro-bio|flora|microbiome|live cultures?|digestive support)\b/i;
+  /\b(?:probiotics?|pro-bio|probiology|essential[\s-]*biotic|flora|microbiome|live cultures?|cfu|digestive support|protectis|floraphage|osfortis|cytoflora)\b/i;
+const PROBIOTIC_SPECIFIC_ROW_PATTERN =
+  /\b(?:probiotic|probiotics|acidophilus|lactobacillus|bifidobacterium|saccharomyces|bacillus|limosilactobacillus|reuteri|cfu|live cultures?|protectis|floraphage|osfortis|cytoflora|bacteriophage|bacterial culture|probiotic lysate)\b/i;
 const GREENS_TITLE_PATTERN =
-  /\b(?:greens\b|green\s+superfood|superfood|vegetable\s+powder|daily\s+greens?|greens?\s+powder)\b/i;
+  /\b(?:ag1|athletic\s+greens|greens\b|supergreens?\b|green\s+superfood|superfood|vegetable\s+powder|whole\s+food\s+powder|daily\s+greens?|greens?\s+(?:powder|blend|formula)|powdered\s+greens?|supergreens?\s+powder)\b/i;
 const TEA_BAG_TITLE_PATTERN = /\b(?:tea\s+bags?|herbal\s+tea|slimming\s+tea)\b/i;
 const FOOD_LIKE_POWDER_TITLE_PATTERN =
   /\b(?:juice\s+powder|fruit\s+powder|smoothie|drink\s+mix|vegetable\s+powder|greens?\s+powder)\b/i;
+const FOOD_LIKE_CONTEXT_ANCHOR_PATTERN =
+  /^(?:greens?|green\s+superfood|food(?:\s|-)?based\s+(?:powder|product)|tea\s+blend|superfood\s+greens?|greens?\s+powder)$/i;
+const FOOD_LIKE_MACRO_ANCHOR_PATTERN =
+  /\b(?:calories|total\s+carbohydrates?|total\s+sugars?|added\s+sugars?|sugar\s+alcohols?|dietary\s+fiber|fiber|sodium|protein|potassium)\b/i;
+const FOOD_LIKE_PRODUCT_TITLE_PATTERN =
+  /\b(?:ag1|athletic\s+greens|greens?\b|supergreens?\b|green\s+superfood|superfood|juice\s+powder|fruit\s+powder|vegetable\s+powder|whole\s+food\s+powder|drink\s+mix|smoothie|tea\s+bags?|snacks?|snackable|crackers?|crisps?|gumm(?:y|ies))\b/i;
+const PROTEIN_PRODUCT_TITLE_PATTERN = /\bprotein\b/i;
+const FIBER_PRODUCT_TITLE_PATTERN = /\b(?:apple|psyllium|acacia|inulin|prebiotic)?\s*fiber\b/i;
+const ALOE_VERA_TITLE_PATTERN = /\baloe\s+vera\b/i;
+const IMMUNE_BLEND_TITLE_PATTERN =
+  /\b(?:immune|immunity|sambucus|elderberry|children'?s|chewable)\b/i;
+const B_COMPLEX_TITLE_PATTERN =
+  /\bb[\s-]*complex\b|\bb[\s-]*vitamins?\b|\bvitamin\s*b\s*complex\b/i;
+const MULTIVITAMIN_TITLE_PATTERN =
+  /\bmulti[\s-]*(?:vitamin|mineral)s?\b|\bmultivitamin\b|\bmultimineral\b|\bmultione\b|\bdaily\s+total\s+one\b|\bsingle\s+daily\s+multiple\b/i;
+const B_COMPLEX_FORMULA_ROW_PATTERN =
+  /\bb[\s-]*complex\b|\bvitamin\s*b\s*complex\b/i;
+const MULTIVITAMIN_FORMULA_ROW_PATTERN =
+  /\bmulti[\s-]*(?:vitamin|mineral)s?\b|\bmultivitamin\b|\bmultimineral\b/i;
 const GENERIC_FORMULA_LINE_PATTERN =
   /\b(?:supplement|nutritional|nutrition(?:al)?|proprietary)\s+formula\b|\bmatrix\b/i;
 const ENZYME_SUPPORT_LINE_PATTERN =
   /\b(?:digestive\s+enzyme|enzyme\s+assimilation|cytozymes?|enzyme\s+blend)\b/i;
+const NUTRITION_FACTS_MACRO_PATTERN =
+  /\b(?:calories|total\s+carbohydrates?|total\s+sugars?|added\s+sugars?|sugar\s+alcohols?|dietary\s+fiber|fiber|sodium)\b/i;
+const NON_INGREDIENT_AUDIENCE_ROW_PATTERN = /^(?:men|women|adults?|children|kids?|teens?)$/i;
 const BRAND_PREFIX_SEGMENT_PATTERN = /^[a-z0-9][a-z0-9 '&.+-]{1,24}$/i;
 
 const normalizeText = (value: string | null | undefined): string =>
@@ -191,6 +217,58 @@ const dedupeIngredientRows = (rows: ScienceIngredientRow[]): ScienceIngredientRo
   }
   return deduped;
 };
+
+const normalizeContextualIngredientRow = (
+  row: ScienceIngredientRow,
+  productName: string,
+): ScienceIngredientRow => {
+  let name = normalizeText(row.name);
+  const dose = normalizeText(row.dose) || null;
+
+  if (/^chewable\s+(calcium|iron)\b/i.test(name)) {
+    name = name.replace(/^chewable\s+/i, "");
+  }
+
+  if (POTASSIUM_SUPPLEMENT_PATTERN.test(productName) && /^potassium$/i.test(name)) {
+    name = extractTitleMatch(productName, POTASSIUM_SUPPLEMENT_PATTERN) ?? "Potassium Gluconate";
+  }
+
+  if (hasTitleFamily("omega_3", productName) && /\bpure\s*algae\s*omega\s*3\b|\bpurealgaeomega3\b/i.test(name)) {
+    name = name.replace(/\bpure\s*algae\s*omega\s*3\b|\bpurealgaeomega3\b/i, "Omega-3 Algal Oil");
+  }
+
+  if (hasTitleFamily("green_tea_extract", productName) && /\bmatcha\b|\bcamellia\s+sinensis\b/i.test(name) && !/\bgreen\s+tea\b/i.test(name)) {
+    name = `Green Tea ${name}`;
+  }
+
+  if (PROBIOTIC_TITLE_PATTERN.test(productName)) {
+    if (/^protectis\b/i.test(name) && !/\bprobiotic\b/i.test(name)) {
+      name = name.replace(/^protectis\b/i, "Protectis Probiotic");
+    } else if (/^osfortis\b/i.test(name) && !/\bprobiotic\b/i.test(name)) {
+      name = name.replace(/^osfortis\b/i, "Osfortis Probiotic");
+    } else if (/\bfloraphage/i.test(name) && !/\bprobiotic\b/i.test(name)) {
+      name = name.replace(/\bfloraphage/i, "Floraphage Probiotic ");
+    } else if (/^cytoflora\b/i.test(name) && !/\bprobiotic\b/i.test(name)) {
+      name = name.replace(/^cytoflora\b/i, "CytoFlora Probiotic");
+    } else if (/^bacterial culture$/i.test(name)) {
+      name = "Probiotic Bacterial Culture";
+    } else if (/^proprietary blend$/i.test(name)) {
+      name = "Probiotic Blend";
+    }
+  }
+
+  return {
+    ...row,
+    name: normalizeText(name),
+    dose,
+  };
+};
+
+const normalizeContextualIngredientRows = (
+  rows: ScienceIngredientRow[],
+  productName: string,
+): ScienceIngredientRow[] =>
+  dedupeIngredientRows(rows.map((row) => normalizeContextualIngredientRow(row, productName)));
 
 const inferFamilyFromText = (combined: string): IngredientScienceIngredientFamily => {
   if (/astaxanthin|carotenoid/.test(combined)) return "astaxanthin_carotenoid";
@@ -451,6 +529,94 @@ const matchesProductTitle = (rowName: string, productName: string): boolean => {
   return variants.some((value) => productKey.includes(value));
 };
 
+const isFoodLikeTitle = (productName: string): boolean =>
+  FUNCTIONAL_FOOD_LIKE_TITLE_PATTERN.test(productName) ||
+  FOOD_LIKE_PRODUCT_TITLE_PATTERN.test(productName) ||
+  GREENS_TITLE_PATTERN.test(productName) ||
+  TEA_BAG_TITLE_PATTERN.test(productName) ||
+  FOOD_LIKE_POWDER_TITLE_PATTERN.test(productName);
+
+const shouldPreferSpecificFoodLikeIngredient = (productName: string): boolean =>
+  ELDERBERRY_PATTERN.test(productName) ||
+  hasTitleFamily("green_tea_extract", productName) ||
+  PROBIOTIC_TITLE_PATTERN.test(productName);
+
+const isFoodLikeContextAnchorRow = (rowName: string | null | undefined): boolean =>
+  FOOD_LIKE_CONTEXT_ANCHOR_PATTERN.test(normalizeText(rowName));
+
+const isFoodLikeMacroAnchorRow = (
+  rowName: string | null | undefined,
+  productName: string,
+): boolean => {
+  const normalizedRow = normalizeText(rowName);
+  if (!normalizedRow || !isFoodLikeTitle(productName)) return false;
+  if (PROTEIN_PRODUCT_TITLE_PATTERN.test(productName) && /\bprotein\b/i.test(normalizedRow)) {
+    return false;
+  }
+  return FOOD_LIKE_MACRO_ANCHOR_PATTERN.test(normalizedRow);
+};
+
+const hasTitleRescueContext = (productName: string): boolean =>
+  isLeadAloeVeraTitle(productName) ||
+  FIBER_PRODUCT_TITLE_PATTERN.test(productName) ||
+  PROTEIN_PRODUCT_TITLE_PATTERN.test(productName) ||
+  POTASSIUM_SUPPLEMENT_PATTERN.test(productName);
+
+const isLeadAloeVeraTitle = (productName: string): boolean => {
+  const normalizedTitle = normalizeText(productName);
+  if (/^aloe\s+vera\b/i.test(normalizedTitle)) return true;
+  const titleWithoutBrand = normalizeText(normalizedTitle.replace(/^[^,]{1,40},\s*/, ""));
+  return /^aloe\s+vera\b/i.test(titleWithoutBrand);
+};
+
+const isTitleRescueAnchorRow = (
+  rowName: string | null | undefined,
+  productName: string,
+): boolean => {
+  const normalizedRow = normalizeText(rowName);
+  return (
+    (isLeadAloeVeraTitle(productName) && ALOE_VERA_TITLE_PATTERN.test(normalizedRow)) ||
+    (FIBER_PRODUCT_TITLE_PATTERN.test(productName) && /\bfiber\b/i.test(normalizedRow)) ||
+    (PROTEIN_PRODUCT_TITLE_PATTERN.test(productName) && /\bprotein\b/i.test(normalizedRow)) ||
+    (POTASSIUM_SUPPLEMENT_PATTERN.test(productName) && POTASSIUM_SUPPLEMENT_PATTERN.test(normalizedRow))
+  );
+};
+
+const isTitleRescueMacroRow = (
+  rowName: string | null | undefined,
+  productName: string,
+): boolean =>
+  hasTitleRescueContext(productName) &&
+  FOOD_LIKE_MACRO_ANCHOR_PATTERN.test(normalizeText(rowName)) &&
+  !matchesProductTitle(normalizeText(rowName), productName);
+
+const isNonZincCompanionInZincTitle = (
+  family: IngredientScienceIngredientFamily,
+  rowName: string,
+  productName: string,
+): boolean =>
+  hasTitleFamily("zinc", productName) &&
+  family !== "zinc" &&
+  (
+    family === "vitamin_c" ||
+    family === "vitamin_d" ||
+    family === "calcium" ||
+    family === "magnesium" ||
+    family === "probiotic_or_blend" ||
+    ELDERBERRY_PATTERN.test(rowName)
+  );
+
+const isDedicatedElderberryRow = (rowName: string | null | undefined): boolean => {
+  const normalized = normalizeText(rowName);
+  if (!ELDERBERRY_PATTERN.test(normalized)) return false;
+  if (/\b(?:syrup|gumm(?:y|ies)|tea|children|kids?|lollipops?|softchew|immune|immunity|support)\b/i.test(normalized)) {
+    return false;
+  }
+  const wordCount = normalized.split(/\s+/).filter(Boolean).length;
+  if (wordCount <= 4) return true;
+  return /^(?:black\s+)?elderberry\b|^sambucus\b/i.test(normalized);
+};
+
 const hasTitleFamily = (
   family: IngredientScienceIngredientFamily,
   productName: string,
@@ -483,12 +649,24 @@ const deriveScienceTitleRescueRows = (params: {
   if (!productName) return [];
 
   const titleWithoutBrand = stripBrandPrefix(productName, params.brandName);
+  const titleWithBrandContext = normalizeText(`${params.brandName ?? ""} ${titleWithoutBrand} ${productName}`);
   const existingFamilies = params.existingRows.map((row) =>
     inferRowIngredientFamily({
       rowName: row.name,
       productName: titleWithoutBrand,
     }),
   );
+  const hasDedicatedFamilyRow = (family: IngredientScienceIngredientFamily): boolean =>
+    params.existingRows.some((row) => {
+      const rowFamily = inferRowIngredientFamily({
+        rowName: row.name,
+        productName: titleWithoutBrand,
+      });
+      if (rowFamily !== family) return false;
+      if (isBlendLike(row.name, rowFamily)) return false;
+      if (HARD_BLEND_LIKE_PATTERN.test(row.name)) return false;
+      return true;
+    });
   const existingKeys = new Set(
     params.existingRows.map((row) => normalizeIngredientScienceKey(row.name)).filter(Boolean),
   );
@@ -509,7 +687,7 @@ const deriveScienceTitleRescueRows = (params: {
     pushRow(extractTitleMatch(titleWithoutBrand, /\b5[\s-]*htp\b|\b5[\s-]*hydroxytryptophan\b/i) ?? "5-HTP");
   }
 
-  if (hasTitleFamily("carnitine", titleWithoutBrand) && !existingFamilies.includes("carnitine")) {
+  if (hasTitleFamily("carnitine", titleWithoutBrand) && !hasDedicatedFamilyRow("carnitine")) {
     pushRow(
       extractTitleMatch(
         titleWithoutBrand,
@@ -518,15 +696,32 @@ const deriveScienceTitleRescueRows = (params: {
     );
   }
 
-  if (hasTitleFamily("cla", titleWithoutBrand) && !existingFamilies.includes("cla")) {
+  if (hasTitleFamily("cla", titleWithoutBrand) && !hasDedicatedFamilyRow("cla")) {
     pushRow("CLA");
   }
 
   if (hasTitleFamily("green_tea_extract", titleWithoutBrand) && !existingFamilies.includes("green_tea_extract")) {
     pushRow(
-      extractTitleMatch(titleWithoutBrand, /\bgreen tea(?:\s+extract)?\b/i) ??
+      extractTitleMatch(titleWithoutBrand, /\begcg\b|\bcatechins?\b|\bgreen tea(?:\s+extract)?\b/i) ??
         (/\bextract\b/i.test(titleWithoutBrand) ? "Green Tea Extract" : "Green Tea"),
     );
+  }
+
+  if (B_COMPLEX_TITLE_PATTERN.test(titleWithoutBrand)) {
+    pushRow("B-Complex Formula");
+  }
+
+  if (MULTIVITAMIN_TITLE_PATTERN.test(titleWithoutBrand)) {
+    pushRow("Multivitamin & Mineral Formula");
+  }
+
+  if (hasTitleFamily("vitamin_c", titleWithoutBrand) && !hasDedicatedFamilyRow("vitamin_c")) {
+    pushRow(extractTitleMatch(titleWithoutBrand, /\b(?:liposomal\s+)?vitamin\s*c\b|\bascorbic\s+acid\b/i) ?? "Vitamin C");
+  }
+
+  const hasDedicatedElderberryRow = params.existingRows.some((row) => isDedicatedElderberryRow(row.name));
+  if (ELDERBERRY_PATTERN.test(titleWithBrandContext) && !hasDedicatedElderberryRow) {
+    pushRow(/\belderberry\b/i.test(titleWithoutBrand) ? "Elderberry" : "Sambucus elderberry");
   }
 
   if (hasTitleFamily("omega_3", titleWithoutBrand) && !existingFamilies.includes("omega_3")) {
@@ -535,10 +730,10 @@ const deriveScienceTitleRescueRows = (params: {
     );
   }
 
-  if (
-    PROBIOTIC_TITLE_PATTERN.test(titleWithoutBrand)
-    && !existingFamilies.includes("probiotic_or_blend")
-  ) {
+  const hasDedicatedProbioticRow = params.existingRows.some((row) =>
+    PROBIOTIC_SPECIFIC_ROW_PATTERN.test(row.name),
+  );
+  if (PROBIOTIC_TITLE_PATTERN.test(titleWithBrandContext) && !hasDedicatedProbioticRow) {
     pushRow("Probiotics");
   }
 
@@ -562,6 +757,18 @@ const deriveScienceTitleRescueRows = (params: {
   const coveredMineralFamilies = existingFamilies.filter(
     (family) => MINERAL_STACK_FAMILIES.has(family) || family === "vitamin_d",
   );
+  const hasMeaningfulCoverage =
+    params.existingRows.length > 0 &&
+    existingFamilies.some((family) => family !== "generic");
+
+  if (
+    titleMineralFamilies.includes("calcium") &&
+    titleMineralFamilies.includes("magnesium") &&
+    !params.existingRows.some((row) => /\bcalcium\b/i.test(row.name) && /\bmagnesium\b/i.test(row.name))
+  ) {
+    pushRow("Calcium Magnesium Mineral Stack");
+  }
+
   if (titleMineralFamilies.length >= 2 && coveredMineralFamilies.length < titleMineralFamilies.length) {
     if (titleMineralFamilies.includes("magnesium") && !hasDedicatedMineralRow("magnesium")) pushRow("Magnesium");
     if (titleMineralFamilies.includes("zinc") && !hasDedicatedMineralRow("zinc")) pushRow("Zinc");
@@ -574,21 +781,56 @@ const deriveScienceTitleRescueRows = (params: {
     }
   }
 
-  const hasMeaningfulCoverage =
-    params.existingRows.length > 0 &&
-    existingFamilies.some((family) => family !== "generic");
+  if (!hasMeaningfulCoverage && titleMineralFamilies.length === 1) {
+    const [family] = titleMineralFamilies;
+    if (family === "magnesium") pushRow("Magnesium");
+    if (family === "zinc") pushRow("Zinc");
+    if (family === "calcium") pushRow("Calcium");
+    if (family === "iron") pushRow("Iron");
+    if (family === "vitamin_d") {
+      pushRow(
+        extractTitleMatch(titleWithoutBrand, /\bvitamin\s*d(?:2|3)?\b|\bd3\b|\bd2\b/i) ?? "Vitamin D3",
+      );
+    }
+  }
+
+  if (
+    hasTitleFamily("zinc", titleWithoutBrand) &&
+    IMMUNE_BLEND_TITLE_PATTERN.test(titleWithoutBrand) &&
+    !hasDedicatedMineralRow("zinc")
+  ) {
+    pushRow("Zinc");
+  }
+
+  if (
+    hasTitleFamily("vitamin_c", titleWithoutBrand) &&
+    IMMUNE_BLEND_TITLE_PATTERN.test(titleWithoutBrand) &&
+    !params.existingRows.some((row) => inferRowIngredientFamily({ rowName: row.name, productName: titleWithoutBrand }) === "vitamin_c")
+  ) {
+    pushRow("Vitamin C");
+  }
+
   const isFoodLikeTitle =
-    GREENS_TITLE_PATTERN.test(titleWithoutBrand) ||
+    GREENS_TITLE_PATTERN.test(titleWithBrandContext) ||
     TEA_BAG_TITLE_PATTERN.test(titleWithoutBrand) ||
     FOOD_LIKE_POWDER_TITLE_PATTERN.test(titleWithoutBrand) ||
+    FOOD_LIKE_PRODUCT_TITLE_PATTERN.test(titleWithBrandContext) ||
     FUNCTIONAL_FOOD_LIKE_FORM_PATTERN.test(normalizeText(params.dosageForm));
 
-  if (!hasMeaningfulCoverage && GREENS_TITLE_PATTERN.test(titleWithoutBrand)) {
+  if (GREENS_TITLE_PATTERN.test(titleWithBrandContext)) {
     pushRow("Greens");
-  } else if (!hasMeaningfulCoverage && TEA_BAG_TITLE_PATTERN.test(titleWithoutBrand)) {
+  } else if (TEA_BAG_TITLE_PATTERN.test(titleWithoutBrand)) {
     pushRow("Tea blend");
+  } else if (isLeadAloeVeraTitle(titleWithoutBrand)) {
+    pushRow("Aloe Vera");
+  } else if (FIBER_PRODUCT_TITLE_PATTERN.test(titleWithoutBrand)) {
+    pushRow(extractTitleMatch(titleWithoutBrand, /(?:apple|psyllium|acacia|inulin|prebiotic)?\s*fiber/i) ?? "Fiber");
+  } else if (PROTEIN_PRODUCT_TITLE_PATTERN.test(titleWithoutBrand)) {
+    pushRow(extractTitleMatch(titleWithoutBrand, /\b(?:whey|pea|rice|soy|hemp|collagen)?\s*protein\b/i) ?? "Protein");
+  } else if (POTASSIUM_SUPPLEMENT_PATTERN.test(titleWithoutBrand)) {
+    pushRow(extractTitleMatch(titleWithoutBrand, POTASSIUM_SUPPLEMENT_PATTERN) ?? "Potassium Gluconate");
   } else if (!hasMeaningfulCoverage && isFoodLikeTitle) {
-    pushRow("Food-based powder");
+    pushRow(FOOD_LIKE_POWDER_TITLE_PATTERN.test(titleWithoutBrand) ? "Food-based powder" : "Food-based product");
   }
 
   if (
@@ -600,7 +842,7 @@ const deriveScienceTitleRescueRows = (params: {
     if (hasTitleFamily("cla", titleWithoutBrand)) pushRow("CLA");
     else if (hasTitleFamily("carnitine", titleWithoutBrand)) pushRow("L-Carnitine");
     else if (hasTitleFamily("green_tea_extract", titleWithoutBrand)) pushRow("Green Tea");
-    else if (PROBIOTIC_TITLE_PATTERN.test(titleWithoutBrand)) pushRow("Probiotics");
+    else if (PROBIOTIC_TITLE_PATTERN.test(titleWithBrandContext)) pushRow("Probiotics");
   }
 
   return rescueRows;
@@ -616,6 +858,32 @@ const getFamilyTitleBoost = (
   const titleBoost = familyPattern.test(productName) ? 150 : 0;
   const rowBoost = matchesProductTitle(rowName, productName) ? 40 : 0;
   return titleBoost + rowBoost;
+};
+
+const getFamilyTitlePositionBoost = (
+  family: IngredientScienceIngredientFamily,
+  productName: string,
+): number => {
+  const familyPattern = FAMILY_TITLE_HINTS.find((entry) => entry.family === family)?.pattern;
+  if (!familyPattern) return 0;
+  const match = productName.match(familyPattern);
+  const index = match?.index;
+  if (typeof index !== "number" || index < 0) return 0;
+  if (index <= 2) return 175;
+  if (index <= 18) return 90;
+  if (index <= 44) return 65;
+  if (index <= 88) return 36;
+  return 18;
+};
+
+const titleStartsWithFamily = (
+  family: IngredientScienceIngredientFamily,
+  productName: string,
+): boolean => {
+  const familyPattern = FAMILY_TITLE_HINTS.find((entry) => entry.family === family)?.pattern;
+  if (!familyPattern) return false;
+  const titleWithoutBrand = normalizeText(productName.replace(/^[^,]{1,40},\s*/, ""));
+  return familyPattern.test(titleWithoutBrand.slice(0, 48));
 };
 
 const hasMineralStackLeadSignal = (
@@ -635,6 +903,23 @@ const hasMineralStackLeadSignal = (
 const hasStrongLeadActiveSignal = (families: IngredientScienceIngredientFamily[]): boolean =>
   families.some((family) => STRONG_LEAD_ACTIVE_FAMILIES.has(family));
 
+const hasCalciumMagnesiumTitle = (productName: string): boolean =>
+  hasTitleFamily("magnesium", productName) && hasTitleFamily("calcium", productName);
+
+const hasClaCarnitineTitle = (productName: string): boolean =>
+  CLA_PATTERN.test(productName) && CARNITINE_PATTERN.test(productName);
+
+const getMineralStackPriorityBoost = (
+  family: IngredientScienceIngredientFamily,
+  hasMineralStackLead: boolean,
+): number => {
+  if (!hasMineralStackLead) return 0;
+  if (family === "magnesium") return 145;
+  if (family === "zinc") return 120;
+  if (family === "calcium") return 36;
+  return 0;
+};
+
 const pickPrimaryActiveRowIndex = (
   rows: ScienceIngredientRow[],
   families: IngredientScienceIngredientFamily[],
@@ -649,6 +934,98 @@ const pickPrimaryActiveRowIndex = (
   rows.forEach((row, index) => {
     const family = families[index] ?? "generic";
     const familyTitleBoost = getFamilyTitleBoost(family, row.name, productName);
+    const familyTitlePositionBoost = getFamilyTitlePositionBoost(family, productName);
+    const productTitleEchoPenalty =
+      normalizeIngredientScienceKey(row.name) === normalizeIngredientScienceKey(productName) ? 300 : 0;
+    const macroPenalty = NUTRITION_FACTS_MACRO_PATTERN.test(row.name) ? 260 : 0;
+    const foodLikeContextAnchorBoost =
+      isFoodLikeTitle(productName)
+      && isFoodLikeContextAnchorRow(row.name)
+      && !shouldPreferSpecificFoodLikeIngredient(productName)
+        ? 760
+        : 0;
+    const titleRescueAnchorBoost = isTitleRescueAnchorRow(row.name, productName) ? 860 : 0;
+    const foodLikeMacroPenalty = isFoodLikeMacroAnchorRow(row.name, productName) ? 460 : 0;
+    const titleRescueMacroPenalty = isTitleRescueMacroRow(row.name, productName) ? 520 : 0;
+    const audienceRowPenalty = NON_INGREDIENT_AUDIENCE_ROW_PATTERN.test(normalizeText(row.name)) ? 260 : 0;
+    const magnesiumComboTitleBoost =
+      family === "magnesium"
+      && hasCalciumMagnesiumTitle(productName)
+        ? 720
+        : 0;
+    const calciumMagnesiumStackRowBoost =
+      hasCalciumMagnesiumTitle(productName)
+      && /\bcalcium\b/i.test(row.name)
+      && /\bmagnesium\b/i.test(row.name)
+        ? 900
+        : 0;
+    const vitaminCInMagnesiumComboPenalty =
+      family === "vitamin_c"
+      && hasCalciumMagnesiumTitle(productName)
+      && !titleStartsWithFamily("vitamin_c", productName)
+        ? 520
+        : 0;
+    const elderberryTitleBoost =
+      ELDERBERRY_PATTERN.test(productName) && ELDERBERRY_PATTERN.test(row.name)
+        ? 190
+        : 0;
+    const probioticLeadBoost =
+      PROBIOTIC_TITLE_PATTERN.test(productName)
+      && (family === "probiotic_or_blend" || PROBIOTIC_SPECIFIC_ROW_PATTERN.test(row.name))
+        ? 420
+        : 0;
+    const vitaminDInProbioticTitlePenalty =
+      PROBIOTIC_TITLE_PATTERN.test(productName) && family === "vitamin_d" ? 320 : 0;
+    const opaqueProbioticBlendPenalty =
+      PROBIOTIC_TITLE_PATTERN.test(productName)
+      && isBlendLike(row.name, family)
+      && !PROBIOTIC_SPECIFIC_ROW_PATTERN.test(row.name)
+        ? 320
+        : 0;
+    const zincImmuneBlendBoost =
+      family === "zinc"
+      && hasTitleFamily("zinc", productName)
+      && IMMUNE_BLEND_TITLE_PATTERN.test(productName)
+        ? 150
+        : 0;
+    const zincTitleLeadBoost =
+      family === "zinc" && hasTitleFamily("zinc", productName)
+        ? titleStartsWithFamily("zinc", productName)
+          ? 720
+          : 620
+        : 0;
+    const nonZincInZincTitlePenalty = isNonZincCompanionInZincTitle(family, row.name, productName) ? 360 : 0;
+    const vitaminCImmuneCompanionPenalty =
+      family === "vitamin_c"
+      && hasTitleFamily("zinc", productName)
+      && IMMUNE_BLEND_TITLE_PATTERN.test(productName)
+      && !titleStartsWithFamily("vitamin_c", productName)
+        ? 210
+        : 0;
+    const claCombinationLeadBoost =
+      family === "cla" && hasClaCarnitineTitle(productName)
+        ? 420
+        : 0;
+    const carnitineInClaCombinationPenalty =
+      family === "carnitine" && hasClaCarnitineTitle(productName)
+        ? 210
+        : 0;
+    const carnitineTitleBoost =
+      family === "carnitine" && hasTitleFamily("carnitine", productName)
+        ? 260
+        : 0;
+    const fiveHtpCombinationLeadBoost =
+      family === "5htp" && hasTitleFamily("5htp", productName)
+        ? 380
+        : 0;
+    const melatoninInFiveHtpPenalty =
+      family === "melatonin" && hasTitleFamily("5htp", productName)
+        ? 260
+        : 0;
+    const claMatrixPenalty =
+      family === "cla" && CARNITINE_PATTERN.test(productName) && HARD_BLEND_LIKE_PATTERN.test(row.name)
+        ? 180
+        : 0;
     const supportingPenalty =
       hasStrongLeadActive && SUPPORTING_MICRONUTRIENT_FAMILIES.has(family) ? 96 : 0;
     const vitaminDInMineralStackPenalty =
@@ -657,27 +1034,56 @@ const pickPrimaryActiveRowIndex = (
       GENERIC_FORMULA_LINE_PATTERN.test(row.name) ? 220 : 0;
     const enzymeSupportPenalty =
       ENZYME_SUPPORT_LINE_PATTERN.test(row.name) ? 190 : 0;
-    const mineralStackPriorityBoost =
-      hasMineralStackLead
-        ? family === "magnesium"
-          ? 42
-          : family === "zinc"
-            ? 32
-            : family === "calcium"
-              ? 18
-              : 0
+    const mineralStackPriorityBoost = getMineralStackPriorityBoost(family, hasMineralStackLead);
+    const bComplexFormulaBoost =
+      B_COMPLEX_TITLE_PATTERN.test(productName) && B_COMPLEX_FORMULA_ROW_PATTERN.test(row.name) ? 840 : 0;
+    const multivitaminFormulaBoost =
+      MULTIVITAMIN_TITLE_PATTERN.test(productName) && MULTIVITAMIN_FORMULA_ROW_PATTERN.test(row.name) ? 880 : 0;
+    const multivitaminSingleActivePenalty =
+      MULTIVITAMIN_TITLE_PATTERN.test(productName)
+      && !MULTIVITAMIN_FORMULA_ROW_PATTERN.test(row.name)
+      && family !== "generic"
+        ? 140
         : 0;
     const score =
       (matchesProductTitle(row.name, productName) ? 120 : 0) +
       familyTitleBoost +
+      familyTitlePositionBoost +
+      foodLikeContextAnchorBoost +
+      titleRescueAnchorBoost +
       mineralStackPriorityBoost +
+      magnesiumComboTitleBoost +
+      calciumMagnesiumStackRowBoost +
+      bComplexFormulaBoost +
+      multivitaminFormulaBoost +
+      probioticLeadBoost +
+      zincTitleLeadBoost +
+      zincImmuneBlendBoost +
+      elderberryTitleBoost +
+      claCombinationLeadBoost +
+      carnitineTitleBoost +
+      fiveHtpCombinationLeadBoost +
       (STRONG_LEAD_ACTIVE_FAMILIES.has(family) ? 86 : 0) +
       (PRIMARY_ACTIVE_FAMILIES.has(family) ? 24 : 0) +
       Math.min(parseDoseMagnitude(row.dose), 1200) / 24 +
       (row.dose ? 18 : 0) -
       (COMPANION_FAMILIES.has(family) ? 48 : 0) -
       supportingPenalty -
+      vitaminDInProbioticTitlePenalty -
+      nonZincInZincTitlePenalty -
+      carnitineInClaCombinationPenalty -
+      melatoninInFiveHtpPenalty -
       vitaminDInMineralStackPenalty -
+      vitaminCImmuneCompanionPenalty -
+      vitaminCInMagnesiumComboPenalty -
+      multivitaminSingleActivePenalty -
+      productTitleEchoPenalty -
+      macroPenalty -
+      foodLikeMacroPenalty -
+      titleRescueMacroPenalty -
+      audienceRowPenalty -
+      opaqueProbioticBlendPenalty -
+      claMatrixPenalty -
       genericFormulaPenalty -
       enzymeSupportPenalty -
       (isBlendLike(row.name, family) ? 120 : 0) -
@@ -715,6 +1121,102 @@ const scoreIngredientDescriptorForDisplay = (params: {
   const titleMatch = matchesProductTitle(row.name, productName);
   const isAnchor = Boolean(anchorKey && rowKey === anchorKey);
   const familyTitleBoost = getFamilyTitleBoost(descriptor.ingredientFamily, row.name, productName);
+  const familyTitlePositionBoost = getFamilyTitlePositionBoost(descriptor.ingredientFamily, productName);
+  const productTitleEchoPenalty =
+    normalizeIngredientScienceKey(row.name) === normalizeIngredientScienceKey(productName) ? 280 : 0;
+  const macroPenalty = NUTRITION_FACTS_MACRO_PATTERN.test(row.name) ? 240 : 0;
+  const foodLikeContextAnchorBoost =
+    isFoodLikeTitle(productName)
+    && isFoodLikeContextAnchorRow(row.name)
+    && !shouldPreferSpecificFoodLikeIngredient(productName)
+      ? 820
+      : 0;
+  const titleRescueAnchorBoost = isTitleRescueAnchorRow(row.name, productName) ? 880 : 0;
+  const foodLikeMacroPenalty = isFoodLikeMacroAnchorRow(row.name, productName) ? 500 : 0;
+  const titleRescueMacroPenalty = isTitleRescueMacroRow(row.name, productName) ? 540 : 0;
+  const audienceRowPenalty = NON_INGREDIENT_AUDIENCE_ROW_PATTERN.test(normalizeText(row.name)) ? 240 : 0;
+  const magnesiumComboTitleBoost =
+    descriptor.ingredientFamily === "magnesium"
+    && hasCalciumMagnesiumTitle(productName)
+      ? 740
+      : 0;
+  const calciumMagnesiumStackRowBoost =
+    hasCalciumMagnesiumTitle(productName)
+    && /\bcalcium\b/i.test(row.name)
+    && /\bmagnesium\b/i.test(row.name)
+      ? 930
+      : 0;
+  const vitaminCInMagnesiumComboPenalty =
+    descriptor.ingredientFamily === "vitamin_c"
+    && hasCalciumMagnesiumTitle(productName)
+    && !titleStartsWithFamily("vitamin_c", productName)
+      ? 520
+      : 0;
+  const elderberryTitleBoost =
+    ELDERBERRY_PATTERN.test(productName) && ELDERBERRY_PATTERN.test(row.name)
+      ? 180
+      : 0;
+  const probioticLeadBoost =
+    PROBIOTIC_TITLE_PATTERN.test(productName)
+    && (
+      descriptor.ingredientFamily === "probiotic_or_blend"
+      || PROBIOTIC_SPECIFIC_ROW_PATTERN.test(row.name)
+    )
+      ? 430
+      : 0;
+  const vitaminDInProbioticTitlePenalty =
+    PROBIOTIC_TITLE_PATTERN.test(productName) && descriptor.ingredientFamily === "vitamin_d" ? 320 : 0;
+  const opaqueProbioticBlendPenalty =
+    PROBIOTIC_TITLE_PATTERN.test(productName)
+    && isBlendLike(row.name, descriptor.ingredientFamily)
+    && !PROBIOTIC_SPECIFIC_ROW_PATTERN.test(row.name)
+      ? 340
+      : 0;
+  const zincImmuneBlendBoost =
+    descriptor.ingredientFamily === "zinc"
+    && hasTitleFamily("zinc", productName)
+    && IMMUNE_BLEND_TITLE_PATTERN.test(productName)
+      ? 140
+      : 0;
+  const zincTitleLeadBoost =
+    descriptor.ingredientFamily === "zinc" && hasTitleFamily("zinc", productName)
+      ? titleStartsWithFamily("zinc", productName)
+        ? 740
+        : 630
+      : 0;
+  const nonZincInZincTitlePenalty =
+    isNonZincCompanionInZincTitle(descriptor.ingredientFamily, row.name, productName) ? 360 : 0;
+  const vitaminCImmuneCompanionPenalty =
+    descriptor.ingredientFamily === "vitamin_c"
+    && hasTitleFamily("zinc", productName)
+    && IMMUNE_BLEND_TITLE_PATTERN.test(productName)
+    && !titleStartsWithFamily("vitamin_c", productName)
+      ? 190
+      : 0;
+  const claCombinationLeadBoost =
+    descriptor.ingredientFamily === "cla" && hasClaCarnitineTitle(productName)
+      ? 430
+      : 0;
+  const carnitineInClaCombinationPenalty =
+    descriptor.ingredientFamily === "carnitine" && hasClaCarnitineTitle(productName)
+      ? 210
+      : 0;
+  const carnitineTitleBoost =
+    descriptor.ingredientFamily === "carnitine" && hasTitleFamily("carnitine", productName)
+      ? 260
+      : 0;
+  const fiveHtpCombinationLeadBoost =
+    descriptor.ingredientFamily === "5htp" && hasTitleFamily("5htp", productName)
+      ? 390
+      : 0;
+  const melatoninInFiveHtpPenalty =
+    descriptor.ingredientFamily === "melatonin" && hasTitleFamily("5htp", productName)
+      ? 260
+      : 0;
+  const claMatrixPenalty =
+    descriptor.ingredientFamily === "cla" && CARNITINE_PATTERN.test(productName) && HARD_BLEND_LIKE_PATTERN.test(row.name)
+      ? 160
+      : 0;
   const genericFormulaPenalty = GENERIC_FORMULA_LINE_PATTERN.test(row.name) ? 180 : 0;
   const enzymeSupportPenalty = ENZYME_SUPPORT_LINE_PATTERN.test(row.name) ? 170 : 0;
   const supportingPenalty =
@@ -722,14 +1224,16 @@ const scoreIngredientDescriptorForDisplay = (params: {
   const vitaminDInMineralStackPenalty =
     hasMineralStackLead && descriptor.ingredientFamily === "vitamin_d" ? 130 : 0;
   const mineralStackPriorityBoost =
-    hasMineralStackLead
-      ? descriptor.ingredientFamily === "magnesium"
-        ? 42
-        : descriptor.ingredientFamily === "zinc"
-          ? 32
-          : descriptor.ingredientFamily === "calcium"
-            ? 18
-            : 0
+    getMineralStackPriorityBoost(descriptor.ingredientFamily, hasMineralStackLead);
+  const bComplexFormulaBoost =
+    B_COMPLEX_TITLE_PATTERN.test(productName) && B_COMPLEX_FORMULA_ROW_PATTERN.test(row.name) ? 860 : 0;
+  const multivitaminFormulaBoost =
+    MULTIVITAMIN_TITLE_PATTERN.test(productName) && MULTIVITAMIN_FORMULA_ROW_PATTERN.test(row.name) ? 900 : 0;
+  const multivitaminSingleActivePenalty =
+    MULTIVITAMIN_TITLE_PATTERN.test(productName)
+    && !MULTIVITAMIN_FORMULA_ROW_PATTERN.test(row.name)
+    && descriptor.ingredientFamily !== "generic"
+      ? 120
       : 0;
 
   return (
@@ -738,14 +1242,42 @@ const scoreIngredientDescriptorForDisplay = (params: {
     (descriptor.lineRole === "breakdown_line" ? 42 : 0) +
     (titleMatch ? 120 : 0) +
     familyTitleBoost +
+    familyTitlePositionBoost +
+    foodLikeContextAnchorBoost +
+    titleRescueAnchorBoost +
     mineralStackPriorityBoost +
+    magnesiumComboTitleBoost +
+    calciumMagnesiumStackRowBoost +
+    bComplexFormulaBoost +
+    multivitaminFormulaBoost +
+    probioticLeadBoost +
+    zincTitleLeadBoost +
+    zincImmuneBlendBoost +
+    elderberryTitleBoost +
+    claCombinationLeadBoost +
+    carnitineTitleBoost +
+    fiveHtpCombinationLeadBoost +
     (STRONG_LEAD_ACTIVE_FAMILIES.has(descriptor.ingredientFamily) ? 68 : 0) +
     (PRIMARY_ACTIVE_FAMILIES.has(descriptor.ingredientFamily) ? 34 : 0) +
     (row.dose ? 16 : 0) +
     Math.min(doseMagnitude, 1200) / 24 -
     (descriptor.lineRole === "companion_nutrient" ? 62 : 0) -
     supportingPenalty -
+    vitaminDInProbioticTitlePenalty -
+    nonZincInZincTitlePenalty -
+    carnitineInClaCombinationPenalty -
+    melatoninInFiveHtpPenalty -
     vitaminDInMineralStackPenalty -
+    vitaminCImmuneCompanionPenalty -
+    vitaminCInMagnesiumComboPenalty -
+    multivitaminSingleActivePenalty -
+    productTitleEchoPenalty -
+    macroPenalty -
+    foodLikeMacroPenalty -
+    titleRescueMacroPenalty -
+    audienceRowPenalty -
+    opaqueProbioticBlendPenalty -
+    claMatrixPenalty -
     (descriptor.lineRole === "aggregate_line" ? 90 : 0) -
     (descriptor.lineRole === "source_line" ? 120 : 0) -
     (descriptor.lineRole === "blend_line" ? 140 : 0) -
@@ -885,9 +1417,17 @@ const classifyProductArchetype = (params: {
   const rowLooksFoodLike = params.rows.some((row) =>
     FUNCTIONAL_FOOD_LIKE_INGREDIENT_PATTERN.test(normalizeText(row.name)),
   );
+  const foodLikeTitleDominant =
+    GREENS_TITLE_PATTERN.test(productName) ||
+    TEA_BAG_TITLE_PATTERN.test(productName) ||
+    FOOD_LIKE_POWDER_TITLE_PATTERN.test(productName);
   const strongFoodPresentation = titleLooksFoodLike || formLooksFoodLike || rowLooksFoodLike;
   const definitelyFoodLikeFromTitle =
     titleLooksFoodLike && (formLooksFoodLike || rowLooksFoodLike);
+
+  if (foodLikeTitleDominant) {
+    return "functional_food_like";
+  }
 
   if (definitelyFoodLikeFromTitle) {
     return "functional_food_like";
@@ -921,13 +1461,32 @@ export const buildIngredientScienceContext = (params: {
     normalizeText(params.digest?.product?.brandLegal) ||
     normalizeText(params.overlayClaims?.brandName) ||
     null;
+  const overlayTitle = normalizeText(params.overlayClaims?.title);
+  const productContextName = normalizeText(
+    [
+      productName,
+      overlayTitle && normalizeIngredientScienceKey(overlayTitle) !== normalizeIngredientScienceKey(productName)
+        ? overlayTitle
+        : null,
+    ].filter(Boolean).join(" "),
+  );
+  const brandProductName = normalizeText([brandName, productContextName].filter(Boolean).join(" "));
+  const rankingProductName =
+    brandName
+    && GREENS_TITLE_PATTERN.test(brandProductName)
+    && !GREENS_TITLE_PATTERN.test(productContextName)
+      ? brandProductName
+      : productContextName || productName;
   const titleRescueRows = deriveScienceTitleRescueRows({
-    productName,
+    productName: rankingProductName,
     brandName,
     dosageForm: params.digest?.product?.dosageForm ?? null,
     existingRows: selection.ingredientRows,
   });
-  const ingredientRows = dedupeIngredientRows([...selection.ingredientRows, ...titleRescueRows]);
+  const ingredientRows = normalizeContextualIngredientRows(
+    [...selection.ingredientRows, ...titleRescueRows],
+    rankingProductName,
+  );
   const sourceContext =
     selection.ingredientSourceTier === "overlay_iherb"
       ? "Supplemental product-page label data"
@@ -935,17 +1494,17 @@ export const buildIngredientScienceContext = (params: {
   const ingredientFamilies = ingredientRows.map((row) =>
     inferRowIngredientFamily({
       rowName: row.name,
-      productName,
+      productName: rankingProductName,
     }),
   );
   const productArchetype = classifyProductArchetype({
-    productName,
+    productName: rankingProductName,
     dosageForm: params.digest?.product?.dosageForm ?? null,
     rows: ingredientRows,
     families: ingredientFamilies,
   });
-  const primaryIndex = pickPrimaryActiveRowIndex(ingredientRows, ingredientFamilies, productName);
-  const lineRoles = buildLineRoles(ingredientRows, ingredientFamilies, primaryIndex, productName);
+  const primaryIndex = pickPrimaryActiveRowIndex(ingredientRows, ingredientFamilies, rankingProductName);
+  const lineRoles = buildLineRoles(ingredientRows, ingredientFamilies, primaryIndex, rankingProductName);
   const initialAnchorRow = primaryIndex >= 0 ? ingredientRows[primaryIndex] ?? null : ingredientRows[0] ?? null;
   const ingredientDescriptors = ingredientRows.map((row, index) => {
     const ingredientFamily = ingredientFamilies[index] ?? "generic";
@@ -964,7 +1523,7 @@ export const buildIngredientScienceContext = (params: {
   });
   const anchorKey = initialAnchorRow ? normalizeIngredientScienceKey(initialAnchorRow.name) : null;
   const hasStrongLeadActive = hasStrongLeadActiveSignal(ingredientFamilies);
-  const hasMineralStackLead = hasMineralStackLeadSignal(ingredientRows, ingredientFamilies, productName);
+  const hasMineralStackLead = hasMineralStackLeadSignal(ingredientRows, ingredientFamilies, rankingProductName);
   const orderedEntries = ingredientRows
     .map((row, index) => ({
       row,
@@ -977,7 +1536,7 @@ export const buildIngredientScienceContext = (params: {
           row: right.row,
           descriptor: right.descriptor,
           index: right.index,
-          productName,
+          productName: rankingProductName,
           anchorKey,
           hasStrongLeadActive,
           hasMineralStackLead,
@@ -986,7 +1545,7 @@ export const buildIngredientScienceContext = (params: {
           row: left.row,
           descriptor: left.descriptor,
           index: left.index,
-          productName,
+          productName: rankingProductName,
           anchorKey,
           hasStrongLeadActive,
           hasMineralStackLead,
@@ -1004,7 +1563,7 @@ export const buildIngredientScienceContext = (params: {
   const formulaMode = determineFormulaMode(ingredientRows, ingredientFamilies);
   const ingredientFamily = inferContextIngredientFamily({
     seedText: anchorRow?.name ?? null,
-    productName,
+    productName: rankingProductName,
     rows: ingredientRows,
   });
   const hasOpaqueBlend = orderedIngredientDescriptors.some((descriptor) => descriptor.isBlendLike);
