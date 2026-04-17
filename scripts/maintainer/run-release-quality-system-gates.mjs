@@ -37,10 +37,10 @@ const DEFAULT_API_BASE_URL =
   "http://127.0.0.1:3001";
 
 const DEFAULT_OUT_DIR = "output/quality-system-release";
-const DEFAULT_SEARCH_PACK = "data/validation/golden-journey-pack.v1.json";
 const DEFAULT_BASELINE_PATH = "data/validation/stable-gate-baseline.v1.json";
 const DEFAULT_CURATED_BASELINE_CONFIG = "data/validation/live-replay-release-slice.v1.json";
 const DEFAULT_MOBILE_SCAN_SMOKE_CONFIG = "data/validation/mobile-scan-smoke-mini.v0.json";
+const DEFAULT_SEARCH_REPLAY_CONFIG = "data/validation/live-replay-release-slice.v1.json";
 
 const DEFAULT_RUNTIME_CONFIGS = [
   "data/validation/runtime-result-page-contract.v0.json",
@@ -55,7 +55,8 @@ const parseArgs = () => {
     outDir: DEFAULT_OUT_DIR,
     baselinePath: DEFAULT_BASELINE_PATH,
     curatedBaselineConfigPath: DEFAULT_CURATED_BASELINE_CONFIG,
-    searchPackPath: DEFAULT_SEARCH_PACK,
+    searchConfigPath: DEFAULT_SEARCH_REPLAY_CONFIG,
+    searchPackPath: null,
     dryRun: false,
     printMarkdown: false,
     skipSearchWarmWait: false,
@@ -77,6 +78,9 @@ const parseArgs = () => {
       index += 1;
     } else if (arg === "--curated-baseline-config" && next) {
       values.curatedBaselineConfigPath = next;
+      index += 1;
+    } else if (arg === "--search-config" && next) {
+      values.searchConfigPath = next;
       index += 1;
     } else if (arg === "--search-pack" && next) {
       values.searchPackPath = next;
@@ -219,6 +223,7 @@ const main = async () => {
       baselineId: baseline.baselineId,
       baselinePath: args.baselinePath,
       curatedBaselineConfigPath: args.curatedBaselineConfigPath,
+      searchConfigPath: args.searchConfigPath,
       runtimeConfigs: DEFAULT_RUNTIME_CONFIGS,
       mobileScanSmokeConfigPath: DEFAULT_MOBILE_SCAN_SMOKE_CONFIG,
       searchPackPath: args.searchPackPath,
@@ -300,10 +305,23 @@ const main = async () => {
     ),
   );
 
-  const searchPack = await loadCuratedValidationSourcePack({
-    sourcePackPath: args.searchPackPath,
-    additionalPackPaths: [],
-  });
+  let searchPack = null;
+  let searchPackSource = null;
+  if (args.searchPackPath) {
+    searchPack = await loadCuratedValidationSourcePack({
+      sourcePackPath: args.searchPackPath,
+      additionalPackPaths: [],
+    });
+    searchPackSource = args.searchPackPath;
+  } else {
+    const searchConfig = await loadCuratedValidationConfig(args.searchConfigPath);
+    const searchSource = await loadCuratedValidationSourcePack(searchConfig);
+    searchPack = buildCuratedValidationPack({
+      pack: searchSource,
+      config: searchConfig,
+    });
+    searchPackSource = args.searchConfigPath;
+  }
   let warmup = null;
   if (!args.skipSearchWarmWait) {
     warmup = await waitForSearchReplayWarmReady({
@@ -322,7 +340,7 @@ const main = async () => {
     report: searchReport,
     outDir: path.join(args.outDir, "search"),
   });
-  suites.push(summarizeSearchReport(searchReport, searchOutputs, args.searchPackPath));
+  suites.push(summarizeSearchReport(searchReport, searchOutputs, searchPackSource));
 
   const blockingSuites = suites.filter((suite) => suite.type !== "frozen_curated_baseline");
   const releaseVerdict = blockingSuites.some((suite) => suite.fail > 0) ? "block" : "pass";

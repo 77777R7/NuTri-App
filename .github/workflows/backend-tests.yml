@@ -96,6 +96,7 @@ jobs:
           tests/validation/runtime-contract-runner.test.mjs
           tests/validation/quality-system-phase-closure.test.mjs
           tests/validation/mobile-scan-smoke-mini.test.mjs
+          tests/validation/run-release-quality-system-gates.test.mjs
           tests/search/search-golden-replay-runner.test.mjs
           tests/search/golden-journey-pack-v1.test.mjs
           tests/search/stratified-nightly-pack.test.mjs
