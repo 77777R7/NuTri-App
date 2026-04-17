@@ -1,0 +1,37 @@
+{
+  "version": "stratified-nightly-pack.v1",
+  "sourcePackPath": "data/validation/golden-journey-pack.v1.json",
+  "additionalPackPaths": [
+    "data/validation/stratified-nightly-additions.v1.json"
+  ],
+  "pinnedScenarioIds": [
+    "scan_nightly_betterbody_coconut_aminos_soy_replacement",
+    "scan_nightly_bpn_go_gel_food_like",
+    "scan_nightly_hydrationup_electrolyte_drink_mix",
+    "scan_nightly_barleans_algal_oil_source"
+  ],
+  "targetSize": 64,
+  "surfaceMinimums": {
+    "barcode_scan": 32,
+    "search": 7,
+    "search_origin_result": 12
+  },
+  "categoryMinimums": {
+    "food_like": 6,
+    "sparse_title_led": 6,
+    "probiotic_microbiome": 8,
+    "omega3_source_oil": 8,
+    "sleep_amino": 6,
+    "mineral_stack": 6
+  },
+  "requiredPersonas": [
+    "shellfish_allergy",
+    "soy_allergy",
+    "fish_allergy",
+    "vegan_preference",
+    "melatonin_sensitivity",
+    "duplicate_zinc_magnesium_d",
+    "digestion_goal",
+    "stimulant_sensitivity"
+  ]
+}

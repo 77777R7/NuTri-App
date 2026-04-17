@@ -8,6 +8,7 @@ import { ActivityIndicator, Dimensions, StyleSheet, Text, TouchableOpacity, View
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ResponsiveScreen } from '@/components/common/ResponsiveScreen';
+import { useOnboarding } from '@/contexts/OnboardingContext';
 import type { DesignTokens } from '@/constants/designTokens';
 import { useResponsiveTokens } from '@/hooks/useResponsiveTokens';
 import { trackOnboardingEvent } from '@/lib/analytics/onboarding';
@@ -47,6 +48,7 @@ export default function BarcodeScanScreen() {
   const params = useLocalSearchParams<{ source?: string }>();
   const isOnboardingScan = params.source === 'onboarding';
   const backFallback = isOnboardingScan ? '/onboarding/done' : '/main';
+  const { draft } = useOnboarding();
   const { tokens } = useResponsiveTokens();
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NavigationProp<ReactNavigation.RootParamList>>();
@@ -75,8 +77,14 @@ export default function BarcodeScanScreen() {
     };
   }, []);
 
-  const navigateToResult = useCallback((sessionId: string) => {
-    router.replace({ pathname: '/scan/result', params: { sessionId } });
+  const navigateToResult = useCallback((sessionId: string, source?: string | null) => {
+    router.replace({
+      pathname: '/scan/result',
+      params: {
+        sessionId,
+        ...(source ? { source } : {}),
+      },
+    });
   }, []);
 
   const handleBarcode = useCallback(
@@ -125,6 +133,8 @@ export default function BarcodeScanScreen() {
           mode: 'barcode',
           input: { barcode: normalized },
           isLoading: true,
+          source: isOnboardingScan ? 'onboarding' : params.source ?? null,
+          onboardingDraftSnapshot: isOnboardingScan ? draft ?? null : null,
         });
         trackOnboardingEvent('first_scan_completed', {
           source: 'barcode_scan',
@@ -134,7 +144,7 @@ export default function BarcodeScanScreen() {
         // Delay navigation to let user see the checkmark
         navigationLockedRef.current = true;
         navigationTimerRef.current = setTimeout(() => {
-          navigateToResult(sessionId);
+          navigateToResult(sessionId, typeof params.source === 'string' ? params.source : null);
         }, 800);
 
       } catch (error) {
@@ -152,7 +162,7 @@ export default function BarcodeScanScreen() {
         }, 2000);
       }
     },
-    [status, navigateToResult],
+    [draft, isOnboardingScan, navigateToResult, params.source, status],
   );
 
   const handleRequestCameraPermission = useCallback(async () => {

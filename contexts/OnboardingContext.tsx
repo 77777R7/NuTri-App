@@ -10,6 +10,7 @@ import {
 import type { ReactNode } from 'react';
 
 import { useAuth } from '@/contexts/AuthContext';
+import { clearFirstScanRevealRecord } from '@/lib/storage/firstScanReveal';
 import {
   getDraft,
   getFlags,
@@ -20,7 +21,7 @@ import {
   setProgress as persistProgress,
 } from '@/lib/storage/onboarding';
 import { supabase } from '@/lib/supabase';
-import { upsertUserProfile } from '@/lib/supabase/profile';
+import { upsertUserFirstScanReveal, upsertUserProfile } from '@/lib/supabase/profile';
 import { ONBOARDING_TOTAL_STEPS } from '@/lib/onboarding-v2';
 import type { OnboardingState, ProfileDraft, TrialState } from '@/types/onboarding';
 
@@ -205,6 +206,7 @@ export const OnboardingProvider = ({ children }: OnboardingProviderProps) => {
   }, []);
 
   const resetLocalOnboarding = useCallback(async () => {
+    const userId = session?.user?.id?.trim() ?? null;
     draftRef.current = null;
     progressRef.current = 1;
     setDraft(null);
@@ -215,7 +217,20 @@ export const OnboardingProvider = ({ children }: OnboardingProviderProps) => {
     setDraftUpdatedAt(undefined);
     setServerSyncedAtState(undefined);
     await resetOnboardingStorage();
-  }, []);
+    await clearFirstScanRevealRecord(userId ?? 'guest');
+    if (userId) {
+      const resetRevealResult = await upsertUserFirstScanReveal(supabase, userId, {
+        first_completed_scan_id: null,
+        first_scan_reveal_state: 'eligible',
+        first_scan_reveal_scan_id: null,
+        first_scan_reveal_granted_at: null,
+        first_scan_paywall_seen_at: null,
+      });
+      if (!resetRevealResult.ok) {
+        console.warn('[onboarding] failed to reset first scan reveal state', resetRevealResult.error);
+      }
+    }
+  }, [session?.user?.id]);
 
   const setServerSyncedAt = useCallback(async (iso: string) => {
     setServerSyncedAtState(iso);

@@ -16,12 +16,17 @@ import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { useFocusEffect } from '@react-navigation/native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 import Animated from 'react-native-reanimated';
 
 import { StepSlide } from '@/components/animation/StepSlide';
+import {
+  FLOW_EASE_BEZIER,
+  ONBOARDING_CHROME_PROGRESS_DURATION_MS,
+  ONBOARDING_STEP_SLIDE_TIMING,
+} from '@/components/onboarding/flow/onboardingMotion';
 import { useTransitionDir } from '@/contexts/TransitionContext';
+import { useOnboardingLayoutTokens } from '@/hooks/useOnboardingLayoutTokens';
 
 import { QAContinueCTA } from './QAContinueCTA';
 import {
@@ -90,9 +95,33 @@ export function QAScreenShell({
   listContentContainerStyle,
   children,
 }: QAScreenShellProps) {
-  const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const { consumeDirection } = useTransitionDir();
+  const layoutTokens = useOnboardingLayoutTokens();
+  const titleLineCount = title.split('\n').length;
+  const useTightTitle = layoutTokens.density === 'tight' || titleLineCount >= 2 || title.length >= 26;
+  const titleSize = useTightTitle
+    ? Math.max(layoutTokens.qaTitleSize - 2, 26)
+    : layoutTokens.qaTitleSize;
+  const titleLineHeight = useTightTitle
+    ? Math.max(layoutTokens.qaTitleLineHeight - 2, titleSize + 2)
+    : layoutTokens.qaTitleLineHeight;
+  const subtitleMarginTop = useTightTitle
+    ? Math.max(layoutTokens.qaSubtitleMarginTop - 2, 8)
+    : layoutTokens.qaSubtitleMarginTop;
+  const copyToListGap = useTightTitle
+    ? Math.max(layoutTokens.qaCopyToListGap - 2, 10)
+    : layoutTokens.qaCopyToListGap;
+  const footerBottomPadding = layoutTokens.shellFooterInset;
+  const helperMinHeight = footerError || footerHint ? 24 : 0;
+  const listBottomFadeHeight =
+    layoutTokens.density === 'tight' ? 30 : layoutTokens.density === 'compact' ? 34 : 40;
+  const requestedListPaddingBottom = StyleSheet.flatten(listContentContainerStyle)?.paddingBottom;
+  const listPaddingBottom = Math.max(
+    layoutTokens.qaListGap - 2,
+    listBottomFadeHeight + layoutTokens.qaListGap,
+    typeof requestedListPaddingBottom === 'number' ? requestedListPaddingBottom : 0,
+  );
 
   const enterDir = useMemo(() => {
     if (transitionDirection) {
@@ -177,8 +206,8 @@ export function QAScreenShell({
     progressFill.setValue(fromWidth);
     RNAnimated.timing(progressFill, {
       toValue: progressFillWidth,
-      duration: 420,
-      easing: RNEasing.bezier(0.16, 1, 0.3, 1),
+      duration: ONBOARDING_CHROME_PROGRESS_DURATION_MS,
+      easing: RNEasing.bezier(...FLOW_EASE_BEZIER),
       useNativeDriver: false,
     }).start();
   }, [
@@ -211,8 +240,16 @@ export function QAScreenShell({
       />
 
       <View style={styles.slideWrap}>
-        <View style={[styles.screen, { paddingTop: insets.top + 10 }]}>
-          <View style={styles.header}>
+        <View style={[styles.screen, { paddingTop: layoutTokens.welcomeTopPadding }]}>
+          <View
+            style={[
+              styles.header,
+              {
+                height: layoutTokens.sharedShellHeaderHeight,
+                paddingHorizontal: layoutTokens.shellHorizontal,
+              },
+            ]}
+          >
             <Pressable
               onPress={() => void handleBack()}
               style={({ pressed }) => [
@@ -249,29 +286,66 @@ export function QAScreenShell({
             <View style={styles.headerSpacer} />
           </View>
 
-          <View style={styles.content}>
+          <View
+            style={[
+              styles.content,
+              {
+                paddingHorizontal: layoutTokens.qaContentPaddingX,
+                paddingTop: layoutTokens.qaContentPaddingTop,
+              },
+            ]}
+          >
             <View style={styles.copyBlock}>
               {eyebrow ? (
-                <Text allowFontScaling={false} style={styles.eyebrow}>
+                <Text
+                  allowFontScaling={false}
+                  style={[
+                    styles.eyebrow,
+                    { marginBottom: layoutTokens.qaEyebrowMarginBottom },
+                  ]}
+                >
                   {eyebrow}
                 </Text>
               ) : null}
-              <Text allowFontScaling={false} style={styles.title}>
+              <Text
+                allowFontScaling={false}
+                  style={[
+                    styles.title,
+                    {
+                      fontSize: titleSize,
+                      lineHeight: titleLineHeight,
+                    },
+                  ]}
+              >
                 {title}
               </Text>
               {subtitle ? (
-                <Text allowFontScaling={false} style={styles.subtitle}>
+                <Text
+                  allowFontScaling={false}
+                  style={[
+                    styles.subtitle,
+                    {
+                      marginTop: subtitleMarginTop,
+                      fontSize: layoutTokens.qaSubtitleSize,
+                      lineHeight: layoutTokens.qaSubtitleLineHeight,
+                    },
+                  ]}
+                >
                   {subtitle}
                 </Text>
               ) : null}
             </View>
 
-            <View style={styles.listViewport}>
+            <View style={[styles.listViewport, { marginTop: copyToListGap }]}>
               <Animated.ScrollView
                 style={styles.listScroll}
                 contentContainerStyle={[
                   styles.listContent,
+                  {
+                    gap: layoutTokens.qaListGap,
+                  },
                   listContentContainerStyle,
+                  { paddingBottom: listPaddingBottom },
                 ]}
                 showsVerticalScrollIndicator={false}
                 keyboardShouldPersistTaps="handled"
@@ -285,6 +359,12 @@ export function QAScreenShell({
                   {listOverlay}
                 </View>
               ) : null}
+              <LinearGradient
+                pointerEvents="none"
+                colors={['rgba(245,247,252,0)', QA_BG_BOTTOM]}
+                locations={[0, 1]}
+                style={[styles.listBottomFade, { height: listBottomFadeHeight }]}
+              />
             </View>
           </View>
 
@@ -292,12 +372,14 @@ export function QAScreenShell({
             style={[
               styles.footer,
               {
-                paddingBottom: Math.max(insets.bottom, 18) + 10,
+                paddingHorizontal: layoutTokens.shellHorizontal,
+                paddingTop: layoutTokens.qaFooterTopPadding,
+                paddingBottom: footerBottomPadding,
               },
             ]}
           >
-            <View style={styles.buttonZone}>
-              <QAContinueCTA
+              <View style={styles.buttonZone}>
+                <QAContinueCTA
                 title={continueLabel}
                 onPress={() => void handleContinue()}
                 disabled={continueDisabled}
@@ -305,7 +387,15 @@ export function QAScreenShell({
             </View>
 
             {footerError || footerHint ? (
-              <View style={styles.helperZone}>
+              <View
+                style={[
+                  styles.helperZone,
+                  {
+                    minHeight: helperMinHeight,
+                    paddingTop: layoutTokens.qaFooterHelperPaddingTop,
+                  },
+                ]}
+              >
                 {footerError ? (
                   <Text allowFontScaling={false} style={styles.footerError}>
                     {footerError}
@@ -320,7 +410,15 @@ export function QAScreenShell({
             ) : null}
 
             {onSkip ? (
-              <View style={styles.skipZone}>
+              <View
+                style={[
+                  styles.skipZone,
+                  {
+                    minHeight: layoutTokens.qaFooterSkipMinHeight,
+                    paddingTop: Math.max(layoutTokens.qaFooterTopPadding - 2, 4),
+                  },
+                ]}
+              >
                 <Pressable
                   onPress={() => void handleSkip()}
                   style={({ pressed }) => [
@@ -328,7 +426,16 @@ export function QAScreenShell({
                     pressed && styles.skipPressed,
                   ]}
                 >
-                  <Text allowFontScaling={false} style={styles.skipText}>
+                  <Text
+                    allowFontScaling={false}
+                    style={[
+                      styles.skipText,
+                      {
+                        fontSize: layoutTokens.qaFooterSkipTextSize,
+                        lineHeight: layoutTokens.qaFooterSkipTextLineHeight,
+                      },
+                    ]}
+                  >
                     Skip for now
                   </Text>
                 </Pressable>
@@ -349,10 +456,10 @@ export function QAScreenShell({
       direction={enterDir}
       slideOnFirst={false}
       mountKey={`qa-${screenKey}-${enterDir}`}
-      durationMs={420}
-      fadeDurationMs={420}
-      distancePctOverride={0.018}
-      scaleFromOverride={1}
+      durationMs={ONBOARDING_STEP_SLIDE_TIMING.durationMs}
+      fadeDurationMs={ONBOARDING_STEP_SLIDE_TIMING.fadeDurationMs}
+      distancePctOverride={ONBOARDING_STEP_SLIDE_TIMING.distancePct}
+      scaleFromOverride={ONBOARDING_STEP_SLIDE_TIMING.scaleFrom}
       style={styles.slideWrap}
     >
       {content}
@@ -381,7 +488,6 @@ const styles = StyleSheet.create({
   },
   header: {
     height: 44,
-    paddingHorizontal: 24,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -437,8 +543,6 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     minHeight: 0,
-    paddingHorizontal: 32,
-    paddingTop: 48,
   },
   copyBlock: {
     alignItems: 'flex-start',
@@ -449,50 +553,47 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 2.4,
     color: QA_EYEBROW,
-    marginBottom: 14,
     textTransform: 'uppercase',
   },
   title: {
-    fontSize: 34,
-    lineHeight: 36,
     fontWeight: '700',
     letterSpacing: -1.6,
     color: QA_FOREGROUND,
   },
   subtitle: {
-    marginTop: 16,
-    fontSize: 16,
-    lineHeight: 23,
     fontWeight: '500',
     color: QA_MUTED,
   },
   listViewport: {
     flex: 1,
     minHeight: 0,
-    marginTop: 38,
   },
   listScroll: {
     flex: 1,
   },
   listContent: {
     gap: 14,
-    paddingBottom: 12,
   },
   listOverlay: {
     ...StyleSheet.absoluteFillObject,
   },
+  listBottomFade: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
   footer: {
-    paddingHorizontal: 24,
     paddingTop: 12,
   },
   buttonZone: {
     width: '100%',
   },
   helperZone: {
-    minHeight: 24,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingTop: 12,
+    minHeight: 0,
+    paddingTop: 0,
   },
   footerHint: {
     fontSize: 13,
@@ -509,10 +610,10 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   skipZone: {
-    minHeight: 50,
     alignItems: 'center',
     justifyContent: 'flex-end',
-    paddingTop: 12,
+    minHeight: 0,
+    paddingTop: 0,
   },
   skipWrap: {
     paddingHorizontal: 8,
@@ -522,8 +623,6 @@ const styles = StyleSheet.create({
     transform: [{ scale: 0.98 }],
   },
   skipText: {
-    fontSize: 14,
-    lineHeight: 18,
     fontWeight: '600',
     color: 'rgba(122,133,159,0.9)',
     textAlign: 'center',

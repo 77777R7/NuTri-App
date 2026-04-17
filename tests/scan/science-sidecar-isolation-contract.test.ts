@@ -39,6 +39,8 @@ test('science UI uses new B/C sidecars and removes the legacy ingredient summary
   assert.ok(dashboardSource.includes("isScientificBackgroundRenderableState(currentState)"));
   assert.ok(dashboardSource.includes('backgroundRefreshPending'));
   assert.ok(dashboardSource.includes('recommendedRetryAfterMs'));
+  assert.ok(dashboardSource.includes('ingredientOverviewRetryCountRef'));
+  assert.ok(dashboardSource.includes('setIngredientOverviewRetryTick((value) => value + 1);'));
   assert.ok(dashboardSource.includes('scientificBackgroundRetryCountRef'));
   assert.ok(dashboardSource.includes('setScientificBackgroundRetryTick((value) => value + 1);'));
 });
@@ -50,6 +52,7 @@ test('server exposes ingredient overview and scientific background sidecars with
   assert.match(serverSource, /buildDecisionSupportDigestMismatchPayload/);
   assert.match(serverSource, /decisionInputsHash:\s*z\.string\(\)\.trim\(\)\.min\(1\)\.nullable\(\)\.optional\(\)/);
   assert.match(serverSource, /personalizationScopeHash:\s*z\.string\(\)\.trim\(\)\.min\(1\)\.nullable\(\)\.optional\(\)/);
+  assert.match(serverSource, /revalidateFallback:\s*z\.boolean\(\)\.optional\(\)/);
   assert.match(serverSource, /authority\.decisionSupport\.decisionInputsHash/);
   assert.match(serverSource, /authority\.personalizationScopeHash/);
   assert.match(
@@ -59,8 +62,15 @@ test('server exposes ingredient overview and scientific background sidecars with
   assert.ok(serverSource.includes('normalizeIngredientScienceKey(parsedBody.selectedIngredientName)'));
   assert.ok(serverSource.includes('backgroundRefreshPending: boolean;'));
   assert.ok(serverSource.includes('recommendedRetryAfterMs: number | null;'));
+  assert.ok(serverSource.includes('withIngredientOverviewRefreshHint'));
   assert.ok(serverSource.includes('withScientificBackgroundRefreshHint'));
+  assert.ok(serverSource.includes('INGREDIENT_OVERVIEW_REFRESH_RETRY_AFTER_MS'));
   assert.ok(serverSource.includes('SCIENTIFIC_BACKGROUND_REFRESH_RETRY_AFTER_MS'));
+  assert.equal(
+    serverSource.includes('await existingBackgroundRefresh.catch(() => null);'),
+    false,
+    'ingredient overview revalidate must not block on long background refresh',
+  );
 });
 
 test('shared ingredient science types are additive and explicit', () => {

@@ -8,6 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useOnboarding } from '@/contexts/OnboardingContext';
 import { useTransitionDir } from '@/contexts/TransitionContext';
+import { useOnboardingLayoutTokens } from '@/hooks/useOnboardingLayoutTokens';
 import { ONBOARDING_TOTAL_STEPS } from '@/lib/onboarding-v2';
 import {
   ONBOARDING_FLOW_PROGRESS,
@@ -30,15 +31,18 @@ import { OnboardingShellBackground } from './OnboardingShellBackground';
 import {
   getSharedShellProgressFillWidth,
   isSharedShellStep,
-  ONBOARDING_SHARED_SHELL_HEADER_HEIGHT,
   ONBOARDING_SHARED_SHELL_QA_FOOTER_SPACE,
   ONBOARDING_SHARED_SHELL_QA_FOOTER_SPACE_WITH_HELPER,
-  ONBOARDING_SHARED_SHELL_TOP_OFFSET,
   type OnboardingSharedShellConfig,
 } from './onboardingShell';
 
 type OnboardingFlowHostProps = {
   initialStep?: string;
+};
+
+type SharedShellConfigEntry = {
+  step: OnboardingFlowStep;
+  config: OnboardingSharedShellConfig;
 };
 
 const QA_CHROME_MASK = [
@@ -187,6 +191,7 @@ export function OnboardingFlowHost({
 }: OnboardingFlowHostProps) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const layoutTokens = useOnboardingLayoutTokens();
   const { loading, onbCompleted, progress, commitProgress, flushDraft } = useOnboarding();
   const { setDirection } = useTransitionDir();
 
@@ -204,8 +209,8 @@ export function OnboardingFlowHost({
   const [leavingStep, setLeavingStep] = useState<OnboardingFlowStep | null>(null);
   const [direction, setFlowDirection] =
     useState<OnboardingFlowDirection>('none');
-  const [sharedShellConfig, setSharedShellConfig] =
-    useState<OnboardingSharedShellConfig | null>(null);
+  const [sharedShellConfigEntry, setSharedShellConfigEntry] =
+    useState<SharedShellConfigEntry | null>(null);
 
   const transitionProgress = useSharedValue(1);
   const transitionTokenRef = useRef(0);
@@ -222,7 +227,7 @@ export function OnboardingFlowHost({
 
   useEffect(() => {
     if (!isSharedShellStep(activeStep)) {
-      setSharedShellConfig(null);
+      setSharedShellConfigEntry(null);
     }
   }, [activeStep]);
 
@@ -280,6 +285,23 @@ export function OnboardingFlowHost({
     [activeStep, finishTransition, transitionProgress],
   );
 
+  const registerSharedShellConfig = useCallback(
+    (step: OnboardingFlowStep, config: OnboardingSharedShellConfig | null) => {
+      setSharedShellConfigEntry((existing) => {
+        if (!config) {
+          return existing?.step === step ? null : existing;
+        }
+
+        if (existing?.step === step && existing.config === config) {
+          return existing;
+        }
+
+        return { step, config };
+      });
+    },
+    [],
+  );
+
   const exitTo = useCallback(
     (href: string, nextDirection: OnboardingFlowDirection = 'forward') => {
       setDirection(nextDirection === 'none' ? 'forward' : nextDirection);
@@ -296,7 +318,9 @@ export function OnboardingFlowHost({
     [activeStep, goToStep],
   );
 
-  const effectiveShellConfig = sharedShellConfig ?? fallbackShellConfig;
+  const activeSharedShellConfig =
+    sharedShellConfigEntry?.step === activeStep ? sharedShellConfigEntry.config : null;
+  const effectiveShellConfig = activeSharedShellConfig ?? fallbackShellConfig;
 
   useFocusEffect(
     useCallback(() => {
@@ -327,13 +351,20 @@ export function OnboardingFlowHost({
   }
 
   const showSharedShell = Boolean(effectiveShellConfig && isSharedShellStep(activeStep));
-  const sharedShellFooterInset = Math.max(insets.bottom - 6, 14);
+  const sharedShellFooterReserveHeight =
+    effectiveShellConfig && showSharedShell
+      ? layoutTokens.getSharedShellFooterReserveHeight({
+          backgroundVariant: effectiveShellConfig.backgroundVariant,
+          hasSkip: Boolean(effectiveShellConfig.onSkip),
+          hasHelper: Boolean(effectiveShellConfig.footerHint || effectiveShellConfig.footerError),
+        })
+      : 0;
+  const sharedShellFooterInset = layoutTokens.shellFooterInset;
   const stagePaddingTop = showSharedShell
-    ? insets.top + ONBOARDING_SHARED_SHELL_TOP_OFFSET + ONBOARDING_SHARED_SHELL_HEADER_HEIGHT
+    ? insets.top + layoutTokens.shellTopOffset + layoutTokens.sharedShellHeaderHeight
     : 0;
   const stagePaddingBottom = showSharedShell
-    ? (effectiveShellConfig?.footerReserveHeight ?? ONBOARDING_SHARED_SHELL_QA_FOOTER_SPACE) +
-      sharedShellFooterInset
+    ? sharedShellFooterReserveHeight + sharedShellFooterInset
     : 0;
 
   return (
@@ -377,7 +408,7 @@ export function OnboardingFlowHost({
               direction,
               goToStep,
               exitTo,
-              setSharedShellConfig,
+              setSharedShellConfig: (config) => registerSharedShellConfig(step, config),
             })
           }
         />
@@ -392,6 +423,7 @@ export function OnboardingFlowHost({
             onBack={effectiveShellConfig.onBack}
           />
           <OnboardingFooter
+            backgroundVariant={effectiveShellConfig.backgroundVariant}
             footerIdentity={activeStep}
             continueLabel={effectiveShellConfig.continueLabel}
             onContinue={effectiveShellConfig.onContinue}

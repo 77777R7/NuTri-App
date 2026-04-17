@@ -13,8 +13,10 @@ test("ensure-overview overlay fetch keeps image fields in the transport select",
   const source = await readFile(SERVER_PATH, "utf8");
   assert.match(
     source,
-    /\.select\(\s*"product_id,brand_name,title,link,product_catalog_image,product_images,categories,supplement_facts,description_sections,updated_at"/,
+    /\.select\(\s*"product_id,upc_code,barcode_gtin14,brand_name,title,link,product_catalog_image,product_images,categories,supplement_facts,serving,description_sections,source_zip_path,updated_at"/,
   );
+  assert.match(source, /readOverlayNutritionalFacts\(rawSupplementFacts, supplementFacts\)/);
+  assert.match(source, /upc_code\.eq/);
 });
 
 test("MySupplementFacts merges overlay warnings and image into the facts payload", async () => {

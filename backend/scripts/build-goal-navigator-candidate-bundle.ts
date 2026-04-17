@@ -9,7 +9,9 @@ import {
 import { uploadGoalNavigatorCandidateBundleArtifact } from "../src/personalization/goalNavigatorArtifactStorage.js";
 import { buildGoalNavigatorCandidateGapRecord } from "../src/personalization/goalNavigatorCandidateGaps.js";
 import { persistGoalNavigatorBundleRun } from "../src/personalization/goalNavigatorBundleRepository.js";
-import { PERSONALIZATION_RULES_VERSION } from "../../lib/personalization/core/reasonCodes";
+import reasonCodesModule from "../../lib/personalization/core/reasonCodes.ts";
+
+const { PERSONALIZATION_RULES_VERSION } = reasonCodesModule;
 
 const args = process.argv.slice(2);
 

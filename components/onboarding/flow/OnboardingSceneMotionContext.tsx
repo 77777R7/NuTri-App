@@ -35,12 +35,12 @@ export function useOnboardingSceneZoneStyle(zone: SceneZone) {
     const incomingSign = direction === 'forward' ? 1 : -1;
     const outgoingSign = direction === 'forward' ? -1 : 1;
 
-    const incomingBaseOffset = zone === 'copy' ? 18 : 28;
-    const outgoingBaseOffset = zone === 'copy' ? 10 : 16;
+    const incomingBaseOffset = zone === 'copy' ? 12 : 18;
+    const outgoingBaseOffset = zone === 'copy' ? 7 : 10;
     const incomingStart = zone === 'copy' ? 0 : 0.08;
     const incomingEnd = zone === 'copy' ? 0.72 : 0.9;
     const outgoingEnd = zone === 'copy' ? 0.84 : 0.72;
-    const outgoingY = zone === 'copy' ? -2 : 2;
+    const outgoingY = zone === 'copy' ? -1 : 1;
 
     if (role === 'incoming') {
       return {
@@ -63,7 +63,7 @@ export function useOnboardingSceneZoneStyle(zone: SceneZone) {
             translateY: interpolate(
               progress.value,
               [incomingStart, incomingEnd],
-              [zone === 'copy' ? 2 : 4, 0],
+                  [zone === 'copy' ? 1 : 2, 0],
               Extrapolation.CLAMP,
             ),
           },

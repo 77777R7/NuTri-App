@@ -11,6 +11,7 @@ import {
 import { useOnboarding } from '@/contexts/OnboardingContext';
 import { usePersonalization } from '@/contexts/PersonalizationContext';
 import { useTransitionDir } from '@/contexts/TransitionContext';
+import { useOnboardingLayoutTokens } from '@/hooks/useOnboardingLayoutTokens';
 import {
   trackEvaluatedLoopClick,
   trackEvaluatedLoopConversion,
@@ -156,29 +157,80 @@ export function FirstStackBodyContent({
   selected,
   onSelectOption,
 }: FirstStackBodyContentProps) {
+  const layoutTokens = useOnboardingLayoutTokens();
+  const compactSummary = layoutTokens.density !== 'regular';
+  const optionTitleSize = compactSummary
+    ? Math.max(layoutTokens.summaryCardTitleSize - 1, 18)
+    : layoutTokens.summaryCardTitleSize;
+  const optionTitleLineHeight = compactSummary
+    ? Math.max(layoutTokens.summaryCardTitleLineHeight - 2, optionTitleSize + 7)
+    : layoutTokens.summaryCardTitleLineHeight;
+  const summaryBodySize = compactSummary ? 14 : 14.5;
+  const summaryBodyLineHeight = compactSummary ? 21.5 : 23.563;
+  const optionSectionGap = layoutTokens.density === 'tight' ? 10 : compactSummary ? 12 : layoutTokens.summaryCardSectionGap - 4;
+  const primaryCardShadowOpacity = layoutTokens.density === 'tight' ? 0.10 : compactSummary ? 0.085 : 0.04;
+  const primaryCardShadowRadius = layoutTokens.density === 'tight' ? 22 : compactSummary ? 26 : 32;
+  const detailCardMarginTop = Math.max(layoutTokens.summaryCardSectionGap - 2, 10);
+  const optionListGap = Math.max(layoutTokens.qaListGap - 1, 8);
   return (
     <>
-      <View style={styles.summaryCard}>
+      <View
+        style={[
+          styles.summaryCard,
+          {
+            minHeight: 0,
+            paddingHorizontal: layoutTokens.summaryCardPadding,
+            paddingTop: layoutTokens.summaryCardPadding,
+            paddingBottom: layoutTokens.summaryCardPadding,
+            shadowOpacity: primaryCardShadowOpacity,
+            shadowRadius: primaryCardShadowRadius,
+          },
+        ]}
+      >
         <View style={styles.summaryCardFill} pointerEvents="none" />
         <View style={styles.summaryInset} pointerEvents="none" />
 
         <Text allowFontScaling={false} style={styles.summaryEyebrow}>
           Your first stack plan
         </Text>
-        <Text allowFontScaling={false} style={styles.summaryTitle}>
+        <Text
+          allowFontScaling={false}
+          style={[
+            styles.summaryTitle,
+            {
+              fontSize: layoutTokens.summaryCardTitleSize,
+              lineHeight: layoutTokens.summaryCardTitleLineHeight,
+            },
+          ]}
+        >
           What NuTri would start with
         </Text>
-        <Text allowFontScaling={false} style={styles.summaryBody}>
+        <Text
+          allowFontScaling={false}
+          style={[
+            styles.summaryBody,
+            {
+              fontSize: summaryBodySize,
+              lineHeight: summaryBodyLineHeight,
+              maxWidth: compactSummary ? 292 : 306,
+            },
+          ]}
+        >
           {topSummary}
         </Text>
 
-        <View style={styles.routineChip}>
+        <View
+          style={[
+            styles.routineChip,
+            { marginTop: layoutTokens.summaryCardSectionGap },
+          ]}
+        >
           <Text allowFontScaling={false} style={styles.routineChipText}>
             {routineStyleLabel}
           </Text>
         </View>
 
-        <View style={styles.detailCard}>
+        <View style={[styles.detailCard, { marginTop: detailCardMarginTop }]}>
           <DetailRow label="Starting focus" value={`${displayGoal} first.`} />
           <DetailRow label="Routine style" value={routineStyleLabel} />
           <DetailRow
@@ -189,15 +241,27 @@ export function FirstStackBodyContent({
         </View>
       </View>
 
-      <View style={styles.optionSection}>
-        <Text allowFontScaling={false} style={styles.optionEyebrow}>
+      <View style={[styles.optionSection, { gap: optionSectionGap }]}>
+        <Text
+          allowFontScaling={false}
+          style={[styles.optionEyebrow, compactSummary ? { opacity: 0.72 } : null]}
+        >
           Choose your next move
         </Text>
-        <Text allowFontScaling={false} style={styles.optionTitle}>
+        <Text
+          allowFontScaling={false}
+          style={[
+            styles.optionTitle,
+            {
+              fontSize: optionTitleSize,
+              lineHeight: optionTitleLineHeight,
+            },
+          ]}
+        >
           How do you want to start?
         </Text>
 
-        <View style={styles.optionList}>
+        <View style={[styles.optionList, { gap: optionListGap }]}>
           {START_OPTIONS.map((option) => (
             <QAOptionRow
               key={option.value}
@@ -223,6 +287,7 @@ export function FirstStackScreenContent({
 }: FirstStackScreenContentProps) {
   const { draft } = useOnboarding();
   const { loading, snapshot, firstStackPlan } = usePersonalization();
+  const layoutTokens = useOnboardingLayoutTokens();
 
   const [selected, setSelected] = useState<FirstStackActionPreference>(
     getDefaultSelection(draft?.firstActionPreference),
@@ -317,7 +382,10 @@ export function FirstStackScreenContent({
       onContinue={handleNext}
       continueLabel="Finish setup"
       progressFillWidthOverride={108.641}
-      listContentContainerStyle={styles.listContent}
+      listContentContainerStyle={[
+        styles.listContent,
+        { gap: layoutTokens.firstStackListGap, paddingBottom: layoutTokens.firstStackListGap - 8 },
+      ]}
     >
       <FirstStackBodyContent
         topSummary={topSummary}
@@ -405,7 +473,6 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
   },
   summaryCard: {
-    minHeight: 542.03,
     borderRadius: 32,
     borderCurve: 'continuous',
     overflow: 'hidden',
@@ -444,8 +511,6 @@ const styles = StyleSheet.create({
   },
   summaryTitle: {
     marginTop: 16,
-    fontSize: 22,
-    lineHeight: 33,
     fontWeight: '700',
     letterSpacing: -0.6978,
     color: QA_FOREGROUND,
@@ -497,7 +562,6 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   detailRow: {
-    minHeight: 77.919,
     paddingHorizontal: 19.991,
     paddingTop: 15.997,
     paddingBottom: 15.997,

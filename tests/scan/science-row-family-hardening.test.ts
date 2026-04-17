@@ -1241,3 +1241,89 @@ test('omega-3 fallback copy distinguishes algal oil sources from fish oil source
   assert.match(background.introLine, /algal oil/i);
   assert.doesNotMatch(backgroundCopy, /fish[-\s]?oil/i);
 });
+
+test('science context rescues sparse title-led food-like anchors from residue rows', () => {
+  const coconutAminosContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-coconut-aminos-title-rescue',
+      productName: 'BetterBody Foods, Organic Coconut Aminos, Soy Sauce Replacement',
+      dosageForm: 'Liquid',
+      actives: [
+        { name: 'Niacin', amount: 1.5, unit: 'mg' },
+      ],
+    }),
+    overlayClaims: null,
+  });
+  const goGelContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-go-gel-title-rescue',
+      productName: 'BPN, Go Gel, Endurance Gel, Apple Cinnamon',
+      dosageForm: 'Gel',
+      actives: [
+        { name: 'Potassium', amount: 144, unit: 'mg' },
+        { name: 'Calcium', amount: 13, unit: 'mg' },
+        { name: 'Fiber', amount: 0, unit: 'g' },
+      ],
+    }),
+    overlayClaims: null,
+  });
+  const hydrationContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-hydrationup-title-rescue',
+      productName: 'California Gold Nutrition, HydrationUP, Electrolyte Drink Mix with Calcium, Potassium, Vitamin C, and Vitamin E',
+      dosageForm: 'Powder',
+      actives: [
+        { name: 'Vitamin C', amount: 220, unit: 'mg' },
+        { name: 'Calcium', amount: 100, unit: 'mg' },
+        { name: 'Vitamin E', amount: 19, unit: 'mg' },
+        { name: 'Magnesium', amount: 40, unit: 'mg' },
+        { name: 'Potassium', amount: 180, unit: 'mg' },
+      ],
+    }),
+    overlayClaims: null,
+  });
+
+  assert.match(coconutAminosContext.ingredientRows[0]?.name ?? '', /\bcoconut aminos\b|\bsoy sauce replacement\b/i);
+  assert.equal(coconutAminosContext.productArchetype, 'functional_food_like');
+
+  assert.match(goGelContext.ingredientRows[0]?.name ?? '', /\bendurance gel\b|\bgo gel\b|\benergy gel\b/i);
+  assert.equal(goGelContext.productArchetype, 'functional_food_like');
+
+  assert.match(hydrationContext.ingredientRows[0]?.name ?? '', /\belectrolyte drink mix\b|\bhydrationup\b|\belectrolyte\b/i);
+});
+
+test('omega-3 source rescue keeps algal titles out of fish-oil fallback copy even when the facts row is generic', async () => {
+  const context = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-algal-oil-generic-row',
+      productName: "Barlean's, Plant Based Omega-3 From Algae Oil, Ginger Peach",
+      dosageForm: 'Liquid',
+      actives: [
+        { name: 'Omega-3 Polyunsaturated Fat', amount: null, unit: null },
+        { name: 'Sugar Alcohol', amount: 5, unit: 'g' },
+      ],
+    }),
+    overlayClaims: null,
+  });
+
+  const overview = await compileIngredientOverviewAsync(context);
+  const background = buildScientificBackgroundDeterministicFallback({
+    context,
+    selectedIngredientName: context.anchorIngredient?.name ?? 'Omega-3',
+  });
+  const overviewCopy = [
+    overview.ingredientOverview.titleLine,
+    overview.ingredientOverview.paragraph1,
+    overview.ingredientOverview.paragraph2,
+    overview.ingredientOverview.compareHint,
+  ].join(' ');
+  const backgroundCopy = [
+    background.introLine,
+    ...background.sections.map((section) => section.summary),
+  ].join(' ');
+
+  assert.match(context.ingredientRows[0]?.name ?? '', /\balgal oil\b|\bplant based omega-3\b|\bomega-3\b/i);
+  assert.match(overviewCopy, /\balgal oil\b|\balgae\b/i);
+  assert.doesNotMatch(overviewCopy, /fish[-\s]?oil/i);
+  assert.doesNotMatch(backgroundCopy, /fish[-\s]?oil/i);
+});

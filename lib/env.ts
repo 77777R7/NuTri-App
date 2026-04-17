@@ -3,12 +3,14 @@ import Constants from 'expo-constants';
 const DIRECT_PUBLIC_ENV: Record<string, string | undefined> = {
   EXPO_PUBLIC_SUPABASE_URL: process.env.EXPO_PUBLIC_SUPABASE_URL,
   EXPO_PUBLIC_SUPABASE_ANON_KEY: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY,
-  EXPO_PUBLIC_OPENAI_API_KEY: process.env.EXPO_PUBLIC_OPENAI_API_KEY,
   EXPO_PUBLIC_PADDLE_OCR_ENDPOINT: process.env.EXPO_PUBLIC_PADDLE_OCR_ENDPOINT,
   EXPO_PUBLIC_API_BASE_URL: process.env.EXPO_PUBLIC_API_BASE_URL,
   EXPO_PUBLIC_SEARCH_API_BASE_URL: process.env.EXPO_PUBLIC_SEARCH_API_BASE_URL,
   EXPO_PUBLIC_SCAN_TERMINAL_LOCK_ENABLED: process.env.EXPO_PUBLIC_SCAN_TERMINAL_LOCK_ENABLED,
   EXPO_PUBLIC_API_PORT: process.env.EXPO_PUBLIC_API_PORT,
+  EXPO_PUBLIC_REVENUECAT_IOS_API_KEY: process.env.EXPO_PUBLIC_REVENUECAT_IOS_API_KEY,
+  EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY: process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY,
+  EXPO_PUBLIC_REVENUECAT_ENTITLEMENT_ID: process.env.EXPO_PUBLIC_REVENUECAT_ENTITLEMENT_ID,
 };
 
 const toExpoPublicEnvKey = (key: string) => {
@@ -197,12 +199,14 @@ const apiBaseUrl = resolveDevApiUrlMismatch({
 const envValues = {
   supabaseUrl: getEnvValue('supabaseUrl'),
   supabaseAnonKey: getEnvValue('supabaseAnonKey'),
-  openAiApiKey: getEnvValue('openAiApiKey', { optional: true }),
   paddleOcrEndpoint: getEnvValue('paddleOcrEndpoint', { optional: true }),
   apiBaseUrl,
   sentryDsn: getEnvValue('sentryDsn', { optional: true }),
   posthogApiKey: getEnvValue('posthogApiKey', { optional: true }),
   scanTerminalLockEnabled: getEnvValue('scanTerminalLockEnabled', { optional: true }),
+  revenueCatIosApiKey: getEnvValue('revenueCatIosApiKey', { optional: true }),
+  revenueCatAndroidApiKey: getEnvValue('revenueCatAndroidApiKey', { optional: true }),
+  revenueCatEntitlementId: getEnvValue('revenueCatEntitlementId', { optional: true }),
 };
 
 // Keep search endpoint aligned with the same localhost->LAN fallback logic as apiBaseUrl.
@@ -261,7 +265,6 @@ const validateEnv = () => {
 
   ensureValidUrl(envValues.supabaseUrl, 'EXPO_PUBLIC_SUPABASE_URL', true, errors, warnings);
   ensureMatches(envValues.supabaseAnonKey, 'EXPO_PUBLIC_SUPABASE_ANON_KEY', /^[-_A-Za-z0-9]{10,}\.?[-_A-Za-z0-9=]*\.?[-_A-Za-z0-9=]*$/, true, errors, warnings);
-  ensureMatches(envValues.openAiApiKey, 'EXPO_PUBLIC_OPENAI_API_KEY', /^sk-[A-Za-z0-9]{20,}$/, false, errors, warnings);
   ensureValidUrl(envValues.apiBaseUrl, 'EXPO_PUBLIC_API_BASE_URL', true, errors, warnings);
   ensureValidUrl(searchApiBaseUrl, 'EXPO_PUBLIC_SEARCH_API_BASE_URL', false, errors, warnings);
 
@@ -286,12 +289,14 @@ const validateEnv = () => {
 export const ENV = {
   supabaseUrl: envValues.supabaseUrl as string,
   supabaseAnonKey: envValues.supabaseAnonKey as string,
-  openAiApiKey: envValues.openAiApiKey ?? null,
   paddleOcrEndpoint: envValues.paddleOcrEndpoint ?? null,
   apiBaseUrl: envValues.apiBaseUrl as string,
   sentryDsn: envValues.sentryDsn ?? null,
   posthogApiKey: envValues.posthogApiKey ?? null,
   searchApiBaseUrl: searchApiBaseUrl as string,
   scanTerminalLockEnabled: parseOptionalBoolean(envValues.scanTerminalLockEnabled, false),
+  revenueCatIosApiKey: envValues.revenueCatIosApiKey ?? null,
+  revenueCatAndroidApiKey: envValues.revenueCatAndroidApiKey ?? null,
+  revenueCatEntitlementId: envValues.revenueCatEntitlementId ?? null,
   validate: validateEnv,
 };

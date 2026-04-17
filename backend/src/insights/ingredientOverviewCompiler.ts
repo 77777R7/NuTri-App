@@ -251,15 +251,33 @@ const resolveOmega3SourceCopy = (context: IngredientScienceContext): {
   sourcePhrase: string;
 } | null => {
   const anchorName = normalizeText(context.anchorIngredient?.name);
-  if (!anchorName) return null;
-  if (/\balgal\s+oil\b|\balgae\b|\bschizochytrium\b/i.test(anchorName)) {
-    return { titleLine: anchorName, sourcePhrase: "algal oil" };
+  const sourceEvidence = [
+    anchorName,
+    normalizeText(context.productName),
+    ...context.ingredientRows.map((row) => normalizeText(row.name)),
+    ...context.ingredientSnapshotNames.map((name) => normalizeText(name)),
+  ]
+    .filter(Boolean)
+    .join(" ");
+  if (!sourceEvidence) return null;
+
+  if (/\balgal\s+oil\b|\balgae\b|\bschizochytrium\b|\bplant\s+based\s+omega\s*-?\s*3\b/i.test(sourceEvidence)) {
+    return {
+      titleLine: /\balgal\s+oil\b|\balgae\b|\bschizochytrium\b/i.test(anchorName) ? anchorName : "Algal Oil",
+      sourcePhrase: "algal oil",
+    };
   }
-  if (/\bkrill\s+oil\b/i.test(anchorName)) {
-    return { titleLine: anchorName, sourcePhrase: "krill oil" };
+  if (/\bkrill\s+oil\b/i.test(sourceEvidence)) {
+    return {
+      titleLine: /\bkrill\s+oil\b/i.test(anchorName) ? anchorName : "Krill Oil",
+      sourcePhrase: "krill oil",
+    };
   }
-  if (/\bfish\s+oil\b|\boil\s+concentrate\b/i.test(anchorName)) {
-    return { titleLine: anchorName, sourcePhrase: "fish oil" };
+  if (/\bfish\s+oil\b|\boil\s+concentrate\b/i.test(sourceEvidence)) {
+    return {
+      titleLine: /\bfish\s+oil\b|\boil\s+concentrate\b/i.test(anchorName) ? anchorName : "Fish Oil",
+      sourcePhrase: "fish oil",
+    };
   }
   return null;
 };

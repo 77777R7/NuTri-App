@@ -4,7 +4,7 @@ import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { FileText } from 'lucide-react-native';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { BackHandler, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSharedValue } from 'react-native-reanimated';
 
 import { ResponsiveScreen } from '@/components/common/ResponsiveScreen';
@@ -12,9 +12,12 @@ import { ScanResultHeaderChrome } from '@/components/scan/ScanResultHeaderChrome
 import { OrganicSpinner } from '@/components/ui/OrganicSpinner';
 import { ShinyText } from '@/components/ui/ShinyText';
 import { useScanHistory } from '@/contexts/ScanHistoryContext';
+import { useOnboarding } from '@/contexts/OnboardingContext';
 import { useResponsiveTokens } from '@/hooks/useResponsiveTokens';
+import { useFirstScanReveal } from '@/hooks/useFirstScanReveal';
 import { useStreamAnalysis } from '@/hooks/useStreamAnalysis';
 import { useSavedSupplements } from '@/contexts/SavedSupplementsContext';
+import { usePremiumAccess } from '@/hooks/usePremiumAccess';
 import { choosePreferredProductImageUrl } from '@/lib/productImagePreference';
 import { consumeScanSessionWithStatusAsync, ensureSessionId, type ScanSession } from '@/lib/scan/session';
 import { resolveReasonCodeMessage } from '@/lib/scan/streamStateMachine';
@@ -163,11 +166,15 @@ export default function ScanResultScreen() {
   const appOwnership = Constants.appOwnership;
   const isExpoGo = appOwnership === 'expo' || appOwnership === 'guest';
   const { addScan } = useScanHistory();
+  const { onbCompleted, loading: onboardingLoading } = useOnboarding();
   const { addSupplement, savedSupplements, updateSupplement } = useSavedSupplements();
+  const premiumAccess = usePremiumAccess();
+  const firstScanReveal = useFirstScanReveal();
   const addedRef = useRef(false);
   const lastDosageRef = useRef<string | null>(null);
   const lastBrandRef = useRef<string | null>(null);
   const lastSupplementIdRef = useRef<string | null>(null);
+  const firstScanPaywallRequestedRef = useRef<string | null>(null);
 
   // Get session to retrieve barcode
   const params = useLocalSearchParams<{ sessionId?: string; devBarcode?: string; source?: string }>();
@@ -175,6 +182,17 @@ export default function ScanResultScreen() {
   const [sessionResolved, setSessionResolved] = useState(false);
   const [sessionState, setSessionState] = useState<'ok' | 'session_expired'>('ok');
   const barcode = session?.mode === 'barcode' ? session.input.barcode : '';
+  const routeSource = typeof params.source === 'string' && params.source.trim().length > 0
+    ? params.source.trim()
+    : null;
+  const sessionSource = typeof session?.source === 'string' && session.source.trim().length > 0
+    ? session.source.trim()
+    : null;
+  const effectiveScanSource = sessionSource ?? routeSource;
+  const currentScanId =
+    typeof params.sessionId === 'string' && params.sessionId.trim().length > 0
+      ? params.sessionId.trim()
+      : session?.id ?? null;
   const [dashboardRuntimeError, setDashboardRuntimeError] = useState<string | null>(null);
   const dashboardRenderMode: 'full' = resolveDashboardRenderMode(isExpoGo);
   const analysisHeaderScrollY = useSharedValue(0);
@@ -183,6 +201,25 @@ export default function ScanResultScreen() {
     DEFAULT_HEADER_MINI_SCORE_TRIGGER,
   );
   const [dashboardCoreReady, setDashboardCoreReady] = useState(false);
+  const isOnboardingFirstScan = effectiveScanSource === 'onboarding';
+  const isFirstRevealEligibleForCurrentScan =
+    !premiumAccess.isPremium
+    && onbCompleted
+    && currentScanId != null
+    && firstScanReveal.reveal.state === 'eligible'
+    && (
+      !firstScanReveal.firstCompletedScanId
+      || firstScanReveal.firstCompletedScanId === currentScanId
+    );
+  const isFirstRevealPendingGrant =
+    !firstScanReveal.loading
+    && isOnboardingFirstScan
+    && isFirstRevealEligibleForCurrentScan;
+  const isFirstRevealActive =
+    !premiumAccess.isPremium
+    && currentScanId != null
+    && firstScanReveal.reveal.state === 'granted'
+    && firstScanReveal.reveal.scanId === currentScanId;
   const searchResultSeed = session?.mode === 'barcode' ? session.searchResultSeed ?? null : null;
   const loadingBadgeTimingRef = useRef({
     startedAt: 0,
@@ -213,10 +250,7 @@ export default function ScanResultScreen() {
     snapshot,
     analysisBundle,
   } = useStreamAnalysis(barcode, {
-    launchSource:
-      typeof params.source === 'string' && params.source.trim().length > 0
-        ? params.source.trim()
-        : null,
+    launchSource: effectiveScanSource,
     searchSeed: searchResultSeed,
   });
   const barcodeQuality = useMemo(
@@ -256,24 +290,53 @@ export default function ScanResultScreen() {
     setHeaderMiniScore(null);
     setHeaderMiniScoreTrigger(DEFAULT_HEADER_MINI_SCORE_TRIGGER);
     setDashboardCoreReady(false);
+    firstScanPaywallRequestedRef.current = null;
     loadingBadgeTimingRef.current = {
       startedAt: 0,
       seen: false,
       hiddenLogged: false,
     };
   }, [analysisHeaderScrollY, barcode, params.sessionId]);
-  const resultEntrySource =
-    typeof params.source === 'string' && params.source.trim().length > 0
-      ? params.source.trim().toLowerCase()
-      : null;
-  const returnToSearch = resultEntrySource === 'search';
-  const navigateToOrigin = () => {
-    if (returnToSearch && router.canGoBack()) {
+
+  const analysisOriginPath = effectiveScanSource === 'search' ? '/search' : '/scan/barcode';
+  const canReturnToSearch = effectiveScanSource === 'search';
+  const retryActionLabel = canReturnToSearch ? 'Back to Search' : 'Retry Scan';
+  const newActionLabel = canReturnToSearch ? 'Back to Search' : 'Start New Scan';
+
+  const navigateToAnalysisOrigin = useCallback(() => {
+    if (canReturnToSearch && router.canGoBack()) {
       router.back();
       return;
     }
-    router.replace(returnToSearch ? '/search' : '/scan/barcode');
-  };
+    router.replace(analysisOriginPath);
+  }, [analysisOriginPath, canReturnToSearch]);
+
+  const openFirstRevealExitPaywall = useCallback(() => {
+    if (!currentScanId || (!isFirstRevealActive && !isFirstRevealPendingGrant)) {
+      navigateToAnalysisOrigin();
+      return;
+    }
+
+    if (firstScanPaywallRequestedRef.current === currentScanId) {
+      return;
+    }
+
+    firstScanPaywallRequestedRef.current = currentScanId;
+    router.replace({
+      pathname: '/paywall/official',
+      params: {
+        source: 'first_scan_result',
+        scanId: currentScanId,
+        returnTo: analysisOriginPath,
+      },
+    });
+  }, [
+    analysisOriginPath,
+    currentScanId,
+    isFirstRevealActive,
+    isFirstRevealPendingGrant,
+    navigateToAnalysisOrigin,
+  ]);
   const debugPanelNode = SHOW_SCAN_DEBUG ? (
     <DebugScanPanel
       requestId={requestId}
@@ -610,8 +673,84 @@ export default function ScanResultScreen() {
     });
   }, [appOwnership, bundleRevision, dashboardRenderMode, isExpoGo]);
 
+  useEffect(() => {
+    if (onboardingLoading || firstScanReveal.loading) {
+      return;
+    }
+
+    if (!onbCompleted || premiumAccess.isPremium) {
+      return;
+    }
+
+    if (session?.mode !== 'barcode' || !currentScanId) {
+      return;
+    }
+
+    if (barcodeQuality.page !== 'dashboard') {
+      return;
+    }
+
+    if (!firstScanReveal.firstCompletedScanId) {
+      void firstScanReveal.ensureFirstCompletedScanId(currentScanId);
+    }
+  }, [
+    barcodeQuality.page,
+    currentScanId,
+    firstScanReveal,
+    onbCompleted,
+    onboardingLoading,
+    premiumAccess.isPremium,
+    session?.mode,
+  ]);
+
+  useEffect(() => {
+    if (onboardingLoading || firstScanReveal.loading) {
+      return;
+    }
+
+    if (!onbCompleted || premiumAccess.isPremium || !currentScanId) {
+      return;
+    }
+
+    if (firstScanReveal.firstCompletedScanId !== currentScanId) {
+      return;
+    }
+
+    if (firstScanReveal.reveal.state !== 'eligible') {
+      return;
+    }
+
+    if (barcodeQuality.page !== 'dashboard') {
+      return;
+    }
+
+    void firstScanReveal.grantForScan(currentScanId);
+  }, [
+    barcodeQuality.page,
+    currentScanId,
+    firstScanReveal,
+    onbCompleted,
+    onboardingLoading,
+    premiumAccess.isPremium,
+  ]);
+
+  useEffect(() => {
+    if (!isFirstRevealActive && !isFirstRevealPendingGrant) {
+      return;
+    }
+
+    const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
+      openFirstRevealExitPaywall();
+      return true;
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, [isFirstRevealActive, isFirstRevealPendingGrant, openFirstRevealExitPaywall]);
+
   const handleBack = () => {
-    navigateToOrigin();
+    openFirstRevealExitPaywall();
   };
 
   if (!sessionResolved) {
@@ -645,8 +784,8 @@ export default function ScanResultScreen() {
           <Text style={styles.fallbackText}>
             Your scan session is no longer available. Please scan again.
           </Text>
-          <TouchableOpacity style={styles.secondaryActionButton} onPress={navigateToOrigin}>
-            <Text style={styles.secondaryActionText}>{returnToSearch ? 'Back to Search' : 'Start New Scan'}</Text>
+          <TouchableOpacity style={styles.secondaryActionButton} onPress={navigateToAnalysisOrigin}>
+            <Text style={styles.secondaryActionText}>{newActionLabel}</Text>
           </TouchableOpacity>
         </View>
         {debugPanelNode}
@@ -670,8 +809,8 @@ export default function ScanResultScreen() {
           <Text style={styles.fallbackNote}>
             {error || 'Try a clearer barcode image or scan another package side.'}
           </Text>
-          <TouchableOpacity style={styles.secondaryActionButton} onPress={navigateToOrigin}>
-            <Text style={styles.secondaryActionText}>{returnToSearch ? 'Back to Search' : 'Retry Scan'}</Text>
+          <TouchableOpacity style={styles.secondaryActionButton} onPress={navigateToAnalysisOrigin}>
+            <Text style={styles.secondaryActionText}>{retryActionLabel}</Text>
           </TouchableOpacity>
         </View>
         {debugPanelNode}
@@ -701,8 +840,8 @@ export default function ScanResultScreen() {
           <FileText size={48} color="#52525b" />
           <Text style={styles.fallbackTitle}>{recoverableTitle}</Text>
           <Text style={styles.fallbackText}>{recoverableText}</Text>
-          <TouchableOpacity style={styles.secondaryActionButton} onPress={navigateToOrigin}>
-            <Text style={styles.secondaryActionText}>{returnToSearch ? 'Back to Search' : 'Retry Scan'}</Text>
+          <TouchableOpacity style={styles.secondaryActionButton} onPress={navigateToAnalysisOrigin}>
+            <Text style={styles.secondaryActionText}>{retryActionLabel}</Text>
           </TouchableOpacity>
         </View>
         {debugPanelNode}
@@ -723,8 +862,8 @@ export default function ScanResultScreen() {
           <FileText size={48} color="#52525b" />
           <Text style={styles.fallbackTitle}>Session Expired</Text>
           <Text style={styles.fallbackText}>Please start a new scan.</Text>
-          <TouchableOpacity style={styles.secondaryActionButton} onPress={navigateToOrigin}>
-            <Text style={styles.secondaryActionText}>{returnToSearch ? 'Back to Search' : 'Start New Scan'}</Text>
+          <TouchableOpacity style={styles.secondaryActionButton} onPress={navigateToAnalysisOrigin}>
+            <Text style={styles.secondaryActionText}>{newActionLabel}</Text>
           </TouchableOpacity>
         </View>
         {debugPanelNode}
@@ -798,9 +937,15 @@ export default function ScanResultScreen() {
         <AnalysisDashboard
           analysis={compositeAnalysis}
           isStreaming={showStreamingBadge}
+          accessLevel={
+            premiumAccess.isPremium || isFirstRevealActive || isFirstRevealPendingGrant
+              ? 'full'
+              : 'preview_locked'
+          }
           sourceType="barcode"
-          scanSessionId={typeof params.sessionId === 'string' ? params.sessionId : null}
+          scanSessionId={currentScanId}
           analysisBundle={analysisBundle}
+          onboardingDraftOverride={session?.onboardingDraftSnapshot ?? null}
           externalScrollY={analysisHeaderScrollY}
           miniHeaderMode="header"
           onMiniScoreMetaChange={handleHeaderMiniScoreChange}

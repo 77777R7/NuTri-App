@@ -33,11 +33,17 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { StepSlide } from '@/components/animation/StepSlide';
+import {
+  FLOW_EASE_BEZIER,
+  ONBOARDING_CHROME_PROGRESS_DURATION_MS,
+  ONBOARDING_STEP_SLIDE_TIMING,
+} from '@/components/onboarding/flow/onboardingMotion';
 import { QAContinueCTA } from '@/components/onboarding/qa/QAContinueCTA';
 import { useOnboardingSceneZoneStyle } from '@/components/onboarding/flow/OnboardingSceneMotionContext';
 import { PlanPreviewCornerGlow } from '@/components/onboarding/summary/PlanPreviewCornerGlow';
 import { useOnboarding } from '@/contexts/OnboardingContext';
 import { useTransitionDir } from '@/contexts/TransitionContext';
+import { useOnboardingLayoutTokens } from '@/hooks/useOnboardingLayoutTokens';
 import {
   buildAvoidItemsFromStructuredPreferences,
   buildSmartFilterConfig,
@@ -146,13 +152,24 @@ function SummaryChip({ label, tone = 'neutral' }: SummaryChipProps) {
 type TopTagProps = {
   label: string;
   withBlueDot?: boolean;
+  minHeight?: number;
+  horizontalPadding?: number;
+  textSize?: number;
 };
 
-function TopTag({ label, withBlueDot = false }: TopTagProps) {
+function TopTag({
+  label,
+  withBlueDot = false,
+  minHeight = 31.35,
+  horizontalPadding = 10.7,
+  textSize = 12,
+}: TopTagProps) {
   return (
-    <View style={styles.topTag}>
+    <View style={[styles.topTag, { minHeight, paddingHorizontal: horizontalPadding }]}>
       {withBlueDot ? <View style={styles.topTagDot} /> : null}
-      <Text style={styles.topTagText}>{label}</Text>
+      <Text style={[styles.topTagText, { fontSize: textSize, lineHeight: textSize + 6 }]}>
+        {label}
+      </Text>
     </View>
   );
 }
@@ -342,35 +359,142 @@ export function PlanPreviewBodyContent({
 }: PlanPreviewBodyContentProps) {
   const copyZoneStyle = useOnboardingSceneZoneStyle('copy');
   const contentZoneStyle = useOnboardingSceneZoneStyle('content');
+  const layoutTokens = useOnboardingLayoutTokens();
+  const compactSummary = layoutTokens.density !== 'regular';
+  const topTagMarginTop = compactSummary
+    ? Math.max(layoutTokens.summaryCardSectionGap - 10, 4)
+    : Math.max(layoutTokens.summaryCardSectionGap - 16, 6);
+  const topTagGap = layoutTokens.density === 'tight' ? 5 : compactSummary ? 6 : 8;
+  const topTagMinHeight = layoutTokens.density === 'tight' ? 26 : compactSummary ? 28 : 31.35;
+  const topTagHorizontal = layoutTokens.density === 'tight' ? 8 : compactSummary ? 9 : 10.7;
+  const topTagTextSize = layoutTokens.density === 'tight' ? 11 : compactSummary ? 11.5 : 12;
+  const primaryCardTitleSize = layoutTokens.summaryCardTitleSize;
+  const primaryCardTitleLineHeight = layoutTokens.summaryCardTitleLineHeight;
+  const secondaryCardTitleSize = compactSummary
+    ? Math.max(layoutTokens.summaryCardTitleSize - 1, 18)
+    : layoutTokens.summaryCardTitleSize;
+  const secondaryCardTitleLineHeight = compactSummary
+    ? Math.max(layoutTokens.summaryCardTitleLineHeight - 2, secondaryCardTitleSize + 7)
+    : layoutTokens.summaryCardTitleLineHeight;
+  const guideBodySize = compactSummary ? 13.5 : 14;
+  const guideBodyLineHeight = compactSummary ? 21.5 : 22.75;
+  const goalListGap = layoutTokens.density === 'tight' ? 10 : compactSummary ? 12 : 14;
+  const contentToCardGap = compactSummary
+    ? Math.max(layoutTokens.summaryListGap - 2, 10)
+    : layoutTokens.summaryListGap;
+  const listStackGap = compactSummary
+    ? Math.max(layoutTokens.summaryListGap - 2, 10)
+    : layoutTokens.summaryListGap;
+  const primaryCardShadowOpacity = layoutTokens.density === 'tight' ? 0.095 : compactSummary ? 0.082 : 0.04;
+  const primaryCardShadowRadius = layoutTokens.density === 'tight' ? 22 : compactSummary ? 26 : 32;
+  const secondaryCardShadowOpacity = layoutTokens.density === 'tight' ? 0.012 : compactSummary ? 0.018 : 0.04;
+  const secondaryCardShadowRadius = layoutTokens.density === 'tight' ? 16 : compactSummary ? 20 : 32;
+  const secondaryCardTitleOpacity = compactSummary ? 0.92 : 1;
+  const guideBodyOpacity = compactSummary ? 0.9 : 1;
+  const listBottomFadeHeight =
+    layoutTokens.density === 'tight' ? 34 : layoutTokens.density === 'compact' ? 38 : 44;
+  const listPaddingBottom = Math.max(
+    layoutTokens.summaryListGap - 8,
+    listBottomFadeHeight + (compactSummary ? 6 : 10),
+  );
 
   return (
-    <View style={styles.content}>
+    <View
+      style={[
+        styles.content,
+        {
+          paddingHorizontal: layoutTokens.summaryContentPaddingX,
+          paddingTop: layoutTokens.summaryContentPaddingTop,
+        },
+      ]}
+    >
       <Animated.View style={[styles.copyBlock, copyZoneStyle]}>
         <Text style={styles.eyebrow}>Your first plan</Text>
-        <Text style={styles.title}>Here is your plan</Text>
-        <Text style={styles.subtitle}>
+        <Text
+          style={[
+            styles.title,
+            {
+              fontSize: layoutTokens.summaryTitleSize,
+              lineHeight: layoutTokens.summaryTitleLineHeight,
+            },
+          ]}
+        >
+          Here is your plan
+        </Text>
+        <Text
+          style={[
+            styles.subtitle,
+            {
+              fontSize: layoutTokens.summarySubtitleSize,
+              lineHeight: layoutTokens.summarySubtitleLineHeight,
+            },
+          ]}
+        >
           This is how NuTri will personalize your first experience based on your choices.
         </Text>
-        <View style={styles.topTagWrap}>
+        <View
+          style={[
+            styles.topTagWrap,
+            {
+              marginTop: topTagMarginTop,
+              gap: topTagGap,
+              opacity: compactSummary ? 0.92 : 1,
+            },
+          ]}
+        >
           {(selectedAge || selectedSex) ? (
             <TopTag
               label={`${selectedAge}${selectedAge && selectedSex ? ' ' : ''}${selectedSex}`.trim()}
               withBlueDot
+              minHeight={topTagMinHeight}
+              horizontalPadding={topTagHorizontal}
+              textSize={topTagTextSize}
             />
           ) : null}
-          {selectedExperience ? <TopTag label={selectedExperience} /> : null}
+          {selectedExperience ? (
+            <TopTag
+              label={selectedExperience}
+              minHeight={topTagMinHeight}
+              horizontalPadding={topTagHorizontal}
+              textSize={topTagTextSize}
+            />
+          ) : null}
         </View>
       </Animated.View>
 
-      <Animated.View style={[styles.listViewport, contentZoneStyle]}>
+      <Animated.View
+        style={[
+          styles.listViewport,
+          contentZoneStyle,
+          { marginTop: contentToCardGap },
+        ]}
+      >
         <Animated.ScrollView
           style={styles.listScroll}
-          contentContainerStyle={styles.listContent}
+          contentContainerStyle={[
+            styles.listContent,
+            {
+              gap: listStackGap,
+              paddingBottom: listPaddingBottom,
+            },
+          ]}
           showsVerticalScrollIndicator={false}
           onScroll={onListScroll}
           scrollEventThrottle={16}
         >
-          <View style={styles.focusCard}>
+          <View
+            style={[
+              styles.focusCard,
+              {
+                minHeight: 0,
+                paddingHorizontal: layoutTokens.summaryCardPadding,
+                paddingTop: layoutTokens.summaryCardPadding,
+                paddingBottom: layoutTokens.summaryCardPadding,
+                shadowOpacity: primaryCardShadowOpacity,
+                shadowRadius: primaryCardShadowRadius,
+              },
+            ]}
+          >
             <LinearGradient
               pointerEvents="none"
               colors={['rgba(255,255,255,0.64)', 'rgba(255,255,255,0.50)', 'rgba(240,245,255,0.72)']}
@@ -394,23 +518,48 @@ export function PlanPreviewBodyContent({
               <Text style={styles.cardEyebrow}>Profile engine active</Text>
             </View>
 
-            <Text style={styles.cardTitle}>What will stay in focus</Text>
+            <Text
+              style={[
+                styles.cardTitle,
+                {
+                  fontSize: primaryCardTitleSize,
+                  lineHeight: primaryCardTitleLineHeight,
+                },
+              ]}
+            >
+              What will stay in focus
+            </Text>
 
-            <View style={styles.summarySection}>
+            <View
+              style={[
+                styles.summarySection,
+                { marginTop: layoutTokens.summaryCardSectionGap },
+              ]}
+            >
               <Text style={styles.sectionLabel}>Core objectives</Text>
               <View style={styles.sectionValueWrap}>
                 <Text style={styles.sectionValue}>{getCoreObjectiveLabel(selectedGoals)}</Text>
               </View>
             </View>
 
-            <View style={styles.summarySection}>
+            <View
+              style={[
+                styles.summarySection,
+                { marginTop: layoutTokens.summaryCardSectionGap },
+              ]}
+            >
               <Text style={styles.sectionLabel}>Lifestyle adaptation</Text>
               <View style={styles.sectionChipWrap}>
                 <SummaryChip label={getRhythmAdaptation(adherenceBlocker)} tone="purple" />
               </View>
             </View>
 
-            <View style={styles.summarySection}>
+            <View
+              style={[
+                styles.summarySection,
+                { marginTop: layoutTokens.summaryCardSectionGap },
+              ]}
+            >
               <Text style={styles.sectionLabel}>Type preference</Text>
               <View style={styles.sectionValueWrap}>
                 <Text style={styles.sectionValue}>{getTypePreferenceLabel(selectedTypes)}</Text>
@@ -418,7 +567,12 @@ export function PlanPreviewBodyContent({
             </View>
 
             {visibleSafeguard ? (
-              <View style={styles.summarySection}>
+              <View
+                style={[
+                  styles.summarySection,
+                  { marginTop: layoutTokens.summaryCardSectionGap },
+                ]}
+              >
                 <Text style={[styles.sectionLabel, styles.sectionLabelDanger]}>
                   Strict safeguards
                 </Text>
@@ -429,7 +583,19 @@ export function PlanPreviewBodyContent({
             ) : null}
           </View>
 
-          <View style={styles.guideCard}>
+          <View
+            style={[
+              styles.guideCard,
+              {
+                minHeight: 0,
+                paddingHorizontal: layoutTokens.summaryCardPadding,
+                paddingTop: layoutTokens.summaryCardPadding,
+                paddingBottom: layoutTokens.summaryCardPadding,
+                shadowOpacity: secondaryCardShadowOpacity,
+                shadowRadius: secondaryCardShadowRadius,
+              },
+            ]}
+          >
             <LinearGradient
               pointerEvents="none"
               colors={['rgba(255,255,255,0.64)', 'rgba(255,255,255,0.50)', 'rgba(247,249,255,0.84)']}
@@ -439,13 +605,42 @@ export function PlanPreviewBodyContent({
             />
             <View style={styles.insetHighlight} pointerEvents="none" />
 
-            <Text style={[styles.cardEyebrow, styles.cardEyebrowBlue]}>How NuTri will guide you</Text>
-            <Text style={styles.cardTitle}>How we&apos;ll build your first stack</Text>
-            <Text style={styles.guideBody}>
+            <Text
+              style={[
+                styles.cardEyebrow,
+                styles.cardEyebrowBlue,
+                compactSummary ? { marginBottom: 8, opacity: 0.78 } : null,
+              ]}
+            >
+              How NuTri will guide you
+            </Text>
+            <Text
+              style={[
+                styles.cardTitle,
+                {
+                  fontSize: secondaryCardTitleSize,
+                  lineHeight: secondaryCardTitleLineHeight,
+                  opacity: secondaryCardTitleOpacity,
+                },
+              ]}
+            >
+              How we&apos;ll build your first stack
+            </Text>
+            <Text
+              style={[
+                styles.guideBody,
+                {
+                  fontSize: guideBodySize,
+                  lineHeight: guideBodyLineHeight,
+                  maxWidth: compactSummary ? 284 : 296,
+                  opacity: guideBodyOpacity,
+                },
+              ]}
+            >
               We&apos;ve mapped your goals to clinically-backed ingredients, perfectly tailored for you.
             </Text>
 
-            <View style={styles.goalList}>
+            <View style={[styles.goalList, { gap: goalListGap }]}>
               {guideGoals.map((goal) => {
                 const recommendation = ingredientRecommendations[goal] ?? {
                   desc: 'Supporting your routine with clinically-backed ingredients tailored to your goals.',
@@ -472,8 +667,14 @@ export function PlanPreviewBodyContent({
         <PlanPreviewScrollbar
           progress={scrollProgress}
           opacity={scrollbarOpacity}
-          top={212}
+          top={layoutTokens.summaryScrollbarTop}
           bottom={scrollbarBottomInset}
+        />
+        <LinearGradient
+          pointerEvents="none"
+          colors={['rgba(245,247,252,0)', PAGE_BG_BOTTOM]}
+          locations={[0, 1]}
+          style={[styles.listBottomFade, { height: listBottomFadeHeight }]}
         />
       </Animated.View>
     </View>
@@ -498,6 +699,7 @@ export function PlanPreviewScreenContent({
   const { draft } = useOnboarding();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
+  const layoutTokens = useOnboardingLayoutTokens();
   const scrollProgress = useSharedValue(0);
   const scrollbarOpacity = useSharedValue(1);
 
@@ -507,8 +709,8 @@ export function PlanPreviewScreenContent({
     progressFill.setValue(enterDir === 'forward' ? 86.913 : PAGE_PROGRESS_FILL);
     RNAnimated.timing(progressFill, {
       toValue: PAGE_PROGRESS_FILL,
-      duration: 420,
-      easing: RNEasing.bezier(0.16, 1, 0.3, 1),
+      duration: ONBOARDING_CHROME_PROGRESS_DURATION_MS,
+      easing: RNEasing.bezier(...FLOW_EASE_BEZIER),
       useNativeDriver: false,
     }).start();
   }, [enterDir, progressFill]);
@@ -641,10 +843,24 @@ export function PlanPreviewScreenContent({
   }, [scrollbarOpacity]);
 
   const ambientSize = width * 1.18;
+  const previewFooterBottom = layoutTokens.shellFooterInset;
+  const previewScrollbarBottomInset =
+    previewFooterBottom +
+    layoutTokens.qaCtaHeight +
+    layoutTokens.qaFooterTopPadding +
+    10;
 
   const content = (
-    <View style={[styles.screen, { paddingTop: insets.top + 10 }]}>
-      <View style={styles.header}>
+    <View style={[styles.screen, { paddingTop: insets.top + layoutTokens.shellTopOffset }]}>
+      <View
+        style={[
+          styles.header,
+          {
+            height: layoutTokens.sharedShellHeaderHeight,
+            paddingHorizontal: layoutTokens.shellHorizontal,
+          },
+        ]}
+      >
         <Pressable
           onPress={() => void handleBack()}
           style={({ pressed }) => [styles.backButton, pressed && styles.backPressed]}
@@ -690,13 +906,17 @@ export function PlanPreviewScreenContent({
         onListScroll={handleScroll}
         scrollProgress={scrollProgress}
         scrollbarOpacity={scrollbarOpacity}
-        scrollbarBottomInset={Math.max(insets.bottom, 18) + 92}
+        scrollbarBottomInset={previewScrollbarBottomInset}
       />
 
       <View
         style={[
           styles.footer,
-          { paddingBottom: Math.max(insets.bottom, 18) + 10 },
+          {
+            paddingHorizontal: layoutTokens.shellHorizontal,
+            paddingTop: layoutTokens.qaFooterTopPadding,
+            paddingBottom: previewFooterBottom,
+          },
         ]}
       >
         <QAContinueCTA title="Unlock My Plan" onPress={handleContinue} />
@@ -728,10 +948,10 @@ export function PlanPreviewScreenContent({
           direction={enterDir}
           slideOnFirst={false}
           mountKey={`plan-preview-${enterDir}`}
-          durationMs={420}
-          fadeDurationMs={420}
-          distancePctOverride={0.018}
-          scaleFromOverride={1}
+          durationMs={ONBOARDING_STEP_SLIDE_TIMING.durationMs}
+          fadeDurationMs={ONBOARDING_STEP_SLIDE_TIMING.fadeDurationMs}
+          distancePctOverride={ONBOARDING_STEP_SLIDE_TIMING.distancePct}
+          scaleFromOverride={ONBOARDING_STEP_SLIDE_TIMING.scaleFrom}
           style={styles.slideWrap}
         >
           {content}
@@ -932,6 +1152,12 @@ const styles = StyleSheet.create({
   },
   listScroll: {
     flex: 1,
+  },
+  listBottomFade: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
   },
   listContent: {
     gap: 24,

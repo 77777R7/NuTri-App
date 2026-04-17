@@ -26,6 +26,7 @@ import { SupportModeCard } from '@/components/screens/personalization/SupportMod
 import { useAuth } from '@/contexts/AuthContext';
 import { useOnboarding } from '@/contexts/OnboardingContext';
 import { usePersonalization } from '@/contexts/PersonalizationContext';
+import { useSubscription } from '@/contexts/SubscriptionContext';
 import { useScreenTokens } from '@/hooks/useScreenTokens';
 import { apiClient } from '@/lib/api-client';
 import { useTranslation } from '@/lib/i18n';
@@ -142,6 +143,7 @@ export default function ProfileScreen({ navHeight }: ProfileScreenProps) {
   const router = useRouter();
   const { draft, resetLocalOnboarding } = useOnboarding();
   const { snapshot, smartFilter, recordOverrideEvents, eventSummary } = usePersonalization();
+  const subscription = useSubscription();
   const { t } = useTranslation();
   const tokens = useScreenTokens(navHeight);
   const model = buildProfileScreenModel({ user, draft, isBiometricEnabled });
@@ -455,6 +457,52 @@ export default function ProfileScreen({ navHeight }: ProfileScreenProps) {
 
             <View style={styles.heroDivider} />
             <Text style={styles.heroBody}>{t.profileOverviewBody}</Text>
+          </View>
+
+          <View style={styles.sectionBlock}>
+            <View style={styles.card}>
+              <Text style={styles.cardTitle}>Tester</Text>
+              <Text style={styles.cardBody}>
+                Switch the local app state so you can quickly compare paid and unpaid scan flows.
+              </Text>
+              <View style={styles.testerToggleRow}>
+                {(['auto', 'unpaid', 'paid'] as const).map((option) => {
+                  const selected = subscription.testOverride === option;
+                  const label = option === 'auto' ? 'Auto' : option === 'paid' ? 'Paid' : 'Unpaid';
+
+                  return (
+                    <TouchableOpacity
+                      key={option}
+                      activeOpacity={0.88}
+                      onPress={() => {
+                        void subscription.setTestOverride(option);
+                      }}
+                      style={[styles.testerToggle, selected ? styles.testerToggleSelected : null]}
+                    >
+                      <Text style={[styles.testerToggleText, selected ? styles.testerToggleTextSelected : null]}>
+                        {label}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+
+              <View style={styles.testerRequirementCard}>
+                <Text style={styles.testerRequirementTitle}>Paid Version Requirements</Text>
+                <Text style={styles.testerRequirementLine}>1. Full scan result content is readable.</Text>
+                <Text style={styles.testerRequirementLine}>2. Personalized Insights shows real rows, no blur.</Text>
+                <Text style={styles.testerRequirementLine}>3. NuTri Score, Deep Dive, and comparison stay unlocked.</Text>
+                <Text style={styles.testerRequirementLine}>4. Locked paywall entry points should disappear.</Text>
+              </View>
+
+              <View style={styles.testerRequirementCard}>
+                <Text style={styles.testerRequirementTitle}>Unpaid Version Requirements</Text>
+                <Text style={styles.testerRequirementLine}>1. Hero card still shows the original analysis summary card.</Text>
+                <Text style={styles.testerRequirementLine}>2. Personalized Insights stays visible but blurred.</Text>
+                <Text style={styles.testerRequirementLine}>3. NuTri Score, Deep Dive, and comparison stay locked.</Text>
+                <Text style={styles.testerRequirementLine}>4. Tapping locked content should open the paywall.</Text>
+              </View>
+            </View>
           </View>
 
           <View style={styles.sectionBlock}>
@@ -865,6 +913,62 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 10,
+  },
+  testerToggleRow: {
+    marginTop: 16,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  testerToggle: {
+    minHeight: 38,
+    borderRadius: 999,
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    backgroundColor: '#f8fafc',
+    borderWidth: 1,
+    borderColor: 'rgba(15, 23, 42, 0.08)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  testerToggleSelected: {
+    backgroundColor: '#2563eb',
+    borderColor: '#2563eb',
+  },
+  testerToggleText: {
+    fontSize: 13,
+    lineHeight: 16,
+    fontWeight: '800',
+    color: '#0f172a',
+    includeFontPadding: false,
+  },
+  testerToggleTextSelected: {
+    color: '#ffffff',
+  },
+  testerRequirementCard: {
+    marginTop: 14,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: 'rgba(148, 163, 184, 0.18)',
+    backgroundColor: '#f8fafc',
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+  },
+  testerRequirementTitle: {
+    fontSize: 14,
+    lineHeight: 18,
+    fontWeight: '900',
+    color: '#0f172a',
+    includeFontPadding: false,
+    marginBottom: 8,
+  },
+  testerRequirementLine: {
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: '600',
+    color: '#475569',
+    includeFontPadding: false,
+    marginTop: 4,
   },
   personalizationStack: {
     marginTop: 18,

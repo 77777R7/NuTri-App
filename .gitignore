@@ -25,6 +25,7 @@ expo-env.d.ts
 npm-debug.*
 yarn-debug.*
 yarn-error.*
+*.log
 
 # macOS
 .DS_Store
@@ -44,12 +45,22 @@ output/
 build-preview*.ipa
 build-production*.ipa
 .codex/
+.claude/
 test-results/
 tmp/
 .tmp_*
 supabase/.temp/
+supabase/config.toml.bak
 scripts/maintainer/python/.venv_*/
 scripts/maintainer/python/__pycache__/
+backend/nu-backend.log
+rebackfill_summary_v8_cohort.json
+findings.md
+task_plan.md
+progress.md
+SETUP_PROGRESS.md
+stage3-roadmap-status.md
+Phase D *.xlsx
 
 # typescript
 *.tsbuildinfo

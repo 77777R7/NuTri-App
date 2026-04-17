@@ -27,7 +27,6 @@ All runtime configuration is centralized in `lib/env.ts`, validated during app s
 | --- | --- | --- |
 | `EXPO_PUBLIC_SUPABASE_URL` | ✅ | Supabase project URL (e.g., `https://xyzcompany.supabase.co`) |
 | `EXPO_PUBLIC_SUPABASE_ANON_KEY` | ✅ | Supabase anon key for client access |
-| `EXPO_PUBLIC_OPENAI_API_KEY` | ✅ | OpenAI key used for on-device AI prompts |
 | `EXPO_PUBLIC_PADDLE_OCR_ENDPOINT` | optional | Paddle OCR inference endpoint |
 | `EXPO_PUBLIC_API_BASE_URL` | ✅ | Backend REST bridge for NuTri (defaults to local dev host) |
 | `EXPO_PUBLIC_API_PORT` | optional | Helps auto-detect the API URL on emulators |

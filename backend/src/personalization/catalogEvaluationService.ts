@@ -23,7 +23,7 @@ import {
 } from "./goalNavigatorBundleObservability.js";
 import { readActiveGoalNavigatorBundleRun } from "./goalNavigatorBundleRepository.js";
 import { supabase } from "../supabase.js";
-import { normalizeIherbSupplementFactsRowsWithTitleFallback } from "../iherbOverlayIngredients.js";
+import { normalizeIherbSupplementFactsRowsForGoalNavigatorCoverage } from "../iherbOverlayIngredients.js";
 
 const { evaluatePreparedCatalogProduct, prepareCatalogProduct } = catalogProductEvaluationModule;
 const { buildGoalNavigatorResponse } = goalNavigatorModule;
@@ -153,7 +153,7 @@ const extractOverlayIngredients = (row: GoalNavigatorOverlayRow) => {
       ? (supplementFacts.nutritional_facts as OverlayFactRow[])
       : [];
 
-  return normalizeIherbSupplementFactsRowsWithTitleFallback({
+  return normalizeIherbSupplementFactsRowsForGoalNavigatorCoverage({
     rows: nutritionalFactsRaw
       .map((item) => ({
         substancy: String(

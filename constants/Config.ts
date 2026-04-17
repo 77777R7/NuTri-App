@@ -13,9 +13,6 @@ export const Config = {
     },
   },
   integrations: {
-    openAi: {
-      apiKey: ENV.openAiApiKey,
-    },
     paddleOcr: {
       endpoint: ENV.paddleOcrEndpoint,
     },

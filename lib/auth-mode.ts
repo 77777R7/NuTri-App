@@ -1,4 +1,5 @@
 import Constants from 'expo-constants';
+import { resolveAuthDisabled } from './auth-mode-policy';
 
 const appExtra = (Constants.expoConfig?.extra as Record<string, unknown> | undefined) ?? {};
 const extraDisableAuthRaw = typeof appExtra.disableAuth === 'string' ? appExtra.disableAuth : null;
@@ -53,8 +54,15 @@ const isPrivateOrLoopbackHost = (hostname: string | null): boolean => {
 
 const apiHost = parseHostname(typeof apiBaseFromConfig === 'string' ? apiBaseFromConfig : null);
 const disableForPrivateApiHost = isPrivateOrLoopbackHost(apiHost);
+const isDevRuntime = typeof __DEV__ !== 'undefined' && __DEV__;
 
-export const AUTH_DISABLED =
-  !(forceAuthFromEnv || forceAuthFromExtra)
-  && (disableFromEnv || disableFromExtra || isExpoGo || disableForPrivateApiHost);
+export const AUTH_DISABLED = resolveAuthDisabled({
+  disableFromEnv,
+  forceAuthFromEnv,
+  disableFromExtra,
+  forceAuthFromExtra,
+  isExpoGo,
+  disableForPrivateApiHost,
+  isDevRuntime,
+});
 export const AUTH_FALLBACK_PATH = AUTH_DISABLED ? '/main' : '/(auth)/gate';

@@ -15,12 +15,10 @@ import {
   StyleSheet,
   Text,
   View,
-  useWindowDimensions,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
   cancelAnimation,
   Easing,
@@ -50,6 +48,7 @@ import {
   WELCOME_BG_TOP,
 } from '@/components/onboarding/welcome/welcomeTokens';
 import { useOnboarding } from '@/contexts/OnboardingContext';
+import { useOnboardingLayoutTokens } from '@/hooks/useOnboardingLayoutTokens';
 import { trackOnboardingEvent } from '@/lib/analytics/onboarding';
 import {
   ADHERENCE_BLOCKER_OPTIONS,
@@ -157,17 +156,14 @@ const TRUST_ROWS = [
   {
     title: 'Private by default',
     body: 'We only ask for what helps narrow fit.',
-    bodyMaxWidth: 232,
   },
   {
     title: 'Only what sharpens fit',
     body: 'Your answers shape recommendations, not ads.',
-    bodyMaxWidth: 169,
   },
   {
     title: 'Still in your control',
     body: 'You can update this later in Profile.',
-    bodyMaxWidth: 215,
   },
 ] as const;
 
@@ -176,11 +172,15 @@ const SCROLLBAR_FADE_DURATION_MS = 720;
 
 type SetupPreferenceValue = 'camera' | 'notifications' | 'photos';
 
-const SETUP_UI_OPTIONS = SETUP_OPTIONS.map((option, index) => ({
+const SETUP_UI_OPTIONS: {
+  label: string;
+  value: SetupPreferenceValue;
+  description: string;
+}[] = SETUP_OPTIONS.map((option, index) => ({
   label: option.title,
   value: index === 0 ? 'camera' : index === 1 ? 'notifications' : 'photos',
   description: option.description,
-})) as const;
+}));
 
 const DEFAULT_SETUP_VALUES: SetupPreferenceValue[] = [
   'camera',
@@ -196,6 +196,9 @@ type QASelectionBodyProps = {
   selectionMode: 'single' | 'multiple';
   selectedValues: string[];
   onPressOption: (value: string) => void;
+  sceneActive: boolean;
+  direction: OnboardingFlowDirection;
+  revealKey: string;
   listContentContainerStyle?: object;
 };
 
@@ -207,6 +210,9 @@ function QASelectionBody({
   selectionMode,
   selectedValues,
   onPressOption,
+  sceneActive,
+  direction,
+  revealKey,
   listContentContainerStyle,
 }: QASelectionBodyProps) {
   return (
@@ -217,13 +223,17 @@ function QASelectionBody({
       showBackground={false}
       listContentContainerStyle={listContentContainerStyle}
     >
-      {options.map((option) => (
+      {options.map((option, index) => (
         <QAOptionRow
           key={option}
           label={option}
           selected={selectedValues.includes(option)}
           selectionMode={selectionMode}
           onPress={() => onPressOption(option)}
+          revealActive={sceneActive}
+          revealDirection={direction}
+          revealIndex={index}
+          revealKey={revealKey}
         />
       ))}
     </QAContentLayout>
@@ -284,7 +294,17 @@ function AllergyScrollbar({
   );
 }
 
-function TrustHeroPanel({ panelWidth }: { panelWidth: number }) {
+function TrustHeroPanel({
+  panelWidth,
+  panelHeight,
+  rowGap,
+  density,
+}: {
+  panelWidth: number;
+  panelHeight: number;
+  rowGap: number;
+  density: 'regular' | 'compact' | 'tight';
+}) {
   const pulse = useSharedValue(0);
   const diffuse = useSharedValue(0);
   const floatY = useSharedValue(0);
@@ -349,10 +369,21 @@ function TrustHeroPanel({ panelWidth }: { panelWidth: number }) {
     transform: [{ translateY: floatY.value }],
   }));
 
-  const panelHeight = 236;
   const heroWidth = panelWidth;
   const heroHeight = panelHeight + 26;
   const glowCardHeight = Math.round(panelHeight * 0.76);
+  const compactTrust = density !== 'regular';
+  const trustContentPaddingHorizontal = density === 'tight' ? 20 : compactTrust ? 22 : 28;
+  const trustContentPaddingVertical = density === 'tight' ? 18 : compactTrust ? 20 : 28;
+  const trustGuideLeft = density === 'tight' ? 26.5 : compactTrust ? 28.5 : 32.5;
+  const trustGuideInset = density === 'tight' ? 24 : compactTrust ? 28 : 40;
+  const trustRowGapValue = density === 'tight' ? 10 : compactTrust ? 11 : 14;
+  const trustDotOffset = density === 'tight' ? 2 : compactTrust ? 3 : 4;
+  const trustTitleSize = density === 'tight' ? 13.5 : compactTrust ? 14.25 : 15;
+  const trustTitleLineHeight = density === 'tight' ? 16 : compactTrust ? 17 : 18;
+  const trustBodyMarginTop = density === 'tight' ? 3 : compactTrust ? 4 : 6;
+  const trustBodySize = density === 'tight' ? 11.5 : compactTrust ? 12.25 : 13;
+  const trustBodyLineHeight = density === 'tight' ? 14 : compactTrust ? 15.5 : 17;
 
   return (
     <Animated.View
@@ -396,21 +427,56 @@ function TrustHeroPanel({ panelWidth }: { panelWidth: number }) {
         <View style={flowStyles.trustPanelBorder} pointerEvents="none" />
         <View style={flowStyles.trustPanelTopSpecular} pointerEvents="none" />
 
-        <View style={flowStyles.trustPanelContent}>
-          <View style={flowStyles.trustPanelGuide} pointerEvents="none" />
+        <View
+          style={[
+            flowStyles.trustPanelContent,
+            {
+              gap: rowGap,
+              paddingHorizontal: trustContentPaddingHorizontal,
+              paddingVertical: trustContentPaddingVertical,
+            },
+          ]}
+        >
+          <View
+            style={[
+              flowStyles.trustPanelGuide,
+              {
+                left: trustGuideLeft,
+                top: trustGuideInset,
+                bottom: trustGuideInset,
+              },
+            ]}
+            pointerEvents="none"
+          />
           {TRUST_ROWS.map((row) => (
-            <View key={row.title} style={flowStyles.trustRowItem}>
-              <View style={flowStyles.trustDotWrap}>
+            <View key={row.title} style={[flowStyles.trustRowItem, { gap: trustRowGapValue }]}>
+              <View style={[flowStyles.trustDotWrap, { paddingTop: trustDotOffset }]}>
                 <View style={flowStyles.trustDotShadow} />
                 <View style={flowStyles.trustDot} />
               </View>
               <View style={flowStyles.trustRowTextWrap}>
-                <Text allowFontScaling={false} style={flowStyles.trustRowTitle}>
+                <Text
+                  allowFontScaling={false}
+                  style={[
+                    flowStyles.trustRowTitle,
+                    {
+                      fontSize: trustTitleSize,
+                      lineHeight: trustTitleLineHeight,
+                    },
+                  ]}
+                >
                   {row.title}
                 </Text>
                 <Text
                   allowFontScaling={false}
-                  style={[flowStyles.trustRowBody, { maxWidth: row.bodyMaxWidth }]}
+                  style={[
+                    flowStyles.trustRowBody,
+                    {
+                      marginTop: trustBodyMarginTop,
+                      fontSize: trustBodySize,
+                      lineHeight: trustBodyLineHeight,
+                    },
+                  ]}
                 >
                   {row.body}
                 </Text>
@@ -426,11 +492,7 @@ function TrustHeroPanel({ panelWidth }: { panelWidth: number }) {
 function WelcomeFlowScene({
   goToStep,
 }: Pick<OnboardingFlowSceneProps, 'goToStep'>) {
-  const insets = useSafeAreaInsets();
-  const { width, height } = useWindowDimensions();
-  const cardWidth = Math.min(width - 56, 320);
-  const cardHeight = Math.round(cardWidth * 0.553);
-  const isCompactHeight = height < 860;
+  const layoutTokens = useOnboardingLayoutTokens();
 
   const floatY = useSharedValue(0);
   const pulse = useSharedValue(0);
@@ -522,7 +584,7 @@ function WelcomeFlowScene({
         style={StyleSheet.absoluteFillObject}
       />
 
-      <View style={[flowStyles.welcomeScreen, { paddingTop: insets.top + 10 }]}>
+      <View style={[flowStyles.welcomeScreen, { paddingTop: layoutTokens.welcomeTopPadding }]}>
         <View style={flowStyles.welcomeLogoWrap}>
           <View style={flowStyles.welcomeLogoPill}>
             <BlurView
@@ -545,30 +607,20 @@ function WelcomeFlowScene({
         </View>
 
         <View style={flowStyles.welcomeMain}>
-          <View
-            style={[
-              flowStyles.welcomeViewport,
-              isCompactHeight && flowStyles.welcomeViewportCompact,
-            ]}
-          >
-            <View
-              style={[
-                flowStyles.welcomeHeroArea,
-                isCompactHeight && flowStyles.welcomeHeroAreaCompact,
-              ]}
-            >
+          <View style={flowStyles.welcomeViewport}>
+            <View style={flowStyles.welcomeHeroArea}>
               <Animated.View
                 style={[flowStyles.welcomeHeroShell, heroFloatStyle]}
               >
                 <WelcomeHeroGlow
-                  cardWidth={cardWidth}
-                  cardHeight={cardHeight}
+                  cardWidth={layoutTokens.welcomeCardWidth}
+                  cardHeight={layoutTokens.welcomeCardHeight}
                   pulse={pulse}
                   diffuse={diffuse}
                 />
                 <WelcomeHeroCarousel
-                  cardWidth={cardWidth}
-                  cardHeight={cardHeight}
+                  cardWidth={layoutTokens.welcomeCardWidth}
+                  cardHeight={layoutTokens.welcomeCardHeight}
                 />
               </Animated.View>
             </View>
@@ -576,14 +628,17 @@ function WelcomeFlowScene({
             <View
               style={[
                 flowStyles.welcomeCopyWrap,
-                isCompactHeight && flowStyles.welcomeCopyWrapCompact,
+                { paddingHorizontal: layoutTokens.welcomeCopyPaddingX },
               ]}
             >
               <Text
                 allowFontScaling={false}
                 style={[
                   flowStyles.welcomeHeadline,
-                  isCompactHeight && flowStyles.welcomeHeadlineCompact,
+                  {
+                    fontSize: layoutTokens.welcomeHeadlineSize,
+                    lineHeight: layoutTokens.welcomeHeadlineLineHeight,
+                  },
                 ]}
               >
                 Welcome to NuTri
@@ -592,7 +647,10 @@ function WelcomeFlowScene({
                 allowFontScaling={false}
                 style={[
                   flowStyles.welcomeSubtext,
-                  isCompactHeight && flowStyles.welcomeSubtextCompact,
+                  {
+                    fontSize: layoutTokens.welcomeSubtextSize,
+                    lineHeight: layoutTokens.welcomeSubtextLineHeight,
+                  },
                 ]}
               >
                 Answer a few quick questions and NuTri will shape the clearest
@@ -604,18 +662,31 @@ function WelcomeFlowScene({
           <View
             style={[
               flowStyles.welcomeFooter,
-              isCompactHeight && flowStyles.welcomeFooterCompact,
-              { paddingBottom: Math.max(insets.bottom, 18) + 10 },
+              {
+                minHeight: layoutTokens.welcomeFooterMinHeight,
+                paddingTop: layoutTokens.welcomeFooterPaddingTop,
+                paddingBottom: Math.max(layoutTokens.insets.bottom, 18) + 10,
+              },
             ]}
           >
-            <View style={flowStyles.welcomeProgressRow}>
+            <View
+              style={[
+                flowStyles.welcomeProgressRow,
+                { marginBottom: layoutTokens.welcomeProgressMarginBottom },
+              ]}
+            >
               <View style={flowStyles.welcomeProgressActivePill} />
               <View style={flowStyles.welcomeProgressInactiveDot} />
             </View>
 
             <WelcomePrimaryCTA title="Get Started" onPress={handleGetStarted} />
 
-            <View style={flowStyles.welcomeMicrocopySlot}>
+            <View
+              style={[
+                flowStyles.welcomeMicrocopySlot,
+                { marginTop: layoutTokens.welcomeMicrocopyMarginTop },
+              ]}
+            >
               <RNAnimated.Text
                 allowFontScaling={false}
                 style={[
@@ -640,12 +711,9 @@ function DataTrustFlowScene({
   sceneActive,
   goToStep,
 }: OnboardingFlowSceneProps) {
-  const insets = useSafeAreaInsets();
-  const { width, height } = useWindowDimensions();
+  const layoutTokens = useOnboardingLayoutTokens();
   const { commitDraft, flushDraft } = useOnboarding();
   const trackedRef = useRef(false);
-  const panelWidth = Math.min(width - 110, 320);
-  const isCompactHeight = height < 860;
 
   useEffect(() => {
     if (!sceneActive || trackedRef.current) return;
@@ -685,7 +753,7 @@ function DataTrustFlowScene({
         style={StyleSheet.absoluteFillObject}
       />
 
-      <View style={[flowStyles.welcomeScreen, { paddingTop: insets.top + 10 }]}>
+      <View style={[flowStyles.welcomeScreen, { paddingTop: layoutTokens.welcomeTopPadding }]}>
         <View style={flowStyles.welcomeLogoWrap}>
           <View style={flowStyles.welcomeLogoPill}>
             <BlurView
@@ -708,27 +776,40 @@ function DataTrustFlowScene({
         </View>
 
         <View style={flowStyles.welcomeMain}>
-          <View style={flowStyles.dataTrustViewport}>
+          <View
+            style={[
+              flowStyles.dataTrustViewport,
+              { paddingBottom: layoutTokens.dataTrustViewportPaddingBottom },
+            ]}
+          >
             <View
               style={[
                 flowStyles.dataTrustHeroArea,
-                isCompactHeight && flowStyles.dataTrustHeroAreaCompact,
+                { paddingTop: layoutTokens.dataTrustHeroTopPadding },
               ]}
             >
-              <TrustHeroPanel panelWidth={panelWidth} />
+              <TrustHeroPanel
+                panelWidth={layoutTokens.dataTrustPanelWidth}
+                panelHeight={layoutTokens.dataTrustPanelHeight}
+                rowGap={layoutTokens.dataTrustRowGap}
+                density={layoutTokens.density}
+              />
             </View>
 
             <View
               style={[
                 flowStyles.dataTrustCopyWrap,
-                isCompactHeight && flowStyles.dataTrustCopyWrapCompact,
+                { paddingHorizontal: layoutTokens.dataTrustCopyPaddingX },
               ]}
             >
               <Text
                 allowFontScaling={false}
                 style={[
                   flowStyles.dataTrustHeadline,
-                  isCompactHeight && flowStyles.dataTrustHeadlineCompact,
+                  {
+                    fontSize: layoutTokens.dataTrustHeadlineSize,
+                    lineHeight: layoutTokens.dataTrustHeadlineLineHeight,
+                  },
                 ]}
               >
                 Only what helps us{'\n'}narrow what fits.
@@ -737,7 +818,10 @@ function DataTrustFlowScene({
                 allowFontScaling={false}
                 style={[
                   flowStyles.dataTrustSubtext,
-                  isCompactHeight && flowStyles.dataTrustSubtextCompact,
+                  {
+                    fontSize: layoutTokens.dataTrustSubtextSize,
+                    lineHeight: layoutTokens.dataTrustSubtextLineHeight,
+                  },
                 ]}
               >
                 A few answers help NuTri shape recommendations and setup.
@@ -749,18 +833,31 @@ function DataTrustFlowScene({
           <View
             style={[
               flowStyles.dataTrustFooter,
-              isCompactHeight && flowStyles.dataTrustFooterCompact,
-              { paddingBottom: Math.max(insets.bottom, 18) + 8 },
+              {
+                minHeight: layoutTokens.welcomeFooterMinHeight,
+                paddingTop: Math.max(layoutTokens.welcomeFooterPaddingTop - 2, 4),
+                paddingBottom: Math.max(layoutTokens.insets.bottom, 18) + 8,
+              },
             ]}
           >
-            <View style={flowStyles.welcomeProgressRow}>
+            <View
+              style={[
+                flowStyles.welcomeProgressRow,
+                { marginBottom: layoutTokens.welcomeProgressMarginBottom },
+              ]}
+            >
               <View style={flowStyles.welcomeProgressInactiveDot} />
               <View style={flowStyles.welcomeProgressActivePill} />
             </View>
 
             <WelcomePrimaryCTA title="Get Started" onPress={handleGetStarted} />
 
-            <View style={flowStyles.dataTrustPolicySlot}>
+            <View
+              style={[
+                flowStyles.dataTrustPolicySlot,
+                { marginTop: layoutTokens.welcomeMicrocopyMarginTop },
+              ]}
+            >
               <Text
                 allowFontScaling={false}
                 style={flowStyles.dataTrustPolicyLink}
@@ -778,6 +875,7 @@ function DataTrustFlowScene({
 
 function AgeRangeFlowScene({
   sceneActive,
+  direction,
   goToStep,
   setSharedShellConfig,
 }: OnboardingFlowSceneProps) {
@@ -830,12 +928,16 @@ function AgeRangeFlowScene({
       selectionMode="single"
       selectedValues={selected ? [selected] : []}
       onPressOption={setSelected}
+      sceneActive={sceneActive}
+      direction={direction}
+      revealKey="age-range"
     />
   );
 }
 
 function SexFlowScene({
   sceneActive,
+  direction,
   goToStep,
   setSharedShellConfig,
 }: OnboardingFlowSceneProps) {
@@ -883,12 +985,16 @@ function SexFlowScene({
       selectionMode="single"
       selectedValues={selected ? [selected] : []}
       onPressOption={setSelected}
+      sceneActive={sceneActive}
+      direction={direction}
+      revealKey="sex"
     />
   );
 }
 
 function ExperienceFlowScene({
   sceneActive,
+  direction,
   goToStep,
   setSharedShellConfig,
 }: OnboardingFlowSceneProps) {
@@ -933,12 +1039,16 @@ function ExperienceFlowScene({
       selectionMode="single"
       selectedValues={selected ? [selected] : []}
       onPressOption={setSelected}
+      sceneActive={sceneActive}
+      direction={direction}
+      revealKey="experience"
     />
   );
 }
 
 function GoalsFlowScene({
   sceneActive,
+  direction,
   goToStep,
   setSharedShellConfig,
 }: OnboardingFlowSceneProps) {
@@ -1003,12 +1113,16 @@ function GoalsFlowScene({
       selectionMode="multiple"
       selectedValues={selectedGoals}
       onPressOption={toggleGoal}
+      sceneActive={sceneActive}
+      direction={direction}
+      revealKey="goals"
     />
   );
 }
 
 function TypesFlowScene({
   sceneActive,
+  direction,
   goToStep,
   setSharedShellConfig,
 }: OnboardingFlowSceneProps) {
@@ -1071,6 +1185,9 @@ function TypesFlowScene({
       selectionMode="multiple"
       selectedValues={selectedTypes}
       onPressOption={toggleType}
+      sceneActive={sceneActive}
+      direction={direction}
+      revealKey="types"
     />
   );
 }
@@ -1249,13 +1366,17 @@ function AllergyFlowScene({
       </Text>
 
       <View style={flowStyles.allergyGroupList}>
-        {commonOptions.map((option) => (
+        {commonOptions.map((option, index) => (
           <QAOptionRow
             key={option}
             label={option}
             selected={selected.includes(option)}
             selectionMode="multiple"
             onPress={() => toggleItem(option)}
+            revealActive={sceneActive}
+            revealDirection={direction}
+            revealIndex={index}
+            revealKey="allergy-common"
           />
         ))}
       </View>
@@ -1268,13 +1389,17 @@ function AllergyFlowScene({
 
         <Animated.View style={[flowStyles.allergyMoreRowsWrap, moreOptionsStyle]}>
           <View style={flowStyles.allergyMoreRowsInner}>
-            {secondaryOptions.map((option) => (
+            {secondaryOptions.map((option, index) => (
               <QAOptionRow
                 key={option}
                 label={option}
                 selected={selected.includes(option)}
                 selectionMode="multiple"
                 onPress={() => toggleItem(option)}
+                revealActive={sceneActive && showMore}
+                revealDirection={direction}
+                revealIndex={index}
+                revealKey={`allergy-more-${showMore ? 'open' : 'closed'}`}
               />
             ))}
           </View>
@@ -1299,6 +1424,7 @@ function AllergyFlowScene({
                 selected={false}
                 selectionMode="multiple"
                 onPress={() => undefined}
+                revealActive={false}
               />
             ))}
           </View>
@@ -1310,13 +1436,17 @@ function AllergyFlowScene({
       </Text>
 
       <View style={flowStyles.allergyGroupList}>
-        {restrictionOptions.map((option) => (
+        {restrictionOptions.map((option, index) => (
           <QAOptionRow
             key={option}
             label={option}
             selected={selected.includes(option)}
             selectionMode="multiple"
             onPress={() => toggleItem(option)}
+            revealActive={sceneActive}
+            revealDirection={direction}
+            revealIndex={commonOptions.length + index}
+            revealKey="allergy-restrictions"
           />
         ))}
       </View>
@@ -1326,6 +1456,7 @@ function AllergyFlowScene({
 
 function BlockerFlowScene({
   sceneActive,
+  direction,
   goToStep,
   setSharedShellConfig,
 }: OnboardingFlowSceneProps) {
@@ -1370,12 +1501,16 @@ function BlockerFlowScene({
       selectionMode="single"
       selectedValues={selected ? [selected] : []}
       onPressOption={setSelected}
+      sceneActive={sceneActive}
+      direction={direction}
+      revealKey="blocker"
     />
   );
 }
 
 function SetupFlowScene({
   sceneActive,
+  direction,
   goToStep,
   setSharedShellConfig,
 }: OnboardingFlowSceneProps) {
@@ -1480,7 +1615,7 @@ function SetupFlowScene({
       subtitle="These are only preferences. We ask for access only when you use the feature."
       listContentContainerStyle={flowStyles.setupListContent}
     >
-      {SETUP_UI_OPTIONS.map((option) => (
+      {SETUP_UI_OPTIONS.map((option, index) => (
         <QAOptionRow
           key={option.value}
           label={option.label}
@@ -1488,6 +1623,10 @@ function SetupFlowScene({
           selected={selectedSetup.includes(option.value)}
           selectionMode="multiple"
           onPress={() => void toggle(option.value)}
+          revealActive={sceneActive}
+          revealDirection={direction}
+          revealIndex={index}
+          revealKey="setup"
         />
       ))}
     </QAContentLayout>

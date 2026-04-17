@@ -1,0 +1,8 @@
+{
+  "version": "full-db-sweep-discovery.v1",
+  "tableName": "iherb_overlay_products",
+  "selectColumns": "product_id,title,brand_name,barcode_gtin14,upc_code",
+  "batchSize": 1000,
+  "maxExamplesPerLane": 5,
+  "outDir": "output/validation-discovery"
+}

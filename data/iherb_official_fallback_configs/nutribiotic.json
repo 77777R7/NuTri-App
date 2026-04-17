@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "iherb_official_fallback_config.v1",
+  "brandName": "NutriBiotic",
+  "priorityLane": "P0_api_fill_us_strong_identity",
+  "siteOrigin": "https://www.nutribiotic.com",
+  "readerPrefix": "https://r.jina.ai/http://",
+  "searchPathTemplate": "https://www.nutribiotic.com/cgi-nutribiotic/sb/productsearch.cgi?storeid=*1a442440a1ab4bad08cd624ed85a44&search_field={query}",
+  "enableAgentBrowserFallback": true,
+  "enableImageOcrFallback": true,
+  "enableStagedImageOcr": true,
+  "ocrMaxImages": 6
+}

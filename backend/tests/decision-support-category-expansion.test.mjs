@@ -60,6 +60,7 @@ const compileCategory = (params) =>
     digest: makeDigest(params),
     factsDigestHash: `fixture-${params.name}`,
     viewMode: "details",
+    overlayClaims: params.overlayClaims ?? null,
   }).categoryId;
 
 const compilePayload = (params) =>
@@ -67,6 +68,7 @@ const compilePayload = (params) =>
     digest: makeDigest(params),
     factsDigestHash: `fixture-${params.name}`,
     viewMode: "details",
+    overlayClaims: params.overlayClaims ?? null,
   });
 
 test("decision support detects collagen products as collagen_connective_support", () => {
@@ -86,6 +88,92 @@ test("decision support detects amino/performance products as sports_performance_
       brand: "California Gold Nutrition",
       name: "BCAA 2:1:1, 500 mg",
       actives: ["L-Leucine", "L-Isoleucine", "L-Valine"],
+    }),
+    "sports_performance_amino_acids",
+  );
+});
+
+test("decision support detects sports hydration and gel titles even when the title cues are capitalized", () => {
+  assert.equal(
+    compileCategory({
+      brand: "California Gold Nutrition",
+      name: "HydrationUP, Electrolyte Drink Mix with Calcium, Potassium, Vitamin C, and Vitamin E",
+      actives: ["Vitamin C", "Calcium", "Vitamin E", "Magnesium", "Potassium"],
+      dosageForm: "Powder",
+    }),
+    "sports_performance_amino_acids",
+  );
+
+  assert.equal(
+    compileCategory({
+      brand: "BPN",
+      name: "Go Gel, Endurance Gel, Apple Cinnamon",
+      actives: ["Potassium", "Calcium", "Fiber"],
+      dosageForm: "Gel",
+    }),
+    "sports_performance_amino_acids",
+  );
+});
+
+test("decision support routes coconut aminos pantry replacements away from unknown", () => {
+  assert.equal(
+    compileCategory({
+      brand: "BetterBody Foods",
+      name: "Organic Coconut Aminos, Soy Sauce Replacement",
+      actives: ["Niacin"],
+      dosageForm: "Liquid",
+    }),
+    "out_of_scope_non_supplement",
+  );
+});
+
+test("decision support uses overlay title fallback when web digests are sparse", () => {
+  assert.equal(
+    compileCategory({
+      brand: "",
+      name: "",
+      actives: ["Potassium", "Calcium", "Fiber"],
+      dosageForm: "Gel",
+      overlayClaims: {
+        provider: "iherb",
+        productId: "fixture-go-gel",
+        brandName: "BPN",
+        title: "BPN, Go Gel, Endurance Gel, Apple Cinnamon",
+        link: null,
+        imageUrl: null,
+        categories: [],
+        description: null,
+        suggestedUse: null,
+        otherIngredients: null,
+        warnings: null,
+        disclaimer: null,
+        nutritionalFacts: [],
+      },
+    }),
+    "sports_performance_amino_acids",
+  );
+
+  assert.equal(
+    compileCategory({
+      brand: "",
+      name: "",
+      actives: ["Vitamin C", "Calcium", "Magnesium", "Potassium"],
+      dosageForm: "Powder",
+      overlayClaims: {
+        provider: "iherb",
+        productId: "fixture-hydrationup",
+        brandName: "California Gold Nutrition",
+        title: "California Gold Nutrition, HydrationUP, Electrolyte Drink Mix with Calcium, Potassium, Vitamin C, and Vitamin E",
+        link: null,
+        imageUrl: null,
+        categories: [],
+        description: null,
+        suggestedUse: null,
+        otherIngredients: null,
+        warnings: null,
+        disclaimer: null,
+        nutritionalFacts: [],
+      },
     }),
     "sports_performance_amino_acids",
   );
@@ -425,6 +513,32 @@ test("fish oil overview and science use category-specific framing", () => {
   assert.doesNotMatch(
     payload.scienceBlock.aiSummaryContract3.join(" "),
     /\bgeneral science\b/i,
+  );
+});
+
+test("omega-3 overview copy avoids fish-oil wording for algal-oil products", () => {
+  const payload = compilePayload({
+    brand: "Barlean's",
+    name: "Plant Based Omega-3 From Algae Oil, Ginger Peach",
+    actives: [
+      "Omega-3 Polyunsaturated Fat",
+      "DHA (Docosahexaenoic Acid)",
+    ],
+    dosageForm: "Liquid",
+  });
+
+  assert.equal(payload.categoryId, "fish_oil_omega3");
+  assert.doesNotMatch(
+    payload.overviewBlock.bestForBullets.join(" "),
+    /fish[-\s]?oil/i,
+  );
+  assert.doesNotMatch(
+    payload.scienceBlock.aiSummaryContract3.join(" "),
+    /fish[-\s]?oil/i,
+  );
+  assert.match(
+    `${payload.overviewBlock.bestForBullets.join(" ")} ${payload.scienceBlock.aiSummaryContract3.join(" ")}`,
+    /\b(algal|source oil|omega-?3)\b/i,
   );
 });
 

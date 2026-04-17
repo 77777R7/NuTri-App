@@ -124,28 +124,27 @@ export function AuthProvider({ children }: PropsWithChildren) {
   }, []);
 
   useEffect(() => {
-    if (authDisabled) {
-      handleSessionChange(null);
-      setIsBiometricEnabled(false);
-      setLoading(false);
-      return;
-    }
-
     let isMounted = true;
 
     const bootstrap = async () => {
       try {
-        const [biometricFlag, sessionResponse] = await Promise.all([
-          SecureStore.getItemAsync(BIOMETRIC_STORE_KEY),
-          supabase.auth.getSession(),
-        ]);
+        const sessionResponse = await supabase.auth.getSession();
+        const activeSession = sessionResponse.data.session;
 
+        if (authDisabled) {
+          if (isMounted) {
+            setIsBiometricEnabled(false);
+            handleSessionChange(activeSession);
+          }
+          return;
+        }
+
+        const biometricFlag = await SecureStore.getItemAsync(BIOMETRIC_STORE_KEY);
         const biometricEnabled = biometricFlag === 'true';
         if (isMounted) {
           setIsBiometricEnabled(biometricEnabled);
         }
 
-        const activeSession = sessionResponse.data.session;
         if (activeSession) {
           if (biometricEnabled) {
             const biometricResult = await LocalAuthentication.authenticateAsync({

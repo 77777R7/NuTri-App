@@ -619,9 +619,9 @@ const PRODUCT_OVERVIEW_AI_TIMEOUT_MS = 8_000;
 const PRODUCT_OVERVIEW_AI_WATCHDOG_MS = 8_800;
 const SCIENTIFIC_BACKGROUND_REVALIDATE_COOLDOWN_MS = 20_000;
 const SCIENTIFIC_BACKGROUND_REFRESH_POLL_MIN_DELAY_MS = 1_500;
-const SCIENTIFIC_BACKGROUND_REFRESH_POLL_MAX_DELAY_MS = 4_000;
-const SCIENTIFIC_BACKGROUND_REFRESH_POLL_MAX_ATTEMPTS = 12;
-const SCIENTIFIC_BACKGROUND_REFRESH_POLL_MAX_WINDOW_MS = 35_000;
+const SCIENTIFIC_BACKGROUND_REFRESH_POLL_MAX_DELAY_MS = 5_000;
+const SCIENTIFIC_BACKGROUND_REFRESH_POLL_MAX_ATTEMPTS = 28;
+const SCIENTIFIC_BACKGROUND_REFRESH_POLL_MAX_WINDOW_MS = 75_000;
 const SHOW_SCAN_DEBUG =
     process.env.EXPO_PUBLIC_SHOW_SCAN_DEBUG === 'true' ||
     process.env.EXPO_PUBLIC_SHOW_SCAN_DEBUG === '1';
@@ -3361,6 +3361,8 @@ type IngredientOverviewSidecarState = {
     source?: 'api' | 'server-fallback';
     fallbackUsed?: boolean;
     promptVersion?: string;
+    backgroundRefreshPending?: boolean;
+    recommendedRetryAfterMs?: number | null;
     data?: IngredientOverviewBlock;
     error?: string;
 };
@@ -4045,9 +4047,12 @@ const AnalysisBundleDashboard: React.FC<{
     const ingredientOverviewStateRef = useRef<Record<string, IngredientOverviewSidecarState>>({});
     const scientificBackgroundStateRef = useRef<Record<string, ScientificBackgroundSidecarState>>({});
     const ingredientOverviewRevalidateAtRef = useRef<Record<string, number>>({});
+    const ingredientOverviewRetryCountRef = useRef<Record<string, number>>({});
+    const ingredientOverviewFallbackStartedAtRef = useRef<Record<string, number>>({});
     const scientificBackgroundRevalidateAtRef = useRef<Record<string, number>>({});
     const scientificBackgroundRetryCountRef = useRef<Record<string, number>>({});
     const scientificBackgroundFallbackStartedAtRef = useRef<Record<string, number>>({});
+    const [ingredientOverviewRetryTick, setIngredientOverviewRetryTick] = useState(0);
     const [scientificBackgroundRetryTick, setScientificBackgroundRetryTick] = useState(0);
     const decisionSupportCacheRef = useRef<Map<string, Record<string, unknown>>>(new Map());
     const decisionSupportByBarcodeRef = useRef<Map<string, Record<string, unknown>>>(decisionSupportWarmCache);
@@ -7957,9 +7962,12 @@ const AnalysisBundleDashboard: React.FC<{
         ingredientOverviewStateRef.current = {};
         scientificBackgroundStateRef.current = {};
         ingredientOverviewRevalidateAtRef.current = {};
+        ingredientOverviewRetryCountRef.current = {};
+        ingredientOverviewFallbackStartedAtRef.current = {};
         scientificBackgroundRevalidateAtRef.current = {};
         scientificBackgroundRetryCountRef.current = {};
         scientificBackgroundFallbackStartedAtRef.current = {};
+        setIngredientOverviewRetryTick(0);
         setScientificBackgroundRetryTick(0);
         setActiveIngredientName(keyIngredientsForDetail[0] ?? null);
         setActiveSafetyIngredientName(keyIngredientsForSafety[0] ?? null);
@@ -7978,12 +7986,27 @@ const AnalysisBundleDashboard: React.FC<{
         }
         const current = ingredientOverviewStateRef.current[ingredientOverviewRequestKey];
         const lastRevalidateAt = ingredientOverviewRevalidateAtRef.current[ingredientOverviewRequestKey] ?? 0;
+        const retryCount = ingredientOverviewRetryCountRef.current[ingredientOverviewRequestKey] ?? 0;
+        const fallbackStartedAt = ingredientOverviewFallbackStartedAtRef.current[ingredientOverviewRequestKey] ?? 0;
+        const withinRefreshWindow =
+            !current?.backgroundRefreshPending
+            || !fallbackStartedAt
+            || (Date.now() - fallbackStartedAt) <= SCIENTIFIC_BACKGROUND_REFRESH_POLL_MAX_WINDOW_MS;
+        const retryDelayMs =
+            current?.backgroundRefreshPending
+                ? clampScientificBackgroundRefreshDelay(current.recommendedRetryAfterMs)
+                : SCIENTIFIC_BACKGROUND_REVALIDATE_COOLDOWN_MS;
+        const canAutoRetryFallback =
+            current?.backgroundRefreshPending
+                ? retryCount < SCIENTIFIC_BACKGROUND_REFRESH_POLL_MAX_ATTEMPTS && withinRefreshWindow
+                : true;
         const shouldRevalidateFallback =
             selectedTileType === 'science'
             && shouldRenderScienceSidecars
             && current?.status === 'ok'
             && current.source === 'server-fallback'
-            && Date.now() - lastRevalidateAt >= SCIENTIFIC_BACKGROUND_REVALIDATE_COOLDOWN_MS;
+            && canAutoRetryFallback
+            && Date.now() - lastRevalidateAt >= retryDelayMs;
         if (
             current
             && (
@@ -8009,12 +8032,21 @@ const AnalysisBundleDashboard: React.FC<{
             try {
                 if (revalidateFallback) {
                     ingredientOverviewRevalidateAtRef.current[ingredientOverviewRequestKey] = Date.now();
+                    ingredientOverviewRetryCountRef.current[ingredientOverviewRequestKey] =
+                        (ingredientOverviewRetryCountRef.current[ingredientOverviewRequestKey] ?? 0) + 1;
                 }
                 setIngredientOverviewSidecarState(ingredientOverviewRequestKey, (currentState) =>
                     isIngredientOverviewRenderableState(currentState)
                         ? { ...currentState, status: 'loading' }
                         : { status: 'loading' },
                 );
+                if (
+                    ingredientOverviewFallbackStartedAtRef.current[ingredientOverviewRequestKey] == null
+                    && current?.status === 'ok'
+                    && current.source === 'server-fallback'
+                ) {
+                    ingredientOverviewFallbackStartedAtRef.current[ingredientOverviewRequestKey] = Date.now();
+                }
                 const baseUrl = String(Config.searchApiBaseUrl).replace(/\/$/, '');
                 const headers = await withAuthHeaders({
                     'Content-Type': 'application/json',
@@ -8069,9 +8101,17 @@ const AnalysisBundleDashboard: React.FC<{
 
                 if (!response.ok) {
                     settled = true;
+                    delete ingredientOverviewRetryCountRef.current[ingredientOverviewRequestKey];
+                    delete ingredientOverviewFallbackStartedAtRef.current[ingredientOverviewRequestKey];
+                    delete ingredientOverviewRevalidateAtRef.current[ingredientOverviewRequestKey];
                     setIngredientOverviewSidecarState(ingredientOverviewRequestKey, (currentState) =>
                         isIngredientOverviewRenderableState(currentState)
-                            ? { ...currentState, status: 'ok' }
+                            ? {
+                                ...currentState,
+                                status: 'ok',
+                                backgroundRefreshPending: false,
+                                recommendedRetryAfterMs: null,
+                            }
                             : {
                                 status: 'error',
                                 error: `HTTP ${response.status}`,
@@ -8091,19 +8131,42 @@ const AnalysisBundleDashboard: React.FC<{
                 }
 
                 settled = true;
+                const source = payload.source === 'fallback' ? 'server-fallback' : 'api';
+                const backgroundRefreshPending =
+                    source === 'server-fallback' && payload.backgroundRefreshPending === true;
+                if (backgroundRefreshPending) {
+                    ingredientOverviewFallbackStartedAtRef.current[ingredientOverviewRequestKey] ??= Date.now();
+                    ingredientOverviewRevalidateAtRef.current[ingredientOverviewRequestKey] ??= Date.now();
+                } else {
+                    delete ingredientOverviewFallbackStartedAtRef.current[ingredientOverviewRequestKey];
+                    delete ingredientOverviewRevalidateAtRef.current[ingredientOverviewRequestKey];
+                }
+                if (source === 'api' || !backgroundRefreshPending) {
+                    delete ingredientOverviewRetryCountRef.current[ingredientOverviewRequestKey];
+                }
                 setIngredientOverviewSidecarState(ingredientOverviewRequestKey, {
                     status: 'ok',
-                    source: payload.source === 'fallback' ? 'server-fallback' : 'api',
+                    source,
                     fallbackUsed: payload.fallbackUsed,
                     promptVersion: payload.promptVersion,
+                    backgroundRefreshPending,
+                    recommendedRetryAfterMs: payload.recommendedRetryAfterMs ?? null,
                     data: payload.ingredientOverview,
                 });
             } catch (error) {
                 if (cancelled) return;
                 settled = true;
+                delete ingredientOverviewRetryCountRef.current[ingredientOverviewRequestKey];
+                delete ingredientOverviewFallbackStartedAtRef.current[ingredientOverviewRequestKey];
+                delete ingredientOverviewRevalidateAtRef.current[ingredientOverviewRequestKey];
                 setIngredientOverviewSidecarState(ingredientOverviewRequestKey, (currentState) =>
                     isIngredientOverviewRenderableState(currentState)
-                        ? { ...currentState, status: 'ok' }
+                        ? {
+                            ...currentState,
+                            status: 'ok',
+                            backgroundRefreshPending: false,
+                            recommendedRetryAfterMs: null,
+                        }
                         : {
                             status: 'error',
                             error: error instanceof Error ? error.message : 'Ingredient overview unavailable',
@@ -8142,8 +8205,42 @@ const AnalysisBundleDashboard: React.FC<{
         localDecisionSupportHeader,
         scienceDecisionInputsHash,
         sciencePersonalizationScopeHash,
+        ingredientOverviewRetryTick,
         selectedTileType,
         setIngredientOverviewSidecarState,
+        shouldRenderScienceSidecars,
+    ]);
+
+    useEffect(() => {
+        if (selectedTileType !== 'science') return;
+        if (!shouldRenderScienceSidecars || !ingredientOverviewRequestKey) return;
+        if (ingredientOverviewState?.status !== 'ok' || ingredientOverviewState.source !== 'server-fallback') return;
+        if (!ingredientOverviewState.backgroundRefreshPending) return;
+        const retryCount = ingredientOverviewRetryCountRef.current[ingredientOverviewRequestKey] ?? 0;
+        const fallbackStartedAt = ingredientOverviewFallbackStartedAtRef.current[ingredientOverviewRequestKey] ?? 0;
+        if (retryCount >= SCIENTIFIC_BACKGROUND_REFRESH_POLL_MAX_ATTEMPTS) return;
+        if (
+            fallbackStartedAt
+            && Date.now() - fallbackStartedAt > SCIENTIFIC_BACKGROUND_REFRESH_POLL_MAX_WINDOW_MS
+        ) {
+            return;
+        }
+        const lastRevalidateAt = ingredientOverviewRevalidateAtRef.current[ingredientOverviewRequestKey] ?? 0;
+        const retryAfterMs = clampScientificBackgroundRefreshDelay(
+            ingredientOverviewState.recommendedRetryAfterMs,
+        );
+        const remainingMs = Math.max(retryAfterMs - (Date.now() - lastRevalidateAt), 0);
+        const timer = setTimeout(() => {
+            setIngredientOverviewRetryTick((value) => value + 1);
+        }, remainingMs);
+        return () => clearTimeout(timer);
+    }, [
+        ingredientOverviewRequestKey,
+        ingredientOverviewState?.backgroundRefreshPending,
+        ingredientOverviewState?.recommendedRetryAfterMs,
+        ingredientOverviewState?.source,
+        ingredientOverviewState?.status,
+        selectedTileType,
         shouldRenderScienceSidecars,
     ]);
 

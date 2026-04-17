@@ -14,6 +14,7 @@ import {
   buildPatchStrategy,
   classifyOverlayStatus,
   deriveCompleteness,
+  extractOverlayRecordFromSeedRow,
   mergeOverlayRecords,
   normalizeText,
   qualifiesHighConfidenceUsProductPage,
@@ -40,8 +41,10 @@ const INPUT_JSON = getArg("input-json");
 const QUEUE_JSON = getArg("queue-json");
 const OUT_JSON = getArg("out-json");
 const SITE_ORIGIN = getArg("site-origin");
+const CONFIG_JSON = getArg("config-json");
 const STORAGE_BUCKET = getArg("storage-bucket", "overlay-label-assets");
 const RENDER_SIZE = Number(getArg("render-size", "900"));
+const FETCH_TIMEOUT_MS = Number(getArg("fetch-timeout-ms", "12000"));
 const ALLOW_GENERATED_IMAGE_FALLBACK = args.includes("--allow-generated-image-fallback");
 
 if (!BRAND || !INPUT_JSON || !QUEUE_JSON || !OUT_JSON || !SITE_ORIGIN) {
@@ -90,29 +93,43 @@ const stripTags = (value) =>
     .join("\n");
 
 const fetchJson = async (url) => {
-  const response = await fetch(url, {
-    headers: {
-      "User-Agent": "Mozilla/5.0 (compatible; NuTriAppMaintainer/1.0)",
-      Accept: "application/json,text/html;q=0.9,*/*;q=0.8",
-    },
-  });
-  if (!response.ok) {
-    throw new Error(`Fetch failed ${response.status} for ${url}`);
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+  try {
+    const response = await fetch(url, {
+      signal: controller.signal,
+      headers: {
+        "User-Agent": "Mozilla/5.0 (compatible; NuTriAppMaintainer/1.0)",
+        Accept: "application/json,text/html;q=0.9,*/*;q=0.8",
+      },
+    });
+    if (!response.ok) {
+      throw new Error(`Fetch failed ${response.status} for ${url}`);
+    }
+    return response.json();
+  } finally {
+    clearTimeout(timeout);
   }
-  return response.json();
 };
 
 const fetchText = async (url) => {
-  const response = await fetch(url, {
-    headers: {
-      "User-Agent": "Mozilla/5.0 (compatible; NuTriAppMaintainer/1.0)",
-      Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-    },
-  });
-  if (!response.ok) {
-    throw new Error(`Fetch failed ${response.status} for ${url}`);
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+  try {
+    const response = await fetch(url, {
+      signal: controller.signal,
+      headers: {
+        "User-Agent": "Mozilla/5.0 (compatible; NuTriAppMaintainer/1.0)",
+        Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+      },
+    });
+    if (!response.ok) {
+      throw new Error(`Fetch failed ${response.status} for ${url}`);
+    }
+    return response.text();
+  } finally {
+    clearTimeout(timeout);
   }
-  return response.text();
 };
 
 const ensureStorageBucket = async () => {
@@ -319,6 +336,9 @@ const extractDsldSections = (label) => {
   const suggested = statements.find((row) =>
     /Suggested\/Recommended\/Usage\/Directions/i.test(normalizeText(row?.type)),
   );
+  const suggestedEmbedded = statements
+    .map((row) => normalizeText(row?.notes))
+    .find((notes) => /suggested use\s*:/i.test(notes));
   const warningParts = statements
     .filter((row) =>
       /^(Precautions|Storage|FDA Disclaimer Statement)/i.test(normalizeText(row?.type)),
@@ -333,7 +353,12 @@ const extractDsldSections = (label) => {
         .join(", ");
 
   return {
-    suggestedUse: normalizeText(suggested?.notes ?? null) || null,
+    suggestedUse:
+      normalizeText(suggested?.notes ?? null) ||
+      normalizeText(
+        suggestedEmbedded?.replace(/^[\s\S]*?suggested use\s*:\s*/i, "").trim() ?? null,
+      ) ||
+      null,
     warnings: normalizeText([...new Set(warningParts)].join(" ")) || null,
     otherIngredients: normalizeText(otherIngredients) || null,
   };
@@ -342,6 +367,18 @@ const extractDsldSections = (label) => {
 const buildSupplementFactsFromLabel = (label) => {
   const ingredientRows = Array.isArray(label?.ingredientRows) ? label.ingredientRows : [];
   const serving = Array.isArray(label?.servingSizes) ? label.servingSizes[0] : null;
+  const deriveAmountFromNotes = (notes) => {
+    const text = normalizeText(notes);
+    if (!text) return null;
+    const match = text.match(/(\d+(?:\.\d+)?)\s*(billion|million|trillion|mg|mcg|g|iu|cfu)\b/i);
+    if (!match) return null;
+    return normalizeText(`${match[1]} ${match[2].toUpperCase() === "CFU" ? "CFU" : match[2]}`) || null;
+  };
+  const formatQuantity = (quantity) => {
+    if (!quantity || quantity?.quantity == null) return null;
+    if (normalizeText(quantity.unit).toUpperCase() === "NP") return null;
+    return normalizeText(`${quantity.quantity} ${quantity.unit ?? ""}`) || null;
+  };
   return {
     servingSize:
       normalizeText(
@@ -353,15 +390,42 @@ const buildSupplementFactsFromLabel = (label) => {
     nutritionalFacts: ingredientRows
       .map((row) => {
         const quantity = Array.isArray(row?.quantity) ? row.quantity[0] : null;
-        const amount = quantity?.quantity != null ? `${quantity.quantity} ${quantity.unit ?? ""}` : null;
+        const amount = formatQuantity(quantity) || deriveAmountFromNotes(row?.notes);
+        const blendMembers = (Array.isArray(row?.nestedRows) ? row.nestedRows : [])
+          .map((nestedRow) => normalizeText(nestedRow?.name ?? null))
+          .filter(Boolean);
+        const substancy =
+          blendMembers.length > 0 && /\b(blend|complex|matrix|formula)\b/i.test(normalizeText(row?.name))
+            ? `${normalizeText(row?.name)}: ${blendMembers.join(", ")}`
+            : normalizeText(row?.name ?? null);
         return {
-          substancy: normalizeText(row?.name ?? null),
+          substancy,
           amountPerServing: normalizeText(amount),
           dailyValuePercent: null,
         };
       })
       .filter((row) => row.substancy && row.amountPerServing),
   };
+};
+
+const shouldPreferLabelSupplementFacts = (currentSupplementFacts, labelSupplementFacts) => {
+  const currentFacts = Array.isArray(currentSupplementFacts?.nutritionalFacts)
+    ? currentSupplementFacts.nutritionalFacts
+    : [];
+  const labelFacts = Array.isArray(labelSupplementFacts?.nutritionalFacts)
+    ? labelSupplementFacts.nutritionalFacts
+    : [];
+
+  if (currentFacts.length === 0) return labelFacts.length > 0;
+
+  const currentHasGenericBlend = currentFacts.some(
+    (row) => /^proprietary blend$/i.test(normalizeText(row?.substancy ?? row?.name ?? null)),
+  );
+  const labelHasExpandedBlend = labelFacts.some((row) =>
+    /^proprietary blend\s*:/i.test(normalizeText(row?.substancy ?? row?.name ?? null)),
+  );
+
+  return currentHasGenericBlend && labelHasExpandedBlend;
 };
 
 const readJson = async (filePath) => JSON.parse(await fs.readFile(filePath, "utf8"));
@@ -399,6 +463,26 @@ const hydrateMergedRow = (currentRow, mergedRecord) => {
   };
 };
 
+const buildBootstrapSeedRow = ({ queueRow, label, dsldMeta, brandName, title, barcodeGtin14 }) => ({
+  brandName: normalizeText(brandName ?? null) || null,
+  title: normalizeText(title ?? null) || null,
+  productId: normalizeText(queueRow?.productId ?? dsldMeta?.dsld_label_id ?? null) || null,
+  upcCode: normalizeText(barcodeGtin14 ?? null) || null,
+  barcode_gtin14: toGtin14(barcodeGtin14) ?? null,
+  link: null,
+  productCatalogImage: null,
+  productImages: [],
+  categories: [],
+  sourceTypes: ["dsld_label_api", "dsld_label_facts"],
+  marketSources: ["US"],
+  sourceUrls: normalizeText(dsldMeta?.dsld_pdf ?? null)
+    ? [`https://api.ods.od.nih.gov/dsld/s3/pdf/${queueRow?.productId}.pdf`]
+    : [],
+  sourceNotes: ["missing_from_staging_dsld_bootstrap"],
+  sections: extractDsldSections(label),
+  supplementFacts: buildSupplementFactsFromLabel(label),
+});
+
 const fetchDsldMetaMap = async (labelIds) => {
   const out = new Map();
   for (const idChunk of chunk(labelIds, 200)) {
@@ -417,27 +501,61 @@ const fetchDsldMetaMap = async (labelIds) => {
 };
 
 const main = async () => {
-  const [payload, queueRows] = await Promise.all([readJson(INPUT_JSON), readJson(QUEUE_JSON)]);
+  const [payload, queueRows, config] = await Promise.all([
+    readJson(INPUT_JSON),
+    readJson(QUEUE_JSON),
+    CONFIG_JSON ? readJson(CONFIG_JSON) : Promise.resolve(null),
+  ]);
   const products = Array.isArray(payload?.products) ? payload.products : [];
   const queue = Array.isArray(queueRows) ? queueRows : [];
 
   const brandRows = products.filter((row) => normalizeLower(row?.brandName) === normalizeLower(BRAND));
   const rowByProductId = new Map(brandRows.map((row) => [normalizeText(row?.productId), row]));
+  const rowByBarcode = new Map(
+    brandRows
+      .map((row) => [toGtin14(row?.barcode_gtin14 ?? row?.upcCode ?? null), row])
+      .filter(([barcode]) => Boolean(barcode)),
+  );
   const metaMap = await fetchDsldMetaMap(queue.map((row) => Number(row?.productId)).filter(Number.isFinite));
   const uploadCache = new Map();
   const audit = [];
+  const bootstrappedRows = [];
 
   for (const queueRow of queue) {
     const productId = normalizeText(queueRow?.productId);
-    const currentRow = rowByProductId.get(productId);
-    if (!currentRow) continue;
+    const label = await fetchJson(`https://api.ods.od.nih.gov/dsld/v9/label/${productId}`);
+    const dsldSections = extractDsldSections(label);
+    const dsldMeta = metaMap.get(productId) ?? null;
+    let currentRow = rowByProductId.get(productId);
+    let bootstrapped = false;
+    const queueBarcode =
+      toGtin14(queueRow?.barcode_gtin14 ?? null) ||
+      toGtin14(dsldMeta?.barcode_normalized_gtin14 ?? null) ||
+      null;
+
+    if (!currentRow && queueBarcode) {
+      currentRow = rowByBarcode.get(queueBarcode) ?? null;
+    }
+
+    if (!currentRow) {
+      const bootstrapSeedRow = buildBootstrapSeedRow({
+        queueRow,
+        label,
+        dsldMeta,
+        brandName: queueRow?.brandName ?? dsldMeta?.brand ?? BRAND,
+        title: queueRow?.title ?? dsldMeta?.product_name ?? label?.fullName ?? productId,
+        barcodeGtin14:
+          queueRow?.barcode_gtin14 ?? dsldMeta?.barcode_normalized_gtin14 ?? null,
+      });
+      currentRow = extractOverlayRecordFromSeedRow(bootstrapSeedRow, {
+        seedName: "missing_from_staging_dsld_bootstrap",
+      });
+      bootstrapped = true;
+    }
 
     const beforeMissingFields = Array.isArray(currentRow?.completeness?.coreMissingFields)
       ? currentRow.completeness.coreMissingFields
       : deriveCompleteness(currentRow).coreMissingFields;
-
-    const label = await fetchJson(`https://api.ods.od.nih.gov/dsld/v9/label/${productId}`);
-    const dsldSections = extractDsldSections(label);
 
     let officialPage = null;
     try {
@@ -456,7 +574,6 @@ const main = async () => {
     const hasExistingImage =
       Boolean(normalizeText(currentRow?.productCatalogImage)) ||
       (Array.isArray(currentRow?.productImages) && currentRow.productImages.length > 0);
-    const dsldMeta = metaMap.get(productId) ?? null;
     if (!hasExistingImage && !normalizeText(officialPage?.productCatalogImage) && normalizeText(dsldMeta?.dsld_pdf)) {
       if (!uploadCache.has(productId)) {
         uploadCache.set(productId, renderDsldPdfToPublicUrl(productId));
@@ -497,17 +614,30 @@ const main = async () => {
         ? currentRow.descriptionSections
         : {}),
     };
+    const manualOverrideKey =
+      normalizeText(currentRow?.productId ?? null) ||
+      normalizeText(queueRow?.productId ?? null) ||
+      productId;
+    const manualSectionOverrides =
+      config?.manualSectionOverrides && typeof config.manualSectionOverrides === "object"
+        ? config.manualSectionOverrides[manualOverrideKey] ??
+          config.manualSectionOverrides[productId] ??
+          null
+        : null;
     const suggestedUse =
+      normalizeText(manualSectionOverrides?.["Suggested use"] ?? null) ||
       normalizeText(nextSections["Suggested use"] ?? null) ||
       normalizeText(officialPage?.suggestedUse ?? null) ||
       normalizeText(dsldSections.suggestedUse ?? null) ||
       null;
     const warnings =
+      normalizeText(manualSectionOverrides?.Warnings ?? null) ||
       normalizeText(nextSections.Warnings ?? null) ||
       normalizeText(officialPage?.warnings ?? null) ||
       normalizeText(dsldSections.warnings ?? null) ||
       null;
     const otherIngredients =
+      normalizeText(manualSectionOverrides?.["Other ingredients"] ?? null) ||
       normalizeText(nextSections["Other ingredients"] ?? null) ||
       normalizeText(officialPage?.otherIngredients ?? null) ||
       normalizeText(dsldSections.otherIngredients ?? null) ||
@@ -516,6 +646,8 @@ const main = async () => {
     if (suggestedUse) nextSections["Suggested use"] = suggestedUse;
     if (warnings) nextSections.Warnings = warnings;
     if (otherIngredients) nextSections["Other ingredients"] = otherIngredients;
+
+    const labelSupplementFacts = buildSupplementFactsFromLabel(label);
 
     const mergedRecord = mergeOverlayRecords(currentRow, {
       ...currentRow,
@@ -534,10 +666,11 @@ const main = async () => {
       link: normalizeText(currentRow?.link ?? null) || normalizeText(officialPage?.pageUrl ?? null) || null,
       productImages: Array.isArray(currentRow?.productImages) ? currentRow.productImages : [],
       descriptionSections: nextSections,
-      supplementFacts:
-        currentRow?.supplementFacts?.nutritionalFacts?.length > 0
+      supplementFacts: shouldPreferLabelSupplementFacts(currentRow?.supplementFacts, labelSupplementFacts)
+        ? labelSupplementFacts
+        : currentRow?.supplementFacts?.nutritionalFacts?.length > 0
           ? currentRow.supplementFacts
-          : buildSupplementFactsFromLabel(label),
+          : labelSupplementFacts,
       sourceSummary: {
         ...(currentRow?.sourceSummary && typeof currentRow.sourceSummary === "object" ? currentRow.sourceSummary : {}),
         sourceKind: officialPage ? "official_page_plus_dsld" : "dsld_label_api",
@@ -582,6 +715,13 @@ const main = async () => {
 
     const hydrated = hydrateMergedRow(currentRow, mergedRecord);
     rowByProductId.set(productId, hydrated);
+    if (normalizeText(currentRow?.productId ?? null)) {
+      rowByProductId.set(normalizeText(currentRow.productId), hydrated);
+    }
+    if (queueBarcode) {
+      rowByBarcode.set(queueBarcode, hydrated);
+    }
+    if (bootstrapped) bootstrappedRows.push(hydrated);
     audit.push({
       productId,
       title: hydrated.title,
@@ -592,10 +732,15 @@ const main = async () => {
       manualImageUrl: manualImageUrl ?? null,
       generatedImageUrl: generatedImageUrl ?? null,
       usedDsldPdf: Boolean(dsldMeta?.dsld_pdf),
+      bootstrapped,
     });
   }
 
-  const updatedProducts = products.map((row) => rowByProductId.get(normalizeText(row?.productId)) ?? row);
+  const existingProductIds = new Set(products.map((row) => normalizeText(row?.productId)).filter(Boolean));
+  const updatedProducts = [
+    ...products.map((row) => rowByProductId.get(normalizeText(row?.productId)) ?? row),
+    ...bootstrappedRows.filter((row) => !existingProductIds.has(normalizeText(row?.productId))),
+  ];
   await writeJson(OUT_JSON, {
     ...payload,
     products: updatedProducts,

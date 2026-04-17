@@ -12,6 +12,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { QAContinueCTA } from '@/components/onboarding/qa/QAContinueCTA';
 import { QA_MUTED } from '@/components/onboarding/qa/qaTokens';
+import { useOnboardingLayoutTokens } from '@/hooks/useOnboardingLayoutTokens';
+
+import {
+  FLOW_EASE_BEZIER,
+  ONBOARDING_FOOTER_TRANSITION_DURATION_MS,
+} from './onboardingMotion';
 
 type FooterVisualPayload = {
   identity: string;
@@ -21,6 +27,7 @@ type FooterVisualPayload = {
 };
 
 type OnboardingFooterProps = {
+  backgroundVariant?: 'qa' | 'summary';
   footerIdentity: string;
   continueLabel: string;
   onContinue: () => void | Promise<void>;
@@ -33,17 +40,25 @@ type OnboardingFooterProps = {
 function FooterMetaLayer({
   payload,
   reserveHelperSpace,
+  helperPaddingTop,
   footerHint,
   footerError,
   onSkip,
   interactive,
+  skipMinHeight,
+  skipTextSize,
+  skipTextLineHeight,
 }: {
   payload: FooterVisualPayload;
   reserveHelperSpace: boolean;
+  helperPaddingTop: number;
   footerHint?: string;
   footerError?: string | null;
   onSkip?: () => void | Promise<void>;
   interactive: boolean;
+  skipMinHeight: number;
+  skipTextSize: number;
+  skipTextLineHeight: number;
 }) {
   return (
     <View pointerEvents={interactive ? 'auto' : 'none'} style={styles.layerInner}>
@@ -51,6 +66,7 @@ function FooterMetaLayer({
         style={[
           styles.helperZone,
           reserveHelperSpace ? styles.helperZoneReserved : styles.helperZoneCollapsed,
+          reserveHelperSpace ? { paddingTop: helperPaddingTop } : null,
         ]}
       >
         {footerError ? (
@@ -67,12 +83,21 @@ function FooterMetaLayer({
       </View>
 
       {payload.hasSkip && onSkip ? (
-        <View style={styles.skipZone}>
+        <View style={[styles.skipZone, { minHeight: skipMinHeight }]}>
           <Pressable
             onPress={() => void onSkip()}
             style={({ pressed }) => [styles.skipWrap, pressed && styles.skipPressed]}
           >
-            <Text allowFontScaling={false} style={styles.skipText}>
+            <Text
+              allowFontScaling={false}
+              style={[
+                styles.skipText,
+                {
+                  fontSize: skipTextSize,
+                  lineHeight: skipTextLineHeight,
+                },
+              ]}
+            >
               Skip for now
             </Text>
           </Pressable>
@@ -90,6 +115,8 @@ function CTAButtonLayer({
   showLabelTransition,
   labelIncomingStyle,
   labelOutgoingStyle,
+  ctaLabelSize,
+  ctaLabelLineHeight,
 }: {
   payload: FooterVisualPayload;
   onContinue: () => void | Promise<void>;
@@ -98,6 +125,8 @@ function CTAButtonLayer({
   showLabelTransition: boolean;
   labelIncomingStyle: object;
   labelOutgoingStyle: object;
+  ctaLabelSize: number;
+  ctaLabelLineHeight: number;
 }) {
   return (
     <View pointerEvents={interactive ? 'auto' : 'none'} style={styles.buttonLayerInner}>
@@ -111,7 +140,14 @@ function CTAButtonLayer({
           {showLabelTransition && previousLabel ? (
             <RNAnimated.Text
               allowFontScaling={false}
-              style={[styles.ctaLabel, labelOutgoingStyle]}
+              style={[
+                styles.ctaLabel,
+                {
+                  fontSize: ctaLabelSize,
+                  lineHeight: ctaLabelLineHeight,
+                },
+                labelOutgoingStyle,
+              ]}
             >
               {previousLabel}
             </RNAnimated.Text>
@@ -120,6 +156,10 @@ function CTAButtonLayer({
             allowFontScaling={false}
             style={[
               styles.ctaLabel,
+              {
+                fontSize: ctaLabelSize,
+                lineHeight: ctaLabelLineHeight,
+              },
               showLabelTransition ? labelIncomingStyle : styles.layerStatic,
             ]}
           >
@@ -132,6 +172,7 @@ function CTAButtonLayer({
 }
 
 export function OnboardingFooter({
+  backgroundVariant = 'qa',
   footerIdentity,
   continueLabel,
   onContinue,
@@ -141,6 +182,7 @@ export function OnboardingFooter({
   footerError,
 }: OnboardingFooterProps) {
   const insets = useSafeAreaInsets();
+  const layoutTokens = useOnboardingLayoutTokens();
   const transition = useRef(new RNAnimated.Value(1)).current;
   const initialHelperPresenceRef = useRef(Boolean(footerHint || footerError));
   const [reserveHelperSpace, setReserveHelperSpace] = useState(
@@ -169,7 +211,6 @@ export function OnboardingFooter({
       JSON.stringify([
         nextPayload.continueLabel,
         nextPayload.hasSkip,
-        nextPayload.identity,
       ]),
     [nextPayload],
   );
@@ -214,7 +255,6 @@ export function OnboardingFooter({
     const currentSignature = JSON.stringify([
       currentPayload.continueLabel,
       currentPayload.hasSkip,
-      currentPayload.identity,
     ]);
 
     if (currentSignature === payloadSignature) {
@@ -233,8 +273,8 @@ export function OnboardingFooter({
 
     RNAnimated.timing(transition, {
       toValue: 1,
-      duration: 380,
-      easing: RNEasing.bezier(0.16, 1, 0.3, 1),
+      duration: ONBOARDING_FOOTER_TRANSITION_DURATION_MS,
+      easing: RNEasing.bezier(...FLOW_EASE_BEZIER),
       useNativeDriver: true,
     }).start(({ finished }) => {
       if (finished) {
@@ -324,22 +364,26 @@ export function OnboardingFooter({
     [transition],
   );
 
-  const hasSkip = currentPayload.hasSkip || previousPayload?.hasSkip;
-  const contentMinHeight = hasSkip
-    ? reserveHelperSpace
-      ? 132
-      : 108
-    : 102;
+  const hasSkip = Boolean(currentPayload.hasSkip || previousPayload?.hasSkip);
+  const contentMinHeight = layoutTokens.getSharedShellFooterReserveHeight({
+    backgroundVariant,
+    hasSkip,
+    hasHelper: reserveHelperSpace,
+  });
 
   return (
     <View
       style={[
         styles.root,
-        { paddingBottom: Math.max(insets.bottom - 4, 14) },
+        {
+          left: layoutTokens.shellHorizontal,
+          right: layoutTokens.shellHorizontal,
+          paddingBottom: Math.max(insets.bottom - 4, layoutTokens.shellFooterInset),
+        },
       ]}
     >
       <View style={[styles.contentStack, { minHeight: contentMinHeight }]}>
-        <View style={styles.buttonStack}>
+        <View style={[styles.buttonStack, { minHeight: layoutTokens.qaCtaHeight }]}>
           <RNAnimated.View
             style={[
               styles.buttonLayer,
@@ -350,6 +394,8 @@ export function OnboardingFooter({
               payload={currentPayload}
               onContinue={() => void handleContinue()}
               interactive
+              ctaLabelSize={layoutTokens.qaCtaLabelSize}
+              ctaLabelLineHeight={layoutTokens.qaCtaLabelLineHeight}
               previousLabel={previousPayload?.continueLabel}
               showLabelTransition={
                 Boolean(previousPayload) &&
@@ -367,10 +413,14 @@ export function OnboardingFooter({
               <FooterMetaLayer
                 payload={previousPayload}
                 reserveHelperSpace={reserveHelperSpace}
+                helperPaddingTop={layoutTokens.qaFooterHelperPaddingTop}
                 footerHint={footerHint}
                 footerError={footerError}
                 onSkip={undefined}
                 interactive={false}
+                skipMinHeight={layoutTokens.qaFooterSkipMinHeight}
+                skipTextSize={layoutTokens.qaFooterSkipTextSize}
+                skipTextLineHeight={layoutTokens.qaFooterSkipTextLineHeight}
               />
             </RNAnimated.View>
           ) : null}
@@ -384,10 +434,14 @@ export function OnboardingFooter({
             <FooterMetaLayer
               payload={currentPayload}
               reserveHelperSpace={reserveHelperSpace}
+              helperPaddingTop={layoutTokens.qaFooterHelperPaddingTop}
               footerHint={footerHint}
               footerError={footerError}
               onSkip={onSkip ? () => void handleSkip() : undefined}
               interactive
+              skipMinHeight={layoutTokens.qaFooterSkipMinHeight}
+              skipTextSize={layoutTokens.qaFooterSkipTextSize}
+              skipTextLineHeight={layoutTokens.qaFooterSkipTextLineHeight}
             />
           </RNAnimated.View>
         </View>
@@ -399,8 +453,6 @@ export function OnboardingFooter({
 const styles = StyleSheet.create({
   root: {
     position: 'absolute',
-    left: 24,
-    right: 24,
     bottom: 0,
     zIndex: 20,
     paddingTop: 8,
@@ -411,7 +463,7 @@ const styles = StyleSheet.create({
   },
   buttonStack: {
     position: 'relative',
-    minHeight: 72,
+    minHeight: 0,
   },
   buttonLayer: {
     ...StyleSheet.absoluteFillObject,
@@ -426,8 +478,6 @@ const styles = StyleSheet.create({
   },
   ctaLabel: {
     position: 'absolute',
-    fontSize: 17,
-    lineHeight: 22,
     fontWeight: '600',
     letterSpacing: -0.45,
     color: '#FFFFFF',
@@ -458,7 +508,7 @@ const styles = StyleSheet.create({
   },
   helperZoneReserved: {
     minHeight: 18,
-    paddingTop: 6,
+    paddingTop: 4,
   },
   helperZoneCollapsed: {
     minHeight: 0,
@@ -483,10 +533,10 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   skipZone: {
-    minHeight: 28,
+    minHeight: 0,
     alignItems: 'center',
     justifyContent: 'flex-end',
-    paddingTop: 4,
+    paddingTop: 2,
   },
   skipWrap: {
     paddingHorizontal: 8,
@@ -496,8 +546,6 @@ const styles = StyleSheet.create({
     transform: [{ scale: 0.97 }],
   },
   skipText: {
-    fontSize: 17,
-    lineHeight: 22,
     fontWeight: '500',
     letterSpacing: -0.4,
     color: QA_MUTED,

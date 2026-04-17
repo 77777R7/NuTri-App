@@ -23,7 +23,7 @@ export default function AppIndex() {
   }
 
   if (!session) {
-    return <Redirect href="/(auth)/gate" />;
+    return <Redirect href="/auth/login" />;
   }
 
   if (onboardingLoading) {

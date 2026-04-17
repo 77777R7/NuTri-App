@@ -1,0 +1,114 @@
+{
+  "version": "stratified-nightly-additions.v1",
+  "description": "Nightly-only real overlay additions discovered from the full overlay sweep.",
+  "scenarios": [
+    {
+      "id": "scan_nightly_betterbody_coconut_aminos_soy_replacement",
+      "surface": "barcode_scan",
+      "origin": "barcode_scan",
+      "category": "food_like",
+      "personas": ["soy_allergy"],
+      "input": { "barcode": "00856260006937" },
+      "product": {
+        "productId": "114934",
+        "brand": "BetterBody Foods",
+        "name": "BetterBody Foods, Organic Coconut Aminos, Soy Sauce Replacement, 16.9 fl oz (500 ml)",
+        "barcode": "00856260006937"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": ["Coconut Aminos", "Soy Sauce Replacement", "Seasoning"],
+          "warn": ["Liquid Aminos"],
+          "fail": ["Soy", "Serving Size"]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": ["contains soy", "soy source", "safe for you"]
+        }
+      },
+      "gates": ["route_health", "default_anchor", "allergy_sensitivity_relevance", "unsafe_language"],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "scan_nightly_bpn_go_gel_food_like",
+      "surface": "barcode_scan",
+      "origin": "barcode_scan",
+      "category": "food_like",
+      "personas": ["fitness_recovery_goal"],
+      "input": { "barcode": "00850046337604" },
+      "product": {
+        "productId": "142023",
+        "brand": "BPN",
+        "name": "BPN, Go Gel, Endurance Gel, Apple Cinnamon, 10 Packets, 1.45 oz (41 g) Each",
+        "barcode": "00850046337604"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": ["Endurance Gel", "Go Gel", "Gel"],
+          "warn": ["Energy Gel"],
+          "fail": ["Sugars", "Calories", "Serving Size"]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": ["safe for you"]
+        }
+      },
+      "gates": ["route_health", "default_anchor", "goal_relevance", "unsafe_language"],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "scan_nightly_hydrationup_electrolyte_drink_mix",
+      "surface": "barcode_scan",
+      "origin": "barcode_scan",
+      "category": "mineral_stack",
+      "personas": ["fitness_recovery_goal"],
+      "input": { "barcode": "00898220017478" },
+      "product": {
+        "productId": "98304",
+        "brand": "California Gold Nutrition",
+        "name": "California Gold Nutrition, Beverages, HydrationUP®, Electrolyte Drink Mix with Calcium, Potassium, Vitamin C, and Vitamin E, Fruit Punch, 8 oz (227 g)",
+        "barcode": "00898220017478"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": ["Electrolyte Drink Mix", "HydrationUP", "Electrolyte"],
+          "warn": ["Calcium", "Potassium"],
+          "fail": ["Vitamin C", "Calories", "Serving Size"]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": ["safe for you"]
+        }
+      },
+      "gates": ["route_health", "default_anchor", "goal_relevance", "unsafe_language"],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "scan_nightly_barleans_algal_oil_source",
+      "surface": "barcode_scan",
+      "origin": "barcode_scan",
+      "category": "omega3_source_oil",
+      "personas": ["vegan_preference", "fish_allergy"],
+      "input": { "barcode": "00705875802208" },
+      "product": {
+        "productId": "147437",
+        "brand": "Barlean's",
+        "name": "Barlean's, Seriously Delicious®, Plant Based Omega-3 From Algae Oil, Ginger Peach, 630 mg, 16 oz (454 g)",
+        "barcode": "00705875802208"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": ["Algal Oil", "Plant Based Omega-3", "Omega-3"],
+          "warn": ["DHA"],
+          "fail": ["Fish Oil", "Softgels"]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": ["fish oil", "fish source", "safe for you"]
+        }
+      },
+      "gates": ["default_anchor", "allergy_sensitivity_relevance", "unsafe_language"],
+      "severityOnFail": "P1"
+    }
+  ]
+}

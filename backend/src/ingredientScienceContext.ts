@@ -137,11 +137,17 @@ const CALCIUM_PATTERN =
 const IRON_PATTERN = /\biron\b|\bferrous\b|\bferric\b/i;
 const POTASSIUM_SUPPLEMENT_PATTERN = /\bpotassium\s+(?:gluconate|citrate|chloride|iodide|bicarbonate)\b/i;
 const MELATONIN_PATTERN = /\bmelatonin\b/i;
+const COCONUT_AMINOS_TITLE_PATTERN = /\bcoconut\s+aminos\b|\bsoy\s+sauce\s+replacement\b/i;
+const GEL_FUEL_TITLE_PATTERN = /\bgo\s+gel\b|\bendurance\s+gel\b|\benergy\s+gel\b/i;
+const ELECTROLYTE_DRINK_MIX_TITLE_PATTERN =
+  /\bhydrationup\b|\belectrolyte\s+drink\s+mix\b|\belectrolyte\s+(?:formula|mix)\b/i;
+const OMEGA3_ALGAL_TITLE_PATTERN =
+  /\balgal\s+oil\b|\balgae\s+oil\b|\bfrom\s+algae\b|\bplant\s+based\s+omega\s*-?\s*3\b|\bschizochytrium\b/i;
 const FUNCTIONAL_FOOD_LIKE_TITLE_PATTERN =
-  /\b(?:ag1|athletic\s+greens|gum|gums|gumm(?:y|ies)|mints?|lozenge|lozenges|freeze\s+dried|juice\s+powder|fruit\s+powder|dragon\s+fruit|smoothie|drink\s+mix|tea\s+bags?|herbal\s+slimming\s+tea|greens\b|green\s+superfood|superfood|vegetable\s+powder|whole\s+food\s+powder|snacks?|snackable|crackers?|crisps?)\b/i;
+  /\b(?:ag1|athletic\s+greens|gum|gums|gumm(?:y|ies)|mints?|lozenge|lozenges|freeze\s+dried|juice\s+powder|fruit\s+powder|dragon\s+fruit|smoothie|drink\s+mix|tea\s+bags?|herbal\s+slimming\s+tea|greens\b|green\s+superfood|superfood|vegetable\s+powder|whole\s+food\s+powder|snacks?|snackable|crackers?|crisps?|coconut\s+aminos|soy\s+sauce\s+replacement|go\s+gel|endurance\s+gel|energy\s+gel)\b/i;
 const FUNCTIONAL_FOOD_LIKE_INGREDIENT_PATTERN =
   /\b(?:xylitol|erythritol|fiber|dragon\s+fruit|fruit\s+powder|juice\s+powder|spirulina|chlorella|barley\s+grass|wheat\s+grass|digestive\s+enzyme|enzyme\s+assimilation|greens\b|green\s+superfood|superfood)\b/i;
-const FUNCTIONAL_FOOD_LIKE_FORM_PATTERN = /\b(?:gum|mint|lozenge|tea|powder|drink\s*mix)\b/i;
+const FUNCTIONAL_FOOD_LIKE_FORM_PATTERN = /\b(?:gum|mint|lozenge|tea|powder|drink\s*mix|gel)\b/i;
 const PROBIOTIC_TITLE_PATTERN =
   /\b(?:probiotics?|pro-bio|probiology|essential[\s-]*biotic|flora|microbiome|live cultures?|cfu|digestive support|protectis|floraphage|osfortis|cytoflora)\b/i;
 const PROBIOTIC_SPECIFIC_ROW_PATTERN =
@@ -156,7 +162,7 @@ const FOOD_LIKE_CONTEXT_ANCHOR_PATTERN =
 const FOOD_LIKE_MACRO_ANCHOR_PATTERN =
   /\b(?:calories|total\s+carbohydrates?|total\s+sugars?|added\s+sugars?|sugar\s+alcohols?|dietary\s+fiber|fiber|sodium|protein|potassium)\b/i;
 const FOOD_LIKE_PRODUCT_TITLE_PATTERN =
-  /\b(?:ag1|athletic\s+greens|greens?\b|supergreens?\b|green\s+superfood|superfood|juice\s+powder|fruit\s+powder|vegetable\s+powder|whole\s+food\s+powder|drink\s+mix|smoothie|tea\s+bags?|snacks?|snackable|crackers?|crisps?|gumm(?:y|ies))\b/i;
+  /\b(?:ag1|athletic\s+greens|greens?\b|supergreens?\b|green\s+superfood|superfood|juice\s+powder|fruit\s+powder|vegetable\s+powder|whole\s+food\s+powder|drink\s+mix|smoothie|tea\s+bags?|snacks?|snackable|crackers?|crisps?|gumm(?:y|ies)|coconut\s+aminos|soy\s+sauce\s+replacement|go\s+gel|endurance\s+gel|energy\s+gel)\b/i;
 const PROTEIN_PRODUCT_TITLE_PATTERN = /\bprotein\b/i;
 const FIBER_PRODUCT_TITLE_PATTERN = /\b(?:apple|psyllium|acacia|inulin|prebiotic)?\s*fiber\b/i;
 const ALOE_VERA_TITLE_PATTERN = /\baloe\s+vera\b/i;
@@ -294,7 +300,7 @@ const inferFamilyFromText = (combined: string): IngredientScienceIngredientFamil
   if (CALCIUM_PATTERN.test(combined)) return "calcium";
   if (IRON_PATTERN.test(combined)) return "iron";
   if (MELATONIN_PATTERN.test(combined)) return "melatonin";
-  if (/\bfish\s*oil\b|\bomega\s*-?\s*3\b|\bepa\b|\bdha\b|\bkrill\b|\balgal\s*oil\b/.test(combined)) {
+  if (/\bfish\s*oil\b|\bomega\s*-?\s*3\b|\bepa\b|\bdha\b|\bkrill\b|\balgal\s*oil\b|\balgae\b|\bplant\s+based\s+omega\s*-?\s*3\b|\bschizochytrium\b/.test(combined)) {
     return "omega_3";
   }
   if (
@@ -488,7 +494,10 @@ const FAMILY_TITLE_HINTS: Array<{ family: IngredientScienceIngredientFamily; pat
   { family: "cla", pattern: /\bcla(?:\d+)?\b|\bconjugated\s+linoleic\s+acid\b/i },
   { family: "carnitine", pattern: /\bcarnitine\b|\balcar\b/i },
   { family: "green_tea_extract", pattern: /\bgreen\s+tea\b|\begcg\b/i },
-  { family: "omega_3", pattern: /\bomega\s*-?\s*3\b|\bfish\s*oil\b|\bepa\b|\bdha\b/i },
+  {
+    family: "omega_3",
+    pattern: /\bomega\s*-?\s*3\b|\bfish\s*oil\b|\bepa\b|\bdha\b|\bkrill\s*oil\b|\balgal\s+oil\b|\balgae\b|\bplant\s+based\s+omega\s*-?\s*3\b|\bschizochytrium\b/i,
+  },
   { family: "7keto_dhea_metabolite", pattern: /\b7[\s-]*keto\b/i },
   { family: "curcumin", pattern: /\bcurcumin\b|\bturmeric\b/i },
   { family: "ashwagandha", pattern: /\bashwagandha\b/i },
@@ -560,7 +569,10 @@ const hasTitleRescueContext = (productName: string): boolean =>
   isLeadAloeVeraTitle(productName) ||
   FIBER_PRODUCT_TITLE_PATTERN.test(productName) ||
   PROTEIN_PRODUCT_TITLE_PATTERN.test(productName) ||
-  POTASSIUM_SUPPLEMENT_PATTERN.test(productName);
+  POTASSIUM_SUPPLEMENT_PATTERN.test(productName) ||
+  COCONUT_AMINOS_TITLE_PATTERN.test(productName) ||
+  GEL_FUEL_TITLE_PATTERN.test(productName) ||
+  ELECTROLYTE_DRINK_MIX_TITLE_PATTERN.test(productName);
 
 const isLeadAloeVeraTitle = (productName: string): boolean => {
   const normalizedTitle = normalizeText(productName);
@@ -578,7 +590,19 @@ const isTitleRescueAnchorRow = (
     (isLeadAloeVeraTitle(productName) && ALOE_VERA_TITLE_PATTERN.test(normalizedRow)) ||
     (FIBER_PRODUCT_TITLE_PATTERN.test(productName) && /\bfiber\b/i.test(normalizedRow)) ||
     (PROTEIN_PRODUCT_TITLE_PATTERN.test(productName) && /\bprotein\b/i.test(normalizedRow)) ||
-    (POTASSIUM_SUPPLEMENT_PATTERN.test(productName) && POTASSIUM_SUPPLEMENT_PATTERN.test(normalizedRow))
+    (POTASSIUM_SUPPLEMENT_PATTERN.test(productName) && POTASSIUM_SUPPLEMENT_PATTERN.test(normalizedRow)) ||
+    (
+      COCONUT_AMINOS_TITLE_PATTERN.test(productName) &&
+      /\bcoconut\s+aminos\b|\bsoy\s+sauce\s+replacement\b|\bseasoning\b/i.test(normalizedRow)
+    ) ||
+    (
+      GEL_FUEL_TITLE_PATTERN.test(productName) &&
+      /\bgo\s+gel\b|\bendurance\s+gel\b|\benergy\s+gel\b|\bgel\b/i.test(normalizedRow)
+    ) ||
+    (
+      ELECTROLYTE_DRINK_MIX_TITLE_PATTERN.test(productName) &&
+      /\bhydrationup\b|\belectrolyte\s+drink\s+mix\b|\belectrolyte\b/i.test(normalizedRow)
+    )
   );
 };
 
@@ -724,10 +748,21 @@ const deriveScienceTitleRescueRows = (params: {
     pushRow(/\belderberry\b/i.test(titleWithoutBrand) ? "Elderberry" : "Sambucus elderberry");
   }
 
-  if (hasTitleFamily("omega_3", titleWithoutBrand) && !existingFamilies.includes("omega_3")) {
-    pushRow(
-      extractTitleMatch(titleWithoutBrand, /\bomega[\s-]*3\b|\bfish oil\b|\bepa\b|\bdha\b/i) ?? "Omega-3",
-    );
+  const hasDedicatedOmega3SourceRow = params.existingRows.some((row) =>
+    /\bfish\s+oil\b|\bkrill\s+oil\b|\balgal\s+oil\b|\balgae\b|\bplant\s+based\s+omega\s*-?\s*3\b|\bschizochytrium\b/i.test(
+      row.name,
+    ),
+  );
+  if (hasTitleFamily("omega_3", titleWithoutBrand) && !hasDedicatedOmega3SourceRow) {
+    if (OMEGA3_ALGAL_TITLE_PATTERN.test(titleWithoutBrand)) {
+      pushRow("Algal Oil");
+    } else if (/\bkrill\s+oil\b/i.test(titleWithoutBrand)) {
+      pushRow("Krill Oil");
+    } else {
+      pushRow(
+        extractTitleMatch(titleWithoutBrand, /\bomega[\s-]*3\b|\bfish oil\b|\bepa\b|\bdha\b/i) ?? "Omega-3",
+      );
+    }
   }
 
   const hasDedicatedProbioticRow = params.existingRows.some((row) =>
@@ -821,6 +856,21 @@ const deriveScienceTitleRescueRows = (params: {
     pushRow("Greens");
   } else if (TEA_BAG_TITLE_PATTERN.test(titleWithoutBrand)) {
     pushRow("Tea blend");
+  } else if (COCONUT_AMINOS_TITLE_PATTERN.test(titleWithoutBrand)) {
+    pushRow(
+      extractTitleMatch(titleWithoutBrand, /\bcoconut\s+aminos\b|\bsoy\s+sauce\s+replacement\b/i) ??
+        "Coconut Aminos",
+    );
+  } else if (GEL_FUEL_TITLE_PATTERN.test(titleWithoutBrand)) {
+    pushRow(
+      extractTitleMatch(titleWithoutBrand, /\bendurance\s+gel\b|\bgo\s+gel\b|\benergy\s+gel\b/i) ??
+        "Endurance Gel",
+    );
+  } else if (ELECTROLYTE_DRINK_MIX_TITLE_PATTERN.test(titleWithoutBrand)) {
+    pushRow(
+      extractTitleMatch(titleWithoutBrand, /\belectrolyte\s+drink\s+mix\b|\bhydrationup\b|\belectrolyte\b/i) ??
+        "Electrolyte Drink Mix",
+    );
   } else if (isLeadAloeVeraTitle(titleWithoutBrand)) {
     pushRow("Aloe Vera");
   } else if (FIBER_PRODUCT_TITLE_PATTERN.test(titleWithoutBrand)) {

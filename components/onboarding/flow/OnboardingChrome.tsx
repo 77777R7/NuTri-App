@@ -19,8 +19,12 @@ import {
   QA_PROGRESS_TRACK_HEIGHT,
   QA_PROGRESS_TRACK_WIDTH,
 } from '@/components/onboarding/qa/qaTokens';
+import { useOnboardingLayoutTokens } from '@/hooks/useOnboardingLayoutTokens';
 
-import { ONBOARDING_SHARED_SHELL_TOP_OFFSET } from './onboardingShell';
+import {
+  FLOW_EASE_BEZIER,
+  ONBOARDING_CHROME_PROGRESS_DURATION_MS,
+} from './onboardingMotion';
 import type { OnboardingFlowDirection } from './OnboardingSceneViewport';
 
 const BLUR_PROPS =
@@ -42,6 +46,7 @@ export function OnboardingChrome({
   onBack,
 }: OnboardingChromeProps) {
   const insets = useSafeAreaInsets();
+  const layoutTokens = useOnboardingLayoutTokens();
   const progressFill = useRef(new RNAnimated.Value(progressFillWidth)).current;
   const previousWidthRef = useRef(progressFillWidth);
 
@@ -55,8 +60,8 @@ export function OnboardingChrome({
     progressFill.setValue(previousWidth);
     RNAnimated.timing(progressFill, {
       toValue: progressFillWidth,
-      duration: 420,
-      easing: RNEasing.bezier(0.16, 1, 0.3, 1),
+      duration: ONBOARDING_CHROME_PROGRESS_DURATION_MS,
+      easing: RNEasing.bezier(...FLOW_EASE_BEZIER),
       useNativeDriver: false,
     }).start();
     previousWidthRef.current = progressFillWidth;
@@ -76,7 +81,17 @@ export function OnboardingChrome({
   }, [onBack]);
 
   return (
-    <View style={[styles.root, { top: insets.top + ONBOARDING_SHARED_SHELL_TOP_OFFSET }]}>
+    <View
+      style={[
+        styles.root,
+        {
+          top: insets.top + layoutTokens.shellTopOffset,
+          left: layoutTokens.shellHorizontal,
+          right: layoutTokens.shellHorizontal,
+          height: layoutTokens.sharedShellHeaderHeight,
+        },
+      ]}
+    >
       <ChromeLayer
         progressWidth={progressFill}
         onBack={() => void handleBack()}
@@ -135,9 +150,6 @@ function ChromeLayer({
 const styles = StyleSheet.create({
   root: {
     position: 'absolute',
-    left: 24,
-    right: 24,
-    height: 44,
     zIndex: 20,
   },
   layerInner: {

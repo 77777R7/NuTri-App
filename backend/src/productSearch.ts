@@ -46,7 +46,7 @@ type SearchIngredientRow = {
   aggregateFormula?: boolean;
 };
 
-type ProductSearchIndexRow = {
+export type ProductSearchIndexRow = {
   id: string;
   productId: string;
   barcode: string | null;
@@ -68,6 +68,12 @@ type ProductSearchIndexRow = {
 type ProductSearchIndex = {
   builtAt: number;
   rows: ProductSearchIndexRow[];
+};
+
+export type SearchQueryPlan = {
+  normalizedQuery: string;
+  requiredGroups: string[][];
+  optionalGroups: string[][];
 };
 
 export type ProductSearchCard = {
@@ -317,6 +323,135 @@ const POPULAR_FALLBACK_BRAND_SCORES = new Map(
 
 const normalizeLookupText = (value: string | null | undefined): string =>
   normalizeSearchText(String(value ?? ""));
+
+const SEARCH_QUERY_PHRASE_ALIASES: { pattern: RegExp; terms: string[] }[] = [
+  {
+    pattern: /\bcamellia sinensis\b/i,
+    terms: ["camellia sinensis", "green tea", "matcha"],
+  },
+];
+
+const SEARCH_QUERY_TOKEN_ALIASES: Record<string, string[]> = {
+  sensoril: ["sensoril", "ashwagandha"],
+  florafage: ["florafage", "floraphage"],
+  floraphage: ["floraphage", "florafage"],
+  matcha: ["matcha", "green tea"],
+  d3: ["d3", "vitamin d"],
+  cholecalciferol: ["cholecalciferol", "vitamin d"],
+};
+
+const SEARCH_QUERY_OPTIONAL_TOKENS = new Set([
+  "support",
+  "supplement",
+  "formula",
+  "capsule",
+  "capsules",
+  "tablet",
+  "tablets",
+  "softgel",
+  "softgels",
+  "gummy",
+  "gummies",
+  "with",
+  "plus",
+]);
+
+const SEARCH_QUERY_OPTIONAL_GOAL_TOKENS = new Set([
+  "stress",
+  "sleep",
+  "calm",
+  "immune",
+  "immunity",
+  "focus",
+  "energy",
+  "recovery",
+  "digestive",
+  "digestion",
+]);
+
+const SEARCH_QUERY_OPTIONAL_DOSE_TOKEN_PATTERN =
+  /^(?:\d+(?:[.,]\d+)?|\d+(?:[.,]\d+)?(?:mg|mcg|g|iu|ui|ml|oz|cfu)|mg|mcg|g|iu|ui|ml|oz|cfu)$/i;
+const SEARCH_QUERY_EXACT_BOOST_PRIMARY_TERMS = new Set([
+  "sensoril",
+  "florafage",
+  "floraphage",
+  "d3",
+  "cholecalciferol",
+]);
+
+const normalizeGroupTerms = (terms: string[]): string[] =>
+  Array.from(
+    new Set(
+      terms
+        .map((term) => normalizeLookupText(term))
+        .filter(Boolean),
+    ),
+  );
+
+const addQueryGroup = (groups: string[][], seenKeys: Set<string>, terms: string[]): void => {
+  const normalizedTerms = normalizeGroupTerms(terms);
+  if (normalizedTerms.length === 0) return;
+  const key = normalizedTerms.join("|");
+  if (seenKeys.has(key)) return;
+  seenKeys.add(key);
+  groups.push(normalizedTerms);
+};
+
+const isBarcodeLikeQueryToken = (token: string): boolean => /^\d{8,14}$/.test(token);
+
+const isOptionalQueryToken = (token: string): boolean => {
+  if (SEARCH_QUERY_OPTIONAL_TOKENS.has(token)) return true;
+  if (!SEARCH_QUERY_OPTIONAL_DOSE_TOKEN_PATTERN.test(token)) return false;
+  return !isBarcodeLikeQueryToken(token);
+};
+
+export const buildSearchQueryPlan = (query: string | null | undefined): SearchQueryPlan => {
+  const normalizedQuery = normalizeLookupText(query);
+  if (!normalizedQuery) {
+    return {
+      normalizedQuery: "",
+      requiredGroups: [],
+      optionalGroups: [],
+    };
+  }
+
+  const requiredGroups: string[][] = [];
+  const optionalGroups: string[][] = [];
+  const seenRequiredKeys = new Set<string>();
+  const seenOptionalKeys = new Set<string>();
+
+  let remaining = normalizedQuery;
+  for (const { pattern, terms } of SEARCH_QUERY_PHRASE_ALIASES) {
+    if (!pattern.test(remaining)) continue;
+    addQueryGroup(requiredGroups, seenRequiredKeys, terms);
+    remaining = remaining.replace(pattern, " ");
+  }
+
+  const tokens = remaining.split(" ").filter(Boolean);
+  for (const token of tokens) {
+    if (isOptionalQueryToken(token)) {
+      continue;
+    }
+
+    if (SEARCH_QUERY_OPTIONAL_GOAL_TOKENS.has(token) && requiredGroups.length > 0) {
+      addQueryGroup(optionalGroups, seenOptionalKeys, [token]);
+      continue;
+    }
+
+    addQueryGroup(requiredGroups, seenRequiredKeys, SEARCH_QUERY_TOKEN_ALIASES[token] ?? [token]);
+  }
+
+  if (requiredGroups.length === 0 && optionalGroups.length > 0) {
+    requiredGroups.push(...optionalGroups);
+    optionalGroups.length = 0;
+  }
+
+  return {
+    normalizedQuery,
+    requiredGroups,
+    optionalGroups,
+  };
+};
 
 const buildBrowseCacheKey = (params: SearchParams): string => {
   const category = safeTrim(params.category) ?? "All";
@@ -965,28 +1100,81 @@ const buildSearchText = (params: {
   return normalizeSearchText([baseText, ...derivedGoalTokens].join(" "));
 };
 
-const computeBaseSearchScore = (row: ProductSearchIndexRow, tokens: string[]): number => {
-  if (tokens.length === 0) return 0;
-
+const scoreSearchTermMatch = (
+  row: ProductSearchIndexRow,
+  term: string,
+): number => {
   const title = normalizeLookupText(row.title);
   const brand = normalizeLookupText(row.brandName);
   const categories = normalizeLookupText(row.categories.join(" "));
   const ingredientNames = normalizeLookupText(row.ingredients.map((ingredient) => ingredient.name).join(" "));
+  const normalizedTerm = normalizeLookupText(term);
+  if (!normalizedTerm) return 0;
+
+  if (!row.searchText.includes(normalizedTerm)) return 0;
+
+  if (title.startsWith(normalizedTerm)) return 36;
+  if (title.includes(normalizedTerm)) return 24;
+  if (brand.startsWith(normalizedTerm)) return 18;
+  if (brand.includes(normalizedTerm)) return 14;
+  if (categories.includes(normalizedTerm)) return 10;
+  if (ingredientNames.includes(normalizedTerm)) return 8;
+  return 4;
+};
+
+export const computeSearchScoreForQueryPlan = (
+  row: ProductSearchIndexRow,
+  plan: SearchQueryPlan,
+): number => {
+  if (plan.requiredGroups.length === 0 && plan.optionalGroups.length === 0) return 0;
 
   let score = 0;
-  for (const token of tokens) {
-    if (!row.searchText.includes(token)) return 0;
+  for (const group of plan.requiredGroups) {
+    const primaryTerm = group[0] ?? "";
+    const primaryScore = primaryTerm ? scoreSearchTermMatch(row, primaryTerm) : 0;
+    let bestGroupScore = group.reduce((best, term) => Math.max(best, scoreSearchTermMatch(row, term)), 0);
+    if (bestGroupScore === 0) return 0;
+    if (primaryScore > 0 && SEARCH_QUERY_EXACT_BOOST_PRIMARY_TERMS.has(primaryTerm)) {
+      bestGroupScore += 12;
+    }
+    score += bestGroupScore;
+  }
 
-    if (title.startsWith(token)) score += 36;
-    else if (title.includes(token)) score += 24;
-    else if (brand.startsWith(token)) score += 18;
-    else if (brand.includes(token)) score += 14;
-    else if (categories.includes(token)) score += 10;
-    else if (ingredientNames.includes(token)) score += 8;
-    else score += 4;
+  for (const group of plan.optionalGroups) {
+    const bestGroupScore = group.reduce((best, term) => Math.max(best, scoreSearchTermMatch(row, term)), 0);
+    if (bestGroupScore > 0) {
+      score += Math.max(2, Math.floor(bestGroupScore / 2));
+    }
   }
 
   return score;
+};
+
+const planIncludesTerm = (plan: SearchQueryPlan, term: string): boolean =>
+  plan.requiredGroups.some((group) => group.includes(term)) ||
+  plan.optionalGroups.some((group) => group.includes(term));
+
+export const computeSearchQueryIntentBonus = (
+  row: ProductSearchIndexRow,
+  typeKey: SearchTypeKey | null,
+  plan: SearchQueryPlan,
+): number => {
+  const visibleHaystack = normalizeLookupText(row.title);
+  if (!visibleHaystack) return 0;
+
+  const isGreenTeaFamilyQuery =
+    plan.normalizedQuery.includes("matcha") &&
+    (plan.normalizedQuery.includes("camellia sinensis") || planIncludesTerm(plan, "green tea"));
+  if (!isGreenTeaFamilyQuery) return 0;
+
+  const hasMatcha = visibleHaystack.includes("matcha");
+  const hasGreenTeaFamilySignal =
+    visibleHaystack.includes("green tea") || visibleHaystack.includes("camellia sinensis");
+
+  if (hasMatcha && hasGreenTeaFamilySignal) return 70;
+  if (hasGreenTeaFamilySignal) return 24;
+  if (hasMatcha && (typeKey === "protein" || typeKey === "amino_acid")) return -12;
+  return 0;
 };
 
 const buildQualityScore = (input: {
@@ -1036,7 +1224,11 @@ const matchGoalForRow = (haystack: string): { benefit: string; tier: SearchGoalT
   };
 };
 
-const enrichSearchRow = (row: ProductSearchIndexRow, baseSearchScore: number): EnrichedCandidate => {
+const enrichSearchRow = (
+  row: ProductSearchIndexRow,
+  baseSearchScore: number,
+  queryPlan: SearchQueryPlan | null = null,
+): EnrichedCandidate => {
   const factsStatus = deriveFactsStatus(row.ingredients);
   const typeKeys = deriveTypeKeysFromContent({
     title: row.title,
@@ -1077,7 +1269,11 @@ const enrichSearchRow = (row: ProductSearchIndexRow, baseSearchScore: number): E
     coverageStatus,
     bestTier: goalChoice.tier,
   });
-  const finalSearchScore = baseSearchScore + (goalChoice.tier !== "no_match" && baseSearchScore > 0 ? 3 : 0);
+  const queryIntentBonus = queryPlan ? computeSearchQueryIntentBonus(row, primaryTypeKey, queryPlan) : 0;
+  const finalSearchScore =
+    baseSearchScore +
+    (goalChoice.tier !== "no_match" && baseSearchScore > 0 ? 3 : 0) +
+    queryIntentBonus;
 
   return {
     row,
@@ -1346,8 +1542,9 @@ const buildSearchResponseFromRows = (
     MAX_LIMIT,
     Math.max(1, Number.isFinite(params.limit) && (params.limit ?? 0) > 0 ? Math.floor(params.limit as number) : DEFAULT_LIMIT),
   );
-  const normalizedQuery = normalizeLookupText(params.query);
-  const queryTokens = normalizedQuery.length >= 2 ? normalizedQuery.split(" ").filter(Boolean) : [];
+  const queryPlan = buildSearchQueryPlan(params.query);
+  const hasQuery =
+    queryPlan.requiredGroups.length > 0 || queryPlan.optionalGroups.length > 0;
   const normalizedBrandFilter = normalizeLookupText(params.brand);
   const categoryTypeKey = categoryFilterToTypeKey(params.category);
 
@@ -1357,12 +1554,12 @@ const buildSearchResponseFromRows = (
     )
     .map((row) => ({
       row,
-      baseSearchScore: queryTokens.length > 0 ? computeBaseSearchScore(row, queryTokens) : 0,
+      baseSearchScore: hasQuery ? computeSearchScoreForQueryPlan(row, queryPlan) : 0,
     }))
-    .filter((entry) => (queryTokens.length > 0 ? entry.baseSearchScore > 0 : true));
+    .filter((entry) => (hasQuery ? entry.baseSearchScore > 0 : true));
 
   preliminary.sort((left, right) => {
-    if (queryTokens.length > 0) {
+    if (hasQuery) {
       const scoreDelta = right.baseSearchScore - left.baseSearchScore;
       if (scoreDelta !== 0) return scoreDelta;
     }
@@ -1372,18 +1569,18 @@ const buildSearchResponseFromRows = (
     return left.row.title.localeCompare(right.row.title);
   });
 
-  const shortlistCap = queryTokens.length > 0 ? MAX_PRELIMINARY_CANDIDATES : 1200;
+  const shortlistCap = hasQuery ? MAX_PRELIMINARY_CANDIDATES : 1200;
   const shortlisted = preliminary.slice(0, shortlistCap);
-  let enriched = shortlisted.map((entry) => enrichSearchRow(entry.row, entry.baseSearchScore));
+  let enriched = shortlisted.map((entry) => enrichSearchRow(entry.row, entry.baseSearchScore, queryPlan));
 
   if (categoryTypeKey) {
     enriched = enriched.filter((entry) => entry.typeKey === categoryTypeKey);
   }
 
-  enriched.sort((left, right) => sortCandidates(left, right, queryTokens.length > 0));
+  enriched.sort((left, right) => sortCandidates(left, right, hasQuery));
   enriched = dedupeCandidates(enriched);
   enriched = enriched.filter((entry) => !isLikelyNonSupplement(entry));
-  if (queryTokens.length === 0) {
+  if (!hasQuery) {
     enriched = diversifyByBrand(enriched);
   }
 

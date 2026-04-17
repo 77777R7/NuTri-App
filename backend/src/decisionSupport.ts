@@ -327,6 +327,8 @@ export type DecisionSupportNutriScoreCardV2 = {
 export type DecisionSupportOverlayClaims = {
   provider: "iherb";
   productId: string | null;
+  upcCode?: string | null;
+  barcodeGtin14?: string | null;
   brandName: string | null;
   title: string | null;
   link: string | null;
@@ -337,6 +339,9 @@ export type DecisionSupportOverlayClaims = {
   otherIngredients: string | null;
   warnings: string | null;
   disclaimer: string | null;
+  servingSize?: string | null;
+  servingsPerContainer?: string | null;
+  sourceZipPath?: string | null;
   nutritionalFacts: Array<{
     substancy: string;
     amountPerServing: string;
@@ -2841,8 +2846,8 @@ const buildCategoryBestForBullets = (params: {
       "Best for: increasing omega-3 intake as part of a heart/vascular-support routine.",
       "Good if you want: products with clear EPA+DHA per serving (easier to compare strength).",
       missingActiveBreakdown
-        ? "Not ideal if: the label does not disclose EPA+DHA, because fish-oil mg alone is a weak strength signal."
-        : "Not ideal if: you compare only fish-oil mg and ignore EPA+DHA transparency.",
+        ? "Not ideal if: the label does not disclose EPA+DHA, because top-line source-oil mg alone is a weak strength signal."
+        : "Not ideal if: you compare only top-line source-oil mg and ignore EPA+DHA transparency.",
     ];
   }
   if (categoryId === "probiotics") {
@@ -2941,7 +2946,7 @@ const hasWarningsData = (digest: FactsDigest): boolean => {
 
 const PROBIOTIC_CATEGORY_REGEX = /(probiotic|cfu|lactobacillus|bifidobacterium|saccharomyces|florassist|microbiome|gut)/;
 const OUT_OF_SCOPE_NON_SUPPLEMENT_CATEGORY_REGEX =
-  /(\bstroopwafels?\b|\bbetter stevia\b|\bconfectioners\b.*\bsweetener\b|\bxylimelts?\b|\bturbinado sugar cubes?\b|\bhawaiian hula rub\b|\bmanuka honey\b|\bhand soap\b|\blotion\b|\bfoam bath\b|\bmoisture cream\b)/;
+  /(\bstroopwafels?\b|\bbetter stevia\b|\bconfectioners\b.*\bsweetener\b|\bxylimelts?\b|\bturbinado sugar cubes?\b|\bhawaiian hula rub\b|\bmanuka honey\b|\bcoconut aminos\b|\bsoy sauce replacement\b|\bhand soap\b|\blotion\b|\bfoam bath\b|\bmoisture cream\b)/;
 const TAXONOMY_BACKLOG_HOLD_CATEGORY_REGEX =
   /(\bflat tummy\b.*\bshakes?\b|\bcuraphen\b|\borganic spearmint\b.*\btea\b|\bchitosan\b)/;
 const VITAMIN_D_CATEGORY_REGEX = /(vitamin\s*d\b|\bd3\b|\bd2\b|cholecalciferol|ergocalciferol|calcifediol|calcitriol)/;
@@ -2964,11 +2969,13 @@ const JOINT_BONE_CATEGORY_REGEX =
 const SLEEP_STRESS_MOOD_CATEGORY_REGEX =
   /(\b5-htp\b|\b5[- ]hydroxytryptophan\b|\bmelatonin\b|\bgaba\b|\bl-theanine\b|\btheanine\b|\btryptophan\b|\bmood\b|\bsleep\b|\bstress\b|\bcalm\b|\brelax\b|\badrenal\b)/;
 const SPORTS_AMINO_CATEGORY_REGEX =
-  /(\bamino\b|\bbcaa\b|\beaa\b|\bcreatine\b|\bglutamine\b|\barginine\b|\bcitrulline\b|\bbeta alanine\b|\bcarnitine\b|\bpre[- ]?workout\b|\bpost[- ]?workout\b|\bhydration\b|\belectrolyte\b|\bwhey\b|\bprotein powder\b|\bpump\b)/;
+  /(\bamino\b|\bbcaa\b|\beaa\b|\bcreatine\b|\bglutamine\b|\barginine\b|\bcitrulline\b|\bbeta alanine\b|\bcarnitine\b|\bpre[- ]?workout\b|\bpost[- ]?workout\b|\bhydration\b|\bhydrationup\b|\belectrolyte\b|\belectrolyte drink mix\b|\bgo gel\b|\bendurance gel\b|\benergy gel\b|\bwhey\b|\bprotein powder\b|\bpump\b)/;
+const SPORTS_TITLE_PRIORITY_CATEGORY_REGEX =
+  /(\bhydrationup\b|\belectrolyte drink mix\b|\bgo gel\b|\bendurance gel\b|\benergy gel\b)/;
 const DIGESTIVE_FIBER_ENZYME_CATEGORY_REGEX =
   /(\bpsyllium\b|\bfiber\b|\bdigestive\b|\bdigest basic\b|\bdigest spectrum\b|\benzyme\b|\bpancreatic enzymes?\b|\bspectrazyme\b|\bcolon\b|\bcleanse\b|\bwhole husk\b)/;
 const SUPERFOODS_MUSHROOMS_GREENS_CATEGORY_REGEX =
-  /(\bmushroom\b|\bmushrooms\b|\bmycobotanical\b|\bcordyceps\b|\bcordychi\b|\bgreens?\b|\bsuperfood\b|\bspirulina\b|\bchlorella\b|\bwheatgrass\b|\bbarley grass\b|\bbeet root\b|\bmatcha\b)/;
+  /(\bag1\b|\bathletic\s+greens\b|\bmushroom\b|\bmushrooms\b|\bmycobotanical\b|\bcordyceps\b|\bcordychi\b|\bgreens?\b|\bsuperfood\b|\bspirulina\b|\bchlorella\b|\bwheatgrass\b|\bbarley grass\b|\bbeet root\b|\bmatcha\b)/;
 const ANTIOXIDANT_CELLULAR_ENERGY_CATEGORY_REGEX =
   /(\bcoq-?10\b|\bcoenzyme q10\b|\bubiquinol\b|\bubiquinone\b|\balpha lipoic acid\b|\bastaxanthin\b|\blutein\b|\bzeaxanthin\b|\bquercetin\b|\bresveratrol\b|\bfisetin\b|\bpqq\b|\bglutathione\b|\blycopene\b|\bpolicosanol\b|\bcranberry\b|\bpomegranate\b|\bblueberry extract\b)/;
 const NOOTROPIC_MEMORY_COGNITION_CATEGORY_REGEX =
@@ -2991,9 +2998,17 @@ const VITAMIN_MINERAL_OTHER_CATEGORY_REGEX =
   /(\bvitamin c\b|\bcomplex c\b|\bpaba\b|\bbiotin\b|\bselenium\b|\bchromium\b|\bboron\b|\bpotassium\b|\bcalcium\b|\biron\b|\bzinc\b|\bcopper\b|\bmanganese\b|\bmolybdenum\b|\biodine\b|\bprenatal\b)/;
 const SPECIALTY_FOLATE_CATEGORY_REGEX = /(\bmethyl folate\b|\bmethylfolate\b|\b5-mthf\b|\bfolate\b)/;
 
-const detectCategoryId = (digest: FactsDigest): DecisionSupportCategoryId => {
-  const productText = `${normalizeText(digest?.product?.name)} ${normalizeText(digest?.product?.brandDisplay)}`;
-  const activeNames = normalizeActiveNames(digest);
+const detectCategoryId = (
+  digest: FactsDigest,
+  overlayClaims: DecisionSupportOverlayClaims | null | undefined = null,
+): DecisionSupportCategoryId => {
+  const productText = [
+    normalizeText(digest?.product?.name),
+    normalizeText(digest?.product?.brandDisplay),
+    normalizeText(overlayClaims?.title),
+    normalizeText(overlayClaims?.brandName),
+  ].join(" ").toLowerCase();
+  const activeNames = normalizeActiveNames(digest).map((name) => name.toLowerCase());
   const combined = `${productText} ${activeNames.join(" ")}`;
 
   if (/(fish\s*oil|omega\s*-?\s*3|epa|dha|theromega)/.test(combined)) return "fish_oil_omega3";
@@ -3015,6 +3030,9 @@ const detectCategoryId = (digest: FactsDigest): DecisionSupportCategoryId => {
   }
 
   if (vitaminDInProductName || vitaminDInActives) return "vitamin_d";
+  if (SPORTS_TITLE_PRIORITY_CATEGORY_REGEX.test(productText) && SPORTS_AMINO_CATEGORY_REGEX.test(combined)) {
+    return "sports_performance_amino_acids";
+  }
   if (MAGNESIUM_CATEGORY_REGEX.test(combined)) return "magnesium";
   if (METABOLIC_GLUCOSE_SUPPORT_CATEGORY_REGEX.test(combined)) return "metabolic_glucose_support";
   if (SPORTS_ANABOLIC_SUPPORT_CATEGORY_REGEX.test(combined)) return "sports_anabolic_support";
@@ -5514,7 +5532,7 @@ export const compileDecisionSupport = (
   params: DecisionSupportCompileParams,
 ): DecisionSupportPayload => {
   const digestSourceType = normalizeText(params.digest?.sourceType);
-  const categoryId = detectCategoryId(params.digest);
+  const categoryId = detectCategoryId(params.digest, params.overlayClaims);
   const categoryProfileVersion = CATEGORY_PROFILE_VERSION[categoryId];
   const overlayOmega3Facts = parseOverlayOmega3Facts(params.overlayClaims);
   const overlaySuggestedUseLine = parseOverlaySuggestedUseLine(params.overlayClaims);

@@ -21,12 +21,17 @@ const SEARCH_API_BASE_URL =
 const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL;
 const SUPABASE_ANON_KEY =
   process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? process.env.SUPABASE_ANON_KEY ?? process.env.EXPO_PUBLIC_SUPABASE_SERVICE_ANON_KEY;
-const OPENAI_API_KEY = process.env.EXPO_PUBLIC_OPENAI_API_KEY ?? process.env.OPENAI_API_KEY;
 const PADDLE_OCR_ENDPOINT = process.env.EXPO_PUBLIC_PADDLE_OCR_ENDPOINT ?? process.env.PADDLE_OCR_ENDPOINT;
 const SENTRY_DSN = process.env.SENTRY_DSN ?? process.env.EXPO_PUBLIC_SENTRY_DSN;
 const POSTHOG_API_KEY = process.env.POSTHOG_API_KEY ?? process.env.EXPO_PUBLIC_POSTHOG_API_KEY;
 const DISABLE_AUTH = process.env.EXPO_PUBLIC_DISABLE_AUTH ?? process.env.DISABLE_AUTH ?? '0';
 const FORCE_AUTH = process.env.EXPO_PUBLIC_FORCE_AUTH ?? process.env.FORCE_AUTH ?? '0';
+const REVENUECAT_IOS_API_KEY =
+  process.env.EXPO_PUBLIC_REVENUECAT_IOS_API_KEY ?? process.env.REVENUECAT_IOS_API_KEY;
+const REVENUECAT_ANDROID_API_KEY =
+  process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY ?? process.env.REVENUECAT_ANDROID_API_KEY;
+const REVENUECAT_ENTITLEMENT_ID =
+  process.env.EXPO_PUBLIC_REVENUECAT_ENTITLEMENT_ID ?? process.env.REVENUECAT_ENTITLEMENT_ID;
 
 const parseHostname = (rawValue: string | undefined | null): string | null => {
   if (!rawValue) return null;
@@ -138,6 +143,8 @@ const createExpoConfig = ({ config }: ConfigContext): ExpoConfig => {
     plugins: [
       'expo-router',
       'expo-localization',
+      'expo-secure-store',
+      'expo-web-browser',
       [
         'expo-splash-screen',
         {
@@ -159,13 +166,15 @@ const createExpoConfig = ({ config }: ConfigContext): ExpoConfig => {
       apiBaseUrl: API_BASE_URL,
       supabaseUrl: SUPABASE_URL,
       supabaseAnonKey: SUPABASE_ANON_KEY,
-      openAiApiKey: OPENAI_API_KEY,
       paddleOcrEndpoint: PADDLE_OCR_ENDPOINT,
       searchApiBaseUrl: SEARCH_API_BASE_URL,
       disableAuth: DISABLE_AUTH,
       forceAuth: FORCE_AUTH,
       sentryDsn: SENTRY_DSN,
       posthogApiKey: POSTHOG_API_KEY,
+      revenueCatIosApiKey: REVENUECAT_IOS_API_KEY,
+      revenueCatAndroidApiKey: REVENUECAT_ANDROID_API_KEY,
+      revenueCatEntitlementId: REVENUECAT_ENTITLEMENT_ID,
       eas: {
         projectId: easProjectId,
       },

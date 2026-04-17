@@ -1531,16 +1531,19 @@ test('magnesium and vitamin d research mode get longer execution budgets than th
   assert.equal(vitaminDPlan.mode, 'research_mode');
   assert.equal(vitaminCPlan.mode, 'research_mode');
   assert.ok(magnesiumProfile.timeoutMs > vitaminCProfile.timeoutMs);
+  assert.ok(magnesiumProfile.backgroundRefreshTimeoutMs < vitaminDProfile.backgroundRefreshTimeoutMs);
+  assert.equal(magnesiumProfile.backgroundRefreshMaxRetries, 1);
   assert.ok(vitaminDProfile.timeoutMs > vitaminCProfile.timeoutMs);
 });
 
-test('calcium and iron research mode get longer execution budgets than the generic research profile', () => {
+test('calcium, zinc, and iron research mode get dedicated execution budgets', () => {
   const digest = buildDigest({
     labelId: 'fixture-calcium-iron-timeout',
-    productName: 'Calcium Citrate with Iron',
+    productName: 'Calcium Citrate with Zinc and Iron',
     dosageForm: 'Capsule',
     actives: [
       { name: 'Calcium (as Calcium Citrate)', amount: 250, unit: 'mg' },
+      { name: 'Zinc (as Zinc Chelate)', amount: 30, unit: 'mg' },
       { name: 'Iron (as Ferrous Bisglycinate Chelate)', amount: 18, unit: 'mg' },
       { name: 'Vitamin C', amount: 500, unit: 'mg' },
     ],
@@ -1555,6 +1558,10 @@ test('calcium and iron research mode get longer execution budgets than the gener
     context,
     selectedIngredientName: 'Iron (as Ferrous Bisglycinate Chelate)',
   });
+  const zincPlan = planScientificBackgroundSections({
+    context,
+    selectedIngredientName: 'Zinc (as Zinc Chelate)',
+  });
   const vitaminCPlan = planScientificBackgroundSections({
     context,
     selectedIngredientName: 'Vitamin C',
@@ -1562,12 +1569,17 @@ test('calcium and iron research mode get longer execution budgets than the gener
 
   const calciumProfile = resolveScientificBackgroundExecutionProfile(calciumPlan);
   const ironProfile = resolveScientificBackgroundExecutionProfile(ironPlan);
+  const zincProfile = resolveScientificBackgroundExecutionProfile(zincPlan);
   const vitaminCProfile = resolveScientificBackgroundExecutionProfile(vitaminCPlan);
 
   assert.equal(calciumPlan.mode, 'research_mode');
   assert.equal(ironPlan.mode, 'research_mode');
+  assert.equal(zincPlan.mode, 'research_mode');
   assert.equal(vitaminCPlan.mode, 'research_mode');
   assert.ok(calciumProfile.timeoutMs > vitaminCProfile.timeoutMs);
+  assert.ok(zincProfile.timeoutMs > vitaminCProfile.timeoutMs);
+  assert.ok(zincProfile.backgroundRefreshTimeoutMs < ironProfile.backgroundRefreshTimeoutMs);
+  assert.equal(zincProfile.backgroundRefreshMaxRetries, 1);
   assert.ok(ironProfile.timeoutMs > vitaminCProfile.timeoutMs);
 });
 
@@ -2121,7 +2133,7 @@ test('science context reorders supporting vitamins behind 5-HTP lead actives', (
   assert.equal(context.anchorIngredient?.ingredientFamily, '5htp');
 });
 
-test('mineral-stack products do not default to vitamin D over calcium or magnesium', () => {
+test('mineral-stack products prioritize magnesium and zinc over vitamin D or high-dose calcium noise', () => {
   const context = buildIngredientScienceContext({
     digest: buildDigest({
       labelId: 'fixture-mineral-stack-d3',
@@ -2138,7 +2150,8 @@ test('mineral-stack products do not default to vitamin D over calcium or magnesi
   });
 
   assert.doesNotMatch(context.ingredientRows[0]?.name ?? '', /vitamin d/i);
-  assert.ok(['calcium', 'magnesium', 'zinc'].includes(context.anchorIngredient?.ingredientFamily ?? ''));
+  assert.match(context.ingredientRows[0]?.name ?? '', /magnesium/i);
+  assert.equal(context.anchorIngredient?.ingredientFamily, 'magnesium');
 });
 
 test('food-like green tea products downgrade to label-context mode instead of research mode', () => {
@@ -2211,10 +2224,35 @@ test('title rescue rows recover higher-value science anchors for CLA, tea bags, 
     }),
     overlayClaims: null,
   });
+  const brandBorneProbioticDigest = buildDigest({
+    labelId: 'fixture-brand-borne-probiotic-title-rescue',
+    productName: 'Align Probiotics, Gut Health + Immune Support, 28 Capsules',
+    dosageForm: 'Capsule',
+    actives: [],
+  });
+  const brandBorneProbioticContext = buildIngredientScienceContext({
+    digest: {
+      ...brandBorneProbioticDigest,
+      product: {
+        ...brandBorneProbioticDigest.product,
+        brandDisplay: 'Align Probiotics',
+      },
+    },
+    overlayClaims: null,
+  });
   const mineralStackContext = buildIngredientScienceContext({
     digest: buildDigest({
       labelId: 'fixture-mineral-stack-title-rescue',
       productName: '21st Century, Calcium Magnesium Zinc + D3, 250 Tablets',
+      dosageForm: 'Tablet',
+      actives: [],
+    }),
+    overlayClaims: null,
+  });
+  const singleMineralContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-single-magnesium-title-rescue',
+      productName: '21st Century, Magnesium, 250 mg, 250 Tablets',
       dosageForm: 'Tablet',
       actives: [],
     }),
@@ -2225,7 +2263,11 @@ test('title rescue rows recover higher-value science anchors for CLA, tea bags, 
   assert.match(teaContext.ingredientRows[0]?.name ?? '', /\bgreen tea\b/i);
   assert.match(probioticContext.ingredientRows[0]?.name ?? '', /\bprobiotic/i);
   assert.equal(probioticContext.anchorIngredient?.ingredientFamily, 'probiotic_or_blend');
+  assert.match(brandBorneProbioticContext.ingredientRows[0]?.name ?? '', /\bprobiotic/i);
+  assert.equal(brandBorneProbioticContext.anchorIngredient?.ingredientFamily, 'probiotic_or_blend');
   assert.match(mineralStackContext.ingredientRows[0]?.name ?? '', /\bmagnesium\b/i);
+  assert.match(singleMineralContext.ingredientRows[0]?.name ?? '', /\bmagnesium\b/i);
+  assert.equal(singleMineralContext.anchorIngredient?.ingredientFamily, 'magnesium');
   assert.ok(
     mineralStackContext.ingredientRows.some((row) => /\bcalcium\b/i.test(row.name)),
   );
@@ -2267,6 +2309,71 @@ test('greens and tea-bag products stay in label-context mode even when the rescu
   assert.equal(greensPlan.mode, 'label_context_mode');
   assert.equal(teaContext.productArchetype, 'functional_food_like');
   assert.equal(teaPlan.mode, 'label_context_mode');
+});
+
+test('opaque probiotic blends and children immune blends rescue user-visible anchors from title context', () => {
+  const probioticContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-opaque-probiotic-blend',
+      productName: '21st Century, Acidophilus Probiotic Blend, 100 Capsules',
+      dosageForm: 'Capsule',
+      actives: [{ name: 'Proprietary Blend', amount: 175, unit: 'mg' }],
+    }),
+    overlayClaims: null,
+  });
+  const immuneContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-children-immune-zinc-blend',
+      productName: 'Chewable Immune Blend with Vitamin A, Vitamin C, Vitamin E, and Zinc for Children',
+      dosageForm: 'Chewable Tablet',
+      actives: [],
+    }),
+    overlayClaims: null,
+  });
+
+  assert.match(probioticContext.ingredientRows[0]?.name ?? '', /probiotic/i);
+  assert.equal(probioticContext.anchorIngredient?.ingredientFamily, 'probiotic_or_blend');
+  assert.ok(
+    immuneContext.ingredientRows.some((row) => /\bzinc\b/i.test(row.name)),
+  );
+  assert.ok(
+    immuneContext.ingredientRows.some((row) => /vitamin c/i.test(row.name)),
+  );
+});
+
+test('greens, tea bags, and juice powders are treated as label-context products from title alone', () => {
+  const juicePowderContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-juice-powder-title-only',
+      productName: 'Organic Dragon Fruit Juice Powder with Magnesium',
+      dosageForm: 'Capsule',
+      actives: [{ name: 'Magnesium (as Magnesium Citrate)', amount: 50, unit: 'mg' }],
+    }),
+    overlayClaims: null,
+  });
+  const teaBagContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-tea-bag-title-only',
+      productName: 'Green Tea, 24 Tea Bags',
+      dosageForm: 'Capsule',
+      actives: [{ name: 'Green Tea Extract', amount: 150, unit: 'mg' }],
+    }),
+    overlayClaims: null,
+  });
+
+  const juicePowderPlan = planScientificBackgroundSections({
+    context: juicePowderContext,
+    selectedIngredientName: juicePowderContext.anchorIngredient?.name ?? 'Magnesium',
+  });
+  const teaBagPlan = planScientificBackgroundSections({
+    context: teaBagContext,
+    selectedIngredientName: teaBagContext.anchorIngredient?.name ?? 'Green Tea Extract',
+  });
+
+  assert.equal(juicePowderContext.productArchetype, 'functional_food_like');
+  assert.equal(juicePowderPlan.mode, 'label_context_mode');
+  assert.equal(teaBagContext.productArchetype, 'functional_food_like');
+  assert.equal(teaBagPlan.mode, 'label_context_mode');
 });
 
 test('new metabolic families fall back with product-specific copy instead of generic research-direction prose', async () => {

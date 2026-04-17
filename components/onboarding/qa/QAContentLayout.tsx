@@ -9,6 +9,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated from 'react-native-reanimated';
 import { useOnboardingSceneZoneStyle } from '@/components/onboarding/flow/OnboardingSceneMotionContext';
+import { useOnboardingLayoutTokens } from '@/hooks/useOnboardingLayoutTokens';
 
 import {
   QA_BG,
@@ -44,6 +45,29 @@ export function QAContentLayout({
 }: QAContentLayoutProps) {
   const copyZoneStyle = useOnboardingSceneZoneStyle('copy');
   const contentZoneStyle = useOnboardingSceneZoneStyle('content');
+  const layoutTokens = useOnboardingLayoutTokens();
+  const titleLineCount = title.split('\n').length;
+  const useTightTitle = layoutTokens.density === 'tight' || titleLineCount >= 2 || title.length >= 26;
+  const titleSize = useTightTitle
+    ? Math.max(layoutTokens.qaTitleSize - 2, 26)
+    : layoutTokens.qaTitleSize;
+  const titleLineHeight = useTightTitle
+    ? Math.max(layoutTokens.qaTitleLineHeight - 2, titleSize + 2)
+    : layoutTokens.qaTitleLineHeight;
+  const subtitleMarginTop = useTightTitle
+    ? Math.max(layoutTokens.qaSubtitleMarginTop - 2, 8)
+    : layoutTokens.qaSubtitleMarginTop;
+  const copyToListGap = useTightTitle
+    ? Math.max(layoutTokens.qaCopyToListGap - 2, 10)
+    : layoutTokens.qaCopyToListGap;
+  const listBottomFadeHeight =
+    layoutTokens.density === 'tight' ? 30 : layoutTokens.density === 'compact' ? 34 : 40;
+  const requestedListPaddingBottom = StyleSheet.flatten(listContentContainerStyle)?.paddingBottom;
+  const listPaddingBottom = Math.max(
+    layoutTokens.qaListGap - 2,
+    listBottomFadeHeight + layoutTokens.qaListGap,
+    typeof requestedListPaddingBottom === 'number' ? requestedListPaddingBottom : 0,
+  );
 
   return (
     <View style={[styles.root, !showBackground && styles.rootTransparent]}>
@@ -60,27 +84,73 @@ export function QAContentLayout({
         </>
       ) : null}
 
-      <View style={styles.content}>
+      <View
+        style={[
+          styles.content,
+          {
+            paddingHorizontal: layoutTokens.qaContentPaddingX,
+            paddingTop: layoutTokens.qaContentPaddingTop,
+          },
+        ]}
+      >
         <Animated.View style={[styles.copyBlock, copyZoneStyle]}>
           {eyebrow ? (
-            <Text allowFontScaling={false} style={styles.eyebrow}>
+            <Text
+              allowFontScaling={false}
+              style={[
+                styles.eyebrow,
+                { marginBottom: layoutTokens.qaEyebrowMarginBottom },
+              ]}
+            >
               {eyebrow}
             </Text>
           ) : null}
-          <Text allowFontScaling={false} style={styles.title}>
+          <Text
+            allowFontScaling={false}
+              style={[
+                styles.title,
+                {
+                  fontSize: titleSize,
+                  lineHeight: titleLineHeight,
+                },
+              ]}
+          >
             {title}
           </Text>
           {subtitle ? (
-            <Text allowFontScaling={false} style={styles.subtitle}>
+            <Text
+              allowFontScaling={false}
+              style={[
+                styles.subtitle,
+                {
+                  marginTop: subtitleMarginTop,
+                  fontSize: layoutTokens.qaSubtitleSize,
+                  lineHeight: layoutTokens.qaSubtitleLineHeight,
+                },
+              ]}
+            >
               {subtitle}
             </Text>
           ) : null}
         </Animated.View>
 
-        <Animated.View style={[styles.listViewport, contentZoneStyle]}>
+        <Animated.View
+          style={[
+            styles.listViewport,
+            contentZoneStyle,
+            { marginTop: copyToListGap },
+          ]}
+        >
           <Animated.ScrollView
             style={styles.listScroll}
-            contentContainerStyle={[styles.listContent, listContentContainerStyle]}
+            contentContainerStyle={[
+              styles.listContent,
+              {
+                gap: layoutTokens.qaListGap,
+              },
+              listContentContainerStyle,
+              { paddingBottom: listPaddingBottom },
+            ]}
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
             onScroll={onListScroll}
@@ -93,6 +163,12 @@ export function QAContentLayout({
               {listOverlay}
             </View>
           ) : null}
+          <LinearGradient
+            pointerEvents="none"
+            colors={['rgba(245,247,252,0)', QA_BG_BOTTOM]}
+            locations={[0, 1]}
+            style={[styles.listBottomFade, { height: listBottomFadeHeight }]}
+          />
         </Animated.View>
       </View>
     </View>
@@ -120,8 +196,6 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     minHeight: 0,
-    paddingHorizontal: 32,
-    paddingTop: 48,
   },
   copyBlock: {
     alignItems: 'flex-start',
@@ -132,37 +206,35 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 2.4,
     color: QA_EYEBROW,
-    marginBottom: 14,
     textTransform: 'uppercase',
   },
   title: {
-    fontSize: 34,
-    lineHeight: 36,
     fontWeight: '700',
     letterSpacing: -1.6,
     color: QA_FOREGROUND,
   },
   subtitle: {
-    marginTop: 16,
-    fontSize: 16,
-    lineHeight: 23,
     fontWeight: '500',
     color: QA_MUTED,
   },
   listViewport: {
     flex: 1,
     minHeight: 0,
-    marginTop: 38,
   },
   listScroll: {
     flex: 1,
   },
   listContent: {
     gap: 14,
-    paddingBottom: 12,
   },
   listOverlay: {
     ...StyleSheet.absoluteFillObject,
+  },
+  listBottomFade: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
   },
 });
 

@@ -44,6 +44,7 @@ import {
   MoreHorizontal,
   Pill,
   Plus,
+  Search,
   ScanBarcode,
   ShieldPlus,
   User,
@@ -2122,11 +2123,24 @@ const BottomNav = ({
                 exit={{ opacity: 0 }}
               >
                 <FloatingMenuItem
+                  labelTop="Product"
+                  labelBottom="Search"
+                  Icon={Search}
+                  delay={0}
+                  onPress={() => {
+                    setIsMenuOpen(false);
+                    router.push('/search');
+                  }}
+                />
+                <FloatingMenuItem
                   labelTop="Barcode"
                   labelBottom="Scan"
                   Icon={ScanBarcode}
-                  delay={0}
-                  onPress={() => router.replace('/scan/barcode')}
+                  delay={40}
+                  onPress={() => {
+                    setIsMenuOpen(false);
+                    router.replace('/scan/barcode');
+                  }}
                 />
               </MotiView>
             )}

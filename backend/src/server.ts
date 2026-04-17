@@ -10026,6 +10026,64 @@ const logIherbOverlayFetchWarningOnce = (message: string) => {
 const toOverlayObjectRecord = (value: unknown): Record<string, unknown> =>
   value && typeof value === "object" ? (value as Record<string, unknown>) : {};
 
+const toOverlayArrayRecord = (value: unknown): Record<string, unknown>[] =>
+  Array.isArray(value)
+    ? value.filter((item): item is Record<string, unknown> => Boolean(item) && typeof item === "object")
+    : [];
+
+const readOverlayServingSize = (row: Record<string, unknown>, supplementFacts: Record<string, unknown>): string | null => {
+  const serving = toOverlayObjectRecord(row.serving);
+  const candidates = [
+    serving.servingSize,
+    serving.serving_size,
+    supplementFacts.servingSize,
+    supplementFacts.serving_size,
+  ];
+  for (const candidate of candidates) {
+    const normalized = String(candidate ?? "").trim();
+    if (normalized && normalized.toLowerCase() !== "n/a") return normalized;
+  }
+  return null;
+};
+
+const readOverlayServingsPerContainer = (
+  row: Record<string, unknown>,
+  supplementFacts: Record<string, unknown>,
+): string | null => {
+  const serving = toOverlayObjectRecord(row.serving);
+  const candidates = [
+    serving.servingsPerContainer,
+    serving.servings_per_container,
+    supplementFacts.servingsPerContainer,
+    supplementFacts.servings_per_container,
+  ];
+  for (const candidate of candidates) {
+    const normalized = String(candidate ?? "").trim();
+    if (normalized && normalized.toLowerCase() !== "n/a") return normalized;
+  }
+  return null;
+};
+
+const readOverlayNutritionalFacts = (
+  rawSupplementFacts: unknown,
+  supplementFacts: Record<string, unknown>,
+): Record<string, unknown>[] => {
+  const directRows = toOverlayArrayRecord(rawSupplementFacts);
+  if (directRows.length > 0) return directRows;
+
+  for (const candidate of [
+    supplementFacts.nutritionalFacts,
+    supplementFacts.nutritional_facts,
+    supplementFacts.rows,
+    supplementFacts.facts,
+  ]) {
+    const rows = toOverlayArrayRecord(candidate);
+    if (rows.length > 0) return rows;
+  }
+
+  return [];
+};
+
 const normalizeOverlaySectionKey = (value: string): string =>
   value
     .toLowerCase()
@@ -10129,12 +10187,9 @@ const toDecisionSupportOverlayClaims = (row: Record<string, unknown>): DecisionS
   const descriptionSections = toOverlayObjectRecord(
     row.allDescriptionSections ?? row.descriptionSections ?? row.description_sections,
   );
-  const supplementFacts = toOverlayObjectRecord(row.supplementFacts ?? row.supplement_facts);
-  const nutritionalFactsRaw = Array.isArray(supplementFacts?.nutritionalFacts)
-    ? (supplementFacts.nutritionalFacts as Record<string, unknown>[])
-    : Array.isArray(supplementFacts?.nutritional_facts)
-      ? (supplementFacts.nutritional_facts as Record<string, unknown>[])
-      : [];
+  const rawSupplementFacts = row.supplementFacts ?? row.supplement_facts;
+  const supplementFacts = toOverlayObjectRecord(rawSupplementFacts);
+  const nutritionalFactsRaw = readOverlayNutritionalFacts(rawSupplementFacts, supplementFacts);
   return {
     provider: "iherb",
     productId:
@@ -10147,6 +10202,8 @@ const toDecisionSupportOverlayClaims = (row: Record<string, unknown>): DecisionS
           : typeof row.product_id === "string"
               ? row.product_id
               : null,
+    upcCode: typeof row.upc_code === "string" ? row.upc_code : null,
+    barcodeGtin14: typeof row.barcode_gtin14 === "string" ? row.barcode_gtin14 : null,
     brandName:
       typeof row.brandName === "string"
         ? row.brandName
@@ -10166,6 +10223,9 @@ const toDecisionSupportOverlayClaims = (row: Record<string, unknown>): DecisionS
     otherIngredients: readOverlaySectionText(descriptionSections, ["Other ingredients", "Other Ingredients"]),
     warnings: readOverlaySectionText(descriptionSections, ["Warnings", "Warning"]),
     disclaimer: readOverlaySectionText(descriptionSections, ["Disclaimer"]),
+    servingSize: readOverlayServingSize(row, supplementFacts),
+    servingsPerContainer: readOverlayServingsPerContainer(row, supplementFacts),
+    sourceZipPath: typeof row.source_zip_path === "string" ? row.source_zip_path : null,
     nutritionalFacts: nutritionalFactsRaw
       .map((item) => ({
         substancy: String(item?.substancy ?? item?.substance ?? item?.substance_name ?? item?.name ?? "").trim(),
@@ -10182,12 +10242,20 @@ const fetchIherbOverlayClaimsByBarcode = async (
 ): Promise<DecisionSupportOverlayClaims | null> => {
   if (!barcodeGtin14) return null;
   try {
+    const barcodeDigits = barcodeGtin14.replace(/\D/g, "");
+    const upc12 = barcodeDigits.length >= 12 ? barcodeDigits.slice(-12) : barcodeDigits;
+    const ean13 = barcodeDigits.length >= 13 ? barcodeDigits.slice(-13) : barcodeDigits;
+    const unpadded = barcodeDigits.replace(/^0+/, "") || barcodeDigits;
+    const barcodeFilters = Array.from(new Set([barcodeDigits, upc12, ean13, unpadded].filter(Boolean)));
     const { data, error } = await supabase
       .from("iherb_overlay_products")
       .select(
-        "product_id,brand_name,title,link,product_catalog_image,product_images,categories,supplement_facts,description_sections,updated_at",
+        "product_id,upc_code,barcode_gtin14,brand_name,title,link,product_catalog_image,product_images,categories,supplement_facts,serving,description_sections,source_zip_path,updated_at",
       )
-      .eq("barcode_gtin14", barcodeGtin14)
+      .or([
+        `barcode_gtin14.eq.${barcodeGtin14}`,
+        ...barcodeFilters.map((value) => `upc_code.eq.${value}`),
+      ].join(","))
       .order("updated_at", { ascending: false })
       .limit(1)
       .maybeSingle();
@@ -10283,9 +10351,12 @@ const scientificBackgroundBodySchema = z.object({
 const SCIENCE_SIDECAR_MAX_RETRIES = 0;
 const INGREDIENT_OVERVIEW_RESULT_CACHE_LIMIT = 120;
 const INGREDIENT_OVERVIEW_FALLBACK_CACHE_TTL_MS = 20_000;
+const INGREDIENT_OVERVIEW_REFRESH_RETRY_AFTER_MS = 1_500;
 const SCIENTIFIC_BACKGROUND_RESULT_CACHE_LIMIT = 120;
 const SCIENTIFIC_BACKGROUND_RESEARCH_FALLBACK_CACHE_TTL_MS = 20_000;
 const SCIENTIFIC_BACKGROUND_REFRESH_RETRY_AFTER_MS = 1_500;
+const SCIENTIFIC_BACKGROUND_REFRESH_FAILURE_COOLDOWN_MS = 45_000;
+const SCIENTIFIC_BACKGROUND_REFRESH_FAILURE_RETRY_LIMIT = 3;
 
 type IngredientOverviewSidecarResponse = {
   status: "ok";
@@ -10294,6 +10365,8 @@ type IngredientOverviewSidecarResponse = {
   source: Awaited<ReturnType<typeof compileIngredientOverviewAsync>>["source"];
   fallbackUsed: boolean;
   promptVersion: string;
+  backgroundRefreshPending: boolean;
+  recommendedRetryAfterMs: number | null;
 };
 
 type IngredientOverviewSidecarSettled = {
@@ -10346,6 +10419,19 @@ const resolveIngredientOverviewCacheTtlMs = (
   return INGREDIENT_OVERVIEW_FALLBACK_CACHE_TTL_MS;
 };
 
+const withIngredientOverviewRefreshHint = (
+  payload: IngredientOverviewSidecarResponse,
+  backgroundRefreshPending: boolean,
+): IngredientOverviewSidecarResponse =>
+  ({
+    ...payload,
+    backgroundRefreshPending: backgroundRefreshPending && payload.source === "fallback",
+    recommendedRetryAfterMs:
+      backgroundRefreshPending && payload.source === "fallback"
+        ? INGREDIENT_OVERVIEW_REFRESH_RETRY_AFTER_MS
+        : null,
+  });
+
 type ScientificBackgroundSidecarResponse = {
   status: "ok";
   digest: string;
@@ -10370,6 +10456,45 @@ type ScientificBackgroundSidecarCacheEntry = {
 const scientificBackgroundSidecarCache = new Map<string, ScientificBackgroundSidecarCacheEntry>();
 const scientificBackgroundSidecarInflight = new Map<string, Promise<ScientificBackgroundSidecarSettled>>();
 const scientificBackgroundSidecarBackgroundRefresh = new Map<string, Promise<void>>();
+const scientificBackgroundSidecarBackgroundRefreshCooldownUntil = new Map<string, number>();
+const scientificBackgroundSidecarBackgroundRefreshFailureCount = new Map<string, number>();
+
+const isScientificBackgroundBackgroundRefreshCoolingDown = (cacheKey: string): boolean => {
+  const cooldownUntil = scientificBackgroundSidecarBackgroundRefreshCooldownUntil.get(cacheKey);
+  if (!cooldownUntil) return false;
+  if (cooldownUntil <= Date.now()) {
+    scientificBackgroundSidecarBackgroundRefreshCooldownUntil.delete(cacheKey);
+    return false;
+  }
+  return true;
+};
+
+const markScientificBackgroundBackgroundRefreshCooldown = (cacheKey: string): void => {
+  scientificBackgroundSidecarBackgroundRefreshCooldownUntil.set(
+    cacheKey,
+    Date.now() + SCIENTIFIC_BACKGROUND_REFRESH_FAILURE_COOLDOWN_MS,
+  );
+  if (scientificBackgroundSidecarBackgroundRefreshCooldownUntil.size <= SCIENTIFIC_BACKGROUND_RESULT_CACHE_LIMIT) return;
+  const oldestKey = scientificBackgroundSidecarBackgroundRefreshCooldownUntil.keys().next().value;
+  if (typeof oldestKey === "string") {
+    scientificBackgroundSidecarBackgroundRefreshCooldownUntil.delete(oldestKey);
+  }
+};
+
+const shouldCoolDownScientificBackgroundBackgroundRefresh = (
+  cacheKey: string,
+  retryLimit: number = SCIENTIFIC_BACKGROUND_REFRESH_FAILURE_RETRY_LIMIT,
+): boolean => {
+  const nextFailureCount = (scientificBackgroundSidecarBackgroundRefreshFailureCount.get(cacheKey) ?? 0) + 1;
+  scientificBackgroundSidecarBackgroundRefreshFailureCount.set(cacheKey, nextFailureCount);
+  if (scientificBackgroundSidecarBackgroundRefreshFailureCount.size > SCIENTIFIC_BACKGROUND_RESULT_CACHE_LIMIT) {
+    const oldestKey = scientificBackgroundSidecarBackgroundRefreshFailureCount.keys().next().value;
+    if (typeof oldestKey === "string") {
+      scientificBackgroundSidecarBackgroundRefreshFailureCount.delete(oldestKey);
+    }
+  }
+  return nextFailureCount >= retryLimit;
+};
 
 const readScientificBackgroundSidecarCache = (
   cacheKey: string,
@@ -11155,6 +11280,7 @@ app.post("/api/ingredient-overview/v1", verifySupabaseToken, async (req: Request
       cacheStatus?: "miss" | "hit" | "inflight";
       fallbackCacheBypassed?: boolean;
       backgroundRefreshScheduled?: boolean;
+      backgroundRefreshPending?: boolean;
       phase?: "response" | "background_refresh";
     }) => {
       const diagnostics = params.settled?.diagnostics ?? null;
@@ -11169,6 +11295,11 @@ app.post("/api/ingredient-overview/v1", verifySupabaseToken, async (req: Request
           fallbackCacheBypassed: params.fallbackCacheBypassed ?? false,
           revalidateFallback: parsedBody.revalidateFallback === true,
           backgroundRefreshScheduled: params.backgroundRefreshScheduled ?? false,
+          backgroundRefreshPending: params.backgroundRefreshPending ?? false,
+          recommendedRetryAfterMs:
+            params.backgroundRefreshPending ?? false
+              ? INGREDIENT_OVERVIEW_REFRESH_RETRY_AFTER_MS
+              : null,
           latencyMs: Date.now() - routeStartedAt,
           ingredientCount: authority.ingredientScienceContext.ingredientRows.length,
           formulaMode: authority.ingredientScienceContext.formulaMode,
@@ -11237,31 +11368,102 @@ app.post("/api/ingredient-overview/v1", verifySupabaseToken, async (req: Request
       executionProfile.cacheTtlMs,
       INGREDIENT_OVERVIEW_PROMPT_VERSION,
     ].join("|");
+    const ensureIngredientOverviewBackgroundRefresh = (): boolean => {
+      if (!deepseekKey) return false;
+      if (ingredientOverviewSidecarBackgroundRefresh.has(cacheKey)) return true;
+
+      const backgroundRefresh = (async (): Promise<void> => {
+        const backgroundLlmFn = buildDeepseekJsonLlmFn({
+          deepseekKey,
+          deepseekModel,
+          timeoutMs: executionProfile.backgroundRefreshTimeoutMs,
+          maxTokens: executionProfile.maxTokens,
+        });
+        if (!backgroundLlmFn) return;
+
+        const refreshed = await compileIngredientOverviewAsync(authority.ingredientScienceContext, {
+          llmFn: backgroundLlmFn,
+          timeoutMs: executionProfile.backgroundRefreshTimeoutMs,
+          maxRetries: executionProfile.backgroundRefreshMaxRetries,
+        });
+
+        if (refreshed.source !== "api") return;
+
+        const refreshedPayload: IngredientOverviewSidecarSettled = {
+          payload: {
+            status: "ok",
+            digest: authority.decisionSupport.digest,
+            ingredientOverview: refreshed.ingredientOverview,
+            source: refreshed.source,
+            fallbackUsed: refreshed.fallbackUsed,
+            promptVersion: refreshed.promptVersion,
+            backgroundRefreshPending: false,
+            recommendedRetryAfterMs: null,
+          },
+          diagnostics: refreshed.diagnostics,
+        };
+
+        writeIngredientOverviewSidecarCache(
+          cacheKey,
+          refreshedPayload,
+          resolveIngredientOverviewCacheTtlMs(refreshedPayload, executionProfile.cacheTtlMs),
+        );
+        logIngredientOverviewResult({
+          settled: refreshedPayload,
+          source: refreshedPayload.payload.source,
+          phase: "background_refresh",
+        });
+      })()
+        .catch((error) => {
+          captureException(error, {
+            route: "/api/ingredient-overview/v1",
+            phase: "background_refresh",
+            cacheKey,
+          });
+        })
+        .finally(() => {
+          ingredientOverviewSidecarBackgroundRefresh.delete(cacheKey);
+        });
+
+      ingredientOverviewSidecarBackgroundRefresh.set(cacheKey, backgroundRefresh);
+      return true;
+    };
     const cached = readIngredientOverviewSidecarCache(cacheKey);
     const shouldBypassFallbackCache =
       parsedBody.revalidateFallback === true && cached?.payload.source === "fallback";
     if (cached && !shouldBypassFallbackCache) {
+      const backgroundRefreshPending =
+        cached.payload.source === "fallback" && ingredientOverviewSidecarBackgroundRefresh.has(cacheKey);
       logIngredientOverviewResult({
         settled: cached,
         source: cached.payload.source,
         cacheStatus: "hit",
+        backgroundRefreshPending,
       });
-      return res.json(cached.payload);
+      return res.json(withIngredientOverviewRefreshHint(cached.payload, backgroundRefreshPending));
     }
     if (shouldBypassFallbackCache) {
-      const existingBackgroundRefresh = ingredientOverviewSidecarBackgroundRefresh.get(cacheKey);
-      if (existingBackgroundRefresh) {
-        await existingBackgroundRefresh.catch(() => null);
-        const refreshedCached = readIngredientOverviewSidecarCache(cacheKey);
-        if (refreshedCached && refreshedCached.payload.source === "api") {
-          logIngredientOverviewResult({
-            settled: refreshedCached,
-            source: refreshedCached.payload.source,
-            cacheStatus: "hit",
-            fallbackCacheBypassed: true,
-          });
-          return res.json(refreshedCached.payload);
-        }
+      const refreshedCached = readIngredientOverviewSidecarCache(cacheKey);
+      if (refreshedCached?.payload.source === "api") {
+        logIngredientOverviewResult({
+          settled: refreshedCached,
+          source: refreshedCached.payload.source,
+          cacheStatus: "hit",
+          fallbackCacheBypassed: true,
+        });
+        return res.json(withIngredientOverviewRefreshHint(refreshedCached.payload, false));
+      }
+      if (cached) {
+        const backgroundRefreshScheduled = ensureIngredientOverviewBackgroundRefresh();
+        logIngredientOverviewResult({
+          settled: cached,
+          source: cached.payload.source,
+          cacheStatus: "hit",
+          fallbackCacheBypassed: true,
+          backgroundRefreshScheduled,
+          backgroundRefreshPending: backgroundRefreshScheduled,
+        });
+        return res.json(withIngredientOverviewRefreshHint(cached.payload, backgroundRefreshScheduled));
       }
     }
 
@@ -11273,8 +11475,15 @@ app.post("/api/ingredient-overview/v1", verifySupabaseToken, async (req: Request
         source: inflightPayload.payload.source,
         cacheStatus: "inflight",
         fallbackCacheBypassed: shouldBypassFallbackCache,
+        backgroundRefreshPending:
+          inflightPayload.payload.source === "fallback" && ingredientOverviewSidecarBackgroundRefresh.has(cacheKey),
       });
-      return res.json(inflightPayload.payload);
+      return res.json(
+        withIngredientOverviewRefreshHint(
+          inflightPayload.payload,
+          inflightPayload.payload.source === "fallback" && ingredientOverviewSidecarBackgroundRefresh.has(cacheKey),
+        ),
+      );
     }
 
     const llmFn = buildDeepseekJsonLlmFn({
@@ -11298,6 +11507,8 @@ app.post("/api/ingredient-overview/v1", verifySupabaseToken, async (req: Request
           source: compiled.source,
           fallbackUsed: compiled.fallbackUsed,
           promptVersion: compiled.promptVersion,
+          backgroundRefreshPending: false,
+          recommendedRetryAfterMs: null,
         },
         diagnostics: compiled.diagnostics,
       };
@@ -11310,64 +11521,8 @@ app.post("/api/ingredient-overview/v1", verifySupabaseToken, async (req: Request
 
       let backgroundRefreshScheduled = false;
 
-      if (
-        settled.payload.source === "fallback" &&
-        deepseekKey &&
-        !ingredientOverviewSidecarBackgroundRefresh.has(cacheKey)
-      ) {
-        backgroundRefreshScheduled = true;
-        const backgroundRefresh = (async (): Promise<void> => {
-          const backgroundLlmFn = buildDeepseekJsonLlmFn({
-            deepseekKey,
-            deepseekModel,
-            timeoutMs: executionProfile.backgroundRefreshTimeoutMs,
-            maxTokens: executionProfile.maxTokens,
-          });
-          if (!backgroundLlmFn) return;
-
-          const refreshed = await compileIngredientOverviewAsync(authority.ingredientScienceContext, {
-            llmFn: backgroundLlmFn,
-            timeoutMs: executionProfile.backgroundRefreshTimeoutMs,
-            maxRetries: executionProfile.backgroundRefreshMaxRetries,
-          });
-
-          if (refreshed.source !== "api") return;
-
-          const refreshedPayload: IngredientOverviewSidecarSettled = {
-            payload: {
-              status: "ok",
-              digest: authority.decisionSupport.digest,
-              ingredientOverview: refreshed.ingredientOverview,
-              source: refreshed.source,
-              fallbackUsed: refreshed.fallbackUsed,
-              promptVersion: refreshed.promptVersion,
-            },
-            diagnostics: refreshed.diagnostics,
-          };
-
-          writeIngredientOverviewSidecarCache(
-            cacheKey,
-            refreshedPayload,
-            resolveIngredientOverviewCacheTtlMs(refreshedPayload, executionProfile.cacheTtlMs),
-          );
-          logIngredientOverviewResult({
-            settled: refreshedPayload,
-            source: refreshedPayload.payload.source,
-            phase: "background_refresh",
-          });
-        })()
-          .catch((error) => {
-            captureException(error, {
-              route: "/api/ingredient-overview/v1",
-              phase: "background_refresh",
-              cacheKey,
-            });
-          })
-          .finally(() => {
-            ingredientOverviewSidecarBackgroundRefresh.delete(cacheKey);
-          });
-
-        ingredientOverviewSidecarBackgroundRefresh.set(cacheKey, backgroundRefresh);
+      if (settled.payload.source === "fallback") {
+        backgroundRefreshScheduled = ensureIngredientOverviewBackgroundRefresh();
       }
 
       logIngredientOverviewResult({
@@ -11375,6 +11530,7 @@ app.post("/api/ingredient-overview/v1", verifySupabaseToken, async (req: Request
         source: settled.payload.source,
         fallbackCacheBypassed: shouldBypassFallbackCache,
         backgroundRefreshScheduled,
+        backgroundRefreshPending: backgroundRefreshScheduled,
       });
       return settled;
     })()
@@ -11384,7 +11540,12 @@ app.post("/api/ingredient-overview/v1", verifySupabaseToken, async (req: Request
 
     ingredientOverviewSidecarInflight.set(cacheKey, compilePromise);
     const settled = await compilePromise;
-    return res.json(settled.payload);
+    return res.json(
+      withIngredientOverviewRefreshHint(
+        settled.payload,
+        settled.payload.source === "fallback" && ingredientOverviewSidecarBackgroundRefresh.has(cacheKey),
+      ),
+    );
   } catch (error) {
     captureException(error, { route: "/api/ingredient-overview/v1" });
     const detail = error instanceof Error ? `${error.name}: ${error.message}` : String(error);
@@ -11515,6 +11676,98 @@ app.post("/api/scientific-background/v1", verifySupabaseToken, async (req: Reque
         }),
       );
     };
+    const ensureScientificBackgroundBackgroundRefresh = (): boolean => {
+      if (!executionProfile.preferLiveWriter || !deepseekKey) return false;
+      if (scientificBackgroundSidecarBackgroundRefresh.has(cacheKey)) return true;
+      if (isScientificBackgroundBackgroundRefreshCoolingDown(cacheKey)) return false;
+
+      const backgroundRefresh = (async (): Promise<void> => {
+        const backgroundLlmFn = buildDeepseekJsonLlmFn({
+          deepseekKey,
+          deepseekModel,
+          timeoutMs: executionProfile.backgroundRefreshTimeoutMs,
+          maxTokens: executionProfile.maxTokens,
+        });
+        if (!backgroundLlmFn) return;
+
+        const refreshed = await compileScientificBackgroundAsync(
+          authority.ingredientScienceContext,
+          selectedDescriptor.name,
+          {
+            llmFn: backgroundLlmFn,
+            timeoutMs: executionProfile.backgroundRefreshTimeoutMs,
+            maxRetries: executionProfile.backgroundRefreshMaxRetries ?? SCIENCE_SIDECAR_MAX_RETRIES,
+          },
+        );
+
+        const refreshedPayload: ScientificBackgroundSidecarSettled = {
+          payload: {
+            status: "ok",
+            digest: authority.decisionSupport.digest,
+            scientificBackground: refreshed.scientificBackground,
+            source: refreshed.source,
+            fallbackUsed: refreshed.fallbackUsed,
+            promptVersion: refreshed.promptVersion,
+            backgroundRefreshPending: false,
+            recommendedRetryAfterMs: null,
+          },
+          diagnostics: refreshed.diagnostics,
+        };
+
+        if (refreshed.source !== "api") {
+          const refreshFailureRetryLimit =
+            plan.family === "magnesium"
+              || plan.family === "zinc"
+              || plan.family === "carnitine"
+              || plan.family === "green_tea_extract"
+              ? 3
+              : SCIENTIFIC_BACKGROUND_REFRESH_FAILURE_RETRY_LIMIT;
+          if (shouldCoolDownScientificBackgroundBackgroundRefresh(
+            cacheKey,
+            refreshFailureRetryLimit,
+          )) {
+            markScientificBackgroundBackgroundRefreshCooldown(cacheKey);
+          }
+          writeScientificBackgroundSidecarCache(
+            cacheKey,
+            refreshedPayload,
+            resolveScientificBackgroundCacheTtlMs(refreshedPayload, executionProfile),
+          );
+          logScientificBackgroundResult({
+            settled: refreshedPayload,
+            source: refreshedPayload.payload.source,
+            phase: "background_refresh",
+          });
+          return;
+        }
+
+        scientificBackgroundSidecarBackgroundRefreshCooldownUntil.delete(cacheKey);
+        scientificBackgroundSidecarBackgroundRefreshFailureCount.delete(cacheKey);
+        writeScientificBackgroundSidecarCache(
+          cacheKey,
+          refreshedPayload,
+          resolveScientificBackgroundCacheTtlMs(refreshedPayload, executionProfile),
+        );
+        logScientificBackgroundResult({
+          settled: refreshedPayload,
+          source: refreshedPayload.payload.source,
+          phase: "background_refresh",
+        });
+      })()
+        .catch((error) => {
+          captureException(error, {
+            route: "/api/scientific-background/v1",
+            phase: "background_refresh",
+            cacheKey,
+          });
+        })
+        .finally(() => {
+          scientificBackgroundSidecarBackgroundRefresh.delete(cacheKey);
+        });
+
+      scientificBackgroundSidecarBackgroundRefresh.set(cacheKey, backgroundRefresh);
+      return true;
+    };
     const cacheKey = [
       authority.decisionSupport.digest,
       authority.decisionSupport.decisionInputsHash,
@@ -11539,29 +11792,27 @@ app.post("/api/scientific-background/v1", verifySupabaseToken, async (req: Reque
       return res.json(withScientificBackgroundRefreshHint(cached.payload, backgroundRefreshPending));
     }
     if (shouldBypassFallbackCache) {
-      const existingBackgroundRefresh = scientificBackgroundSidecarBackgroundRefresh.get(cacheKey);
-      if (existingBackgroundRefresh) {
-        const refreshedCached = readScientificBackgroundSidecarCache(cacheKey);
-        if (refreshedCached?.payload.source === "api") {
-          logScientificBackgroundResult({
-            settled: refreshedCached,
-            source: refreshedCached.payload.source,
-            cacheStatus: "hit",
-            fallbackCacheBypassed: true,
-          });
-          return res.json(withScientificBackgroundRefreshHint(refreshedCached.payload, false));
-        }
-        if (cached) {
-          logScientificBackgroundResult({
-            settled: cached,
-            source: cached.payload.source,
-            cacheStatus: "hit",
-            fallbackCacheBypassed: true,
-            backgroundRefreshScheduled: true,
-            backgroundRefreshPending: true,
-          });
-          return res.json(withScientificBackgroundRefreshHint(cached.payload, true));
-        }
+      const refreshedCached = readScientificBackgroundSidecarCache(cacheKey);
+      if (refreshedCached?.payload.source === "api") {
+        logScientificBackgroundResult({
+          settled: refreshedCached,
+          source: refreshedCached.payload.source,
+          cacheStatus: "hit",
+          fallbackCacheBypassed: true,
+        });
+        return res.json(withScientificBackgroundRefreshHint(refreshedCached.payload, false));
+      }
+      if (cached) {
+        const backgroundRefreshScheduled = ensureScientificBackgroundBackgroundRefresh();
+        logScientificBackgroundResult({
+          settled: cached,
+          source: cached.payload.source,
+          cacheStatus: "hit",
+          fallbackCacheBypassed: true,
+          backgroundRefreshScheduled,
+          backgroundRefreshPending: backgroundRefreshScheduled,
+        });
+        return res.json(withScientificBackgroundRefreshHint(cached.payload, backgroundRefreshScheduled));
       }
     }
 
@@ -11623,71 +11874,8 @@ app.post("/api/scientific-background/v1", verifySupabaseToken, async (req: Reque
 
       let backgroundRefreshScheduled = false;
 
-      if (
-        settled.payload.source === "fallback" &&
-        executionProfile.preferLiveWriter &&
-        deepseekKey &&
-        !scientificBackgroundSidecarBackgroundRefresh.has(cacheKey)
-      ) {
-        backgroundRefreshScheduled = true;
-        const backgroundRefresh = (async (): Promise<void> => {
-          const backgroundLlmFn = buildDeepseekJsonLlmFn({
-            deepseekKey,
-            deepseekModel,
-            timeoutMs: executionProfile.backgroundRefreshTimeoutMs,
-            maxTokens: executionProfile.maxTokens,
-          });
-          if (!backgroundLlmFn) return;
-
-          const refreshed = await compileScientificBackgroundAsync(
-            authority.ingredientScienceContext,
-            selectedDescriptor.name,
-            {
-              llmFn: backgroundLlmFn,
-              timeoutMs: executionProfile.backgroundRefreshTimeoutMs,
-              maxRetries: executionProfile.backgroundRefreshMaxRetries ?? SCIENCE_SIDECAR_MAX_RETRIES,
-            },
-          );
-
-          if (refreshed.source !== "api") return;
-
-          const refreshedPayload: ScientificBackgroundSidecarSettled = {
-            payload: {
-              status: "ok",
-              digest: authority.decisionSupport.digest,
-              scientificBackground: refreshed.scientificBackground,
-              source: refreshed.source,
-              fallbackUsed: refreshed.fallbackUsed,
-              promptVersion: refreshed.promptVersion,
-              backgroundRefreshPending: false,
-              recommendedRetryAfterMs: null,
-            },
-            diagnostics: refreshed.diagnostics,
-          };
-
-          writeScientificBackgroundSidecarCache(
-            cacheKey,
-            refreshedPayload,
-            resolveScientificBackgroundCacheTtlMs(refreshedPayload, executionProfile),
-          );
-          logScientificBackgroundResult({
-            settled: refreshedPayload,
-            source: refreshedPayload.payload.source,
-            phase: "background_refresh",
-          });
-        })()
-          .catch((error) => {
-            captureException(error, {
-              route: "/api/scientific-background/v1",
-              phase: "background_refresh",
-              cacheKey,
-            });
-          })
-          .finally(() => {
-            scientificBackgroundSidecarBackgroundRefresh.delete(cacheKey);
-          });
-
-        scientificBackgroundSidecarBackgroundRefresh.set(cacheKey, backgroundRefresh);
+      if (settled.payload.source === "fallback") {
+        backgroundRefreshScheduled = ensureScientificBackgroundBackgroundRefresh();
       }
 
       logScientificBackgroundResult({

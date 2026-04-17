@@ -1,3 +1,5 @@
+import type { ProfileDraft } from '@/types/onboarding';
+
 import type { BarcodeScanResult } from './service';
 
 export type SearchResultSeed = {
@@ -31,6 +33,7 @@ export type ScanSession =
     isLoading?: boolean;
     source?: string | null;
     searchResultSeed?: SearchResultSeed | null;
+    onboardingDraftSnapshot?: ProfileDraft | null;
   };
 
 export const SCAN_SESSION_SCHEMA_VERSION = 1 as const;

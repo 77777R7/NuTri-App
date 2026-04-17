@@ -1,8 +1,23 @@
-import React from 'react';
-import { Pressable, StyleSheet, Text, View, type ReactNode } from 'react-native';
+import React, { useEffect } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import type { ReactNode } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
+import Animated, {
+  Easing,
+  interpolate,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated';
 
-import { QA_ACTIVE_BLUE, QA_CTA_HEIGHT } from './qaTokens';
+import {
+  QA_CTA_DISABLED_SCALE,
+  QA_CTA_ENABLED_LIFT_Y,
+  QA_CTA_STATE_DURATION_MS,
+} from '@/components/onboarding/flow/onboardingMotion';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
+import { QA_ACTIVE_BLUE } from './qaTokens';
+import { useOnboardingLayoutTokens } from '@/hooks/useOnboardingLayoutTokens';
 
 type QAContinueCTAProps = {
   title: string;
@@ -19,8 +34,62 @@ export function QAContinueCTA({
   showLabel = true,
   children,
 }: QAContinueCTAProps) {
+  const layoutTokens = useOnboardingLayoutTokens();
+  const reduceMotion = useReducedMotion();
+  const enabledProgress = useSharedValue(disabled ? 0 : 1);
+
+  useEffect(() => {
+    if (reduceMotion) {
+      enabledProgress.value = disabled ? 0 : 1;
+      return;
+    }
+
+    enabledProgress.value = withTiming(disabled ? 0 : 1, {
+      duration: QA_CTA_STATE_DURATION_MS,
+      easing: Easing.bezier(0.16, 1, 0.3, 1),
+    });
+  }, [disabled, enabledProgress, reduceMotion]);
+
+  const outerStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(enabledProgress.value, [0, 1], [0.9, 1]),
+  }));
+
+  const buttonStateStyle = useAnimatedStyle(() => ({
+    shadowOpacity: interpolate(enabledProgress.value, [0, 1], [0.06, 0.18]),
+    shadowRadius: interpolate(enabledProgress.value, [0, 1], [8, 13]),
+    shadowOffset: {
+      width: 0,
+      height: interpolate(enabledProgress.value, [0, 1], [4, 7]),
+    },
+    elevation: interpolate(enabledProgress.value, [0, 1], [8, 13]),
+    transform: [
+      {
+        translateY: interpolate(
+          enabledProgress.value,
+          [0, 1],
+          [0, QA_CTA_ENABLED_LIFT_Y],
+        ),
+      },
+      {
+        scale: interpolate(
+          enabledProgress.value,
+          [0, 1],
+          [QA_CTA_DISABLED_SCALE, 1],
+        ),
+      },
+    ],
+  }));
+
+  const enabledLayerStyle = useAnimatedStyle(() => ({
+    opacity: enabledProgress.value,
+  }));
+
+  const disabledLayerStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(enabledProgress.value, [0, 1], [1, 0]),
+  }));
+
   return (
-    <View style={[styles.outer, disabled && styles.outerDisabled]}>
+    <Animated.View style={[styles.outer, outerStyle]}>
       <Pressable
         disabled={disabled}
         onPress={onPress}
@@ -28,53 +97,81 @@ export function QAContinueCTA({
         accessibilityLabel={title}
         style={({ pressed }) => [styles.pressable, pressed && !disabled && styles.pressed]}
       >
-        <View style={[styles.buttonFrame, disabled && styles.buttonFrameDisabled]}>
+        <Animated.View
+          style={[
+            styles.buttonFrame,
+            { height: layoutTokens.qaCtaHeight },
+            buttonStateStyle,
+          ]}
+        >
           <View style={styles.clipShell}>
-            <LinearGradient
-              pointerEvents="none"
-              colors={
-                disabled
-                  ? ['#B7C7EF', '#AEC0EA', '#A6B8E5']
-                  : ['#6F98F8', '#638CEE', '#5782E8']
-              }
-              locations={[0, 0.52, 1]}
-              start={{ x: 0.14, y: 0.06 }}
-              end={{ x: 0.92, y: 0.96 }}
-              style={styles.fill}
-            />
+            <Animated.View pointerEvents="none" style={[styles.fill, disabledLayerStyle]}>
+              <LinearGradient
+                colors={['#B7C7EF', '#AEC0EA', '#A6B8E5']}
+                locations={[0, 0.52, 1]}
+                start={{ x: 0.14, y: 0.06 }}
+                end={{ x: 0.92, y: 0.96 }}
+                style={styles.fill}
+              />
+            </Animated.View>
 
-            <LinearGradient
-              pointerEvents="none"
-              colors={
-                disabled
-                  ? [
-                      'rgba(255,255,255,0.12)',
-                      'rgba(255,255,255,0.04)',
-                      'rgba(255,255,255,0)',
-                    ]
-                  : [
-                      'rgba(255,255,255,0.22)',
-                      'rgba(255,255,255,0.08)',
-                      'rgba(255,255,255,0)',
-                    ]
-              }
-              locations={[0, 0.56, 1]}
-              start={{ x: 0.5, y: 0 }}
-              end={{ x: 0.5, y: 1 }}
-              style={styles.topCap}
-            />
+            <Animated.View pointerEvents="none" style={[styles.fill, enabledLayerStyle]}>
+              <LinearGradient
+                colors={['#6F98F8', '#638CEE', '#5782E8']}
+                locations={[0, 0.52, 1]}
+                start={{ x: 0.14, y: 0.06 }}
+                end={{ x: 0.92, y: 0.96 }}
+                style={styles.fill}
+              />
+            </Animated.View>
+
+            <Animated.View pointerEvents="none" style={[styles.topCap, disabledLayerStyle]}>
+              <LinearGradient
+                colors={[
+                  'rgba(255,255,255,0.12)',
+                  'rgba(255,255,255,0.04)',
+                  'rgba(255,255,255,0)',
+                ]}
+                locations={[0, 0.56, 1]}
+                start={{ x: 0.5, y: 0 }}
+                end={{ x: 0.5, y: 1 }}
+                style={StyleSheet.absoluteFillObject}
+              />
+            </Animated.View>
+            <Animated.View pointerEvents="none" style={[styles.topCap, enabledLayerStyle]}>
+              <LinearGradient
+                colors={[
+                  'rgba(255,255,255,0.22)',
+                  'rgba(255,255,255,0.08)',
+                  'rgba(255,255,255,0)',
+                ]}
+                locations={[0, 0.56, 1]}
+                start={{ x: 0.5, y: 0 }}
+                end={{ x: 0.5, y: 1 }}
+                style={StyleSheet.absoluteFillObject}
+              />
+            </Animated.View>
             <View style={styles.outerStroke} pointerEvents="none" />
 
             {children ? children : null}
             {showLabel ? (
-              <Text allowFontScaling={false} style={styles.text}>
+              <Text
+                allowFontScaling={false}
+                style={[
+                  styles.text,
+                  {
+                    fontSize: layoutTokens.qaCtaLabelSize,
+                    lineHeight: layoutTokens.qaCtaLabelLineHeight,
+                  },
+                ]}
+              >
                 {title}
               </Text>
             ) : null}
           </View>
-        </View>
+        </Animated.View>
       </Pressable>
-    </View>
+    </Animated.View>
   );
 }
 
@@ -84,14 +181,10 @@ const styles = StyleSheet.create({
     maxWidth: 392,
     alignSelf: 'center',
   },
-  outerDisabled: {
-    opacity: 0.9,
-  },
   pressable: {
     width: '100%',
   },
   buttonFrame: {
-    height: QA_CTA_HEIGHT,
     borderRadius: 999,
     backgroundColor: 'transparent',
     shadowColor: QA_ACTIVE_BLUE,
@@ -99,12 +192,6 @@ const styles = StyleSheet.create({
     shadowRadius: 11,
     shadowOffset: { width: 0, height: 6 },
     elevation: 12,
-  },
-  buttonFrameDisabled: {
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 8,
   },
   clipShell: {
     flex: 1,
@@ -138,8 +225,6 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255,255,255,0.12)',
   },
   text: {
-    fontSize: 17,
-    lineHeight: 22,
     fontWeight: '600',
     letterSpacing: -0.45,
     color: '#FFFFFF',

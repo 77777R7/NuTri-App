@@ -5,6 +5,28 @@ import type { ProfileDraft, TrialState } from '@/types/onboarding';
 import type { Database } from '@/types/supabase';
 
 type PublicClient = SupabaseClient<Database>;
+type UserProfileDraftSeedRow = {
+  user_id: string;
+  age: number | null;
+  gender: string | null;
+  age_range: string | null;
+  sex: string | null;
+  supplement_experience: string | null;
+  dietary_preferences: string[] | null;
+  activity_level: string | null;
+  preferred_types: string[] | null;
+  allergy_flags: string[] | null;
+  ingredient_restrictions: string[] | null;
+  adherence_blocker: string | null;
+  onboarding_version: string | null;
+  onboarding_completed_at: string | null;
+  onboarding_completed: boolean | null;
+  first_action_preference: string | null;
+  location_country: string | null;
+  location_city: string | null;
+  health_goals: string[] | null;
+  updated_at: string | null;
+};
 
 const LEGACY_ACTIVITY_LEVEL_MAP: Record<string, string> = {
   sedentary: 'sedentary',
@@ -34,6 +56,17 @@ const normalizeLegacyToken = (value?: string | null) =>
     .replace(/[^a-z0-9]+/g, '_')
     .replace(/^_+|_+$/g, '') ?? '';
 
+const sanitizeString = (value?: string | null) => {
+  const normalized = value?.trim();
+  return normalized ? normalized : undefined;
+};
+
+const sanitizeStringArray = (values?: string[] | null) => {
+  if (!Array.isArray(values)) return undefined;
+  const next = values.map(value => sanitizeString(value)).filter(Boolean) as string[];
+  return next.length > 0 ? next : undefined;
+};
+
 export const ensureUserProfileTable = async (client: PublicClient) => {
   const ddl = `
     create table if not exists public.user_profiles (
@@ -60,6 +93,21 @@ export const ensureUserProfileTable = async (client: PublicClient) => {
       onboarding_completed boolean default false,
       trial_status text,
       trial_started_at timestamp with time zone,
+      premium_status text,
+      premium_entitlement text,
+      premium_source text,
+      premium_customer_id text,
+      premium_product_id text,
+      premium_store text,
+      premium_expires_at timestamp with time zone,
+      premium_will_renew boolean,
+      premium_period_type text,
+      premium_updated_at timestamp with time zone,
+      first_completed_scan_id text,
+      first_scan_reveal_state text,
+      first_scan_reveal_scan_id text,
+      first_scan_reveal_granted_at timestamp with time zone,
+      first_scan_paywall_seen_at timestamp with time zone,
       created_at timestamp with time zone default now(),
       updated_at timestamp with time zone default now()
     );
@@ -84,7 +132,22 @@ export const ensureUserProfileTable = async (client: PublicClient) => {
       add column if not exists health_goals text[],
       add column if not exists onboarding_completed boolean default false,
       add column if not exists trial_status text,
-      add column if not exists trial_started_at timestamp with time zone;
+      add column if not exists trial_started_at timestamp with time zone,
+      add column if not exists premium_status text,
+      add column if not exists premium_entitlement text,
+      add column if not exists premium_source text,
+      add column if not exists premium_customer_id text,
+      add column if not exists premium_product_id text,
+      add column if not exists premium_store text,
+      add column if not exists premium_expires_at timestamp with time zone,
+      add column if not exists premium_will_renew boolean,
+      add column if not exists premium_period_type text,
+      add column if not exists premium_updated_at timestamp with time zone,
+      add column if not exists first_completed_scan_id text,
+      add column if not exists first_scan_reveal_state text,
+      add column if not exists first_scan_reveal_scan_id text,
+      add column if not exists first_scan_reveal_granted_at timestamp with time zone,
+      add column if not exists first_scan_paywall_seen_at timestamp with time zone;
 
     drop trigger if exists user_profiles_set_updated_at on public.user_profiles;
 
@@ -108,6 +171,27 @@ export const ensureUserProfileTable = async (client: PublicClient) => {
   if (error) {
     console.warn('[supabase] ensureUserProfileTable error', error);
   }
+};
+
+export type UserPremiumEntitlementWrite = {
+  premium_status: string;
+  premium_entitlement?: string | null;
+  premium_source?: string | null;
+  premium_customer_id?: string | null;
+  premium_product_id?: string | null;
+  premium_store?: string | null;
+  premium_expires_at?: string | null;
+  premium_will_renew?: boolean | null;
+  premium_period_type?: string | null;
+  premium_updated_at?: string;
+};
+
+export type UserFirstScanRevealWrite = {
+  first_completed_scan_id?: string | null;
+  first_scan_reveal_state?: 'eligible' | 'granted' | 'paywall_seen' | 'converted' | null;
+  first_scan_reveal_scan_id?: string | null;
+  first_scan_reveal_granted_at?: string | null;
+  first_scan_paywall_seen_at?: string | null;
 };
 
 const mapProfileDraft = (draft: ProfileDraft | null) => {
@@ -226,4 +310,161 @@ export const fetchUserProfile = async (client: PublicClient, userId: string) => 
     .select('user_id, allergy_flags, ingredient_restrictions, updated_at')
     .eq('user_id', userId)
     .maybeSingle();
+};
+
+export const upsertUserPremiumEntitlement = async (
+  client: PublicClient,
+  userId: string,
+  entitlement: UserPremiumEntitlementWrite,
+) => {
+  await ensureUserProfileTable(client);
+
+  const payload = {
+    user_id: userId,
+    premium_status: entitlement.premium_status,
+    premium_entitlement: entitlement.premium_entitlement ?? null,
+    premium_source: entitlement.premium_source ?? null,
+    premium_customer_id: entitlement.premium_customer_id ?? null,
+    premium_product_id: entitlement.premium_product_id ?? null,
+    premium_store: entitlement.premium_store ?? null,
+    premium_expires_at: entitlement.premium_expires_at ?? null,
+    premium_will_renew: entitlement.premium_will_renew ?? null,
+    premium_period_type: entitlement.premium_period_type ?? null,
+    premium_updated_at: entitlement.premium_updated_at ?? new Date().toISOString(),
+  };
+
+  const { error } = await client.from('user_profiles').upsert(payload as any, { onConflict: 'user_id' });
+
+  if (error) {
+    console.error('[supabase] Failed to upsert premium entitlement', error);
+    return { ok: false, error };
+  }
+
+  return { ok: true } as const;
+};
+
+export const fetchUserFirstScanReveal = async (client: PublicClient, userId: string) => {
+  await ensureUserProfileTable(client);
+
+  return client
+    .from('user_profiles')
+    .select(
+      'first_completed_scan_id, first_scan_reveal_state, first_scan_reveal_scan_id, first_scan_reveal_granted_at, first_scan_paywall_seen_at',
+    )
+    .eq('user_id', userId)
+    .maybeSingle<{
+      first_completed_scan_id: string | null;
+      first_scan_reveal_state: 'eligible' | 'granted' | 'paywall_seen' | 'converted' | null;
+      first_scan_reveal_scan_id: string | null;
+      first_scan_reveal_granted_at: string | null;
+      first_scan_paywall_seen_at: string | null;
+    }>();
+};
+
+export const upsertUserFirstScanReveal = async (
+  client: PublicClient,
+  userId: string,
+  reveal: UserFirstScanRevealWrite,
+) => {
+  await ensureUserProfileTable(client);
+
+  const payload = {
+    user_id: userId,
+    first_completed_scan_id: reveal.first_completed_scan_id ?? null,
+    first_scan_reveal_state: reveal.first_scan_reveal_state ?? null,
+    first_scan_reveal_scan_id: reveal.first_scan_reveal_scan_id ?? null,
+    first_scan_reveal_granted_at: reveal.first_scan_reveal_granted_at ?? null,
+    first_scan_paywall_seen_at: reveal.first_scan_paywall_seen_at ?? null,
+  };
+
+  const { error } = await client.from('user_profiles').upsert(payload as any, { onConflict: 'user_id' });
+
+  if (error) {
+    console.error('[supabase] Failed to upsert first scan reveal', error);
+    return { ok: false, error };
+  }
+
+  return { ok: true } as const;
+};
+
+export const mapUserProfileRowToDraft = (row: UserProfileDraftSeedRow | null | undefined): ProfileDraft | null => {
+  if (!row) return null;
+
+  const draft: ProfileDraft = {};
+  if (typeof row.age === 'number' && Number.isFinite(row.age)) {
+    draft.age = row.age;
+  }
+  const gender = sanitizeString(row.gender);
+  const sex = sanitizeString(row.sex);
+  if (gender) draft.gender = gender;
+  if (sex) draft.sex = sex;
+  const ageRange = sanitizeString(row.age_range);
+  if (ageRange) draft.ageRange = ageRange;
+  const supplementExperience = sanitizeString(row.supplement_experience);
+  if (supplementExperience) draft.supplementExperience = supplementExperience;
+  const diets = sanitizeStringArray(row.dietary_preferences);
+  if (diets) draft.diets = diets;
+  const activity = sanitizeString(row.activity_level);
+  if (activity) draft.activity = activity;
+  const preferredTypes = sanitizeStringArray(row.preferred_types);
+  if (preferredTypes) draft.preferredTypes = preferredTypes;
+  const adherenceBlocker = sanitizeString(row.adherence_blocker);
+  if (adherenceBlocker) draft.adherenceBlocker = adherenceBlocker;
+  const goals = sanitizeStringArray(row.health_goals);
+  if (goals) draft.goals = goals;
+  const allergyFlags = sanitizeStringArray(row.allergy_flags);
+  if (allergyFlags) draft.allergyFlags = allergyFlags as ProfileDraft['allergyFlags'];
+  const ingredientRestrictions = sanitizeStringArray(row.ingredient_restrictions);
+  if (ingredientRestrictions) {
+    draft.ingredientRestrictions = ingredientRestrictions as ProfileDraft['ingredientRestrictions'];
+  }
+  const country = sanitizeString(row.location_country);
+  const city = sanitizeString(row.location_city);
+  if (country || city) {
+    draft.location = {
+      ...(country ? { country } : {}),
+      ...(city ? { city } : {}),
+    };
+  }
+  if (row.onboarding_version === 'v2') {
+    draft.onboardingVersion = 'v2';
+  }
+  const onboardingCompletedAt = sanitizeString(row.onboarding_completed_at);
+  if (onboardingCompletedAt) draft.onboardingCompletedAt = onboardingCompletedAt;
+  const firstActionPreference = sanitizeString(row.first_action_preference);
+  if (
+    firstActionPreference === 'scan'
+    || firstActionPreference === 'manual'
+    || firstActionPreference === 'later'
+  ) {
+    draft.firstActionPreference = firstActionPreference;
+  }
+
+  return Object.keys(draft).length > 0 ? draft : null;
+};
+
+export const fetchUserProfileDraftSeed = async (client: PublicClient, userId: string) => {
+  const result = await client
+    .from('user_profiles')
+    .select(
+      'user_id, age, gender, age_range, sex, supplement_experience, dietary_preferences, activity_level, preferred_types, allergy_flags, ingredient_restrictions, adherence_blocker, onboarding_version, onboarding_completed_at, onboarding_completed, first_action_preference, location_country, location_city, health_goals, updated_at',
+    )
+    .eq('user_id', userId)
+    .maybeSingle<UserProfileDraftSeedRow>();
+
+  if (result.error || !result.data) {
+    return {
+      draft: null,
+      updatedAt: undefined,
+      completed: false,
+      error: result.error ?? null,
+    };
+  }
+
+  return {
+    draft: mapUserProfileRowToDraft(result.data),
+    updatedAt: sanitizeString(result.data.updated_at),
+    completed: result.data.onboarding_completed === true || Boolean(result.data.onboarding_completed_at),
+    error: null,
+  };
 };

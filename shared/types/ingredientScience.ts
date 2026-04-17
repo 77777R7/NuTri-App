@@ -30,6 +30,8 @@ export type IngredientOverviewResponse = {
   source: "api" | "fallback";
   fallbackUsed: boolean;
   promptVersion: string;
+  backgroundRefreshPending?: boolean;
+  recommendedRetryAfterMs?: number | null;
 };
 
 export type ScientificBackgroundResponse = {
