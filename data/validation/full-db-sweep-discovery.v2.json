@@ -1,0 +1,72 @@
+{
+  "version": "full-db-sweep-discovery.v2",
+  "taxonomyPath": "data/validation/taxonomy-v0.json",
+  "tableName": "iherb_overlay_products",
+  "selectColumns": "product_id,title,brand_name,barcode_gtin14,upc_code,supplement_facts,facts_count,facts_type",
+  "batchSize": 1000,
+  "maxExamplesPerLane": 8,
+  "maxExamplesPerBucket": 8,
+  "radarOnly": true,
+  "priorityBuckets": [
+    {
+      "bucket": "facts_short_1_3",
+      "note": "Promote title-led sparse honesty examples into nightly and curated packs."
+    },
+    {
+      "bucket": "food_like_boundary",
+      "note": "Check route honesty across drink mix, gel, and bar products."
+    },
+    {
+      "bucket": "source_whey_dairy",
+      "note": "Promote explicit dairy/source-sensitive runtime checks."
+    },
+    {
+      "bucket": "source_soy",
+      "note": "Promote explicit soy/source-sensitive runtime checks."
+    },
+    {
+      "bucket": "omega_shellfish_source",
+      "note": "Promote shellfish-aware omega source checks."
+    },
+    {
+      "bucket": "probiotic_trade_name",
+      "note": "Promote named probiotic alias coverage."
+    },
+    {
+      "bucket": "omega_algal_source",
+      "note": "Promote source-family omega copy checks."
+    },
+    {
+      "bucket": "duplicate_stack_cal_mag",
+      "note": "Promote mineral stack counterfactuals."
+    }
+  ],
+  "promotionCandidatesByBucket": [
+    {
+      "bucket": "facts_short_1_3",
+      "limit": 3,
+      "note": "nightly_sparse_honesty"
+    },
+    {
+      "bucket": "food_like_boundary",
+      "limit": 3,
+      "note": "nightly_route_honesty"
+    },
+    {
+      "bucket": "source_whey_dairy",
+      "limit": 2,
+      "note": "stable_persona_source"
+    },
+    {
+      "bucket": "source_soy",
+      "limit": 2,
+      "note": "stable_persona_source"
+    },
+    {
+      "bucket": "omega_shellfish_source",
+      "limit": 2,
+      "note": "stable_persona_source"
+    }
+  ],
+  "outDir": "output/validation-discovery"
+}

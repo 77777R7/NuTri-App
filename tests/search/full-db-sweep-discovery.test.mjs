@@ -103,3 +103,47 @@ test("full DB sweep discovery summary counts rows by lane and bucket and keeps r
   assert.ok(summary.buckets.probiotic_trade_name.examples.length > 0);
   assert.ok(summary.lanes.omega3_source_oil.examples.length > 0);
 });
+
+test("full DB sweep discovery can surface radar-only priority buckets and promoted scenario candidates", () => {
+  const summary = summarizeDiscoveryRows([
+    {
+      product_id: "1",
+      title: "BPN Go Gel",
+      brand_name: "BPN",
+      supplement_facts: { nutritionalFacts: [{ substancy: "Sodium" }] },
+    },
+    {
+      product_id: "2",
+      title: "Alani Nu Whey Protein",
+      brand_name: "Alani Nu",
+      supplement_facts: { nutritionalFacts: [{ substancy: "Protein" }] },
+    },
+    {
+      product_id: "3",
+      title: "21st Century Krill Oil",
+      brand_name: "21st Century",
+      supplement_facts: { nutritionalFacts: [{ substancy: "Krill Oil" }] },
+    },
+  ], {
+    priorityBuckets: [
+      { bucket: "food_like_boundary", note: "route honesty" },
+      { bucket: "source_whey_dairy", note: "source-sensitive dairy" },
+      { bucket: "omega_shellfish_source", note: "shellfish omega source" },
+    ],
+    promotionCandidatesByBucket: [
+      { bucket: "food_like_boundary", limit: 1, note: "nightly_route_honesty" },
+      { bucket: "source_whey_dairy", limit: 1, note: "stable_persona_source" },
+      { bucket: "omega_shellfish_source", limit: 1, note: "stable_persona_source" },
+    ],
+  });
+
+  assert.deepEqual(summary.highlights.candidateFailureBuckets, [
+    { bucket: "food_like_boundary", products: 1, note: "route honesty" },
+    { bucket: "source_whey_dairy", products: 1, note: "source-sensitive dairy" },
+    { bucket: "omega_shellfish_source", products: 1, note: "shellfish omega source" },
+  ]);
+  assert.equal(summary.highlights.promotedScenarioCandidates.length, 3);
+  assert.equal(summary.highlights.promotedScenarioCandidates[0].productId, "1");
+  assert.equal(summary.highlights.promotedScenarioCandidates[1].productId, "2");
+  assert.equal(summary.highlights.promotedScenarioCandidates[2].productId, "3");
+});

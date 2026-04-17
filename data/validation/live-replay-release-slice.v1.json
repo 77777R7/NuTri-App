@@ -1,0 +1,39 @@
+{
+  "version": "live-replay-release-slice.v1",
+  "sourcePackPath": "data/validation/golden-journey-pack.v1.json",
+  "additionalPackPaths": [
+    "data/validation/stratified-nightly-additions.v1.json"
+  ],
+  "scenarioIds": [
+    "scan_nightly_betterbody_coconut_aminos_soy_replacement",
+    "scan_nightly_bpn_go_gel_food_like",
+    "scan_nightly_hydrationup_electrolyte_drink_mix",
+    "scan_nightly_barleans_algal_oil_source",
+    "scan_beet_juice_food_like",
+    "scan_core_nac_sparse_result",
+    "scan_core_gi_phage_digestive_goal",
+    "scan_colon_cleanse_proprietary_blend",
+    "scan_biogaia_protectis_zero_facts",
+    "scan_core_sr_omega3_fish_allergy",
+    "scan_natures_way_algal_oil_vegan",
+    "search_brand_family_sr_omega3",
+    "search_barcode_sr_omega3",
+    "search_origin_sr_omega3_consistency",
+    "search_origin_algal_oil_consistency",
+    "search_real_21stcentury_600_d3",
+    "scan_solaray_matcha_green_tea_stimulant",
+    "scan_core_sr_vitamin_c_immunity_duplicate",
+    "scan_core_sr_astaxanthin_single_active",
+    "scan_codeage_aloe_no_anchor_steal",
+    "search_brand_product_aloe",
+    "search_real_21stcentury_krill_oil",
+    "search_real_alani_whey_fruity_cereal"
+  ],
+  "releaseBlocker": true,
+  "runner": "local_live_replay",
+  "packRole": "stable_live_slice",
+  "notes": [
+    "Frozen from local 23/23 pass live replay closure.",
+    "Use this slice to protect already-closed live routing, anchor, and source/copy behavior."
+  ]
+}

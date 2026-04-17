@@ -82,12 +82,18 @@ export const summarizeDiscoveryRows = (
   {
     maxExamplesPerLane = 5,
     maxExamplesPerBucket = 5,
+    priorityBuckets = [],
+    promotionCandidatesByBucket = [],
   } = {},
 ) => {
   const summary = {
     total: rows.length,
     lanes: {},
     buckets: {},
+    highlights: {
+      candidateFailureBuckets: [],
+      promotedScenarioCandidates: [],
+    },
   };
   for (const row of rows) {
     const lane = classifyDiscoveryLane(row);
@@ -109,6 +115,48 @@ export const summarizeDiscoveryRows = (
       }
     }
   }
+
+  const bucketCounts = summary.buckets ?? {};
+  const configuredPriorityBuckets = Array.isArray(priorityBuckets) ? priorityBuckets : [];
+  summary.highlights.candidateFailureBuckets = configuredPriorityBuckets
+    .map((entry) => {
+      const bucket = typeof entry === "string" ? entry : entry?.bucket;
+      const details = bucket ? bucketCounts[bucket] : null;
+      if (!bucket || !details) return null;
+      return {
+        bucket,
+        products: details.count,
+        note: typeof entry === "string" ? null : (entry?.note ?? null),
+      };
+    })
+    .filter(Boolean);
+
+  const configuredPromotionBuckets = Array.isArray(promotionCandidatesByBucket)
+    ? promotionCandidatesByBucket
+    : [];
+  const promoted = [];
+  const seenProductIds = new Set();
+  for (const entry of configuredPromotionBuckets) {
+    const bucket = entry?.bucket;
+    if (!bucket) continue;
+    const limit = Number(entry?.limit) > 0 ? Number(entry.limit) : 1;
+    const examples = bucketCounts[bucket]?.examples ?? [];
+    for (const example of examples.slice(0, limit)) {
+      const productId = example?.productId ?? null;
+      if (productId && seenProductIds.has(productId)) continue;
+      if (productId) seenProductIds.add(productId);
+      promoted.push({
+        id: productId ? `promote-${productId}` : `promote-${bucket}-${promoted.length + 1}`,
+        productId,
+        title: example?.title ?? null,
+        brand: example?.brand ?? null,
+        buckets: [bucket],
+        note: entry?.note ?? null,
+      });
+    }
+  }
+  summary.highlights.promotedScenarioCandidates = promoted;
+
   return summary;
 };
 

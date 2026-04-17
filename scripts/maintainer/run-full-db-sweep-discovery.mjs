@@ -94,6 +94,9 @@ const main = async () => {
   });
   const summary = summarizeDiscoveryRows(rows, {
     maxExamplesPerLane: config.maxExamplesPerLane,
+    maxExamplesPerBucket: config.maxExamplesPerBucket,
+    priorityBuckets: config.priorityBuckets,
+    promotionCandidatesByBucket: config.promotionCandidatesByBucket,
   });
   const outputs = await writeFullDbSweepSummary({
     summary,

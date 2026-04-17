@@ -1,0 +1,95 @@
+{
+  "version": "taxonomy-v0",
+  "families": [
+    {
+      "id": "single_active_nutrients",
+      "name": "Single Active Nutrients",
+      "categories": ["vitamin_mineral_single"],
+      "overlayTags": ["duplicate_stack_prone", "alias_heavy"]
+    },
+    {
+      "id": "title_led_structured_stacks",
+      "name": "Title-led Structured Stacks",
+      "categories": ["mineral_stack"],
+      "overlayTags": ["duplicate_stack_prone", "strong_title_weak_facts"]
+    },
+    {
+      "id": "broad_multi_systems",
+      "name": "Broad Multi Systems",
+      "categories": ["multivitamin_b_complex"],
+      "overlayTags": ["duplicate_stack_prone", "lifecycle"]
+    },
+    {
+      "id": "microbiome",
+      "name": "Microbiome",
+      "categories": ["probiotic_microbiome"],
+      "overlayTags": ["alias_heavy"]
+    },
+    {
+      "id": "omega_source_oils",
+      "name": "Omega / Source Oils",
+      "categories": ["omega3_source_oil"],
+      "overlayTags": ["source_sensitive", "alias_heavy", "multi_variant"]
+    },
+    {
+      "id": "botanical_extracts",
+      "name": "Botanical / Tea / Extract",
+      "categories": ["botanical_extract"],
+      "overlayTags": ["stimulant_sensitive", "alias_heavy"]
+    },
+    {
+      "id": "sleep_formulas",
+      "name": "Sleep Formulas",
+      "categories": ["sleep_amino"],
+      "overlayTags": ["stimulant_sensitive", "duplicate_stack_prone"]
+    },
+    {
+      "id": "sports_hydration_metabolic",
+      "name": "Sports / Hydration / Metabolic",
+      "categories": ["metabolic_body_composition"],
+      "overlayTags": ["duplicate_stack_prone", "stimulant_sensitive", "food_boundary"]
+    },
+    {
+      "id": "protein_collagen",
+      "name": "Protein / Collagen",
+      "categories": ["protein_fiber"],
+      "overlayTags": ["source_sensitive", "food_boundary", "multi_variant"]
+    },
+    {
+      "id": "lifecycle_specific",
+      "name": "Lifecycle-specific",
+      "categories": ["prenatal_kids"],
+      "overlayTags": ["lifecycle"]
+    },
+    {
+      "id": "food_like_hybrid",
+      "name": "Food-like / Hybrid",
+      "categories": ["food_like"],
+      "overlayTags": ["food_boundary", "sparse_or_malformed"]
+    },
+    {
+      "id": "sparse_proprietary_weak_facts",
+      "name": "Sparse / Proprietary / Weak-facts",
+      "categories": ["sparse_title_led"],
+      "overlayTags": ["sparse_or_malformed", "strong_title_weak_facts"]
+    }
+  ],
+  "personaMaturity": {
+    "fish_allergy": "blocker",
+    "shellfish_allergy": "blocker",
+    "dairy_allergy": "blocker",
+    "soy_allergy": "blocker",
+    "gluten_restriction": "nightly",
+    "gelatin_restriction": "nightly",
+    "vegan_preference": "blocker",
+    "pregnancy_prenatal": "nightly",
+    "melatonin_sensitivity": "nightly",
+    "stimulant_sensitivity": "nightly",
+    "duplicate_zinc_magnesium_d": "blocker",
+    "digestion_goal": "nightly",
+    "sleep_goal": "nightly",
+    "immunity_goal": "nightly",
+    "fitness_recovery_goal": "nightly",
+    "stress_goal": "discovery"
+  }
+}

@@ -122,14 +122,29 @@ export const buildStratifiedNightlyPack = ({ pack, config }) => {
     selectedIds.add(scenario.id);
   }
 
+  const hiddenHoldoutFraction = Number(config?.hiddenHoldoutFraction);
+  const remaining = scenarios.filter((scenario) => !selectedIds.has(scenario.id));
+  const hiddenHoldoutTarget =
+    Number.isFinite(hiddenHoldoutFraction) && hiddenHoldoutFraction > 0
+      ? Math.min(remaining.length, Math.floor(scenarios.length * hiddenHoldoutFraction))
+      : 0;
+  const hiddenHoldout = hiddenHoldoutTarget > 0
+    ? remaining.slice(0, hiddenHoldoutTarget)
+    : [];
+
   return {
     version: config?.version ?? "stratified-nightly-pack",
     sourcePackVersion: pack?.version ?? null,
     sourcePackPath: config?.sourcePackPath ?? null,
     additionalPackPaths: config?.additionalPackPaths ?? [],
     targetSize,
+    discoveryOnly: config?.discoveryOnly === true,
+    releaseBlocker: config?.releaseBlocker !== false,
+    hiddenHoldoutFraction: Number.isFinite(hiddenHoldoutFraction) ? hiddenHoldoutFraction : 0,
     generatedAt: Date.now(),
     summary: summarizeScenarios(selected),
+    hiddenHoldoutSummary: summarizeScenarios(hiddenHoldout),
+    hiddenHoldout,
     scenarios: selected,
   };
 };
@@ -141,6 +156,8 @@ export const renderStratifiedNightlyMarkdown = (nightlyPack) => {
     `- sourcePackVersion: ${nightlyPack.sourcePackVersion ?? "unknown"}`,
     `- targetSize: ${nightlyPack.targetSize ?? 0}`,
     `- selected: ${nightlyPack.summary?.total ?? 0}`,
+    `- discoveryOnly: ${nightlyPack.discoveryOnly === true ? "true" : "false"}`,
+    `- releaseBlocker: ${nightlyPack.releaseBlocker === true ? "true" : "false"}`,
     "",
     "## Surfaces",
     "",
@@ -158,6 +175,18 @@ export const renderStratifiedNightlyMarkdown = (nightlyPack) => {
   lines.push("", "## Personas", "");
   for (const persona of nightlyPack.summary?.personas ?? []) {
     lines.push(`- ${persona}`);
+  }
+
+  if ((nightlyPack.hiddenHoldoutSummary?.total ?? 0) > 0) {
+    lines.push(
+      "",
+      "## Hidden Holdout",
+      "",
+      `- total: ${nightlyPack.hiddenHoldoutSummary.total}`,
+    );
+    for (const [category, count] of Object.entries(nightlyPack.hiddenHoldoutSummary.categories ?? {})) {
+      lines.push(`- ${category}: ${count}`);
+    }
   }
 
   return `${lines.join("\n")}\n`;

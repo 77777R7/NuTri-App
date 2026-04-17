@@ -1,0 +1,56 @@
+{
+  "version": "scan-smoke.v0",
+  "sourcePackPath": "data/validation/golden-journey-pack.v1.json",
+  "additionalPackPaths": [
+    "data/validation/stratified-nightly-additions.v1.json"
+  ],
+  "scenarioIds": [
+    "scan_nightly_betterbody_coconut_aminos_soy_replacement",
+    "scan_nightly_bpn_go_gel_food_like",
+    "scan_nightly_hydrationup_electrolyte_drink_mix",
+    "scan_nightly_barleans_algal_oil_source",
+    "scan_beet_juice_food_like",
+    "scan_core_nac_sparse_result",
+    "scan_core_gi_phage_digestive_goal",
+    "scan_colon_cleanse_proprietary_blend",
+    "scan_biogaia_protectis_zero_facts",
+    "scan_core_sr_omega3_fish_allergy",
+    "scan_natures_way_algal_oil_vegan",
+    "scan_solaray_matcha_green_tea_stimulant",
+    "scan_core_sr_vitamin_c_immunity_duplicate",
+    "scan_sparse_multimineral_malformed_panel",
+    "scan_codeage_aloe_no_anchor_steal",
+    "scan_real_alani_whey_protein_dairy",
+    "scan_real_21stcentury_soy_isoflavones",
+    "scan_real_21stcentury_krill_oil_shellfish",
+    "scan_real_alani_energy_drink_mix_food_like",
+    "scan_real_21stcentury_600_d3_short_panel"
+  ],
+  "runtimeProfiles": [
+    {
+      "id": "authenticated_warm_network",
+      "authState": "authenticated",
+      "networkProfile": "normal",
+      "sessionState": "warm"
+    },
+    {
+      "id": "anonymous_warm_network",
+      "authState": "anonymous",
+      "networkProfile": "normal",
+      "sessionState": "warm"
+    },
+    {
+      "id": "authenticated_weak_network",
+      "authState": "authenticated",
+      "networkProfile": "weak",
+      "sessionState": "warm"
+    }
+  ],
+  "releaseBlocker": true,
+  "runner": "scan_smoke_harness",
+  "packRole": "scan_smoke",
+  "notes": [
+    "This is the current small hard blocker for scan-result stability without changing frozen scan UX.",
+    "Cold-start, background-resume, and device-level camera traces still need dedicated runner support outside this repo-local pack."
+  ]
+}

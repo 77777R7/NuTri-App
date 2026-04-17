@@ -1,0 +1,43 @@
+{
+  "version": "stable-gate-baseline.v1",
+  "baselineId": "science-baseline-v1",
+  "sourcePackPath": "data/validation/golden-journey-pack.v1.json",
+  "stablePackPaths": [
+    "data/validation/live-replay-release-slice.v1.json",
+    "data/validation/consistency-pack.v0.json",
+    "data/validation/scan-smoke.v0.json"
+  ],
+  "expectationModesBySurface": {
+    "barcode_scan": {
+      "identityMode": "exact_product",
+      "anchorMode": "exact_anchor",
+      "scoreMode": "exact_score",
+      "warningMode": "no_contradiction"
+    },
+    "search": {
+      "identityMode": "canonical_product",
+      "anchorMode": "family_anchor",
+      "scoreMode": "same_band",
+      "warningMode": "no_contradiction"
+    },
+    "search_origin_result": {
+      "identityMode": "canonical_product",
+      "anchorMode": "exact_anchor",
+      "scoreMode": "same_band",
+      "warningMode": "detail_superset_allowed"
+    }
+  },
+  "reportDimensions": [
+    "identity",
+    "anchor",
+    "score",
+    "warning"
+  ],
+  "closureEvidence": {
+    "localLiveReplay": {
+      "summary": "23/23 pass",
+      "artifactPattern": "output/validation-nightly/nightly-live-replay-*.json",
+      "latestPassingArtifact": "output/validation-nightly/nightly-live-replay-1776408060156.json"
+    }
+  }
+}

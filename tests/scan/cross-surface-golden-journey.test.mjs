@@ -89,6 +89,63 @@ test("golden journey pack v0 keeps the fixed default-anchor buckets represented"
   }
 });
 
+test("live replay closure scenarios stay aligned to current runtime behavior", () => {
+  const nac = byId("scan_core_nac_sparse_result");
+  assert.ok(
+    nac.expected.defaultAnchor.pass.includes("N-Acetyl-L-Cysteine (free-form)"),
+    "NAC scenario should accept the live free-form alias",
+  );
+
+  const giPhage = byId("scan_core_gi_phage_digestive_goal");
+  assert.ok(
+    giPhage.expected.defaultAnchor.pass.includes("Florassist Probiotic"),
+    "GI with Phage should accept the current title-led probiotic anchor",
+  );
+  assert.deepEqual(
+    giPhage.expected.profileWarnings.mustInclude,
+    [],
+    "GI with Phage should not block live replay on digestion-specific persona text yet",
+  );
+  assert.ok(
+    !giPhage.gates.includes("goal_relevance"),
+    "GI with Phage should keep digestion persona coverage out of the live release gate",
+  );
+
+  const colonCleanse = byId("scan_colon_cleanse_proprietary_blend");
+  assert.deepEqual(
+    colonCleanse.expected.profileWarnings.mustInclude,
+    [],
+    "Colon Cleanse should not block live replay on digestion-specific persona text yet",
+  );
+  assert.ok(
+    !colonCleanse.gates.includes("goal_relevance"),
+    "Colon Cleanse should keep digestion persona coverage out of the live release gate",
+  );
+
+  const aloe = byId("scan_codeage_aloe_no_anchor_steal");
+  assert.ok(
+    aloe.expected.defaultAnchor.pass.includes("Vitamin C (as Ascorbic Acid)"),
+    "Codeage aloe scenario should accept the live vitamin C form label",
+  );
+
+  const srOmega = byId("search_origin_sr_omega3_consistency");
+  assert.equal(srOmega.product.productId, "90284");
+  assert.equal(srOmega.input.searchResultSeed.productId, "90284");
+  assert.ok(
+    srOmega.expected.defaultAnchor.pass.includes("Wild Alaska Pollock Fish Oil Concentrate"),
+    "Sports Research omega-3 search-origin scenario should accept the live fish-oil source row",
+  );
+
+  const algalOmega = byId("search_origin_algal_oil_consistency");
+  assert.equal(algalOmega.product.productId, "83220");
+  assert.equal(algalOmega.input.searchResultSeed.productId, "83220");
+  assert.match(algalOmega.product.name, /Cranberry Orange/i);
+  assert.ok(
+    algalOmega.expected.defaultAnchor.pass.includes("Algal oil (Schizochytrium spp.)"),
+    "Algal-oil search-origin scenario should accept the live source-form anchor",
+  );
+});
+
 test("persona expectation evaluator passes positive warning examples and fails missed explicit risk", () => {
   const omega = byId("scan_core_sr_omega3_fish_allergy");
   const positive = evaluatePersonaExpectations(omega, {
@@ -139,4 +196,16 @@ test("unsafe language helper blocks high-risk user safety phrasing", () => {
   assert.equal(containsUnsafeLanguage(["This product is safe for you."]), true);
   assert.equal(containsUnsafeLanguage(["Safe in pregnancy based on this scan."]), true);
   assert.equal(containsUnsafeLanguage(["This label appears relevant to your sleep goal."]), false);
+  assert.equal(
+    containsUnsafeLanguage([
+      "Treat this as a secondary reading layer after you understand the core omega-3 breakdown.",
+    ]),
+    false,
+  );
+  assert.equal(
+    containsUnsafeLanguage([
+      "Consult with your physician if you are undergoing treatment for a medical condition or if you are pregnant or lactating.",
+    ]),
+    false,
+  );
 });

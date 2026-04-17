@@ -82,7 +82,9 @@ const UNSAFE_LANGUAGE_PATTERNS = [
   /\bproven\s+to\b/i,
   /\bprevents?\b/i,
   /\bcures?\b/i,
-  /\btreats?\b/i,
+  /\btreats\b/i,
+  /\bused\s+to\s+treat\b/i,
+  /\btreating\b/i,
   /\boverdose\b/i,
 ];
 

@@ -1,0 +1,159 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+
+import { loadGoldenJourneyPack } from "../../scripts/maintainer/lib/cross-surface-quality-reporting.mjs";
+import {
+  buildStratifiedNightlyPack,
+  loadStratifiedNightlyConfig,
+  loadStratifiedNightlySourcePack,
+} from "../../scripts/maintainer/lib/stratified-nightly-pack.mjs";
+import {
+  buildCuratedValidationPack,
+  deriveScenarioGovernance,
+  loadCuratedValidationConfig,
+  loadCuratedValidationSourcePack,
+  loadStableGateBaseline,
+  loadTaxonomyConfig,
+  summarizeScenarioGovernance,
+  validateCuratedValidationConfig,
+  validateStableGateBaseline,
+  validateTaxonomyConfig,
+} from "../../scripts/maintainer/lib/validation-governance.mjs";
+
+const sourcePack = await loadGoldenJourneyPack("data/validation/golden-journey-pack.v1.json");
+
+const byId = (pack, id) => {
+  const scenario = pack.scenarios.find((item) => item.id === id);
+  assert.ok(scenario, `missing scenario ${id}`);
+  return scenario;
+};
+
+test("stable gate baseline freezes source pack, stable curated packs, and expectation modes", async () => {
+  const baseline = await loadStableGateBaseline("data/validation/stable-gate-baseline.v1.json");
+  assert.deepEqual(validateStableGateBaseline(baseline), []);
+
+  assert.equal(baseline.baselineId, "science-baseline-v1");
+  assert.equal(baseline.sourcePackPath, "data/validation/golden-journey-pack.v1.json");
+  assert.deepEqual(baseline.stablePackPaths, [
+    "data/validation/live-replay-release-slice.v1.json",
+    "data/validation/consistency-pack.v0.json",
+    "data/validation/scan-smoke.v0.json",
+  ]);
+
+  assert.equal(baseline.expectationModesBySurface.barcode_scan.identityMode, "exact_product");
+  assert.equal(baseline.expectationModesBySurface.barcode_scan.anchorMode, "exact_anchor");
+  assert.equal(baseline.expectationModesBySurface.barcode_scan.scoreMode, "exact_score");
+  assert.equal(
+    baseline.expectationModesBySurface.search_origin_result.warningMode,
+    "detail_superset_allowed",
+  );
+  assert.equal(
+    baseline.closureEvidence.localLiveReplay.summary,
+    "23/23 pass",
+  );
+});
+
+test("taxonomy v0 covers all golden journey categories and provides persona maturity tiers", async () => {
+  const taxonomy = await loadTaxonomyConfig("data/validation/taxonomy-v0.json");
+  assert.deepEqual(validateTaxonomyConfig(taxonomy), []);
+
+  const omegaScenario = byId(sourcePack, "scan_real_21stcentury_krill_oil_shellfish");
+  const omegaGovernance = deriveScenarioGovernance(omegaScenario, taxonomy);
+  assert.equal(omegaGovernance.familyId, "omega_source_oils");
+  assert.equal(omegaGovernance.primaryPersonaMaturity, "blocker");
+  assert.ok(omegaGovernance.overlayTags.includes("source_sensitive"));
+
+  const microbiomeScenario = byId(sourcePack, "scan_core_gi_phage_digestive_goal");
+  const microbiomeGovernance = deriveScenarioGovernance(microbiomeScenario, taxonomy);
+  assert.equal(microbiomeGovernance.familyId, "microbiome");
+  assert.equal(microbiomeGovernance.primaryPersonaMaturity, "nightly");
+
+  const lifecycleScenario = byId(sourcePack, "scan_prenatal_multivitamin_counterfactual_b");
+  const lifecycleGovernance = deriveScenarioGovernance(lifecycleScenario, taxonomy);
+  assert.equal(lifecycleGovernance.familyId, "lifecycle_specific");
+  assert.equal(lifecycleGovernance.primaryPersonaMaturity, "nightly");
+  assert.ok(lifecycleGovernance.overlayTags.includes("lifecycle"));
+
+  const summary = summarizeScenarioGovernance(sourcePack.scenarios, taxonomy);
+  assert.equal(summary.total, 119);
+  assert.equal(summary.familyCounts.omega_source_oils, 15);
+  assert.equal(summary.familyCounts.microbiome, 15);
+  assert.ok(summary.maturityCounts.blocker > 0);
+  assert.ok(summary.maturityCounts.nightly > 0);
+});
+
+test("live replay release slice freezes the current 23-scenario passing local slice", async () => {
+  const config = await loadCuratedValidationConfig("data/validation/live-replay-release-slice.v1.json");
+  assert.deepEqual(validateCuratedValidationConfig(config), []);
+
+  const mergedPack = await loadCuratedValidationSourcePack(config);
+  const slice = buildCuratedValidationPack({ pack: mergedPack, config });
+  assert.equal(slice.summary.total, 23);
+  assert.equal(slice.metadata.releaseBlocker, true);
+  assert.equal(slice.metadata.runner, "local_live_replay");
+  assert.ok(slice.scenarios.some((scenario) => scenario.id === "scan_core_nac_sparse_result"));
+  assert.ok(slice.scenarios.some((scenario) => scenario.id === "search_origin_sr_omega3_consistency"));
+  assert.ok(slice.scenarios.some((scenario) => scenario.id === "search_real_alani_whey_fruity_cereal"));
+});
+
+test("consistency pack v0 selects the current cross-surface blocker slice from supported scenarios", async () => {
+  const config = await loadCuratedValidationConfig("data/validation/consistency-pack.v0.json");
+  assert.deepEqual(validateCuratedValidationConfig(config), []);
+
+  const consistencyPack = buildCuratedValidationPack({ pack: sourcePack, config });
+  assert.equal(consistencyPack.metadata.releaseBlocker, true);
+  assert.equal(consistencyPack.summary.total, 24);
+  assert.ok((consistencyPack.summary.surfaces.barcode_scan ?? 0) >= 8);
+  assert.ok((consistencyPack.summary.surfaces.search_origin_result ?? 0) >= 16);
+  assert.ok((consistencyPack.summary.categories.omega3_source_oil ?? 0) >= 6);
+
+  for (const scenario of consistencyPack.scenarios) {
+    assert.ok(
+      (scenario.gates ?? []).some((gate) => [
+        "click_through_seed_consistency",
+        "canonical_product_consistency",
+        "selected_anchor_consistency",
+        "score_consistency",
+        "warning_consistency",
+      ].includes(gate)),
+      `scenario ${scenario.id} should carry a consistency gate`,
+    );
+  }
+});
+
+test("scan smoke v0 pins a barcode-only release blocker slice with runtime profiles", async () => {
+  const config = await loadCuratedValidationConfig("data/validation/scan-smoke.v0.json");
+  assert.deepEqual(validateCuratedValidationConfig(config), []);
+
+  const mergedPack = await loadCuratedValidationSourcePack(config);
+  const smokePack = buildCuratedValidationPack({ pack: mergedPack, config });
+  assert.equal(smokePack.metadata.releaseBlocker, true);
+  assert.equal(smokePack.summary.total, 20);
+  assert.deepEqual(
+    Object.keys(smokePack.summary.surfaces),
+    ["barcode_scan"],
+  );
+  assert.equal(config.runtimeProfiles.length, 3);
+  assert.ok(smokePack.scenarios.some((scenario) => scenario.id === "scan_nightly_bpn_go_gel_food_like"));
+  assert.ok(smokePack.scenarios.some((scenario) => scenario.id === "scan_core_sr_omega3_fish_allergy"));
+  assert.ok(smokePack.scenarios.some((scenario) => scenario.id === "scan_real_alani_whey_protein_dairy"));
+  assert.ok((smokePack.summary.categories.food_like ?? 0) >= 4);
+  assert.ok((smokePack.summary.categories.omega3_source_oil ?? 0) >= 3);
+  assert.ok((smokePack.summary.categories.sparse_title_led ?? 0) >= 2);
+});
+
+test("stratified nightly v2 becomes discovery-first and reserves a hidden holdout", async () => {
+  const config = await loadStratifiedNightlyConfig("data/validation/stratified-nightly-pack.v2.json");
+  const pack = await loadStratifiedNightlySourcePack(config);
+  const nightly = buildStratifiedNightlyPack({ pack, config });
+
+  assert.equal(config.discoveryOnly, true);
+  assert.equal(config.releaseBlocker, false);
+  assert.ok(config.hiddenHoldoutFraction > 0);
+  assert.equal(nightly.scenarios.length, config.targetSize);
+  assert.ok(Array.isArray(nightly.hiddenHoldout));
+  assert.ok(nightly.hiddenHoldout.length > 0);
+  assert.ok((nightly.hiddenHoldoutSummary?.total ?? 0) > 0);
+  assert.ok(nightly.summary.personas.includes("shellfish_allergy"));
+  assert.ok(nightly.summary.personas.includes("pregnancy_prenatal"));
+});

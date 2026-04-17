@@ -1,0 +1,38 @@
+{
+  "version": "consistency-pack.v0",
+  "sourcePackPath": "data/validation/golden-journey-pack.v1.json",
+  "targetSize": 24,
+  "includeSurfaces": ["barcode_scan", "search_origin_result"],
+  "includeAnyGates": [
+    "click_through_seed_consistency",
+    "canonical_product_consistency",
+    "selected_anchor_consistency",
+    "score_consistency",
+    "warning_consistency"
+  ],
+  "surfaceMinimums": {
+    "barcode_scan": 8,
+    "search_origin_result": 16
+  },
+  "categoryMinimums": {
+    "omega3_source_oil": 6,
+    "protein_fiber": 4,
+    "probiotic_microbiome": 3
+  },
+  "requiredPersonas": [
+    "fish_allergy",
+    "shellfish_allergy",
+    "soy_allergy",
+    "dairy_allergy",
+    "vegan_preference",
+    "duplicate_zinc_magnesium_d",
+    "melatonin_sensitivity"
+  ],
+  "releaseBlocker": true,
+  "runner": "cross_surface_reporter",
+  "packRole": "cross_surface_consistency",
+  "notes": [
+    "Current v0 consistency blocker slice only covers scenarios that already carry explicit consistency gates.",
+    "Expand this pack as more scan/detail and search/detail scenarios get explicit canonical, anchor, score, and warning assertions."
+  ]
+}
