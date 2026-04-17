@@ -94,6 +94,8 @@ const FACTUAL_RESTATEMENT_PATTERNS = [
 ];
 const SPECIFIC_COMPARE_HINT_PATTERN =
   /\b(per serving|stated amount|disclosed amount|breakdown|epa|dha|source|form|delivery|strain|cfu|blend total|item[- ]level|disclosure|label)\b/i;
+const ALGAL_OMEGA_SOURCE_PATTERN =
+  /\balgal(?:\b|\s+oil)\b|\balgae\b|\bschizochytrium\b|\bplant\s+based\s+omega\s*-?\s*3\b/i;
 
 const normalizeText = (value: string | null | undefined): string =>
   String(value ?? "")
@@ -261,9 +263,9 @@ const resolveOmega3SourceCopy = (context: IngredientScienceContext): {
     .join(" ");
   if (!sourceEvidence) return null;
 
-  if (/\balgal\s+oil\b|\balgae\b|\bschizochytrium\b|\bplant\s+based\s+omega\s*-?\s*3\b/i.test(sourceEvidence)) {
+  if (ALGAL_OMEGA_SOURCE_PATTERN.test(sourceEvidence)) {
     return {
-      titleLine: /\balgal\s+oil\b|\balgae\b|\bschizochytrium\b/i.test(anchorName) ? anchorName : "Algal Oil",
+      titleLine: ALGAL_OMEGA_SOURCE_PATTERN.test(anchorName) ? anchorName : "Algal Oil",
       sourcePhrase: "algal oil",
     };
   }

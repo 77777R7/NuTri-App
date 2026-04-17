@@ -29,6 +29,10 @@ test("normalizeIherbSupplementFactsRows cleans Florassist blend rows and drops h
 
   assert.deepEqual(rows, [
     {
+      name: "Probiotics",
+      dose: "15 Billion CFU",
+    },
+    {
       name: "Proprietary Probiotic Blend",
       dose: "50 mg",
     },
@@ -174,8 +178,10 @@ test("selectScienceIngredientRows source-locks to iHerb when primary active cove
 
   assert.equal(selection.ingredientSourceTier, "overlay_iherb");
   assert.deepEqual(selection.ingredientRows, [
+    { name: "Probiotics", dose: "15 Billion CFU" },
     { name: "Proprietary Probiotic Blend", dose: "50 mg" },
     { name: "TetraPhage Blend", dose: "15 mg" },
+    { name: "Supplement Formula", dose: "50 mg" },
   ]);
 });
 
@@ -391,7 +397,7 @@ test("selectScienceIngredientRows filters official nutrition rows before coverag
   ]);
 });
 
-test("selectScienceIngredientRows hard-falls back when official coverage rows are empty after nutrition filtering", () => {
+test("selectScienceIngredientRows uses clean overlay rows when official coverage rows are only nutrition facts", () => {
   const selection = selectScienceIngredientRows({
     digest: {
       sourceType: "dsld",
@@ -410,9 +416,8 @@ test("selectScienceIngredientRows hard-falls back when official coverage rows ar
     },
   });
 
-  assert.equal(selection.ingredientSourceTier, "official_record");
+  assert.equal(selection.ingredientSourceTier, "overlay_iherb");
   assert.deepEqual(selection.ingredientRows, [
-    { name: "Calories", dose: "15 cal" },
-    { name: "Total Fat", dose: "1.5 g" },
+    { name: "Wild Alaska Pollock Fish Oil Concentrate", dose: "1,250 mg" },
   ]);
 });

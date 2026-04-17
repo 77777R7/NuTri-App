@@ -646,24 +646,41 @@ const evaluateSearchOriginIdentity = (scenario, bundle) => {
   });
 };
 
+const scenarioHasExplicitGates = (scenario) =>
+  Array.isArray(scenario?.gates) && scenario.gates.length > 0;
+
+const scenarioRequestsGate = (scenario, gate) =>
+  !scenarioHasExplicitGates(scenario) || scenario.gates.includes(gate);
+
 const evaluateRouteHealth = ({ scenario, decisionSupport, analysisBundle, endpointErrors }) => {
   const missing = [];
   const isFoodLike = isFoodLikeRuntimeScenario(scenario);
+  const requiresRouteHealth = scenarioRequestsGate(scenario, "route_health");
   if (!decisionSupport?.ok || decisionSupport.payload?.status !== "ok") {
     missing.push("decision_support");
   }
-  if (!isFoodLike && (!analysisBundle?.ok || !analysisBundle.latestBundle)) {
+  if (requiresRouteHealth && !isFoodLike && (!analysisBundle?.ok || !analysisBundle.latestBundle)) {
     missing.push("analysis_bundle");
   }
-  if (endpointErrors.length > 0) {
-    missing.push(...endpointErrors);
+  if (requiresRouteHealth && endpointErrors.length > 0) {
+    missing.push(...endpointErrors.filter((endpoint) => endpoint !== "decision_support"));
   }
+  const uniqueMissing = [...new Set(missing)];
   return buildGateResult({
     gate: "route_health",
-    status: missing.length === 0 ? "pass" : "fail",
-    reason: missing.length === 0 ? "runtime_routes_healthy" : "runtime_route_failure",
-    severity: missing.length === 0 ? null : scenario?.severityOnFail ?? "P1",
-    details: { missing },
+    status: uniqueMissing.length === 0 ? "pass" : "fail",
+    reason:
+      uniqueMissing.length > 0
+        ? "runtime_route_failure"
+        : requiresRouteHealth
+          ? "runtime_routes_healthy"
+          : "route_health_not_required_for_scenario",
+    severity: uniqueMissing.length === 0 ? null : scenario?.severityOnFail ?? "P1",
+    details: {
+      missing: uniqueMissing,
+      requiresRouteHealth,
+      suppressedEndpointErrors: requiresRouteHealth ? [] : endpointErrors,
+    },
   });
 };
 
@@ -1053,7 +1070,7 @@ export const createRuntimeContractReport = async ({
       url: `${apiBaseUrl}/api/decision-support/v1?barcode=${encodeURIComponent(barcode)}&viewMode=summary`,
       headers: scenarioHeaders,
     });
-    const analysisBundle = await fetchAnalysisBundle({
+    let analysisBundle = await fetchAnalysisBundle({
       fetchImpl,
       apiBaseUrl,
       barcode,
@@ -1061,11 +1078,11 @@ export const createRuntimeContractReport = async ({
     });
 
     const decisionSupportPayload = decisionSupport?.payload ?? {};
-    const bundle = analysisBundle?.latestBundle ?? {};
+    let bundle = analysisBundle?.latestBundle ?? {};
     const selectedAnchor = extractSelectedAnchor(decisionSupportPayload);
-    const authoritativeIdentity = bundle?.meta?.authoritativeIdentity ?? null;
-    const factsDigestHash = normalizeText(bundle?.meta?.factsDigestHash ?? decisionSupportPayload?.factsDigestHash);
-    const promptVersion = normalizeText(bundle?.meta?.promptVersion ?? "reg_v4.0");
+    let authoritativeIdentity = bundle?.meta?.authoritativeIdentity ?? null;
+    let factsDigestHash = normalizeText(bundle?.meta?.factsDigestHash ?? decisionSupportPayload?.factsDigestHash);
+    let promptVersion = normalizeText(bundle?.meta?.promptVersion ?? "reg_v4.0");
     const decisionDigest = normalizeText(decisionSupportPayload?.digest);
     const decisionInputsHash = normalizeText(decisionSupportPayload?.decisionInputsHash);
     const personalizationScopeHash = normalizeText(decisionSupportPayload?.personalizationScopeHash);
@@ -1110,6 +1127,23 @@ export const createRuntimeContractReport = async ({
         payload: null,
         error: "selected_anchor_missing",
       };
+
+    if (!analysisBundle?.latestBundle && scenarioRequestsGate(scenario, "route_health")) {
+      const lateAnalysisBundle = await fetchAnalysisBundle({
+        fetchImpl,
+        apiBaseUrl,
+        barcode,
+        headers: scenarioHeaders,
+        maxRetries: 1,
+      });
+      if (lateAnalysisBundle?.latestBundle) {
+        analysisBundle = lateAnalysisBundle;
+        bundle = analysisBundle.latestBundle;
+        authoritativeIdentity = bundle?.meta?.authoritativeIdentity ?? null;
+        factsDigestHash = normalizeText(bundle?.meta?.factsDigestHash ?? decisionSupportPayload?.factsDigestHash);
+        promptVersion = normalizeText(bundle?.meta?.promptVersion ?? "reg_v4.0");
+      }
+    }
 
     const analysisSections = {};
     if (authoritativeIdentity?.type && authoritativeIdentity?.value && factsDigestHash) {

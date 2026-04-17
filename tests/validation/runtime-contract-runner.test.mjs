@@ -290,6 +290,47 @@ test("runtime contract report passes when runtime surfaces stay aligned", async 
   assert.deepEqual(report.summary.failedGates, {});
 });
 
+test("runtime contract report performs a late bundle retry before failing route health", async () => {
+  const pack = {
+    version: "runtime-pack",
+    metadata: { packRole: "result_page_runtime_contract" },
+    scenarios: [baseScenario],
+  };
+  const baseFetch = buildMockFetch();
+  let enrichCalls = 0;
+
+  const report = await createRuntimeContractReport({
+    pack,
+    apiBaseUrl: "http://127.0.0.1:3001",
+    fetchImpl: async (url, options = {}) => {
+      const target = new URL(url);
+      if (target.pathname === "/api/enrich-stream") {
+        enrichCalls += 1;
+        if (enrichCalls <= 3) {
+          return new Response([
+            "event: error",
+            'data: {"code":"STREAM_BUSY","retryable":true,"retryAfterMs":1}',
+            "",
+          ].join("\n"), {
+            status: 200,
+            headers: { "Content-Type": "text/event-stream" },
+          });
+        }
+        return new Response(buildSseBody(buildAnalysisBundle()), {
+          status: 200,
+          headers: { "Content-Type": "text/event-stream" },
+        });
+      }
+      return baseFetch(url, options);
+    },
+    commonHeaders: { "x-auth-disabled": "1" },
+  });
+
+  assert.equal(report.summary.pass, 1);
+  assert.equal(report.summary.fail, 0);
+  assert.equal(enrichCalls, 4);
+});
+
 test("runtime contract report retries transient usage-section fetch failures before failing the scenario", async () => {
   const pack = {
     version: "runtime-pack",
@@ -664,6 +705,105 @@ test("runtime contract treats drink-mix hybrid routes as food-like honesty cases
   assert.equal(row.failures.find((failure) => failure.gate === "route_health"), undefined);
   assert.equal(row.failures.find((failure) => failure.gate === "result_page_section_contract"), undefined);
   assert.equal(row.warnings.find((warning) => warning.reason === "score_not_required_for_food_like"), undefined);
+});
+
+test("runtime contract does not fail source-copy scenarios on missing analysis bundle when route health is not requested", () => {
+  const scenario = {
+    ...baseScenario,
+    id: "scan_nightly_barleans_algal_oil_source",
+    gates: ["default_anchor", "allergy_sensitivity_relevance", "unsafe_language"],
+    personas: ["vegan_preference", "fish_allergy"],
+    expected: {
+      ...baseScenario.expected,
+      defaultAnchor: {
+        pass: ["Omega-3 Algal Oil", "DHA Algal Oil"],
+        warn: ["Omega-3"],
+        fail: ["Fish Oil"],
+      },
+      profileWarnings: {
+        mustInclude: [],
+        mustNotInclude: ["fish oil", "fish source", "safe for you"],
+      },
+    },
+  };
+
+  const row = evaluateRuntimeContractRow({
+    scenario,
+    decisionSupport: {
+      ok: true,
+      status: 200,
+      payload: buildDecisionSupportPayload({
+        scienceBlock: {
+          ingredientRows: [{ name: "Omega-3 Algal Oil", dose: "500 mg" }],
+        },
+        topBlockers: [],
+        personalizedResultLane: {
+          summary: "This plant-based omega-3 product is label-grounded for vegan preference checks.",
+        },
+      }),
+    },
+    analysisBundle: { ok: true, status: 200, latestBundle: null },
+    ingredientOverview: {
+      ok: true,
+      status: 200,
+      payload: {
+        ingredientOverview: { paragraph1: "This is a plant-based omega-3 product from algal oil." },
+      },
+    },
+    scientificBackground: {
+      ok: true,
+      status: 200,
+      payload: {
+        scientificBackground: { selectedLabel: "Omega-3 Algal Oil", introLine: "Algal oil context." },
+      },
+    },
+    analysisSections: {
+      overview: { ok: false, status: null, payload: null, error: "authoritative_identity_missing" },
+      ingredients_detail: { ok: false, status: null, payload: null, error: "authoritative_identity_missing" },
+      usage: { ok: false, status: null, payload: null, error: "authoritative_identity_missing" },
+    },
+  });
+
+  const routeGate = row.gates.find((gate) => gate.gate === "route_health");
+  assert.equal(routeGate.status, "pass");
+  assert.equal(routeGate.reason, "route_health_not_required_for_scenario");
+  assert.equal(row.failures.find((failure) => failure.gate === "route_health"), undefined);
+  assert.equal(row.failures.length, 0);
+});
+
+test("runtime contract still fails missing analysis bundle when route health is requested", () => {
+  const row = evaluateRuntimeContractRow({
+    scenario: {
+      ...baseScenario,
+      gates: ["route_health", "default_anchor"],
+    },
+    decisionSupport: { ok: true, status: 200, payload: buildDecisionSupportPayload() },
+    analysisBundle: { ok: true, status: 200, latestBundle: null },
+    ingredientOverview: {
+      ok: true,
+      status: 200,
+      payload: {
+        ingredientOverview: { paragraph1: "Krill oil is the lead omega-3 source." },
+      },
+    },
+    scientificBackground: {
+      ok: true,
+      status: 200,
+      payload: {
+        scientificBackground: { selectedLabel: "Krill Oil", introLine: "Krill oil context." },
+      },
+    },
+    analysisSections: {
+      overview: { ok: false, status: null, payload: null, error: "authoritative_identity_missing" },
+      ingredients_detail: { ok: false, status: null, payload: null, error: "authoritative_identity_missing" },
+      usage: { ok: false, status: null, payload: null, error: "authoritative_identity_missing" },
+    },
+  });
+
+  const routeGate = row.failures.find((failure) => failure.gate === "route_health");
+  assert.ok(routeGate);
+  assert.equal(routeGate.reason, "runtime_route_failure");
+  assert.deepEqual(routeGate.details.missing, ["analysis_bundle"]);
 });
 
 test("runtime contract accepts exact-barcode search-origin results when brand and title are family-compatible aliases", () => {

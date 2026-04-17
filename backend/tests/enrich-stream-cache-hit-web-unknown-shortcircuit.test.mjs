@@ -12,7 +12,9 @@ test("cache-hit web-only with empty core facts short-circuits to NOT_FOUND", asy
   const source = await readFile(SERVER_PATH, "utf8");
   const branchStart = source.indexOf("if (cachedFast && !bypassCachedFastPathForAuthority)");
   assert.ok(branchStart >= 0, "missing cachedFast branch");
-  const branchSlice = source.slice(branchStart, branchStart + 1400);
+  const branchEnd = source.indexOf("const needsEnrichment = shouldReEnrich", branchStart);
+  assert.ok(branchEnd > branchStart, "missing cachedFast branch enrichment boundary");
+  const branchSlice = source.slice(branchStart, branchEnd);
 
   assert.match(branchSlice, /cachedLooksWebOnly && !hasCoreFacts\(cachedFast\.snapshot, cachedFast\.analysisPayload\)/);
   assert.match(branchSlice, /emitProductNotFoundAndFinalize\(\{/);

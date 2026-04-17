@@ -28,7 +28,7 @@ test("allergy insight reports matches when user settings conflict with product f
 
   assert.equal(insight.status, "ready");
   assert.equal(insight.reasonCode, null);
-  assert.equal(insight.summary, "May conflict with your allergy settings.");
+  assert.equal(insight.summary, "May conflict with your fish and animal-based gelatin setting.");
   assert.deepEqual(insight.matchedAllergyFlags, ["fish"]);
   assert.deepEqual(insight.matchedRestrictions, ["gelatin_animal_based"]);
   assert.equal(insight.details.length, 2);
@@ -45,7 +45,7 @@ test("allergy insight returns unknown-style summary when product coverage is ins
   });
 
   assert.equal(insight.status, "ready");
-  assert.equal(insight.summary, "Needs more label detail to confirm.");
+  assert.equal(insight.summary, "Needs more label detail to confirm your soy setting.");
 });
 
 test("allergy insight reports unsaved profile settings cleanly", () => {

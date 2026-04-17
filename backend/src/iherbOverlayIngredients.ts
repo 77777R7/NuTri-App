@@ -1425,22 +1425,22 @@ const deriveOverlayFallbackRows = (
   );
 
 const deriveDigestTitleFallbackRows = (
-  digest: FactsDigest,
+  digest: Partial<FactsDigest> | null | undefined,
 ): NormalizedScienceIngredientRow[] =>
   toNormalizedScienceIngredientRows(
     normalizeIherbSupplementFactsRowsWithTitleFallback({
       rows: null,
-      title: digest.product.name,
-      brandName: digest.product.brandDisplay ?? digest.product.brandLegal ?? null,
-      servingSize: digest.serving.servingSize,
+      title: digest?.product?.name ?? null,
+      brandName: digest?.product?.brandDisplay ?? digest?.product?.brandLegal ?? null,
+      servingSize: digest?.serving?.servingSize ?? null,
       servingsPerContainer:
-        digest.serving.servingsPerContainer != null
+        digest?.serving?.servingsPerContainer != null
           ? String(digest.serving.servingsPerContainer)
           : null,
       sourceZipPath: null,
       descriptionText: [
-        ...(digest.claims.labelPurposes ?? []),
-        ...(digest.claims.webClaims ?? []),
+        ...(digest?.claims?.labelPurposes ?? []),
+        ...(digest?.claims?.webClaims ?? []),
       ].join(" "),
     }),
   );
