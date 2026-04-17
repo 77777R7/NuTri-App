@@ -671,6 +671,36 @@ test('science context keeps CLA ahead of carnitine rows in CLA-led combo product
   assert.equal(context.anchorIngredient?.ingredientFamily, 'cla');
 });
 
+test('science context keeps reds-pack blend rows ahead of generic vitamin anchors in superfood packet formulas', () => {
+  const digest = buildDigest({
+    labelId: 'fixture-trace-reds-pak',
+    productName: 'Reds Pak, Mixed Berry',
+    dosageForm: 'Packet',
+    actives: [
+      { name: 'Vitamin C', amount: 45, unit: 'mg' },
+      { name: 'Vitamin A', amount: 250, unit: 'iu' },
+      { name: 'Potassium', amount: 30, unit: 'mg' },
+      { name: 'Calcium', amount: 10, unit: 'mg' },
+      { name: 'Enzymes & Probiotics Blend', amount: 1642.5, unit: 'mg' },
+      { name: 'Proprietary Liver Support Blend', amount: 1300, unit: 'mg' },
+      { name: 'Proprietary Antioxidant Berry Blend', amount: 1085.5, unit: 'mg' },
+      { name: 'Proprietary Fruit & Vegetable Blend', amount: 1072.5, unit: 'mg' },
+    ],
+  });
+
+  const context = buildIngredientScienceContext({
+    digest,
+    overlayClaims: {
+      title: 'Trace, Reds Pak, Mixed Berry, 30 Packets, 0.23 oz (6.5 g) Each',
+      brandName: 'Trace',
+      nutritionalFacts: null,
+    },
+  });
+
+  assert.match(context.ingredientRows[0]?.name ?? '', /\bblend\b/i);
+  assert.doesNotMatch(context.ingredientRows[0]?.name ?? '', /\bvitamin c\b|\bpotassium\b|\bcalcium\b/i);
+});
+
 test('science context prioritizes magnesium in calcium-magnesium buffered vitamin C stacks', () => {
   const digest = buildDigest({
     labelId: 'fixture-buffered-vitamin-c-calcium-magnesium',
@@ -925,6 +955,75 @@ test('science context rescues probiotic anchors ahead of opaque proprietary blen
   assert.match(context.ingredientRows[0]?.name ?? '', /probiotic/i);
   assert.equal(context.anchorIngredient?.ingredientFamily, 'probiotic_or_blend');
   assert.notEqual(context.ingredientRows[0]?.name, 'Proprietary Blend');
+});
+
+test('science context rescues title-led botanicals ahead of proprietary blend and alcohol rows', () => {
+  const echinaceaContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-echinacea-goldenseal-proprietary-blend',
+      productName: 'Eclectic Herb, Herb, Echinacea Goldenseal, 1 fl oz (30 ml)',
+      dosageForm: 'Liquid',
+      actives: [
+        { name: 'Proprietary Blend', amount: 1, unit: 'ml' },
+      ],
+    }),
+    overlayClaims: null,
+  });
+  const lemonBalmContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-lemon-balm-alcohol',
+      productName: 'Eclectic Herb, Lemon Balm Extract, 2 fl oz (60 ml)',
+      dosageForm: 'Liquid',
+      actives: [
+        { name: 'Alcohol', amount: 45, unit: '%' },
+      ],
+    }),
+    overlayClaims: null,
+  });
+
+  assert.match(echinaceaContext.ingredientRows[0]?.name ?? '', /echinacea|goldenseal/i);
+  assert.doesNotMatch(echinaceaContext.ingredientRows[0]?.name ?? '', /proprietary blend/i);
+  assert.match(lemonBalmContext.ingredientRows[0]?.name ?? '', /lemon balm/i);
+  assert.notEqual(lemonBalmContext.ingredientRows[0]?.name, 'Alcohol');
+});
+
+test('science context does not let alcohol solvent rows outrank title-led lemon balm extract rows', () => {
+  const context = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-lemon-balm-solvent-rows',
+      productName: 'Eclectic Herb, Lemon Balm Extract, 2 fl oz (60 ml)',
+      dosageForm: 'Liquid',
+      actives: [
+        { name: 'Alcohol', amount: null, unit: null },
+        { name: 'Lemon Balm, Dried', amount: null, unit: null },
+        { name: 'filtered Water', amount: null, unit: null },
+      ],
+    }),
+    overlayClaims: null,
+  });
+
+  assert.match(context.ingredientRows[0]?.name ?? '', /lemon balm/i);
+  assert.notEqual(context.ingredientRows[0]?.name, 'Alcohol');
+  assert.notEqual(context.ingredientRows[0]?.name, 'filtered Water');
+});
+
+test('science context rescues title-led probiotic strains ahead of proprietary synergistic blend rows', () => {
+  const context = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-acidophilus-bifidus-proprietary-synergistic-blend',
+      productName: 'Natural Factors, Acidophilus & Bifidus, 90 Capsules',
+      dosageForm: 'Capsule',
+      actives: [
+        { name: 'Proprietary Synergistic Blend', amount: 3, unit: 'Billion CFU' },
+        { name: 'Vitamin D3', amount: 5, unit: 'mcg' },
+      ],
+    }),
+    overlayClaims: null,
+  });
+
+  assert.match(context.ingredientRows[0]?.name ?? '', /acidophilus|bifidus|probiotic/i);
+  assert.doesNotMatch(context.ingredientRows[0]?.name ?? '', /proprietary synergistic blend/i);
+  assert.equal(context.anchorIngredient?.ingredientFamily, 'probiotic_or_blend');
 });
 
 test('science context uses food-like label anchors instead of macro rows for greens powders and snacks', () => {
@@ -1282,6 +1381,46 @@ test('science context rescues sparse title-led food-like anchors from residue ro
     }),
     overlayClaims: null,
   });
+  const proteinBarContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-protein-bar-title-rescue',
+      productName: 'Simply Protein, Crispy Snack Bars, Dark Chocolate Almond',
+      dosageForm: 'Bar',
+      actives: [
+        { name: 'Potas', amount: 35, unit: 'mg' },
+        { name: 'Glycerin', amount: 4, unit: 'g' },
+        { name: 'Protein', amount: 12, unit: 'g' },
+        { name: 'Total Sugars', amount: 1, unit: 'g' },
+      ],
+    }),
+    overlayClaims: null,
+  });
+  const energyDrinkMixContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-energy-drink-mix-title-rescue',
+      productName: 'Alani Nu, Energy Drink Mix, Cherry Slush, 10 Sticks',
+      dosageForm: 'Powder',
+      actives: [
+        { name: 'Biotin', amount: 300, unit: 'mcg' },
+        { name: 'Niacin', amount: 18, unit: 'mg' },
+        { name: 'Vitamin B12', amount: 2.4, unit: 'mcg' },
+      ],
+    }),
+    overlayClaims: null,
+  });
+  const seaMossGelContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-sea-moss-gel-title-rescue',
+      productName: 'Akasha Superfoods, Liposomal Sea Moss Gel, Sweet Citrus',
+      dosageForm: 'Gel',
+      actives: [
+        { name: 'Monounsaturated Fat', amount: 0.5, unit: 'g' },
+        { name: 'Vitamin C', amount: 30, unit: 'mg' },
+        { name: 'Sodium', amount: 15, unit: 'mg' },
+      ],
+    }),
+    overlayClaims: null,
+  });
 
   assert.match(coconutAminosContext.ingredientRows[0]?.name ?? '', /\bcoconut aminos\b|\bsoy sauce replacement\b/i);
   assert.equal(coconutAminosContext.productArchetype, 'functional_food_like');
@@ -1290,6 +1429,18 @@ test('science context rescues sparse title-led food-like anchors from residue ro
   assert.equal(goGelContext.productArchetype, 'functional_food_like');
 
   assert.match(hydrationContext.ingredientRows[0]?.name ?? '', /\belectrolyte drink mix\b|\bhydrationup\b|\belectrolyte\b/i);
+
+  assert.match(proteinBarContext.ingredientRows[0]?.name ?? '', /\bprotein bars?\b|\bsnack bars?\b/i);
+  assert.doesNotMatch(proteinBarContext.ingredientRows[0]?.name ?? '', /\bglycerin\b|\bpotas\b/i);
+  assert.equal(proteinBarContext.productArchetype, 'functional_food_like');
+
+  assert.match(energyDrinkMixContext.ingredientRows[0]?.name ?? '', /\benergy drink mix\b|\benergy mix\b/i);
+  assert.doesNotMatch(energyDrinkMixContext.ingredientRows[0]?.name ?? '', /\bbiotin\b/i);
+  assert.equal(energyDrinkMixContext.productArchetype, 'functional_food_like');
+
+  assert.match(seaMossGelContext.ingredientRows[0]?.name ?? '', /\bsea moss gel\b|\bsea moss\b/i);
+  assert.doesNotMatch(seaMossGelContext.ingredientRows[0]?.name ?? '', /\bmonounsaturated fat\b/i);
+  assert.equal(seaMossGelContext.productArchetype, 'functional_food_like');
 });
 
 test('omega-3 source rescue keeps algal titles out of fish-oil fallback copy even when the facts row is generic', async () => {
@@ -1328,4 +1479,30 @@ test('omega-3 source rescue keeps algal titles out of fish-oil fallback copy eve
   assert.match(overviewCopy, /\balgal oil\b|\balgae\b/i);
   assert.doesNotMatch(overviewCopy, /fish[-\s]?oil/i);
   assert.doesNotMatch(backgroundCopy, /fish[-\s]?oil/i);
+});
+
+test('omega-3 fallback copy respects title-led algal dha products without an explicit algal oil row', async () => {
+  const context = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-algal-900-dha-title-copy',
+      productName: 'Spring Valley, Algal-900 DHA',
+      dosageForm: 'Softgel',
+      actives: [
+        { name: 'Docosahexaenoic Acid', amount: 450, unit: 'mg' },
+        { name: 'Total Omega-3 Fatty Acids', amount: 900, unit: 'mg' },
+      ],
+    }),
+    overlayClaims: null,
+  });
+
+  const overview = await compileIngredientOverviewAsync(context);
+  const overviewCopy = [
+    overview.ingredientOverview.titleLine,
+    overview.ingredientOverview.paragraph1,
+    overview.ingredientOverview.paragraph2,
+    overview.ingredientOverview.compareHint,
+  ].join(' ');
+
+  assert.match(overviewCopy, /\balgal\b|\balgae\b/i);
+  assert.doesNotMatch(overviewCopy, /fish[-\s]?oil/i);
 });

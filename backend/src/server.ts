@@ -135,7 +135,10 @@ import {
   buildIngredientScienceContext,
   normalizeIngredientScienceKey,
 } from "./ingredientScienceContext.js";
-import { normalizeIherbSupplementFactsRows } from "./iherbOverlayIngredients.js";
+import {
+  normalizeIherbSupplementFactsRows,
+  normalizeIherbSupplementFactsRowsWithTitleFallback,
+} from "./iherbOverlayIngredients.js";
 import { getKbRuntime, lookupKbFormExplain, lookupKbRuntimeFormInsights, lookupSafeScienceSignals } from "./kbRuntime.js";
 import { type LabelDraft } from "./labelTypes.js";
 import { getMetricsSnapshot, incrementMetric, recordMetricTiming, startMetricsFlush } from "./metrics.js";
@@ -5727,6 +5730,46 @@ const buildLabelFactsFromSnapshot = (snapshot: SupplementSnapshot): LabelFacts |
   };
 };
 
+const buildSnapshotWebIngredientsText = (snapshot: SupplementSnapshot): string | null => {
+  const activeLines = snapshot.label.actives
+    .map((item) => {
+      const name = String(item.name ?? "").trim();
+      if (!name) return null;
+      const unit = item.amountUnitNormalized ?? item.amountUnit ?? null;
+      const amountText =
+        item.amount != null && Number.isFinite(Number(item.amount))
+          ? unit
+            ? `${Number(item.amount)} ${unit}`
+            : String(Number(item.amount))
+          : null;
+      const formText = String(item.form ?? "").trim() || null;
+      return [name, amountText, formText].filter(Boolean).join(" ");
+    })
+    .filter((value): value is string => Boolean(value && value.trim()));
+
+  const blendLines = snapshot.label.proprietaryBlends
+    .map((blend) => {
+      const name = String(blend.name ?? "").trim();
+      if (!name) return null;
+      const unit = String(blend.unit ?? "").trim() || null;
+      const amountText =
+        blend.totalAmount != null && Number.isFinite(Number(blend.totalAmount))
+          ? unit
+            ? `${Number(blend.totalAmount)} ${unit}`
+            : String(Number(blend.totalAmount))
+          : null;
+      const ingredientList = Array.isArray(blend.ingredients)
+        ? blend.ingredients.map((item) => String(item ?? "").trim()).filter(Boolean).join(", ")
+        : "";
+      const ingredientText = ingredientList ? `(${ingredientList})` : null;
+      return [name, amountText, ingredientText].filter(Boolean).join(" ");
+    })
+    .filter((value): value is string => Boolean(value && value.trim()));
+
+  const lines = [...activeLines, ...blendLines];
+  return lines.length > 0 ? lines.join("\n") : null;
+};
+
 const hasAiPayload = (analysisPayload?: SnapshotAnalysisPayload | null): boolean => {
   if (!analysisPayload) return false;
   const efficacyScore = (analysisPayload.efficacy as { score?: number | null } | undefined)?.score;
@@ -10364,6 +10407,7 @@ type IngredientOverviewSidecarResponse = {
   ingredientOverview: Awaited<ReturnType<typeof compileIngredientOverviewAsync>>["ingredientOverview"];
   source: Awaited<ReturnType<typeof compileIngredientOverviewAsync>>["source"];
   fallbackUsed: boolean;
+  fallbackReason: string | null;
   promptVersion: string;
   backgroundRefreshPending: boolean;
   recommendedRetryAfterMs: number | null;
@@ -10438,6 +10482,7 @@ type ScientificBackgroundSidecarResponse = {
   scientificBackground: Awaited<ReturnType<typeof compileScientificBackgroundAsync>>["scientificBackground"];
   source: Awaited<ReturnType<typeof compileScientificBackgroundAsync>>["source"];
   fallbackUsed: boolean;
+  fallbackReason: string | null;
   promptVersion: string;
   backgroundRefreshPending: boolean;
   recommendedRetryAfterMs: number | null;
@@ -11396,6 +11441,7 @@ app.post("/api/ingredient-overview/v1", verifySupabaseToken, async (req: Request
             ingredientOverview: refreshed.ingredientOverview,
             source: refreshed.source,
             fallbackUsed: refreshed.fallbackUsed,
+            fallbackReason: refreshed.diagnostics.fallbackReason,
             promptVersion: refreshed.promptVersion,
             backgroundRefreshPending: false,
             recommendedRetryAfterMs: null,
@@ -11506,6 +11552,7 @@ app.post("/api/ingredient-overview/v1", verifySupabaseToken, async (req: Request
           ingredientOverview: compiled.ingredientOverview,
           source: compiled.source,
           fallbackUsed: compiled.fallbackUsed,
+          fallbackReason: compiled.diagnostics.fallbackReason,
           promptVersion: compiled.promptVersion,
           backgroundRefreshPending: false,
           recommendedRetryAfterMs: null,
@@ -11707,6 +11754,7 @@ app.post("/api/scientific-background/v1", verifySupabaseToken, async (req: Reque
             scientificBackground: refreshed.scientificBackground,
             source: refreshed.source,
             fallbackUsed: refreshed.fallbackUsed,
+            fallbackReason: refreshed.diagnostics.fallbackReason,
             promptVersion: refreshed.promptVersion,
             backgroundRefreshPending: false,
             recommendedRetryAfterMs: null,
@@ -11859,6 +11907,7 @@ app.post("/api/scientific-background/v1", verifySupabaseToken, async (req: Reque
           scientificBackground: compiled.scientificBackground,
           source: compiled.source,
           fallbackUsed: compiled.fallbackUsed,
+          fallbackReason: compiled.diagnostics.fallbackReason,
           promptVersion: compiled.promptVersion,
           backgroundRefreshPending: false,
           recommendedRetryAfterMs: null,
@@ -12899,6 +12948,9 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
         bundleId: randomUUID(),
         revision: 2,
         factsDigestHash,
+        fallbackUsed: "skeleton",
+        fallback: { code: "ingredients_not_provided" },
+        fallbackReason: "ingredients_not_provided",
       },
       timingMs: 0,
     });
@@ -15543,6 +15595,138 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
       }
       return overlayClaimsForBarcodePromise;
     };
+    const hydrateBundleOnlyOverlayFallbackSkeleton = async (): Promise<boolean> => {
+      const overlayClaims = await getOverlayClaimsForBarcode();
+      if (!overlayClaims) return false;
+      const descriptionText = [
+        typeof overlayClaims.description === "string" ? overlayClaims.description.trim() : "",
+        typeof overlayClaims.suggestedUse === "string" ? overlayClaims.suggestedUse.trim() : "",
+      ].filter(Boolean).join(" ") || null;
+      const normalizedRows = normalizeIherbSupplementFactsRowsWithTitleFallback({
+        rows: Array.isArray(overlayClaims.nutritionalFacts)
+          ? overlayClaims.nutritionalFacts.map((row) => ({ ...row }))
+          : [],
+        title: overlayClaims.title,
+        brandName: overlayClaims.brandName,
+        servingSize: overlayClaims.servingSize,
+        servingsPerContainer: overlayClaims.servingsPerContainer,
+        sourceZipPath: overlayClaims.sourceZipPath ?? null,
+        descriptionText,
+      });
+      const ingredientsText = normalizedRows
+        .map((row) => [row.name, row.dose].filter(Boolean).join(" ").trim())
+        .filter(Boolean)
+        .join("\n") || null;
+      const overlayLink = typeof overlayClaims.link === "string" ? overlayClaims.link.trim() : "";
+      const identityType: FactsDigest["identity"]["type"] = overlayLink ? "webCanonicalId" : "gtin14";
+      const identityValue = overlayLink
+        ? createHash("sha256").update(`${overlayLink}|${RESOLUTION_ENGINE_VERSION}|${barcodeGtin14}`).digest("hex")
+        : barcodeGtin14;
+      const overlayFactsSourceVersionHash = createHash("sha256")
+        .update([
+          overlayClaims.title ?? "",
+          overlayClaims.brandName ?? "",
+          overlayLink,
+          ingredientsText ?? "",
+          overlayClaims.servingSize ?? "",
+        ].join("|"))
+        .digest("hex");
+      const digest = buildFactsDigestFromWeb({
+        facts: {
+          barcode: barcodeGtin14,
+          canonical: {
+            name: overlayClaims.title ?? null,
+            brand: overlayClaims.brandName ?? null,
+            url: overlayLink || null,
+            domain: overlayLink ? extractDomain(overlayLink) : null,
+          },
+          identifiers: { npn: null },
+          textFacts: {
+            ingredientsText,
+            directionsText: overlayClaims.suggestedUse ?? null,
+            warningsText: overlayClaims.warnings ?? null,
+            servingSizeText: overlayClaims.servingSize ?? null,
+          },
+          coverageScore: ingredientsText ? 0.45 : 0,
+          missingFields: [
+            ingredientsText ? null : "textFacts.ingredientsText",
+            overlayClaims.suggestedUse ? null : "textFacts.directionsText",
+            overlayClaims.warnings ? null : "textFacts.warningsText",
+          ].filter((value): value is string => Boolean(value)),
+        },
+        identityType,
+        identityValue,
+      });
+      const factsDigestHash = computeFactsDigestHash(digest);
+      const deterministicSignals = DETERMINISTIC_SIGNALS_PRIMARY
+        ? extractDeterministicSignalPack({
+          sourceRole: digest.sourceType,
+          digest,
+        })
+        : null;
+      const digestProductIdentity = buildProductIdentityFromDigest({
+        digest,
+        identityType,
+        identityValue,
+        sourceTypeFinal: false,
+      });
+      const alignedQuickDigest = await buildMySupplementDigestQuick({
+        supplementId: barcodeGtin14,
+        barcode,
+        brandName: "",
+        productName: "",
+        budgetMs: 1_200,
+      });
+      const alignedPatched = applyPatchShadowToFactsDigest({
+        digest: alignedQuickDigest.digest,
+        barcodeGtin14,
+      });
+      const alignedDecisionSupport = compileDecisionSupport({
+        digest: alignedPatched.digest,
+        factsDigestHash: alignedQuickDigest.factsDigestHash,
+        viewMode: DECISION_SUPPORT_DEFAULT_VIEW_MODE,
+        locale,
+        flagsSnapshot: collectDecisionSupportFlagsSnapshot(),
+        patchActivation: alignedPatched.activation,
+        overlayClaims,
+      });
+      rememberStreamProductIdentity(digestProductIdentity);
+      const overlaySkeletonBase = buildAnalysisBundleSkeleton({
+        digest,
+        deterministicSignals,
+        bundleId,
+        revision: 0,
+        phase: "skeleton",
+        locale,
+        factsDigestHash,
+        factsSourceVersion: `web:${RESOLUTION_ENGINE_VERSION}:overlay:${overlayFactsSourceVersionHash.slice(0, 16)}`,
+        identityType,
+        identityValue,
+        dataStatus: {
+          overview: "limited",
+          usage: "limited",
+          safety: "limited",
+        },
+        overlayClaims,
+        includeDecisionDebug: debugDecisionRequested && (authDisabled || isRegressionRequest),
+      });
+      latestSkeletonBundle = attachProductIdentityMeta({
+        ...overlaySkeletonBase,
+        meta: {
+          ...overlaySkeletonBase.meta,
+          decisionSupportDigest: alignedDecisionSupport.digest,
+          decisionInputsHash: alignedDecisionSupport.decisionInputsHash,
+          decisionContractVersion: alignedDecisionSupport.decisionContractVersion,
+          overlayClaimsHash: alignedDecisionSupport.overlayClaimsHash,
+          overlayAugmentationVersion: alignedDecisionSupport.overlayAugmentationVersion,
+          overlayAugmentationSource: alignedDecisionSupport.overlayAugmentationSource,
+          patchActivationCanonical: alignedDecisionSupport.patchActivationCanonical,
+          decisionSupportInline: toDecisionSupportInline(alignedDecisionSupport),
+          productIdentity: digestProductIdentity ?? overlaySkeletonBase.meta.productIdentity,
+        },
+      }, digestProductIdentity);
+      return true;
+    };
     const authorityRegressionScenarioActive =
       AUTHORITY_REGRESSION_SAMPLE_ENABLED &&
       isRegressionLikeRequest &&
@@ -17359,6 +17543,128 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
       }
     }
     if (cachedFast && !bypassCachedFastPathForAuthority) {
+      const hydrateCachedSnapshotBundleOnlySkeleton = () => {
+        const snapshotLabelSource =
+          normalizeLabelExtractionSource(
+            cachedFast.snapshot.analysis?.labelExtraction?.source
+            ?? cachedFast.analysisPayload?.analysis?.labelExtraction?.source
+            ?? null,
+          );
+        const snapshotLabelVersion =
+          cachedFast.snapshot.analysis?.labelExtraction?.datasetVersion
+          ?? cachedFast.analysisPayload?.analysis?.labelExtraction?.datasetVersion
+          ?? cachedFast.snapshot.analysis?.labelExtraction?.fetchedAt
+          ?? null;
+        let digest: FactsDigest | null = null;
+        let identityType: FactsDigest["identity"]["type"] = "gtin14";
+        let identityValue = barcodeGtin14 ?? "";
+        let factsSourceVersion = "snapshot:unknown";
+
+        const dsldLabelIdRaw = cachedFast.snapshot.regulatory.dsldLabelId;
+        if (snapshotLabelSource === "dsld" && dsldLabelIdRaw) {
+          const fallbackFacts = buildDsldFactsInputFromSnapshot(cachedFast.snapshot);
+          identityType = "dsldLabelId";
+          identityValue = String(dsldLabelIdRaw);
+          factsSourceVersion = `dsld:${snapshotLabelVersion ?? "unknown"}`;
+          digest = buildFactsDigestFromDsld({
+            facts: fallbackFacts,
+            snapshot: cachedFast.snapshot,
+            identityValue,
+            regionTags: cachedFast.snapshot.regulatory.regionTags,
+          });
+        }
+
+        if (!digest) {
+          const urls = cachedFast.snapshot.references.items
+            .map((ref) => ref.url)
+            .filter((value): value is string => typeof value === "string" && value.length > 0)
+            .slice(0, 2);
+          const canonicalHash = createHash("sha256").update(urls.join("|"))
+            .digest("hex");
+          const bestUrl = urls[0] ?? null;
+          const webCanonicalId = bestUrl
+            ? createHash("sha256").update(`${bestUrl}|${RESOLUTION_ENGINE_VERSION}|${barcodeGtin14}`).digest("hex")
+            : barcodeGtin14;
+          const ingredientsText = buildSnapshotWebIngredientsText(cachedFast.snapshot);
+          const missingFields = [
+            ingredientsText ? null : "textFacts.ingredientsText",
+            "textFacts.directionsText",
+            "textFacts.warningsText",
+          ].filter((value): value is string => Boolean(value));
+          identityType = bestUrl ? "webCanonicalId" : "gtin14";
+          identityValue = String(webCanonicalId ?? barcodeGtin14 ?? "");
+          factsSourceVersion = urls.length
+            ? `web:${RESOLUTION_ENGINE_VERSION}:${canonicalHash}`
+            : `web:${RESOLUTION_ENGINE_VERSION}:none`;
+
+          digest = buildFactsDigestFromWeb({
+            facts: {
+              barcode: barcodeGtin14 ?? "",
+              canonical: {
+                name: cachedFast.snapshot.product.name ?? null,
+                brand: cachedFast.snapshot.product.brand ?? null,
+                url: bestUrl,
+                domain: bestUrl ? extractDomain(bestUrl) : null,
+              },
+              identifiers: { npn: null },
+              textFacts: {
+                ingredientsText,
+                directionsText: null,
+                warningsText: null,
+                servingSizeText: cachedFast.snapshot.label.servingSize ?? null,
+              },
+              coverageScore: ingredientsText ? 0.35 : 0,
+              missingFields,
+            },
+            snapshot: cachedFast.snapshot,
+            identityType,
+            identityValue,
+            regionTags: cachedFast.snapshot.regulatory.regionTags,
+          });
+        }
+
+        if (!digest) return;
+        const factsDigestHash = computeFactsDigestHash(digest);
+        const deterministicSignals = DETERMINISTIC_SIGNALS_PRIMARY
+          ? extractDeterministicSignalPack({
+            sourceRole: digest.sourceType,
+            digest,
+          })
+          : null;
+        const digestProductIdentity = buildProductIdentityFromDigest({
+          digest,
+          identityType,
+          identityValue,
+          sourceTypeFinal: false,
+        });
+        rememberStreamProductIdentity(digestProductIdentity);
+        const snapshotSkeletonBase = buildAnalysisBundleSkeleton({
+          digest,
+          deterministicSignals,
+          bundleId,
+          revision: 0,
+          phase: "skeleton",
+          locale,
+          factsDigestHash,
+          factsSourceVersion,
+          identityType,
+          identityValue,
+          dataStatus: {
+            overview: "limited",
+            usage: "limited",
+            safety: "limited",
+          },
+          overlayClaims: cachedOverlayClaims,
+          includeDecisionDebug: debugDecisionRequested && (authDisabled || isRegressionRequest),
+        });
+        latestSkeletonBundle = attachProductIdentityMeta({
+          ...snapshotSkeletonBase,
+          meta: {
+            ...snapshotSkeletonBase.meta,
+            productIdentity: digestProductIdentity ?? snapshotSkeletonBase.meta.productIdentity,
+          },
+        }, digestProductIdentity);
+      };
       const snapshotIsAuthoritativeFastPath = hasBundleOnlyAuthoritativeFastPath(cachedFast.snapshot);
       if (streamAnalysisBundleOnly && !forceStage1 && !snapshotIsAuthoritativeFastPath) {
         const recoveredFromCachedFastShortCircuit = await maybeRunDsldDirectFallbackStage0();
@@ -17370,6 +17676,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
           releaseInFlightOnce();
           return;
         }
+        hydrateCachedSnapshotBundleOnlySkeleton();
         emitDegradedLimitedRev1AndFinalize("BUNDLE_ONLY_NO_AUTHORITATIVE_MATCH");
         releaseInFlightOnce(new Error("snapshot_bundle_only_unverified_short_circuit"));
         return;
@@ -17432,6 +17739,91 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
           Boolean(snapshotNpn);
         const snapshotIsAuthoritativeForBundleOnly =
           snapshotIsVerified || hasBundleOnlyLabelRecordIdentityFromSnapshot(cachedFast.snapshot);
+        const buildSnapshotStage0Seed = (): {
+          digest: FactsDigest;
+          identityType: FactsDigest["identity"]["type"];
+          identityValue: string;
+          factsSourceVersion: string;
+        } | null => {
+          let digest: FactsDigest | null = null;
+          let identityType: FactsDigest["identity"]["type"] = "gtin14";
+          let identityValue = barcodeGtin14 ?? "";
+          let factsSourceVersion = "snapshot:unknown";
+
+          // Prefer DSLD identity when present.
+          const dsldLabelIdRaw = cachedFast.snapshot.regulatory.dsldLabelId;
+          if (snapshotLabelSource === "dsld" && dsldLabelIdRaw) {
+            const fallbackFacts = buildDsldFactsInputFromSnapshot(cachedFast.snapshot);
+            identityType = "dsldLabelId";
+            identityValue = String(dsldLabelIdRaw);
+            factsSourceVersion = `dsld:${snapshotLabelVersion ?? "unknown"}`;
+            digest = buildFactsDigestFromDsld({
+              facts: fallbackFacts,
+              snapshot: cachedFast.snapshot,
+              identityValue,
+              regionTags: cachedFast.snapshot.regulatory.regionTags,
+            });
+          }
+
+          if (!digest) {
+            const urls = cachedFast.snapshot.references.items
+              .map((ref) => ref.url)
+              .filter((value): value is string => typeof value === "string" && value.length > 0)
+              .slice(0, 2);
+            const canonicalHash = createHash("sha256").update(urls.join("|"))
+              .digest("hex");
+            const bestUrl = urls[0] ?? null;
+            const webCanonicalId = bestUrl
+              ? createHash("sha256").update(`${bestUrl}|${RESOLUTION_ENGINE_VERSION}|${barcodeGtin14}`).digest("hex")
+              : barcodeGtin14;
+            const ingredientsText = buildSnapshotWebIngredientsText(cachedFast.snapshot);
+            const missingFields = [
+              ingredientsText ? null : "textFacts.ingredientsText",
+              "textFacts.directionsText",
+              "textFacts.warningsText",
+            ].filter((value): value is string => Boolean(value));
+            identityType = bestUrl ? "webCanonicalId" : "gtin14";
+            identityValue = String(webCanonicalId ?? barcodeGtin14 ?? "");
+            factsSourceVersion = urls.length
+              ? `web:${RESOLUTION_ENGINE_VERSION}:${canonicalHash}`
+              : `web:${RESOLUTION_ENGINE_VERSION}:none`;
+
+            const webFactsInput = {
+              barcode: barcodeGtin14 ?? "",
+              canonical: {
+                name: cachedFast.snapshot.product.name ?? null,
+                brand: cachedFast.snapshot.product.brand ?? null,
+                url: bestUrl,
+                domain: bestUrl ? extractDomain(bestUrl) : null,
+              },
+              identifiers: { npn: null },
+              textFacts: {
+                ingredientsText,
+                directionsText: null,
+                warningsText: null,
+                servingSizeText: cachedFast.snapshot.label.servingSize ?? null,
+              },
+              coverageScore: ingredientsText ? 0.35 : 0,
+              missingFields,
+            };
+
+            digest = buildFactsDigestFromWeb({
+              facts: webFactsInput,
+              snapshot: cachedFast.snapshot,
+              identityType,
+              identityValue,
+              regionTags: cachedFast.snapshot.regulatory.regionTags,
+            });
+          }
+
+          if (!digest) return null;
+          return {
+            digest,
+            identityType,
+            identityValue,
+            factsSourceVersion,
+          };
+        };
 
         if (!snapshotIsVerified) {
           // Stability-first contract for analysis_bundle_only:
@@ -17446,88 +17838,60 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
               releaseInFlightOnce();
               return;
             }
+            const snapshotStage0Seed = buildSnapshotStage0Seed();
+            if (snapshotStage0Seed) {
+              const factsDigestHash = computeFactsDigestHash(snapshotStage0Seed.digest);
+              const deterministicSignals = DETERMINISTIC_SIGNALS_PRIMARY
+                ? extractDeterministicSignalPack({
+                  sourceRole: snapshotStage0Seed.digest.sourceType,
+                  digest: snapshotStage0Seed.digest,
+                })
+                : null;
+              const digestProductIdentity = buildProductIdentityFromDigest({
+                digest: snapshotStage0Seed.digest,
+                identityType: snapshotStage0Seed.identityType,
+                identityValue: snapshotStage0Seed.identityValue,
+                sourceTypeFinal: false,
+              });
+              rememberStreamProductIdentity(digestProductIdentity);
+              const snapshotSkeletonBase = buildAnalysisBundleSkeleton({
+                digest: snapshotStage0Seed.digest,
+                deterministicSignals,
+                bundleId,
+                revision: 0,
+                phase: "skeleton",
+                locale,
+                factsDigestHash,
+                factsSourceVersion: snapshotStage0Seed.factsSourceVersion,
+                identityType: snapshotStage0Seed.identityType,
+                identityValue: snapshotStage0Seed.identityValue,
+                dataStatus: {
+                  overview: "limited",
+                  usage: "limited",
+                  safety: "limited",
+                },
+                overlayClaims: cachedOverlayClaims,
+                includeDecisionDebug: debugDecisionRequested && (authDisabled || isRegressionRequest),
+              });
+              latestSkeletonBundle = attachProductIdentityMeta({
+                ...snapshotSkeletonBase,
+                meta: {
+                  ...snapshotSkeletonBase.meta,
+                  productIdentity: digestProductIdentity ?? snapshotSkeletonBase.meta.productIdentity,
+                },
+              }, digestProductIdentity);
+            }
             emitDegradedLimitedRev1AndFinalize("BUNDLE_ONLY_NO_AUTHORITATIVE_MATCH");
             releaseInFlightOnce(new Error("snapshot_bundle_only_skip_stage0"));
             return;
           }
-
-          let digest: FactsDigest | null = null;
-          let identityType: FactsDigest["identity"]["type"] = "gtin14";
-          let identityValue = barcodeGtin14;
-          let factsSourceVersion = "snapshot:unknown";
-
-          // Prefer DSLD identity when present.
-          const dsldLabelIdRaw = cachedFast.snapshot.regulatory.dsldLabelId;
-          if (snapshotLabelSource === "dsld" && dsldLabelIdRaw) {
-            const fallbackFacts = buildDsldFactsInputFromSnapshot(cachedFast.snapshot);
-            identityType = "dsldLabelId";
-            identityValue = dsldLabelIdRaw;
-            factsSourceVersion = `dsld:${snapshotLabelVersion ?? "unknown"}`;
-            digest = buildFactsDigestFromDsld({
-              facts: fallbackFacts,
-              snapshot: cachedFast.snapshot,
-              identityValue,
-              regionTags: cachedFast.snapshot.regulatory.regionTags,
-            });
-          }
-
-          // Otherwise treat as web snapshot if we have any references.
-          if (!digest) {
-            const urls = cachedFast.snapshot.references.items
-              .map((ref) => ref.url)
-              .filter((value): value is string => typeof value === "string" && value.length > 0)
-              .slice(0, 2);
-            const canonicalHash = createHash("sha256").update(urls.join("|"))
-              .digest("hex");
-            const bestUrl = urls[0] ?? null;
-            const webCanonicalId = bestUrl
-              ? createHash("sha256").update(`${bestUrl}|${RESOLUTION_ENGINE_VERSION}|${barcodeGtin14}`).digest("hex")
-              : barcodeGtin14;
-            identityType = bestUrl ? "webCanonicalId" : "gtin14";
-            identityValue = webCanonicalId;
-            factsSourceVersion = urls.length
-              ? `web:${RESOLUTION_ENGINE_VERSION}:${canonicalHash}`
-              : `web:${RESOLUTION_ENGINE_VERSION}:none`;
-
-            const webFactsInput = {
-              barcode: barcodeGtin14,
-              canonical: {
-                name: cachedFast.snapshot.product.name ?? null,
-                brand: cachedFast.snapshot.product.brand ?? null,
-                url: bestUrl,
-                domain: bestUrl ? extractDomain(bestUrl) : null,
-              },
-              identifiers: { npn: null },
-              textFacts: {
-                ingredientsText: null,
-                directionsText: null,
-                warningsText: null,
-                servingSizeText: null,
-              },
-              coverageScore: 0,
-              missingFields: [
-                "textFacts.ingredientsText",
-                "textFacts.directionsText",
-                "textFacts.warningsText",
-                "textFacts.servingSizeText",
-              ],
-            };
-
-            digest = buildFactsDigestFromWeb({
-              facts: webFactsInput,
-              snapshot: cachedFast.snapshot,
-              identityType,
-              identityValue,
-              regionTags: cachedFast.snapshot.regulatory.regionTags,
-            });
-          }
-
-          if (digest) {
+          const snapshotStage0Seed = buildSnapshotStage0Seed();
+          if (snapshotStage0Seed) {
             startStage0Bundle({
-              digest,
-              identityType,
-              identityValue,
-              factsSourceVersion,
+              digest: snapshotStage0Seed.digest,
+              identityType: snapshotStage0Seed.identityType,
+              identityValue: snapshotStage0Seed.identityValue,
+              factsSourceVersion: snapshotStage0Seed.factsSourceVersion,
               allowAi: Boolean(deepseekKey),
               apiKey: deepseekKey,
             });
@@ -18894,6 +19258,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
         releaseInFlightOnce();
         return;
       }
+      await hydrateBundleOnlyOverlayFallbackSkeleton();
       markPipelineStepEnd("retrieve", "degraded", "bundle_only_skip_web_search");
       emitDegradedLimitedRev1AndFinalize("BUNDLE_ONLY_NO_AUTHORITATIVE_MATCH");
       releaseInFlightOnce(new Error("bundle_only_skip_web_search"));

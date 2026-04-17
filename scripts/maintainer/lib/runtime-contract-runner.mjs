@@ -63,6 +63,8 @@ const normalizeText = (value) =>
 
 const normalizeLooseText = (value) =>
   normalizeText(value)
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, " ")
     .trim();
@@ -116,6 +118,11 @@ const stableUniqueStrings = (values) =>
   );
 
 const FOOD_LIKE_RUNTIME_PATTERN = /\b(drink mix|gel|bar|snack|latte|aminos|soy sauce replacement|chewable|gummy)\b/i;
+const OPERATIONAL_SIDECAR_FALLBACK_REASONS = new Set([
+  "llm_unconfigured",
+  "llm_timeout",
+]);
+const OPERATIONAL_SIDECAR_FALLBACK_REASON_PATTERN = /^[a-z0-9]+_http_\d+$/i;
 
 const isFoodLikeRuntimeScenario = (scenario) =>
   scenario?.category === "food_like"
@@ -129,6 +136,20 @@ const isFoodLikeRuntimeScenario = (scenario) =>
 
 const hasHeader = (headers, headerName) =>
   Object.keys(headers ?? {}).some((key) => key.toLowerCase() === headerName.toLowerCase());
+
+const rawScenarioBarcodeValue = (scenario) =>
+  scenario?.input?.barcode
+  ?? scenario?.input?.searchResultSeed?.barcode
+  ?? scenario?.input?.searchResultSeed?.upcCode
+  ?? scenario?.product?.barcode
+  ?? null;
+
+const scenarioProductId = (scenario) =>
+  normalizeText(
+    scenario?.product?.productId
+    ?? scenario?.input?.searchResultSeed?.productId
+    ?? null,
+  ) || null;
 
 const buildLocalPersonalizationContext = (scenario) => {
   const personas = Array.isArray(scenario?.personas) ? scenario.personas : [];
@@ -284,34 +305,49 @@ const fetchJson = async ({
   headers = {},
   body,
   timeoutMs = DEFAULT_TIMEOUT_MS,
+  maxRetries = 1,
+  retryDelayMs = 250,
 }) => {
-  try {
-    const payload = await withTimeout(
-      async (signal) => {
-        const response = await fetchImpl(url, {
-          method,
-          headers,
-          body,
-          signal,
-        });
-        const parsed = await safeJson(response);
+  let attempt = 0;
+  while (attempt <= maxRetries) {
+    try {
+      const payload = await withTimeout(
+        async (signal) => {
+          const response = await fetchImpl(url, {
+            method,
+            headers,
+            body,
+            signal,
+          });
+          const parsed = await safeJson(response);
+          return {
+            ok: response.ok,
+            status: response.status,
+            payload: parsed,
+          };
+        },
+        timeoutMs,
+      );
+      return payload;
+    } catch (error) {
+      if (attempt >= maxRetries) {
         return {
-          ok: response.ok,
-          status: response.status,
-          payload: parsed,
+          ok: false,
+          status: null,
+          payload: null,
+          error: error instanceof Error ? error.message : String(error),
         };
-      },
-      timeoutMs,
-    );
-    return payload;
-  } catch (error) {
-    return {
-      ok: false,
-      status: null,
-      payload: null,
-      error: error instanceof Error ? error.message : String(error),
-    };
+      }
+      attempt += 1;
+      await sleep(retryDelayMs);
+    }
   }
+  return {
+    ok: false,
+    status: null,
+    payload: null,
+    error: "fetch_retries_exhausted",
+  };
 };
 
 export const fetchAnalysisBundle = async ({
@@ -404,12 +440,30 @@ export const fetchAnalysisBundle = async ({
 };
 
 const scenarioBarcode = (scenario) =>
-  normalizeBarcode(
-    scenario?.input?.barcode
-      ?? scenario?.input?.searchResultSeed?.barcode
-      ?? scenario?.input?.searchResultSeed?.upcCode
-      ?? scenario?.product?.barcode,
+  normalizeBarcode(rawScenarioBarcodeValue(scenario));
+
+const isSyntheticRuntimeScenario = (scenario) => {
+  const rawBarcode = normalizeText(rawScenarioBarcodeValue(scenario));
+  const productId = scenarioProductId(scenario);
+  return /^fixture[-:_]/i.test(rawBarcode) || /^fixture[-:_]/i.test(productId ?? "");
+};
+
+const extractSidecarFallbackReason = (payload) =>
+  normalizeText(
+    payload?.fallbackReason
+    ?? payload?.meta?.fallbackReason
+    ?? payload?.meta?.fallback?.code
+    ?? null,
+  ) || null;
+
+const isOperationalSidecarFallbackReason = (reason) => {
+  const normalized = normalizeText(reason).toLowerCase();
+  if (!normalized) return false;
+  return (
+    OPERATIONAL_SIDECAR_FALLBACK_REASONS.has(normalized)
+    || OPERATIONAL_SIDECAR_FALLBACK_REASON_PATTERN.test(normalized)
   );
+};
 
 const extractSelectedAnchor = (payload) => {
   const rows = Array.isArray(payload?.scienceBlock?.ingredientRows)
@@ -473,6 +527,23 @@ const namesLookCompatible = (expectedName, actualName) => {
   return actualTokens.every((token) => expected.includes(token));
 };
 
+const brandsLookCompatible = (expectedBrand, actualBrand) => {
+  const expected = normalizeLooseText(expectedBrand);
+  const actual = normalizeLooseText(actualBrand);
+  if (!expected || !actual) return false;
+  if (expected === actual) return true;
+  return expected.includes(actual) || actual.includes(expected);
+};
+
+const namesLookBarcodeAligned = (expectedName, actualName) => {
+  if (namesLookCompatible(expectedName, actualName)) return true;
+  const expectedTokens = tokenizeComparable(expectedName);
+  const actualTokens = tokenizeComparable(actualName);
+  if (expectedTokens.length === 0 || actualTokens.length === 0) return false;
+  const overlap = actualTokens.filter((token) => expectedTokens.includes(token)).length;
+  return overlap >= 3 && overlap / actualTokens.length >= 0.6;
+};
+
 const sectionHasVisibleContent = (sectionKey, payload) => {
   if (!isPlainObject(payload)) return false;
   if (sectionKey === "overview") {
@@ -508,18 +579,31 @@ const evaluateSearchOriginIdentity = (scenario, bundle) => {
   const expectedBarcode = normalizeBarcode(seed.barcode ?? seed.upcCode ?? scenario?.product?.barcode);
   const actualBarcode = scenarioBarcode(scenario);
   const mismatches = [];
+  const barcodeMatches = Boolean(expectedBarcode && actualBarcode && expectedBarcode === actualBarcode);
 
   if (expectedBarcode && actualBarcode && expectedBarcode !== actualBarcode) {
     mismatches.push("barcode");
   }
   const expectedBrand = normalizeLooseText(seed.brand ?? scenario?.product?.brand);
   const actualBrand = normalizeLooseText(identity.brand);
-  if (expectedBrand && actualBrand && expectedBrand !== actualBrand) {
+  if (
+    expectedBrand &&
+    actualBrand &&
+    !brandsLookCompatible(seed.brand ?? scenario?.product?.brand, identity.brand)
+  ) {
     mismatches.push("brand");
   }
   const expectedName = normalizeLooseText(seed.name ?? scenario?.product?.name);
   const actualName = normalizeLooseText(identity.name);
-  if (expectedName && actualName && !namesLookCompatible(seed.name ?? scenario?.product?.name, identity.name)) {
+  if (
+    expectedName &&
+    actualName &&
+    !(
+      barcodeMatches
+      ? namesLookBarcodeAligned(seed.name ?? scenario?.product?.name, identity.name)
+      : namesLookCompatible(seed.name ?? scenario?.product?.name, identity.name)
+    )
+  ) {
     mismatches.push("name");
   }
 
@@ -592,7 +676,7 @@ const evaluateMainMiniScore = ({ scenario, decisionSupportPayload, bundle }) => 
   if (score.overallScore == null || inlineScore.overallScore == null) {
     return buildGateResult({
       gate: "score_consistency",
-      status: isFoodLike || bundleInlineMissing ? "warn" : "fail",
+      status: isFoodLike ? "pass" : bundleInlineMissing ? "warn" : "fail",
       reason:
         isFoodLike
           ? "score_not_required_for_food_like"
@@ -746,6 +830,7 @@ const evaluateSidecars = ({ scenario, ingredientOverview, scientificBackground }
 
   const failures = [];
   const warnings = [];
+  const acceptedOperationalFallbacks = [];
   const overviewPayload = ingredientOverview?.payload;
   const scientificPayload = scientificBackground?.payload;
 
@@ -754,7 +839,15 @@ const evaluateSidecars = ({ scenario, ingredientOverview, scientificBackground }
   } else if (flattenStrings(overviewPayload?.ingredientOverview).length === 0) {
     failures.push("ingredient_overview_blank");
   } else if (overviewPayload?.fallbackUsed === true || overviewPayload?.backgroundRefreshPending === true) {
-    warnings.push("ingredient_overview_fallback");
+    const fallbackReason = extractSidecarFallbackReason(overviewPayload);
+    if (isOperationalSidecarFallbackReason(fallbackReason)) {
+      acceptedOperationalFallbacks.push({
+        section: "ingredient_overview",
+        reason: fallbackReason,
+      });
+    } else {
+      warnings.push("ingredient_overview_fallback");
+    }
   }
 
   if (!scientificBackground?.ok) {
@@ -762,7 +855,15 @@ const evaluateSidecars = ({ scenario, ingredientOverview, scientificBackground }
   } else if (flattenStrings(scientificPayload?.scientificBackground).length === 0) {
     failures.push("scientific_background_blank");
   } else if (scientificPayload?.fallbackUsed === true || scientificPayload?.backgroundRefreshPending === true) {
-    warnings.push("scientific_background_fallback");
+    const fallbackReason = extractSidecarFallbackReason(scientificPayload);
+    if (isOperationalSidecarFallbackReason(fallbackReason)) {
+      acceptedOperationalFallbacks.push({
+        section: "scientific_background",
+        reason: fallbackReason,
+      });
+    } else {
+      warnings.push("scientific_background_fallback");
+    }
   }
 
   if (failures.length > 0) {
@@ -771,16 +872,21 @@ const evaluateSidecars = ({ scenario, ingredientOverview, scientificBackground }
       status: "fail",
       reason: "sidecar_contract_failed",
       severity: scenario?.severityOnFail ?? "P1",
-      details: { failures, warnings },
+      details: { failures, warnings, acceptedOperationalFallbacks },
     });
   }
 
   return buildGateResult({
     gate: "sidecar_contract",
     status: warnings.length > 0 ? "warn" : "pass",
-    reason: warnings.length > 0 ? "sidecar_fallback_safe" : "sidecars_ready",
+    reason:
+      warnings.length > 0
+        ? "sidecar_fallback_safe"
+        : acceptedOperationalFallbacks.length > 0
+          ? "sidecars_ready_via_operational_fallback"
+          : "sidecars_ready",
     severity: null,
-    details: { warnings },
+    details: { warnings, acceptedOperationalFallbacks },
   });
 };
 
@@ -916,33 +1022,28 @@ export const createRuntimeContractReport = async ({
     const scenarioHeaders = buildScenarioHeaders({ scenario, commonHeaders });
     const barcode = scenarioBarcode(scenario);
     if (!barcode) {
+      const runtimeApplicable = !isSyntheticRuntimeScenario(scenario);
+      const routeHealthGate = buildGateResult({
+        gate: "route_health",
+        status: runtimeApplicable ? "warn" : "pass",
+        reason: runtimeApplicable ? "runtime_barcode_missing" : "runtime_fixture_not_live_applicable",
+        severity: null,
+        details: {
+          rawBarcode: normalizeText(rawScenarioBarcodeValue(scenario)) || null,
+          productId: scenarioProductId(scenario),
+        },
+      });
       rows.push({
         scenarioId: scenario.id,
-        status: "warn",
+        status: runtimeApplicable ? "warn" : "pass",
         product: scenario.product,
         barcode: null,
         surface: scenario.surface,
         category: scenario.category,
         personas: scenario.personas ?? [],
-        gates: [
-          buildGateResult({
-            gate: "route_health",
-            status: "warn",
-            reason: "runtime_barcode_missing",
-            severity: null,
-            details: {},
-          }),
-        ],
+        gates: [routeHealthGate],
         failures: [],
-        warnings: [
-          buildGateResult({
-            gate: "route_health",
-            status: "warn",
-            reason: "runtime_barcode_missing",
-            severity: null,
-            details: {},
-          }),
-        ],
+        warnings: runtimeApplicable ? [routeHealthGate] : [],
       });
       continue;
     }

@@ -138,18 +138,23 @@ const IRON_PATTERN = /\biron\b|\bferrous\b|\bferric\b/i;
 const POTASSIUM_SUPPLEMENT_PATTERN = /\bpotassium\s+(?:gluconate|citrate|chloride|iodide|bicarbonate)\b/i;
 const MELATONIN_PATTERN = /\bmelatonin\b/i;
 const COCONUT_AMINOS_TITLE_PATTERN = /\bcoconut\s+aminos\b|\bsoy\s+sauce\s+replacement\b/i;
+const PROTEIN_BAR_TITLE_PATTERN = /\b(?:protein|collagen)\s+bars?\b|\b(?:crispy\s+)?snack\s+bars?\b/i;
+const ENERGY_DRINK_MIX_TITLE_PATTERN = /\benergy\s+drink\s+mix\b|\benergy\s+mix\b/i;
+const SEA_MOSS_GEL_TITLE_PATTERN = /\bsea\s+moss\s+gel\b|\bliposomal\s+sea\s+moss\b/i;
 const GEL_FUEL_TITLE_PATTERN = /\bgo\s+gel\b|\bendurance\s+gel\b|\benergy\s+gel\b/i;
 const ELECTROLYTE_DRINK_MIX_TITLE_PATTERN =
   /\bhydrationup\b|\belectrolyte\s+drink\s+mix\b|\belectrolyte\s+(?:formula|mix)\b/i;
+const REDS_SUPERFOOD_TITLE_PATTERN =
+  /\breds?\s+pak\b|\bred\s+(?:fruits?|vegetables?)\b/i;
 const OMEGA3_ALGAL_TITLE_PATTERN =
   /\balgal\s+oil\b|\balgae\s+oil\b|\bfrom\s+algae\b|\bplant\s+based\s+omega\s*-?\s*3\b|\bschizochytrium\b/i;
 const FUNCTIONAL_FOOD_LIKE_TITLE_PATTERN =
-  /\b(?:ag1|athletic\s+greens|gum|gums|gumm(?:y|ies)|mints?|lozenge|lozenges|freeze\s+dried|juice\s+powder|fruit\s+powder|dragon\s+fruit|smoothie|drink\s+mix|tea\s+bags?|herbal\s+slimming\s+tea|greens\b|green\s+superfood|superfood|vegetable\s+powder|whole\s+food\s+powder|snacks?|snackable|crackers?|crisps?|coconut\s+aminos|soy\s+sauce\s+replacement|go\s+gel|endurance\s+gel|energy\s+gel)\b/i;
+  /\b(?:ag1|athletic\s+greens|gum|gums|gumm(?:y|ies)|mints?|lozenge|lozenges|freeze\s+dried|juice\s+powder|fruit\s+powder|dragon\s+fruit|smoothie|drink\s+mix|tea\s+bags?|herbal\s+slimming\s+tea|greens\b|green\s+superfood|superfood|vegetable\s+powder|whole\s+food\s+powder|snacks?|snackable|crackers?|crisps?|protein\s+bars?|collagen\s+bars?|snack\s+bars?|sea\s+moss\s+gel|coconut\s+aminos|soy\s+sauce\s+replacement|go\s+gel|endurance\s+gel|energy\s+gel)\b/i;
 const FUNCTIONAL_FOOD_LIKE_INGREDIENT_PATTERN =
   /\b(?:xylitol|erythritol|fiber|dragon\s+fruit|fruit\s+powder|juice\s+powder|spirulina|chlorella|barley\s+grass|wheat\s+grass|digestive\s+enzyme|enzyme\s+assimilation|greens\b|green\s+superfood|superfood)\b/i;
 const FUNCTIONAL_FOOD_LIKE_FORM_PATTERN = /\b(?:gum|mint|lozenge|tea|powder|drink\s*mix|gel)\b/i;
 const PROBIOTIC_TITLE_PATTERN =
-  /\b(?:probiotics?|pro-bio|probiology|essential[\s-]*biotic|flora|microbiome|live cultures?|cfu|digestive support|protectis|floraphage|osfortis|cytoflora)\b/i;
+  /\b(?:probiotics?|pro-bio|probiology|essential[\s-]*biotic|flora|microbiome|live cultures?|cfu|digestive support|protectis|floraphage|osfortis|cytoflora|acidophilus|bifidus?)\b/i;
 const PROBIOTIC_SPECIFIC_ROW_PATTERN =
   /\b(?:probiotic|probiotics|acidophilus|lactobacillus|bifidobacterium|saccharomyces|bacillus|limosilactobacillus|reuteri|cfu|live cultures?|protectis|floraphage|osfortis|cytoflora|bacteriophage|bacterial culture|probiotic lysate)\b/i;
 const GREENS_TITLE_PATTERN =
@@ -160,9 +165,9 @@ const FOOD_LIKE_POWDER_TITLE_PATTERN =
 const FOOD_LIKE_CONTEXT_ANCHOR_PATTERN =
   /^(?:greens?|green\s+superfood|food(?:\s|-)?based\s+(?:powder|product)|tea\s+blend|superfood\s+greens?|greens?\s+powder)$/i;
 const FOOD_LIKE_MACRO_ANCHOR_PATTERN =
-  /\b(?:calories|total\s+carbohydrates?|total\s+sugars?|added\s+sugars?|sugar\s+alcohols?|dietary\s+fiber|fiber|sodium|protein|potassium)\b/i;
+  /\b(?:calories|total\s+carbohydrates?|total\s+sugars?|added\s+sugars?|sugar\s+alcohols?|dietary\s+fiber|fiber|sodium|protein|potassium|potas)\b/i;
 const FOOD_LIKE_PRODUCT_TITLE_PATTERN =
-  /\b(?:ag1|athletic\s+greens|greens?\b|supergreens?\b|green\s+superfood|superfood|juice\s+powder|fruit\s+powder|vegetable\s+powder|whole\s+food\s+powder|drink\s+mix|smoothie|tea\s+bags?|snacks?|snackable|crackers?|crisps?|gumm(?:y|ies)|coconut\s+aminos|soy\s+sauce\s+replacement|go\s+gel|endurance\s+gel|energy\s+gel)\b/i;
+  /\b(?:ag1|athletic\s+greens|greens?\b|supergreens?\b|green\s+superfood|superfood|juice\s+powder|fruit\s+powder|vegetable\s+powder|whole\s+food\s+powder|drink\s+mix|smoothie|tea\s+bags?|snacks?|snackable|crackers?|crisps?|gumm(?:y|ies)|protein\s+bars?|collagen\s+bars?|snack\s+bars?|sea\s+moss\s+gel|coconut\s+aminos|soy\s+sauce\s+replacement|go\s+gel|endurance\s+gel|energy\s+gel)\b/i;
 const PROTEIN_PRODUCT_TITLE_PATTERN = /\bprotein\b/i;
 const FIBER_PRODUCT_TITLE_PATTERN = /\b(?:apple|psyllium|acacia|inulin|prebiotic)?\s*fiber\b/i;
 const ALOE_VERA_TITLE_PATTERN = /\baloe\s+vera\b/i;
@@ -573,20 +578,62 @@ const isFoodLikeMacroAnchorRow = (
   return FOOD_LIKE_MACRO_ANCHOR_PATTERN.test(normalizedRow);
 };
 
+const isFoodLikeLowValueAnchorRow = (
+  rowName: string | null | undefined,
+  productName: string,
+): boolean => {
+  const normalizedRow = normalizeText(rowName);
+  if (!normalizedRow || !isFoodLikeTitle(productName)) return false;
+  if (matchesProductTitle(normalizedRow, productName)) return false;
+  if (/\bbiotin\b/i.test(normalizedRow) && /\bbiotin\b/i.test(productName)) return false;
+  return /\b(?:glycerin|monounsaturated\s+fat|polyunsaturated\s+fat|total\s+fat|saturated\s+fat|biotin)\b/i.test(normalizedRow);
+};
+
 const hasTitleRescueContext = (productName: string): boolean =>
   isLeadAloeVeraTitle(productName) ||
   FIBER_PRODUCT_TITLE_PATTERN.test(productName) ||
   PROTEIN_PRODUCT_TITLE_PATTERN.test(productName) ||
   POTASSIUM_SUPPLEMENT_PATTERN.test(productName) ||
   COCONUT_AMINOS_TITLE_PATTERN.test(productName) ||
+  PROTEIN_BAR_TITLE_PATTERN.test(productName) ||
+  ENERGY_DRINK_MIX_TITLE_PATTERN.test(productName) ||
+  SEA_MOSS_GEL_TITLE_PATTERN.test(productName) ||
   GEL_FUEL_TITLE_PATTERN.test(productName) ||
-  ELECTROLYTE_DRINK_MIX_TITLE_PATTERN.test(productName);
+  ELECTROLYTE_DRINK_MIX_TITLE_PATTERN.test(productName) ||
+  REDS_SUPERFOOD_TITLE_PATTERN.test(productName);
 
 const isLeadAloeVeraTitle = (productName: string): boolean => {
   const normalizedTitle = normalizeText(productName);
   if (/^aloe\s+vera\b/i.test(normalizedTitle)) return true;
   const titleWithoutBrand = normalizeText(normalizedTitle.replace(/^[^,]{1,40},\s*/, ""));
   return /^aloe\s+vera\b/i.test(titleWithoutBrand);
+};
+
+const getTitleLedBotanicalPattern = (productName: string): RegExp | null => {
+  const titleWithoutBrand = normalizeText(productName.replace(/^[^,]{1,40},\s*/, ""));
+  if (/\bechinacea\b/i.test(titleWithoutBrand) && /\bgoldenseal\b/i.test(titleWithoutBrand)) {
+    return /\bechinacea\b|\bgoldenseal\b/i;
+  }
+  if (/\blemon balm\b|\bmelissa\b/i.test(titleWithoutBrand)) {
+    return /\blemon balm\b|\bmelissa\b/i;
+  }
+  return null;
+};
+
+const isTitleLedBotanicalAnchorRow = (
+  rowName: string | null | undefined,
+  productName: string,
+): boolean => {
+  const botanicalPattern = getTitleLedBotanicalPattern(productName);
+  return botanicalPattern ? botanicalPattern.test(normalizeText(rowName)) : false;
+};
+
+const isTitleLedBotanicalSolventRow = (
+  rowName: string | null | undefined,
+  productName: string,
+): boolean => {
+  if (!getTitleLedBotanicalPattern(productName)) return false;
+  return /^(?:alcohol|filtered water|water|vegetable glycerin|glycerin)$/i.test(normalizeText(rowName));
 };
 
 const isTitleRescueAnchorRow = (
@@ -604,12 +651,29 @@ const isTitleRescueAnchorRow = (
       /\bcoconut\s+aminos\b|\bsoy\s+sauce\s+replacement\b|\bseasoning\b/i.test(normalizedRow)
     ) ||
     (
+      PROTEIN_BAR_TITLE_PATTERN.test(productName) &&
+      /\bprotein\s+bars?\b|\bcollagen\s+bars?\b|\b(?:crispy\s+)?snack\s+bars?\b/i.test(normalizedRow)
+    ) ||
+    (
+      ENERGY_DRINK_MIX_TITLE_PATTERN.test(productName) &&
+      /\benergy\s+drink\s+mix\b|\bdrink\s+mix\b|\benergy\s+mix\b/i.test(normalizedRow)
+    ) ||
+    (
+      SEA_MOSS_GEL_TITLE_PATTERN.test(productName) &&
+      /\bsea\s+moss\s+gel\b|\bsea\s+moss\b|\bgel\b/i.test(normalizedRow)
+    ) ||
+    (
       GEL_FUEL_TITLE_PATTERN.test(productName) &&
       /\bgo\s+gel\b|\bendurance\s+gel\b|\benergy\s+gel\b|\bgel\b/i.test(normalizedRow)
     ) ||
     (
       ELECTROLYTE_DRINK_MIX_TITLE_PATTERN.test(productName) &&
       /\bhydrationup\b|\belectrolyte\s+drink\s+mix\b|\belectrolyte\b/i.test(normalizedRow)
+    ) ||
+    (
+      REDS_SUPERFOOD_TITLE_PATTERN.test(productName) &&
+      /\bblend\b/i.test(normalizedRow) &&
+      !/\bvitamin\b|\bpotassium\b|\bcalcium\b|\bsodium\b|\bcalories\b|\bsugars?\b/i.test(normalizedRow)
     )
   );
 };
@@ -661,6 +725,18 @@ const extractTitleMatch = (productName: string, pattern: RegExp): string | null 
   const match = productName.match(pattern)?.[0] ?? null;
   return normalizeText(match);
 };
+
+const hasNamedTitleAlignedRow = (
+  rows: ScienceIngredientRow[],
+  pattern: RegExp,
+): boolean =>
+  rows.some((row) => {
+    const normalizedName = normalizeText(row.name);
+    if (!pattern.test(normalizedName)) return false;
+    if (HARD_BLEND_LIKE_PATTERN.test(normalizedName)) return false;
+    if (/^alcohol$/i.test(normalizedName)) return false;
+    return true;
+  });
 
 const countMineralFamiliesInText = (value: string): number =>
   [
@@ -754,6 +830,21 @@ const deriveScienceTitleRescueRows = (params: {
   const hasDedicatedElderberryRow = params.existingRows.some((row) => isDedicatedElderberryRow(row.name));
   if (ELDERBERRY_PATTERN.test(titleWithBrandContext) && !hasDedicatedElderberryRow) {
     pushRow(/\belderberry\b/i.test(titleWithoutBrand) ? "Elderberry" : "Sambucus elderberry");
+  }
+
+  if (
+    /\bechinacea\b/i.test(titleWithoutBrand) &&
+    /\bgoldenseal\b/i.test(titleWithoutBrand) &&
+    !hasNamedTitleAlignedRow(params.existingRows, /\bechinacea\b|\bgoldenseal\b/i)
+  ) {
+    pushRow("Echinacea Goldenseal");
+  }
+
+  if (
+    /\blemon balm\b|\bmelissa\b/i.test(titleWithoutBrand) &&
+    !hasNamedTitleAlignedRow(params.existingRows, /\blemon balm\b|\bmelissa\b/i)
+  ) {
+    pushRow("Lemon Balm");
   }
 
   const hasDedicatedOmega3SourceRow = params.existingRows.some((row) =>
@@ -868,6 +959,21 @@ const deriveScienceTitleRescueRows = (params: {
     pushRow(
       extractTitleMatch(titleWithoutBrand, /\bcoconut\s+aminos\b|\bsoy\s+sauce\s+replacement\b/i) ??
         "Coconut Aminos",
+    );
+  } else if (PROTEIN_BAR_TITLE_PATTERN.test(titleWithoutBrand)) {
+    pushRow(
+      extractTitleMatch(titleWithoutBrand, /\b(?:protein|collagen)\s+bars?\b|\b(?:crispy\s+)?snack\s+bars?\b/i) ??
+        "Snack Bar",
+    );
+  } else if (ENERGY_DRINK_MIX_TITLE_PATTERN.test(titleWithoutBrand)) {
+    pushRow(
+      extractTitleMatch(titleWithoutBrand, /\benergy\s+drink\s+mix\b|\benergy\s+mix\b/i) ??
+        "Energy Drink Mix",
+    );
+  } else if (SEA_MOSS_GEL_TITLE_PATTERN.test(titleWithoutBrand)) {
+    pushRow(
+      extractTitleMatch(titleWithoutBrand, /\b(?:liposomal\s+)?sea\s+moss\s+gel\b|\bsea\s+moss\b/i) ??
+        "Sea Moss Gel",
     );
   } else if (GEL_FUEL_TITLE_PATTERN.test(titleWithoutBrand)) {
     pushRow(
@@ -1002,8 +1108,11 @@ const pickPrimaryActiveRowIndex = (
       && !shouldPreferSpecificFoodLikeIngredient(productName)
         ? 760
         : 0;
+    const titleLedBotanicalAnchorBoost = isTitleLedBotanicalAnchorRow(row.name, productName) ? 520 : 0;
     const titleRescueAnchorBoost = isTitleRescueAnchorRow(row.name, productName) ? 860 : 0;
     const foodLikeMacroPenalty = isFoodLikeMacroAnchorRow(row.name, productName) ? 460 : 0;
+    const foodLikeLowValueAnchorPenalty = isFoodLikeLowValueAnchorRow(row.name, productName) ? 520 : 0;
+    const titleLedBotanicalSolventPenalty = isTitleLedBotanicalSolventRow(row.name, productName) ? 420 : 0;
     const titleRescueMacroPenalty = isTitleRescueMacroRow(row.name, productName) ? 520 : 0;
     const audienceRowPenalty = NON_INGREDIENT_AUDIENCE_ROW_PATTERN.test(normalizeText(row.name)) ? 260 : 0;
     const magnesiumComboTitleBoost =
@@ -1108,6 +1217,7 @@ const pickPrimaryActiveRowIndex = (
       familyTitleBoost +
       familyTitlePositionBoost +
       foodLikeContextAnchorBoost +
+      titleLedBotanicalAnchorBoost +
       titleRescueAnchorBoost +
       mineralStackPriorityBoost +
       magnesiumComboTitleBoost +
@@ -1138,6 +1248,8 @@ const pickPrimaryActiveRowIndex = (
       productTitleEchoPenalty -
       macroPenalty -
       foodLikeMacroPenalty -
+      foodLikeLowValueAnchorPenalty -
+      titleLedBotanicalSolventPenalty -
       titleRescueMacroPenalty -
       audienceRowPenalty -
       opaqueProbioticBlendPenalty -
@@ -1189,8 +1301,11 @@ const scoreIngredientDescriptorForDisplay = (params: {
     && !shouldPreferSpecificFoodLikeIngredient(productName)
       ? 820
       : 0;
+  const titleLedBotanicalAnchorBoost = isTitleLedBotanicalAnchorRow(row.name, productName) ? 540 : 0;
   const titleRescueAnchorBoost = isTitleRescueAnchorRow(row.name, productName) ? 880 : 0;
   const foodLikeMacroPenalty = isFoodLikeMacroAnchorRow(row.name, productName) ? 500 : 0;
+  const foodLikeLowValueAnchorPenalty = isFoodLikeLowValueAnchorRow(row.name, productName) ? 560 : 0;
+  const titleLedBotanicalSolventPenalty = isTitleLedBotanicalSolventRow(row.name, productName) ? 440 : 0;
   const titleRescueMacroPenalty = isTitleRescueMacroRow(row.name, productName) ? 540 : 0;
   const audienceRowPenalty = NON_INGREDIENT_AUDIENCE_ROW_PATTERN.test(normalizeText(row.name)) ? 240 : 0;
   const magnesiumComboTitleBoost =
@@ -1302,6 +1417,7 @@ const scoreIngredientDescriptorForDisplay = (params: {
     familyTitleBoost +
     familyTitlePositionBoost +
     foodLikeContextAnchorBoost +
+    titleLedBotanicalAnchorBoost +
     titleRescueAnchorBoost +
     mineralStackPriorityBoost +
     magnesiumComboTitleBoost +
@@ -1332,6 +1448,8 @@ const scoreIngredientDescriptorForDisplay = (params: {
     productTitleEchoPenalty -
     macroPenalty -
     foodLikeMacroPenalty -
+    foodLikeLowValueAnchorPenalty -
+    titleLedBotanicalSolventPenalty -
     titleRescueMacroPenalty -
     audienceRowPenalty -
     opaqueProbioticBlendPenalty -

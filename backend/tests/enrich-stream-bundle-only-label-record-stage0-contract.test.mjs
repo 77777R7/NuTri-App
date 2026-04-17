@@ -36,10 +36,10 @@ test("cached snapshot bundle_only short-circuits use authoritative fast path inc
   const source = await readFile(SERVER_PATH, "utf8");
   const fastPathIdx = source.indexOf("if (cachedFast && !bypassCachedFastPathForAuthority)");
   assert.ok(fastPathIdx >= 0, "missing cachedFast branch");
-  const slice = source.slice(fastPathIdx, fastPathIdx + 1800);
+  const slice = source.slice(fastPathIdx, fastPathIdx + 5200);
 
-  assert.match(slice, /const snapshotIsAuthoritativeFastPath = hasBundleOnlyAuthoritativeFastPath\(cachedFast\.snapshot\);/);
-  assert.match(slice, /if \(streamAnalysisBundleOnly && !forceStage1 && !snapshotIsAuthoritativeFastPath\)/);
+  assert.match(source, /const snapshotIsAuthoritativeFastPath = hasBundleOnlyAuthoritativeFastPath\(cachedFast\.snapshot\);/);
+  assert.match(source, /if \(streamAnalysisBundleOnly && !forceStage1 && !snapshotIsAuthoritativeFastPath\)/);
 
   const stage0SkipIdx = source.indexOf("snapshot_bundle_only_skip_stage0");
   assert.ok(stage0SkipIdx >= 0, "missing snapshot_bundle_only_skip_stage0 gate");

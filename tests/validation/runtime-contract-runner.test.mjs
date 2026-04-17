@@ -290,6 +290,116 @@ test("runtime contract report passes when runtime surfaces stay aligned", async 
   assert.deepEqual(report.summary.failedGates, {});
 });
 
+test("runtime contract report retries transient usage-section fetch failures before failing the scenario", async () => {
+  const pack = {
+    version: "runtime-pack",
+    metadata: { packRole: "result_page_runtime_contract" },
+    scenarios: [baseScenario],
+  };
+  const baseFetch = buildMockFetch();
+  let usageAttempts = 0;
+
+  const report = await createRuntimeContractReport({
+    pack,
+    apiBaseUrl: "http://127.0.0.1:3001",
+    fetchImpl: async (url, options = {}) => {
+      const target = new URL(url);
+      if (target.pathname === "/api/analysis-section") {
+        const body = JSON.parse(options.body);
+        if (body.section === "usage" && usageAttempts === 0) {
+          usageAttempts += 1;
+          throw new Error("fetch failed");
+        }
+      }
+      return baseFetch(url, options);
+    },
+    commonHeaders: { "x-auth-disabled": "1" },
+  });
+
+  assert.equal(report.summary.pass, 1);
+  assert.equal(report.summary.fail, 0);
+  assert.equal(usageAttempts, 1);
+});
+
+test("runtime contract report treats fixture-only scenarios without real barcodes as not live-applicable", async () => {
+  const pack = {
+    version: "runtime-pack",
+    metadata: { packRole: "result_page_runtime_contract" },
+    scenarios: [
+      {
+        id: "search_origin_fixture_only",
+        surface: "search_origin_result",
+        category: "omega3_source_oil",
+        input: {
+          query: "fixture search",
+          searchResultSeed: {
+            productId: "fixture-krill-oil",
+            barcode: null,
+            upcCode: null,
+            name: "Krill Oil Omega-3",
+            brand: "Fixture Brand",
+          },
+        },
+        product: {
+          productId: "fixture-krill-oil",
+          brand: "Fixture Brand",
+          name: "Krill Oil Omega-3",
+          barcode: null,
+        },
+        expected: {
+          defaultAnchor: { pass: ["Krill Oil"], warn: [], fail: [] },
+        },
+      },
+    ],
+  };
+
+  const report = await createRuntimeContractReport({
+    pack,
+    apiBaseUrl: "http://127.0.0.1:3001",
+    fetchImpl: async () => {
+      throw new Error("fixture-only scenario should not hit runtime fetches");
+    },
+    commonHeaders: { "x-auth-disabled": "1" },
+  });
+
+  assert.equal(report.summary.total, 1);
+  assert.equal(report.summary.pass, 1);
+  assert.equal(report.summary.warn, 0);
+  assert.equal(report.scenarios[0].warnings.length, 0);
+  assert.equal(report.scenarios[0].gates[0].reason, "runtime_fixture_not_live_applicable");
+});
+
+test("runtime contract report still warns when a non-fixture scenario is missing its runtime barcode", async () => {
+  const pack = {
+    version: "runtime-pack",
+    metadata: { packRole: "result_page_runtime_contract" },
+    scenarios: [
+      {
+        ...baseScenario,
+        id: "scan_missing_runtime_barcode",
+        input: { barcode: null },
+        product: {
+          ...baseScenario.product,
+          productId: "41329",
+          barcode: null,
+        },
+      },
+    ],
+  };
+
+  const report = await createRuntimeContractReport({
+    pack,
+    apiBaseUrl: "http://127.0.0.1:3001",
+    fetchImpl: async () => {
+      throw new Error("missing-barcode scenario should short-circuit before fetch");
+    },
+    commonHeaders: { "x-auth-disabled": "1" },
+  });
+
+  assert.equal(report.summary.warn, 1);
+  assert.equal(report.scenarios[0].warnings[0].reason, "runtime_barcode_missing");
+});
+
 test("runtime contract row fails on main vs mini score mismatch", () => {
   const row = evaluateRuntimeContractRow({
     scenario: baseScenario,
@@ -430,6 +540,75 @@ test("runtime contract row fails when persona warning is missing", () => {
   assert.equal(personaGate.reason, "persona_expectation_mismatch");
 });
 
+test("runtime contract accepts operational sidecar fallbacks when visible content is present", () => {
+  const row = evaluateRuntimeContractRow({
+    scenario: baseScenario,
+    decisionSupport: { ok: true, status: 200, payload: buildDecisionSupportPayload() },
+    analysisBundle: { ok: true, status: 200, latestBundle: buildAnalysisBundle() },
+    ingredientOverview: {
+      ok: true,
+      status: 200,
+      payload: {
+        fallbackUsed: true,
+        fallbackReason: "deepseek_http_402",
+        ingredientOverview: { paragraph1: "Krill oil is the lead omega-3 source." },
+      },
+    },
+    scientificBackground: {
+      ok: true,
+      status: 200,
+      payload: {
+        fallbackUsed: true,
+        fallbackReason: "llm_unconfigured",
+        scientificBackground: { selectedLabel: "Krill Oil", introLine: "Krill oil context." },
+      },
+    },
+    analysisSections: {
+      overview: { ok: true, status: 200, payload: { dataStatus: "complete", cover: { summary: "ok" } } },
+      ingredients_detail: { ok: true, status: 200, payload: { dataStatus: "complete", detail: { items: [{ name: "Krill Oil" }] } } },
+      usage: { ok: true, status: 200, payload: { dataStatus: "limited", cover: { bullets: [{ text: "Take with food." }] } } },
+    },
+  });
+
+  const sidecarGate = row.gates.find((gate) => gate.gate === "sidecar_contract");
+  assert.ok(sidecarGate);
+  assert.equal(sidecarGate.status, "pass");
+  assert.equal(sidecarGate.reason, "sidecars_ready_via_operational_fallback");
+});
+
+test("runtime contract keeps quality-driven sidecar fallbacks as warnings", () => {
+  const row = evaluateRuntimeContractRow({
+    scenario: baseScenario,
+    decisionSupport: { ok: true, status: 200, payload: buildDecisionSupportPayload() },
+    analysisBundle: { ok: true, status: 200, latestBundle: buildAnalysisBundle() },
+    ingredientOverview: {
+      ok: true,
+      status: 200,
+      payload: {
+        fallbackUsed: true,
+        fallbackReason: "quality_gate_rejected",
+        ingredientOverview: { paragraph1: "Krill oil is the lead omega-3 source." },
+      },
+    },
+    scientificBackground: {
+      ok: true,
+      status: 200,
+      payload: {
+        scientificBackground: { selectedLabel: "Krill Oil", introLine: "Krill oil context." },
+      },
+    },
+    analysisSections: {
+      overview: { ok: true, status: 200, payload: { dataStatus: "complete", cover: { summary: "ok" } } },
+      ingredients_detail: { ok: true, status: 200, payload: { dataStatus: "complete", detail: { items: [{ name: "Krill Oil" }] } } },
+      usage: { ok: true, status: 200, payload: { dataStatus: "limited", cover: { bullets: [{ text: "Take with food." }] } } },
+    },
+  });
+
+  const sidecarGate = row.warnings.find((gate) => gate.gate === "sidecar_contract");
+  assert.ok(sidecarGate);
+  assert.equal(sidecarGate.reason, "sidecar_fallback_safe");
+});
+
 test("runtime contract treats drink-mix hybrid routes as food-like honesty cases instead of hard analysis-bundle failures", () => {
   const row = evaluateRuntimeContractRow({
     scenario: {
@@ -484,4 +663,95 @@ test("runtime contract treats drink-mix hybrid routes as food-like honesty cases
 
   assert.equal(row.failures.find((failure) => failure.gate === "route_health"), undefined);
   assert.equal(row.failures.find((failure) => failure.gate === "result_page_section_contract"), undefined);
+  assert.equal(row.warnings.find((warning) => warning.reason === "score_not_required_for_food_like"), undefined);
+});
+
+test("runtime contract accepts exact-barcode search-origin results when brand and title are family-compatible aliases", () => {
+  const scenario = {
+    id: "search_origin_trace_liquid_cal_mag_zinc",
+    surface: "search_origin_result",
+    category: "mineral_stack",
+    severityOnFail: "P1",
+    input: {
+      query: "00878941000447",
+      queryType: "barcode",
+      searchResultSeed: {
+        productId: "22224",
+        barcode: "00878941000447",
+        upcCode: "00878941000447",
+        name: "Trace, Liquid Cal/Mag/Zinc, Piña Colada, 30 fl oz (887 ml)",
+        brand: "Trace",
+        category: "Supplement",
+      },
+    },
+    product: {
+      productId: "22224",
+      brand: "Trace",
+      name: "Trace, Liquid Cal/Mag/Zinc, Piña Colada, 30 fl oz (887 ml)",
+      barcode: "00878941000447",
+    },
+    expected: {
+      defaultAnchor: {
+        pass: ["Calcium", "Magnesium", "Zinc"],
+        warn: [],
+        fail: ["Serving Size", "Sugars"],
+      },
+    },
+  };
+
+  const row = evaluateRuntimeContractRow({
+    scenario,
+    decisionSupport: {
+      ok: true,
+      status: 200,
+      payload: buildDecisionSupportPayload({
+        scienceBlock: {
+          ingredientRows: [{ name: "Zinc (as Zinc Gluconate)", dose: "15 mg" }],
+        },
+      }),
+    },
+    analysisBundle: {
+      ok: true,
+      status: 200,
+      latestBundle: buildAnalysisBundle({
+        meta: {
+          productIdentity: {
+            brand: "Trace Minerals Research",
+            name: "Liquid Cal/Mag/Zinc Natural Pina Colada Flavor",
+          },
+          authoritativeIdentity: {
+            type: "gtin14",
+            value: "00878941000447",
+          },
+          decisionSupportInline: {
+            nutriScoreCardV2: { overallScore: 82, overallBand: "Strong" },
+            scienceBlock: {
+              ingredientRows: [{ name: "Zinc (as Zinc Gluconate)", dose: "15 mg" }],
+            },
+          },
+        },
+      }),
+    },
+    ingredientOverview: {
+      ok: true,
+      status: 200,
+      payload: {
+        ingredientOverview: { paragraph1: "This liquid mineral stack keeps calcium, magnesium, and zinc together." },
+      },
+    },
+    scientificBackground: {
+      ok: true,
+      status: 200,
+      payload: {
+        scientificBackground: { selectedLabel: "Zinc (as Zinc Gluconate)", introLine: "Mineral-stack context." },
+      },
+    },
+    analysisSections: {
+      overview: { ok: true, status: 200, payload: { dataStatus: "complete", cover: { summary: "ok" } } },
+      ingredients_detail: { ok: true, status: 200, payload: { dataStatus: "complete", detail: { items: [{ name: "Zinc (as Zinc Gluconate)" }] } } },
+      usage: { ok: true, status: 200, payload: { dataStatus: "limited", cover: { bullets: [{ text: "Shake well." }] } } },
+    },
+  });
+
+  assert.equal(row.failures.find((failure) => failure.gate === "canonical_product_consistency"), undefined);
 });
