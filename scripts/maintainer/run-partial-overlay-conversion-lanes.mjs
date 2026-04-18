@@ -5,6 +5,7 @@ import path from "node:path";
 import { spawn } from "node:child_process";
 
 import { normalizeText, normalizeLower } from "./lib/iherb-overlay-utils.mjs";
+import { resolveDefaultScraplingPythonBin } from "./lib/scrapling-fetcher.mjs";
 
 const ROOT = process.cwd();
 const args = process.argv.slice(2);
@@ -27,7 +28,7 @@ const OUT_DIR = getArg(
 );
 const EXECUTE = getArg("execute", "true") === "true";
 const FETCH_CONCURRENCY = Math.max(1, Number(getArg("fetch-concurrency", "3")) || 3);
-const SCRAPLING_PYTHON_BIN = process.env.SCRAPLING_PYTHON_BIN || path.join(ROOT, "scripts", "maintainer", "python", ".venv_scrapling", "bin", "python");
+const SCRAPLING_PYTHON_BIN = resolveDefaultScraplingPythonBin({ root: ROOT });
 const parseBrandList = (value) =>
   String(value ?? "")
     .split(",")

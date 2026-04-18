@@ -36,6 +36,7 @@ const SEED_JSON_PATH = getArg(
 const BRAND_SLUG = getArg("brand-slug", "pure-encapsulations");
 const OUT_DIR = getArg("out-dir", path.join(ROOT, "output", "pure_rapidapi_enriched"));
 const RAPIDAPI_KEY =
+  process.env.IHERB_RAPIDAPI_KEY ||
   process.env.RAPIDAPI_KEY ||
   process.env.X_RAPIDAPI_KEY ||
   process.env.RAPID_API_KEY ||

@@ -277,3 +277,60 @@ test("readOfficialWaveYieldAdmission admits only positive-yield brand runs", asy
     [{ brandName: "Pure Synergy", admissionReason: "zero_yield", improvedRows: 0 }],
   );
 });
+
+test("readOfficialWaveYieldAdmission resolves scrapling canary brand names from fallback results", async () => {
+  const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "official-wave-scrapling-yield-"));
+  const runDir = path.join(tempDir, "runs");
+  const natureWayDir = path.join(runDir, "nature-s-way-v3");
+  await fs.mkdir(path.join(natureWayDir, "merge_validation"), { recursive: true });
+
+  await fs.writeFile(
+    path.join(natureWayDir, "scrapling_official_fallback_report.json"),
+    JSON.stringify({
+      inputs: {
+        brandFilter: null,
+      },
+      results: [
+        {
+          productId: "2111",
+          brandName: "Nature's Way",
+          outcome: "scrapling_candidate_built",
+        },
+      ],
+    }),
+  );
+
+  await fs.writeFile(
+    path.join(natureWayDir, "merge_validation", "scrapling_merge_validation_report.json"),
+    JSON.stringify({
+      summary: {
+        processed: 3,
+        improvedRows: 3,
+        becameFullOverlayReady: 3,
+        filledSuggestedUse: 3,
+        filledWarnings: 3,
+      },
+      rows: [
+        {
+          productId: "2111",
+          title: "Nature's Way, Acid-A-Cal Formula, 100 Capsules",
+          improved: true,
+        },
+      ],
+    }),
+  );
+
+  const admission = await readOfficialWaveYieldAdmission({
+    runDirs: [path.relative(ROOT_DIR, runDir)],
+    rootDir: ROOT_DIR,
+  });
+
+  assert.deepEqual(
+    admission.admittedBrandRuns.map((row) => ({
+      brandName: row.brandName,
+      improvedRows: row.summary.improvedRows,
+      admissionReason: row.admissionReason,
+    })),
+    [{ brandName: "Nature's Way", improvedRows: 3, admissionReason: "yield_positive" }],
+  );
+});

@@ -162,6 +162,12 @@ const PROBIOTIC_TITLE_PATTERN =
   /\b(?:probiotics?|pro-bio|probiology|oralbiotic|essential[\s-]*biotic|(?:gut|intestinal|digestive)[\s-]+flora|flora\s+support|live cultures?|cfu|protectis|floraphage|osfortis|cytoflora|acidophilus|bifidus?)\b/i;
 const PROBIOTIC_SPECIFIC_ROW_PATTERN =
   /\b(?:probiotic|probiotics|acidophilus|lactobacillus|bifidobacterium|saccharomyces|bacillus|streptococcus|salivarius|limosilactobacillus|reuteri|cfu|live cultures?|protectis|floraphage|osfortis|cytoflora|bacteriophage|bacterial culture|probiotic lysate)\b/i;
+const PROBIOTIC_FORMULA_TITLE_PATTERN =
+  /\b(?:multi[\s-]*function\s+)?probiotic\s+formula\b|\bpolyflora\b/i;
+const PROBIOTIC_FORMULA_FAMILY_ROW_PATTERN =
+  /\bprobiotics?\b|\bprobiotic\s+(?:blend|formula)\b/i;
+const PROBIOTIC_FORMULA_COMPANION_YEAST_PATTERN =
+  /\b(?:brewer'?s|baker'?s)\s+yeast\b|\bsaccharomyces\b/i;
 const GREENS_TITLE_PATTERN =
   /\b(?:ag1|athletic\s+greens|greens\b|supergreens?\b|green\s+superfood|superfood|vegetable\s+powder|whole\s+food\s+powder|daily\s+greens?|greens?\s+(?:powder|blend|formula)|powdered\s+greens?|supergreens?\s+powder)\b/i;
 const TEA_BAG_TITLE_PATTERN = /\b(?:tea\s+bags?|herbal\s+tea|slimming\s+tea)\b/i;
@@ -181,7 +187,10 @@ const IMMUNE_BLEND_TITLE_PATTERN =
 const B_COMPLEX_TITLE_PATTERN =
   /\bb[\s-]*complex\b|\bb[\s-]*vitamins?\b|\bvitamin\s*b\s*complex\b/i;
 const MULTIVITAMIN_TITLE_PATTERN =
-  /\bmulti[\s-]*(?:vitamin|mineral)s?\b|\bmultivitamin\b|\bmultimineral\b|\bmultione\b|\bdaily\s+total\s+one\b|\bsingle\s+daily\s+multiple\b|\bmale\s+multiple\b|\bdaily\s+multi(?:\s+formula)?\b|\b(?:women'?s|men'?s)\s+daily\s+multi\b|\bmulti\s+formula\b|\bjust\s+one\s+multi\b|\bmulti\s+with\s+iron\b/i;
+  /\bmulti[\s-]*(?:vitamin|mineral)s?\b|\bmultivitamin\b|\bmultimineral\b|\bmultione\b|\bdaily\s+total\s+one\b|\bsingle\s+daily\s+multiple\b|\bmale\s+multiple\b|\bwhole\s+food\s+based\s+multiple\b|\bladies'?\s+choice\b|\bdaily\s+multi(?:\s+formula)?\b|\bmulti\s+for\s+men\b|\bmulti\s+vitamin\s+energy\b|\b(?:women'?s|men'?s)\s+daily\s+multi\b|\bmulti\s+formula\b|\bjust\s+one\s+multi\b|\bmulti\s+with\s+iron\b/i;
+const MINIMAL_ESSENTIAL_BROAD_NUTRIENT_TITLE_PATTERN = /\bminimal\s+and\s+essential\b/i;
+const BROAD_VITAMIN_MINERAL_ROW_PATTERN =
+  /\b(?:vitamin\s*[a-z0-9]*|thiamin|riboflavin|niacin|folate|biotin|pantothenic|calcium|magnesium|zinc|selenium|copper|manganese|chromium|molybdenum|iodine|iron)\b/i;
 const JOINT_SUPPORT_TITLE_PATTERN = /\bjoint\s+support\b|\bno\.?\s*7\b/i;
 const B_COMPLEX_FORMULA_ROW_PATTERN =
   /\bb[\s-]*complex\b|\bvitamin\s*b\s*complex\b/i;
@@ -561,6 +570,15 @@ const matchesProductTitle = (rowName: string, productName: string): boolean => {
   return variants.some((value) => productKey.includes(value));
 };
 
+const isProbioticFormulaFamilyRow = (rowName: string, productName: string): boolean =>
+  PROBIOTIC_FORMULA_TITLE_PATTERN.test(productName) &&
+  PROBIOTIC_FORMULA_FAMILY_ROW_PATTERN.test(rowName);
+
+const isProbioticFormulaCompanionYeastRow = (rowName: string, productName: string): boolean =>
+  PROBIOTIC_FORMULA_TITLE_PATTERN.test(productName) &&
+  PROBIOTIC_FORMULA_COMPANION_YEAST_PATTERN.test(rowName) &&
+  !PROBIOTIC_FORMULA_FAMILY_ROW_PATTERN.test(rowName);
+
 const isFoodLikeTitle = (productName: string): boolean => {
   if (FLOWER_ESSENCE_TITLE_PATTERN.test(productName)) return false;
   if (PROBIOTIC_TITLE_PATTERN.test(productName)) return false;
@@ -853,6 +871,13 @@ const deriveScienceTitleRescueRows = (params: {
   }
 
   if (MULTIVITAMIN_TITLE_PATTERN.test(titleWithoutBrand)) {
+    pushRow("Multivitamin & Mineral Formula");
+  }
+
+  if (
+    MINIMAL_ESSENTIAL_BROAD_NUTRIENT_TITLE_PATTERN.test(titleWithoutBrand) &&
+    params.existingRows.filter((row) => BROAD_VITAMIN_MINERAL_ROW_PATTERN.test(row.name)).length >= 4
+  ) {
     pushRow("Multivitamin & Mineral Formula");
   }
 
@@ -1227,6 +1252,8 @@ const pickPrimaryActiveRowIndex = (
       && (family === "probiotic_or_blend" || PROBIOTIC_SPECIFIC_ROW_PATTERN.test(row.name))
         ? 420
         : 0;
+    const probioticFormulaFamilyBoost = isProbioticFormulaFamilyRow(row.name, productName) ? 360 : 0;
+    const probioticFormulaCompanionPenalty = isProbioticFormulaCompanionYeastRow(row.name, productName) ? 220 : 0;
     const vitaminDInProbioticTitlePenalty =
       PROBIOTIC_TITLE_PATTERN.test(productName) && family === "vitamin_d" ? 320 : 0;
     const opaqueProbioticBlendPenalty =
@@ -1290,10 +1317,13 @@ const pickPrimaryActiveRowIndex = (
     const mineralStackPriorityBoost = getMineralStackPriorityBoost(family, hasMineralStackLead);
     const bComplexFormulaBoost =
       B_COMPLEX_TITLE_PATTERN.test(productName) && B_COMPLEX_FORMULA_ROW_PATTERN.test(row.name) ? 840 : 0;
+    const hasBroadMultivitaminTitle =
+      MULTIVITAMIN_TITLE_PATTERN.test(productName) ||
+      MINIMAL_ESSENTIAL_BROAD_NUTRIENT_TITLE_PATTERN.test(productName);
     const multivitaminFormulaBoost =
-      MULTIVITAMIN_TITLE_PATTERN.test(productName) && MULTIVITAMIN_FORMULA_ROW_PATTERN.test(row.name) ? 880 : 0;
+      hasBroadMultivitaminTitle && MULTIVITAMIN_FORMULA_ROW_PATTERN.test(row.name) ? 880 : 0;
     const multivitaminSingleActivePenalty =
-      MULTIVITAMIN_TITLE_PATTERN.test(productName)
+      hasBroadMultivitaminTitle
       && !MULTIVITAMIN_FORMULA_ROW_PATTERN.test(row.name)
       && family !== "generic"
         ? 140
@@ -1311,6 +1341,7 @@ const pickPrimaryActiveRowIndex = (
       bComplexFormulaBoost +
       multivitaminFormulaBoost +
       probioticLeadBoost +
+      probioticFormulaFamilyBoost +
       zincTitleLeadBoost +
       zincImmuneBlendBoost +
       elderberryTitleBoost +
@@ -1325,6 +1356,7 @@ const pickPrimaryActiveRowIndex = (
       (COMPANION_FAMILIES.has(family) ? 48 : 0) -
       supportingPenalty -
       vitaminDInProbioticTitlePenalty -
+      probioticFormulaCompanionPenalty -
       nonZincInZincTitlePenalty -
       carnitineInClaCombinationPenalty -
       melatoninInFiveHtpPenalty -
@@ -1441,6 +1473,8 @@ const scoreIngredientDescriptorForDisplay = (params: {
     )
       ? 430
       : 0;
+  const probioticFormulaFamilyBoost = isProbioticFormulaFamilyRow(row.name, productName) ? 380 : 0;
+  const probioticFormulaCompanionPenalty = isProbioticFormulaCompanionYeastRow(row.name, productName) ? 220 : 0;
   const vitaminDInProbioticTitlePenalty =
     PROBIOTIC_TITLE_PATTERN.test(productName) && descriptor.ingredientFamily === "vitamin_d" ? 320 : 0;
   const opaqueProbioticBlendPenalty =
@@ -1504,10 +1538,13 @@ const scoreIngredientDescriptorForDisplay = (params: {
     getMineralStackPriorityBoost(descriptor.ingredientFamily, hasMineralStackLead);
   const bComplexFormulaBoost =
     B_COMPLEX_TITLE_PATTERN.test(productName) && B_COMPLEX_FORMULA_ROW_PATTERN.test(row.name) ? 860 : 0;
+  const hasBroadMultivitaminTitle =
+    MULTIVITAMIN_TITLE_PATTERN.test(productName) ||
+    MINIMAL_ESSENTIAL_BROAD_NUTRIENT_TITLE_PATTERN.test(productName);
   const multivitaminFormulaBoost =
-    MULTIVITAMIN_TITLE_PATTERN.test(productName) && MULTIVITAMIN_FORMULA_ROW_PATTERN.test(row.name) ? 900 : 0;
+    hasBroadMultivitaminTitle && MULTIVITAMIN_FORMULA_ROW_PATTERN.test(row.name) ? 900 : 0;
   const multivitaminSingleActivePenalty =
-    MULTIVITAMIN_TITLE_PATTERN.test(productName)
+    hasBroadMultivitaminTitle
     && !MULTIVITAMIN_FORMULA_ROW_PATTERN.test(row.name)
     && descriptor.ingredientFamily !== "generic"
       ? 120
@@ -1529,6 +1566,7 @@ const scoreIngredientDescriptorForDisplay = (params: {
     bComplexFormulaBoost +
     multivitaminFormulaBoost +
     probioticLeadBoost +
+    probioticFormulaFamilyBoost +
     zincTitleLeadBoost +
     zincImmuneBlendBoost +
     elderberryTitleBoost +
@@ -1543,6 +1581,7 @@ const scoreIngredientDescriptorForDisplay = (params: {
     (descriptor.lineRole === "companion_nutrient" ? 62 : 0) -
     supportingPenalty -
     vitaminDInProbioticTitlePenalty -
+    probioticFormulaCompanionPenalty -
     nonZincInZincTitlePenalty -
     carnitineInClaCombinationPenalty -
     melatoninInFiveHtpPenalty -

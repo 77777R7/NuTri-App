@@ -536,6 +536,29 @@ test('science context normalizes branded probiotic rows so they remain searchabl
   assert.equal(floraphageContext.anchorIngredient?.ingredientFamily, 'probiotic_or_blend');
 });
 
+test('science context keeps title-led probiotic formula anchors ahead of yeast companion rows', () => {
+  const context = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-polyflora-o-probiotic-formula',
+      productName: "D'adamo, Polyflora® + O, Multi-Function Probiotic Formula, 120 VeggieCaps",
+      dosageForm: 'Capsule',
+      actives: [
+        { name: 'Probiotic Blend(Contains Streptococcus thermophilus and Lactobacillus rhamnosus)', amount: 3, unit: 'Billion CFU' },
+        { name: 'Larch Arabinogalactan', amount: 100, unit: 'mg' },
+        { name: 'Banana Fruit Powder(Musa paradisiaca)', amount: 100, unit: 'mg' },
+        { name: 'Chicory 4:1 Root Extract(Cichorium intybus)', amount: 100, unit: 'mg' },
+        { name: "Brewer's Yeast (Saccharomyces boulardii)", amount: 100, unit: 'mg' },
+        { name: 'Akkermansia muciniphila Postbiotic', amount: 5, unit: 'Billion TFU' },
+      ],
+    }),
+    overlayClaims: null,
+  });
+
+  assert.match(context.ingredientRows[0]?.name ?? '', /probiotic/i);
+  assert.doesNotMatch(context.ingredientRows[0]?.name ?? '', /brewer'?s yeast/i);
+  assert.equal(context.anchorIngredient?.ingredientFamily, 'probiotic_or_blend');
+});
+
 test('science context does not treat Flora brand omega oils as probiotic products', () => {
   const context = buildIngredientScienceContext({
     digest: buildDigest({
@@ -1059,6 +1082,71 @@ test('science context treats just-one multi with iron titles as multivitamin fam
   assert.notEqual(context.ingredientRows[0]?.name, 'Iron');
 });
 
+test('science context treats minimal and essential broad nutrient formulas as multivitamin family anchors', () => {
+  const context = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-vital-nutrients-minimal-essential',
+      productName: 'Minimal and Essential',
+      dosageForm: 'Vegan Capsule',
+      actives: [
+        { name: 'Vitamin A (as 67% beta carotene and 33% acetate)', amount: 1500, unit: 'mcg' },
+        { name: 'Vitamin C (as ascorbic acid)', amount: 500, unit: 'mg' },
+        { name: 'Vitamin D3 (as cholecalciferol)', amount: 50, unit: 'mcg' },
+        { name: 'Vitamin E (as d-alpha tocopheryl succinate)', amount: 67, unit: 'mg' },
+        { name: 'Zinc (as zinc citrate)', amount: 10, unit: 'mg' },
+        { name: 'Selenium (as selenomethionine)', amount: 100, unit: 'mcg' },
+      ],
+    }),
+    overlayClaims: {
+      title: 'Vital Nutrients, Minimal and Essential, 90 Vegan Capsules',
+      brandName: 'Vital Nutrients',
+      nutritionalFacts: null,
+    },
+  });
+
+  assert.equal(context.ingredientRows[0]?.name, 'Multivitamin & Mineral Formula');
+  assert.notEqual(context.ingredientRows[0]?.name, 'Zinc (as zinc citrate)');
+});
+
+test("science context treats ladies choice whole-food multiple titles as multivitamin family anchors", () => {
+  const context = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: "fixture-ladies-choice-multiple",
+      productName: "Bluebonnet Nutrition, Ladies' Choice, Whole Food Based Multiple, Ladies 18-49, 90 Caplets",
+      dosageForm: "Caplet",
+      actives: [
+        { name: "Vitamin A", amount: 750, unit: "mcg RAE" },
+        { name: "Vitamin C", amount: 120, unit: "mg" },
+        { name: "Zinc", amount: 15, unit: "mg" },
+        { name: "Inositol", amount: 50, unit: "mg" },
+      ],
+    }),
+    overlayClaims: null,
+  });
+
+  assert.equal(context.ingredientRows[0]?.name, "Multivitamin & Mineral Formula");
+  assert.notEqual(context.ingredientRows[0]?.name, "Inositol");
+});
+
+test("science context treats multi for men energy titles as multivitamin family anchors", () => {
+  const context = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: "fixture-hi-energy-multi-for-men",
+      productName: "Futurebiotics, Hi Energy Multi For Men, 60 Tablets",
+      dosageForm: "Tablet",
+      actives: [
+        { name: "Vitamin A (as beta-carotene)", amount: 750, unit: "mcg" },
+        { name: "Vitamin C", amount: 120, unit: "mg" },
+        { name: "Magnesium (as magnesium oxide and lysyl glycinate chelate)", amount: 50, unit: "mg" },
+      ],
+    }),
+    overlayClaims: null,
+  });
+
+  assert.equal(context.ingredientRows[0]?.name, "Multivitamin & Mineral Formula");
+  assert.notEqual(context.ingredientRows[0]?.name, "Magnesium (as magnesium oxide and lysyl glycinate chelate)");
+});
+
 test('science context treats No. 7 joint support titles as joint complex anchors', () => {
   const context = buildIngredientScienceContext({
     digest: buildDigest({
@@ -1453,6 +1541,28 @@ test('single-anchor ingredient overview strips exact-dose factual echo before re
   assert.doesNotMatch(result.ingredientOverview.paragraph1, /1000 mg/i);
   assert.doesNotMatch(result.ingredientOverview.paragraph2 ?? '', /1000 mg/i);
   assert.match(result.ingredientOverview.compareHint ?? '', /form/i);
+});
+
+test('single-anchor ingredient overview keeps liposomal vitamin C form context in fallback copy', async () => {
+  const digest = buildDigest({
+    labelId: 'fixture-liposomal-vitamin-c-single',
+    productName: 'BodyBio, Liposomal Vitamin C, 60 Capsules (500 mg per Capsule)',
+    dosageForm: 'Capsule',
+    actives: [{ name: 'Vitamin C (as Quali-C Ascorbic Acid)', amount: 1000, unit: 'mg' }],
+  });
+
+  const context = buildIngredientScienceContext({ digest, overlayClaims: null });
+  const result = await compileIngredientOverviewAsync(context);
+  const overviewCopy = [
+    result.ingredientOverview.titleLine,
+    result.ingredientOverview.paragraph1,
+    result.ingredientOverview.paragraph2,
+    result.ingredientOverview.compareHint,
+  ].join(' ');
+
+  assert.equal(result.source, 'fallback');
+  assert.match(result.ingredientOverview.titleLine ?? '', /liposomal vitamin c/i);
+  assert.match(overviewCopy, /liposomal vitamin c/i);
 });
 
 test('blend-anchor ingredient overview fallback names probiotic and tea blend anchors', async () => {

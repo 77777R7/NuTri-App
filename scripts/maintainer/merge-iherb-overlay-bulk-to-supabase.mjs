@@ -6,7 +6,7 @@ import crypto from "node:crypto";
 import dotenv from "dotenv";
 
 import { createClient } from "@supabase/supabase-js";
-import { deriveCompleteness, qualifiesHighConfidenceUsProductPage } from "./lib/iherb-overlay-utils.mjs";
+import { qualifiesHighConfidenceUsProductPage, resolveCurrentCompleteness } from "./lib/iherb-overlay-utils.mjs";
 
 const ROOT = process.cwd();
 dotenv.config();
@@ -163,20 +163,11 @@ const main = async () => {
 
   for (const row of products) {
     const gtin14 = normalizeText(row.barcode_gtin14);
-    const status = row?.completeness?.status ?? "unknown";
-    const overlayResolvedFields = Array.isArray(row?.completeness?.coreResolvedFields)
-      ? row.completeness.coreResolvedFields
-      : [];
-    const stillMissingFields = Array.isArray(row?.completeness?.coreMissingFields)
-      ? row.completeness.coreMissingFields
-      : [];
+    const completeness = resolveCurrentCompleteness(row);
+    const status = completeness.status;
+    const overlayResolvedFields = completeness.coreResolvedFields;
+    const stillMissingFields = completeness.coreMissingFields;
     const matchIds = dsldMatches.get(gtin14) ?? [];
-    const completeness = row?.completeness?.coreResolvedFields
-      ? row.completeness
-      : {
-          ...deriveCompleteness(row),
-          status,
-        };
     const highConfidenceUsProductPageReady =
       row?.readiness?.highConfidenceUsProductPageReady ??
       qualifiesHighConfidenceUsProductPage(row, completeness);

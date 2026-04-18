@@ -9,6 +9,7 @@ import test from "node:test";
 import { ROOT_DIR } from "../../scripts/maintainer/lib/science-validation-reporting.mjs";
 import { readOfficialWaveYieldAdmission } from "../../scripts/maintainer/lib/full-db-api-fill-official-waves.mjs";
 import {
+  buildRuntimeScenario,
   chooseValidationTargets,
   inferDynamicPassAnchors,
 } from "../../scripts/maintainer/run-official-wave-merge-post-validate.mjs";
@@ -206,6 +207,29 @@ test("post-merge validation falls back to dynamic title-led targets for new posi
   );
 });
 
+test("post-merge runtime scenario uses live search result title when available", () => {
+  const scenario = buildRuntimeScenario(
+    {
+      productId: "144224",
+      brandName: "Source Naturals",
+      title: "Source Naturals, Sleep Science®, Melatonin, Orange, 5 mg, 50 Lozenges",
+      barcode: "00021078005797",
+      category: "dynamic_post_merge",
+      passAnchors: ["Melatonin"],
+      failAnchors: ["Serving Size"],
+    },
+    {
+      topName: "Sleep Science®, Melatonin, Orange, 5 mg, 50 Lozenges",
+    },
+  );
+
+  assert.equal(
+    scenario.input.searchResultSeed.name,
+    "Sleep Science®, Melatonin, Orange, 5 mg, 50 Lozenges",
+  );
+  assert.equal(scenario.expected.consistency.identityMode, "exact_barcode_alias_allowed");
+});
+
 test("post-merge validation treats Udo's Oil 3-6-9 as an omega title-led target", () => {
   const anchors = inferDynamicPassAnchors({
     title: "Flora, Udo's Choice, Udo's Oil DHA 3-6-9 Blend, 17 fl oz (500 ml)",
@@ -266,6 +290,82 @@ test("post-merge validation treats just-one multi titles as multivitamin targets
   assert.deepEqual(anchors.slice(0, 2), ["Multivitamin", "Multivitamin & Mineral Formula"]);
 });
 
+test("post-merge validation treats minimal and essential formulas as multivitamin targets", () => {
+  const anchors = inferDynamicPassAnchors({
+    title: "Vital Nutrients, Minimal and Essential, 90 Vegan Capsules",
+    supplementFacts: {
+      nutritionalFacts: [
+        { substancy: "Vitamin A (as 67% beta carotene and 33% acetate)", amountPerServing: "750 mcg RAE" },
+        { substancy: "Vitamin C (as ascorbic acid)", amountPerServing: "150 mg" },
+        { substancy: "Vitamin D3 (as cholecalciferol)", amountPerServing: "25 mcg" },
+        { substancy: "Zinc (as zinc glycinate)", amountPerServing: "15 mg" },
+      ],
+    },
+  });
+
+  assert.deepEqual(anchors.slice(0, 2), ["Multivitamin", "Multivitamin & Mineral Formula"]);
+});
+
+test("post-merge validation treats ladies choice whole-food multiples as multivitamin targets", () => {
+  const anchors = inferDynamicPassAnchors({
+    title: "Bluebonnet Nutrition, Ladies' Choice, Whole Food Based Multiple, Ladies 18-49, 90 Caplets",
+    supplementFacts: {
+      nutritionalFacts: [
+        { substancy: "Vitamin A", amountPerServing: "750 mcg RAE" },
+        { substancy: "Vitamin C", amountPerServing: "120 mg" },
+        { substancy: "Zinc", amountPerServing: "15 mg" },
+        { substancy: "Inositol", amountPerServing: "50 mg" },
+      ],
+    },
+  });
+
+  assert.deepEqual(anchors.slice(0, 2), ["Multivitamin", "Multivitamin & Mineral Formula"]);
+});
+
+test("post-merge validation treats energy multi titles as multivitamin targets", () => {
+  assert.deepEqual(
+    inferDynamicPassAnchors({
+      title: "Futurebiotics, Hi Energy Multi For Men, 60 Tablets",
+      supplementFacts: {
+        nutritionalFacts: [
+          { substancy: "Vitamin A (as beta-carotene)", amountPerServing: "750 mcg" },
+          { substancy: "Magnesium", amountPerServing: "50 mg" },
+        ],
+      },
+    }).slice(0, 2),
+    ["Multivitamin", "Multivitamin & Mineral Formula"],
+  );
+
+  assert.deepEqual(
+    inferDynamicPassAnchors({
+      title: "Futurebiotics, Multi Vitamin Energy Plus, 120 Tablets",
+      supplementFacts: {
+        nutritionalFacts: [
+          { substancy: "Vitamin A (as beta-carotene)", amountPerServing: "750 mcg" },
+          { substancy: "Vitamin C", amountPerServing: "120 mg" },
+        ],
+      },
+    }).slice(0, 2),
+    ["Multivitamin", "Multivitamin & Mineral Formula"],
+  );
+});
+
+test("post-merge validation treats protein and greens powder titles as title-led food-like targets", () => {
+  const anchors = inferDynamicPassAnchors({
+    title: "Natural Factors, Whole Earth & Sea®, Organic Protein & Greens, Unflavored, 1.41 lbs (640 g)",
+    supplementFacts: {
+      nutritionalFacts: [
+        { substancy: "Saturated Fat", amountPerServing: "0.5 g" },
+        { substancy: "Total Carbohydrates", amountPerServing: "3 g" },
+        { substancy: "Dietary Fiber", amountPerServing: "2 g" },
+        { substancy: "Total Sugars", amountPerServing: "1 g" },
+      ],
+    },
+  });
+
+  assert.deepEqual(anchors.slice(0, 3), ["Protein & Greens", "Greens", "Protein"]);
+});
+
 test("post-merge validation accepts sparse folate and probiotic family anchors", () => {
   assert.deepEqual(
     inferDynamicPassAnchors({
@@ -285,6 +385,19 @@ test("post-merge validation accepts sparse folate and probiotic family anchors",
       supplementFacts: {
         nutritionalFacts: [
           { substancy: "Blend of 10 Strains of Probiotic Bacteria", amountPerServing: "np" },
+        ],
+      },
+    }).slice(0, 2),
+    ["Probiotics", "Probiotic"],
+  );
+
+  assert.deepEqual(
+    inferDynamicPassAnchors({
+      title: "D'adamo, Polyflora, 120 Vegetarian Capsules (Discontinued Item)",
+      supplementFacts: {
+        nutritionalFacts: [
+          { substancy: "Probiotic Blend(Contains Streptococcus thermophilus and Lactobacillus rhamnosus)", amountPerServing: "3 Billion CFU" },
+          { substancy: "Larch Arabinogalactan", amountPerServing: "100 mg" },
         ],
       },
     }).slice(0, 2),
@@ -338,6 +451,41 @@ test("post-merge validation accepts title-led botanical and nootropic anchors fr
       supplementFacts: { nutritionalFacts: [{ substancy: "Chinese Skullcap root extract" }] },
     }).slice(0, 1),
     ["CogninSA"],
+  );
+
+  assert.ok(
+    inferDynamicPassAnchors({
+      title: "Natural Stacks, Focus Stack, 2 Bottles, 15 Vegetarian Capsules Each",
+      supplementFacts: { nutritionalFacts: [{ substancy: "Neurofuel Nootropic", amountPerServing: null }] },
+    }).some((anchor) => /acetyl l-carnitine/i.test(anchor)),
+  );
+
+  assert.ok(
+    inferDynamicPassAnchors({
+      title: "Michael's Health, Energy Adrenal Support, 60 Vegetarian Tablets",
+      supplementFacts: { nutritionalFacts: [{ substancy: "Ashwagandha Root", amountPerServing: "150 mg" }] },
+    }).some((anchor) => /ashwagandha/i.test(anchor)),
+  );
+
+  assert.ok(
+    inferDynamicPassAnchors({
+      title: "Michael's Health, Thyroid Factors, 90 Vegan Capsules",
+      supplementFacts: { nutritionalFacts: [{ substancy: "Chromium", amountPerServing: "200 mcg" }] },
+    }).some((anchor) => /chromium|thyroid/i.test(anchor)),
+  );
+
+  assert.ok(
+    inferDynamicPassAnchors({
+      title: "Nordic Naturals, ProDHA Eye, 120 Soft Gels",
+      supplementFacts: { nutritionalFacts: [{ substancy: "FloraGLO Lutein", amountPerServing: "20 mg" }] },
+    }).some((anchor) => /^DHA$/i.test(anchor)),
+  );
+
+  assert.ok(
+    inferDynamicPassAnchors({
+      title: "Nutricost, Women, Pre-Workout Complex With Vitamin B12 & Folate, Peach Mango, 1.5 lb",
+      supplementFacts: { nutritionalFacts: [{ substancy: "Folate", amountPerServing: "400 mcg" }] },
+    }).some((anchor) => /taurine|pre-workout/i.test(anchor)),
   );
 });
 
@@ -423,6 +571,55 @@ test("post-merge validation accepts immune liquid zinc anchors beyond the first 
       },
     }).some((anchor) => /zinc/i.test(anchor)),
   );
+});
+
+test("post-merge validation ignores supplement facts header rows when building dynamic anchors", () => {
+  const anchors = inferDynamicPassAnchors({
+    title: "Nature's Way, Acid-A-Cal Formula, 100 Capsules",
+    supplementFacts: {
+      nutritionalFacts: [
+        { substancy: "Amount Per Serving", amountPerServing: "%DV" },
+        { substancy: "Vitamin C (ascorbic acid)", amountPerServing: "100 mg" },
+        { substancy: "Vitamin B6", amountPerServing: "19.7 mg" },
+        { substancy: "Calcium", amountPerServing: "130 mg" },
+        { substancy: "Magnesium (as magnesium glycerophosphate)", amountPerServing: "11 mg" },
+      ],
+    },
+  });
+
+  assert.equal(anchors.includes("Amount Per Serving"), false);
+  assert.ok(anchors.includes("Magnesium (as magnesium glycerophosphate)"));
+});
+
+test("post-merge validation treats liposomal vitamin C titles as form-aware vitamin C anchors", () => {
+  const anchors = inferDynamicPassAnchors({
+    title: "BodyBio, Liposomal Vitamin C, 60 Capsules (500 mg per Capsule)",
+    supplementFacts: {
+      nutritionalFacts: [
+        { substancy: "Vitamin C (as Quali-C Ascorbic Acid)", amountPerServing: "1000 mg" },
+      ],
+    },
+  });
+
+  assert.ok(anchors.includes("Liposomal Vitamin C"));
+  assert.ok(anchors.includes("Vitamin C"));
+});
+
+test("post-merge validation treats garlic oil titles as garlic bulb oil anchors", () => {
+  const anchors = inferDynamicPassAnchors({
+    title: "Sports Research, Garlic Oil, Plant-Based, 150 Veggie Softgels",
+    supplementFacts: {
+      nutritionalFacts: [
+        {
+          substancy: "Garlic Oil (bulb) (100:1 concentrate, equivalent to 1,000 mg fresh garlic)",
+          amountPerServing: "10 mg",
+        },
+      ],
+    },
+  });
+
+  assert.ok(anchors.includes("Garlic Bulb Oil Concentrate"));
+  assert.ok(anchors.includes("Garlic Oil"));
 });
 
 test("post-merge validation accepts lutein in bilberry ginkgo eyebright complex titles", () => {

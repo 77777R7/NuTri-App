@@ -649,6 +649,14 @@ export const classifyOverlayStatus = (record, completeness) => {
   return "catalog_only";
 };
 
+export const resolveCurrentCompleteness = (record) => {
+  const completeness = deriveCompleteness(record);
+  return {
+    ...completeness,
+    status: classifyOverlayStatus(record, completeness),
+  };
+};
+
 export const qualifiesHighConfidenceUsProductPage = (record, completeness) => {
   const hasUsAuthoritativeOverlay = Boolean(record?.sourceSummary?.hasUsIherbPage);
   if (!hasUsAuthoritativeOverlay) return false;

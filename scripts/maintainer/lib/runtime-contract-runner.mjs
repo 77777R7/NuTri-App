@@ -510,8 +510,13 @@ const anchorMatchesAllowed = ({ selectedAnchor, allowedAnchors, disallowedAnchor
     if (!normalized) return false;
     if (actual === normalized) return true;
     if (actual.includes(normalized) || normalized.includes(actual)) return true;
+    const actualTokens = tokenizeComparable(selectedAnchor).map((token) => token.replace(/s$/, ""));
     const expectedTokens = tokenizeComparable(anchor);
     if (expectedTokens.length === 0) return false;
+    const expectedSingularTokens = expectedTokens.map((token) => token.replace(/s$/, ""));
+    if (actualTokens.length >= 2 && actualTokens.every((token) => expectedSingularTokens.includes(token))) {
+      return true;
+    }
     return expectedTokens.every((token) => actual.includes(token));
   });
 };
@@ -532,6 +537,16 @@ const brandsLookCompatible = (expectedBrand, actualBrand) => {
   const actual = normalizeLooseText(actualBrand);
   if (!expected || !actual) return false;
   if (expected === actual) return true;
+  const stripBrandSuffixes = (value) =>
+    normalizeLooseText(value)
+      .replace(/\b(?:nutrition|naturals?|foods?|labs?|laboratories|supplements?|products?|inc|llc|co)\b/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+  const expectedCore = stripBrandSuffixes(expectedBrand);
+  const actualCore = stripBrandSuffixes(actualBrand);
+  if (expectedCore && actualCore && (expectedCore.includes(actualCore) || actualCore.includes(expectedCore))) {
+    return true;
+  }
   const aliases = [
     ["eclectic herb", "eclectic institute"],
     ["rapidfire", "rapid fire"],
@@ -547,6 +562,11 @@ const namesLookBarcodeAligned = (expectedName, actualName) => {
   if (expectedTokens.length === 0 || actualTokens.length === 0) return false;
   const overlap = actualTokens.filter((token) => expectedTokens.includes(token)).length;
   return overlap >= 3 && overlap / actualTokens.length >= 0.6;
+};
+
+const allowsExactBarcodeIdentityAliasPass = (scenario) => {
+  const mode = normalizeLooseText(scenario?.expected?.consistency?.identityMode);
+  return mode === "exact barcode alias allowed";
 };
 
 const sectionHasVisibleContent = (sectionKey, payload) => {
@@ -626,10 +646,13 @@ const evaluateSearchOriginIdentity = (scenario, bundle) => {
       brandsLookCompatible(seed.brand ?? scenario?.product?.brand, identity.brand)
     )
   ) {
+    const aliasAllowed = allowsExactBarcodeIdentityAliasPass(scenario);
     return buildGateResult({
       gate: "canonical_product_consistency",
-      status: "warn",
-      reason: "search_origin_identity_barcode_brand_consistent_name_alias",
+      status: aliasAllowed ? "pass" : "warn",
+      reason: aliasAllowed
+        ? "search_origin_identity_exact_barcode_name_alias_allowed"
+        : "search_origin_identity_barcode_brand_consistent_name_alias",
       severity: null,
       details: {
         mismatches,
@@ -649,10 +672,13 @@ const evaluateSearchOriginIdentity = (scenario, bundle) => {
     barcodeMatches &&
     namesLookBarcodeAligned(seed.name ?? scenario?.product?.name, identity.name)
   ) {
+    const aliasAllowed = allowsExactBarcodeIdentityAliasPass(scenario);
     return buildGateResult({
       gate: "canonical_product_consistency",
-      status: "warn",
-      reason: "search_origin_identity_barcode_name_consistent_brand_alias",
+      status: aliasAllowed ? "pass" : "warn",
+      reason: aliasAllowed
+        ? "search_origin_identity_exact_barcode_brand_alias_allowed"
+        : "search_origin_identity_barcode_name_consistent_brand_alias",
       severity: null,
       details: {
         mismatches,

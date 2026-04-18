@@ -333,13 +333,22 @@ const buildSingleAnchorFallback = (context: IngredientScienceContext): Ingredien
         compareHint: "When comparing products, focus on the stated amount per serving, the named source, and whether the label clearly identifies the form or delivery type.",
       };
     case "vitamin_c":
-      return {
-        mode: "single_anchor",
-        titleLine: "Vitamin C",
-        paragraph1: "Vitamin C is a single-ingredient vitamin formula, and this label names the active directly instead of burying it inside a broader blend or matrix.",
-        paragraph2: "That makes the product easier to compare because shoppers can focus on the exact ingredient identity and stated form without decoding a more complex formula first.",
-        compareHint: "When comparing products, look first at the stated vitamin C amount and then check whether the label clearly states the exact form and delivery type.",
-      };
+      {
+        const titleEvidence = `${anchorName} ${context.productName}`;
+        const vitaminCTitleLine = /\bliposomal\s+vitamin\s+c\b/i.test(titleEvidence)
+          ? "Liposomal Vitamin C"
+          : "Vitamin C";
+        const leadPhrase = vitaminCTitleLine === "Vitamin C" ? "Vitamin C" : vitaminCTitleLine;
+        const compareSubject = vitaminCTitleLine === "Vitamin C" ? "vitamin C products" : "liposomal vitamin C products";
+
+        return {
+          mode: "single_anchor",
+          titleLine: vitaminCTitleLine,
+          paragraph1: `${leadPhrase} is a single-ingredient vitamin formula, and this label names the active directly instead of burying it inside a broader blend or matrix.`,
+          paragraph2: "That makes the product easier to compare because shoppers can focus on the exact ingredient identity and stated form without decoding a more complex formula first.",
+          compareHint: `When comparing ${compareSubject}, look first at the stated vitamin C amount and then check whether the label clearly states the exact form and delivery type.`,
+        };
+      }
     case "zinc":
       return {
         mode: "single_anchor",

@@ -1,0 +1,61 @@
+{
+  "schemaVersion": "official_yield_first_zero_yield_brands.v0",
+  "description": "Brands that should not re-enter official/API merge validation unless a fresh preflight or wave shows improvedRows > 0. This keeps known 0-yield soft-field lanes out of the main data-fill path.",
+  "brands": [
+    {
+      "brandName": "NutriBiotic",
+      "reason": "Prior official soft-field lane produced no user-surface yield; keep discovery-only until a fresh preflight proves improvedRows > 0.",
+      "source": "operator_yield_first_closeout"
+    },
+    {
+      "brandName": "Global Healing",
+      "reason": "Prior official soft-field lane produced no user-surface yield; keep discovery-only until a fresh preflight proves improvedRows > 0.",
+      "source": "operator_yield_first_closeout"
+    },
+    {
+      "brandName": "Pure Synergy",
+      "reason": "Prior official soft-field lane produced no user-surface yield; keep discovery-only until a fresh preflight proves improvedRows > 0.",
+      "source": "operator_yield_first_closeout"
+    },
+    {
+      "brandName": "Frontier Co-op",
+      "reason": "Current full-db official wave reported improvedRows=0.",
+      "source": "output/full_db_api_fill_queue/1776493027844"
+    },
+    {
+      "brandName": "Garden of Life",
+      "reason": "Current full-db official wave reported improvedRows=0.",
+      "source": "output/full_db_api_fill_queue/1776493027844"
+    },
+    {
+      "brandName": "Eclectic Herb",
+      "reason": "Current full-db official wave reported improvedRows=0.",
+      "source": "output/full_db_api_fill_queue/1776493027844"
+    },
+    {
+      "brandName": "NB Pure",
+      "reason": "Current full-db official wave reported improvedRows=0.",
+      "source": "output/full_db_api_fill_queue/1776493027844"
+    },
+    {
+      "brandName": "BodyHealth",
+      "reason": "Current yield-first top34 official wave reported improvedRows=0.",
+      "source": "output/full_db_api_fill_queue/1776493027844"
+    },
+    {
+      "brandName": "Arizona Natural",
+      "reason": "Current yield-first top34 official wave reported improvedRows=0.",
+      "source": "output/full_db_api_fill_queue/1776493027844"
+    },
+    {
+      "brandName": "HealthForce Superfoods",
+      "reason": "Current yield-first top34 official wave reported improvedRows=0.",
+      "source": "output/full_db_api_fill_queue/1776493027844"
+    },
+    {
+      "brandName": "Purity Products",
+      "reason": "Current yield-first top34 official wave reported improvedRows=0.",
+      "source": "output/full_db_api_fill_queue/1776493027844"
+    }
+  ]
+}

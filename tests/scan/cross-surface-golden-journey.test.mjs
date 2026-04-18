@@ -224,4 +224,12 @@ test("unsafe language helper blocks high-risk user safety phrasing", () => {
     ]),
     false,
   );
+  assert.equal(
+    containsUnsafeLanguage([
+      "When comparing flax seed oil products, focus on the source oil rather than treating it like a marine EPA/DHA label.",
+    ]),
+    false,
+  );
+  assert.equal(containsUnsafeLanguage(["This product treats insomnia."]), true);
+  assert.equal(containsUnsafeLanguage(["Used to treat digestive disease."]), true);
 });

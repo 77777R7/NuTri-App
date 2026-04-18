@@ -6,16 +6,20 @@ import { applySupplementFactsFallbacks } from "./supplement-facts-fallbacks.mjs"
 
 const ROOT = process.cwd();
 
-const PROJECT_VENV_PYTHON = path.join(
-  ROOT,
-  "scripts",
-  "maintainer",
-  "python",
-  ".venv_scrapling",
-  "bin",
-  "python",
-);
-const DEFAULT_PYTHON = process.env.SCRAPLING_PYTHON_BIN || (fs.existsSync(PROJECT_VENV_PYTHON) ? PROJECT_VENV_PYTHON : "python3");
+export const resolveDefaultScraplingPythonBin = ({
+  root = ROOT,
+  env = process.env,
+  existsSync = fs.existsSync,
+} = {}) => {
+  if (env.SCRAPLING_PYTHON_BIN) return env.SCRAPLING_PYTHON_BIN;
+  const candidates = [
+    path.join(root, "scripts", "maintainer", "python", ".venv_scrapling_047", "bin", "python"),
+    path.join(root, "scripts", "maintainer", "python", ".venv_scrapling", "bin", "python"),
+  ];
+  return candidates.find((candidate) => existsSync(candidate)) ?? "python3";
+};
+
+const DEFAULT_PYTHON = resolveDefaultScraplingPythonBin();
 const DEFAULT_WORKER_PATH = path.join(ROOT, "scripts", "maintainer", "python", "scrapling_worker.py");
 
 const runWorker = (payload, { pythonBin = DEFAULT_PYTHON, workerPath = DEFAULT_WORKER_PATH } = {}) =>

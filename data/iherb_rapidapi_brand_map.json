@@ -26,6 +26,16 @@
       "brandName": "Centrum",
       "brandSlug": "centrum",
       "status": "available"
+    },
+    {
+      "brandName": "Barlean's",
+      "brandSlug": "barleans",
+      "status": "available"
+    },
+    {
+      "brandName": "D'adamo",
+      "brandSlug": "d-adamo-personalized-nutrition",
+      "status": "available"
     }
   ]
 }

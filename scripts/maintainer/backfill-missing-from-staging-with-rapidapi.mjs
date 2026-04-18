@@ -45,13 +45,14 @@ const BRAND_MAP_PATH = getArg(
 );
 const OUT_DIR = getArg("out-dir", path.join(ROOT, "output", "iherb_missing_from_staging_rapidapi_wave"));
 const RAPIDAPI_KEY =
+  process.env.IHERB_RAPIDAPI_KEY ||
   process.env.RAPIDAPI_KEY ||
   process.env.X_RAPIDAPI_KEY ||
   process.env.RAPID_API_KEY ||
   getArg("rapidapi-key");
 const DELAY_MS = Number(getArg("delay-ms", 500)) || 0;
 const ALLOW_FUZZY_MATCH = args.includes("--allow-fuzzy-match");
-const TARGET_BRANDS = (getArg("brands", "Healthy Origins,Schiff,Natrol,Spring Valley,Centrum"))
+const TARGET_BRANDS = (getArg("brands", "Healthy Origins,Schiff,Natrol,Centrum"))
   .split(",")
   .map((item) => normalizeText(item))
   .filter(Boolean);

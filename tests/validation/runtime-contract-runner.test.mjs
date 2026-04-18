@@ -990,6 +990,104 @@ test("runtime contract warns instead of failing exact-barcode search-origin resu
   assert.equal(canonicalWarning?.reason, "search_origin_identity_barcode_brand_consistent_name_alias");
 });
 
+test("runtime contract can pass exact-barcode title aliases when post-merge validation opts in", () => {
+  const scenario = {
+    id: "search_origin_source_naturals_day_starter_alias_allowed",
+    surface: "search_origin_result",
+    category: "dynamic_post_merge",
+    severityOnFail: "P1",
+    input: {
+      query: "00021078027638",
+      queryType: "barcode",
+      searchResultSeed: {
+        productId: "155200",
+        barcode: "00021078027638",
+        upcCode: "00021078027638",
+        name: "Source Naturals, Caffeine + L-Theanine, 60 Tablets",
+        brand: "Source Naturals",
+        category: "Supplement",
+      },
+    },
+    product: {
+      productId: "155200",
+      brand: "Source Naturals",
+      name: "Source Naturals, Caffeine + L-Theanine, 60 Tablets",
+      barcode: "00021078027638",
+    },
+    expected: {
+      consistency: {
+        identityMode: "exact_barcode_alias_allowed",
+      },
+      defaultAnchor: {
+        pass: ["Caffeine", "L-Theanine"],
+        warn: [],
+        fail: ["Serving Size", "Sugars"],
+      },
+    },
+  };
+
+  const row = evaluateRuntimeContractRow({
+    scenario,
+    decisionSupport: {
+      ok: true,
+      status: 200,
+      payload: buildDecisionSupportPayload({
+        scienceBlock: {
+          ingredientRows: [{ name: "L-Theanine", dose: null }],
+        },
+      }),
+    },
+    analysisBundle: {
+      ok: true,
+      status: 200,
+      latestBundle: buildAnalysisBundle({
+        meta: {
+          productIdentity: {
+            brand: "Source Naturals",
+            name: "Day Starter",
+          },
+          authoritativeIdentity: {
+            type: "gtin14",
+            value: "00021078027638",
+          },
+          decisionSupportInline: {
+            nutriScoreCardV2: { overallScore: 82, overallBand: "Strong" },
+            scienceBlock: {
+              ingredientRows: [{ name: "L-Theanine", dose: null }],
+            },
+          },
+        },
+      }),
+    },
+    ingredientOverview: {
+      ok: true,
+      status: 200,
+      payload: {
+        ingredientOverview: { paragraph1: "Caffeine and L-Theanine are the title-led actives here." },
+      },
+    },
+    scientificBackground: {
+      ok: true,
+      status: 200,
+      payload: {
+        scientificBackground: { selectedLabel: "L-Theanine", introLine: "Caffeine plus L-Theanine context." },
+      },
+    },
+    analysisSections: {
+      overview: { ok: true, status: 200, payload: { dataStatus: "complete", cover: { summary: "ok" } } },
+      ingredients_detail: { ok: true, status: 200, payload: { dataStatus: "complete", detail: { items: [{ name: "L-Theanine" }] } } },
+      usage: { ok: true, status: 200, payload: { dataStatus: "limited", cover: { bullets: [{ text: "Use as directed." }] } } },
+    },
+  });
+
+  assert.equal(row.status, "pass");
+  assert.equal(row.failures.find((failure) => failure.gate === "canonical_product_consistency"), undefined);
+  assert.equal(row.warnings.find((warning) => warning.gate === "canonical_product_consistency"), undefined);
+  const canonicalGate = row.gates.find((gate) => gate.gate === "canonical_product_consistency");
+  assert.equal(canonicalGate?.status, "pass");
+  assert.equal(canonicalGate?.reason, "search_origin_identity_exact_barcode_name_alias_allowed");
+});
+
 test("runtime contract treats Eclectic Herb and Eclectic Institute as exact-barcode brand aliases", () => {
   const scenario = {
     id: "search_origin_eclectic_lemon_balm_brand_alias",
@@ -1073,6 +1171,99 @@ test("runtime contract treats Eclectic Herb and Eclectic Institute as exact-barc
     analysisSections: {
       overview: { ok: true, status: 200, payload: { dataStatus: "complete", cover: { summary: "ok" } } },
       ingredients_detail: { ok: true, status: 200, payload: { dataStatus: "complete", detail: { items: [{ name: "Lemon Balm, Dried" }] } } },
+      usage: { ok: true, status: 200, payload: { dataStatus: "limited", cover: { bullets: [{ text: "Use as directed." }] } } },
+    },
+  });
+
+  assert.equal(row.failures.find((failure) => failure.gate === "canonical_product_consistency"), undefined);
+  const canonicalWarning = row.warnings.find((warning) => warning.gate === "canonical_product_consistency");
+  assert.equal(canonicalWarning?.status, "warn");
+  assert.equal(canonicalWarning?.reason, "search_origin_identity_barcode_brand_consistent_name_alias");
+});
+
+test("runtime contract warns on exact-barcode branded line aliases when product shorthand stays aligned", () => {
+  const scenario = {
+    id: "search_origin_bluebonnet_earth_sweet_vitamin_c_alias",
+    surface: "search_origin_result",
+    category: "vitamin_mineral_single",
+    severityOnFail: "P1",
+    input: {
+      query: "00743715005051",
+      queryType: "barcode",
+      searchResultSeed: {
+        productId: "82017",
+        barcode: "00743715005051",
+        upcCode: "00743715005051",
+        name: "Bluebonnet Nutrition, Earth Sweet Chewables, Vitamin C, Orange, 90 Chewable Tablets",
+        brand: "Bluebonnet Nutrition",
+        category: "Supplement",
+      },
+    },
+    product: {
+      productId: "82017",
+      brand: "Bluebonnet Nutrition",
+      name: "Bluebonnet Nutrition, Earth Sweet Chewables, Vitamin C, Orange, 90 Chewable Tablets",
+      barcode: "00743715005051",
+    },
+    expected: {
+      defaultAnchor: {
+        pass: ["Vitamin C"],
+        warn: [],
+        fail: ["Sugars"],
+      },
+    },
+  };
+
+  const row = evaluateRuntimeContractRow({
+    scenario,
+    decisionSupport: {
+      ok: true,
+      status: 200,
+      payload: buildDecisionSupportPayload({
+        scienceBlock: {
+          ingredientRows: [{ name: "Vitamin C", dose: "500 mg" }],
+        },
+      }),
+    },
+    analysisBundle: {
+      ok: true,
+      status: 200,
+      latestBundle: buildAnalysisBundle({
+        meta: {
+          productIdentity: {
+            brand: "Bluebonnet EarthSweet Chewables",
+            name: "Vitamin C 500 mg Orange Flavor",
+          },
+          authoritativeIdentity: {
+            type: "gtin14",
+            value: "00743715005051",
+          },
+          decisionSupportInline: {
+            nutriScoreCardV2: { overallScore: 65, overallBand: "Fair" },
+            scienceBlock: {
+              ingredientRows: [{ name: "Vitamin C", dose: "500 mg" }],
+            },
+          },
+        },
+      }),
+    },
+    ingredientOverview: {
+      ok: true,
+      status: 200,
+      payload: {
+        ingredientOverview: { paragraph1: "Vitamin C is the selected nutrient here." },
+      },
+    },
+    scientificBackground: {
+      ok: true,
+      status: 200,
+      payload: {
+        scientificBackground: { selectedLabel: "Vitamin C", introLine: "Vitamin C context." },
+      },
+    },
+    analysisSections: {
+      overview: { ok: true, status: 200, payload: { dataStatus: "complete", cover: { summary: "ok" } } },
+      ingredients_detail: { ok: true, status: 200, payload: { dataStatus: "complete", detail: { items: [{ name: "Vitamin C" }] } } },
       usage: { ok: true, status: 200, payload: { dataStatus: "limited", cover: { bullets: [{ text: "Use as directed." }] } } },
     },
   });

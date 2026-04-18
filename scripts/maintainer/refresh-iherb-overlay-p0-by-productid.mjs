@@ -42,6 +42,7 @@ const PRIORITY_LANE = getArg("priority-lane", "P0_api_fill_us_strong_identity");
 const LIMIT = Number(getArg("limit", 0)) || null;
 const DELAY_MS = Number(getArg("delay-ms", 1300)) || 0;
 const RAPIDAPI_KEY =
+  process.env.IHERB_RAPIDAPI_KEY ||
   process.env.RAPIDAPI_KEY ||
   process.env.X_RAPIDAPI_KEY ||
   process.env.RAPID_API_KEY ||

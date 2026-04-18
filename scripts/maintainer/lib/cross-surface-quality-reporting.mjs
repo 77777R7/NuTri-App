@@ -82,9 +82,9 @@ const UNSAFE_LANGUAGE_PATTERNS = [
   /\bproven\s+to\b/i,
   /\bprevents?\b/i,
   /\bcures?\b/i,
-  /\btreats\b/i,
   /\bused\s+to\s+treat\b/i,
-  /\btreating\b/i,
+  /\btreats?\s+(?:insomnia|diseases?|conditions?|symptoms?|constipation|colds?|flu|infections?|inflammation|pain|anxiety|depression|diabetes|hypertension|arthritis|digestive\s+disease|heart\s+disease)\b/i,
+  /\btreating\s+(?:insomnia|diseases?|conditions?|symptoms?|constipation|colds?|flu|infections?|inflammation|pain|anxiety|depression|diabetes|hypertension|arthritis|digestive\s+disease|heart\s+disease)\b/i,
   /\boverdose\b/i,
 ];
 

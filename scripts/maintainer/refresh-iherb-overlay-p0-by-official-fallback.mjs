@@ -9,6 +9,7 @@ import {
   buildOverlayRecordKey,
   buildPatchStrategy,
   classifyOverlayStatus,
+  collectProductsFromEntry,
   deriveCompleteness,
   extractOverlayRecordFromSeedRow,
   mergeOverlayRecords,
@@ -1512,7 +1513,7 @@ const main = async () => {
 
   const stagingPayload = await readJson(STAGING_PATH);
   const queueRows = await readJson(QUEUE_PATH);
-  const stagingRows = Array.isArray(stagingPayload?.products) ? stagingPayload.products : [];
+  const stagingRows = collectProductsFromEntry(stagingPayload);
   const requestedRows = (Array.isArray(queueRows) ? queueRows : []).filter(queueRowMatchesCohort);
 
   const selectedRows = LIMIT ? requestedRows.slice(0, LIMIT) : requestedRows;

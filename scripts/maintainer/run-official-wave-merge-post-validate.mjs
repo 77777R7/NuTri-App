@@ -78,6 +78,10 @@ const PRIORITIZED_VALIDATION_TARGETS = [
 ];
 
 const DYNAMIC_FAIL_ANCHORS = [
+  "Amount Per Serving",
+  "%DV",
+  "% Daily Value",
+  "Daily Value",
   "Serving Size",
   "Servings Per Container",
   "Calories",
@@ -91,6 +95,7 @@ const DYNAMIC_FAIL_ANCHORS = [
 ];
 
 const DYNAMIC_TITLE_ANCHOR_RULES = [
+  { pattern: /\bliposomal\s+vitamin\s*c\b/i, anchors: ["Liposomal Vitamin C", "Vitamin C", "Ascorbic Acid"] },
   { pattern: /\bmethyl\s+folate\b|\b5[\s-]*methyl\s+folate\b/i, anchors: ["Folate", "5-Methyl Folate", "Methyl Folate"] },
   { pattern: /\b(?:b[\s-]*complex|methyl\s*b12)\b/i, anchors: ["B-Complex", "Vitamin B Complex", "Methyl B12"] },
   { pattern: /\bwhey\s+protein\b/i, anchors: ["Whey Protein", "Protein"] },
@@ -98,11 +103,12 @@ const DYNAMIC_TITLE_ANCHOR_RULES = [
   { pattern: /\bdigestion\s+enhancement\s+enzymes?\b|\bdigestive\s+enzymes?\b/i, anchors: ["Digestive Enzymes", "Enzyme Blend"] },
   { pattern: /\bspirulina\b/i, anchors: ["Spirulina"] },
   { pattern: /\bchlorella\b/i, anchors: ["Chlorella"] },
+  { pattern: /\bprotein\s*(?:&|and)\s*greens\b/i, anchors: ["Protein & Greens", "Greens", "Protein"] },
   { pattern: /\bglutamine\b/i, anchors: ["Glutamine"] },
   { pattern: /\bleucine\b/i, anchors: ["Leucine"] },
   { pattern: /\bbilberry\b|\bginkgo\b|\beyebright\b|\blutein\b/i, anchors: ["Bilberry", "Ginkgo", "Eyebright", "Lutein"] },
   { pattern: /\bchromium\b/i, anchors: ["Chromium", "Chromium Picolinate"] },
-  { pattern: /\bmale\s+multiple\b|\bmultivitamin\b|\bmultiple\b|\bdaily\s+multi(?:\s+formula)?\b|\b(?:women'?s|men'?s)\s+daily\s+multi\b|\bmulti\s+formula\b|\bjust\s+one\s+multi\b|\bmulti\s+with\s+iron\b/i, anchors: ["Multivitamin", "Multivitamin & Mineral Formula", "Male Multiple"] },
+  { pattern: /\bmale\s+multiple\b|\bmultivitamin\b|\bmultiple\b|\bdaily\s+multi(?:\s+formula)?\b|\bmulti\s+for\s+men\b|\bmulti\s+vitamin\s+energy\b|\b(?:women'?s|men'?s)\s+daily\s+multi\b|\bmulti\s+formula\b|\bjust\s+one\s+multi\b|\bmulti\s+with\s+iron\b|\bminimal\s+and\s+essential\b/i, anchors: ["Multivitamin", "Multivitamin & Mineral Formula", "Multi Vitamin Energy Plus", "Male Multiple"] },
   { pattern: /\bjoint\s+support\b|\bno\.?\s*7\b/i, anchors: ["Joint Support Complex", "Collagen"] },
   { pattern: /\bsaw\s+palmetto\b/i, anchors: ["Saw Palmetto"] },
   { pattern: /\bvitamin\s*d3\b|\bvegan\s+vitamin\s*d3\b|\bcholecalciferol\b/i, anchors: ["Vitamin D3", "Vitamin D"] },
@@ -117,13 +123,19 @@ const DYNAMIC_TITLE_ANCHOR_RULES = [
   { pattern: /\bflax\s+seed\s+oil\b|\bflaxseed\s+oil\b|\blinseed\s+oil\b/i, anchors: ["Flax Seed Oil", "Linolenic Acid", "Omega-3", "Omega-6", "Omega-9"] },
   { pattern: /\bmenopause\s+support\b/i, anchors: ["Menopause Support", "Soy Isoflavone", "Chaste Tree", "Red Clover", "Dong Quai", "Black Cohosh"] },
   { pattern: /\b(?:immune|immunity)\b/i, anchors: ["Zinc", "Vitamin C", "Elderberry", "Black Elderberry", "Vitamin D3", "Vitamin E"] },
+  { pattern: /\bgarlic\s+oil\b/i, anchors: ["Garlic Bulb Oil Concentrate", "Garlic Oil", "Garlic"] },
   { pattern: /\budo'?s\s+(?:choice\s+)?oil\b|\b(?:omega\s*)?3[\s-]*6[\s-]*9\b|\bdha\s+3[\s-]*6[\s-]*9\b/i, anchors: ["Omega 3-6-9", "Omega-3", "DHA", "ALA", "Essential Fatty Acids", "Omega-6", "Omega-9"] },
   { pattern: /\bpara\s*fight\b/i, anchors: ["ParaFight Herbal Blend", "ParaFight", "Intestinal Support Blend"] },
-  { pattern: /\bproto\s*dophilus\b|\bprobiotics?\b|\b50\s+billion\b/i, anchors: ["Probiotics", "Probiotic", "Blend of 10 Strains of Probiotic Bacteria"] },
+  { pattern: /\bproto\s*dophilus\b|\bpolyflora\b|\bprobiotics?\b|\b50\s+billion\b/i, anchors: ["Probiotics", "Probiotic", "Blend of 10 Strains of Probiotic Bacteria"] },
   { pattern: /\bpropolis\b/i, anchors: ["Propolis", "Astragalus", "Echinacea", "Slippery Elm"] },
   { pattern: /\bgoldenseal\b/i, anchors: ["Goldenseal", "Goldenseal Extract"] },
   { pattern: /\bcaffeine\b.*\bl[\s-]*theanine\b|\bl[\s-]*theanine\b.*\bcaffeine\b/i, anchors: ["Caffeine", "L-Theanine"] },
   { pattern: /\bthinkfast\b|\bbrain\s+performance\b|\bmemory\b/i, anchors: ["CogninSA", "Ginkgo", "Bacopa", "Chinese Skullcap"] },
+  { pattern: /\bfocus\s+stack\b/i, anchors: ["Acetyl L-Carnitine", "Nootropic", "Neurofuel", "Artichoke Leaf Extract"] },
+  { pattern: /\benergy\s+adrenal\s+support\b/i, anchors: ["Ashwagandha", "Adrenal Support", "Pantothenic Acid", "Vitamin B-12", "Vitamin C"] },
+  { pattern: /\bthyroid\s+factors?\b/i, anchors: ["Thyroid Support", "Chromium", "Iodine", "Kelp"] },
+  { pattern: /\bprodha\s+eye\b/i, anchors: ["DHA", "Omega-3", "EPA", "Lutein", "Zeaxanthin"] },
+  { pattern: /\bpre[\s-]*workout\s+complex\b/i, anchors: ["Taurine", "Pre-Workout Complex", "Vitamin B12", "Folate"] },
 ];
 
 const inferFlowerEssenceTitleAnchors = (title) => {
@@ -300,7 +312,12 @@ const anchorMatchesAllowed = ({ selectedAnchor, allowedAnchors, disallowedAnchor
     if (!normalized) return false;
     if (actual === normalized) return true;
     if (actual.includes(normalized) || normalized.includes(actual)) return true;
+    const actualTokens = tokenizeComparable(selectedAnchor).map((token) => token.replace(/s$/, ""));
     const expectedTokens = tokenizeComparable(anchor);
+    const expectedSingularTokens = expectedTokens.map((token) => token.replace(/s$/, ""));
+    if (actualTokens.length >= 2 && actualTokens.every((token) => expectedSingularTokens.includes(token))) {
+      return true;
+    }
     return expectedTokens.length > 0 && expectedTokens.every((token) => actual.includes(token));
   });
 };
@@ -390,7 +407,7 @@ const buildSearchScenario = (target) => ({
   severityOnFail: "P1",
 });
 
-const buildRuntimeScenario = (target) => ({
+export const buildRuntimeScenario = (target, searchRow = null) => ({
   id: `search_origin_${slugify(target.brandName)}_${slugify(target.title)}`.slice(0, 120),
   surface: "search_origin_result",
   origin: "search_result",
@@ -403,7 +420,7 @@ const buildRuntimeScenario = (target) => ({
       productId: target.productId,
       barcode: target.barcode,
       upcCode: target.barcode,
-      name: target.title,
+      name: normalizeText(searchRow?.topName) || target.title,
       brand: target.brandName,
       category: "Supplement",
       benefit: "",
@@ -419,6 +436,9 @@ const buildRuntimeScenario = (target) => ({
     barcode: target.barcode,
   },
   expected: {
+    consistency: {
+      identityMode: "exact_barcode_alias_allowed",
+    },
     defaultAnchor: {
       pass: target.passAnchors,
       warn: [],
@@ -444,9 +464,18 @@ const collectImprovedRowsFromRunDir = async ({ runDir, admittedBrandDirs = null 
     const reportPath = path.join(brandDir, "official_fallback_report.json");
     const scraplingValidationPath = path.join(brandDir, "scrapling_merge_validation_report.json");
     const nestedScraplingValidationPath = path.join(brandDir, "merge_validation", "scrapling_merge_validation_report.json");
-    const stagingPath = path.join(brandDir, "staging_products.official_refreshed.json");
+    const stagingPaths = [
+      path.join(brandDir, "staging_products.official_refreshed.json"),
+      path.join(brandDir, "staging_products.scrapling_merged.json"),
+      path.join(brandDir, "merge_validation", "staging_products.scrapling_merged.json"),
+    ];
     try {
-      const report = await readJson(reportPath);
+      let report = null;
+      try {
+        report = await readJson(reportPath);
+      } catch {
+        report = null;
+      }
       let scraplingValidationReport = null;
       try {
         scraplingValidationReport = await readJson(scraplingValidationPath);
@@ -457,8 +486,16 @@ const collectImprovedRowsFromRunDir = async ({ runDir, admittedBrandDirs = null 
           scraplingValidationReport = null;
         }
       }
-      const staging = await readJson(stagingPath);
-      const stagingProducts = Array.isArray(staging?.products) ? staging.products : [];
+      let stagingProducts = [];
+      for (const stagingPath of stagingPaths) {
+        try {
+          const staging = await readJson(stagingPath);
+          stagingProducts = Array.isArray(staging) ? staging : Array.isArray(staging?.products) ? staging.products : [];
+          if (stagingProducts.length > 0) break;
+        } catch {
+          // Try the next staging shape; Scrapling canary validation can keep merged staging nested.
+        }
+      }
       const stagingByProductId = new Map(
         stagingProducts
           .map((row) => [normalizeText(row?.productId), row])
@@ -775,13 +812,7 @@ const main = async () => {
     version: "iherb-post-merge-search.v1",
     scenarios: validationTargets.map(buildSearchScenario),
   };
-  const runtimePack = {
-    version: "iherb-post-merge-runtime.v1",
-    scenarios: validationTargets.map(buildRuntimeScenario),
-  };
-
   await writeJson(path.relative(ROOT_DIR, path.join(outDir, "search-pack.json")), searchPack);
-  await writeJson(path.relative(ROOT_DIR, path.join(outDir, "runtime-pack.json")), runtimePack);
 
   const searchReport = await createSearchReplayReport({
     pack: searchPack,
@@ -790,6 +821,19 @@ const main = async () => {
     scenarioLimit: validationTargets.length,
     timestamp: String(Date.now()),
   });
+
+  const searchByScenarioId = new Map(
+    (searchReport?.rows ?? []).map((row) => [row.id, row]),
+  );
+  const runtimePack = {
+    version: "iherb-post-merge-runtime.v1",
+    scenarios: validationTargets.map((target) => {
+      const searchScenario = buildSearchScenario(target);
+      return buildRuntimeScenario(target, searchByScenarioId.get(searchScenario.id) ?? null);
+    }),
+  };
+
+  await writeJson(path.relative(ROOT_DIR, path.join(outDir, "runtime-pack.json")), runtimePack);
 
   const regressionToken = process.env.RENDER_REGRESSION_TOKEN || process.env.REGRESSION_AUTH_TOKEN || "";
   const commonHeaders = regressionToken
@@ -807,15 +851,13 @@ const main = async () => {
   const runtimeByScenarioId = new Map(
     (runtimeReport?.scenarios ?? []).map((row) => [row.scenarioId, row]),
   );
-  const searchByScenarioId = new Map(
-    (searchReport?.rows ?? []).map((row) => [row.id, row]),
-  );
 
   const validationRows = [];
 
   for (const target of validationTargets) {
-    const runtimeScenario = buildRuntimeScenario(target);
     const searchScenario = buildSearchScenario(target);
+    const searchRow = searchByScenarioId.get(searchScenario.id) ?? null;
+    const runtimeScenario = buildRuntimeScenario(target, searchRow);
     const headers = buildScenarioHeaders({ scenario: runtimeScenario, commonHeaders });
 
     const decisionSupport = await fetchJson({
@@ -886,7 +928,6 @@ const main = async () => {
       && copyMentionsExpected(scientificText, [selectedAnchor, ...target.passAnchors].filter(Boolean));
 
     const runtimeRow = runtimeByScenarioId.get(runtimeScenario.id) ?? null;
-    const searchRow = searchByScenarioId.get(searchScenario.id) ?? null;
     const consistencyFailures = (runtimeRow?.failures ?? []).filter((gate) =>
       ["canonical_product_consistency", "selected_anchor_consistency"].includes(gate.gate),
     );

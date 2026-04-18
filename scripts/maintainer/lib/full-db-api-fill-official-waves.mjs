@@ -264,6 +264,9 @@ const readScraplingMergeValidationReport = async (absoluteBrandDir) => {
   return null;
 };
 
+const readScraplingFallbackReport = async (absoluteBrandDir) =>
+  readJsonIfExists(path.join(absoluteBrandDir, "scrapling_official_fallback_report.json"));
+
 export const readOfficialWaveYieldAdmission = async ({ runDirs, rootDir = ROOT_DIR }) => {
   const brandRuns = [];
 
@@ -302,6 +305,7 @@ export const readOfficialWaveYieldAdmission = async ({ runDirs, rootDir = ROOT_D
       const absoluteBrandDir = path.resolve(rootDir, brandDir);
       const report = await readJsonIfExists(path.join(absoluteBrandDir, "official_fallback_report.json"));
       const scraplingValidationReport = await readScraplingMergeValidationReport(absoluteBrandDir);
+      const scraplingFallbackReport = await readScraplingFallbackReport(absoluteBrandDir);
       const staging = await readJsonIfExists(
         path.join(absoluteBrandDir, "staging_products.official_refreshed.json"),
       );
@@ -319,6 +323,10 @@ export const readOfficialWaveYieldAdmission = async ({ runDirs, rootDir = ROOT_D
         normalizeText(report?.inputs?.brandName)
         || normalizeText(report?.inputs?.brandFilter)
         || normalizeText(report?.rows?.find((row) => normalizeText(row?.brandName))?.brandName)
+        || normalizeText(scraplingValidationReport?.rows?.find((row) => normalizeText(row?.brandName))?.brandName)
+        || normalizeText(scraplingFallbackReport?.inputs?.brandName)
+        || normalizeText(scraplingFallbackReport?.inputs?.brandFilter)
+        || normalizeText(scraplingFallbackReport?.results?.find((row) => normalizeText(row?.brandName))?.brandName)
         || normalizeText(staging?.products?.find((row) => normalizeText(row?.brandName))?.brandName)
         || normalizeText(entry.name);
 

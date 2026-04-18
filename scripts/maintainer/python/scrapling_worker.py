@@ -9,8 +9,21 @@ from urllib.parse import urljoin
 from lxml import html as lxml_html
 
 SHIM_ROOT = os.path.join(os.path.dirname(__file__), "vendor_shims")
-if os.path.isdir(SHIM_ROOT) and SHIM_ROOT not in sys.path:
-    sys.path.insert(0, SHIM_ROOT)
+
+
+def should_enable_vendor_shims():
+    try:
+        __import__("playwright._impl")
+        __import__("browserforge.headers.generator")
+        return False
+    except Exception:
+        return True
+
+
+if os.path.isdir(SHIM_ROOT) and SHIM_ROOT not in sys.path and should_enable_vendor_shims():
+    # Keep shims as a fallback for the legacy lightweight venv. Do not add them
+    # when real browser packages are present in the Scrapling 0.4.7 sidecar.
+    sys.path.append(SHIM_ROOT)
 
 try:
     import extruct
@@ -643,12 +656,16 @@ def parse_supplement_facts_rows(html):
     }
 
 
-def scrape_with_scrapling(url, mode, headless, network_idle, allow_google_search):
+def scrape_with_scrapling(url, mode, headless, network_idle, allow_google_search, timeout_ms=45000):
     from scrapling.fetchers import Fetcher
 
     fetch_kwargs = {}
     header_strategy = "default_stealthy_headers"
     stealthy_headers = True
+    requested_mode = normalize_text(mode).lower() or "plain"
+    fetcher = "Fetcher"
+    effective_mode = "plain"
+    mode_fallback_error = None
 
     # Codeage official product pages redirect to the locale home page when Scrapling's
     # Google-style referer/browser header bundle is present. Use a quieter static request
@@ -660,9 +677,36 @@ def scrape_with_scrapling(url, mode, headless, network_idle, allow_google_search
             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
         }
 
-    page = Fetcher.get(url, stealthy_headers=stealthy_headers, **fetch_kwargs)
-    fetcher = "Fetcher"
-    effective_mode = "plain"
+    try:
+        if requested_mode in ("fetch", "dynamic", "browser", "dynamic-fetch"):
+            from scrapling.fetchers import DynamicFetcher
+            page = DynamicFetcher.fetch(
+                url,
+                headless=headless,
+                network_idle=network_idle,
+                timeout=timeout_ms,
+            )
+            fetcher = "DynamicFetcher"
+            effective_mode = "dynamic"
+        elif requested_mode in ("stealthy", "stealthy-fetch", "stealth"):
+            from scrapling.fetchers import StealthyFetcher
+            page = StealthyFetcher.fetch(
+                url,
+                headless=headless,
+                network_idle=network_idle,
+                timeout=timeout_ms,
+            )
+            fetcher = "StealthyFetcher"
+            effective_mode = "stealthy"
+        else:
+            page = Fetcher.get(url, stealthy_headers=stealthy_headers, **fetch_kwargs)
+    except Exception as exc:
+        # Keep official fallback waves productive when browser deps are missing
+        # or a protected site rejects dynamic mode; the report records the downgrade.
+        mode_fallback_error = normalize_text(str(exc))[:500]
+        page = Fetcher.get(url, stealthy_headers=stealthy_headers, **fetch_kwargs)
+        fetcher = "Fetcher"
+        effective_mode = "plain"
 
     html = (
         getattr(page, "html_content", None)
@@ -682,6 +726,7 @@ def scrape_with_scrapling(url, mode, headless, network_idle, allow_google_search
         "fetcher": fetcher,
         "effectiveMode": effective_mode,
         "headerStrategy": header_strategy,
+        "modeFallbackError": mode_fallback_error,
         "html": html,
         "text": text,
         "title": title or None,
@@ -695,6 +740,7 @@ def main():
     mode = payload.get("mode", "stealthy")
     headless = bool(payload.get("headless", True))
     network_idle = bool(payload.get("networkIdle", True))
+    timeout_ms = int(payload.get("timeoutMs", 45000) or 45000)
     allow_google_search = bool(payload.get("allowGoogleSearch", False))
 
     if not url:
@@ -702,7 +748,7 @@ def main():
         return
 
     try:
-        result = scrape_with_scrapling(url, mode, headless, network_idle, allow_google_search)
+        result = scrape_with_scrapling(url, mode, headless, network_idle, allow_google_search, timeout_ms)
         sections = parse_sections_from_html(result["html"]) or parse_sections(result["text"])
         facts = parse_supplement_facts_rows(result["html"])
         supplement_facts_artifacts = extract_shopify_supplement_facts_artifacts(
@@ -766,7 +812,8 @@ def main():
             "images": images,
             "primaryImage": images[0] if images else None,
             "extractionWarnings": [
-                *([f"requested_{mode}_mode_downgraded_to_plain"] if result["effectiveMode"] != mode else []),
+                *([f"requested_{mode}_mode_downgraded_to_plain"] if result["effectiveMode"] == "plain" and normalize_text(mode).lower() not in ("", "plain") else []),
+                *([f"mode_fallback_error:{result['modeFallbackError']}"] if result.get("modeFallbackError") else []),
                 *(["structured_metadata_unavailable"] if not metadata.get("available") else []),
                 *(["missing_sections"] if not sections else []),
                 *(["missing_supplement_facts_rows"] if not facts["rows"] else []),
