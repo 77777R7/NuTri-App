@@ -534,6 +534,7 @@ const brandsLookCompatible = (expectedBrand, actualBrand) => {
   if (expected === actual) return true;
   const aliases = [
     ["eclectic herb", "eclectic institute"],
+    ["rapidfire", "rapid fire"],
   ];
   if (aliases.some((group) => group.includes(expected) && group.includes(actual))) return true;
   return expected.includes(actual) || actual.includes(expected);
@@ -629,6 +630,29 @@ const evaluateSearchOriginIdentity = (scenario, bundle) => {
       gate: "canonical_product_consistency",
       status: "warn",
       reason: "search_origin_identity_barcode_brand_consistent_name_alias",
+      severity: null,
+      details: {
+        mismatches,
+        expectedBrand: seed.brand ?? scenario?.product?.brand ?? null,
+        actualBrand: identity.brand ?? null,
+        expectedName: seed.name ?? scenario?.product?.name ?? null,
+        actualName: identity.name ?? null,
+        expectedBarcode,
+        actualBarcode,
+      },
+    });
+  }
+
+  if (
+    mismatches.length === 1 &&
+    mismatches[0] === "brand" &&
+    barcodeMatches &&
+    namesLookBarcodeAligned(seed.name ?? scenario?.product?.name, identity.name)
+  ) {
+    return buildGateResult({
+      gate: "canonical_product_consistency",
+      status: "warn",
+      reason: "search_origin_identity_barcode_name_consistent_brand_alias",
       severity: null,
       details: {
         mismatches,

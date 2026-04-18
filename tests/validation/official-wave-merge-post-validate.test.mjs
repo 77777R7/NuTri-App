@@ -195,6 +195,32 @@ test("post-merge validation treats just-one multi titles as multivitamin targets
   assert.deepEqual(anchors.slice(0, 2), ["Multivitamin", "Multivitamin & Mineral Formula"]);
 });
 
+test("post-merge validation accepts sparse folate and probiotic family anchors", () => {
+  assert.deepEqual(
+    inferDynamicPassAnchors({
+      title: "Protocol for Life Balance, 5-Methyl Folate, 5,000 mcg , 50 Veg Capsules",
+      supplementFacts: {
+        nutritionalFacts: [
+          { substancy: "Folate", amountPerServing: "8333 mcg DFE" },
+        ],
+      },
+    }).slice(0, 3),
+    ["Folate", "5-Methyl Folate", "Methyl Folate"],
+  );
+
+  assert.deepEqual(
+    inferDynamicPassAnchors({
+      title: "Protocol for Life Balance, ProtoDophilus, 50 Billion, 50 Veg Capsules",
+      supplementFacts: {
+        nutritionalFacts: [
+          { substancy: "Blend of 10 Strains of Probiotic Bacteria", amountPerServing: "np" },
+        ],
+      },
+    }).slice(0, 2),
+    ["Probiotics", "Probiotic"],
+  );
+});
+
 test("post-merge validation accepts title-led botanical and nootropic anchors from sparse official rows", () => {
   assert.deepEqual(
     inferDynamicPassAnchors({

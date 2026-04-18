@@ -91,7 +91,8 @@ const DYNAMIC_FAIL_ANCHORS = [
 ];
 
 const DYNAMIC_TITLE_ANCHOR_RULES = [
-  { pattern: /\b(?:b[\s-]*complex|methyl\s+folate|methyl\s*b12)\b/i, anchors: ["B-Complex", "Vitamin B Complex", "Methyl B12"] },
+  { pattern: /\bmethyl\s+folate\b|\b5[\s-]*methyl\s+folate\b/i, anchors: ["Folate", "5-Methyl Folate", "Methyl Folate"] },
+  { pattern: /\b(?:b[\s-]*complex|methyl\s*b12)\b/i, anchors: ["B-Complex", "Vitamin B Complex", "Methyl B12"] },
   { pattern: /\bwhey\s+protein\b/i, anchors: ["Whey Protein", "Protein"] },
   { pattern: /\bvitamin\s*k2\b|\bmenaquinone\b/i, anchors: ["Vitamin K2", "Menaquinone-7"] },
   { pattern: /\bdigestion\s+enhancement\s+enzymes?\b|\bdigestive\s+enzymes?\b/i, anchors: ["Digestive Enzymes", "Enzyme Blend"] },
@@ -113,6 +114,7 @@ const DYNAMIC_TITLE_ANCHOR_RULES = [
   { pattern: /\bmelatonin\b/i, anchors: ["Melatonin"] },
   { pattern: /\budo'?s\s+(?:choice\s+)?oil\b|\b(?:omega\s*)?3[\s-]*6[\s-]*9\b|\bdha\s+3[\s-]*6[\s-]*9\b/i, anchors: ["Omega 3-6-9", "Omega-3", "DHA", "ALA", "Essential Fatty Acids", "Omega-6", "Omega-9"] },
   { pattern: /\bpara\s*fight\b/i, anchors: ["ParaFight Herbal Blend", "ParaFight", "Intestinal Support Blend"] },
+  { pattern: /\bproto\s*dophilus\b|\bprobiotics?\b|\b50\s+billion\b/i, anchors: ["Probiotics", "Probiotic", "Blend of 10 Strains of Probiotic Bacteria"] },
   { pattern: /\bpropolis\b/i, anchors: ["Propolis", "Astragalus", "Echinacea", "Slippery Elm"] },
   { pattern: /\bgoldenseal\b/i, anchors: ["Goldenseal", "Goldenseal Extract"] },
   { pattern: /\bcaffeine\b.*\bl[\s-]*theanine\b|\bl[\s-]*theanine\b.*\bcaffeine\b/i, anchors: ["Caffeine", "L-Theanine"] },

@@ -158,7 +158,7 @@ const FUNCTIONAL_FOOD_LIKE_INGREDIENT_PATTERN =
   /\b(?:xylitol|erythritol|fiber|dragon\s+fruit|fruit\s+powder|juice\s+powder|spirulina|chlorella|barley\s+grass|wheat\s+grass|digestive\s+enzyme|enzyme\s+assimilation|greens\b|green\s+superfood|superfood)\b/i;
 const FUNCTIONAL_FOOD_LIKE_FORM_PATTERN = /\b(?:gum|mint|lozenge|tea|powder|drink\s*mix|gel)\b/i;
 const PROBIOTIC_TITLE_PATTERN =
-  /\b(?:probiotics?|pro-bio|probiology|essential[\s-]*biotic|(?:gut|intestinal|digestive)[\s-]+flora|flora\s+support|microbiome|live cultures?|cfu|digestive support|protectis|floraphage|osfortis|cytoflora|acidophilus|bifidus?)\b/i;
+  /\b(?:probiotics?|pro-bio|probiology|essential[\s-]*biotic|(?:gut|intestinal|digestive)[\s-]+flora|flora\s+support|live cultures?|cfu|protectis|floraphage|osfortis|cytoflora|acidophilus|bifidus?)\b/i;
 const PROBIOTIC_SPECIFIC_ROW_PATTERN =
   /\b(?:probiotic|probiotics|acidophilus|lactobacillus|bifidobacterium|saccharomyces|bacillus|limosilactobacillus|reuteri|cfu|live cultures?|protectis|floraphage|osfortis|cytoflora|bacteriophage|bacterial culture|probiotic lysate)\b/i;
 const GREENS_TITLE_PATTERN =
@@ -322,7 +322,7 @@ const inferFamilyFromText = (combined: string): IngredientScienceIngredientFamil
     return "omega_3";
   }
   if (
-    /probiotic|lactobacillus|bifidobacterium|saccharomyces|microbiome|phage/.test(combined) ||
+    /probiotic|lactobacillus|bifidobacterium|saccharomyces|phage/.test(combined) ||
     HARD_BLEND_LIKE_PATTERN.test(combined) ||
     SOFT_BLEND_LIKE_PATTERN.test(combined)
   ) {
@@ -529,7 +529,7 @@ const FAMILY_TITLE_HINTS: Array<{ family: IngredientScienceIngredientFamily; pat
   { family: "vitamin_c", pattern: /\bvitamin\s*c\b|\bascorbic\b/i },
   {
     family: "probiotic_or_blend",
-    pattern: /\bprobiotic|(?:gut|intestinal|digestive)[\s-]+flora|flora\s+support|microbiome|live cultures?\b/i,
+    pattern: /\bprobiotic|(?:gut|intestinal|digestive)[\s-]+flora|flora\s+support|live cultures?\b/i,
   },
 ];
 

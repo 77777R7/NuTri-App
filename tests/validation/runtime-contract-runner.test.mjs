@@ -1083,6 +1083,99 @@ test("runtime contract treats Eclectic Herb and Eclectic Institute as exact-barc
   assert.equal(canonicalWarning?.reason, "search_origin_identity_barcode_brand_consistent_name_alias");
 });
 
+test("runtime contract warns on exact-barcode brand aliases when the product name stays aligned", () => {
+  const scenario = {
+    id: "search_origin_replesta_biogaia_brand_alias",
+    surface: "search_origin_result",
+    category: "vitamin_mineral_single",
+    severityOnFail: "P1",
+    input: {
+      query: "00602359460100",
+      queryType: "barcode",
+      searchResultSeed: {
+        productId: "104123",
+        barcode: "00602359460100",
+        upcCode: "00602359460100",
+        name: "Replesta, Cholecalciferol, Vitamin D3, Natural Orange, 50,000 IU",
+        brand: "Replesta",
+        category: "Supplement",
+      },
+    },
+    product: {
+      productId: "104123",
+      brand: "Replesta",
+      name: "Replesta, Cholecalciferol, Vitamin D3, Natural Orange, 50,000 IU",
+      barcode: "00602359460100",
+    },
+    expected: {
+      defaultAnchor: {
+        pass: ["Vitamin D3", "Vitamin D"],
+        warn: [],
+        fail: ["Sugars"],
+      },
+    },
+  };
+
+  const row = evaluateRuntimeContractRow({
+    scenario,
+    decisionSupport: {
+      ok: true,
+      status: 200,
+      payload: buildDecisionSupportPayload({
+        scienceBlock: {
+          ingredientRows: [{ name: "Vitamin D3", dose: "50,000 IU" }],
+        },
+      }),
+    },
+    analysisBundle: {
+      ok: true,
+      status: 200,
+      latestBundle: buildAnalysisBundle({
+        meta: {
+          productIdentity: {
+            brand: "BioGaia",
+            name: "Replesta Cholecalciferol Natural Orange Flavor",
+          },
+          authoritativeIdentity: {
+            type: "gtin14",
+            value: "00602359460100",
+          },
+          decisionSupportInline: {
+            nutriScoreCardV2: { overallScore: 82, overallBand: "Strong" },
+            scienceBlock: {
+              ingredientRows: [{ name: "Vitamin D3", dose: "50,000 IU" }],
+            },
+          },
+        },
+      }),
+    },
+    ingredientOverview: {
+      ok: true,
+      status: 200,
+      payload: {
+        ingredientOverview: { paragraph1: "Vitamin D3 is the selected nutrient here." },
+      },
+    },
+    scientificBackground: {
+      ok: true,
+      status: 200,
+      payload: {
+        scientificBackground: { selectedLabel: "Vitamin D3", introLine: "Vitamin D3 context." },
+      },
+    },
+    analysisSections: {
+      overview: { ok: true, status: 200, payload: { dataStatus: "complete", cover: { summary: "ok" } } },
+      ingredients_detail: { ok: true, status: 200, payload: { dataStatus: "complete", detail: { items: [{ name: "Vitamin D3" }] } } },
+      usage: { ok: true, status: 200, payload: { dataStatus: "limited", cover: { bullets: [{ text: "Use as directed." }] } } },
+    },
+  });
+
+  assert.equal(row.failures.find((failure) => failure.gate === "canonical_product_consistency"), undefined);
+  const canonicalWarning = row.warnings.find((warning) => warning.gate === "canonical_product_consistency");
+  assert.equal(canonicalWarning?.status, "warn");
+  assert.equal(canonicalWarning?.reason, "search_origin_identity_barcode_name_consistent_brand_alias");
+});
+
 test("runtime contract treats exact-barcode search-origin identity as consistent when bundle identity is partial", () => {
   const scenario = {
     id: "search_origin_healthforce_spirulina",

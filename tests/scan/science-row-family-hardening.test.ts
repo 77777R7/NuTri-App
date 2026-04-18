@@ -1051,6 +1051,27 @@ test('science context rescues probiotic anchors ahead of opaque proprietary blen
   assert.notEqual(context.ingredientRows[0]?.name, 'Proprietary Blend');
 });
 
+test('science context does not synthesize probiotic anchors for broad microbiome wording alone', () => {
+  const context = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-dentalcidin-oral-microbiome-rinse',
+      productName: 'Biocidin Botanicals, Dentalcidin LS Oral Microbiome Liposomal Rinse Natural Mint',
+      dosageForm: 'Liquid',
+      actives: [
+        { name: 'Biocidin', amount: null, unit: 'np' },
+        { name: 'Myrrh', amount: null, unit: 'np' },
+        { name: 'Clove bud Oil', amount: null, unit: 'np' },
+        { name: 'Quercetin', amount: null, unit: 'np' },
+      ],
+    }),
+    overlayClaims: null,
+  });
+
+  assert.match(context.ingredientRows[0]?.name ?? '', /biocidin/i);
+  assert.doesNotMatch(context.ingredientRows[0]?.name ?? '', /^probiotics?$/i);
+  assert.notEqual(context.anchorIngredient?.ingredientFamily, 'probiotic_or_blend');
+});
+
 test('science context rescues title-led botanicals ahead of proprietary blend and alcohol rows', () => {
   const echinaceaContext = buildIngredientScienceContext({
     digest: buildDigest({
