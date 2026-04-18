@@ -7,6 +7,7 @@ import { promisify } from "node:util";
 import test from "node:test";
 
 import { ROOT_DIR } from "../../scripts/maintainer/lib/science-validation-reporting.mjs";
+import { readOfficialWaveYieldAdmission } from "../../scripts/maintainer/lib/full-db-api-fill-official-waves.mjs";
 import {
   chooseValidationTargets,
   inferDynamicPassAnchors,
@@ -65,6 +66,59 @@ test("run-official-wave-merge-post-validate skips merge when admission finds zer
   assert.equal(report.merge.skipped, true);
   assert.equal(report.merge.skipReason, "no_admitted_improved_rows");
   assert.equal(report.admission.discoveryOnlyBrandRuns[0].brandName, "Pure Synergy");
+});
+
+test("yield admission accepts scrapling merge-validation positive yield", async () => {
+  const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "official-wave-scrapling-yield-"));
+  const runDir = path.join(tempDir, "runs", "soft-tail");
+  const brandDir = path.join(runDir, "flower-essence-services");
+  await fs.mkdir(brandDir, { recursive: true });
+
+  await fs.writeFile(
+    path.join(brandDir, "official_fallback_report.json"),
+    JSON.stringify({
+      selectedCount: 2,
+      results: [
+        { productId: "16167", outcome: "scrapling_candidate_built" },
+        { productId: "16178", outcome: "scrapling_candidate_built" },
+      ],
+    }),
+  );
+  await fs.writeFile(
+    path.join(brandDir, "scrapling_merge_validation_report.json"),
+    JSON.stringify({
+      summary: {
+        processed: 2,
+        improvedRows: 2,
+        becameFullOverlayReady: 2,
+        filledSuggestedUse: 0,
+        filledWarnings: 2,
+      },
+      rows: [
+        { productId: "16167", brandName: "Flower Essence Services", improved: true },
+        { productId: "16178", brandName: "Flower Essence Services", improved: true },
+      ],
+    }),
+  );
+  await fs.writeFile(
+    path.join(brandDir, "staging_products.official_refreshed.json"),
+    JSON.stringify({
+      products: [
+        { productId: "16167", brandName: "Flower Essence Services", title: "Angelica" },
+        { productId: "16178", brandName: "Flower Essence Services", title: "Aspen" },
+      ],
+    }),
+  );
+
+  const admission = await readOfficialWaveYieldAdmission({
+    runDirs: [path.relative(ROOT_DIR, runDir)],
+    rootDir: ROOT_DIR,
+  });
+
+  assert.equal(admission.summary.admittedBrandRuns, 1);
+  assert.equal(admission.summary.discoveryOnlyBrandRuns, 0);
+  assert.equal(admission.summary.improvedRows, 2);
+  assert.equal(admission.admittedBrandRuns[0].summary.filledWarnings, 2);
 });
 
 test("post-merge validation falls back to dynamic title-led targets for new positive-yield waves", () => {
@@ -218,6 +272,21 @@ test("post-merge validation accepts sparse folate and probiotic family anchors",
       },
     }).slice(0, 2),
     ["Probiotics", "Probiotic"],
+  );
+});
+
+test("post-merge validation accepts flower essence family anchors for flower essence products", () => {
+  assert.deepEqual(
+    inferDynamicPassAnchors({
+      title: "Flower Essence Services, Flower Essence & Essential Oil, Grounding Green, 1 fl oz (30 ml)",
+      supplementFacts: {
+        nutritionalFacts: [
+          { substancy: "infusions of flowers of", amountPerServing: null },
+          { substancy: "Essential Oils", amountPerServing: null },
+        ],
+      },
+    }).slice(0, 3),
+    ["Flower Essence", "Flower Essence & Essential Oil", "Grounding Green"],
   );
 });
 

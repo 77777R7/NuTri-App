@@ -121,6 +121,28 @@ const DYNAMIC_TITLE_ANCHOR_RULES = [
   { pattern: /\bthinkfast\b|\bbrain\s+performance\b|\bmemory\b/i, anchors: ["CogninSA", "Ginkgo", "Bacopa", "Chinese Skullcap"] },
 ];
 
+const inferFlowerEssenceTitleAnchors = (title) => {
+  if (!/\bflower\s+essence\b/i.test(title)) return [];
+  const anchors = ["Flower Essence"];
+  if (/\bflower\s+essence\s*&\s*essential\s+oil\b/i.test(title)) {
+    anchors.push("Flower Essence & Essential Oil");
+  }
+  if (/\bflower\s+essence\s+spray\b/i.test(title)) {
+    anchors.push("Flower Essence Spray");
+  }
+  for (const segment of title.split(",")) {
+    const cleaned = normalizeText(segment)
+      .replace(/\b\d+(?:\.\d+)?\s*(?:fl\s*oz|ml|capsules?|tablets?|softgels?)\b.*$/i, "")
+      .replace(/[™®]/g, "")
+      .trim();
+    if (!cleaned || /^flower essence services$/i.test(cleaned)) continue;
+    if (/^flower\s+essence(?:\s*&\s*essential\s+oil|\s+spray)?$/i.test(cleaned)) continue;
+    if (/^\d/.test(cleaned)) continue;
+    anchors.push(cleaned);
+  }
+  return uniqNormalized(anchors).slice(0, 8);
+};
+
 const DEFAULT_RUN_DIRS = [
   "output/full_db_api_fill_queue/1776444464175/official_waves/runs/wave_lane_a_hard_facts_01",
   "output/full_db_api_fill_queue/1776444464175/official_waves/runs/wave_lane_b_official_top_01",
@@ -247,6 +269,8 @@ const extractFactNames = (row) => {
 
 export const inferDynamicPassAnchors = (row) => {
   const title = normalizeText(row?.title ?? row?.productName);
+  const flowerEssenceAnchors = inferFlowerEssenceTitleAnchors(title);
+  if (flowerEssenceAnchors.length > 0) return flowerEssenceAnchors;
   const titleAnchors = [];
   for (const rule of DYNAMIC_TITLE_ANCHOR_RULES) {
     if (rule.pattern.test(title)) titleAnchors.push(...rule.anchors);
@@ -413,9 +437,21 @@ const collectImprovedRowsFromRunDir = async ({ runDir, admittedBrandDirs = null 
     const brandDir = path.join(runDir, entry.name);
     if (admitted && !admitted.has(brandDir)) continue;
     const reportPath = path.join(brandDir, "official_fallback_report.json");
+    const scraplingValidationPath = path.join(brandDir, "scrapling_merge_validation_report.json");
+    const nestedScraplingValidationPath = path.join(brandDir, "merge_validation", "scrapling_merge_validation_report.json");
     const stagingPath = path.join(brandDir, "staging_products.official_refreshed.json");
     try {
       const report = await readJson(reportPath);
+      let scraplingValidationReport = null;
+      try {
+        scraplingValidationReport = await readJson(scraplingValidationPath);
+      } catch {
+        try {
+          scraplingValidationReport = await readJson(nestedScraplingValidationPath);
+        } catch {
+          scraplingValidationReport = null;
+        }
+      }
       const staging = await readJson(stagingPath);
       const stagingProducts = Array.isArray(staging?.products) ? staging.products : [];
       const stagingByProductId = new Map(
@@ -424,7 +460,10 @@ const collectImprovedRowsFromRunDir = async ({ runDir, admittedBrandDirs = null 
           .filter(([productId]) => productId),
       );
 
-      for (const row of report?.rows ?? []) {
+      const candidateRows = Array.isArray(report?.rows) && report.rows.length > 0
+        ? report.rows
+        : (scraplingValidationReport?.rows ?? []);
+      for (const row of candidateRows) {
         if (row?.improved !== true) continue;
         const productId = normalizeText(row?.productId);
         const stagingRow = stagingByProductId.get(productId);

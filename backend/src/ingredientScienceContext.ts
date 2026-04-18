@@ -152,6 +152,7 @@ const DIGESTIVE_ENZYME_TITLE_PATTERN =
   /\bdigestion\s+enhancement\s+enzymes?\b|\bdigestive\s+enzymes?\b|\benzyme\s+blend\b/i;
 const OMEGA3_ALGAL_TITLE_PATTERN =
   /\balgal\s+oil\b|\balgae\s+oil\b|\bfrom\s+algae\b|\bplant\s+based\s+omega\s*-?\s*3\b|\bschizochytrium\b/i;
+const FLOWER_ESSENCE_TITLE_PATTERN = /\bflower\s+essence\b/i;
 const FUNCTIONAL_FOOD_LIKE_TITLE_PATTERN =
   /\b(?:ag1|athletic\s+greens|gum|gums|gumm(?:y|ies)|mints?|lozenge|lozenges|freeze\s+dried|juice\s+powder|fruit\s+powder|dragon\s+fruit|smoothie|drink\s+mix|tea\s+bags?|herbal\s+slimming\s+tea|greens\b|green\s+superfood|superfood|vegetable\s+powder|whole\s+food\s+powder|snacks?|snackable|crackers?|crisps?|protein\s+bars?|collagen\s+bars?|snack\s+bars?|sea\s+moss\s+gel|coconut\s+aminos|soy\s+sauce\s+replacement|go\s+gel|endurance\s+gel|energy\s+gel)\b/i;
 const FUNCTIONAL_FOOD_LIKE_INGREDIENT_PATTERN =
@@ -559,12 +560,16 @@ const matchesProductTitle = (rowName: string, productName: string): boolean => {
   return variants.some((value) => productKey.includes(value));
 };
 
-const isFoodLikeTitle = (productName: string): boolean =>
-  FUNCTIONAL_FOOD_LIKE_TITLE_PATTERN.test(productName) ||
-  FOOD_LIKE_PRODUCT_TITLE_PATTERN.test(productName) ||
-  GREENS_TITLE_PATTERN.test(productName) ||
-  TEA_BAG_TITLE_PATTERN.test(productName) ||
-  FOOD_LIKE_POWDER_TITLE_PATTERN.test(productName);
+const isFoodLikeTitle = (productName: string): boolean => {
+  if (FLOWER_ESSENCE_TITLE_PATTERN.test(productName)) return false;
+  return (
+    FUNCTIONAL_FOOD_LIKE_TITLE_PATTERN.test(productName) ||
+    FOOD_LIKE_PRODUCT_TITLE_PATTERN.test(productName) ||
+    GREENS_TITLE_PATTERN.test(productName) ||
+    TEA_BAG_TITLE_PATTERN.test(productName) ||
+    FOOD_LIKE_POWDER_TITLE_PATTERN.test(productName)
+  );
+};
 
 const shouldPreferSpecificFoodLikeIngredient = (productName: string): boolean =>
   ELDERBERRY_PATTERN.test(productName) ||
@@ -992,11 +997,14 @@ const deriveScienceTitleRescueRows = (params: {
   }
 
   const isFoodLikeTitle =
-    GREENS_TITLE_PATTERN.test(titleWithBrandContext) ||
-    TEA_BAG_TITLE_PATTERN.test(titleWithoutBrand) ||
-    FOOD_LIKE_POWDER_TITLE_PATTERN.test(titleWithoutBrand) ||
-    FOOD_LIKE_PRODUCT_TITLE_PATTERN.test(titleWithBrandContext) ||
-    FUNCTIONAL_FOOD_LIKE_FORM_PATTERN.test(normalizeText(params.dosageForm));
+    !FLOWER_ESSENCE_TITLE_PATTERN.test(titleWithBrandContext) &&
+    (
+      GREENS_TITLE_PATTERN.test(titleWithBrandContext) ||
+      TEA_BAG_TITLE_PATTERN.test(titleWithoutBrand) ||
+      FOOD_LIKE_POWDER_TITLE_PATTERN.test(titleWithoutBrand) ||
+      FOOD_LIKE_PRODUCT_TITLE_PATTERN.test(titleWithBrandContext) ||
+      FUNCTIONAL_FOOD_LIKE_FORM_PATTERN.test(normalizeText(params.dosageForm))
+    );
 
   if (GREENS_TITLE_PATTERN.test(titleWithBrandContext)) {
     pushRow("Greens");
@@ -1635,7 +1643,9 @@ const classifyProductArchetype = (params: {
   const genericCount = params.families.filter((family) => family === "generic").length;
   const genericDominant =
     params.rows.length > 0 && genericCount / params.rows.length >= 0.6;
-  const titleLooksFoodLike = FUNCTIONAL_FOOD_LIKE_TITLE_PATTERN.test(productName);
+  const titleLooksFoodLike =
+    !FLOWER_ESSENCE_TITLE_PATTERN.test(productName) &&
+    FUNCTIONAL_FOOD_LIKE_TITLE_PATTERN.test(productName);
   const formLooksFoodLike = FUNCTIONAL_FOOD_LIKE_FORM_PATTERN.test(dosageForm);
   const rowLooksFoodLike = params.rows.some((row) =>
     FUNCTIONAL_FOOD_LIKE_INGREDIENT_PATTERN.test(normalizeText(row.name)),

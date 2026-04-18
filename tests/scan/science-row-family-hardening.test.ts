@@ -1604,6 +1604,26 @@ test('science context rescues sparse title-led food-like anchors from residue ro
   assert.equal(seaMossGelContext.productArchetype, 'functional_food_like');
 });
 
+test('flower essence titles are not treated as food-like green products', () => {
+  const context = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-flower-essence-grounding-green',
+      productName: 'Flower Essence Services, Flower Essence & Essential Oil, Grounding Green, 1 fl oz (30 ml)',
+      dosageForm: 'Liquid',
+      actives: [
+        { name: 'Flower Essence & Essential Oil', amount: null, unit: null },
+        { name: 'infusions of flowers of', amount: null, unit: null },
+        { name: 'Essential Oils', amount: null, unit: null },
+      ],
+    }),
+    overlayClaims: null,
+  });
+
+  assert.notEqual(context.productArchetype, 'functional_food_like');
+  assert.doesNotMatch(context.ingredientRows[0]?.name ?? '', /food-based product/i);
+  assert.match(context.ingredientRows[0]?.name ?? '', /flower essence/i);
+});
+
 test('omega-3 source rescue keeps algal titles out of fish-oil fallback copy even when the facts row is generic', async () => {
   const context = buildIngredientScienceContext({
     digest: buildDigest({

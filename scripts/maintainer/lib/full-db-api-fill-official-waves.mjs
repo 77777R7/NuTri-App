@@ -253,6 +253,17 @@ const asCount = (value) => {
   return Number.isFinite(numeric) ? numeric : 0;
 };
 
+const readScraplingMergeValidationReport = async (absoluteBrandDir) => {
+  for (const candidate of [
+    path.join(absoluteBrandDir, "scrapling_merge_validation_report.json"),
+    path.join(absoluteBrandDir, "merge_validation", "scrapling_merge_validation_report.json"),
+  ]) {
+    const report = await readJsonIfExists(candidate);
+    if (report) return report;
+  }
+  return null;
+};
+
 export const readOfficialWaveYieldAdmission = async ({ runDirs, rootDir = ROOT_DIR }) => {
   const brandRuns = [];
 
@@ -290,13 +301,19 @@ export const readOfficialWaveYieldAdmission = async ({ runDirs, rootDir = ROOT_D
       const brandDir = path.join(runDir, entry.name);
       const absoluteBrandDir = path.resolve(rootDir, brandDir);
       const report = await readJsonIfExists(path.join(absoluteBrandDir, "official_fallback_report.json"));
+      const scraplingValidationReport = await readScraplingMergeValidationReport(absoluteBrandDir);
       const staging = await readJsonIfExists(
         path.join(absoluteBrandDir, "staging_products.official_refreshed.json"),
       );
       const summary = report?.summary ?? {};
+      const scraplingSummary = scraplingValidationReport?.summary ?? {};
       const improvedRows = Math.max(
         asCount(summary?.improvedRows),
+        asCount(scraplingSummary?.improvedRows),
         Array.isArray(report?.rows) ? report.rows.filter((row) => row?.improved === true).length : 0,
+        Array.isArray(scraplingValidationReport?.rows)
+          ? scraplingValidationReport.rows.filter((row) => row?.improved === true).length
+          : 0,
       );
       const brandName =
         normalizeText(report?.inputs?.brandName)
@@ -312,13 +329,19 @@ export const readOfficialWaveYieldAdmission = async ({ runDirs, rootDir = ROOT_D
         brandName,
         summary: {
           queued: asCount(summary?.queued),
-          processed: asCount(summary?.processed),
+          processed: Math.max(asCount(summary?.processed), asCount(scraplingSummary?.processed)),
           improvedRows,
-          becameFullOverlayReady: asCount(summary?.becameFullOverlayReady),
-          filledIngredient: asCount(summary?.filledIngredient),
-          filledDosage: asCount(summary?.filledDosage),
-          filledSuggestedUse: asCount(summary?.filledSuggestedUse),
-          filledWarnings: asCount(summary?.filledWarnings),
+          becameFullOverlayReady: Math.max(
+            asCount(summary?.becameFullOverlayReady),
+            asCount(scraplingSummary?.becameFullOverlayReady),
+          ),
+          filledIngredient: Math.max(asCount(summary?.filledIngredient), asCount(scraplingSummary?.filledIngredient)),
+          filledDosage: Math.max(asCount(summary?.filledDosage), asCount(scraplingSummary?.filledDosage)),
+          filledSuggestedUse: Math.max(
+            asCount(summary?.filledSuggestedUse),
+            asCount(scraplingSummary?.filledSuggestedUse),
+          ),
+          filledWarnings: Math.max(asCount(summary?.filledWarnings), asCount(scraplingSummary?.filledWarnings)),
         },
         admissionStatus: improvedRows > 0 ? "admitted" : "discovery_only",
         admissionReason: improvedRows > 0 ? "yield_positive" : report ? "zero_yield" : "missing_report",

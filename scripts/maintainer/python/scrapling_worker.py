@@ -491,11 +491,22 @@ def parse_structured_metadata(html, base_url=None):
         }
 
     resolved_base_url = base_url or get_base_url(html, base_url or "")
-    extracted = extruct.extract(
-        html,
-        base_url=resolved_base_url,
-        syntaxes=["json-ld", "microdata", "opengraph", "dublincore"],
-    )
+    try:
+        extracted = extruct.extract(
+            html,
+            base_url=resolved_base_url,
+            syntaxes=["json-ld", "microdata", "opengraph", "dublincore"],
+        )
+    except Exception as exc:
+        return {
+            "available": False,
+            "error": normalize_text(str(exc)),
+            "detectedKinds": [],
+            "primaryProduct": None,
+            "openGraph": None,
+            "dublinCore": None,
+            "breadcrumbs": [],
+        }
     detected_kinds = [key for key in ("json-ld", "microdata", "opengraph", "dublincore") if extracted.get(key)]
     metadata_nodes = list(iter_metadata_nodes(extracted.get("json-ld", []))) + list(iter_metadata_nodes(extracted.get("microdata", [])))
 
