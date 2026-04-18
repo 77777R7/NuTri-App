@@ -532,6 +532,10 @@ const brandsLookCompatible = (expectedBrand, actualBrand) => {
   const actual = normalizeLooseText(actualBrand);
   if (!expected || !actual) return false;
   if (expected === actual) return true;
+  const aliases = [
+    ["eclectic herb", "eclectic institute"],
+  ];
+  if (aliases.some((group) => group.includes(expected) && group.includes(actual))) return true;
   return expected.includes(actual) || actual.includes(expected);
 };
 
@@ -609,6 +613,33 @@ const evaluateSearchOriginIdentity = (scenario, bundle) => {
 
   if ((expectedBrand && !actualBrand) || (expectedName && !actualName)) {
     mismatches.push("identity_missing");
+  }
+
+  if (
+    mismatches.length === 1 &&
+    mismatches[0] === "name" &&
+    barcodeMatches &&
+    (
+      !expectedBrand ||
+      !actualBrand ||
+      brandsLookCompatible(seed.brand ?? scenario?.product?.brand, identity.brand)
+    )
+  ) {
+    return buildGateResult({
+      gate: "canonical_product_consistency",
+      status: "warn",
+      reason: "search_origin_identity_barcode_brand_consistent_name_alias",
+      severity: null,
+      details: {
+        mismatches,
+        expectedBrand: seed.brand ?? scenario?.product?.brand ?? null,
+        actualBrand: identity.brand ?? null,
+        expectedName: seed.name ?? scenario?.product?.name ?? null,
+        actualName: identity.name ?? null,
+        expectedBarcode,
+        actualBarcode,
+      },
+    });
   }
 
   if (mismatches.length > 0 && mismatches.every((item) => item === "identity_missing") && expectedBarcode === actualBarcode) {

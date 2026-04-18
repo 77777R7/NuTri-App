@@ -101,7 +101,7 @@ const DYNAMIC_TITLE_ANCHOR_RULES = [
   { pattern: /\bleucine\b/i, anchors: ["Leucine"] },
   { pattern: /\bbilberry\b|\bginkgo\b|\beyebright\b/i, anchors: ["Bilberry", "Ginkgo", "Eyebright"] },
   { pattern: /\bchromium\b/i, anchors: ["Chromium", "Chromium Picolinate"] },
-  { pattern: /\bmale\s+multiple\b|\bmultivitamin\b|\bmultiple\b|\bdaily\s+multi(?:\s+formula)?\b|\b(?:women'?s|men'?s)\s+daily\s+multi\b|\bmulti\s+formula\b/i, anchors: ["Multivitamin", "Multivitamin & Mineral Formula", "Male Multiple"] },
+  { pattern: /\bmale\s+multiple\b|\bmultivitamin\b|\bmultiple\b|\bdaily\s+multi(?:\s+formula)?\b|\b(?:women'?s|men'?s)\s+daily\s+multi\b|\bmulti\s+formula\b|\bjust\s+one\s+multi\b|\bmulti\s+with\s+iron\b/i, anchors: ["Multivitamin", "Multivitamin & Mineral Formula", "Male Multiple"] },
   { pattern: /\bjoint\s+support\b|\bno\.?\s*7\b/i, anchors: ["Joint Support Complex", "Collagen"] },
   { pattern: /\bsaw\s+palmetto\b/i, anchors: ["Saw Palmetto"] },
   { pattern: /\bvitamin\s*d3\b|\bvegan\s+vitamin\s*d3\b|\bcholecalciferol\b/i, anchors: ["Vitamin D3", "Vitamin D"] },
@@ -112,6 +112,11 @@ const DYNAMIC_TITLE_ANCHOR_RULES = [
   { pattern: /\bastaxanthin\b/i, anchors: ["Astaxanthin"] },
   { pattern: /\bmelatonin\b/i, anchors: ["Melatonin"] },
   { pattern: /\budo'?s\s+(?:choice\s+)?oil\b|\b(?:omega\s*)?3[\s-]*6[\s-]*9\b|\bdha\s+3[\s-]*6[\s-]*9\b/i, anchors: ["Omega 3-6-9", "Omega-3", "DHA", "ALA", "Essential Fatty Acids", "Omega-6", "Omega-9"] },
+  { pattern: /\bpara\s*fight\b/i, anchors: ["ParaFight Herbal Blend", "ParaFight", "Intestinal Support Blend"] },
+  { pattern: /\bpropolis\b/i, anchors: ["Propolis", "Astragalus", "Echinacea", "Slippery Elm"] },
+  { pattern: /\bgoldenseal\b/i, anchors: ["Goldenseal", "Goldenseal Extract"] },
+  { pattern: /\bcaffeine\b.*\bl[\s-]*theanine\b|\bl[\s-]*theanine\b.*\bcaffeine\b/i, anchors: ["Caffeine", "L-Theanine"] },
+  { pattern: /\bthinkfast\b|\bbrain\s+performance\b|\bmemory\b/i, anchors: ["CogninSA", "Ginkgo", "Bacopa", "Chinese Skullcap"] },
 ];
 
 const DEFAULT_RUN_DIRS = [

@@ -180,3 +180,51 @@ test("post-merge validation treats daily multi formula titles as multivitamin ta
 
   assert.deepEqual(anchors.slice(0, 2), ["Multivitamin", "Multivitamin & Mineral Formula"]);
 });
+
+test("post-merge validation treats just-one multi titles as multivitamin targets", () => {
+  const anchors = inferDynamicPassAnchors({
+    title: "Swanson, Just One Multi with Iron, 130 Tablets",
+    supplementFacts: {
+      nutritionalFacts: [
+        { substancy: "Vitamin C (as ascorbic acid)", amountPerServing: "1,500 mcg" },
+        { substancy: "Iron", amountPerServing: "18 mg" },
+      ],
+    },
+  });
+
+  assert.deepEqual(anchors.slice(0, 2), ["Multivitamin", "Multivitamin & Mineral Formula"]);
+});
+
+test("post-merge validation accepts title-led botanical and nootropic anchors from sparse official rows", () => {
+  assert.deepEqual(
+    inferDynamicPassAnchors({
+      title: "Eclectic Herb, Parafight, Intestinal Support, 2 fl oz (60 ml)",
+      supplementFacts: { nutritionalFacts: [{ substancy: "Contains tree nuts (black walnut)" }] },
+    }).slice(0, 3),
+    ["ParaFight Herbal Blend", "ParaFight", "Intestinal Support Blend"],
+  );
+
+  assert.deepEqual(
+    inferDynamicPassAnchors({
+      title: "Eclectic Herb, Propolis, 2 fl oz ( 60 ml)",
+      supplementFacts: { nutritionalFacts: [{ substancy: "Fresh propolis (resina propoli)" }] },
+    }).slice(0, 1),
+    ["Propolis"],
+  );
+
+  assert.deepEqual(
+    inferDynamicPassAnchors({
+      title: "Source Naturals, Caffeine + L-Theanine, 60 Tablets",
+      supplementFacts: { nutritionalFacts: [{ substancy: "Microcrystalline cellulose" }] },
+    }).slice(0, 2),
+    ["Caffeine", "L-Theanine"],
+  );
+
+  assert.deepEqual(
+    inferDynamicPassAnchors({
+      title: "Futurebiotics, Thinkfast, Brain Performance + Memory, 120 Vegetarian Capsules",
+      supplementFacts: { nutritionalFacts: [{ substancy: "Chinese Skullcap root extract" }] },
+    }).slice(0, 1),
+    ["CogninSA"],
+  );
+});

@@ -897,6 +897,192 @@ test("runtime contract accepts exact-barcode search-origin results when brand an
   assert.equal(row.failures.find((failure) => failure.gate === "canonical_product_consistency"), undefined);
 });
 
+test("runtime contract warns instead of failing exact-barcode search-origin results when only the product title is an alias", () => {
+  const scenario = {
+    id: "search_origin_source_naturals_day_starter_alias",
+    surface: "search_origin_result",
+    category: "dynamic_post_merge",
+    severityOnFail: "P1",
+    input: {
+      query: "00021078027638",
+      queryType: "barcode",
+      searchResultSeed: {
+        productId: "155200",
+        barcode: "00021078027638",
+        upcCode: "00021078027638",
+        name: "Source Naturals, Caffeine + L-Theanine, 60 Tablets",
+        brand: "Source Naturals",
+        category: "Supplement",
+      },
+    },
+    product: {
+      productId: "155200",
+      brand: "Source Naturals",
+      name: "Source Naturals, Caffeine + L-Theanine, 60 Tablets",
+      barcode: "00021078027638",
+    },
+    expected: {
+      defaultAnchor: {
+        pass: ["Caffeine", "L-Theanine"],
+        warn: [],
+        fail: ["Serving Size", "Sugars"],
+      },
+    },
+  };
+
+  const row = evaluateRuntimeContractRow({
+    scenario,
+    decisionSupport: {
+      ok: true,
+      status: 200,
+      payload: buildDecisionSupportPayload({
+        scienceBlock: {
+          ingredientRows: [{ name: "L-Theanine", dose: null }],
+        },
+      }),
+    },
+    analysisBundle: {
+      ok: true,
+      status: 200,
+      latestBundle: buildAnalysisBundle({
+        meta: {
+          productIdentity: {
+            brand: "Source Naturals",
+            name: "Day Starter",
+          },
+          authoritativeIdentity: {
+            type: "gtin14",
+            value: "00021078027638",
+          },
+          decisionSupportInline: {
+            nutriScoreCardV2: { overallScore: 82, overallBand: "Strong" },
+            scienceBlock: {
+              ingredientRows: [{ name: "L-Theanine", dose: null }],
+            },
+          },
+        },
+      }),
+    },
+    ingredientOverview: {
+      ok: true,
+      status: 200,
+      payload: {
+        ingredientOverview: { paragraph1: "Caffeine and L-Theanine are the title-led actives here." },
+      },
+    },
+    scientificBackground: {
+      ok: true,
+      status: 200,
+      payload: {
+        scientificBackground: { selectedLabel: "L-Theanine", introLine: "Caffeine plus L-Theanine context." },
+      },
+    },
+    analysisSections: {
+      overview: { ok: true, status: 200, payload: { dataStatus: "complete", cover: { summary: "ok" } } },
+      ingredients_detail: { ok: true, status: 200, payload: { dataStatus: "complete", detail: { items: [{ name: "L-Theanine" }] } } },
+      usage: { ok: true, status: 200, payload: { dataStatus: "limited", cover: { bullets: [{ text: "Use as directed." }] } } },
+    },
+  });
+
+  assert.equal(row.failures.find((failure) => failure.gate === "canonical_product_consistency"), undefined);
+  const canonicalWarning = row.warnings.find((warning) => warning.gate === "canonical_product_consistency");
+  assert.equal(canonicalWarning?.status, "warn");
+  assert.equal(canonicalWarning?.reason, "search_origin_identity_barcode_brand_consistent_name_alias");
+});
+
+test("runtime contract treats Eclectic Herb and Eclectic Institute as exact-barcode brand aliases", () => {
+  const scenario = {
+    id: "search_origin_eclectic_lemon_balm_brand_alias",
+    surface: "search_origin_result",
+    category: "botanical_extract",
+    severityOnFail: "P1",
+    input: {
+      query: "00023363102808",
+      queryType: "barcode",
+      searchResultSeed: {
+        productId: "2921",
+        barcode: "00023363102808",
+        upcCode: "00023363102808",
+        name: "Eclectic Herb, Lemon Balm Extract, 2 fl oz (60 ml)",
+        brand: "Eclectic Herb",
+        category: "Supplement",
+      },
+    },
+    product: {
+      productId: "2921",
+      brand: "Eclectic Herb",
+      name: "Eclectic Herb, Lemon Balm Extract, 2 fl oz (60 ml)",
+      barcode: "00023363102808",
+    },
+    expected: {
+      defaultAnchor: {
+        pass: ["Lemon Balm"],
+        warn: [],
+        fail: ["Serving Size", "Sugars"],
+      },
+    },
+  };
+
+  const row = evaluateRuntimeContractRow({
+    scenario,
+    decisionSupport: {
+      ok: true,
+      status: 200,
+      payload: buildDecisionSupportPayload({
+        scienceBlock: {
+          ingredientRows: [{ name: "Lemon Balm, Dried", dose: null }],
+        },
+      }),
+    },
+    analysisBundle: {
+      ok: true,
+      status: 200,
+      latestBundle: buildAnalysisBundle({
+        meta: {
+          productIdentity: {
+            brand: "Eclectic Institute",
+            name: "Lemon Balm Grain-Free Alcohol",
+          },
+          authoritativeIdentity: {
+            type: "gtin14",
+            value: "00023363102808",
+          },
+          decisionSupportInline: {
+            nutriScoreCardV2: { overallScore: 82, overallBand: "Strong" },
+            scienceBlock: {
+              ingredientRows: [{ name: "Lemon Balm, Dried", dose: null }],
+            },
+          },
+        },
+      }),
+    },
+    ingredientOverview: {
+      ok: true,
+      status: 200,
+      payload: {
+        ingredientOverview: { paragraph1: "Lemon balm is the title-led botanical here." },
+      },
+    },
+    scientificBackground: {
+      ok: true,
+      status: 200,
+      payload: {
+        scientificBackground: { selectedLabel: "Lemon Balm, Dried", introLine: "Lemon balm context." },
+      },
+    },
+    analysisSections: {
+      overview: { ok: true, status: 200, payload: { dataStatus: "complete", cover: { summary: "ok" } } },
+      ingredients_detail: { ok: true, status: 200, payload: { dataStatus: "complete", detail: { items: [{ name: "Lemon Balm, Dried" }] } } },
+      usage: { ok: true, status: 200, payload: { dataStatus: "limited", cover: { bullets: [{ text: "Use as directed." }] } } },
+    },
+  });
+
+  assert.equal(row.failures.find((failure) => failure.gate === "canonical_product_consistency"), undefined);
+  const canonicalWarning = row.warnings.find((warning) => warning.gate === "canonical_product_consistency");
+  assert.equal(canonicalWarning?.status, "warn");
+  assert.equal(canonicalWarning?.reason, "search_origin_identity_barcode_brand_consistent_name_alias");
+});
+
 test("runtime contract treats exact-barcode search-origin identity as consistent when bundle identity is partial", () => {
   const scenario = {
     id: "search_origin_healthforce_spirulina",

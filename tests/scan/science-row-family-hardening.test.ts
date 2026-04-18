@@ -975,6 +975,48 @@ test('science context treats daily multi formula titles as multivitamin family a
   assert.notEqual(context.ingredientRows[0]?.name, 'Magnesium (magnesium oxide)');
 });
 
+test('science context treats just-one multi with iron titles as multivitamin family anchors', () => {
+  const context = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-just-one-multi-with-iron',
+      productName: 'Just One Multi with Iron',
+      dosageForm: 'Tablet',
+      actives: [
+        { name: 'Vitamin C (as ascorbic acid)', amount: 1500, unit: 'mcg' },
+        { name: 'Thiamin (as thiamin mononitrate)', amount: 25, unit: 'mcg' },
+        { name: 'Iron', amount: 18, unit: 'mg' },
+      ],
+    }),
+    overlayClaims: {
+      title: 'Swanson, Just One Multi with Iron, 130 Tablets',
+      brandName: 'Swanson',
+      nutritionalFacts: null,
+    },
+  });
+
+  assert.equal(context.ingredientRows[0]?.name, 'Multivitamin & Mineral Formula');
+  assert.notEqual(context.ingredientRows[0]?.name, 'Iron');
+});
+
+test('science context rescues ParaFight titles ahead of opaque blend rows', () => {
+  const context = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-parafight-opaque-blend',
+      productName: 'Eclectic Herb, Parafight, Intestinal Support, 2 fl oz (60 ml)',
+      dosageForm: 'Liquid',
+      actives: [
+        { name: 'Proprietary Blend', amount: null, unit: null },
+        { name: 'Contains tree nuts (black walnut)', amount: null, unit: null },
+      ],
+    }),
+    overlayClaims: null,
+  });
+
+  assert.equal(context.ingredientRows[0]?.name, 'ParaFight Herbal Blend');
+  assert.notEqual(context.ingredientRows[0]?.name, 'Proprietary Blend');
+  assert.notEqual(context.ingredientRows[0]?.name, 'Contains tree nuts (black walnut)');
+});
+
 test('science context rescues EGCG as the default anchor from branded cytokine blend rows', () => {
   const digest = buildDigest({
     labelId: 'fixture-cytokine-suppress-egcg',
