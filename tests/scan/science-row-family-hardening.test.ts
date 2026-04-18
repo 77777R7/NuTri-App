@@ -1311,6 +1311,26 @@ test('science context does not let alcohol solvent rows outrank title-led lemon 
   assert.notEqual(context.ingredientRows[0]?.name, 'filtered Water');
 });
 
+test('science context keeps title-led bilberry extract ahead of companion vitamin and mineral rows', () => {
+  const context = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-source-naturals-bilberry-extract',
+      productName: 'Source Naturals, Bilberry Extract, 120 Tablets',
+      dosageForm: 'Tablet',
+      actives: [
+        { name: 'Vitamin C', amount: 3, unit: 'mg' },
+        { name: 'Bilberry Fruit Standardized Extract (Vaccinium myrtillus)', amount: 100, unit: 'mg' },
+        { name: 'Calcium', amount: 64, unit: 'mg' },
+      ],
+    }),
+    overlayClaims: null,
+  });
+
+  assert.match(context.ingredientRows[0]?.name ?? '', /bilberry/i);
+  assert.notEqual(context.ingredientRows[0]?.name, 'Vitamin C');
+  assert.notEqual(context.ingredientRows[0]?.name, 'Calcium');
+});
+
 test('science context rescues title-led probiotic strains ahead of proprietary synergistic blend rows', () => {
   const context = buildIngredientScienceContext({
     digest: buildDigest({

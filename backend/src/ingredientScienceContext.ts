@@ -129,6 +129,7 @@ const CURCUMIN_PATTERN = /\bcurcumin\b|\bturmeric\s+extract\b|\bcurcuminoids?\b/
 const ASHWAGANDHA_PATTERN = /\bashwagandha\b|\bwithania\s+somnifera\b|\bksm-?66\b|\bsensoril\b/i;
 const GINSENG_PATTERN = /\bginseng\b|\bpanax\b|\bamerican\s+ginseng\b|\bred\s+ginseng\b/i;
 const GREEN_TEA_EXTRACT_PATTERN = /\bgreen\s+tea(?:\s+extract)?\b|\begcg\b|\bcatechins?\b|\bcamellia\s+sinensis\b/i;
+const EYE_HEALTH_TITLE_LED_ACTIVE_PATTERN = /\bbilberry\b|\bginkgo\b|\beyebright\b|\blutein\b/i;
 const ELDERBERRY_PATTERN = /\belderberry\b|\bsambucus\b/i;
 const MAGNESIUM_PATTERN =
   /\bmagnesium\b|\bmagnesium\s+(?:glycinate|citrate|oxide|malate|taurate|threonate|chloride|l-threonate)\b/i;
@@ -654,6 +655,9 @@ const getTitleLedBotanicalPattern = (productName: string): RegExp | null => {
   if (/\blemon balm\b|\bmelissa\b/i.test(titleWithoutBrand)) {
     return /\blemon balm\b|\bmelissa\b/i;
   }
+  if (EYE_HEALTH_TITLE_LED_ACTIVE_PATTERN.test(titleWithoutBrand)) {
+    return EYE_HEALTH_TITLE_LED_ACTIVE_PATTERN;
+  }
   return null;
 };
 
@@ -914,6 +918,13 @@ const deriveScienceTitleRescueRows = (params: {
     !hasNamedTitleAlignedRow(params.existingRows, /\blemon balm\b|\bmelissa\b/i)
   ) {
     pushRow("Lemon Balm");
+  }
+
+  if (
+    EYE_HEALTH_TITLE_LED_ACTIVE_PATTERN.test(titleWithoutBrand) &&
+    !hasNamedTitleAlignedRow(params.existingRows, EYE_HEALTH_TITLE_LED_ACTIVE_PATTERN)
+  ) {
+    pushRow(extractTitleMatch(titleWithoutBrand, EYE_HEALTH_TITLE_LED_ACTIVE_PATTERN) ?? "Bilberry");
   }
 
   if (
