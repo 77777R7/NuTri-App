@@ -151,3 +151,18 @@ test("post-merge validation falls back to dynamic title-led targets for new posi
     ],
   );
 });
+
+test("post-merge validation treats Udo's Oil 3-6-9 as an omega title-led target", () => {
+  const anchors = inferDynamicPassAnchors({
+    title: "Flora, Udo's Choice, Udo's Oil DHA 3-6-9 Blend, 17 fl oz (500 ml)",
+    supplementFacts: {
+      nutritionalFacts: [
+        { substancy: "Saturated Fat", amountPerServing: "2 g" },
+        { substancy: "Omega-3 ALA", amountPerServing: "6 g" },
+        { substancy: "DHA", amountPerServing: "100 mg" },
+      ],
+    },
+  });
+
+  assert.deepEqual(anchors.slice(0, 4), ["Omega 3-6-9", "Omega-3", "DHA", "ALA"]);
+});

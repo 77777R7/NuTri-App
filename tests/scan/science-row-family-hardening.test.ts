@@ -536,6 +536,33 @@ test('science context normalizes branded probiotic rows so they remain searchabl
   assert.equal(floraphageContext.anchorIngredient?.ingredientFamily, 'probiotic_or_blend');
 });
 
+test('science context does not treat Flora brand omega oils as probiotic products', () => {
+  const context = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-flora-udos-oil-omega-369',
+      productName: "Organic Udo's Oil 3-6-9 Blend",
+      dosageForm: 'Liquid',
+      actives: [
+        { name: 'Saturated Fat', amount: 2, unit: 'g' },
+        { name: 'Polyunsaturated Fat', amount: 9, unit: 'g' },
+        { name: 'Omega-3 ALA', amount: 6, unit: 'g' },
+        { name: 'Omega-6 LA', amount: 3, unit: 'g' },
+        { name: 'Omega-9 OA', amount: 3, unit: 'g' },
+      ],
+    }),
+    overlayClaims: {
+      title: "Flora, Organic Udo's Oil™ 3-6-9 Blend, 17 fl oz (500 ml)",
+      brandName: 'Flora',
+      nutritionalFacts: null,
+    },
+  });
+
+  assert.doesNotMatch(context.ingredientRows[0]?.name ?? '', /^probiotics?$/i);
+  assert.notEqual(context.anchorIngredient?.ingredientFamily, 'probiotic_or_blend');
+  assert.match(context.anchorIngredient?.name ?? '', /omega-3|ALA|DHA/i);
+  assert.equal(context.anchorIngredient?.ingredientFamily, 'omega_3');
+});
+
 test('science context rescues zinc as the lead row in children immune blend products', () => {
   const digest = buildDigest({
     labelId: 'fixture-children-immune-vitamin-c-zinc',

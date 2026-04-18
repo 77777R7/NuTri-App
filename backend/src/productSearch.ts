@@ -399,6 +399,43 @@ const addQueryGroup = (groups: string[][], seenKeys: Set<string>, terms: string[
 
 const isBarcodeLikeQueryToken = (token: string): boolean => /^\d{8,14}$/.test(token);
 
+const normalizeBarcodeDigits = (value: unknown): string | null => {
+  const raw = safeTrim(value);
+  if (!raw || !/^[\d\s-]+$/.test(raw)) return null;
+  const digits = raw.replace(/\D/g, "");
+  return /^\d{8,14}$/.test(digits) ? digits : null;
+};
+
+const trimBarcodeLeadingZeros = (value: string): string => value.replace(/^0+/, "") || "0";
+
+const barcodeDigitsMatch = (candidate: string | null, query: string): boolean => {
+  if (!candidate) return false;
+  if (candidate === query) return true;
+  return trimBarcodeLeadingZeros(candidate) === trimBarcodeLeadingZeros(query);
+};
+
+export const getBarcodeExactSearchDigits = (query: string | null | undefined): string | null =>
+  normalizeBarcodeDigits(query);
+
+export const productSearchResponseHasExactBarcodeMatch = (
+  response: ProductSearchResponse,
+  query: string | null | undefined,
+): boolean => {
+  const queryDigits = getBarcodeExactSearchDigits(query);
+  if (!queryDigits) return false;
+
+  return response.supplements.some((card) =>
+    [normalizeBarcodeDigits(card.barcode), normalizeBarcodeDigits(card.upcCode)].some((candidate) =>
+      barcodeDigitsMatch(candidate, queryDigits),
+    ),
+  );
+};
+
+export const shouldUseColdBarcodeExactFallback = (
+  response: ProductSearchResponse,
+  params: Pick<SearchParams, "query">,
+): boolean => Boolean(getBarcodeExactSearchDigits(params.query)) && !productSearchResponseHasExactBarcodeMatch(response, params.query);
+
 const isOptionalQueryToken = (token: string): boolean => {
   if (SEARCH_QUERY_OPTIONAL_TOKENS.has(token)) return true;
   if (!SEARCH_QUERY_OPTIONAL_DOSE_TOKEN_PATTERN.test(token)) return false;
@@ -1332,10 +1369,21 @@ const dedupeCandidates = (items: EnrichedCandidate[]): EnrichedCandidate[] => {
 
 const NON_SUPPLEMENT_TITLE_PATTERN =
   /\b(tea bags?|herbal tea|green tea|black tea|coffee|snack|candy|cookies?|cracker|rice|pasta|granola|sweeteners?)\b/;
+const SUPPLEMENT_FORM_TITLE_PATTERN =
+  /\b(?:capsules?|vcaps?|veggie\s+caps?|vegan\s+capsules?|tablets?|softgels?|extract|per\s+capsule|per\s+tablet|dietary\s+supplement)\b/;
+
+export const isLikelyNonSupplementTitle = (
+  name: string | null | undefined,
+  description: string | null | undefined,
+): boolean => {
+  const normalizedName = normalizeLookupText(name);
+  if (!NON_SUPPLEMENT_TITLE_PATTERN.test(normalizedName)) return false;
+  if (SUPPLEMENT_FORM_TITLE_PATTERN.test(normalizedName)) return false;
+  return !/\bsupplement\b/.test(normalizeLookupText(`${name ?? ""} ${description ?? ""}`));
+};
 
 const isLikelyNonSupplement = (item: EnrichedCandidate): boolean =>
-  NON_SUPPLEMENT_TITLE_PATTERN.test(normalizeLookupText(item.card.name)) &&
-  !/\bsupplement\b/.test(normalizeLookupText(`${item.card.name} ${item.row.description ?? ""}`));
+  isLikelyNonSupplementTitle(item.card.name, item.row.description);
 
 const diversifyByBrand = (items: EnrichedCandidate[]): EnrichedCandidate[] => {
   const order: string[] = [];
@@ -1605,6 +1653,22 @@ const buildSearchResponseFromRows = (
   };
 };
 
+const useColdBarcodeExactFallbackIfNeeded = async (
+  response: ProductSearchResponse,
+  params: SearchParams,
+): Promise<ProductSearchResponse> => {
+  if (!shouldUseColdBarcodeExactFallback(response, params)) return response;
+
+  const fallbackRows = await fetchColdFallbackRows(params);
+  const fallbackResponse = buildSearchResponseFromRows(fallbackRows, params);
+  if (!productSearchResponseHasExactBarcodeMatch(fallbackResponse, params.query)) return response;
+
+  console.info("[product-search] using cold barcode exact fallback after warm index miss", {
+    query: getBarcodeExactSearchDigits(params.query),
+  });
+  return fallbackResponse;
+};
+
 const buildBootstrapPayloadFromRows = (rows: ProductSearchIndexRow[]): ProductSearchBootstrapResponse => ({
   generatedAt: Date.now(),
   categories: Object.fromEntries(
@@ -1702,7 +1766,8 @@ export const searchProducts = async (params: SearchParams): Promise<ProductSearc
     if (!cachedBrowseResponseMap || cachedBrowseResponseMap.builtAt !== index.builtAt) {
       rebuildWarmBrowseResponseMap(index);
     }
-    return buildSearchResponseFromRows(index.rows, params);
+    const response = buildSearchResponseFromRows(index.rows, params);
+    return useColdBarcodeExactFallbackIfNeeded(response, params);
   }
 
   console.info("[product-search] using cold fallback while warming full index", {

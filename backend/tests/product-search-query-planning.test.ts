@@ -5,6 +5,11 @@ import {
   buildSearchQueryPlan,
   computeSearchQueryIntentBonus,
   computeSearchScoreForQueryPlan,
+  getBarcodeExactSearchDigits,
+  isLikelyNonSupplementTitle,
+  productSearchResponseHasExactBarcodeMatch,
+  shouldUseColdBarcodeExactFallback,
+  type ProductSearchResponse,
   type ProductSearchIndexRow,
 } from "../src/productSearch.js";
 
@@ -56,6 +61,55 @@ test("buildSearchQueryPlan keeps barcode-length numeric queries as required sear
 
   assert.deepEqual(plan.requiredGroups, [["00023249011835"]]);
   assert.deepEqual(plan.optionalGroups, []);
+});
+
+test("barcode exact search detects warm-index misses that need cold fallback", () => {
+  const emptyResponse: ProductSearchResponse = {
+    supplements: [],
+    pagination: { total: 0, page: 1, limit: 20, totalPages: 1 },
+    suggestions: { categories: [], brands: [], popularSearches: [] },
+  };
+  const exactResponse: ProductSearchResponse = {
+    ...emptyResponse,
+    supplements: [
+      {
+        id: "120987",
+        productId: "120987",
+        barcode: "00609492800275",
+        upcCode: "609492800275",
+        name: "MRM Nutrition, Matcha Green Tea",
+        brand: "MRM Nutrition",
+        category: "Herbs",
+        categoryKey: "herb",
+        benefit: "Weight Management",
+        dose: "500 mg",
+        imageUrl: null,
+        popularityScore: 0,
+        relevanceScore: 36,
+        factsStatus: "full",
+        coverageStatus: "coverage_ready",
+      },
+    ],
+  };
+
+  assert.equal(getBarcodeExactSearchDigits("00609492800275"), "00609492800275");
+  assert.equal(getBarcodeExactSearchDigits("MRM Matcha 500 mg"), null);
+  assert.equal(productSearchResponseHasExactBarcodeMatch(exactResponse, "00609492800275"), true);
+  assert.equal(productSearchResponseHasExactBarcodeMatch(exactResponse, "609492800275"), true);
+  assert.equal(shouldUseColdBarcodeExactFallback(emptyResponse, { query: "00609492800275" }), true);
+  assert.equal(shouldUseColdBarcodeExactFallback(exactResponse, { query: "00609492800275" }), false);
+  assert.equal(shouldUseColdBarcodeExactFallback(emptyResponse, { query: "MRM Matcha Green Tea" }), false);
+});
+
+test("non-supplement filtering keeps green tea capsule supplements searchable", () => {
+  assert.equal(
+    isLikelyNonSupplementTitle(
+      "MRM Nutrition, Matcha Green Tea, 60 Vegan Capsules (500 mg per Capsule)",
+      "SuperfoodDietary SupplementContains 10 mg Caffeine Per Serving",
+    ),
+    false,
+  );
+  assert.equal(isLikelyNonSupplementTitle("Organic Green Tea Bags", "Premium steeping tea"), true);
 });
 
 test("computeSearchScoreForQueryPlan matches trademark aliases even when generic goal text is absent", () => {

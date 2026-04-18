@@ -111,6 +111,7 @@ const DYNAMIC_TITLE_ANCHOR_RULES = [
   { pattern: /\bcurcumin\b|\bturmeric\b/i, anchors: ["Curcumin", "Turmeric"] },
   { pattern: /\bastaxanthin\b/i, anchors: ["Astaxanthin"] },
   { pattern: /\bmelatonin\b/i, anchors: ["Melatonin"] },
+  { pattern: /\budo'?s\s+(?:choice\s+)?oil\b|\b(?:omega\s*)?3[\s-]*6[\s-]*9\b|\bdha\s+3[\s-]*6[\s-]*9\b/i, anchors: ["Omega 3-6-9", "Omega-3", "DHA", "ALA", "Essential Fatty Acids", "Omega-6", "Omega-9"] },
 ];
 
 const DEFAULT_RUN_DIRS = [
