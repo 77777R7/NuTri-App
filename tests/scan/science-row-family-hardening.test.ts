@@ -950,6 +950,31 @@ test('science context prefers aggregate multivitamin formula rows over trace ino
   assert.notEqual(countryLifeContext.ingredientRows[0]?.name, 'Inositol (as inositol, inositol hexanicotinate)');
 });
 
+test('science context treats daily multi formula titles as multivitamin family anchors', () => {
+  const context = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-womens-daily-multi-formula',
+      productName: "Women's Daily Multi Formula",
+      dosageForm: 'Caplet',
+      actives: [
+        { name: 'Vitamin A (as acetate)', amount: 750, unit: 'mcg RAE' },
+        { name: 'Vitamin C (ascorbic acid)', amount: 60, unit: 'mg' },
+        { name: 'Calcium (calcium carbonate)', amount: 500, unit: 'mg' },
+        { name: 'Magnesium (magnesium oxide)', amount: 50, unit: 'mg' },
+        { name: 'Zinc (zinc oxide)', amount: 15, unit: 'mg' },
+      ],
+    }),
+    overlayClaims: {
+      title: "Mason Natural, Women's Daily Multi Formula, 90 Caplets",
+      brandName: 'Mason Natural',
+      nutritionalFacts: null,
+    },
+  });
+
+  assert.equal(context.ingredientRows[0]?.name, 'Multivitamin & Mineral Formula');
+  assert.notEqual(context.ingredientRows[0]?.name, 'Magnesium (magnesium oxide)');
+});
+
 test('science context rescues EGCG as the default anchor from branded cytokine blend rows', () => {
   const digest = buildDigest({
     labelId: 'fixture-cytokine-suppress-egcg',

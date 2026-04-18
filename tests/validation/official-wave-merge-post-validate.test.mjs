@@ -166,3 +166,17 @@ test("post-merge validation treats Udo's Oil 3-6-9 as an omega title-led target"
 
   assert.deepEqual(anchors.slice(0, 4), ["Omega 3-6-9", "Omega-3", "DHA", "ALA"]);
 });
+
+test("post-merge validation treats daily multi formula titles as multivitamin targets", () => {
+  const anchors = inferDynamicPassAnchors({
+    title: "Mason Natural, Women's Daily Multi Formula, 90 Caplets",
+    supplementFacts: {
+      nutritionalFacts: [
+        { substancy: "Vitamin A(as acetate, and 20% as beta-carotene)", amountPerServing: "750 mcg RAE" },
+        { substancy: "Magnesium (magnesium oxide)", amountPerServing: "50 mg" },
+      ],
+    },
+  });
+
+  assert.deepEqual(anchors.slice(0, 2), ["Multivitamin", "Multivitamin & Mineral Formula"]);
+});

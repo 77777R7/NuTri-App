@@ -180,7 +180,7 @@ const IMMUNE_BLEND_TITLE_PATTERN =
 const B_COMPLEX_TITLE_PATTERN =
   /\bb[\s-]*complex\b|\bb[\s-]*vitamins?\b|\bvitamin\s*b\s*complex\b/i;
 const MULTIVITAMIN_TITLE_PATTERN =
-  /\bmulti[\s-]*(?:vitamin|mineral)s?\b|\bmultivitamin\b|\bmultimineral\b|\bmultione\b|\bdaily\s+total\s+one\b|\bsingle\s+daily\s+multiple\b/i;
+  /\bmulti[\s-]*(?:vitamin|mineral)s?\b|\bmultivitamin\b|\bmultimineral\b|\bmultione\b|\bdaily\s+total\s+one\b|\bsingle\s+daily\s+multiple\b|\bdaily\s+multi(?:\s+formula)?\b|\b(?:women'?s|men'?s)\s+daily\s+multi\b|\bmulti\s+formula\b/i;
 const B_COMPLEX_FORMULA_ROW_PATTERN =
   /\bb[\s-]*complex\b|\bvitamin\s*b\s*complex\b/i;
 const MULTIVITAMIN_FORMULA_ROW_PATTERN =
