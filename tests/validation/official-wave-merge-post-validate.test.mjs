@@ -262,6 +262,26 @@ test("post-merge validation accepts salmon oil source anchors beyond fat macro r
   assert.ok(anchors.some((anchor) => /salmon oil/i.test(anchor)));
 });
 
+test("post-merge validation accepts cod liver oil source anchors beyond fat macro rows", () => {
+  const anchors = inferDynamicPassAnchors({
+    title: "Amazing Nutrition, Amazing Omega, Norwegian Cod Liver Oil, Fresh Orange, 1,000 mg, 250 Softgels",
+    supplementFacts: {
+      nutritionalFacts: [
+        { substancy: "Energy (kcal)", amountPerServing: "10" },
+        { substancy: "Calories from Fat", amountPerServing: "10" },
+        { substancy: "Saturated Fatty Acids", amountPerServing: "0.5 g" },
+        { substancy: "Cholesterol", amountPerServing: "5 mg" },
+        {
+          substancy: "Norwegian Cod Liver Oil Concentrate Containing: Eicosapentaenoic Acid (EPA) TG Docosahexaenoic Acid (DHA) TG",
+          amountPerServing: "1,000 mg",
+        },
+      ],
+    },
+  });
+
+  assert.deepEqual(anchors.slice(0, 3), ["Cod Liver Oil", "Fish Oil", "Omega-3"]);
+});
+
 test("post-merge validation treats daily multi formula titles as multivitamin targets", () => {
   const anchors = inferDynamicPassAnchors({
     title: "Mason Natural, Women's Daily Multi Formula, 90 Caplets",
