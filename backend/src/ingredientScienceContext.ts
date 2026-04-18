@@ -1192,6 +1192,22 @@ const pickPrimaryActiveRowIndex = (
       ELDERBERRY_PATTERN.test(productName) && ELDERBERRY_PATTERN.test(row.name)
         ? 190
         : 0;
+    const immuneSupportLeadBoost =
+      IMMUNE_BLEND_TITLE_PATTERN.test(productName)
+        ? family === "zinc"
+          ? 190
+          : family === "vitamin_c"
+            ? 150
+            : ELDERBERRY_PATTERN.test(row.name)
+              ? 140
+              : 0
+        : 0;
+    const magnesiumInImmuneFormulaPenalty =
+      IMMUNE_BLEND_TITLE_PATTERN.test(productName)
+      && family === "magnesium"
+      && !hasTitleFamily("magnesium", productName)
+        ? 220
+        : 0;
     const probioticLeadBoost =
       PROBIOTIC_TITLE_PATTERN.test(productName)
       && (family === "probiotic_or_blend" || PROBIOTIC_SPECIFIC_ROW_PATTERN.test(row.name))
@@ -1284,6 +1300,7 @@ const pickPrimaryActiveRowIndex = (
       zincTitleLeadBoost +
       zincImmuneBlendBoost +
       elderberryTitleBoost +
+      immuneSupportLeadBoost +
       claCombinationLeadBoost +
       carnitineTitleBoost +
       fiveHtpCombinationLeadBoost +
@@ -1299,6 +1316,7 @@ const pickPrimaryActiveRowIndex = (
       melatoninInFiveHtpPenalty -
       vitaminDInMineralStackPenalty -
       vitaminCImmuneCompanionPenalty -
+      magnesiumInImmuneFormulaPenalty -
       vitaminCInMagnesiumComboPenalty -
       multivitaminSingleActivePenalty -
       productTitleEchoPenalty -
@@ -1384,6 +1402,22 @@ const scoreIngredientDescriptorForDisplay = (params: {
   const elderberryTitleBoost =
     ELDERBERRY_PATTERN.test(productName) && ELDERBERRY_PATTERN.test(row.name)
       ? 180
+      : 0;
+  const immuneSupportLeadBoost =
+    IMMUNE_BLEND_TITLE_PATTERN.test(productName)
+      ? descriptor.ingredientFamily === "zinc"
+        ? 190
+        : descriptor.ingredientFamily === "vitamin_c"
+          ? 150
+          : ELDERBERRY_PATTERN.test(row.name)
+            ? 140
+            : 0
+      : 0;
+  const magnesiumInImmuneFormulaPenalty =
+    IMMUNE_BLEND_TITLE_PATTERN.test(productName)
+    && descriptor.ingredientFamily === "magnesium"
+    && !hasTitleFamily("magnesium", productName)
+      ? 220
       : 0;
   const probioticLeadBoost =
     PROBIOTIC_TITLE_PATTERN.test(productName)
@@ -1484,6 +1518,7 @@ const scoreIngredientDescriptorForDisplay = (params: {
     zincTitleLeadBoost +
     zincImmuneBlendBoost +
     elderberryTitleBoost +
+    immuneSupportLeadBoost +
     claCombinationLeadBoost +
     carnitineTitleBoost +
     fiveHtpCombinationLeadBoost +
@@ -1498,6 +1533,7 @@ const scoreIngredientDescriptorForDisplay = (params: {
     carnitineInClaCombinationPenalty -
     melatoninInFiveHtpPenalty -
     vitaminDInMineralStackPenalty -
+    magnesiumInImmuneFormulaPenalty -
     vitaminCImmuneCompanionPenalty -
     vitaminCInMagnesiumComboPenalty -
     multivitaminSingleActivePenalty -

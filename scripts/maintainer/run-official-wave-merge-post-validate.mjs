@@ -115,6 +115,7 @@ const DYNAMIC_TITLE_ANCHOR_RULES = [
   { pattern: /\boralbiotic\b/i, anchors: ["OralBiotic", "Probiotic", "BLIS K12", "Streptococcus salivarius"] },
   { pattern: /\bflax\s+seed\s+oil\b|\bflaxseed\s+oil\b|\blinseed\s+oil\b/i, anchors: ["Flax Seed Oil", "Linolenic Acid", "Omega-3", "Omega-6", "Omega-9"] },
   { pattern: /\bmenopause\s+support\b/i, anchors: ["Menopause Support", "Soy Isoflavone", "Chaste Tree", "Red Clover", "Dong Quai", "Black Cohosh"] },
+  { pattern: /\b(?:immune|immunity)\b/i, anchors: ["Zinc", "Vitamin C", "Elderberry", "Black Elderberry", "Vitamin D3", "Vitamin E"] },
   { pattern: /\budo'?s\s+(?:choice\s+)?oil\b|\b(?:omega\s*)?3[\s-]*6[\s-]*9\b|\bdha\s+3[\s-]*6[\s-]*9\b/i, anchors: ["Omega 3-6-9", "Omega-3", "DHA", "ALA", "Essential Fatty Acids", "Omega-6", "Omega-9"] },
   { pattern: /\bpara\s*fight\b/i, anchors: ["ParaFight Herbal Blend", "ParaFight", "Intestinal Support Blend"] },
   { pattern: /\bproto\s*dophilus\b|\bprobiotics?\b|\b50\s+billion\b/i, anchors: ["Probiotics", "Probiotic", "Blend of 10 Strains of Probiotic Bacteria"] },

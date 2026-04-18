@@ -388,3 +388,22 @@ test("post-merge validation accepts OralBiotic strain runtime anchors", () => {
 
   assert.ok(target.passAnchors.some((anchor) => /blis k12|streptococcus salivarius/i.test(anchor)));
 });
+
+test("post-merge validation accepts immune liquid zinc anchors beyond the first facts rows", () => {
+  assert.ok(
+    inferDynamicPassAnchors({
+      title: "Trace, Liquid Immunity+, Mixed Berry, 30 fl oz (887 ml)",
+      supplementFacts: {
+        nutritionalFacts: [
+          { substancy: "Total CarbohydrateR", amountPerServing: "10 g" },
+          { substancy: "Vitamin C (as Ascorbic Acid)", amountPerServing: "1000 mg" },
+          { substancy: "Vitamin D3 (as Cholecalciferol)", amountPerServing: "30 mcg" },
+          { substancy: "Vitamin E (as D-Alpha Tocopherol Acetate)", amountPerServing: "30 mg" },
+          { substancy: "Magnesium (from CTM)", amountPerServing: "10 mg" },
+          { substancy: "Zinc (as Zinc Gluconate)", amountPerServing: "15 mg" },
+          { substancy: "Black Elderberry", amountPerServing: "200 mg" },
+        ],
+      },
+    }).some((anchor) => /zinc/i.test(anchor)),
+  );
+});

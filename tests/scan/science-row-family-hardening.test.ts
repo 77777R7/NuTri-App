@@ -657,6 +657,28 @@ test('science context keeps zinc ahead of vitamin C in elderberry immune formula
   assert.ok(context.ingredientRows.some((row) => /elderberry|sambucus/i.test(row.name)));
 });
 
+test('science context does not let magnesium steal immune liquid formulas from zinc and vitamin C', () => {
+  const digest = buildDigest({
+    labelId: 'fixture-trace-liquid-immunity',
+    productName: 'Trace, Liquid Immunity+, Mixed Berry, 30 fl oz (887 ml)',
+    dosageForm: 'Liquid',
+    actives: [
+      { name: 'Total CarbohydrateR', amount: 10, unit: 'g' },
+      { name: 'Vitamin C (as Ascorbic Acid)', amount: 1000, unit: 'mg' },
+      { name: 'Vitamin D3 (as Cholecalciferol)', amount: 30, unit: 'mcg' },
+      { name: 'Vitamin E (as D-Alpha Tocopherol Acetate)', amount: 30, unit: 'mg' },
+      { name: 'Magnesium (from CTM)', amount: 10, unit: 'mg' },
+      { name: 'Zinc (as Zinc Gluconate)', amount: 15, unit: 'mg' },
+      { name: 'Black Elderberry', amount: 200, unit: 'mg' },
+    ],
+  });
+
+  const context = buildIngredientScienceContext({ digest, overlayClaims: null });
+
+  assert.doesNotMatch(context.ingredientRows[0]?.name ?? '', /magnesium|carbohydrate/i);
+  assert.match(context.ingredientRows[0]?.name ?? '', /zinc|vitamin c|elderberry/i);
+});
+
 test('science context does not let audience or sugar rows beat title-rescued actives', () => {
   const zincDigest = buildDigest({
     labelId: 'fixture-zinc-audience-row',
