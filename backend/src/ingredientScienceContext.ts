@@ -146,6 +146,10 @@ const ELECTROLYTE_DRINK_MIX_TITLE_PATTERN =
   /\bhydrationup\b|\belectrolyte\s+drink\s+mix\b|\belectrolyte\s+(?:formula|mix)\b/i;
 const REDS_SUPERFOOD_TITLE_PATTERN =
   /\breds?\s+pak\b|\bred\s+(?:fruits?|vegetables?)\b/i;
+const SPIRULINA_TITLE_PATTERN = /\bspirulina\b/i;
+const CHLORELLA_TITLE_PATTERN = /\bchlorella\b/i;
+const DIGESTIVE_ENZYME_TITLE_PATTERN =
+  /\bdigestion\s+enhancement\s+enzymes?\b|\bdigestive\s+enzymes?\b|\benzyme\s+blend\b/i;
 const OMEGA3_ALGAL_TITLE_PATTERN =
   /\balgal\s+oil\b|\balgae\s+oil\b|\bfrom\s+algae\b|\bplant\s+based\s+omega\s*-?\s*3\b|\bschizochytrium\b/i;
 const FUNCTIONAL_FOOD_LIKE_TITLE_PATTERN =
@@ -600,7 +604,10 @@ const hasTitleRescueContext = (productName: string): boolean =>
   SEA_MOSS_GEL_TITLE_PATTERN.test(productName) ||
   GEL_FUEL_TITLE_PATTERN.test(productName) ||
   ELECTROLYTE_DRINK_MIX_TITLE_PATTERN.test(productName) ||
-  REDS_SUPERFOOD_TITLE_PATTERN.test(productName);
+  REDS_SUPERFOOD_TITLE_PATTERN.test(productName) ||
+  SPIRULINA_TITLE_PATTERN.test(productName) ||
+  CHLORELLA_TITLE_PATTERN.test(productName) ||
+  DIGESTIVE_ENZYME_TITLE_PATTERN.test(productName);
 
 const isLeadAloeVeraTitle = (productName: string): boolean => {
   const normalizedTitle = normalizeText(productName);
@@ -674,6 +681,12 @@ const isTitleRescueAnchorRow = (
       REDS_SUPERFOOD_TITLE_PATTERN.test(productName) &&
       /\bblend\b/i.test(normalizedRow) &&
       !/\bvitamin\b|\bpotassium\b|\bcalcium\b|\bsodium\b|\bcalories\b|\bsugars?\b/i.test(normalizedRow)
+    ) ||
+    (SPIRULINA_TITLE_PATTERN.test(productName) && SPIRULINA_TITLE_PATTERN.test(normalizedRow)) ||
+    (CHLORELLA_TITLE_PATTERN.test(productName) && CHLORELLA_TITLE_PATTERN.test(normalizedRow)) ||
+    (
+      DIGESTIVE_ENZYME_TITLE_PATTERN.test(productName) &&
+      /\bdigestive\s+enzymes?\b|\benzyme\s+blend\b/i.test(normalizedRow)
     )
   );
 };
@@ -845,6 +858,27 @@ const deriveScienceTitleRescueRows = (params: {
     !hasNamedTitleAlignedRow(params.existingRows, /\blemon balm\b|\bmelissa\b/i)
   ) {
     pushRow("Lemon Balm");
+  }
+
+  if (
+    DIGESTIVE_ENZYME_TITLE_PATTERN.test(titleWithoutBrand) &&
+    !hasNamedTitleAlignedRow(params.existingRows, /\bdigestive\s+enzymes?\b|\benzyme\s+blend\b/i)
+  ) {
+    pushRow("Digestive Enzyme Blend");
+  }
+
+  if (
+    SPIRULINA_TITLE_PATTERN.test(titleWithoutBrand) &&
+    !hasNamedTitleAlignedRow(params.existingRows, SPIRULINA_TITLE_PATTERN)
+  ) {
+    pushRow("Spirulina");
+  }
+
+  if (
+    CHLORELLA_TITLE_PATTERN.test(titleWithoutBrand) &&
+    !hasNamedTitleAlignedRow(params.existingRows, CHLORELLA_TITLE_PATTERN)
+  ) {
+    pushRow("Chlorella");
   }
 
   const hasDedicatedOmega3SourceRow = params.existingRows.some((row) =>

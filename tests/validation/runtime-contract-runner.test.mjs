@@ -769,6 +769,7 @@ test("runtime contract does not fail source-copy scenarios on missing analysis b
   assert.equal(routeGate.reason, "route_health_not_required_for_scenario");
   assert.equal(row.failures.find((failure) => failure.gate === "route_health"), undefined);
   assert.equal(row.failures.length, 0);
+  assert.equal(row.warnings.length, 0);
 });
 
 test("runtime contract still fails missing analysis bundle when route health is requested", () => {
@@ -894,4 +895,78 @@ test("runtime contract accepts exact-barcode search-origin results when brand an
   });
 
   assert.equal(row.failures.find((failure) => failure.gate === "canonical_product_consistency"), undefined);
+});
+
+test("runtime contract treats exact-barcode search-origin identity as consistent when bundle identity is partial", () => {
+  const scenario = {
+    id: "search_origin_healthforce_spirulina",
+    surface: "search_origin_result",
+    category: "dynamic_post_merge",
+    severityOnFail: "P1",
+    gates: ["canonical_product_consistency", "selected_anchor_consistency"],
+    input: {
+      query: "00650786000048",
+      queryType: "barcode",
+      searchResultSeed: {
+        productId: "19294",
+        barcode: "00650786000048",
+        upcCode: "00650786000048",
+        name: "HealthForce Superfoods, Spirulina Manna, 16 oz (454 g)",
+        brand: "HealthForce Superfoods",
+        category: "Supplement",
+      },
+    },
+    product: {
+      productId: "19294",
+      brand: "HealthForce Superfoods",
+      name: "HealthForce Superfoods, Spirulina Manna, 16 oz (454 g)",
+      barcode: "00650786000048",
+    },
+    expected: {
+      defaultAnchor: {
+        pass: ["Spirulina"],
+        warn: [],
+        fail: ["Vitamin A", "Vitamin D"],
+      },
+    },
+  };
+
+  const row = evaluateRuntimeContractRow({
+    scenario,
+    decisionSupport: {
+      ok: true,
+      status: 200,
+      payload: buildDecisionSupportPayload({
+        scienceBlock: {
+          ingredientRows: [{ name: "Spirulina", dose: null }],
+        },
+      }),
+    },
+    analysisBundle: { ok: true, status: 200, latestBundle: null },
+    ingredientOverview: {
+      ok: true,
+      status: 200,
+      payload: {
+        ingredientOverview: { paragraph1: "Spirulina is the lead ingredient." },
+      },
+    },
+    scientificBackground: {
+      ok: true,
+      status: 200,
+      payload: {
+        scientificBackground: { selectedLabel: "Spirulina", introLine: "Spirulina context." },
+      },
+    },
+    analysisSections: {
+      overview: { ok: false, status: null, payload: null, error: "authoritative_identity_missing" },
+      ingredients_detail: { ok: false, status: null, payload: null, error: "authoritative_identity_missing" },
+      usage: { ok: false, status: null, payload: null, error: "authoritative_identity_missing" },
+    },
+  });
+
+  assert.equal(row.status, "pass");
+  assert.equal(row.warnings.length, 0);
+  const canonicalGate = row.gates.find((gate) => gate.gate === "canonical_product_consistency");
+  assert.equal(canonicalGate?.status, "pass");
+  assert.equal(canonicalGate?.reason, "search_origin_identity_barcode_consistent_identity_partial");
 });

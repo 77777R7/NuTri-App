@@ -401,16 +401,86 @@ const countUsefulNutritionFactsForMerge = (supplementFacts) => {
   }).length;
 };
 
+const normalizeNutritionFactKey = (value) =>
+  normalizeLower(value)
+    .replace(/\([^)]*\)/g, " ")
+    .replace(/\bamount\b/g, " ")
+    .replace(/\bdaily\b/g, " ")
+    .replace(/\bvalue\b/g, " ")
+    .replace(/\bservings?\b/g, " ")
+    .replace(/\bcontainer\b/g, " ")
+    .replace(/\bsize\b/g, " ")
+    .replace(/\blot\/exp\b/g, " ")
+    .replace(/\bfill line\b/g, " ")
+    .replace(/\b[a-z]\b/g, " ")
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+const normalizeNutritionAmountKey = (value) =>
+  normalizeLower(value)
+    .replace(/[^a-z0-9<.%]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+const scoreNutritionFactRow = (row) => {
+  const substancy = normalizeText(row?.substancy ?? row?.substance ?? row?.name);
+  const amount = normalizeText(row?.amountPerServing ?? row?.amount ?? row?.value);
+  const dailyValuePercent = normalizeText(row?.dailyValuePercent ?? row?.daily_value_percent ?? null);
+
+  if (!substancy || !amount) return -5;
+  if (/^amount per serving$/i.test(substancy) || /^amount per serving$/i.test(amount)) return -5;
+
+  let score = 5;
+  if (dailyValuePercent) score += 1;
+  if (!/^[A-Z0-9]/.test(substancy)) score -= 1;
+  if (substancy.length > 90) score -= 1;
+  if (/\b(amount|daily value|serving size|servings per container|lot\/exp|fill line)\b/i.test(substancy)) score -= 3;
+  if (!/[A-Za-z]{3}/.test(substancy)) score -= 2;
+  if (!/\d|</.test(amount)) score -= 2;
+  return score;
+};
+
+const scoreSupplementFactsQuality = (supplementFacts) => {
+  const rows = Array.isArray(supplementFacts?.nutritionalFacts) ? supplementFacts.nutritionalFacts : [];
+  const duplicateCounts = new Map();
+  const duplicateAmountCounts = new Map();
+  let score = 0;
+  for (const row of rows) {
+    score += scoreNutritionFactRow(row);
+    const key = normalizeNutritionFactKey(row?.substancy ?? row?.substance ?? row?.name);
+    if (!key) continue;
+    duplicateCounts.set(key, (duplicateCounts.get(key) ?? 0) + 1);
+    const amountKey = normalizeNutritionAmountKey(row?.amountPerServing ?? row?.amount ?? row?.value);
+    if (amountKey) {
+      duplicateAmountCounts.set(amountKey, (duplicateAmountCounts.get(amountKey) ?? 0) + 1);
+    }
+  }
+  for (const count of duplicateCounts.values()) {
+    if (count > 1) score -= (count - 1) * 3;
+  }
+  for (const count of duplicateAmountCounts.values()) {
+    if (count > 1) score -= (count - 1) * 3;
+  }
+  return score;
+};
+
 const mergeSupplementFacts = (currentFacts, currentRank, incomingFacts, incomingRank) => {
   const current = currentFacts ?? { servingSize: null, servingsPerContainer: null, nutritionalFacts: [] };
   const incoming = incomingFacts ?? { servingSize: null, servingsPerContainer: null, nutritionalFacts: [] };
   const chooseIncoming = incomingRank > currentRank;
   const currentUsefulFacts = countUsefulNutritionFactsForMerge(current);
   const incomingUsefulFacts = countUsefulNutritionFactsForMerge(incoming);
+  const currentQualityScore = scoreSupplementFactsQuality(current);
+  const incomingQualityScore = scoreSupplementFactsQuality(incoming);
   const currentRows = Array.isArray(current.nutritionalFacts) ? current.nutritionalFacts : [];
   const incomingRows = Array.isArray(incoming.nutritionalFacts) ? incoming.nutritionalFacts : [];
   const nutritionalFacts =
-    incomingUsefulFacts > currentUsefulFacts && incomingRows.length > 0
+    incomingQualityScore > currentQualityScore && incomingRows.length > 0
+      ? incomingRows
+      : currentQualityScore >= incomingQualityScore && currentRows.length > 0
+        ? currentRows
+        : incomingUsefulFacts > currentUsefulFacts && incomingRows.length > 0
       ? incomingRows
       : currentUsefulFacts > incomingUsefulFacts && currentRows.length > 0
         ? currentRows

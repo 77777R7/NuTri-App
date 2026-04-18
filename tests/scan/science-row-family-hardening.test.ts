@@ -1160,6 +1160,52 @@ test('default science ingredient ordering follows title-led actives over compani
   assert.doesNotMatch(packageAnchorContext.ingredientRows[0]?.name ?? '', /capsules|calories/i);
 });
 
+test('science context keeps title-led algae and enzyme products ahead of micronutrient rows', () => {
+  const enzymeContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-healthforce-digestive-enzymes',
+      productName: 'HealthForce Superfoods, Digestion Enhancement Enzymes™, 120 VeganCaps',
+      dosageForm: 'VeganCaps',
+      actives: [
+        { name: 'Proteases∞', amount: 15100, unit: 'HUT' },
+        { name: 'Amylase', amount: 4000, unit: 'DU' },
+      ],
+    }),
+    overlayClaims: null,
+  });
+  const spirulinaContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-healthforce-spirulina-manna',
+      productName: 'HealthForce Superfoods, Spirulina Manna, 16 oz (454 g)',
+      dosageForm: 'Powder',
+      actives: [
+        { name: 'Vitamin A (Beta-carotene)', amount: 2500, unit: 'IU' },
+        { name: 'Iron', amount: 2, unit: 'mg' },
+      ],
+    }),
+    overlayClaims: null,
+  });
+  const chlorellaContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-healthforce-chlorella-manna',
+      productName: 'HealthForce Superfoods, Chlorella Manna™, 12.34 oz (350 g)',
+      dosageForm: 'Powder',
+      actives: [
+        { name: 'Vitamin D (as D2)', amount: 10, unit: 'mcg' },
+        { name: 'Iron', amount: 1, unit: 'mg' },
+      ],
+    }),
+    overlayClaims: null,
+  });
+
+  assert.match(enzymeContext.ingredientRows[0]?.name ?? '', /digestive enzyme|enzyme blend/i);
+  assert.doesNotMatch(enzymeContext.ingredientRows[0]?.name ?? '', /^proteases/i);
+  assert.match(spirulinaContext.ingredientRows[0]?.name ?? '', /spirulina/i);
+  assert.doesNotMatch(spirulinaContext.ingredientRows[0]?.name ?? '', /vitamin a|iron/i);
+  assert.match(chlorellaContext.ingredientRows[0]?.name ?? '', /chlorella/i);
+  assert.doesNotMatch(chlorellaContext.ingredientRows[0]?.name ?? '', /vitamin d|iron/i);
+});
+
 test('single-anchor ingredient overview still allows identity copy when it adds label meaning', async () => {
   const digest = buildDigest({
     labelId: 'fixture-astaxanthin',

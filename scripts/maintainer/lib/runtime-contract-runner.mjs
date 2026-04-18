@@ -614,8 +614,8 @@ const evaluateSearchOriginIdentity = (scenario, bundle) => {
   if (mismatches.length > 0 && mismatches.every((item) => item === "identity_missing") && expectedBarcode === actualBarcode) {
     return buildGateResult({
       gate: "canonical_product_consistency",
-      status: "warn",
-      reason: "search_origin_identity_partial",
+      status: "pass",
+      reason: "search_origin_identity_barcode_consistent_identity_partial",
       severity: null,
       details: {
         mismatches,
@@ -986,8 +986,9 @@ export const evaluateRuntimeContractRow = ({
   const sourceFamilyGate = evaluateSourceFamilyConsistency({ scenario, runtimeCopy });
   if (sourceFamilyGate) gates.push(sourceFamilyGate);
 
-  const failures = gates.filter((gate) => gate.status === "fail");
-  const warnings = gates.filter((gate) => gate.status === "warn");
+  const gateCountsTowardScenarioStatus = (gate) => scenarioRequestsGate(scenario, gate.gate);
+  const failures = gates.filter((gate) => gate.status === "fail" && gateCountsTowardScenarioStatus(gate));
+  const warnings = gates.filter((gate) => gate.status === "warn" && gateCountsTowardScenarioStatus(gate));
 
   return {
     scenarioId: scenario.id,
