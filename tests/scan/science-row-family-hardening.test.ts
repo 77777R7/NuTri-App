@@ -997,6 +997,25 @@ test('science context treats daily multi formula titles as multivitamin family a
   assert.notEqual(context.ingredientRows[0]?.name, 'Magnesium (magnesium oxide)');
 });
 
+test('science context treats male multiple titles as multivitamin family anchors', () => {
+  const context = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-solgar-male-multiple',
+      productName: 'Solgar, Male Multiple, 120 Tablets',
+      dosageForm: 'Tablet',
+      actives: [
+        { name: 'Vitamin C (as L-ascorbic acid, niacinamide ascorbate)', amount: 400, unit: 'mg' },
+        { name: 'Vitamin D (as ergocalciferol)', amount: 10, unit: 'mcg' },
+        { name: 'Inositol', amount: 25, unit: 'mg' },
+      ],
+    }),
+    overlayClaims: null,
+  });
+
+  assert.equal(context.ingredientRows[0]?.name, 'Multivitamin & Mineral Formula');
+  assert.notEqual(context.ingredientRows[0]?.name, 'Inositol');
+});
+
 test('science context treats just-one multi with iron titles as multivitamin family anchors', () => {
   const context = buildIngredientScienceContext({
     digest: buildDigest({
@@ -1018,6 +1037,26 @@ test('science context treats just-one multi with iron titles as multivitamin fam
 
   assert.equal(context.ingredientRows[0]?.name, 'Multivitamin & Mineral Formula');
   assert.notEqual(context.ingredientRows[0]?.name, 'Iron');
+});
+
+test('science context treats No. 7 joint support titles as joint complex anchors', () => {
+  const context = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-solgar-no7-joint-support',
+      productName: 'Solgar, No. 7, Advanced Joint Support Complex, 30 Vegetable Capsules',
+      dosageForm: 'Vegetable Capsule',
+      actives: [
+        { name: 'Vitamin C', amount: 100, unit: 'mg' },
+        { name: 'Turmeric Root', amount: 50, unit: 'mg' },
+        { name: 'Total Collagen', amount: 40, unit: 'mg' },
+        { name: '5-Loxin Advanced Boswellia serrata Extract', amount: 100, unit: 'mg' },
+      ],
+    }),
+    overlayClaims: null,
+  });
+
+  assert.match(context.ingredientRows[0]?.name ?? '', /joint support|collagen/i);
+  assert.notEqual(context.ingredientRows[0]?.name, 'Vitamin C');
 });
 
 test('science context rescues ParaFight titles ahead of opaque blend rows', () => {

@@ -181,7 +181,8 @@ const IMMUNE_BLEND_TITLE_PATTERN =
 const B_COMPLEX_TITLE_PATTERN =
   /\bb[\s-]*complex\b|\bb[\s-]*vitamins?\b|\bvitamin\s*b\s*complex\b/i;
 const MULTIVITAMIN_TITLE_PATTERN =
-  /\bmulti[\s-]*(?:vitamin|mineral)s?\b|\bmultivitamin\b|\bmultimineral\b|\bmultione\b|\bdaily\s+total\s+one\b|\bsingle\s+daily\s+multiple\b|\bdaily\s+multi(?:\s+formula)?\b|\b(?:women'?s|men'?s)\s+daily\s+multi\b|\bmulti\s+formula\b|\bjust\s+one\s+multi\b|\bmulti\s+with\s+iron\b/i;
+  /\bmulti[\s-]*(?:vitamin|mineral)s?\b|\bmultivitamin\b|\bmultimineral\b|\bmultione\b|\bdaily\s+total\s+one\b|\bsingle\s+daily\s+multiple\b|\bmale\s+multiple\b|\bdaily\s+multi(?:\s+formula)?\b|\b(?:women'?s|men'?s)\s+daily\s+multi\b|\bmulti\s+formula\b|\bjust\s+one\s+multi\b|\bmulti\s+with\s+iron\b/i;
+const JOINT_SUPPORT_TITLE_PATTERN = /\bjoint\s+support\b|\bno\.?\s*7\b/i;
 const B_COMPLEX_FORMULA_ROW_PATTERN =
   /\bb[\s-]*complex\b|\bvitamin\s*b\s*complex\b/i;
 const MULTIVITAMIN_FORMULA_ROW_PATTERN =
@@ -702,6 +703,10 @@ const isTitleRescueAnchorRow = (
     (
       PARAFIGHT_TITLE_PATTERN.test(productName) &&
       /\bpara\s*fight\b|\bintestinal\s+support\b|\bherbal\s+blend\b/i.test(normalizedRow)
+    ) ||
+    (
+      JOINT_SUPPORT_TITLE_PATTERN.test(productName) &&
+      /\bjoint\s+support\b|\bcollagen\b|\bcartilage\b|\bno\.?\s*7\b/i.test(normalizedRow)
     )
   );
 };
@@ -853,6 +858,13 @@ const deriveScienceTitleRescueRows = (params: {
 
   if (PARAFIGHT_TITLE_PATTERN.test(titleWithoutBrand)) {
     pushRow("ParaFight Herbal Blend");
+  }
+
+  if (
+    JOINT_SUPPORT_TITLE_PATTERN.test(titleWithoutBrand) &&
+    !hasNamedTitleAlignedRow(params.existingRows, /\bjoint\s+support\b|\bcollagen\b|\bcartilage\b/i)
+  ) {
+    pushRow("Joint Support Complex");
   }
 
   if (hasTitleFamily("vitamin_c", titleWithoutBrand) && !hasDedicatedFamilyRow("vitamin_c")) {

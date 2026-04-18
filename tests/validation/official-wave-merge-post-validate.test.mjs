@@ -407,3 +407,19 @@ test("post-merge validation accepts immune liquid zinc anchors beyond the first 
     }).some((anchor) => /zinc/i.test(anchor)),
   );
 });
+
+test("post-merge validation accepts lutein in bilberry ginkgo eyebright complex titles", () => {
+  assert.ok(
+    inferDynamicPassAnchors({
+      title: "Solgar, Bilberry Ginkgo Eyebright Complex Plus Lutein, 60 Vegetable Capsules",
+      supplementFacts: {
+        nutritionalFacts: [
+          { substancy: "Lutein (from marigold flower)", amountPerServing: "10 mg" },
+          { substancy: "Eyebright Extract", amountPerServing: "25 mg" },
+          { substancy: "Bilberry Extract", amountPerServing: "20 mg" },
+          { substancy: "Ginkgo Extract", amountPerServing: "10 mg" },
+        ],
+      },
+    }).some((anchor) => /lutein/i.test(anchor)),
+  );
+});
