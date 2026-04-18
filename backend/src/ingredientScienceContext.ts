@@ -159,9 +159,9 @@ const FUNCTIONAL_FOOD_LIKE_INGREDIENT_PATTERN =
   /\b(?:xylitol|erythritol|fiber|dragon\s+fruit|fruit\s+powder|juice\s+powder|spirulina|chlorella|barley\s+grass|wheat\s+grass|digestive\s+enzyme|enzyme\s+assimilation|greens\b|green\s+superfood|superfood)\b/i;
 const FUNCTIONAL_FOOD_LIKE_FORM_PATTERN = /\b(?:gum|mint|lozenge|tea|powder|drink\s*mix|gel)\b/i;
 const PROBIOTIC_TITLE_PATTERN =
-  /\b(?:probiotics?|pro-bio|probiology|essential[\s-]*biotic|(?:gut|intestinal|digestive)[\s-]+flora|flora\s+support|live cultures?|cfu|protectis|floraphage|osfortis|cytoflora|acidophilus|bifidus?)\b/i;
+  /\b(?:probiotics?|pro-bio|probiology|oralbiotic|essential[\s-]*biotic|(?:gut|intestinal|digestive)[\s-]+flora|flora\s+support|live cultures?|cfu|protectis|floraphage|osfortis|cytoflora|acidophilus|bifidus?)\b/i;
 const PROBIOTIC_SPECIFIC_ROW_PATTERN =
-  /\b(?:probiotic|probiotics|acidophilus|lactobacillus|bifidobacterium|saccharomyces|bacillus|limosilactobacillus|reuteri|cfu|live cultures?|protectis|floraphage|osfortis|cytoflora|bacteriophage|bacterial culture|probiotic lysate)\b/i;
+  /\b(?:probiotic|probiotics|acidophilus|lactobacillus|bifidobacterium|saccharomyces|bacillus|streptococcus|salivarius|limosilactobacillus|reuteri|cfu|live cultures?|protectis|floraphage|osfortis|cytoflora|bacteriophage|bacterial culture|probiotic lysate)\b/i;
 const GREENS_TITLE_PATTERN =
   /\b(?:ag1|athletic\s+greens|greens\b|supergreens?\b|green\s+superfood|superfood|vegetable\s+powder|whole\s+food\s+powder|daily\s+greens?|greens?\s+(?:powder|blend|formula)|powdered\s+greens?|supergreens?\s+powder)\b/i;
 const TEA_BAG_TITLE_PATTERN = /\b(?:tea\s+bags?|herbal\s+tea|slimming\s+tea)\b/i;
@@ -562,6 +562,7 @@ const matchesProductTitle = (rowName: string, productName: string): boolean => {
 
 const isFoodLikeTitle = (productName: string): boolean => {
   if (FLOWER_ESSENCE_TITLE_PATTERN.test(productName)) return false;
+  if (PROBIOTIC_TITLE_PATTERN.test(productName)) return false;
   return (
     FUNCTIONAL_FOOD_LIKE_TITLE_PATTERN.test(productName) ||
     FOOD_LIKE_PRODUCT_TITLE_PATTERN.test(productName) ||
@@ -1645,6 +1646,7 @@ const classifyProductArchetype = (params: {
     params.rows.length > 0 && genericCount / params.rows.length >= 0.6;
   const titleLooksFoodLike =
     !FLOWER_ESSENCE_TITLE_PATTERN.test(productName) &&
+    !PROBIOTIC_TITLE_PATTERN.test(productName) &&
     FUNCTIONAL_FOOD_LIKE_TITLE_PATTERN.test(productName);
   const formLooksFoodLike = FUNCTIONAL_FOOD_LIKE_FORM_PATTERN.test(dosageForm);
   const rowLooksFoodLike = params.rows.some((row) =>
@@ -1657,6 +1659,16 @@ const classifyProductArchetype = (params: {
   const strongFoodPresentation = titleLooksFoodLike || formLooksFoodLike || rowLooksFoodLike;
   const definitelyFoodLikeFromTitle =
     titleLooksFoodLike && (formLooksFoodLike || rowLooksFoodLike);
+
+  if (
+    PROBIOTIC_TITLE_PATTERN.test(productName) &&
+    params.rows.some((row, index) =>
+      params.families[index] === "probiotic_or_blend" ||
+      PROBIOTIC_SPECIFIC_ROW_PATTERN.test(row.name),
+    )
+  ) {
+    return "standard_supplement";
+  }
 
   if (foodLikeTitleDominant) {
     return "functional_food_like";

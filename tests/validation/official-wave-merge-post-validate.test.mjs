@@ -323,3 +323,68 @@ test("post-merge validation accepts title-led botanical and nootropic anchors fr
     ["CogninSA"],
   );
 });
+
+test("post-merge validation accepts NOW oil and menopause formula runtime anchors", () => {
+  assert.ok(
+    inferDynamicPassAnchors({
+      title: "NOW Foods, Certified Organic Flax Seed Oil, 12 fl oz (355 ml)",
+      supplementFacts: {
+        nutritionalFacts: [
+          { substancy: "Calories", amountPerServing: "120" },
+          { substancy: "Total Fat", amountPerServing: "14 g" },
+          { substancy: "Saturated Fat", amountPerServing: "1 g" },
+          { substancy: "Polyunsaturated Fat", amountPerServing: "10 g" },
+          { substancy: "Monounsaturated Fat", amountPerServing: "3 g" },
+          { substancy: "Sodium", amountPerServing: "0 mg" },
+          { substancy: "Total Carbohydrate", amountPerServing: "0 g" },
+          { substancy: "Protein", amountPerServing: "0 g" },
+          { substancy: "Linolenic Acid (Omega-3)", amountPerServing: "7.7 g" },
+        ],
+      },
+    }).some((anchor) => /linolenic acid|flax seed oil/i.test(anchor)),
+  );
+
+  assert.ok(
+    inferDynamicPassAnchors({
+      title: "NOW Foods, Menopause Support, 90 Veg Capsules",
+      supplementFacts: {
+        nutritionalFacts: [
+          { substancy: "Organic Dong Quai (Angelica sinensis) (Root/Rhizome)", amountPerServing: "400 mg" },
+          { substancy: "Red Raspberry (Rubus idaeus) (Leaf)", amountPerServing: "300 mg" },
+          { substancy: "Chaste Tree Extract (Vitex agnus castus) (Fruit) (min. 0.5% Agnusides)", amountPerServing: "300 mg" },
+          { substancy: "Red Clover (Trifolium pratense) (Flower Tops)", amountPerServing: "250 mg" },
+          { substancy: "Black Cohosh Extract (Actaea racemosa) (Root)", amountPerServing: "80 mg" },
+          { substancy: "Soy Isoflavone Powder (Glycine max)(Seed)", amountPerServing: "50 mg" },
+        ],
+      },
+    }).some((anchor) => /soy isoflavone/i.test(anchor)),
+  );
+});
+
+test("post-merge validation accepts OralBiotic strain runtime anchors", () => {
+  const [target] = chooseValidationTargets({
+    limit: 1,
+    mergedRows: [
+      {
+        productId: "23650",
+        brandName: "NOW Foods",
+        title: "NOW Foods, OralBiotic®, 60 Lozenges",
+        barcodeGtin14: "00733739029218",
+        mergeDecision: "merged",
+      },
+    ],
+    combinedProducts: [
+      {
+        productId: "23650",
+        title: "NOW Foods, OralBiotic®, 60 Lozenges",
+        supplementFacts: {
+          nutritionalFacts: [
+            { substancy: "Streptococcus salivarius K12 (BLIS K12®) (1 Billion CFU†)" },
+          ],
+        },
+      },
+    ],
+  });
+
+  assert.ok(target.passAnchors.some((anchor) => /blis k12|streptococcus salivarius/i.test(anchor)));
+});

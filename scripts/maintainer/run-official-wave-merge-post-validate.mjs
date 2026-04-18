@@ -54,7 +54,7 @@ const PRIORITIZED_VALIDATION_TARGETS = [
   {
     productId: "23650",
     category: "probiotic_microbiome",
-    passAnchors: ["OralBiotic", "Probiotic"],
+    passAnchors: ["OralBiotic", "Probiotic", "BLIS K12", "Streptococcus salivarius"],
     failAnchors: ["Serving Size", "Vitamin D"],
   },
   {
@@ -112,6 +112,9 @@ const DYNAMIC_TITLE_ANCHOR_RULES = [
   { pattern: /\bcurcumin\b|\bturmeric\b/i, anchors: ["Curcumin", "Turmeric"] },
   { pattern: /\bastaxanthin\b/i, anchors: ["Astaxanthin"] },
   { pattern: /\bmelatonin\b/i, anchors: ["Melatonin"] },
+  { pattern: /\boralbiotic\b/i, anchors: ["OralBiotic", "Probiotic", "BLIS K12", "Streptococcus salivarius"] },
+  { pattern: /\bflax\s+seed\s+oil\b|\bflaxseed\s+oil\b|\blinseed\s+oil\b/i, anchors: ["Flax Seed Oil", "Linolenic Acid", "Omega-3", "Omega-6", "Omega-9"] },
+  { pattern: /\bmenopause\s+support\b/i, anchors: ["Menopause Support", "Soy Isoflavone", "Chaste Tree", "Red Clover", "Dong Quai", "Black Cohosh"] },
   { pattern: /\budo'?s\s+(?:choice\s+)?oil\b|\b(?:omega\s*)?3[\s-]*6[\s-]*9\b|\bdha\s+3[\s-]*6[\s-]*9\b/i, anchors: ["Omega 3-6-9", "Omega-3", "DHA", "ALA", "Essential Fatty Acids", "Omega-6", "Omega-9"] },
   { pattern: /\bpara\s*fight\b/i, anchors: ["ParaFight Herbal Blend", "ParaFight", "Intestinal Support Blend"] },
   { pattern: /\bproto\s*dophilus\b|\bprobiotics?\b|\b50\s+billion\b/i, anchors: ["Probiotics", "Probiotic", "Blend of 10 Strains of Probiotic Bacteria"] },

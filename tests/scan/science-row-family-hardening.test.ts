@@ -1502,6 +1502,33 @@ test('omega-3 fallback copy distinguishes algal oil sources from fish oil source
   assert.doesNotMatch(backgroundCopy, /fish[-\s]?oil/i);
 });
 
+test('omega-3 fallback copy distinguishes flax seed oil sources from fish oil sources', async () => {
+  const context = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-flax-seed-oil-source-copy',
+      productName: 'NOW Foods, Certified Organic Flax Seed Oil, 12 fl oz (355 ml)',
+      dosageForm: 'Liquid',
+      actives: [
+        { name: 'Linolenic Acid (Omega-3)', amount: 7.7, unit: 'g' },
+        { name: 'Linolenic Acid (Omega-6)', amount: 2, unit: 'g' },
+        { name: 'Oleic Acid (Omega-9)', amount: 2.7, unit: 'g' },
+      ],
+    }),
+    overlayClaims: null,
+  });
+
+  const overview = await compileIngredientOverviewAsync(context);
+  const overviewCopy = [
+    overview.ingredientOverview.titleLine,
+    overview.ingredientOverview.paragraph1,
+    overview.ingredientOverview.paragraph2,
+    overview.ingredientOverview.compareHint,
+  ].join(' ');
+
+  assert.match(overviewCopy, /flax seed oil|plant oil/i);
+  assert.doesNotMatch(overviewCopy, /fish[-\s]?oil/i);
+});
+
 test('science context rescues sparse title-led food-like anchors from residue rows', () => {
   const coconutAminosContext = buildIngredientScienceContext({
     digest: buildDigest({
@@ -1622,6 +1649,24 @@ test('flower essence titles are not treated as food-like green products', () => 
   assert.notEqual(context.productArchetype, 'functional_food_like');
   assert.doesNotMatch(context.ingredientRows[0]?.name ?? '', /food-based product/i);
   assert.match(context.ingredientRows[0]?.name ?? '', /flower essence/i);
+});
+
+test('oral probiotic lozenges keep probiotic anchors instead of food-like anchors', () => {
+  const context = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-now-oralbiotic-lozenge',
+      productName: 'NOW Foods, OralBiotic®, 60 Lozenges',
+      dosageForm: 'Lozenge',
+      actives: [
+        { name: 'BLIS K12 Streptococcus salivarius K12', amount: 1, unit: 'billion CFU' },
+      ],
+    }),
+    overlayClaims: null,
+  });
+
+  assert.notEqual(context.productArchetype, 'functional_food_like');
+  assert.doesNotMatch(context.ingredientRows[0]?.name ?? '', /food-based product/i);
+  assert.match(context.ingredientRows[0]?.name ?? '', /oralbiotic|probiotic|streptococcus/i);
 });
 
 test('omega-3 source rescue keeps algal titles out of fish-oil fallback copy even when the facts row is generic', async () => {

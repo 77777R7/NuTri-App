@@ -96,6 +96,8 @@ const SPECIFIC_COMPARE_HINT_PATTERN =
   /\b(per serving|stated amount|disclosed amount|breakdown|epa|dha|source|form|delivery|strain|cfu|blend total|item[- ]level|disclosure|label)\b/i;
 const ALGAL_OMEGA_SOURCE_PATTERN =
   /\balgal(?:\b|\s+oil)\b|\balgae\b|\bschizochytrium\b|\bplant\s+based\s+omega\s*-?\s*3\b/i;
+const FLAX_OMEGA_SOURCE_PATTERN =
+  /\bflax(?:\s+seed)?\s+oil\b|\bflaxseed\s+oil\b|\blinseed\s+oil\b/i;
 
 const normalizeText = (value: string | null | undefined): string =>
   String(value ?? "")
@@ -251,6 +253,8 @@ const hasAnchorFamilyDrift = (context: IngredientScienceContext): boolean =>
 const resolveOmega3SourceCopy = (context: IngredientScienceContext): {
   titleLine: string;
   sourcePhrase: string;
+  detailPhrase?: string;
+  compareHint?: string;
 } | null => {
   const anchorName = normalizeText(context.anchorIngredient?.name);
   const sourceEvidence = [
@@ -267,6 +271,14 @@ const resolveOmega3SourceCopy = (context: IngredientScienceContext): {
     return {
       titleLine: ALGAL_OMEGA_SOURCE_PATTERN.test(anchorName) ? anchorName : "Algal Oil",
       sourcePhrase: "algal oil",
+    };
+  }
+  if (FLAX_OMEGA_SOURCE_PATTERN.test(sourceEvidence)) {
+    return {
+      titleLine: FLAX_OMEGA_SOURCE_PATTERN.test(anchorName) ? anchorName : "Flax Seed Oil",
+      sourcePhrase: "flax seed oil",
+      detailPhrase: "the omega-3, omega-6, and omega-9 fatty acid lines underneath it",
+      compareHint: "When comparing flax seed oil products, focus on the source oil and the disclosed omega-3, omega-6, and omega-9 amounts rather than treating it like a marine EPA/DHA label.",
     };
   }
   if (/\bkrill\s+oil\b/i.test(sourceEvidence)) {
@@ -359,12 +371,13 @@ const buildMultiAnchorFallback = (context: IngredientScienceContext): Ingredient
   if (!hasAnchorFamilyDrift(context) && getFallbackLeadFamily(context) === "omega_3") {
     const sourceCopy = resolveOmega3SourceCopy(context);
     const sourcePhrase = sourceCopy?.sourcePhrase ?? "fish oil";
+    const detailPhrase = sourceCopy?.detailPhrase ?? "the EPA and DHA amounts that matter most";
     return {
       mode: "multi_anchor",
       titleLine: sourceCopy?.titleLine ?? "Omega-3 formula",
       paragraph1: `This omega-3 product is organized around ${sourcePhrase} as the source ingredient, with separate lines that break out total omega-3 and the specific fatty acids underneath it.`,
-      paragraph2: "That structure helps distinguish the source oil from the EPA and DHA amounts that matter most when you compare products side by side.",
-      compareHint: `When comparing omega-3 products, focus on total omega-3 plus the disclosed EPA and DHA amounts, not just the ${sourcePhrase} total.`,
+      paragraph2: `That structure helps distinguish the source oil from ${detailPhrase} when you compare products side by side.`,
+      compareHint: sourceCopy?.compareHint ?? `When comparing omega-3 products, focus on total omega-3 plus the disclosed EPA and DHA amounts, not just the ${sourcePhrase} total.`,
     };
   }
 

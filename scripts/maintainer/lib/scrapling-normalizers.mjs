@@ -11,6 +11,10 @@ const normalizeStringList = (value) =>
     .map((item) => normalizeText(item))
     .filter(Boolean);
 
+const uniqueStrings = (values) => [...new Set(normalizeStringList(values))];
+
+const isUsIherbUrl = (value) => /^https?:\/\/(?:www\.)?iherb\.com\//i.test(normalizeText(value));
+
 export const normalizeScraplingResult = (raw = {}) => {
   const sections = normalizeDescriptionSections(raw.sections ?? {}, raw.bodyText ?? null);
   const nutritionalFacts = pickNutritionFacts(raw.nutritionalFacts ?? raw.supplementFactsRows ?? []);
@@ -82,6 +86,8 @@ export const buildOverlayCandidateFromScrapling = ({
     normalizeText((looksUnavailable ? null : result.title) ?? queueEntry?.title ?? queueEntry?.productName ?? null) || null;
   const resolvedBrand = normalizeText(brandName ?? queueEntry?.brandName ?? null) || null;
   const sourceUrl = result.finalUrl ?? result.pageUrl ?? null;
+  const sourceUrls = uniqueStrings([sourceUrl, result.pageUrl, queueEntry?.link]);
+  const hasUsIherbPage = Boolean(queueEntry?.hasUsIherbPage) || sourceUrls.some(isUsIherbUrl);
   return {
     productId: normalizeText(queueEntry?.productId ?? null) || null,
     barcode_gtin14: barcode,
@@ -102,11 +108,11 @@ export const buildOverlayCandidateFromScrapling = ({
     sourceSummary: {
       sourceKind: "scrapling_official_fallback",
       sourceTypes: ["scrapling_product_page"],
-      marketSources: queueEntry?.hasUsIherbPage ? ["us"] : [],
-      sourceUrls: sourceUrl ? [sourceUrl] : [],
+      marketSources: hasUsIherbPage ? ["us"] : [],
+      sourceUrls,
       sourceNotes: [sourceNote],
       npnIgnored: false,
-      hasUsIherbPage: Boolean(queueEntry?.hasUsIherbPage),
+      hasUsIherbPage,
       sourceRank: 85,
     },
     fetchDiagnostics: result.sourceDiagnostics ?? {},
