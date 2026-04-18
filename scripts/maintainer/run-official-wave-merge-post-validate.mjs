@@ -108,7 +108,7 @@ const DYNAMIC_TITLE_ANCHOR_RULES = [
   { pattern: /\bleucine\b/i, anchors: ["Leucine"] },
   { pattern: /\bbilberry\b|\bginkgo\b|\beyebright\b|\blutein\b/i, anchors: ["Bilberry", "Ginkgo", "Eyebright", "Lutein"] },
   { pattern: /\bchromium\b/i, anchors: ["Chromium", "Chromium Picolinate"] },
-  { pattern: /\bmale\s+multiple\b|\bmultivitamin\b|\bmultiple\b|\bdaily\s+multi(?:\s+formula)?\b|\bmulti\s+for\s+men\b|\bmulti\s+vitamin\s+energy\b|\b(?:women'?s|men'?s)\s+daily\s+multi\b|\bmulti\s+formula\b|\bjust\s+one\s+multi\b|\bmulti\s+with\s+iron\b|\bminimal\s+and\s+essential\b/i, anchors: ["Multivitamin", "Multivitamin & Mineral Formula", "Multi Vitamin Energy Plus", "Male Multiple"] },
+  { pattern: /\bmale\s+multiple\b|\bmultivitamin\b|\bmultiple\b|\bdaily\s+multi(?:\s+formula)?\b|\bmulti\s+for\s+men\b|\bmulti\s+vitamin\s+energy\b|\b(?:women'?s|men'?s)\s+(?:daily\s+)?multi\b|\bmulti\s+formula\b|\bjust\s+one\s+multi\b|\bmulti\s+with\s+iron\b|\bminimal\s+and\s+essential\b/i, anchors: ["Multivitamin", "Multivitamin & Mineral Formula", "Multi Vitamin Energy Plus", "Male Multiple"] },
   { pattern: /\bjoint\s+support\b|\bno\.?\s*7\b/i, anchors: ["Joint Support Complex", "Collagen"] },
   { pattern: /\bsaw\s+palmetto\b/i, anchors: ["Saw Palmetto"] },
   { pattern: /\bvitamin\s*d3\b|\bvegan\s+vitamin\s*d3\b|\bcholecalciferol\b/i, anchors: ["Vitamin D3", "Vitamin D"] },

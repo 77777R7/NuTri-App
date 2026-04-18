@@ -1147,6 +1147,26 @@ test("science context treats multi for men energy titles as multivitamin family 
   assert.notEqual(context.ingredientRows[0]?.name, "Magnesium (as magnesium oxide and lysyl glycinate chelate)");
 });
 
+test("science context treats men's multi titles as multivitamin family anchors", () => {
+  const context = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: "fixture-now-adam-superior-mens-multi",
+      productName: "NOW Foods, ADAM, Superior Men's Multi, 60 Tablets",
+      dosageForm: "Tablet",
+      actives: [
+        { name: "Vitamin A (100% as Beta-Carotene)", amount: 2250, unit: "mcg" },
+        { name: "Vitamin C (from Calcium Ascorbate)", amount: 250, unit: "mg" },
+        { name: "Magnesium (from Magnesium Citrate)", amount: 25, unit: "mg" },
+        { name: "Inositol", amount: 12.5, unit: "mg" },
+      ],
+    }),
+    overlayClaims: null,
+  });
+
+  assert.equal(context.ingredientRows[0]?.name, "Multivitamin & Mineral Formula");
+  assert.notEqual(context.ingredientRows[0]?.name, "Inositol");
+});
+
 test('science context treats No. 7 joint support titles as joint complex anchors', () => {
   const context = buildIngredientScienceContext({
     digest: buildDigest({

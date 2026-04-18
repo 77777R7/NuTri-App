@@ -350,6 +350,21 @@ test("post-merge validation treats energy multi titles as multivitamin targets",
   );
 });
 
+test("post-merge validation treats men's multi titles as multivitamin targets", () => {
+  const anchors = inferDynamicPassAnchors({
+    title: "NOW Foods, ADAM, Superior Men's Multi, 60 Tablets",
+    supplementFacts: {
+      nutritionalFacts: [
+        { substancy: "Vitamin A (100% as Beta-Carotene)", amountPerServing: "2,250 mcg" },
+        { substancy: "Vitamin C (from Calcium Ascorbate)", amountPerServing: "250 mg" },
+        { substancy: "Inositol", amountPerServing: "12.5 mg" },
+      ],
+    },
+  });
+
+  assert.deepEqual(anchors.slice(0, 2), ["Multivitamin", "Multivitamin & Mineral Formula"]);
+});
+
 test("post-merge validation treats protein and greens powder titles as title-led food-like targets", () => {
   const anchors = inferDynamicPassAnchors({
     title: "Natural Factors, Whole Earth & Sea®, Organic Protein & Greens, Unflavored, 1.41 lbs (640 g)",

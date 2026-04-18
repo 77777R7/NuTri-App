@@ -187,7 +187,7 @@ const IMMUNE_BLEND_TITLE_PATTERN =
 const B_COMPLEX_TITLE_PATTERN =
   /\bb[\s-]*complex\b|\bb[\s-]*vitamins?\b|\bvitamin\s*b\s*complex\b/i;
 const MULTIVITAMIN_TITLE_PATTERN =
-  /\bmulti[\s-]*(?:vitamin|mineral)s?\b|\bmultivitamin\b|\bmultimineral\b|\bmultione\b|\bdaily\s+total\s+one\b|\bsingle\s+daily\s+multiple\b|\bmale\s+multiple\b|\bwhole\s+food\s+based\s+multiple\b|\bladies'?\s+choice\b|\bdaily\s+multi(?:\s+formula)?\b|\bmulti\s+for\s+men\b|\bmulti\s+vitamin\s+energy\b|\b(?:women'?s|men'?s)\s+daily\s+multi\b|\bmulti\s+formula\b|\bjust\s+one\s+multi\b|\bmulti\s+with\s+iron\b/i;
+  /\bmulti[\s-]*(?:vitamin|mineral)s?\b|\bmultivitamin\b|\bmultimineral\b|\bmultione\b|\bdaily\s+total\s+one\b|\bsingle\s+daily\s+multiple\b|\bmale\s+multiple\b|\bwhole\s+food\s+based\s+multiple\b|\bladies'?\s+choice\b|\bdaily\s+multi(?:\s+formula)?\b|\bmulti\s+for\s+men\b|\bmulti\s+vitamin\s+energy\b|\b(?:women'?s|men'?s)\s+(?:daily\s+)?multi\b|\bmulti\s+formula\b|\bjust\s+one\s+multi\b|\bmulti\s+with\s+iron\b/i;
 const MINIMAL_ESSENTIAL_BROAD_NUTRIENT_TITLE_PATTERN = /\bminimal\s+and\s+essential\b/i;
 const BROAD_VITAMIN_MINERAL_ROW_PATTERN =
   /\b(?:vitamin\s*[a-z0-9]*|thiamin|riboflavin|niacin|folate|biotin|pantothenic|calcium|magnesium|zinc|selenium|copper|manganese|chromium|molybdenum|iodine|iron)\b/i;
