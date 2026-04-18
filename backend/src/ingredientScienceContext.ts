@@ -320,7 +320,7 @@ const inferFamilyFromText = (combined: string): IngredientScienceIngredientFamil
   if (CALCIUM_PATTERN.test(combined)) return "calcium";
   if (IRON_PATTERN.test(combined)) return "iron";
   if (MELATONIN_PATTERN.test(combined)) return "melatonin";
-  if (/\bfish\s*oil\b|\bomega\s*-?\s*3\b|\bepa\b|\bdha\b|\bkrill\b|\balgal\s*oil\b|\balgae\b|\bplant\s+based\s+omega\s*-?\s*3\b|\bschizochytrium\b/.test(combined)) {
+  if (/\bfish\s*oil\b|\bsalmon\s*oil\b|\bomega\s*-?\s*3\b|\bepa\b|\bdha\b|\bkrill\b|\balgal\s*oil\b|\balgae\b|\bplant\s+based\s+omega\s*-?\s*3\b|\bschizochytrium\b/.test(combined)) {
     return "omega_3";
   }
   if (
@@ -516,7 +516,7 @@ const FAMILY_TITLE_HINTS: Array<{ family: IngredientScienceIngredientFamily; pat
   { family: "green_tea_extract", pattern: /\bgreen\s+tea\b|\begcg\b/i },
   {
     family: "omega_3",
-    pattern: /\bomega\s*-?\s*3\b|\bfish\s*oil\b|\bepa\b|\bdha\b|\bkrill\s*oil\b|\balgal\s+oil\b|\balgae\b|\bplant\s+based\s+omega\s*-?\s*3\b|\bschizochytrium\b/i,
+    pattern: /\bomega\s*-?\s*3\b|\bfish\s*oil\b|\bsalmon\s*oil\b|\bepa\b|\bdha\b|\bkrill\s*oil\b|\balgal\s+oil\b|\balgae\b|\bplant\s+based\s+omega\s*-?\s*3\b|\bschizochytrium\b/i,
   },
   { family: "7keto_dhea_metabolite", pattern: /\b7[\s-]*keto\b/i },
   { family: "curcumin", pattern: /\bcurcumin\b|\bturmeric\b/i },
@@ -913,7 +913,7 @@ const deriveScienceTitleRescueRows = (params: {
   }
 
   const hasDedicatedOmega3SourceRow = params.existingRows.some((row) =>
-    /\bfish\s+oil\b|\bkrill\s+oil\b|\balgal\s+oil\b|\balgae\b|\bplant\s+based\s+omega\s*-?\s*3\b|\bschizochytrium\b/i.test(
+    /\bfish\s+oil\b|\bsalmon\s+oil\b|\bkrill\s+oil\b|\balgal\s+oil\b|\balgae\b|\bplant\s+based\s+omega\s*-?\s*3\b|\bschizochytrium\b/i.test(
       row.name,
     ),
   );
@@ -922,9 +922,11 @@ const deriveScienceTitleRescueRows = (params: {
       pushRow("Algal Oil");
     } else if (/\bkrill\s+oil\b/i.test(titleWithoutBrand)) {
       pushRow("Krill Oil");
+    } else if (/\bsalmon\s+oil\b/i.test(titleWithoutBrand)) {
+      pushRow("Salmon Oil");
     } else {
       pushRow(
-        extractTitleMatch(titleWithoutBrand, /\bomega[\s-]*3\b|\bfish oil\b|\bepa\b|\bdha\b/i) ?? "Omega-3",
+        extractTitleMatch(titleWithoutBrand, /\bomega[\s-]*3\b|\bfish oil\b|\bsalmon oil\b|\bepa\b|\bdha\b/i) ?? "Omega-3",
       );
     }
   }

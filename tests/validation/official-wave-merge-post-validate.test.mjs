@@ -221,6 +221,23 @@ test("post-merge validation treats Udo's Oil 3-6-9 as an omega title-led target"
   assert.deepEqual(anchors.slice(0, 4), ["Omega 3-6-9", "Omega-3", "DHA", "ALA"]);
 });
 
+test("post-merge validation accepts salmon oil source anchors beyond fat macro rows", () => {
+  const anchors = inferDynamicPassAnchors({
+    title: "Amazing Nutrition, Wild Alaskan Salmon Oil, 180 Softgels (1,000 Per Softgel)",
+    supplementFacts: {
+      nutritionalFacts: [
+        { substancy: "Calories From Fat", amountPerServing: "20" },
+        { substancy: "Saturated Fat", amountPerServing: "0.5 g" },
+        { substancy: "Polyunsaturated Fat", amountPerServing: "1 g" },
+        { substancy: "Monounsaturated Fat", amountPerServing: "0.5 g" },
+        { substancy: "Salmon Oil", amountPerServing: "2,000 mg" },
+      ],
+    },
+  });
+
+  assert.ok(anchors.some((anchor) => /salmon oil/i.test(anchor)));
+});
+
 test("post-merge validation treats daily multi formula titles as multivitamin targets", () => {
   const anchors = inferDynamicPassAnchors({
     title: "Mason Natural, Women's Daily Multi Formula, 90 Caplets",

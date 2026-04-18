@@ -563,6 +563,26 @@ test('science context does not treat Flora brand omega oils as probiotic product
   assert.equal(context.anchorIngredient?.ingredientFamily, 'omega_3');
 });
 
+test('science context treats salmon oil rows as omega source oil anchors', () => {
+  const context = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-amazing-salmon-oil',
+      productName: 'Amazing Nutrition, Wild Alaskan Salmon Oil, 180 Softgels (1,000 Per Softgel)',
+      dosageForm: 'Softgel',
+      actives: [
+        { name: 'Calories From Fat', amount: 20, unit: null },
+        { name: 'Polyunsaturated Fat', amount: 1, unit: 'g' },
+        { name: 'Salmon Oil', amount: 2000, unit: 'mg' },
+        { name: 'DHA (Docosahexaenoic Acid)', amount: 220, unit: 'mg' },
+      ],
+    }),
+    overlayClaims: null,
+  });
+
+  assert.equal(context.anchorIngredient?.name, 'Salmon Oil');
+  assert.equal(context.anchorIngredient?.ingredientFamily, 'omega_3');
+});
+
 test('science context rescues zinc as the lead row in children immune blend products', () => {
   const digest = buildDigest({
     labelId: 'fixture-children-immune-vitamin-c-zinc',

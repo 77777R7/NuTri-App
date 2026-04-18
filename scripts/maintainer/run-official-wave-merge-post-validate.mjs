@@ -113,6 +113,7 @@ const DYNAMIC_TITLE_ANCHOR_RULES = [
   { pattern: /\bastaxanthin\b/i, anchors: ["Astaxanthin"] },
   { pattern: /\bmelatonin\b/i, anchors: ["Melatonin"] },
   { pattern: /\boralbiotic\b/i, anchors: ["OralBiotic", "Probiotic", "BLIS K12", "Streptococcus salivarius"] },
+  { pattern: /\bsalmon\s+oil\b|\bwild\s+alaskan\s+salmon\b/i, anchors: ["Salmon Oil", "Omega-3", "DHA", "EPA"] },
   { pattern: /\bflax\s+seed\s+oil\b|\bflaxseed\s+oil\b|\blinseed\s+oil\b/i, anchors: ["Flax Seed Oil", "Linolenic Acid", "Omega-3", "Omega-6", "Omega-9"] },
   { pattern: /\bmenopause\s+support\b/i, anchors: ["Menopause Support", "Soy Isoflavone", "Chaste Tree", "Red Clover", "Dong Quai", "Black Cohosh"] },
   { pattern: /\b(?:immune|immunity)\b/i, anchors: ["Zinc", "Vitamin C", "Elderberry", "Black Elderberry", "Vitamin D3", "Vitamin E"] },
