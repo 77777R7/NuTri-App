@@ -334,3 +334,54 @@ test("readOfficialWaveYieldAdmission resolves scrapling canary brand names from 
     [{ brandName: "Nature's Way", improvedRows: 3, admissionReason: "yield_positive" }],
   );
 });
+
+test("readOfficialWaveYieldAdmission accepts a direct single-brand run directory", async () => {
+  const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "official-wave-direct-brand-yield-"));
+  const brandDir = path.join(tempDir, "runs", "california-gold-nutrition");
+  await fs.mkdir(path.join(brandDir, "merge_validation"), { recursive: true });
+
+  await fs.writeFile(
+    path.join(brandDir, "scrapling_official_fallback_report.json"),
+    JSON.stringify({
+      inputs: { brandFilter: null },
+      results: [
+        {
+          productId: "96309",
+          brandName: "California Gold Nutrition",
+          outcome: "scrapling_candidate_built",
+        },
+      ],
+    }),
+  );
+
+  await fs.writeFile(
+    path.join(brandDir, "merge_validation", "scrapling_merge_validation_report.json"),
+    JSON.stringify({
+      summary: {
+        processed: 1,
+        improvedRows: 1,
+        becameFullOverlayReady: 1,
+        filledSuggestedUse: 1,
+        filledWarnings: 1,
+      },
+      rows: [
+        {
+          productId: "96309",
+          title: "California Gold Nutrition, 5-HTP with Vitamin B6 & Vitamin C, 60 Veggie Capsules",
+          improved: true,
+        },
+      ],
+    }),
+  );
+
+  const admission = await readOfficialWaveYieldAdmission({
+    runDirs: [path.relative(ROOT_DIR, brandDir)],
+    rootDir: ROOT_DIR,
+  });
+
+  assert.equal(admission.summary.brandRuns, 1);
+  assert.equal(admission.summary.admittedBrandRuns, 1);
+  assert.equal(admission.summary.improvedRows, 1);
+  assert.equal(admission.admittedBrandRuns[0].brandName, "California Gold Nutrition");
+  assert.equal(admission.admittedBrandRuns[0].brandDir, path.relative(ROOT_DIR, brandDir));
+});

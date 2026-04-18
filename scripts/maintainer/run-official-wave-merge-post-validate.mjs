@@ -452,14 +452,42 @@ export const buildRuntimeScenario = (target, searchRow = null) => ({
   severityOnFail: "P1",
 });
 
+const pathExists = async (filePath) => {
+  try {
+    await fs.access(filePath);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+const hasBrandRunShape = async (absoluteBrandDir) => {
+  for (const candidate of [
+    "official_fallback_report.json",
+    "scrapling_merge_validation_report.json",
+    path.join("merge_validation", "scrapling_merge_validation_report.json"),
+    "staging_products.official_refreshed.json",
+    "staging_products.scrapling_merged.json",
+    path.join("merge_validation", "staging_products.scrapling_merged.json"),
+  ]) {
+    if (await pathExists(path.join(absoluteBrandDir, candidate))) return true;
+  }
+  return false;
+};
+
 const collectImprovedRowsFromRunDir = async ({ runDir, admittedBrandDirs = null }) => {
-  const entries = await fs.readdir(path.resolve(ROOT_DIR, runDir), { withFileTypes: true });
+  const absoluteRunDir = path.resolve(ROOT_DIR, runDir);
+  const entries = await fs.readdir(absoluteRunDir, { withFileTypes: true });
   const collected = [];
   const admitted = admittedBrandDirs instanceof Set ? admittedBrandDirs : null;
 
-  for (const entry of entries) {
-    if (!entry.isDirectory()) continue;
-    const brandDir = path.join(runDir, entry.name);
+  const brandDirs = (await hasBrandRunShape(absoluteRunDir))
+    ? [{ brandDir: runDir }]
+    : entries
+      .filter((entry) => entry.isDirectory())
+      .map((entry) => ({ brandDir: path.join(runDir, entry.name) }));
+
+  for (const { brandDir } of brandDirs) {
     if (admitted && !admitted.has(brandDir)) continue;
     const reportPath = path.join(brandDir, "official_fallback_report.json");
     const scraplingValidationPath = path.join(brandDir, "scrapling_merge_validation_report.json");

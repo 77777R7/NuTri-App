@@ -267,6 +267,44 @@ const readScraplingMergeValidationReport = async (absoluteBrandDir) => {
 const readScraplingFallbackReport = async (absoluteBrandDir) =>
   readJsonIfExists(path.join(absoluteBrandDir, "scrapling_official_fallback_report.json"));
 
+const hasBrandRunShape = async (absoluteBrandDir) => {
+  for (const candidate of [
+    "official_fallback_report.json",
+    "scrapling_official_fallback_report.json",
+    "scrapling_merge_validation_report.json",
+    path.join("merge_validation", "scrapling_merge_validation_report.json"),
+    "staging_products.official_refreshed.json",
+    "staging_products.scrapling_merged.json",
+    path.join("merge_validation", "staging_products.scrapling_merged.json"),
+  ]) {
+    try {
+      await fs.access(path.join(absoluteBrandDir, candidate));
+      return true;
+    } catch {
+      // Keep looking for another known brand-run marker.
+    }
+  }
+  return false;
+};
+
+const discoverBrandRunDirs = async ({ runDir, absoluteRunDir, entries, rootDir = ROOT_DIR }) => {
+  if (await hasBrandRunShape(absoluteRunDir)) {
+    return [{
+      brandDir: runDir,
+      absoluteBrandDir: absoluteRunDir,
+      brandSlug: path.basename(runDir),
+    }];
+  }
+
+  return entries
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => ({
+      brandDir: path.join(runDir, entry.name),
+      absoluteBrandDir: path.resolve(rootDir, runDir, entry.name),
+      brandSlug: entry.name,
+    }));
+};
+
 export const readOfficialWaveYieldAdmission = async ({ runDirs, rootDir = ROOT_DIR }) => {
   const brandRuns = [];
 
@@ -299,10 +337,8 @@ export const readOfficialWaveYieldAdmission = async ({ runDirs, rootDir = ROOT_D
       continue;
     }
 
-    for (const entry of entries) {
-      if (!entry.isDirectory()) continue;
-      const brandDir = path.join(runDir, entry.name);
-      const absoluteBrandDir = path.resolve(rootDir, brandDir);
+    const brandRunDirs = await discoverBrandRunDirs({ runDir, absoluteRunDir, entries, rootDir });
+    for (const { brandDir, absoluteBrandDir, brandSlug } of brandRunDirs) {
       const report = await readJsonIfExists(path.join(absoluteBrandDir, "official_fallback_report.json"));
       const scraplingValidationReport = await readScraplingMergeValidationReport(absoluteBrandDir);
       const scraplingFallbackReport = await readScraplingFallbackReport(absoluteBrandDir);
@@ -328,12 +364,12 @@ export const readOfficialWaveYieldAdmission = async ({ runDirs, rootDir = ROOT_D
         || normalizeText(scraplingFallbackReport?.inputs?.brandFilter)
         || normalizeText(scraplingFallbackReport?.results?.find((row) => normalizeText(row?.brandName))?.brandName)
         || normalizeText(staging?.products?.find((row) => normalizeText(row?.brandName))?.brandName)
-        || normalizeText(entry.name);
+        || normalizeText(brandSlug);
 
       brandRuns.push({
         runDir,
         brandDir,
-        brandSlug: entry.name,
+        brandSlug,
         brandName,
         summary: {
           queued: asCount(summary?.queued),
