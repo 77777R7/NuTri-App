@@ -1990,6 +1990,45 @@ test('science context rescues sparse title-led food-like anchors from residue ro
     }),
     overlayClaims: null,
   });
+  const wheyIsolateContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-whey-isolate-title-rescue',
+      productName: 'APS, Isomorph 28, Pure Whey Isolate, Chocolate Milkshake',
+      dosageForm: 'Powder',
+      actives: [
+        { name: 'Sugars', amount: 1.5, unit: 'g' },
+        { name: 'Potassium', amount: 200, unit: 'mg' },
+        { name: 'Calcium', amount: 100, unit: 'mg' },
+      ],
+    }),
+    overlayClaims: null,
+  });
+  const energyChewsContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-energy-chews-title-rescue',
+      productName: 'Bonk Breaker, Energy Chews, Green Apples',
+      dosageForm: 'Chew',
+      actives: [
+        { name: 'Vitamin C', amount: 60, unit: 'mg' },
+        { name: 'Iron', amount: 0.3, unit: 'mg' },
+        { name: 'Potassium', amount: 20, unit: 'mg' },
+        { name: 'Fiber', amount: 0, unit: 'g' },
+      ],
+    }),
+    overlayClaims: null,
+  });
+  const liposomalGlutathioneContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-liposomal-glutathione-drink-mix-clean-name',
+      productName: 'Aurora Nutrascience, Nano-Liposomal, Glutathione, Liposomal Drink Mix',
+      dosageForm: 'Powder',
+      actives: [
+        { name: 'L-Glutathione(as Nano-Liposomal Proprietary Blend)', amount: 750, unit: 'mg' },
+        { name: 'Supplement Formula', amount: 750, unit: 'mg' },
+      ],
+    }),
+    overlayClaims: null,
+  });
 
   assert.match(coconutAminosContext.ingredientRows[0]?.name ?? '', /\bcoconut aminos\b|\bsoy sauce replacement\b/i);
   assert.equal(coconutAminosContext.productArchetype, 'functional_food_like');
@@ -2014,6 +2053,18 @@ test('science context rescues sparse title-led food-like anchors from residue ro
   assert.match(megaOmegaTrailMixContext.ingredientRows[0]?.name ?? '', /\btrail mix\b|\bmega omega\b/i);
   assert.doesNotMatch(megaOmegaTrailMixContext.ingredientRows[0]?.name ?? '', /\btotal carbs?\b|\bsugars?\b|\bprotein\b/i);
   assert.equal(megaOmegaTrailMixContext.productArchetype, 'functional_food_like');
+
+  assert.match(wheyIsolateContext.ingredientRows[0]?.name ?? '', /\bwhey(?:\s+protein|\s+isolate)?\b|\bprotein\b/i);
+  assert.doesNotMatch(wheyIsolateContext.ingredientRows[0]?.name ?? '', /\bsugars?\b|\bpotassium\b|\bcalcium\b/i);
+  assert.equal(wheyIsolateContext.productArchetype, 'functional_food_like');
+
+  assert.match(energyChewsContext.ingredientRows[0]?.name ?? '', /\benergy chews?\b/i);
+  assert.doesNotMatch(energyChewsContext.ingredientRows[0]?.name ?? '', /\bvitamin c\b|\biron\b|\bpotassium\b|\bfiber\b/i);
+  assert.equal(energyChewsContext.productArchetype, 'functional_food_like');
+
+  assert.match(liposomalGlutathioneContext.ingredientRows[0]?.name ?? '', /\bglutathione\b/i);
+  assert.doesNotMatch(liposomalGlutathioneContext.ingredientRows[0]?.name ?? '', /\bproprietary blend\b|\bsupplement formula\b/i);
+  assert.equal(liposomalGlutathioneContext.productArchetype, 'functional_food_like');
 });
 
 test('flower essence titles are not treated as food-like green products', () => {

@@ -12,7 +12,13 @@
     "scan_food_like_powerup_mega_omega_route_honesty",
     "search_origin_food_like_powerup_mega_omega_route_honesty",
     "scan_food_like_mt_capra_clean_whey_route_honesty",
-    "search_origin_food_like_mt_capra_clean_whey_route_honesty"
+    "search_origin_food_like_mt_capra_clean_whey_route_honesty",
+    "scan_food_like_aps_whey_isolate_route_honesty",
+    "search_origin_food_like_aps_whey_isolate_route_honesty",
+    "scan_food_like_bonk_breaker_energy_chews_route_honesty",
+    "search_origin_food_like_bonk_breaker_energy_chews_route_honesty",
+    "scan_food_like_aurora_glutathione_drink_mix_route_honesty",
+    "search_origin_food_like_aurora_glutathione_drink_mix_route_honesty"
   ],
   "releaseBlocker": true,
   "runner": "runtime_contract_runner",

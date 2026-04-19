@@ -8,7 +8,9 @@
       "origin": "barcode_scan",
       "category": "food_like",
       "personas": [],
-      "input": { "barcode": "00815709022716" },
+      "input": {
+        "barcode": "00815709022716"
+      },
       "product": {
         "productId": "142560",
         "brand": "BulletProof",
@@ -17,16 +19,31 @@
       },
       "expected": {
         "defaultAnchor": {
-          "pass": ["Brain Octane C8 MCT Oil", "MCT Oil"],
-          "warn": ["C8"],
-          "fail": ["Total Carbs", "Calories", "Serving Size"]
+          "pass": [
+            "Brain Octane C8 MCT Oil",
+            "MCT Oil"
+          ],
+          "warn": [
+            "C8"
+          ],
+          "fail": [
+            "Total Carbs",
+            "Calories",
+            "Serving Size"
+          ]
         },
         "profileWarnings": {
           "mustInclude": [],
-          "mustNotInclude": ["safe for you"]
+          "mustNotInclude": [
+            "safe for you"
+          ]
         }
       },
-      "gates": ["route_health", "default_anchor", "unsafe_language"],
+      "gates": [
+        "route_health",
+        "selected_anchor_consistency",
+        "unsafe_language"
+      ],
       "severityOnFail": "P1"
     },
     {
@@ -59,13 +76,24 @@
       },
       "expected": {
         "defaultAnchor": {
-          "pass": ["Brain Octane C8 MCT Oil", "MCT Oil"],
-          "warn": ["C8"],
-          "fail": ["Total Carbs", "Calories", "Serving Size"]
+          "pass": [
+            "Brain Octane C8 MCT Oil",
+            "MCT Oil"
+          ],
+          "warn": [
+            "C8"
+          ],
+          "fail": [
+            "Total Carbs",
+            "Calories",
+            "Serving Size"
+          ]
         },
         "profileWarnings": {
           "mustInclude": [],
-          "mustNotInclude": ["safe for you"]
+          "mustNotInclude": [
+            "safe for you"
+          ]
         },
         "consistency": {
           "productId": "142560",
@@ -86,8 +114,12 @@
       "surface": "barcode_scan",
       "origin": "barcode_scan",
       "category": "food_like",
-      "personas": ["fitness_recovery_goal"],
-      "input": { "barcode": "00810124604455" },
+      "personas": [
+        "fitness_recovery_goal"
+      ],
+      "input": {
+        "barcode": "00810124604455"
+      },
       "product": {
         "productId": "155139",
         "brand": "G FUEL",
@@ -96,16 +128,33 @@
       },
       "expected": {
         "defaultAnchor": {
-          "pass": ["Hydration + Focus Drink Mix", "Electrolyte Drink Mix", "Drink Mix"],
-          "warn": ["Electrolyte", "Cognizin"],
-          "fail": ["Calories", "Serving Size"]
+          "pass": [
+            "Hydration + Focus Drink Mix",
+            "Electrolyte Drink Mix",
+            "Drink Mix"
+          ],
+          "warn": [
+            "Electrolyte",
+            "Cognizin"
+          ],
+          "fail": [
+            "Calories",
+            "Serving Size"
+          ]
         },
         "profileWarnings": {
           "mustInclude": [],
-          "mustNotInclude": ["safe for you"]
+          "mustNotInclude": [
+            "safe for you"
+          ]
         }
       },
-      "gates": ["route_health", "default_anchor", "goal_relevance", "unsafe_language"],
+      "gates": [
+        "route_health",
+        "selected_anchor_consistency",
+        "goal_relevance",
+        "unsafe_language"
+      ],
       "severityOnFail": "P1"
     },
     {
@@ -113,7 +162,9 @@
       "surface": "search_origin_result",
       "origin": "search_result",
       "category": "food_like",
-      "personas": ["fitness_recovery_goal"],
+      "personas": [
+        "fitness_recovery_goal"
+      ],
       "input": {
         "query": "g fuel hydration focus electrolyte drink mix",
         "queryType": "brand_product",
@@ -138,13 +189,25 @@
       },
       "expected": {
         "defaultAnchor": {
-          "pass": ["Hydration + Focus Drink Mix", "Electrolyte Drink Mix", "Drink Mix"],
-          "warn": ["Electrolyte", "Cognizin"],
-          "fail": ["Calories", "Serving Size"]
+          "pass": [
+            "Hydration + Focus Drink Mix",
+            "Electrolyte Drink Mix",
+            "Drink Mix"
+          ],
+          "warn": [
+            "Electrolyte",
+            "Cognizin"
+          ],
+          "fail": [
+            "Calories",
+            "Serving Size"
+          ]
         },
         "profileWarnings": {
           "mustInclude": [],
-          "mustNotInclude": ["safe for you"]
+          "mustNotInclude": [
+            "safe for you"
+          ]
         },
         "consistency": {
           "productId": "155139",
@@ -166,7 +229,9 @@
       "origin": "barcode_scan",
       "category": "food_like",
       "personas": [],
-      "input": { "barcode": "00857468006156" },
+      "input": {
+        "barcode": "00857468006156"
+      },
       "product": {
         "productId": "104067",
         "brand": "Power Up",
@@ -175,16 +240,33 @@
       },
       "expected": {
         "defaultAnchor": {
-          "pass": ["Trail Mix", "Mega Omega Trail Mix"],
-          "warn": ["Mega Omega", "Omega"],
-          "fail": ["Total Carbs", "Sugars", "Calories", "Serving Size"]
+          "pass": [
+            "Trail Mix",
+            "Mega Omega Trail Mix"
+          ],
+          "warn": [
+            "Mega Omega",
+            "Omega"
+          ],
+          "fail": [
+            "Total Carbs",
+            "Sugars",
+            "Calories",
+            "Serving Size"
+          ]
         },
         "profileWarnings": {
           "mustInclude": [],
-          "mustNotInclude": ["safe for you"]
+          "mustNotInclude": [
+            "safe for you"
+          ]
         }
       },
-      "gates": ["route_health", "default_anchor", "unsafe_language"],
+      "gates": [
+        "route_health",
+        "selected_anchor_consistency",
+        "unsafe_language"
+      ],
       "severityOnFail": "P1"
     },
     {
@@ -217,13 +299,26 @@
       },
       "expected": {
         "defaultAnchor": {
-          "pass": ["Trail Mix", "Mega Omega Trail Mix"],
-          "warn": ["Mega Omega", "Omega"],
-          "fail": ["Total Carbs", "Sugars", "Calories", "Serving Size"]
+          "pass": [
+            "Trail Mix",
+            "Mega Omega Trail Mix"
+          ],
+          "warn": [
+            "Mega Omega",
+            "Omega"
+          ],
+          "fail": [
+            "Total Carbs",
+            "Sugars",
+            "Calories",
+            "Serving Size"
+          ]
         },
         "profileWarnings": {
           "mustInclude": [],
-          "mustNotInclude": ["safe for you"]
+          "mustNotInclude": [
+            "safe for you"
+          ]
         },
         "consistency": {
           "productId": "104067",
@@ -245,7 +340,9 @@
       "origin": "barcode_scan",
       "category": "food_like",
       "personas": [],
-      "input": { "barcode": "00633924720060" },
+      "input": {
+        "barcode": "00633924720060"
+      },
       "product": {
         "productId": "85012",
         "brand": "Mt. Capra",
@@ -254,16 +351,34 @@
       },
       "expected": {
         "defaultAnchor": {
-          "pass": ["Whey Protein", "Clean Whey Protein", "Protein"],
-          "warn": ["Whey"],
-          "fail": ["Sugars", "Total Carbs", "Potassium", "Calories", "Serving Size"]
+          "pass": [
+            "Whey Protein",
+            "Clean Whey Protein",
+            "Protein"
+          ],
+          "warn": [
+            "Whey"
+          ],
+          "fail": [
+            "Sugars",
+            "Total Carbs",
+            "Potassium",
+            "Calories",
+            "Serving Size"
+          ]
         },
         "profileWarnings": {
           "mustInclude": [],
-          "mustNotInclude": ["safe for you"]
+          "mustNotInclude": [
+            "safe for you"
+          ]
         }
       },
-      "gates": ["route_health", "default_anchor", "unsafe_language"],
+      "gates": [
+        "route_health",
+        "selected_anchor_consistency",
+        "unsafe_language"
+      ],
       "severityOnFail": "P1"
     },
     {
@@ -296,18 +411,374 @@
       },
       "expected": {
         "defaultAnchor": {
-          "pass": ["Whey Protein", "Clean Whey Protein", "Protein"],
-          "warn": ["Whey"],
-          "fail": ["Sugars", "Total Carbs", "Potassium", "Calories", "Serving Size"]
+          "pass": [
+            "Whey Protein",
+            "Clean Whey Protein",
+            "Protein"
+          ],
+          "warn": [
+            "Whey"
+          ],
+          "fail": [
+            "Sugars",
+            "Total Carbs",
+            "Potassium",
+            "Calories",
+            "Serving Size"
+          ]
         },
         "profileWarnings": {
           "mustInclude": [],
-          "mustNotInclude": ["safe for you"]
+          "mustNotInclude": [
+            "safe for you"
+          ]
         },
         "consistency": {
           "productId": "85012",
           "barcode": "00633924720060",
           "selectedAnchor": "Whey Protein"
+        }
+      },
+      "gates": [
+        "click_through_seed_consistency",
+        "canonical_product_consistency",
+        "selected_anchor_consistency",
+        "warning_consistency"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "scan_food_like_aps_whey_isolate_route_honesty",
+      "surface": "barcode_scan",
+      "origin": "barcode_scan",
+      "category": "food_like",
+      "personas": [],
+      "input": {
+        "barcode": "00649241878308"
+      },
+      "product": {
+        "productId": "130127",
+        "brand": "APS",
+        "name": "APS, Isomorph 28, Pure Whey Isolate, Chocolate Milkshake, 5 lb (2.27 kg)",
+        "barcode": "00649241878308"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "Pure Whey Isolate",
+            "Whey Isolate",
+            "Whey Protein"
+          ],
+          "warn": [
+            "Protein"
+          ],
+          "fail": [
+            "Sugars",
+            "Total Carbs",
+            "Potassium",
+            "Calcium",
+            "Calories",
+            "Serving Size"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        }
+      },
+      "gates": [
+        "route_health",
+        "selected_anchor_consistency",
+        "unsafe_language"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_origin_food_like_aps_whey_isolate_route_honesty",
+      "surface": "search_origin_result",
+      "origin": "search_result",
+      "category": "food_like",
+      "personas": [],
+      "input": {
+        "query": "aps isomorph 28 pure whey isolate chocolate milkshake",
+        "queryType": "brand_product",
+        "searchResultSeed": {
+          "productId": "130127",
+          "barcode": "00649241878308",
+          "upcCode": "00649241878308",
+          "name": "APS, Isomorph 28, Pure Whey Isolate, Chocolate Milkshake, 5 lb (2.27 kg)",
+          "brand": "APS",
+          "category": "Food",
+          "benefit": "Food-like whey isolate source boundary",
+          "dose": "5 lb",
+          "factsStatus": "partial",
+          "coverageStatus": "not_enough_structured_data"
+        }
+      },
+      "product": {
+        "productId": "130127",
+        "brand": "APS",
+        "name": "APS, Isomorph 28, Pure Whey Isolate, Chocolate Milkshake, 5 lb (2.27 kg)",
+        "barcode": "00649241878308"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "Pure Whey Isolate",
+            "Whey Isolate",
+            "Whey Protein"
+          ],
+          "warn": [
+            "Protein"
+          ],
+          "fail": [
+            "Sugars",
+            "Total Carbs",
+            "Potassium",
+            "Calcium",
+            "Calories",
+            "Serving Size"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        },
+        "consistency": {
+          "productId": "130127",
+          "barcode": "00649241878308",
+          "selectedAnchor": "Pure Whey Isolate"
+        }
+      },
+      "gates": [
+        "click_through_seed_consistency",
+        "canonical_product_consistency",
+        "selected_anchor_consistency",
+        "warning_consistency"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "scan_food_like_bonk_breaker_energy_chews_route_honesty",
+      "surface": "barcode_scan",
+      "origin": "barcode_scan",
+      "category": "food_like",
+      "personas": [
+        "fitness_recovery_goal"
+      ],
+      "input": {
+        "barcode": "00051497316372"
+      },
+      "product": {
+        "productId": "147744",
+        "brand": "Bonk Breaker",
+        "name": "Bonk Breaker, Energy Chews, Green Apples, 10 Packets, 1.76 oz (50 g) Each",
+        "barcode": "00051497316372"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "Energy Chews",
+            "Chews"
+          ],
+          "warn": [
+            "Energy"
+          ],
+          "fail": [
+            "Vitamin C",
+            "Iron",
+            "Potassium",
+            "Fiber",
+            "Calories",
+            "Serving Size"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        }
+      },
+      "gates": [
+        "route_health",
+        "selected_anchor_consistency",
+        "goal_relevance",
+        "unsafe_language"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_origin_food_like_bonk_breaker_energy_chews_route_honesty",
+      "surface": "search_origin_result",
+      "origin": "search_result",
+      "category": "food_like",
+      "personas": [
+        "fitness_recovery_goal"
+      ],
+      "input": {
+        "query": "bonk breaker energy chews green apple",
+        "queryType": "brand_product",
+        "searchResultSeed": {
+          "productId": "147744",
+          "barcode": "00051497316372",
+          "upcCode": "00051497316372",
+          "name": "Bonk Breaker, Energy Chews, Green Apples, 10 Packets, 1.76 oz (50 g) Each",
+          "brand": "Bonk Breaker",
+          "category": "Food",
+          "benefit": "Food-like sports energy chews boundary",
+          "dose": "10 packets",
+          "factsStatus": "partial",
+          "coverageStatus": "not_enough_structured_data"
+        }
+      },
+      "product": {
+        "productId": "147744",
+        "brand": "Bonk Breaker",
+        "name": "Bonk Breaker, Energy Chews, Green Apples, 10 Packets, 1.76 oz (50 g) Each",
+        "barcode": "00051497316372"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "Energy Chews",
+            "Chews"
+          ],
+          "warn": [
+            "Energy"
+          ],
+          "fail": [
+            "Vitamin C",
+            "Iron",
+            "Potassium",
+            "Fiber",
+            "Calories",
+            "Serving Size"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        },
+        "consistency": {
+          "productId": "147744",
+          "barcode": "00051497316372",
+          "selectedAnchor": "Energy Chews"
+        }
+      },
+      "gates": [
+        "click_through_seed_consistency",
+        "canonical_product_consistency",
+        "selected_anchor_consistency",
+        "warning_consistency"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "scan_food_like_aurora_glutathione_drink_mix_route_honesty",
+      "surface": "barcode_scan",
+      "origin": "barcode_scan",
+      "category": "food_like",
+      "personas": [],
+      "input": {
+        "barcode": "00628504648612"
+      },
+      "product": {
+        "productId": "141544",
+        "brand": "Aurora Nutrascience",
+        "name": "Aurora Nutrascience, Nano-Liposomal®, Glutathione, Liposomal Drink Mix, 30 Packets, 0.32 oz (9 g) Each",
+        "barcode": "00628504648612"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "L-Glutathione",
+            "Glutathione"
+          ],
+          "warn": [
+            "Liposomal Glutathione"
+          ],
+          "fail": [
+            "Supplement Formula",
+            "Proprietary Blend",
+            "Calories",
+            "Serving Size"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        }
+      },
+      "gates": [
+        "route_health",
+        "selected_anchor_consistency",
+        "unsafe_language"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_origin_food_like_aurora_glutathione_drink_mix_route_honesty",
+      "surface": "search_origin_result",
+      "origin": "search_result",
+      "category": "food_like",
+      "personas": [],
+      "input": {
+        "query": "aurora nutrascience liposomal glutathione drink mix",
+        "queryType": "brand_product",
+        "searchResultSeed": {
+          "productId": "141544",
+          "barcode": "00628504648612",
+          "upcCode": "00628504648612",
+          "name": "Aurora Nutrascience, Nano-Liposomal®, Glutathione, Liposomal Drink Mix, 30 Packets, 0.32 oz (9 g) Each",
+          "brand": "Aurora Nutrascience",
+          "category": "Food",
+          "benefit": "Food-like glutathione liposomal drink mix boundary",
+          "dose": "30 packets",
+          "factsStatus": "partial",
+          "coverageStatus": "not_enough_structured_data"
+        }
+      },
+      "product": {
+        "productId": "141544",
+        "brand": "Aurora Nutrascience",
+        "name": "Aurora Nutrascience, Nano-Liposomal®, Glutathione, Liposomal Drink Mix, 30 Packets, 0.32 oz (9 g) Each",
+        "barcode": "00628504648612"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "L-Glutathione",
+            "Glutathione"
+          ],
+          "warn": [
+            "Liposomal Glutathione"
+          ],
+          "fail": [
+            "Supplement Formula",
+            "Proprietary Blend",
+            "Calories",
+            "Serving Size"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        },
+        "consistency": {
+          "productId": "141544",
+          "barcode": "00628504648612",
+          "selectedAnchor": "L-Glutathione"
         }
       },
       "gates": [
