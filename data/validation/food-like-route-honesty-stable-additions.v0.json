@@ -788,6 +788,458 @@
         "warning_consistency"
       ],
       "severityOnFail": "P1"
+    },
+    {
+      "id": "scan_food_like_eden_tamari_soy_sauce_route_honesty",
+      "surface": "barcode_scan",
+      "origin": "barcode_scan",
+      "category": "food_like",
+      "personas": ["soy_allergy"],
+      "input": {
+        "barcode": "00024182000474"
+      },
+      "product": {
+        "productId": "36307",
+        "brand": "Eden Foods",
+        "name": "Eden Foods, Organic Tamari Soy Sauce, 20 fl oz (591 ml)",
+        "barcode": "00024182000474"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "Tamari Soy Sauce",
+            "Soy Sauce",
+            "Tamari"
+          ],
+          "warn": [
+            "Seasoning"
+          ],
+          "fail": [
+            "Potas",
+            "Potassium",
+            "Sodium",
+            "Iron",
+            "Total Carb"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        }
+      },
+      "gates": [
+        "route_health",
+        "selected_anchor_consistency",
+        "unsafe_language"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_origin_food_like_eden_tamari_soy_sauce_route_honesty",
+      "surface": "search_origin_result",
+      "origin": "search_result",
+      "category": "food_like",
+      "personas": ["soy_allergy"],
+      "input": {
+        "query": "eden organic tamari soy sauce",
+        "queryType": "brand_product",
+        "searchResultSeed": {
+          "productId": "36307",
+          "barcode": "00024182000474",
+          "upcCode": "00024182000474",
+          "name": "Eden Foods, Organic Tamari Soy Sauce, 20 fl oz (591 ml)",
+          "brand": "Eden Foods",
+          "category": "Food",
+          "benefit": "Food-like tamari soy sauce boundary",
+          "dose": "20 fl oz",
+          "factsStatus": "partial",
+          "coverageStatus": "not_enough_structured_data"
+        }
+      },
+      "product": {
+        "productId": "36307",
+        "brand": "Eden Foods",
+        "name": "Eden Foods, Organic Tamari Soy Sauce, 20 fl oz (591 ml)",
+        "barcode": "00024182000474"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "Tamari Soy Sauce",
+            "Soy Sauce",
+            "Tamari"
+          ],
+          "warn": [
+            "Seasoning"
+          ],
+          "fail": [
+            "Potas",
+            "Potassium",
+            "Sodium",
+            "Iron",
+            "Total Carb"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        },
+        "consistency": {
+          "productId": "36307",
+          "barcode": "00024182000474",
+          "selectedAnchor": "Tamari Soy Sauce"
+        }
+      },
+      "gates": [
+        "click_through_seed_consistency",
+        "canonical_product_consistency",
+        "selected_anchor_consistency",
+        "warning_consistency"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "scan_food_like_chamberlain_matcha_latte_route_honesty",
+      "surface": "barcode_scan",
+      "origin": "barcode_scan",
+      "category": "food_like",
+      "personas": ["stimulant_sensitivity"],
+      "input": {
+        "barcode": "00810070875169"
+      },
+      "product": {
+        "productId": "142579",
+        "brand": "Chamberlain Coffee",
+        "name": "Chamberlain Coffee, Blue Matcha Latte with Oat Milk, 10 oz (283 g)",
+        "barcode": "00810070875169"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "Matcha Latte",
+            "Matcha"
+          ],
+          "warn": [
+            "Green Tea"
+          ],
+          "fail": [
+            "Potassium",
+            "Calcium",
+            "Iron",
+            "Fiber",
+            "Sugars",
+            "Calories"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        }
+      },
+      "gates": [
+        "route_health",
+        "selected_anchor_consistency",
+        "unsafe_language"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_origin_food_like_chamberlain_matcha_latte_route_honesty",
+      "surface": "search_origin_result",
+      "origin": "search_result",
+      "category": "food_like",
+      "personas": ["stimulant_sensitivity"],
+      "input": {
+        "query": "chamberlain blue matcha latte oat milk",
+        "queryType": "brand_product",
+        "searchResultSeed": {
+          "productId": "142579",
+          "barcode": "00810070875169",
+          "upcCode": "00810070875169",
+          "name": "Chamberlain Coffee, Blue Matcha Latte with Oat Milk, 10 oz (283 g)",
+          "brand": "Chamberlain Coffee",
+          "category": "Food",
+          "benefit": "Food-like matcha latte boundary",
+          "dose": "10 oz",
+          "factsStatus": "partial",
+          "coverageStatus": "not_enough_structured_data"
+        }
+      },
+      "product": {
+        "productId": "142579",
+        "brand": "Chamberlain Coffee",
+        "name": "Chamberlain Coffee, Blue Matcha Latte with Oat Milk, 10 oz (283 g)",
+        "barcode": "00810070875169"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "Matcha Latte",
+            "Matcha"
+          ],
+          "warn": [
+            "Green Tea"
+          ],
+          "fail": [
+            "Potassium",
+            "Calcium",
+            "Iron",
+            "Fiber",
+            "Sugars",
+            "Calories"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        },
+        "consistency": {
+          "productId": "142579",
+          "barcode": "00810070875169",
+          "selectedAnchor": "Matcha Latte"
+        }
+      },
+      "gates": [
+        "click_through_seed_consistency",
+        "canonical_product_consistency",
+        "selected_anchor_consistency",
+        "warning_consistency"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "scan_food_like_crispy_green_apple_route_honesty",
+      "surface": "barcode_scan",
+      "origin": "barcode_scan",
+      "category": "food_like",
+      "personas": [],
+      "input": {
+        "barcode": "00185255000576"
+      },
+      "product": {
+        "productId": "119824",
+        "brand": "Crispy Green",
+        "name": "Crispy Green, Crispy Fruit, All Apple, 4 Pack, 0.53 oz (15 g) Each",
+        "barcode": "00185255000576"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "Crispy Fruit",
+            "All Apple",
+            "Fruit Snack"
+          ],
+          "warn": [
+            "Apple"
+          ],
+          "fail": [
+            "Vit. D",
+            "Vitamin D",
+            "Calcium",
+            "Potassium",
+            "Fiber"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        }
+      },
+      "gates": [
+        "route_health",
+        "selected_anchor_consistency",
+        "unsafe_language"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_origin_food_like_crispy_green_apple_route_honesty",
+      "surface": "search_origin_result",
+      "origin": "search_result",
+      "category": "food_like",
+      "personas": [],
+      "input": {
+        "query": "crispy green crispy fruit all apple",
+        "queryType": "brand_product",
+        "searchResultSeed": {
+          "productId": "119824",
+          "barcode": "00185255000576",
+          "upcCode": "00185255000576",
+          "name": "Crispy Green, Crispy Fruit, All Apple, 4 Pack, 0.53 oz (15 g) Each",
+          "brand": "Crispy Green",
+          "category": "Food",
+          "benefit": "Food-like freeze-dried fruit snack boundary",
+          "dose": "4 pack",
+          "factsStatus": "partial",
+          "coverageStatus": "not_enough_structured_data"
+        }
+      },
+      "product": {
+        "productId": "119824",
+        "brand": "Crispy Green",
+        "name": "Crispy Green, Crispy Fruit, All Apple, 4 Pack, 0.53 oz (15 g) Each",
+        "barcode": "00185255000576"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "Crispy Fruit",
+            "All Apple",
+            "Fruit Snack"
+          ],
+          "warn": [
+            "Apple"
+          ],
+          "fail": [
+            "Vit. D",
+            "Vitamin D",
+            "Calcium",
+            "Potassium",
+            "Fiber"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        },
+        "consistency": {
+          "productId": "119824",
+          "barcode": "00185255000576",
+          "selectedAnchor": "Crispy Fruit"
+        }
+      },
+      "gates": [
+        "click_through_seed_consistency",
+        "canonical_product_consistency",
+        "selected_anchor_consistency",
+        "warning_consistency"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "scan_food_like_alter_eco_truffles_route_honesty",
+      "surface": "barcode_scan",
+      "origin": "barcode_scan",
+      "category": "food_like",
+      "personas": ["dairy_allergy"],
+      "input": {
+        "barcode": "00817670010334"
+      },
+      "product": {
+        "productId": "56336",
+        "brand": "Alter Eco",
+        "name": "Alter Eco, Organic Dark Milk Chocolate, Silk Velvet Truffles, 10 Individually Wrapped Truffles, 4.2 oz (120 g)",
+        "barcode": "00817670010334"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "Truffles",
+            "Chocolate Truffles",
+            "Milk Chocolate"
+          ],
+          "warn": [
+            "Chocolate"
+          ],
+          "fail": [
+            "Potassium",
+            "Iron",
+            "Fiber",
+            "Sugars",
+            "Calories"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        }
+      },
+      "gates": [
+        "route_health",
+        "selected_anchor_consistency",
+        "unsafe_language"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_origin_food_like_alter_eco_truffles_route_honesty",
+      "surface": "search_origin_result",
+      "origin": "search_result",
+      "category": "food_like",
+      "personas": ["dairy_allergy"],
+      "input": {
+        "query": "alter eco silk velvet truffles",
+        "queryType": "brand_product",
+        "searchResultSeed": {
+          "productId": "56336",
+          "barcode": "00817670010334",
+          "upcCode": "00817670010334",
+          "name": "Alter Eco, Organic Dark Milk Chocolate, Silk Velvet Truffles, 10 Individually Wrapped Truffles, 4.2 oz (120 g)",
+          "brand": "Alter Eco",
+          "category": "Food",
+          "benefit": "Food-like chocolate truffle boundary",
+          "dose": "10 truffles",
+          "factsStatus": "partial",
+          "coverageStatus": "not_enough_structured_data"
+        }
+      },
+      "product": {
+        "productId": "56336",
+        "brand": "Alter Eco",
+        "name": "Alter Eco, Organic Dark Milk Chocolate, Silk Velvet Truffles, 10 Individually Wrapped Truffles, 4.2 oz (120 g)",
+        "barcode": "00817670010334"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "Truffles",
+            "Chocolate Truffles",
+            "Milk Chocolate"
+          ],
+          "warn": [
+            "Chocolate"
+          ],
+          "fail": [
+            "Potassium",
+            "Iron",
+            "Fiber",
+            "Sugars",
+            "Calories"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        },
+        "consistency": {
+          "productId": "56336",
+          "barcode": "00817670010334",
+          "selectedAnchor": "Truffles"
+        }
+      },
+      "gates": [
+        "click_through_seed_consistency",
+        "canonical_product_consistency",
+        "selected_anchor_consistency",
+        "warning_consistency"
+      ],
+      "severityOnFail": "P1"
     }
   ]
 }

@@ -2,7 +2,10 @@ import { createHash } from "node:crypto";
 
 import type { FactsDigest } from "./factsDigest.js";
 import type { ScienceIngredientRow as DecisionSupportScienceIngredientRow } from "./iherbOverlayIngredients.js";
-import { buildIngredientScienceContext } from "./ingredientScienceContext.js";
+import {
+  buildIngredientScienceContext,
+  type IngredientScienceProductArchetype,
+} from "./ingredientScienceContext.js";
 import { lookupSafeScienceSignals } from "./kbRuntime.js";
 import {
   buildUlScopeNote,
@@ -4855,6 +4858,7 @@ const buildActionStep = (params: {
 const buildAiSummaryContract = (params: {
   digest: FactsDigest;
   categoryId: DecisionSupportCategoryId;
+  productArchetype: IngredientScienceProductArchetype;
   overviewBlock: DecisionSupportOverviewBlock;
   safeScienceSignals: ReturnType<typeof lookupSafeScienceSignals> | null;
   usageBlock: DecisionSupportUsageBlock;
@@ -4867,6 +4871,7 @@ const buildAiSummaryContract = (params: {
   const {
     digest,
     categoryId,
+    productArchetype,
     overviewBlock,
     safeScienceSignals,
     usageBlock,
@@ -4876,6 +4881,23 @@ const buildAiSummaryContract = (params: {
     overlayClaims,
     scienceIngredientRows,
   } = params;
+  if (productArchetype === "functional_food_like") {
+    const keyIngredient = scienceIngredientRows[0] ?? null;
+    const keyFragment = keyIngredient
+      ? `${keyIngredient.name}${keyIngredient.dose ? ` ${keyIngredient.dose} per serving` : ""}`
+      : (overviewBlock.providesVerified.servingSize ?? "the visible nutrition label details");
+    const foodLikeLabel = normalizeDisplayText(digest?.product?.name) || "this product";
+    const sentence1 = sanitizeDecisionLine(
+      "Food-like label context: compare this as a food, drink, snack, or seasoning product rather than as a stand-alone health claim.",
+    ) ?? "Food-like label context: compare this as a food or drink product.";
+    const sentence2 = sanitizeDecisionLine(
+      `This product is anchored on ${keyFragment}; read that against the Nutrition Facts and ingredient list for ${foodLikeLabel}.`,
+    ) ?? "This product is best read through its Nutrition Facts and ingredient list.";
+    const sentence3 = sanitizeDecisionLine(
+      "Main limitation: food-like labels may not expose research-style active rows. Next step: compare serving size, ingredients, allergens, and nutrition details on the package.",
+    ) ?? "Main limitation: food-like label detail can be limited. Next step: compare serving size, ingredients, allergens, and nutrition details.";
+    return [sentence1, sentence2, sentence3];
+  }
   const overlayOmega3Facts = parseOverlayOmega3Facts(overlayClaims);
   const overlayHasWarnings = splitOverlayTextLines(overlayClaims?.warnings, 4).length > 0;
   const overlayHasChemicalForm = hasOverlayChemicalFormCue(categoryId, overlayClaims);
@@ -4953,6 +4975,7 @@ const buildAiSummaryContract = (params: {
 const buildScienceBlock = (params: {
   digest: FactsDigest;
   categoryId: DecisionSupportCategoryId;
+  productArchetype: IngredientScienceProductArchetype;
   safeScienceSignals: ReturnType<typeof lookupSafeScienceSignals> | null;
   overviewBlock: DecisionSupportOverviewBlock;
   usageBlock: DecisionSupportUsageBlock;
@@ -4968,6 +4991,7 @@ const buildScienceBlock = (params: {
   const {
     digest,
     categoryId,
+    productArchetype,
     safeScienceSignals,
     overviewBlock,
     usageBlock,
@@ -5068,6 +5092,7 @@ const buildScienceBlock = (params: {
   const aiSummaryContract3 = buildAiSummaryContract({
     digest,
     categoryId,
+    productArchetype,
     overviewBlock,
     safeScienceSignals,
     usageBlock,
@@ -5697,6 +5722,7 @@ export const compileDecisionSupport = (
   const scienceBlock = buildScienceBlock({
     digest: params.digest,
     categoryId,
+    productArchetype: ingredientScienceContext.productArchetype,
     safeScienceSignals,
     overviewBlock,
     usageBlock,

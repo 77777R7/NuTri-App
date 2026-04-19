@@ -2029,6 +2029,105 @@ test('science context rescues sparse title-led food-like anchors from residue ro
     }),
     overlayClaims: null,
   });
+  const tamariContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-tamari-soy-sauce-title-rescue',
+      productName: 'Eden Foods, Organic Tamari Soy Sauce',
+      dosageForm: 'Liquid',
+      actives: [
+        { name: 'Potas', amount: 120, unit: 'mg' },
+        { name: 'Iron', amount: 0.7, unit: 'mg' },
+      ],
+    }),
+    overlayClaims: null,
+  });
+  const lozengeContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-xylitol-lozenge-title-rescue',
+      productName: 'ACT, Dry Mouth Lozenges with Xylitol, Honey-Lemon',
+      dosageForm: 'Lozenge',
+      actives: [
+        { name: 'Sugar Alcohol', amount: 2, unit: 'g' },
+      ],
+    }),
+    overlayClaims: null,
+  });
+  const matchaLatteContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-matcha-latte-title-rescue',
+      productName: 'Chamberlain Coffee, Blue Matcha Latte with Oat Milk',
+      dosageForm: 'Powder',
+      actives: [
+        { name: 'Potassium', amount: 40, unit: 'mg' },
+        { name: 'Calcium', amount: 50, unit: 'mg' },
+        { name: 'Fiber', amount: 1, unit: 'g' },
+      ],
+    }),
+    overlayClaims: null,
+  });
+  const crispyFruitContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-crispy-fruit-title-rescue',
+      productName: 'Crispy Green, Crispy Fruit, All Apple',
+      dosageForm: 'Snack',
+      actives: [
+        { name: 'Vit. D', amount: 0, unit: 'mcg' },
+        { name: 'Calcium', amount: 0, unit: 'mg' },
+        { name: 'Potassium', amount: 40, unit: 'mg' },
+      ],
+    }),
+    overlayClaims: null,
+  });
+  const gummySquaresContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-gummy-squares-title-rescue',
+      productName: 'Dr. John’s Healthy Sweets, Gummy Squares, Sugar Free',
+      dosageForm: 'Gummy',
+      actives: [
+        { name: 'Vitamin D', amount: 1, unit: 'mcg' },
+        { name: 'Potassium', amount: 10, unit: 'mg' },
+        { name: 'Fiber', amount: 0, unit: 'g' },
+      ],
+    }),
+    overlayClaims: null,
+  });
+  const truffleContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-chocolate-truffle-title-rescue',
+      productName: 'Alter Eco, Organic Dark Milk Chocolate, Silk Velvet Truffles',
+      dosageForm: 'Snack',
+      actives: [
+        { name: 'Potassium', amount: 110, unit: 'mg' },
+        { name: 'Iron', amount: 1, unit: 'mg' },
+        { name: 'Fiber', amount: 1, unit: 'g' },
+      ],
+    }),
+    overlayClaims: null,
+  });
+  const curryPasteContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-green-curry-paste-title-rescue',
+      productName: 'A Taste Of Thai, Green Curry Paste',
+      dosageForm: 'Paste',
+      actives: [
+        { name: 'Calcium', amount: 2, unit: 'mg' },
+        { name: 'Potassium', amount: 20, unit: 'mg' },
+        { name: 'Fiber', amount: 0, unit: 'g' },
+      ],
+    }),
+    overlayClaims: null,
+  });
+  const himalayanSaltContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-himalayan-crystal-salt-title-rescue',
+      productName: 'Aloha Bay, Himalayan Crystal Salt, Coarse',
+      dosageForm: 'Salt',
+      actives: [
+        { name: 'Crystal Salt', amount: 1.5, unit: 'g' },
+      ],
+    }),
+    overlayClaims: null,
+  });
 
   assert.match(coconutAminosContext.ingredientRows[0]?.name ?? '', /\bcoconut aminos\b|\bsoy sauce replacement\b/i);
   assert.equal(coconutAminosContext.productArchetype, 'functional_food_like');
@@ -2065,6 +2164,37 @@ test('science context rescues sparse title-led food-like anchors from residue ro
   assert.match(liposomalGlutathioneContext.ingredientRows[0]?.name ?? '', /\bglutathione\b/i);
   assert.doesNotMatch(liposomalGlutathioneContext.ingredientRows[0]?.name ?? '', /\bproprietary blend\b|\bsupplement formula\b/i);
   assert.equal(liposomalGlutathioneContext.productArchetype, 'functional_food_like');
+
+  assert.match(tamariContext.ingredientRows[0]?.name ?? '', /\btamari\b|\bsoy sauce\b/i);
+  assert.doesNotMatch(tamariContext.ingredientRows[0]?.name ?? '', /\bpotas\b|\biron\b/i);
+  assert.equal(tamariContext.productArchetype, 'functional_food_like');
+
+  assert.match(lozengeContext.ingredientRows[0]?.name ?? '', /\blozenges?\b|\bxylitol\b/i);
+  assert.doesNotMatch(lozengeContext.ingredientRows[0]?.name ?? '', /\bsugar alcohol\b/i);
+  assert.equal(lozengeContext.productArchetype, 'functional_food_like');
+
+  assert.match(matchaLatteContext.ingredientRows[0]?.name ?? '', /\bmatcha latte\b|\bmatcha\b/i);
+  assert.doesNotMatch(matchaLatteContext.ingredientRows[0]?.name ?? '', /\bpotassium\b|\bcalcium\b|\bfiber\b/i);
+  assert.equal(matchaLatteContext.productArchetype, 'functional_food_like');
+
+  assert.match(crispyFruitContext.ingredientRows[0]?.name ?? '', /\bcrispy fruit\b|\ball apple\b/i);
+  assert.doesNotMatch(crispyFruitContext.ingredientRows[0]?.name ?? '', /\bvit\.?\s*d\b|\bcalcium\b|\bpotassium\b/i);
+  assert.equal(crispyFruitContext.productArchetype, 'functional_food_like');
+
+  assert.match(gummySquaresContext.ingredientRows[0]?.name ?? '', /\bgummy squares\b|\bgumm(?:y|ies)\b/i);
+  assert.doesNotMatch(gummySquaresContext.ingredientRows[0]?.name ?? '', /\bvitamin d\b|\bpotassium\b|\bfiber\b/i);
+  assert.equal(gummySquaresContext.productArchetype, 'functional_food_like');
+
+  assert.match(truffleContext.ingredientRows[0]?.name ?? '', /\btruffles?\b|\bchocolate\b/i);
+  assert.doesNotMatch(truffleContext.ingredientRows[0]?.name ?? '', /\bpotassium\b|\biron\b|\bfiber\b/i);
+  assert.equal(truffleContext.productArchetype, 'functional_food_like');
+
+  assert.match(curryPasteContext.ingredientRows[0]?.name ?? '', /\bcurry paste\b/i);
+  assert.doesNotMatch(curryPasteContext.ingredientRows[0]?.name ?? '', /\bcalcium\b|\bpotassium\b|\bfiber\b/i);
+  assert.equal(curryPasteContext.productArchetype, 'functional_food_like');
+
+  assert.match(himalayanSaltContext.ingredientRows[0]?.name ?? '', /\bhimalayan crystal salt\b|\bcrystal salt\b|\bsalt\b/i);
+  assert.equal(himalayanSaltContext.productArchetype, 'functional_food_like');
 });
 
 test('flower essence titles are not treated as food-like green products', () => {

@@ -202,10 +202,10 @@ test("food-like route honesty stable pack promotes only user-surface-impacting d
   const routeHonestyPack = buildCuratedValidationPack({ pack: mergedPack, config });
   assert.equal(routeHonestyPack.metadata.releaseBlocker, true);
   assert.equal(routeHonestyPack.metadata.runner, "runtime_contract_runner");
-  assert.equal(routeHonestyPack.summary.total, 14);
-  assert.equal(routeHonestyPack.summary.surfaces.barcode_scan, 7);
-  assert.equal(routeHonestyPack.summary.surfaces.search_origin_result, 7);
-  assert.equal(routeHonestyPack.summary.categories.food_like, 14);
+  assert.equal(routeHonestyPack.summary.total, 22);
+  assert.equal(routeHonestyPack.summary.surfaces.barcode_scan, 11);
+  assert.equal(routeHonestyPack.summary.surfaces.search_origin_result, 11);
+  assert.equal(routeHonestyPack.summary.categories.food_like, 22);
 
   for (const id of [
     "scan_food_like_bulletproof_mct_oil_route_honesty",
@@ -222,6 +222,14 @@ test("food-like route honesty stable pack promotes only user-surface-impacting d
     "search_origin_food_like_bonk_breaker_energy_chews_route_honesty",
     "scan_food_like_aurora_glutathione_drink_mix_route_honesty",
     "search_origin_food_like_aurora_glutathione_drink_mix_route_honesty",
+    "scan_food_like_eden_tamari_soy_sauce_route_honesty",
+    "search_origin_food_like_eden_tamari_soy_sauce_route_honesty",
+    "scan_food_like_chamberlain_matcha_latte_route_honesty",
+    "search_origin_food_like_chamberlain_matcha_latte_route_honesty",
+    "scan_food_like_crispy_green_apple_route_honesty",
+    "search_origin_food_like_crispy_green_apple_route_honesty",
+    "scan_food_like_alter_eco_truffles_route_honesty",
+    "search_origin_food_like_alter_eco_truffles_route_honesty",
   ]) {
     assert.ok(routeHonestyPack.scenarios.some((scenario) => scenario.id === id), `missing ${id}`);
   }
