@@ -672,3 +672,62 @@ test("post-merge validation accepts lutein in bilberry ginkgo eyebright complex 
     }).some((anchor) => /lutein/i.test(anchor)),
   );
 });
+
+test("post-merge validation accepts title-led aliases for official limit1 probe runtime anchors", () => {
+  const perfectAminoAnchors = inferDynamicPassAnchors({
+    title: "BodyHealth, Perfect Amino™, 150 Coated Tablets",
+    supplementFacts: {
+      nutritionalFacts: [
+        {
+          substancy: "Perfect Amino™ EAA & NA Proprietary Blend L-Leucine, L-Valine",
+          amountPerServing: "5 g",
+        },
+      ],
+    },
+  });
+  assert.ok(perfectAminoAnchors.some((anchor) => /perfect ?amino|amino acid blend/i.test(anchor)));
+
+  const livingCalciumAnchors = inferDynamicPassAnchors({
+    title: "Garden of Life, Living Calcium™ Advanced, 120 Vegetarian Caplets",
+    supplementFacts: {
+      nutritionalFacts: [
+        { substancy: "Vitamin D (D3 from culture of S. cerevisiae)", amountPerServing: "15 mcg" },
+        { substancy: "Calcium (from Algae)", amountPerServing: "1,000 mg" },
+      ],
+    },
+  });
+  assert.ok(livingCalciumAnchors.some((anchor) => /living calcium|calcium/i.test(anchor)));
+
+  const iodineAnchors = inferDynamicPassAnchors({
+    title: "Global Healing, Detoxadine, Nascent Iodine, 1 fl oz (29.6 ml)",
+    supplementFacts: {
+      nutritionalFacts: [
+        { substancy: "lodine", amountPerServing: "1,950 mcg" },
+      ],
+    },
+  });
+  assert.ok(iodineAnchors.some((anchor) => /iodine/i.test(anchor)));
+
+  const b12EnergyAnchors = inferDynamicPassAnchors({
+    title: "Purity Products, B12 Energy, Berry Lemonade Melts, 30 Fast-Dissolving Tablets",
+    supplementFacts: {
+      nutritionalFacts: [
+        { substancy: "Vitamin B12 (as methylcobalamin)", amountPerServing: "1,000 mcg" },
+      ],
+    },
+  });
+  assert.ok(b12EnergyAnchors.some((anchor) => /b12 energy|vitamin b12/i.test(anchor)));
+
+  const jointSkinAnchors = inferDynamicPassAnchors({
+    title: "Purity Products, H.A. Joint & Skin™, Super Formula, 90 Capsules",
+    supplementFacts: {
+      nutritionalFacts: [
+        {
+          substancy: "BioCell Collagen® (Proprietary Collagen Extract)",
+          amountPerServing: "1,000 mg",
+        },
+      ],
+    },
+  });
+  assert.ok(jointSkinAnchors.some((anchor) => /joint support|collagen|hyaluronic/i.test(anchor)));
+});

@@ -946,6 +946,38 @@ test('science context rescues common title-led actives from macro residue rows',
   assert.match(proteinContext.ingredientRows[0]?.name ?? '', /whey protein/i);
 });
 
+test('science context rescues trace minerals titles ahead of aloe and macro residue rows', async () => {
+  const context = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-trace-minerals-title-rescue',
+      productName: 'Tropical Oasis, Premium Ionized Trace Minerals, 16 fl oz (480 ml)',
+      dosageForm: 'Liquid',
+      actives: [
+        { name: 'Calories', amount: 10, unit: null },
+        { name: 'Aloe vera gel 200:1 extract', amount: 250, unit: 'mg' },
+        { name: 'Colloidal Minerals', amount: 198, unit: 'mg' },
+      ],
+    }),
+    overlayClaims: {
+      title: 'Tropical Oasis, Premium Ionized Trace Minerals, 16 fl oz (480 ml)',
+      brandName: 'Tropical Oasis',
+      nutritionalFacts: null,
+    },
+  });
+
+  assert.match(context.anchorIngredient?.name ?? '', /trace minerals/i);
+  assert.match(context.ingredientRows[0]?.name ?? '', /trace minerals/i);
+
+  const overview = await compileIngredientOverviewAsync(context, context.anchorIngredient?.name ?? 'Trace Minerals');
+  const scientific = buildScientificBackgroundDeterministicFallback({
+    context,
+    selectedIngredientName: context.anchorIngredient?.name ?? 'Trace Minerals',
+  });
+
+  assert.match(overview.ingredientOverview.paragraph1, /trace minerals/i);
+  assert.match(scientific.selectedLabel, /trace minerals/i);
+});
+
 test('science context uses iHerb overlay title as ranking context when official product name is sparse', () => {
   const digest = buildDigest({
     labelId: 'fixture-osfortis-short-official-name',
@@ -1289,6 +1321,92 @@ test('science context rescues title-led botanicals ahead of proprietary blend an
   assert.doesNotMatch(echinaceaContext.ingredientRows[0]?.name ?? '', /proprietary blend/i);
   assert.match(lemonBalmContext.ingredientRows[0]?.name ?? '', /lemon balm/i);
   assert.notEqual(lemonBalmContext.ingredientRows[0]?.name, 'Alcohol');
+});
+
+test('science context rescues tart cherry titles ahead of sugars', () => {
+  const context = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-tart-cherry-powder',
+      productName: 'Eclectic Herb, Berry Tart Cherry Powder, 5.1 oz (144 g)',
+      dosageForm: 'Powder',
+      actives: [
+        { name: 'Calories', amount: 35, unit: null },
+        { name: 'Total carbohydrate', amount: 7, unit: 'g' },
+        { name: 'Sugars', amount: 5, unit: 'g' },
+      ],
+    }),
+    overlayClaims: null,
+  });
+
+  assert.match(context.ingredientRows[0]?.name ?? '', /tart cherry/i);
+  assert.notEqual(context.ingredientRows[0]?.name, 'Sugars');
+});
+
+test('science context rescues quercetin recovery titles ahead of probiotic companions', () => {
+  const context = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-quercetin-recovery',
+      productName: 'Garden of Life, Dr. Formulated, Quercetin Recovery, 30 Vegan Tablets',
+      dosageForm: 'Tablet',
+      actives: [
+        { name: 'Bacillus subtilis DE111®', amount: 5, unit: 'mg' },
+      ],
+    }),
+    overlayClaims: null,
+  });
+
+  assert.match(context.ingredientRows[0]?.name ?? '', /quercetin/i);
+  assert.doesNotMatch(context.ingredientRows[0]?.name ?? '', /probiotic/i);
+});
+
+test('science context rescues green guard and broth food-like titles ahead of noisy rows', () => {
+  const greenGuardContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-green-guard-powder',
+      productName: 'Eclectic Herb, Green Guard Powder, 3.7 oz (105 g)',
+      dosageForm: 'Powder',
+      actives: [
+        { name: 'Calories', amount: 10, unit: null },
+        { name: 'Sugars', amount: 1, unit: 'g' },
+      ],
+    }),
+    overlayClaims: null,
+  });
+  const brothContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-earth-broth',
+      productName: 'HealthForce Superfoods, Earth Broth®, 16 oz (454 g)',
+      dosageForm: 'Powder',
+      actives: [
+        { name: 'Ashwagandha Root', amount: 200, unit: 'mg' },
+        { name: 'Protein', amount: 1, unit: 'g' },
+      ],
+    }),
+    overlayClaims: null,
+  });
+
+  assert.match(greenGuardContext.ingredientRows[0]?.name ?? '', /greens/i);
+  assert.notEqual(greenGuardContext.ingredientRows[0]?.name, 'Sugars');
+  assert.match(brothContext.ingredientRows[0]?.name ?? '', /broth/i);
+  assert.notEqual(brothContext.ingredientRows[0]?.name, 'Ashwagandha Root');
+});
+
+test('science context treats joint and skin titles as joint support or collagen-led formulas', () => {
+  const context = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-ha-joint-skin',
+      productName: 'Purity Products, H.A. Joint & Skin™, Super Formula, 90 Capsules',
+      dosageForm: 'Capsule',
+      actives: [
+        { name: 'BioCell Collagen', amount: 1000, unit: 'mg' },
+        { name: 'Calcium-Magnesium Inositol Hexaphosphate (IP6)', amount: 75, unit: 'mg' },
+      ],
+    }),
+    overlayClaims: null,
+  });
+
+  assert.match(context.ingredientRows[0]?.name ?? '', /joint support|collagen/i);
+  assert.notEqual(context.ingredientRows[0]?.name, 'Calcium-Magnesium Inositol Hexaphosphate (IP6)');
 });
 
 test('science context does not let alcohol solvent rows outrank title-led lemon balm extract rows', () => {

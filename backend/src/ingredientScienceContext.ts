@@ -149,6 +149,8 @@ const REDS_SUPERFOOD_TITLE_PATTERN =
   /\breds?\s+pak\b|\bred\s+(?:fruits?|vegetables?)\b/i;
 const SPIRULINA_TITLE_PATTERN = /\bspirulina\b/i;
 const CHLORELLA_TITLE_PATTERN = /\bchlorella\b/i;
+const TRACE_MINERALS_TITLE_PATTERN =
+  /\b(?:ionized\s+)?trace\s+minerals?\b|\bcolloidal\s+minerals?\b/i;
 const DIGESTIVE_ENZYME_TITLE_PATTERN =
   /\bdigestion\s+enhancement\s+enzymes?\b|\bdigestive\s+enzymes?\b|\benzyme\s+blend\b/i;
 const OMEGA3_ALGAL_TITLE_PATTERN =
@@ -170,7 +172,7 @@ const PROBIOTIC_FORMULA_FAMILY_ROW_PATTERN =
 const PROBIOTIC_FORMULA_COMPANION_YEAST_PATTERN =
   /\b(?:brewer'?s|baker'?s)\s+yeast\b|\bsaccharomyces\b/i;
 const GREENS_TITLE_PATTERN =
-  /\b(?:ag1|athletic\s+greens|greens\b|supergreens?\b|green\s+superfood|superfood|vegetable\s+powder|whole\s+food\s+powder|daily\s+greens?|greens?\s+(?:powder|blend|formula)|powdered\s+greens?|supergreens?\s+powder)\b/i;
+  /\b(?:ag1|athletic\s+greens|greens\b|supergreens?\b|green\s+superfood|green\s+guard|superfood|vegetable\s+powder|whole\s+food\s+powder|daily\s+greens?|greens?\s+(?:powder|blend|formula)|powdered\s+greens?|supergreens?\s+powder)\b/i;
 const TEA_BAG_TITLE_PATTERN = /\b(?:tea\s+bags?|herbal\s+tea|slimming\s+tea)\b/i;
 const FOOD_LIKE_POWDER_TITLE_PATTERN =
   /\b(?:juice\s+powder|fruit\s+powder|smoothie|drink\s+mix|vegetable\s+powder|greens?\s+powder)\b/i;
@@ -192,7 +194,7 @@ const MULTIVITAMIN_TITLE_PATTERN =
 const MINIMAL_ESSENTIAL_BROAD_NUTRIENT_TITLE_PATTERN = /\bminimal\s+and\s+essential\b/i;
 const BROAD_VITAMIN_MINERAL_ROW_PATTERN =
   /\b(?:vitamin\s*[a-z0-9]*|thiamin|riboflavin|niacin|folate|biotin|pantothenic|calcium|magnesium|zinc|selenium|copper|manganese|chromium|molybdenum|iodine|iron)\b/i;
-const JOINT_SUPPORT_TITLE_PATTERN = /\bjoint\s+support\b|\bno\.?\s*7\b/i;
+const JOINT_SUPPORT_TITLE_PATTERN = /\bjoint\s+support\b|\bno\.?\s*7\b|\bh\.?\s*a\.?\b.*\bjoint\b|\bjoint\b.*\bskin\b/i;
 const B_COMPLEX_FORMULA_ROW_PATTERN =
   /\bb[\s-]*complex\b|\bvitamin\s*b\s*complex\b/i;
 const MULTIVITAMIN_FORMULA_ROW_PATTERN =
@@ -206,6 +208,9 @@ const NUTRITION_FACTS_MACRO_PATTERN =
 const NON_INGREDIENT_AUDIENCE_ROW_PATTERN = /^(?:men|women|adults?|children|kids?|teens?)$/i;
 const BRAND_PREFIX_SEGMENT_PATTERN = /^[a-z0-9][a-z0-9 '&.+-]{1,24}$/i;
 const PARAFIGHT_TITLE_PATTERN = /\bpara\s*fight\b/i;
+const TART_CHERRY_TITLE_PATTERN = /\btart\s+cherr(?:y|ies)\b/i;
+const QUERCETIN_TITLE_PATTERN = /\bquercetin\b/i;
+const BROTH_TITLE_PATTERN = /\bbroth\b/i;
 
 const normalizeText = (value: string | null | undefined): string =>
   String(value ?? "")
@@ -255,6 +260,10 @@ const normalizeContextualIngredientRow = (
 
   if (/^chewable\s+(calcium|iron)\b/i.test(name)) {
     name = name.replace(/^chewable\s+/i, "");
+  }
+
+  if (TRACE_MINERALS_TITLE_PATTERN.test(productName) && /^colloidal\s+minerals?$/i.test(name)) {
+    name = extractTitleMatch(productName, TRACE_MINERALS_TITLE_PATTERN) ?? "Trace Minerals";
   }
 
   if (POTASSIUM_SUPPLEMENT_PATTERN.test(productName) && /^potassium$/i.test(name)) {
@@ -637,6 +646,7 @@ const hasTitleRescueContext = (productName: string): boolean =>
   REDS_SUPERFOOD_TITLE_PATTERN.test(productName) ||
   SPIRULINA_TITLE_PATTERN.test(productName) ||
   CHLORELLA_TITLE_PATTERN.test(productName) ||
+  TRACE_MINERALS_TITLE_PATTERN.test(productName) ||
   DIGESTIVE_ENZYME_TITLE_PATTERN.test(productName) ||
   PARAFIGHT_TITLE_PATTERN.test(productName);
 
@@ -684,9 +694,15 @@ const isTitleRescueAnchorRow = (
   const normalizedRow = normalizeText(rowName);
   return (
     (isLeadAloeVeraTitle(productName) && ALOE_VERA_TITLE_PATTERN.test(normalizedRow)) ||
+    (TART_CHERRY_TITLE_PATTERN.test(productName) && TART_CHERRY_TITLE_PATTERN.test(normalizedRow)) ||
+    (QUERCETIN_TITLE_PATTERN.test(productName) && QUERCETIN_TITLE_PATTERN.test(normalizedRow)) ||
     (FIBER_PRODUCT_TITLE_PATTERN.test(productName) && /\bfiber\b/i.test(normalizedRow)) ||
     (PROTEIN_PRODUCT_TITLE_PATTERN.test(productName) && /\bprotein\b/i.test(normalizedRow)) ||
     (POTASSIUM_SUPPLEMENT_PATTERN.test(productName) && POTASSIUM_SUPPLEMENT_PATTERN.test(normalizedRow)) ||
+    (
+      BROTH_TITLE_PATTERN.test(productName) &&
+      /\bbroth\b|\bherbal\s+broth\b/i.test(normalizedRow)
+    ) ||
     (
       COCONUT_AMINOS_TITLE_PATTERN.test(productName) &&
       /\bcoconut\s+aminos\b|\bsoy\s+sauce\s+replacement\b|\bseasoning\b/i.test(normalizedRow)
@@ -718,6 +734,10 @@ const isTitleRescueAnchorRow = (
     ) ||
     (SPIRULINA_TITLE_PATTERN.test(productName) && SPIRULINA_TITLE_PATTERN.test(normalizedRow)) ||
     (CHLORELLA_TITLE_PATTERN.test(productName) && CHLORELLA_TITLE_PATTERN.test(normalizedRow)) ||
+    (
+      TRACE_MINERALS_TITLE_PATTERN.test(productName) &&
+      /\b(?:ionized\s+)?trace\s+minerals?\b|\bcolloidal\s+minerals?\b/i.test(normalizedRow)
+    ) ||
     (
       DIGESTIVE_ENZYME_TITLE_PATTERN.test(productName) &&
       /\bdigestive\s+enzymes?\b|\benzyme\s+blend\b/i.test(normalizedRow)
@@ -890,6 +910,20 @@ const deriveScienceTitleRescueRows = (params: {
   }
 
   if (
+    TART_CHERRY_TITLE_PATTERN.test(titleWithoutBrand) &&
+    !hasNamedTitleAlignedRow(params.existingRows, TART_CHERRY_TITLE_PATTERN)
+  ) {
+    pushRow(extractTitleMatch(titleWithoutBrand, TART_CHERRY_TITLE_PATTERN) ?? "Tart Cherry");
+  }
+
+  if (
+    QUERCETIN_TITLE_PATTERN.test(titleWithoutBrand) &&
+    !hasNamedTitleAlignedRow(params.existingRows, QUERCETIN_TITLE_PATTERN)
+  ) {
+    pushRow(extractTitleMatch(titleWithoutBrand, QUERCETIN_TITLE_PATTERN) ?? "Quercetin");
+  }
+
+  if (
     JOINT_SUPPORT_TITLE_PATTERN.test(titleWithoutBrand) &&
     !hasNamedTitleAlignedRow(params.existingRows, /\bjoint\s+support\b|\bcollagen\b|\bcartilage\b/i)
   ) {
@@ -946,6 +980,13 @@ const deriveScienceTitleRescueRows = (params: {
     !hasNamedTitleAlignedRow(params.existingRows, CHLORELLA_TITLE_PATTERN)
   ) {
     pushRow("Chlorella");
+  }
+
+  if (
+    TRACE_MINERALS_TITLE_PATTERN.test(titleWithoutBrand) &&
+    !hasNamedTitleAlignedRow(params.existingRows, TRACE_MINERALS_TITLE_PATTERN)
+  ) {
+    pushRow(extractTitleMatch(titleWithoutBrand, TRACE_MINERALS_TITLE_PATTERN) ?? "Trace Minerals");
   }
 
   const hasDedicatedOmega3SourceRow = params.existingRows.some((row) =>
@@ -1059,6 +1100,8 @@ const deriveScienceTitleRescueRows = (params: {
 
   if (GREENS_TITLE_PATTERN.test(titleWithBrandContext)) {
     pushRow("Greens");
+  } else if (BROTH_TITLE_PATTERN.test(titleWithoutBrand)) {
+    pushRow(extractTitleMatch(titleWithoutBrand, /\b(?:earth\s+)?broth\b/i) ?? "Herbal Broth Blend");
   } else if (TEA_BAG_TITLE_PATTERN.test(titleWithoutBrand)) {
     pushRow("Tea blend");
   } else if (COCONUT_AMINOS_TITLE_PATTERN.test(titleWithoutBrand)) {
