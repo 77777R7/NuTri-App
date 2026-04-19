@@ -1712,6 +1712,30 @@ test('science context keeps title-led snack and seasoning foods ahead of macro n
   assert.match(liquidAminosContext.ingredientRows[0]?.name ?? '', /liquid\s+aminos|soy\s+protein\s+seasoning/i);
 });
 
+test('science context keeps title-led multi-vitamin drink mixes ahead of formula anchors', () => {
+  const context = buildIngredientScienceContext({
+    digest: withBrand(
+      buildDigest({
+        labelId: 'fixture-ener-c-multivitamin-drink-mix',
+        productName: 'Ener-C, Bubbly Multi-Vitamin Drink Mix, Variety Pack, 1,000 mg',
+        dosageForm: 'Packet',
+        actives: [
+          { name: 'Vitamin C', amount: 1000, unit: 'mg' },
+          { name: 'Total Carbohydrates', amount: 5, unit: 'g' },
+          { name: 'Magnesium', amount: 60, unit: 'mg' },
+          { name: 'Zinc', amount: 5, unit: 'mg' },
+        ],
+      }),
+      'Ener-C',
+    ),
+    overlayClaims: null,
+  });
+
+  assert.equal(context.productArchetype, 'functional_food_like');
+  assert.match(context.ingredientRows[0]?.name ?? '', /multi[-\s]*vitamin\s+drink\s+mix|drink\s+mix/i);
+  assert.doesNotMatch(context.ingredientRows[0]?.name ?? '', /multivitamin\s+&\s+mineral\s+formula|vitamin\s+c|magnesium|zinc|total\s+carb/i);
+});
+
 test('science context creates label-context rows for title-only Greens First and Project 1 powders', () => {
   const greensFirstContext = buildIngredientScienceContext({
     digest: buildDigest({

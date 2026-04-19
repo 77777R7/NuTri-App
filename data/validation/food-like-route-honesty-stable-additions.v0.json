@@ -2058,6 +2058,54 @@
         "warning_consistency"
       ],
       "severityOnFail": "P1"
+    },
+    {
+      "id": "scan_food_like_ener_c_bubbly_multivitamin_drink_mix_route_honesty",
+      "surface": "barcode_scan",
+      "origin": "barcode_scan",
+      "category": "food_like",
+      "personas": [],
+      "input": {
+        "barcode": "00873024001045"
+      },
+      "product": {
+        "productId": "71402",
+        "brand": "Ener-C",
+        "name": "Ener-C, Bubbly Multi-Vitamin Drink Mix, Variety Pack, 1,000 mg, 30 Packets, 9.9 oz (282.9 g)",
+        "barcode": "00873024001045"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "Bubbly Multi-Vitamin Drink Mix",
+            "Multi-Vitamin Drink Mix",
+            "Drink Mix"
+          ],
+          "warn": [
+            "Multivitamin Drink Mix"
+          ],
+          "fail": [
+            "Multivitamin & Mineral Formula",
+            "Vitamin C",
+            "Magnesium",
+            "Zinc",
+            "Total Carbohydrates",
+            "Serving Size"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        }
+      },
+      "gates": [
+        "route_health",
+        "selected_anchor_consistency",
+        "unsafe_language"
+      ],
+      "severityOnFail": "P1"
     }
   ]
 }

@@ -142,6 +142,8 @@ const COCONUT_AMINOS_TITLE_PATTERN = /\bcoconut\s+aminos\b|\bsoy\s+sauce\s+repla
 const SOY_SAUCE_TITLE_PATTERN = /\btamari\b|\bsoy\s+sauce\b/i;
 const FOOD_LIKE_LOZENGE_TITLE_PATTERN = /\bdry\s+mouth\s+lozenges?\b|\blozenges?\s+with\s+xylitol\b/i;
 const MATCHA_LATTE_TITLE_PATTERN = /\bmatcha\s+latte\b/i;
+const MULTIVITAMIN_DRINK_MIX_TITLE_PATTERN =
+  /\b(?:bubbly\s+)?(?:multi[\s-]*vitamin|vitamin)\s+drink\s+mix\b/i;
 const CRISPY_FRUIT_TITLE_PATTERN = /\bcrispy\s+fruit\b|\ball\s+(?:apple|mango)\b/i;
 const GUMMY_CANDY_TITLE_PATTERN = /\bgummy\s+squares\b|\bhealthy\s+sweets\b/i;
 const CHOCOLATE_TRUFFLE_TITLE_PATTERN = /\bchocolate\b.*\btruffles?\b|\btruffles?\b/i;
@@ -674,6 +676,7 @@ const hasTitleRescueContext = (productName: string): boolean =>
   SOY_SAUCE_TITLE_PATTERN.test(productName) ||
   FOOD_LIKE_LOZENGE_TITLE_PATTERN.test(productName) ||
   MATCHA_LATTE_TITLE_PATTERN.test(productName) ||
+  MULTIVITAMIN_DRINK_MIX_TITLE_PATTERN.test(productName) ||
   CRISPY_FRUIT_TITLE_PATTERN.test(productName) ||
   GUMMY_CANDY_TITLE_PATTERN.test(productName) ||
   CHOCOLATE_TRUFFLE_TITLE_PATTERN.test(productName) ||
@@ -765,6 +768,10 @@ const isTitleRescueAnchorRow = (
     (
       MATCHA_LATTE_TITLE_PATTERN.test(productName) &&
       /\bmatcha\s+latte\b|\bmatcha\b/i.test(normalizedRow)
+    ) ||
+    (
+      MULTIVITAMIN_DRINK_MIX_TITLE_PATTERN.test(productName) &&
+      /\b(?:bubbly\s+)?(?:multi[\s-]*vitamin|vitamin)\s+drink\s+mix\b|\bdrink\s+mix\b/i.test(normalizedRow)
     ) ||
     (
       CRISPY_FRUIT_TITLE_PATTERN.test(productName) &&
@@ -1220,6 +1227,11 @@ const deriveScienceTitleRescueRows = (params: {
     pushRow(extractTitleMatch(titleWithoutBrand, /\bdry\s+mouth\s+lozenges?\b|\blozenges?\s+with\s+xylitol\b|\blozenges?\b/i) ?? "Lozenges");
   } else if (MATCHA_LATTE_TITLE_PATTERN.test(titleWithoutBrand)) {
     pushRow(extractTitleMatch(titleWithoutBrand, MATCHA_LATTE_TITLE_PATTERN) ?? "Matcha Latte");
+  } else if (MULTIVITAMIN_DRINK_MIX_TITLE_PATTERN.test(titleWithoutBrand)) {
+    pushRow(
+      extractTitleMatch(titleWithoutBrand, MULTIVITAMIN_DRINK_MIX_TITLE_PATTERN) ??
+        "Multi-Vitamin Drink Mix",
+    );
   } else if (CRISPY_FRUIT_TITLE_PATTERN.test(titleWithoutBrand)) {
     pushRow(extractTitleMatch(titleWithoutBrand, /\bcrispy\s+fruit\b|\ball\s+(?:apple|mango)\b/i) ?? "Crispy Fruit");
   } else if (GUMMY_CANDY_TITLE_PATTERN.test(titleWithoutBrand)) {
