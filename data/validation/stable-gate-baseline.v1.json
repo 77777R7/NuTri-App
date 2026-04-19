@@ -8,6 +8,7 @@
     "data/validation/scan-smoke.v0.json",
     "data/validation/runtime-result-page-contract.v0.json",
     "data/validation/persona-blocker-pack.v0.json",
+    "data/validation/food-like-route-honesty-stable.v0.json",
     "data/validation/mobile-scan-smoke-mini.v0.json"
   ],
   "expectationModesBySurface": {

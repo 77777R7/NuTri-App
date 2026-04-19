@@ -26,6 +26,10 @@ test("release quality system dry-run defaults search replay to the frozen live s
   assert.equal(payload.curatedBaselineConfigPath, "data/validation/live-replay-release-slice.v1.json");
   assert.equal(payload.searchConfigPath, "data/validation/live-replay-release-slice.v1.json");
   assert.equal(payload.searchPackPath, null);
+  assert.ok(
+    payload.runtimeConfigs.includes("data/validation/food-like-route-honesty-stable.v0.json"),
+    "food-like route honesty stable pack should be part of release runtime gates",
+  );
 });
 
 test("release quality system dry-run accepts an explicit raw search pack override", async () => {

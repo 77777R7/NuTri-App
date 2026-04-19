@@ -47,6 +47,7 @@ const DEFAULT_RUNTIME_CONFIGS = [
   "data/validation/scan-smoke.v0.json",
   "data/validation/persona-blocker-pack.v0.json",
   "data/validation/consistency-pack.v0.json",
+  "data/validation/food-like-route-honesty-stable.v0.json",
 ];
 
 const parseArgs = () => {

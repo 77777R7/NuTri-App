@@ -1,0 +1,164 @@
+{
+  "version": "food-like-route-honesty-stable-additions.v0",
+  "description": "Small promoted slice from lane_c_food_like_route_honesty discovery. Only user-surface-impacting food-like boundaries are included here; broad lane rows stay nightly/discovery.",
+  "scenarios": [
+    {
+      "id": "scan_food_like_powerup_mega_omega_route_honesty",
+      "surface": "barcode_scan",
+      "origin": "barcode_scan",
+      "category": "food_like",
+      "personas": [],
+      "input": { "barcode": "00857468006156" },
+      "product": {
+        "productId": "104067",
+        "brand": "Power Up",
+        "name": "Power Up, Premium Trail Mix, Mega Omega , 14 oz (397 g)",
+        "barcode": "00857468006156"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": ["Trail Mix", "Mega Omega", "Snack Mix"],
+          "warn": ["Omega"],
+          "fail": ["Fish Oil", "Softgels", "Serving Size"]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": ["safe for you"]
+        }
+      },
+      "gates": ["route_health", "default_anchor", "unsafe_language"],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_origin_food_like_powerup_mega_omega_route_honesty",
+      "surface": "search_origin_result",
+      "origin": "search_result",
+      "category": "food_like",
+      "personas": [],
+      "input": {
+        "query": "power up mega omega trail mix",
+        "queryType": "brand_product",
+        "searchResultSeed": {
+          "productId": "104067",
+          "barcode": "00857468006156",
+          "upcCode": "00857468006156",
+          "name": "Power Up, Premium Trail Mix, Mega Omega , 14 oz (397 g)",
+          "brand": "Power Up",
+          "category": "Food",
+          "benefit": "Food-like trail mix with omega positioning",
+          "dose": "14 oz",
+          "factsStatus": "partial",
+          "coverageStatus": "not_enough_structured_data"
+        }
+      },
+      "product": {
+        "productId": "104067",
+        "brand": "Power Up",
+        "name": "Power Up, Premium Trail Mix, Mega Omega , 14 oz (397 g)",
+        "barcode": "00857468006156"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": ["Trail Mix", "Mega Omega", "Snack Mix"],
+          "warn": ["Omega"],
+          "fail": ["Fish Oil", "Softgels", "Serving Size"]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": ["safe for you"]
+        },
+        "consistency": {
+          "productId": "104067",
+          "barcode": "00857468006156",
+          "selectedAnchor": "Trail Mix"
+        }
+      },
+      "gates": [
+        "click_through_seed_consistency",
+        "canonical_product_consistency",
+        "selected_anchor_consistency",
+        "warning_consistency"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "scan_food_like_gfuel_hydration_focus_route_honesty",
+      "surface": "barcode_scan",
+      "origin": "barcode_scan",
+      "category": "food_like",
+      "personas": ["fitness_recovery_goal"],
+      "input": { "barcode": "00810124604455" },
+      "product": {
+        "productId": "155139",
+        "brand": "G FUEL",
+        "name": "G FUEL, Hydration + Focus, Electrolyte Drink Mix with Cognizin®, Lemon Limelight, 20 Stick Packs, 0.21 oz (6 g) Each",
+        "barcode": "00810124604455"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": ["Hydration + Focus Drink Mix", "Electrolyte Drink Mix", "Drink Mix"],
+          "warn": ["Electrolyte", "Cognizin"],
+          "fail": ["Calories", "Serving Size"]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": ["safe for you"]
+        }
+      },
+      "gates": ["route_health", "default_anchor", "goal_relevance", "unsafe_language"],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_origin_food_like_gfuel_hydration_focus_route_honesty",
+      "surface": "search_origin_result",
+      "origin": "search_result",
+      "category": "food_like",
+      "personas": ["fitness_recovery_goal"],
+      "input": {
+        "query": "g fuel hydration focus electrolyte drink mix",
+        "queryType": "brand_product",
+        "searchResultSeed": {
+          "productId": "155139",
+          "barcode": "00810124604455",
+          "upcCode": "00810124604455",
+          "name": "G FUEL, Hydration + Focus, Electrolyte Drink Mix with Cognizin®, Lemon Limelight, 20 Stick Packs, 0.21 oz (6 g) Each",
+          "brand": "G FUEL",
+          "category": "Food",
+          "benefit": "Food-like hydration and electrolyte drink mix",
+          "dose": "20 stick packs",
+          "factsStatus": "partial",
+          "coverageStatus": "not_enough_structured_data"
+        }
+      },
+      "product": {
+        "productId": "155139",
+        "brand": "G FUEL",
+        "name": "G FUEL, Hydration + Focus, Electrolyte Drink Mix with Cognizin®, Lemon Limelight, 20 Stick Packs, 0.21 oz (6 g) Each",
+        "barcode": "00810124604455"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": ["Hydration + Focus Drink Mix", "Electrolyte Drink Mix", "Drink Mix"],
+          "warn": ["Electrolyte", "Cognizin"],
+          "fail": ["Calories", "Serving Size"]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": ["safe for you"]
+        },
+        "consistency": {
+          "productId": "155139",
+          "barcode": "00810124604455",
+          "selectedAnchor": "Hydration + Focus Drink Mix"
+        }
+      },
+      "gates": [
+        "click_through_seed_consistency",
+        "canonical_product_consistency",
+        "selected_anchor_consistency",
+        "warning_consistency"
+      ],
+      "severityOnFail": "P1"
+    }
+  ]
+}

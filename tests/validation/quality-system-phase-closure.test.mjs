@@ -40,6 +40,7 @@ test("stable gate baseline freezes source pack, stable curated packs, and expect
     "data/validation/scan-smoke.v0.json",
     "data/validation/runtime-result-page-contract.v0.json",
     "data/validation/persona-blocker-pack.v0.json",
+    "data/validation/food-like-route-honesty-stable.v0.json",
     "data/validation/mobile-scan-smoke-mini.v0.json",
   ]);
 
@@ -191,6 +192,29 @@ test("persona blocker pack freezes deterministic source, duplicate-stack, and li
   assert.ok(blockerPack.scenarios.some((scenario) => scenario.id === "scan_nightly_nutricost_grassfed_whey_dairy"));
   assert.ok(blockerPack.scenarios.some((scenario) => scenario.id === "scan_nightly_now_soy_protein_isolate_source"));
   assert.ok(blockerPack.scenarios.some((scenario) => scenario.id === "scan_nightly_swanson_krill_curcumin_shellfish"));
+});
+
+test("food-like route honesty stable pack promotes only user-surface-impacting discovery seeds", async () => {
+  const config = await loadCuratedValidationConfig("data/validation/food-like-route-honesty-stable.v0.json");
+  assert.deepEqual(validateCuratedValidationConfig(config), []);
+
+  const mergedPack = await loadCuratedValidationSourcePack(config);
+  const routeHonestyPack = buildCuratedValidationPack({ pack: mergedPack, config });
+  assert.equal(routeHonestyPack.metadata.releaseBlocker, true);
+  assert.equal(routeHonestyPack.metadata.runner, "runtime_contract_runner");
+  assert.equal(routeHonestyPack.summary.total, 4);
+  assert.equal(routeHonestyPack.summary.surfaces.barcode_scan, 2);
+  assert.equal(routeHonestyPack.summary.surfaces.search_origin_result, 2);
+  assert.equal(routeHonestyPack.summary.categories.food_like, 4);
+
+  for (const id of [
+    "scan_food_like_powerup_mega_omega_route_honesty",
+    "search_origin_food_like_powerup_mega_omega_route_honesty",
+    "scan_food_like_gfuel_hydration_focus_route_honesty",
+    "search_origin_food_like_gfuel_hydration_focus_route_honesty",
+  ]) {
+    assert.ok(routeHonestyPack.scenarios.some((scenario) => scenario.id === id), `missing ${id}`);
+  }
 });
 
 test("persona nightly pack keeps partially wired goal and persona nuance out of blocker scope", async () => {

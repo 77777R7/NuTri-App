@@ -1,0 +1,20 @@
+{
+  "version": "food-like-route-honesty-stable.v0",
+  "sourcePackPath": "data/validation/golden-journey-pack.v1.json",
+  "additionalPackPaths": [
+    "data/validation/food-like-route-honesty-stable-additions.v0.json"
+  ],
+  "scenarioIds": [
+    "scan_food_like_powerup_mega_omega_route_honesty",
+    "search_origin_food_like_powerup_mega_omega_route_honesty",
+    "scan_food_like_gfuel_hydration_focus_route_honesty",
+    "search_origin_food_like_gfuel_hydration_focus_route_honesty"
+  ],
+  "releaseBlocker": true,
+  "runner": "runtime_contract_runner",
+  "packRole": "food_like_route_honesty_stable",
+  "notes": [
+    "Promotes only the route-honesty discovery examples most likely to affect scan/search/detail user perception.",
+    "The broader lane_c_food_like_route_honesty queue remains nightly/discovery and is not treated as a data-fill blocker."
+  ]
+}
