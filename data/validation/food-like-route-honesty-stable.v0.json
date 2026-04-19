@@ -32,7 +32,15 @@
     "scan_food_like_now_soy_milk_powder_route_honesty",
     "search_origin_food_like_now_soy_milk_powder_route_honesty",
     "scan_food_like_binggrae_banana_milk_drink_route_honesty",
-    "search_origin_food_like_binggrae_banana_milk_drink_route_honesty"
+    "search_origin_food_like_binggrae_banana_milk_drink_route_honesty",
+    "scan_food_like_bhu_protein_bites_route_honesty",
+    "search_origin_food_like_bhu_protein_bites_route_honesty",
+    "scan_food_like_hu_simple_milk_chocolate_route_honesty",
+    "search_origin_food_like_hu_simple_milk_chocolate_route_honesty",
+    "scan_food_like_tcho_choco_latte_route_honesty",
+    "search_origin_food_like_tcho_choco_latte_route_honesty",
+    "scan_food_like_bragg_liquid_aminos_soy_protein_seasoning_route_honesty",
+    "search_origin_food_like_bragg_liquid_aminos_soy_protein_seasoning_route_honesty"
   ],
   "releaseBlocker": true,
   "runner": "runtime_contract_runner",
@@ -42,6 +50,7 @@
     "The broader lane_c_food_like_route_honesty queue remains nightly/discovery and is not treated as a data-fill blocker.",
     "Power Up Mega Omega is included only after its Total Carbs macro-anchor warning was fixed in runtime.",
     "Tamari, matcha latte, freeze-dried fruit, and chocolate truffles were promoted after live canary showed they are user-visible food-like route honesty boundaries.",
-    "Electrolyte drink mix, soy milk powder, and flavored milk drink were promoted after live canary showed brand/mineral noise could otherwise drift the default anchor."
+    "Electrolyte drink mix, soy milk powder, and flavored milk drink were promoted after live canary showed brand/mineral noise could otherwise drift the default anchor.",
+    "Protein bites, milk chocolate, choco latte, and liquid aminos seasoning are promoted after live canary showed macro/protein rows could otherwise drift food-like anchors."
   ]
 }

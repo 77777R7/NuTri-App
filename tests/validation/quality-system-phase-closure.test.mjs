@@ -202,10 +202,10 @@ test("food-like route honesty stable pack promotes only user-surface-impacting d
   const routeHonestyPack = buildCuratedValidationPack({ pack: mergedPack, config });
   assert.equal(routeHonestyPack.metadata.releaseBlocker, true);
   assert.equal(routeHonestyPack.metadata.runner, "runtime_contract_runner");
-  assert.equal(routeHonestyPack.summary.total, 28);
-  assert.equal(routeHonestyPack.summary.surfaces.barcode_scan, 14);
-  assert.equal(routeHonestyPack.summary.surfaces.search_origin_result, 14);
-  assert.equal(routeHonestyPack.summary.categories.food_like, 28);
+  assert.equal(routeHonestyPack.summary.total, 36);
+  assert.equal(routeHonestyPack.summary.surfaces.barcode_scan, 18);
+  assert.equal(routeHonestyPack.summary.surfaces.search_origin_result, 18);
+  assert.equal(routeHonestyPack.summary.categories.food_like, 36);
 
   for (const id of [
     "scan_food_like_bulletproof_mct_oil_route_honesty",
@@ -236,6 +236,14 @@ test("food-like route honesty stable pack promotes only user-surface-impacting d
     "search_origin_food_like_now_soy_milk_powder_route_honesty",
     "scan_food_like_binggrae_banana_milk_drink_route_honesty",
     "search_origin_food_like_binggrae_banana_milk_drink_route_honesty",
+    "scan_food_like_bhu_protein_bites_route_honesty",
+    "search_origin_food_like_bhu_protein_bites_route_honesty",
+    "scan_food_like_hu_simple_milk_chocolate_route_honesty",
+    "search_origin_food_like_hu_simple_milk_chocolate_route_honesty",
+    "scan_food_like_tcho_choco_latte_route_honesty",
+    "search_origin_food_like_tcho_choco_latte_route_honesty",
+    "scan_food_like_bragg_liquid_aminos_soy_protein_seasoning_route_honesty",
+    "search_origin_food_like_bragg_liquid_aminos_soy_protein_seasoning_route_honesty",
   ]) {
     assert.ok(routeHonestyPack.scenarios.some((scenario) => scenario.id === id), `missing ${id}`);
   }

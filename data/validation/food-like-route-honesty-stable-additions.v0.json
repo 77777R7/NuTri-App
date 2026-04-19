@@ -794,7 +794,9 @@
       "surface": "barcode_scan",
       "origin": "barcode_scan",
       "category": "food_like",
-      "personas": ["soy_allergy"],
+      "personas": [
+        "soy_allergy"
+      ],
       "input": {
         "barcode": "00024182000474"
       },
@@ -841,7 +843,9 @@
       "surface": "search_origin_result",
       "origin": "search_result",
       "category": "food_like",
-      "personas": ["soy_allergy"],
+      "personas": [
+        "soy_allergy"
+      ],
       "input": {
         "query": "eden organic tamari soy sauce",
         "queryType": "brand_product",
@@ -907,7 +911,9 @@
       "surface": "barcode_scan",
       "origin": "barcode_scan",
       "category": "food_like",
-      "personas": ["stimulant_sensitivity"],
+      "personas": [
+        "stimulant_sensitivity"
+      ],
       "input": {
         "barcode": "00810070875169"
       },
@@ -954,7 +960,9 @@
       "surface": "search_origin_result",
       "origin": "search_result",
       "category": "food_like",
-      "personas": ["stimulant_sensitivity"],
+      "personas": [
+        "stimulant_sensitivity"
+      ],
       "input": {
         "query": "chamberlain blue matcha latte oat milk",
         "queryType": "brand_product",
@@ -1133,7 +1141,9 @@
       "surface": "barcode_scan",
       "origin": "barcode_scan",
       "category": "food_like",
-      "personas": ["dairy_allergy"],
+      "personas": [
+        "dairy_allergy"
+      ],
       "input": {
         "barcode": "00817670010334"
       },
@@ -1180,7 +1190,9 @@
       "surface": "search_origin_result",
       "origin": "search_result",
       "category": "food_like",
-      "personas": ["dairy_allergy"],
+      "personas": [
+        "dairy_allergy"
+      ],
       "input": {
         "query": "alter eco silk velvet truffles",
         "queryType": "brand_product",
@@ -1587,6 +1599,456 @@
           "productId": "142898",
           "barcode": "00769828221607",
           "selectedAnchor": "Flavored Milk Drink"
+        }
+      },
+      "gates": [
+        "click_through_seed_consistency",
+        "canonical_product_consistency",
+        "selected_anchor_consistency",
+        "warning_consistency"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "scan_food_like_bhu_protein_bites_route_honesty",
+      "surface": "barcode_scan",
+      "origin": "barcode_scan",
+      "category": "food_like",
+      "personas": [],
+      "input": {
+        "barcode": "00858087006497"
+      },
+      "product": {
+        "productId": "120418",
+        "brand": "BHU Foods",
+        "name": "BHU Foods, Protein Bites, Chocolate Chip Cookie Dough, 6 Bites, 0.88 oz (25 g) Each",
+        "barcode": "00858087006497"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "Protein Bites"
+          ],
+          "warn": [
+            "Chocolate Chip Cookie Dough"
+          ],
+          "fail": [
+            "Calcium",
+            "Potassium",
+            "Fiber",
+            "Calories",
+            "Serving Size"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        }
+      },
+      "gates": [
+        "route_health",
+        "selected_anchor_consistency",
+        "unsafe_language"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_origin_food_like_bhu_protein_bites_route_honesty",
+      "surface": "search_origin_result",
+      "origin": "search_result",
+      "category": "food_like",
+      "personas": [],
+      "input": {
+        "query": "bhu foods protein bites chocolate chip cookie dough",
+        "queryType": "brand_product",
+        "searchResultSeed": {
+          "productId": "120418",
+          "barcode": "00858087006497",
+          "upcCode": "00858087006497",
+          "name": "BHU Foods, Protein Bites, Chocolate Chip Cookie Dough, 6 Bites, 0.88 oz (25 g) Each",
+          "brand": "BHU Foods",
+          "category": "Food",
+          "benefit": "Food-like protein bites boundary",
+          "dose": "6 bites",
+          "factsStatus": "partial",
+          "coverageStatus": "not_enough_structured_data"
+        }
+      },
+      "product": {
+        "productId": "120418",
+        "brand": "BHU Foods",
+        "name": "BHU Foods, Protein Bites, Chocolate Chip Cookie Dough, 6 Bites, 0.88 oz (25 g) Each",
+        "barcode": "00858087006497"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "Protein Bites"
+          ],
+          "warn": [
+            "Chocolate Chip Cookie Dough"
+          ],
+          "fail": [
+            "Calcium",
+            "Potassium",
+            "Fiber",
+            "Calories",
+            "Serving Size"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        },
+        "consistency": {
+          "productId": "120418",
+          "barcode": "00858087006497",
+          "selectedAnchor": "Protein Bites"
+        }
+      },
+      "gates": [
+        "click_through_seed_consistency",
+        "canonical_product_consistency",
+        "selected_anchor_consistency",
+        "warning_consistency"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "scan_food_like_hu_simple_milk_chocolate_route_honesty",
+      "surface": "barcode_scan",
+      "origin": "barcode_scan",
+      "category": "food_like",
+      "personas": [],
+      "input": {
+        "barcode": "00850024267930"
+      },
+      "product": {
+        "productId": "116202",
+        "brand": "Hu",
+        "name": "Hu, Simple Milk Chocolate, 2.1 oz (60 g)",
+        "barcode": "00850024267930"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "Milk Chocolate",
+            "Chocolate Bar"
+          ],
+          "warn": [
+            "Simple Chocolate"
+          ],
+          "fail": [
+            "Potas",
+            "Potassium",
+            "Sat Fat",
+            "Calcium",
+            "Iron",
+            "Vitamin D",
+            "Serving Size"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        }
+      },
+      "gates": [
+        "route_health",
+        "selected_anchor_consistency",
+        "unsafe_language"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_origin_food_like_hu_simple_milk_chocolate_route_honesty",
+      "surface": "search_origin_result",
+      "origin": "search_result",
+      "category": "food_like",
+      "personas": [],
+      "input": {
+        "query": "hu simple milk chocolate",
+        "queryType": "brand_product",
+        "searchResultSeed": {
+          "productId": "116202",
+          "barcode": "00850024267930",
+          "upcCode": "00850024267930",
+          "name": "Hu, Simple Milk Chocolate, 2.1 oz (60 g)",
+          "brand": "Hu",
+          "category": "Food",
+          "benefit": "Food-like milk chocolate boundary",
+          "dose": "2.1 oz",
+          "factsStatus": "partial",
+          "coverageStatus": "not_enough_structured_data"
+        }
+      },
+      "product": {
+        "productId": "116202",
+        "brand": "Hu",
+        "name": "Hu, Simple Milk Chocolate, 2.1 oz (60 g)",
+        "barcode": "00850024267930"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "Milk Chocolate",
+            "Chocolate Bar"
+          ],
+          "warn": [
+            "Simple Chocolate"
+          ],
+          "fail": [
+            "Potas",
+            "Potassium",
+            "Sat Fat",
+            "Calcium",
+            "Iron",
+            "Vitamin D",
+            "Serving Size"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        },
+        "consistency": {
+          "productId": "116202",
+          "barcode": "00850024267930",
+          "selectedAnchor": "Milk Chocolate"
+        }
+      },
+      "gates": [
+        "click_through_seed_consistency",
+        "canonical_product_consistency",
+        "selected_anchor_consistency",
+        "warning_consistency"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "scan_food_like_tcho_choco_latte_route_honesty",
+      "surface": "barcode_scan",
+      "origin": "barcode_scan",
+      "category": "food_like",
+      "personas": [],
+      "input": {
+        "barcode": "00812603019767"
+      },
+      "product": {
+        "productId": "155765",
+        "brand": "TCHO",
+        "name": "TCHO, Choco Latte, Milk Chocolate with Coffee, 47% Cacao, 3 Bars, 0.70 oz Each",
+        "barcode": "00812603019767"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "Choco Latte",
+            "Milk Chocolate"
+          ],
+          "warn": [
+            "Coffee"
+          ],
+          "fail": [
+            "Sat Fat",
+            "Sat. Fat",
+            "Potas",
+            "Potassium",
+            "Calcium",
+            "Iron",
+            "Vit. D",
+            "Vitamin D",
+            "Serving Size"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        }
+      },
+      "gates": [
+        "route_health",
+        "selected_anchor_consistency",
+        "unsafe_language"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_origin_food_like_tcho_choco_latte_route_honesty",
+      "surface": "search_origin_result",
+      "origin": "search_result",
+      "category": "food_like",
+      "personas": [],
+      "input": {
+        "query": "tcho choco latte milk chocolate coffee",
+        "queryType": "brand_product",
+        "searchResultSeed": {
+          "productId": "155765",
+          "barcode": "00812603019767",
+          "upcCode": "00812603019767",
+          "name": "TCHO, Choco Latte, Milk Chocolate with Coffee, 47% Cacao, 3 Bars, 0.70 oz Each",
+          "brand": "TCHO",
+          "category": "Food",
+          "benefit": "Food-like choco latte chocolate boundary",
+          "dose": "3 bars",
+          "factsStatus": "partial",
+          "coverageStatus": "not_enough_structured_data"
+        }
+      },
+      "product": {
+        "productId": "155765",
+        "brand": "TCHO",
+        "name": "TCHO, Choco Latte, Milk Chocolate with Coffee, 47% Cacao, 3 Bars, 0.70 oz Each",
+        "barcode": "00812603019767"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "Choco Latte",
+            "Milk Chocolate"
+          ],
+          "warn": [
+            "Coffee"
+          ],
+          "fail": [
+            "Sat Fat",
+            "Sat. Fat",
+            "Potas",
+            "Potassium",
+            "Calcium",
+            "Iron",
+            "Vit. D",
+            "Vitamin D",
+            "Serving Size"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        },
+        "consistency": {
+          "productId": "155765",
+          "barcode": "00812603019767",
+          "selectedAnchor": "Choco Latte"
+        }
+      },
+      "gates": [
+        "click_through_seed_consistency",
+        "canonical_product_consistency",
+        "selected_anchor_consistency",
+        "warning_consistency"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "scan_food_like_bragg_liquid_aminos_soy_protein_seasoning_route_honesty",
+      "surface": "barcode_scan",
+      "origin": "barcode_scan",
+      "category": "food_like",
+      "personas": [],
+      "input": {
+        "barcode": "00074305000164"
+      },
+      "product": {
+        "productId": "38027",
+        "brand": "Bragg",
+        "name": "Bragg, Liquid Aminos, Soy Protein Seasoning, 16 fl oz (473 ml)",
+        "barcode": "00074305000164"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "Liquid Aminos",
+            "Soy Protein Seasoning"
+          ],
+          "warn": [
+            "Aminos"
+          ],
+          "fail": [
+            "Calories",
+            "Total Carbs",
+            "Serving Size"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        }
+      },
+      "gates": [
+        "route_health",
+        "selected_anchor_consistency",
+        "unsafe_language"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_origin_food_like_bragg_liquid_aminos_soy_protein_seasoning_route_honesty",
+      "surface": "search_origin_result",
+      "origin": "search_result",
+      "category": "food_like",
+      "personas": [],
+      "input": {
+        "query": "bragg liquid aminos soy protein seasoning",
+        "queryType": "brand_product",
+        "searchResultSeed": {
+          "productId": "38027",
+          "barcode": "00074305000164",
+          "upcCode": "00074305000164",
+          "name": "Bragg, Liquid Aminos, Soy Protein Seasoning, 16 fl oz (473 ml)",
+          "brand": "Bragg",
+          "category": "Food",
+          "benefit": "Food-like liquid aminos seasoning boundary",
+          "dose": "16 fl oz",
+          "factsStatus": "partial",
+          "coverageStatus": "not_enough_structured_data"
+        }
+      },
+      "product": {
+        "productId": "38027",
+        "brand": "Bragg",
+        "name": "Bragg, Liquid Aminos, Soy Protein Seasoning, 16 fl oz (473 ml)",
+        "barcode": "00074305000164"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "Liquid Aminos",
+            "Soy Protein Seasoning"
+          ],
+          "warn": [
+            "Aminos"
+          ],
+          "fail": [
+            "Calories",
+            "Total Carbs",
+            "Serving Size"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        },
+        "consistency": {
+          "productId": "38027",
+          "barcode": "00074305000164",
+          "selectedAnchor": "Soy Protein Seasoning"
         }
       },
       "gates": [

@@ -1610,6 +1610,108 @@ test('science context keeps title-led beverage foods ahead of brand and mineral 
   assert.doesNotMatch(coffeeMilkContext.ingredientRows[0]?.name ?? '', /potas|calcium|vit\.\s*d|fiber/i);
 });
 
+test('science context keeps title-led snack and seasoning foods ahead of macro noise', () => {
+  const proteinBitesContext = buildIngredientScienceContext({
+    digest: withBrand(
+      buildDigest({
+        labelId: 'fixture-bhu-protein-bites',
+        productName: 'BHU Foods, Protein Bites, Chocolate Chip Cookie Dough',
+        dosageForm: 'Bites',
+        actives: [
+          { name: 'Protein', amount: 10, unit: 'g' },
+          { name: 'Calcium', amount: 40, unit: 'mg' },
+          { name: 'Potassium', amount: 120, unit: 'mg' },
+          { name: 'Fiber', amount: 3, unit: 'g' },
+        ],
+      }),
+      'BHU Foods',
+    ),
+    overlayClaims: null,
+  });
+  const snackMixContext = buildIngredientScienceContext({
+    digest: withBrand(
+      buildDigest({
+        labelId: 'fixture-catalina-protein-snack-mix',
+        productName: 'Catalina Crunch, Protein Snack Mix, Cheddar',
+        dosageForm: 'Snack Mix',
+        actives: [
+          { name: 'Protein', amount: 12, unit: 'g' },
+          { name: 'Calcium', amount: 60, unit: 'mg' },
+          { name: 'Iron', amount: 1, unit: 'mg' },
+          { name: 'Potassium', amount: 180, unit: 'mg' },
+          { name: 'Fiber', amount: 5, unit: 'g' },
+        ],
+      }),
+      'Catalina Crunch',
+    ),
+    overlayClaims: null,
+  });
+  const milkChocolateContext = buildIngredientScienceContext({
+    digest: withBrand(
+      buildDigest({
+        labelId: 'fixture-chocolove-milk-chocolate',
+        productName: 'Chocolove, Almonds & Sea Salt in Milk Chocolate',
+        dosageForm: 'Bar',
+        actives: [
+          { name: 'Sat Fat', amount: 5, unit: 'g' },
+          { name: 'Calcium', amount: 40, unit: 'mg' },
+          { name: 'Potassium', amount: 170, unit: 'mg' },
+          { name: 'Iron', amount: 1, unit: 'mg' },
+        ],
+      }),
+      'Chocolove',
+    ),
+    overlayClaims: null,
+  });
+  const chocoLatteContext = buildIngredientScienceContext({
+    digest: withBrand(
+      buildDigest({
+        labelId: 'fixture-tcho-choco-latte',
+        productName: 'TCHO, Choco Latte, Milk Chocolate with Coffee',
+        dosageForm: 'Bar',
+        actives: [
+          { name: 'Sat. Fat', amount: 4.5, unit: 'g' },
+          { name: 'Calcium', amount: 40, unit: 'mg' },
+          { name: 'Potas', amount: 160, unit: 'mg' },
+          { name: 'Vit. D', amount: 1, unit: 'mcg' },
+          { name: 'Iron', amount: 1, unit: 'mg' },
+        ],
+      }),
+      'TCHO',
+    ),
+    overlayClaims: null,
+  });
+  const liquidAminosContext = buildIngredientScienceContext({
+    digest: withBrand(
+      buildDigest({
+        labelId: 'fixture-bragg-liquid-aminos-soy-protein-seasoning',
+        productName: 'Bragg, Liquid Aminos, Soy Protein Seasoning',
+        dosageForm: 'Liquid',
+        actives: [
+          { name: 'Soy Protein', amount: 310, unit: 'mg' },
+        ],
+      }),
+      'Bragg',
+    ),
+    overlayClaims: null,
+  });
+
+  assert.equal(proteinBitesContext.productArchetype, 'functional_food_like');
+  assert.match(proteinBitesContext.ingredientRows[0]?.name ?? '', /protein\s+bites/i);
+  assert.doesNotMatch(proteinBitesContext.ingredientRows[0]?.name ?? '', /^protein$|calcium|potassium|fiber/i);
+  assert.equal(snackMixContext.productArchetype, 'functional_food_like');
+  assert.match(snackMixContext.ingredientRows[0]?.name ?? '', /protein\s+snack\s+mix/i);
+  assert.doesNotMatch(snackMixContext.ingredientRows[0]?.name ?? '', /^protein$|calcium|iron|potassium|fiber/i);
+  assert.equal(milkChocolateContext.productArchetype, 'functional_food_like');
+  assert.match(milkChocolateContext.ingredientRows[0]?.name ?? '', /milk\s+chocolate|chocolate\s+bar/i);
+  assert.doesNotMatch(milkChocolateContext.ingredientRows[0]?.name ?? '', /sat\.?\s*fat|calcium|potassium|iron/i);
+  assert.equal(chocoLatteContext.productArchetype, 'functional_food_like');
+  assert.match(chocoLatteContext.ingredientRows[0]?.name ?? '', /choco\s+latte|milk\s+chocolate/i);
+  assert.doesNotMatch(chocoLatteContext.ingredientRows[0]?.name ?? '', /sat\.?\s*fat|calcium|potas|vit\.\s*d|iron/i);
+  assert.equal(liquidAminosContext.productArchetype, 'functional_food_like');
+  assert.match(liquidAminosContext.ingredientRows[0]?.name ?? '', /liquid\s+aminos|soy\s+protein\s+seasoning/i);
+});
+
 test('science context creates label-context rows for title-only Greens First and Project 1 powders', () => {
   const greensFirstContext = buildIngredientScienceContext({
     digest: buildDigest({
