@@ -2106,6 +2106,73 @@
         "unsafe_language"
       ],
       "severityOnFail": "P1"
+    },
+    {
+      "id": "search_origin_food_like_ener_c_bubbly_multivitamin_drink_mix_route_honesty",
+      "surface": "search_origin_result",
+      "origin": "search_result",
+      "category": "food_like",
+      "personas": [],
+      "input": {
+        "query": "ener-c bubbly multi-vitamin drink mix variety pack",
+        "queryType": "brand_product",
+        "searchResultSeed": {
+          "productId": "71402",
+          "barcode": "00873024001045",
+          "upcCode": "873024001045",
+          "name": "Ener-C, Bubbly Multi-Vitamin Drink Mix, Variety Pack, 1,000 mg, 30 Packets, 9.9 oz (282.9 g)",
+          "brand": "Ener-C",
+          "category": "Food",
+          "benefit": "Food-like multi-vitamin drink mix boundary",
+          "dose": "30 Packets",
+          "factsStatus": "partial",
+          "coverageStatus": "not_enough_structured_data"
+        }
+      },
+      "product": {
+        "productId": "71402",
+        "brand": "Ener-C",
+        "name": "Ener-C, Bubbly Multi-Vitamin Drink Mix, Variety Pack, 1,000 mg, 30 Packets, 9.9 oz (282.9 g)",
+        "barcode": "00873024001045"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "Bubbly Multi-Vitamin Drink Mix",
+            "Multi-Vitamin Drink Mix",
+            "Drink Mix"
+          ],
+          "warn": [
+            "Multivitamin Drink Mix"
+          ],
+          "fail": [
+            "Multivitamin & Mineral Formula",
+            "Vitamin C",
+            "Magnesium",
+            "Zinc",
+            "Total Carbohydrates",
+            "Serving Size"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        },
+        "consistency": {
+          "productId": "71402",
+          "barcode": "00873024001045",
+          "selectedAnchor": "Bubbly Multi-Vitamin Drink Mix"
+        }
+      },
+      "gates": [
+        "click_through_seed_consistency",
+        "canonical_product_consistency",
+        "selected_anchor_consistency",
+        "warning_consistency"
+      ],
+      "severityOnFail": "P1"
     }
   ]
 }

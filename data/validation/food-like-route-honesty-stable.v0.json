@@ -41,7 +41,8 @@
     "search_origin_food_like_tcho_choco_latte_route_honesty",
     "scan_food_like_bragg_liquid_aminos_soy_protein_seasoning_route_honesty",
     "search_origin_food_like_bragg_liquid_aminos_soy_protein_seasoning_route_honesty",
-    "scan_food_like_ener_c_bubbly_multivitamin_drink_mix_route_honesty"
+    "scan_food_like_ener_c_bubbly_multivitamin_drink_mix_route_honesty",
+    "search_origin_food_like_ener_c_bubbly_multivitamin_drink_mix_route_honesty"
   ],
   "releaseBlocker": true,
   "runner": "runtime_contract_runner",
@@ -53,6 +54,6 @@
     "Tamari, matcha latte, freeze-dried fruit, and chocolate truffles were promoted after live canary showed they are user-visible food-like route honesty boundaries.",
     "Electrolyte drink mix, soy milk powder, and flavored milk drink were promoted after live canary showed brand/mineral noise could otherwise drift the default anchor.",
     "Protein bites, milk chocolate, choco latte, and liquid aminos seasoning are promoted after live canary showed macro/protein rows could otherwise drift food-like anchors.",
-    "Ener-C multi-vitamin drink mix barcode-scan route is promoted after live canary; its search-origin identity drift stays discovery/nightly until the Pauling Labs/Raspberry bundle identity is resolved."
+    "Ener-C multi-vitamin drink mix barcode-scan and search-origin route honesty are promoted after the Pauling Labs/Raspberry bundle display-identity drift was resolved."
   ]
 }

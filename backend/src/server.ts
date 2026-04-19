@@ -65,6 +65,7 @@ import {
   type FactsIdentityType,
   type LnhpdFactsInput,
 } from "./factsDigest.js";
+import { resolvePreferredAnalysisProductIdentity } from "./analysisProductIdentity.js";
 import {
   buildDecisionSupportOverlayAugmentationMeta,
   compileDecisionSupport,
@@ -15670,6 +15671,11 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
         identityValue,
         sourceTypeFinal: false,
       });
+      const preferredProductIdentity = resolvePreferredAnalysisProductIdentity({
+        digestIdentity: digestProductIdentity,
+        overlayClaims,
+        barcodeGtin14,
+      });
       const alignedQuickDigest = await buildMySupplementDigestQuick({
         supplementId: barcodeGtin14,
         barcode,
@@ -15690,7 +15696,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
         patchActivation: alignedPatched.activation,
         overlayClaims,
       });
-      rememberStreamProductIdentity(digestProductIdentity);
+      rememberStreamProductIdentity(preferredProductIdentity);
       const overlaySkeletonBase = buildAnalysisBundleSkeleton({
         digest,
         deterministicSignals,
@@ -15722,9 +15728,9 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
           overlayAugmentationSource: alignedDecisionSupport.overlayAugmentationSource,
           patchActivationCanonical: alignedDecisionSupport.patchActivationCanonical,
           decisionSupportInline: toDecisionSupportInline(alignedDecisionSupport),
-          productIdentity: digestProductIdentity ?? overlaySkeletonBase.meta.productIdentity,
+          productIdentity: preferredProductIdentity ?? overlaySkeletonBase.meta.productIdentity,
         },
-      }, digestProductIdentity);
+      }, preferredProductIdentity);
       return true;
     };
     const authorityRegressionScenarioActive =
@@ -16110,7 +16116,6 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
         identityValue: params.identityValue,
         sourceTypeFinal: false,
       });
-      rememberStreamProductIdentity(digestProductIdentity);
       const dataStatus = params.allowAi
         ? { overview: "pending" as const, usage: "pending" as const, safety: "pending" as const }
         : { overview: "limited" as const, usage: "limited" as const, safety: "limited" as const };
@@ -16128,6 +16133,12 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
       const overlayClaimsByBarcode = overlayClaims
         ? await fetchIherbOverlayClaimsByBarcode(overlayClaims)
         : null;
+      const preferredProductIdentity = resolvePreferredAnalysisProductIdentity({
+        digestIdentity: digestProductIdentity,
+        overlayClaims: overlayClaimsByBarcode,
+        barcodeGtin14: overlayClaims,
+      });
+      rememberStreamProductIdentity(preferredProductIdentity);
       // shared-store contract:
       // - persisted is emitted only after bundle_fast is committed
       // - /api/analysis-section reads from the same shared store keyspace
@@ -16201,9 +16212,9 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
         ...skeletonBase,
         meta: {
           ...skeletonBase.meta,
-          productIdentity: digestProductIdentity ?? skeletonBase.meta.productIdentity,
+          productIdentity: preferredProductIdentity ?? skeletonBase.meta.productIdentity,
         },
-      }, digestProductIdentity);
+      }, preferredProductIdentity);
 
       void upsertAnalysisIdentityCache(
         {
@@ -17637,7 +17648,12 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
           identityValue,
           sourceTypeFinal: false,
         });
-        rememberStreamProductIdentity(digestProductIdentity);
+        const preferredProductIdentity = resolvePreferredAnalysisProductIdentity({
+          digestIdentity: digestProductIdentity,
+          overlayClaims: cachedOverlayClaims,
+          barcodeGtin14,
+        });
+        rememberStreamProductIdentity(preferredProductIdentity);
         const snapshotSkeletonBase = buildAnalysisBundleSkeleton({
           digest,
           deterministicSignals,
@@ -17661,9 +17677,9 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
           ...snapshotSkeletonBase,
           meta: {
             ...snapshotSkeletonBase.meta,
-            productIdentity: digestProductIdentity ?? snapshotSkeletonBase.meta.productIdentity,
+            productIdentity: preferredProductIdentity ?? snapshotSkeletonBase.meta.productIdentity,
           },
-        }, digestProductIdentity);
+        }, preferredProductIdentity);
       };
       const snapshotIsAuthoritativeFastPath = hasBundleOnlyAuthoritativeFastPath(cachedFast.snapshot);
       if (streamAnalysisBundleOnly && !forceStage1 && !snapshotIsAuthoritativeFastPath) {
@@ -17853,7 +17869,12 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
                 identityValue: snapshotStage0Seed.identityValue,
                 sourceTypeFinal: false,
               });
-              rememberStreamProductIdentity(digestProductIdentity);
+              const preferredProductIdentity = resolvePreferredAnalysisProductIdentity({
+                digestIdentity: digestProductIdentity,
+                overlayClaims: cachedOverlayClaims,
+                barcodeGtin14,
+              });
+              rememberStreamProductIdentity(preferredProductIdentity);
               const snapshotSkeletonBase = buildAnalysisBundleSkeleton({
                 digest: snapshotStage0Seed.digest,
                 deterministicSignals,
@@ -17877,9 +17898,9 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
                 ...snapshotSkeletonBase,
                 meta: {
                   ...snapshotSkeletonBase.meta,
-                  productIdentity: digestProductIdentity ?? snapshotSkeletonBase.meta.productIdentity,
+                  productIdentity: preferredProductIdentity ?? snapshotSkeletonBase.meta.productIdentity,
                 },
-              }, digestProductIdentity);
+              }, preferredProductIdentity);
             }
             emitDegradedLimitedRev1AndFinalize("BUNDLE_ONLY_NO_AUTHORITATIVE_MATCH");
             releaseInFlightOnce(new Error("snapshot_bundle_only_skip_stage0"));
