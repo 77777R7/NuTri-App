@@ -140,6 +140,7 @@ const POTASSIUM_SUPPLEMENT_PATTERN = /\bpotassium\s+(?:gluconate|citrate|chlorid
 const MELATONIN_PATTERN = /\bmelatonin\b/i;
 const COCONUT_AMINOS_TITLE_PATTERN = /\bcoconut\s+aminos\b|\bsoy\s+sauce\s+replacement\b/i;
 const PROTEIN_BAR_TITLE_PATTERN = /\b(?:protein|collagen)\s+bars?\b|\b(?:crispy\s+)?snack\s+bars?\b/i;
+const TRAIL_MIX_TITLE_PATTERN = /\btrail\s+mix\b/i;
 const ENERGY_DRINK_MIX_TITLE_PATTERN = /\benergy\s+drink\s+mix\b|\benergy\s+mix\b/i;
 const SEA_MOSS_GEL_TITLE_PATTERN = /\bsea\s+moss\s+gel\b|\bliposomal\s+sea\s+moss\b/i;
 const GEL_FUEL_TITLE_PATTERN = /\bgo\s+gel\b|\bendurance\s+gel\b|\benergy\s+gel\b/i;
@@ -157,7 +158,7 @@ const OMEGA3_ALGAL_TITLE_PATTERN =
   /\balgal\s+oil\b|\balgae\s+oil\b|\bfrom\s+algae\b|\bplant\s+based\s+omega\s*-?\s*3\b|\bschizochytrium\b/i;
 const FLOWER_ESSENCE_TITLE_PATTERN = /\bflower\s+essence\b/i;
 const FUNCTIONAL_FOOD_LIKE_TITLE_PATTERN =
-  /\b(?:ag1|athletic\s+greens|gum|gums|gumm(?:y|ies)|mints?|lozenge|lozenges|freeze\s+dried|juice\s+powder|fruit\s+powder|dragon\s+fruit|smoothie|drink\s+mix|tea\s+bags?|herbal\s+slimming\s+tea|greens\b|green\s+superfood|superfood|vegetable\s+powder|whole\s+food\s+powder|snacks?|snackable|crackers?|crisps?|protein\s+bars?|collagen\s+bars?|snack\s+bars?|sea\s+moss\s+gel|coconut\s+aminos|soy\s+sauce\s+replacement|go\s+gel|endurance\s+gel|energy\s+gel)\b/i;
+  /\b(?:ag1|athletic\s+greens|gum|gums|gumm(?:y|ies)|mints?|lozenge|lozenges|freeze\s+dried|juice\s+powder|fruit\s+powder|dragon\s+fruit|smoothie|drink\s+mix|tea\s+bags?|herbal\s+slimming\s+tea|greens\b|green\s+superfood|superfood|vegetable\s+powder|whole\s+food\s+powder|snacks?|snackable|crackers?|crisps?|trail\s+mix|protein\s+bars?|collagen\s+bars?|snack\s+bars?|sea\s+moss\s+gel|coconut\s+aminos|soy\s+sauce\s+replacement|go\s+gel|endurance\s+gel|energy\s+gel)\b/i;
 const FUNCTIONAL_FOOD_LIKE_INGREDIENT_PATTERN =
   /\b(?:xylitol|erythritol|fiber|dragon\s+fruit|fruit\s+powder|juice\s+powder|spirulina|chlorella|barley\s+grass|wheat\s+grass|digestive\s+enzyme|enzyme\s+assimilation|greens\b|green\s+superfood|superfood)\b/i;
 const FUNCTIONAL_FOOD_LIKE_FORM_PATTERN = /\b(?:gum|mint|lozenge|tea|powder|drink\s*mix|gel)\b/i;
@@ -179,9 +180,9 @@ const FOOD_LIKE_POWDER_TITLE_PATTERN =
 const FOOD_LIKE_CONTEXT_ANCHOR_PATTERN =
   /^(?:greens?|green\s+superfood|food(?:\s|-)?based\s+(?:powder|product)|tea\s+blend|superfood\s+greens?|greens?\s+powder)$/i;
 const FOOD_LIKE_MACRO_ANCHOR_PATTERN =
-  /\b(?:calories|total\s+carbohydrates?|total\s+sugars?|added\s+sugars?|sugar\s+alcohols?|dietary\s+fiber|fiber|sodium|protein|potassium|potas)\b/i;
+  /\b(?:calories|total\s+carbs?|total\s+carbohydrates?|total\s+sugars?|added\s+sugars?|sugar\s+alcohols?|dietary\s+fiber|fiber|sodium|protein|potassium|potas)\b/i;
 const FOOD_LIKE_PRODUCT_TITLE_PATTERN =
-  /\b(?:ag1|athletic\s+greens|greens?\b|supergreens?\b|green\s+superfood|superfood|juice\s+powder|fruit\s+powder|vegetable\s+powder|whole\s+food\s+powder|drink\s+mix|smoothie|tea\s+bags?|snacks?|snackable|crackers?|crisps?|gumm(?:y|ies)|protein\s+bars?|collagen\s+bars?|snack\s+bars?|sea\s+moss\s+gel|coconut\s+aminos|soy\s+sauce\s+replacement|go\s+gel|endurance\s+gel|energy\s+gel)\b/i;
+  /\b(?:ag1|athletic\s+greens|greens?\b|supergreens?\b|green\s+superfood|superfood|juice\s+powder|fruit\s+powder|vegetable\s+powder|whole\s+food\s+powder|drink\s+mix|smoothie|tea\s+bags?|snacks?|snackable|crackers?|crisps?|trail\s+mix|gumm(?:y|ies)|protein\s+bars?|collagen\s+bars?|snack\s+bars?|sea\s+moss\s+gel|coconut\s+aminos|soy\s+sauce\s+replacement|go\s+gel|endurance\s+gel|energy\s+gel)\b/i;
 const PROTEIN_PRODUCT_TITLE_PATTERN = /\bprotein\b/i;
 const FIBER_PRODUCT_TITLE_PATTERN = /\b(?:apple|psyllium|acacia|inulin|prebiotic)?\s*fiber\b/i;
 const ALOE_VERA_TITLE_PATTERN = /\baloe\s+vera\b/i;
@@ -204,7 +205,7 @@ const GENERIC_FORMULA_LINE_PATTERN =
 const ENZYME_SUPPORT_LINE_PATTERN =
   /\b(?:digestive\s+enzyme|enzyme\s+assimilation|cytozymes?|enzyme\s+blend)\b/i;
 const NUTRITION_FACTS_MACRO_PATTERN =
-  /\b(?:calories|total\s+carbohydrates?|total\s+sugars?|added\s+sugars?|sugar\s+alcohols?|dietary\s+fiber|fiber|sodium)\b/i;
+  /\b(?:calories|total\s+carbs?|total\s+carbohydrates?|total\s+sugars?|added\s+sugars?|sugar\s+alcohols?|dietary\s+fiber|fiber|sodium)\b/i;
 const NON_INGREDIENT_AUDIENCE_ROW_PATTERN = /^(?:men|women|adults?|children|kids?|teens?)$/i;
 const BRAND_PREFIX_SEGMENT_PATTERN = /^[a-z0-9][a-z0-9 '&.+-]{1,24}$/i;
 const PARAFIGHT_TITLE_PATTERN = /\bpara\s*fight\b/i;
@@ -1114,6 +1115,8 @@ const deriveScienceTitleRescueRows = (params: {
       extractTitleMatch(titleWithoutBrand, /\b(?:protein|collagen)\s+bars?\b|\b(?:crispy\s+)?snack\s+bars?\b/i) ??
         "Snack Bar",
     );
+  } else if (TRAIL_MIX_TITLE_PATTERN.test(titleWithoutBrand)) {
+    pushRow(extractTitleMatch(titleWithoutBrand, TRAIL_MIX_TITLE_PATTERN) ?? "Trail Mix");
   } else if (ENERGY_DRINK_MIX_TITLE_PATTERN.test(titleWithoutBrand)) {
     pushRow(
       extractTitleMatch(titleWithoutBrand, /\benergy\s+drink\s+mix\b|\benergy\s+mix\b/i) ??

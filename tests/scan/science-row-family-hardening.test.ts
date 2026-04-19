@@ -1977,6 +1977,19 @@ test('science context rescues sparse title-led food-like anchors from residue ro
     }),
     overlayClaims: null,
   });
+  const megaOmegaTrailMixContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-mega-omega-trail-mix-title-rescue',
+      productName: 'Power Up, Premium Trail Mix, Mega Omega',
+      dosageForm: 'Snack',
+      actives: [
+        { name: 'Total Carbs', amount: 16, unit: 'g' },
+        { name: 'Sugars', amount: 8, unit: 'g' },
+        { name: 'Protein', amount: 5, unit: 'g' },
+      ],
+    }),
+    overlayClaims: null,
+  });
 
   assert.match(coconutAminosContext.ingredientRows[0]?.name ?? '', /\bcoconut aminos\b|\bsoy sauce replacement\b/i);
   assert.equal(coconutAminosContext.productArchetype, 'functional_food_like');
@@ -1997,6 +2010,10 @@ test('science context rescues sparse title-led food-like anchors from residue ro
   assert.match(seaMossGelContext.ingredientRows[0]?.name ?? '', /\bsea moss gel\b|\bsea moss\b/i);
   assert.doesNotMatch(seaMossGelContext.ingredientRows[0]?.name ?? '', /\bmonounsaturated fat\b/i);
   assert.equal(seaMossGelContext.productArchetype, 'functional_food_like');
+
+  assert.match(megaOmegaTrailMixContext.ingredientRows[0]?.name ?? '', /\btrail mix\b|\bmega omega\b/i);
+  assert.doesNotMatch(megaOmegaTrailMixContext.ingredientRows[0]?.name ?? '', /\btotal carbs?\b|\bsugars?\b|\bprotein\b/i);
+  assert.equal(megaOmegaTrailMixContext.productArchetype, 'functional_food_like');
 });
 
 test('flower essence titles are not treated as food-like green products', () => {
