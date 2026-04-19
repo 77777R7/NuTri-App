@@ -3,23 +3,23 @@
   "description": "Small promoted slice from lane_c_food_like_route_honesty discovery. Only user-surface-impacting food-like boundaries are included here; broad lane rows stay nightly/discovery.",
   "scenarios": [
     {
-      "id": "scan_food_like_powerup_mega_omega_route_honesty",
+      "id": "scan_food_like_bulletproof_mct_oil_route_honesty",
       "surface": "barcode_scan",
       "origin": "barcode_scan",
       "category": "food_like",
       "personas": [],
-      "input": { "barcode": "00857468006156" },
+      "input": { "barcode": "00815709022716" },
       "product": {
-        "productId": "104067",
-        "brand": "Power Up",
-        "name": "Power Up, Premium Trail Mix, Mega Omega , 14 oz (397 g)",
-        "barcode": "00857468006156"
+        "productId": "142560",
+        "brand": "BulletProof",
+        "name": "BulletProof, Brain Octane® C8 MCT Oil , 15 Packets, 0.5 fl oz (15 ml) Each",
+        "barcode": "00815709022716"
       },
       "expected": {
         "defaultAnchor": {
-          "pass": ["Trail Mix", "Mega Omega", "Snack Mix"],
-          "warn": ["Omega"],
-          "fail": ["Fish Oil", "Softgels", "Serving Size"]
+          "pass": ["Brain Octane C8 MCT Oil", "MCT Oil"],
+          "warn": ["C8"],
+          "fail": ["Total Carbs", "Calories", "Serving Size"]
         },
         "profileWarnings": {
           "mustInclude": [],
@@ -30,47 +30,47 @@
       "severityOnFail": "P1"
     },
     {
-      "id": "search_origin_food_like_powerup_mega_omega_route_honesty",
+      "id": "search_origin_food_like_bulletproof_mct_oil_route_honesty",
       "surface": "search_origin_result",
       "origin": "search_result",
       "category": "food_like",
       "personas": [],
       "input": {
-        "query": "power up mega omega trail mix",
+        "query": "bulletproof brain octane c8 mct oil packets",
         "queryType": "brand_product",
         "searchResultSeed": {
-          "productId": "104067",
-          "barcode": "00857468006156",
-          "upcCode": "00857468006156",
-          "name": "Power Up, Premium Trail Mix, Mega Omega , 14 oz (397 g)",
-          "brand": "Power Up",
+          "productId": "142560",
+          "barcode": "00815709022716",
+          "upcCode": "00815709022716",
+          "name": "BulletProof, Brain Octane® C8 MCT Oil , 15 Packets, 0.5 fl oz (15 ml) Each",
+          "brand": "BulletProof",
           "category": "Food",
-          "benefit": "Food-like trail mix with omega positioning",
-          "dose": "14 oz",
+          "benefit": "Food-like MCT oil packets",
+          "dose": "15 packets",
           "factsStatus": "partial",
           "coverageStatus": "not_enough_structured_data"
         }
       },
       "product": {
-        "productId": "104067",
-        "brand": "Power Up",
-        "name": "Power Up, Premium Trail Mix, Mega Omega , 14 oz (397 g)",
-        "barcode": "00857468006156"
+        "productId": "142560",
+        "brand": "BulletProof",
+        "name": "BulletProof, Brain Octane® C8 MCT Oil , 15 Packets, 0.5 fl oz (15 ml) Each",
+        "barcode": "00815709022716"
       },
       "expected": {
         "defaultAnchor": {
-          "pass": ["Trail Mix", "Mega Omega", "Snack Mix"],
-          "warn": ["Omega"],
-          "fail": ["Fish Oil", "Softgels", "Serving Size"]
+          "pass": ["Brain Octane C8 MCT Oil", "MCT Oil"],
+          "warn": ["C8"],
+          "fail": ["Total Carbs", "Calories", "Serving Size"]
         },
         "profileWarnings": {
           "mustInclude": [],
           "mustNotInclude": ["safe for you"]
         },
         "consistency": {
-          "productId": "104067",
-          "barcode": "00857468006156",
-          "selectedAnchor": "Trail Mix"
+          "productId": "142560",
+          "barcode": "00815709022716",
+          "selectedAnchor": "Brain Octane C8 MCT Oil"
         }
       },
       "gates": [

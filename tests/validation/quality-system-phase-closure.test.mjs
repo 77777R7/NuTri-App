@@ -208,8 +208,8 @@ test("food-like route honesty stable pack promotes only user-surface-impacting d
   assert.equal(routeHonestyPack.summary.categories.food_like, 4);
 
   for (const id of [
-    "scan_food_like_powerup_mega_omega_route_honesty",
-    "search_origin_food_like_powerup_mega_omega_route_honesty",
+    "scan_food_like_bulletproof_mct_oil_route_honesty",
+    "search_origin_food_like_bulletproof_mct_oil_route_honesty",
     "scan_food_like_gfuel_hydration_focus_route_honesty",
     "search_origin_food_like_gfuel_hydration_focus_route_honesty",
   ]) {
