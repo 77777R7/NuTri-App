@@ -2173,6 +2173,444 @@
         "warning_consistency"
       ],
       "severityOnFail": "P1"
+    },
+    {
+      "id": "scan_food_like_pure_indian_foods_mct_oil_route_honesty",
+      "surface": "barcode_scan",
+      "origin": "barcode_scan",
+      "category": "food_like",
+      "personas": [],
+      "input": {
+        "barcode": "00797734506815"
+      },
+      "product": {
+        "productId": "121237",
+        "brand": "Pure Indian Foods",
+        "name": "Pure Indian Foods, MCT Oil, 250 ml",
+        "barcode": "00797734506815"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "MCT Oil"
+          ],
+          "warn": [
+            "Oil"
+          ],
+          "fail": [
+            "Calories",
+            "Total Fat",
+            "Serving Size"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        }
+      },
+      "gates": [
+        "route_health",
+        "selected_anchor_consistency",
+        "unsafe_language"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_origin_food_like_pure_indian_foods_mct_oil_route_honesty",
+      "surface": "search_origin_result",
+      "origin": "search_result",
+      "category": "food_like",
+      "personas": [],
+      "input": {
+        "query": "pure indian foods mct oil",
+        "queryType": "brand_product",
+        "searchResultSeed": {
+          "productId": "121237",
+          "barcode": "00797734506815",
+          "upcCode": "797734506815",
+          "name": "Pure Indian Foods, MCT Oil, 250 ml",
+          "brand": "Pure Indian Foods",
+          "category": "Food",
+          "benefit": "Food-like MCT oil source boundary",
+          "dose": "250 ml",
+          "factsStatus": "partial",
+          "coverageStatus": "not_enough_structured_data"
+        }
+      },
+      "product": {
+        "productId": "121237",
+        "brand": "Pure Indian Foods",
+        "name": "Pure Indian Foods, MCT Oil, 250 ml",
+        "barcode": "00797734506815"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "MCT Oil"
+          ],
+          "warn": [
+            "Oil"
+          ],
+          "fail": [
+            "Calories",
+            "Total Fat",
+            "Serving Size"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        },
+        "consistency": {
+          "productId": "121237",
+          "barcode": "00797734506815",
+          "selectedAnchor": "MCT Oil"
+        }
+      },
+      "gates": [
+        "click_through_seed_consistency",
+        "canonical_product_consistency",
+        "selected_anchor_consistency",
+        "warning_consistency"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "scan_food_like_catalina_crunch_protein_snack_mix_route_honesty",
+      "surface": "barcode_scan",
+      "origin": "barcode_scan",
+      "category": "food_like",
+      "personas": [],
+      "input": {
+        "barcode": "00850017468160"
+      },
+      "product": {
+        "productId": "140892",
+        "brand": "Catalina Crunch",
+        "name": "Catalina Crunch, Protein Snack Mix, Cheddar, 5.25 oz (148 g)",
+        "barcode": "00850017468160"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "Protein Snack Mix",
+            "Snack Mix"
+          ],
+          "warn": [
+            "Protein"
+          ],
+          "fail": [
+            "Calories",
+            "Total Carbs",
+            "Serving Size"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        }
+      },
+      "gates": [
+        "route_health",
+        "selected_anchor_consistency",
+        "unsafe_language"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_origin_food_like_catalina_crunch_protein_snack_mix_route_honesty",
+      "surface": "search_origin_result",
+      "origin": "search_result",
+      "category": "food_like",
+      "personas": [],
+      "input": {
+        "query": "catalina crunch protein snack mix cheddar",
+        "queryType": "brand_product",
+        "searchResultSeed": {
+          "productId": "140892",
+          "barcode": "00850017468160",
+          "upcCode": "850017468160",
+          "name": "Catalina Crunch, Protein Snack Mix, Cheddar, 5.25 oz (148 g)",
+          "brand": "Catalina Crunch",
+          "category": "Food",
+          "benefit": "Food-like protein snack mix boundary",
+          "dose": "5.25 oz",
+          "factsStatus": "partial",
+          "coverageStatus": "not_enough_structured_data"
+        }
+      },
+      "product": {
+        "productId": "140892",
+        "brand": "Catalina Crunch",
+        "name": "Catalina Crunch, Protein Snack Mix, Cheddar, 5.25 oz (148 g)",
+        "barcode": "00850017468160"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "Protein Snack Mix",
+            "Snack Mix"
+          ],
+          "warn": [
+            "Protein"
+          ],
+          "fail": [
+            "Calories",
+            "Total Carbs",
+            "Serving Size"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        },
+        "consistency": {
+          "productId": "140892",
+          "barcode": "00850017468160",
+          "selectedAnchor": "Protein Snack Mix"
+        }
+      },
+      "gates": [
+        "click_through_seed_consistency",
+        "canonical_product_consistency",
+        "selected_anchor_consistency",
+        "warning_consistency"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "scan_food_like_eas_platinum_whey_route_honesty",
+      "surface": "barcode_scan",
+      "origin": "barcode_scan",
+      "category": "food_like",
+      "personas": [],
+      "input": {
+        "barcode": "00811836026399"
+      },
+      "product": {
+        "productId": "130142",
+        "brand": "EAS",
+        "name": "EAS, 100% Platinum Whey, Chocolate Ice Cream , 2 lb (907 g)",
+        "barcode": "00811836026399"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "100% Platinum Whey",
+            "Whey Protein",
+            "Protein"
+          ],
+          "warn": [
+            "Whey"
+          ],
+          "fail": [
+            "Sugars",
+            "Total Carbs",
+            "Potassium",
+            "Calories",
+            "Serving Size"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        }
+      },
+      "gates": [
+        "route_health",
+        "selected_anchor_consistency",
+        "unsafe_language"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_origin_food_like_eas_platinum_whey_route_honesty",
+      "surface": "search_origin_result",
+      "origin": "search_result",
+      "category": "food_like",
+      "personas": [],
+      "input": {
+        "query": "eas 100 platinum whey chocolate ice cream",
+        "queryType": "brand_product",
+        "searchResultSeed": {
+          "productId": "130142",
+          "barcode": "00811836026399",
+          "upcCode": "811836026399",
+          "name": "EAS, 100% Platinum Whey, Chocolate Ice Cream , 2 lb (907 g)",
+          "brand": "EAS",
+          "category": "Food",
+          "benefit": "Food-like whey protein source boundary",
+          "dose": "2 lb",
+          "factsStatus": "partial",
+          "coverageStatus": "not_enough_structured_data"
+        }
+      },
+      "product": {
+        "productId": "130142",
+        "brand": "EAS",
+        "name": "EAS, 100% Platinum Whey, Chocolate Ice Cream , 2 lb (907 g)",
+        "barcode": "00811836026399"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "100% Platinum Whey",
+            "Whey Protein",
+            "Protein"
+          ],
+          "warn": [
+            "Whey"
+          ],
+          "fail": [
+            "Sugars",
+            "Total Carbs",
+            "Potassium",
+            "Calories",
+            "Serving Size"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        },
+        "consistency": {
+          "productId": "130142",
+          "barcode": "00811836026399",
+          "selectedAnchor": "100% Platinum Whey"
+        }
+      },
+      "gates": [
+        "click_through_seed_consistency",
+        "canonical_product_consistency",
+        "selected_anchor_consistency",
+        "warning_consistency"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "scan_food_like_muscletech_nitro_tech_whey_route_honesty",
+      "surface": "barcode_scan",
+      "origin": "barcode_scan",
+      "category": "food_like",
+      "personas": [],
+      "input": {
+        "barcode": "00631656703269"
+      },
+      "product": {
+        "productId": "45234",
+        "brand": "MuscleTech",
+        "name": "MuscleTech, Nitro-Tech™ Whey Protein, Strawberry, 2.2 lbs (998 g)",
+        "barcode": "00631656703269"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "Whey Protein",
+            "Nitro-Tech Whey Protein",
+            "Protein"
+          ],
+          "warn": [
+            "Whey"
+          ],
+          "fail": [
+            "Sugars",
+            "Total Carbs",
+            "Potassium",
+            "Calories",
+            "Serving Size"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        }
+      },
+      "gates": [
+        "route_health",
+        "selected_anchor_consistency",
+        "unsafe_language"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_origin_food_like_muscletech_nitro_tech_whey_route_honesty",
+      "surface": "search_origin_result",
+      "origin": "search_result",
+      "category": "food_like",
+      "personas": [],
+      "input": {
+        "query": "muscletech nitro-tech whey protein strawberry",
+        "queryType": "brand_product",
+        "searchResultSeed": {
+          "productId": "45234",
+          "barcode": "00631656703269",
+          "upcCode": "631656703269",
+          "name": "MuscleTech, Nitro-Tech™ Whey Protein, Strawberry, 2.2 lbs (998 g)",
+          "brand": "MuscleTech",
+          "category": "Food",
+          "benefit": "Food-like whey protein source boundary",
+          "dose": "2.2 lbs",
+          "factsStatus": "partial",
+          "coverageStatus": "not_enough_structured_data"
+        }
+      },
+      "product": {
+        "productId": "45234",
+        "brand": "MuscleTech",
+        "name": "MuscleTech, Nitro-Tech™ Whey Protein, Strawberry, 2.2 lbs (998 g)",
+        "barcode": "00631656703269"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "Whey Protein",
+            "Nitro-Tech Whey Protein",
+            "Protein"
+          ],
+          "warn": [
+            "Whey"
+          ],
+          "fail": [
+            "Sugars",
+            "Total Carbs",
+            "Potassium",
+            "Calories",
+            "Serving Size"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        },
+        "consistency": {
+          "productId": "45234",
+          "barcode": "00631656703269",
+          "selectedAnchor": "Whey Protein"
+        }
+      },
+      "gates": [
+        "click_through_seed_consistency",
+        "canonical_product_consistency",
+        "selected_anchor_consistency",
+        "warning_consistency"
+      ],
+      "severityOnFail": "P1"
     }
   ]
 }

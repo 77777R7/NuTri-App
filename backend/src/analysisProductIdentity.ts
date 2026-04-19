@@ -45,6 +45,7 @@ const looksLikeWeakVariantOnlyName = (name: string): boolean => {
   if (hasProductFamilyCue(normalized)) return false;
   const tokens = normalized.split(/\s+/).filter(Boolean);
   if (tokens.length <= 2 && WEAK_VARIANT_RE.test(normalized)) return true;
+  if (tokens.length <= 4 && WEAK_VARIANT_RE.test(normalized)) return true;
   return tokens.length <= 1;
 };
 
