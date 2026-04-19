@@ -57,6 +57,14 @@ const buildDigest = (params: {
   },
 });
 
+const withBrand = (digest: FactsDigest, brandDisplay: string): FactsDigest => ({
+  ...digest,
+  product: {
+    ...digest.product,
+    brandDisplay,
+  },
+});
+
 test('row-level family inference does not let zinc or calcium inherit vitamin C family', () => {
   const digest = buildDigest({
     labelId: 'fixture-vitamin-c-zinc-calcium',
@@ -1517,6 +1525,89 @@ test('science context uses food-like label anchors instead of macro rows for gre
   assert.equal(snackContext.productArchetype, 'functional_food_like');
   assert.match(snackContext.ingredientRows[0]?.name ?? '', /food-based product/i);
   assert.doesNotMatch(snackContext.ingredientRows[0]?.name ?? '', /protein|potassium/i);
+});
+
+test('science context keeps title-led beverage foods ahead of brand and mineral noise', () => {
+  const lairdContext = buildIngredientScienceContext({
+    digest: withBrand(
+      buildDigest({
+        labelId: 'fixture-laird-superfood-hydrate-electrolyte-drink-mix',
+        productName: 'Laird Superfood, Hydrate Coconut Water, Electrolyte Drink Mix, Lemon',
+        dosageForm: 'Powder',
+        actives: [
+          { name: 'Magnesium', amount: 22, unit: 'mg' },
+          { name: 'Calcium', amount: 12, unit: 'mg' },
+          { name: 'Iron', amount: 1, unit: 'mg' },
+          { name: 'Potassium', amount: 220, unit: 'mg' },
+        ],
+      }),
+      'Laird Superfood',
+    ),
+    overlayClaims: null,
+  });
+  const soyMilkContext = buildIngredientScienceContext({
+    digest: withBrand(
+      buildDigest({
+        labelId: 'fixture-now-real-food-organic-soy-milk-powder',
+        productName: 'NOW Foods, Real Food, Organic Soy Milk Powder',
+        dosageForm: 'Powder',
+        actives: [
+          { name: 'Potassium', amount: 330, unit: 'mg' },
+          { name: 'Calcium', amount: 30, unit: 'mg' },
+          { name: 'Iron', amount: 1.4, unit: 'mg' },
+          { name: 'Fiber', amount: 2, unit: 'g' },
+        ],
+      }),
+      'NOW Foods',
+    ),
+    overlayClaims: null,
+  });
+  const bananaMilkContext = buildIngredientScienceContext({
+    digest: withBrand(
+      buildDigest({
+        labelId: 'fixture-binggrae-flavored-milk-drink-banana',
+        productName: 'Binggrae, Flavored Milk Drink, Banana',
+        dosageForm: 'Drink',
+        actives: [
+          { name: 'Potassium', amount: 320, unit: 'mg' },
+          { name: 'Calcium', amount: 90, unit: 'mg' },
+          { name: 'Fiber', amount: 1, unit: 'g' },
+        ],
+      }),
+      'Binggrae',
+    ),
+    overlayClaims: null,
+  });
+  const coffeeMilkContext = buildIngredientScienceContext({
+    digest: withBrand(
+      buildDigest({
+        labelId: 'fixture-binggrae-flavored-milk-drink-coffee',
+        productName: 'Binggrae, Flavored Milk Drink, Coffee',
+        dosageForm: 'Drink',
+        actives: [
+          { name: 'Potas', amount: 300, unit: 'mg' },
+          { name: 'Calcium', amount: 100, unit: 'mg' },
+          { name: 'Vit. D', amount: 2, unit: 'mcg' },
+          { name: 'Fiber', amount: 1, unit: 'g' },
+        ],
+      }),
+      'Binggrae',
+    ),
+    overlayClaims: null,
+  });
+
+  assert.equal(lairdContext.productArchetype, 'functional_food_like');
+  assert.match(lairdContext.ingredientRows[0]?.name ?? '', /electrolyte\s+drink\s+mix|hydrate\s+coconut\s+water|electrolyte/i);
+  assert.doesNotMatch(lairdContext.ingredientRows[0]?.name ?? '', /greens|magnesium|calcium|iron|potassium/i);
+  assert.equal(soyMilkContext.productArchetype, 'functional_food_like');
+  assert.match(soyMilkContext.ingredientRows[0]?.name ?? '', /soy\s+milk\s+powder/i);
+  assert.doesNotMatch(soyMilkContext.ingredientRows[0]?.name ?? '', /potassium|calcium|iron|fiber/i);
+  assert.equal(bananaMilkContext.productArchetype, 'functional_food_like');
+  assert.match(bananaMilkContext.ingredientRows[0]?.name ?? '', /flavored\s+milk\s+drink|milk\s+drink/i);
+  assert.doesNotMatch(bananaMilkContext.ingredientRows[0]?.name ?? '', /potassium|calcium|fiber/i);
+  assert.equal(coffeeMilkContext.productArchetype, 'functional_food_like');
+  assert.match(coffeeMilkContext.ingredientRows[0]?.name ?? '', /flavored\s+milk\s+drink|milk\s+drink/i);
+  assert.doesNotMatch(coffeeMilkContext.ingredientRows[0]?.name ?? '', /potas|calcium|vit\.\s*d|fiber/i);
 });
 
 test('science context creates label-context rows for title-only Greens First and Project 1 powders', () => {

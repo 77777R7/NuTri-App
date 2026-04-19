@@ -1240,6 +1240,362 @@
         "warning_consistency"
       ],
       "severityOnFail": "P1"
+    },
+    {
+      "id": "scan_food_like_laird_hydrate_electrolyte_drink_mix_route_honesty",
+      "surface": "barcode_scan",
+      "origin": "barcode_scan",
+      "category": "food_like",
+      "personas": [
+        "fitness_recovery_goal"
+      ],
+      "input": {
+        "barcode": "00810005132992"
+      },
+      "product": {
+        "productId": "143675",
+        "brand": "Laird Superfood",
+        "name": "Laird Superfood, Hydrate Coconut Water, Electrolyte Drink Mix, Lemon, 10 Packs, 0.3 oz (9 g) Each",
+        "barcode": "00810005132992"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "Electrolyte Drink Mix",
+            "Hydrate Coconut Water",
+            "Electrolyte"
+          ],
+          "warn": [
+            "Drink Mix"
+          ],
+          "fail": [
+            "Greens",
+            "Magnesium",
+            "Calcium",
+            "Iron",
+            "Potassium",
+            "Calories",
+            "Serving Size"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        }
+      },
+      "gates": [
+        "route_health",
+        "selected_anchor_consistency",
+        "goal_relevance",
+        "unsafe_language"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_origin_food_like_laird_hydrate_electrolyte_drink_mix_route_honesty",
+      "surface": "search_origin_result",
+      "origin": "search_result",
+      "category": "food_like",
+      "personas": [
+        "fitness_recovery_goal"
+      ],
+      "input": {
+        "query": "laird hydrate coconut water electrolyte drink mix lemon",
+        "queryType": "brand_product",
+        "searchResultSeed": {
+          "productId": "143675",
+          "barcode": "00810005132992",
+          "upcCode": "00810005132992",
+          "name": "Laird Superfood, Hydrate Coconut Water, Electrolyte Drink Mix, Lemon, 10 Packs, 0.3 oz (9 g) Each",
+          "brand": "Laird Superfood",
+          "category": "Food",
+          "benefit": "Food-like electrolyte drink mix boundary",
+          "dose": "10 packs",
+          "factsStatus": "partial",
+          "coverageStatus": "not_enough_structured_data"
+        }
+      },
+      "product": {
+        "productId": "143675",
+        "brand": "Laird Superfood",
+        "name": "Laird Superfood, Hydrate Coconut Water, Electrolyte Drink Mix, Lemon, 10 Packs, 0.3 oz (9 g) Each",
+        "barcode": "00810005132992"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "Electrolyte Drink Mix",
+            "Hydrate Coconut Water",
+            "Electrolyte"
+          ],
+          "warn": [
+            "Drink Mix"
+          ],
+          "fail": [
+            "Greens",
+            "Magnesium",
+            "Calcium",
+            "Iron",
+            "Potassium",
+            "Calories",
+            "Serving Size"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        },
+        "consistency": {
+          "productId": "143675",
+          "barcode": "00810005132992",
+          "selectedAnchor": "Electrolyte Drink Mix"
+        }
+      },
+      "gates": [
+        "click_through_seed_consistency",
+        "canonical_product_consistency",
+        "selected_anchor_consistency",
+        "warning_consistency"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "scan_food_like_now_soy_milk_powder_route_honesty",
+      "surface": "barcode_scan",
+      "origin": "barcode_scan",
+      "category": "food_like",
+      "personas": [
+        "soy_allergy"
+      ],
+      "input": {
+        "barcode": "00733739058362"
+      },
+      "product": {
+        "productId": "156822",
+        "brand": "NOW Foods",
+        "name": "NOW Foods, Real Food, Organic Soy Milk Powder, 14 oz (397 g)",
+        "barcode": "00733739058362"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "Soy Milk Powder",
+            "Soy Milk"
+          ],
+          "warn": [
+            "Soy"
+          ],
+          "fail": [
+            "Potassium",
+            "Calcium",
+            "Iron",
+            "Fiber",
+            "Calories",
+            "Serving Size"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        }
+      },
+      "gates": [
+        "route_health",
+        "selected_anchor_consistency",
+        "unsafe_language"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_origin_food_like_now_soy_milk_powder_route_honesty",
+      "surface": "search_origin_result",
+      "origin": "search_result",
+      "category": "food_like",
+      "personas": [
+        "soy_allergy"
+      ],
+      "input": {
+        "query": "now foods real food organic soy milk powder",
+        "queryType": "brand_product",
+        "searchResultSeed": {
+          "productId": "156822",
+          "barcode": "00733739058362",
+          "upcCode": "00733739058362",
+          "name": "NOW Foods, Real Food, Organic Soy Milk Powder, 14 oz (397 g)",
+          "brand": "NOW Foods",
+          "category": "Food",
+          "benefit": "Food-like soy milk powder boundary",
+          "dose": "14 oz",
+          "factsStatus": "partial",
+          "coverageStatus": "not_enough_structured_data"
+        }
+      },
+      "product": {
+        "productId": "156822",
+        "brand": "NOW Foods",
+        "name": "NOW Foods, Real Food, Organic Soy Milk Powder, 14 oz (397 g)",
+        "barcode": "00733739058362"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "Soy Milk Powder",
+            "Soy Milk"
+          ],
+          "warn": [
+            "Soy"
+          ],
+          "fail": [
+            "Potassium",
+            "Calcium",
+            "Iron",
+            "Fiber",
+            "Calories",
+            "Serving Size"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        },
+        "consistency": {
+          "productId": "156822",
+          "barcode": "00733739058362",
+          "selectedAnchor": "Soy Milk Powder"
+        }
+      },
+      "gates": [
+        "click_through_seed_consistency",
+        "canonical_product_consistency",
+        "selected_anchor_consistency",
+        "warning_consistency"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "scan_food_like_binggrae_banana_milk_drink_route_honesty",
+      "surface": "barcode_scan",
+      "origin": "barcode_scan",
+      "category": "food_like",
+      "personas": [
+        "dairy_allergy"
+      ],
+      "input": {
+        "barcode": "00769828221607"
+      },
+      "product": {
+        "productId": "142898",
+        "brand": "Binggrae",
+        "name": "Binggrae, Flavored Milk Drink, Banana, 6 Cartons, 6.8 fl oz (200 ml) Each",
+        "barcode": "00769828221607"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "Flavored Milk Drink",
+            "Milk Drink"
+          ],
+          "warn": [
+            "Banana"
+          ],
+          "fail": [
+            "Potassium",
+            "Potas",
+            "Calcium",
+            "Fiber",
+            "Calories",
+            "Serving Size"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        }
+      },
+      "gates": [
+        "route_health",
+        "selected_anchor_consistency",
+        "unsafe_language"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_origin_food_like_binggrae_banana_milk_drink_route_honesty",
+      "surface": "search_origin_result",
+      "origin": "search_result",
+      "category": "food_like",
+      "personas": [
+        "dairy_allergy"
+      ],
+      "input": {
+        "query": "binggrae flavored milk drink banana",
+        "queryType": "brand_product",
+        "searchResultSeed": {
+          "productId": "142898",
+          "barcode": "00769828221607",
+          "upcCode": "00769828221607",
+          "name": "Binggrae, Flavored Milk Drink, Banana, 6 Cartons, 6.8 fl oz (200 ml) Each",
+          "brand": "Binggrae",
+          "category": "Food",
+          "benefit": "Food-like flavored milk drink boundary",
+          "dose": "6 cartons",
+          "factsStatus": "partial",
+          "coverageStatus": "not_enough_structured_data"
+        }
+      },
+      "product": {
+        "productId": "142898",
+        "brand": "Binggrae",
+        "name": "Binggrae, Flavored Milk Drink, Banana, 6 Cartons, 6.8 fl oz (200 ml) Each",
+        "barcode": "00769828221607"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "Flavored Milk Drink",
+            "Milk Drink"
+          ],
+          "warn": [
+            "Banana"
+          ],
+          "fail": [
+            "Potassium",
+            "Potas",
+            "Calcium",
+            "Fiber",
+            "Calories",
+            "Serving Size"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        },
+        "consistency": {
+          "productId": "142898",
+          "barcode": "00769828221607",
+          "selectedAnchor": "Flavored Milk Drink"
+        }
+      },
+      "gates": [
+        "click_through_seed_consistency",
+        "canonical_product_consistency",
+        "selected_anchor_consistency",
+        "warning_consistency"
+      ],
+      "severityOnFail": "P1"
     }
   ]
 }
