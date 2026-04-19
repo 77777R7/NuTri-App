@@ -159,6 +159,164 @@
         "warning_consistency"
       ],
       "severityOnFail": "P1"
+    },
+    {
+      "id": "scan_food_like_powerup_mega_omega_route_honesty",
+      "surface": "barcode_scan",
+      "origin": "barcode_scan",
+      "category": "food_like",
+      "personas": [],
+      "input": { "barcode": "00857468006156" },
+      "product": {
+        "productId": "104067",
+        "brand": "Power Up",
+        "name": "Power Up, Premium Trail Mix, Mega Omega , 14 oz (397 g)",
+        "barcode": "00857468006156"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": ["Trail Mix", "Mega Omega Trail Mix"],
+          "warn": ["Mega Omega", "Omega"],
+          "fail": ["Total Carbs", "Sugars", "Calories", "Serving Size"]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": ["safe for you"]
+        }
+      },
+      "gates": ["route_health", "default_anchor", "unsafe_language"],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_origin_food_like_powerup_mega_omega_route_honesty",
+      "surface": "search_origin_result",
+      "origin": "search_result",
+      "category": "food_like",
+      "personas": [],
+      "input": {
+        "query": "power up mega omega trail mix",
+        "queryType": "brand_product",
+        "searchResultSeed": {
+          "productId": "104067",
+          "barcode": "00857468006156",
+          "upcCode": "00857468006156",
+          "name": "Power Up, Premium Trail Mix, Mega Omega , 14 oz (397 g)",
+          "brand": "Power Up",
+          "category": "Food",
+          "benefit": "Food-like omega trail mix boundary",
+          "dose": "14 oz",
+          "factsStatus": "partial",
+          "coverageStatus": "not_enough_structured_data"
+        }
+      },
+      "product": {
+        "productId": "104067",
+        "brand": "Power Up",
+        "name": "Power Up, Premium Trail Mix, Mega Omega , 14 oz (397 g)",
+        "barcode": "00857468006156"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": ["Trail Mix", "Mega Omega Trail Mix"],
+          "warn": ["Mega Omega", "Omega"],
+          "fail": ["Total Carbs", "Sugars", "Calories", "Serving Size"]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": ["safe for you"]
+        },
+        "consistency": {
+          "productId": "104067",
+          "barcode": "00857468006156",
+          "selectedAnchor": "Trail Mix"
+        }
+      },
+      "gates": [
+        "click_through_seed_consistency",
+        "canonical_product_consistency",
+        "selected_anchor_consistency",
+        "warning_consistency"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "scan_food_like_mt_capra_clean_whey_route_honesty",
+      "surface": "barcode_scan",
+      "origin": "barcode_scan",
+      "category": "food_like",
+      "personas": [],
+      "input": { "barcode": "00633924720060" },
+      "product": {
+        "productId": "85012",
+        "brand": "Mt. Capra",
+        "name": "Mt. Capra, Clean Whey Protein, Unsweetened, 16 oz (453 g)",
+        "barcode": "00633924720060"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": ["Whey Protein", "Clean Whey Protein", "Protein"],
+          "warn": ["Whey"],
+          "fail": ["Sugars", "Total Carbs", "Potassium", "Calories", "Serving Size"]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": ["safe for you"]
+        }
+      },
+      "gates": ["route_health", "default_anchor", "unsafe_language"],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_origin_food_like_mt_capra_clean_whey_route_honesty",
+      "surface": "search_origin_result",
+      "origin": "search_result",
+      "category": "food_like",
+      "personas": [],
+      "input": {
+        "query": "mt capra clean whey protein unsweetened",
+        "queryType": "brand_product",
+        "searchResultSeed": {
+          "productId": "85012",
+          "barcode": "00633924720060",
+          "upcCode": "00633924720060",
+          "name": "Mt. Capra, Clean Whey Protein, Unsweetened, 16 oz (453 g)",
+          "brand": "Mt. Capra",
+          "category": "Food",
+          "benefit": "Food-like whey protein source boundary",
+          "dose": "16 oz",
+          "factsStatus": "partial",
+          "coverageStatus": "not_enough_structured_data"
+        }
+      },
+      "product": {
+        "productId": "85012",
+        "brand": "Mt. Capra",
+        "name": "Mt. Capra, Clean Whey Protein, Unsweetened, 16 oz (453 g)",
+        "barcode": "00633924720060"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": ["Whey Protein", "Clean Whey Protein", "Protein"],
+          "warn": ["Whey"],
+          "fail": ["Sugars", "Total Carbs", "Potassium", "Calories", "Serving Size"]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": ["safe for you"]
+        },
+        "consistency": {
+          "productId": "85012",
+          "barcode": "00633924720060",
+          "selectedAnchor": "Whey Protein"
+        }
+      },
+      "gates": [
+        "click_through_seed_consistency",
+        "canonical_product_consistency",
+        "selected_anchor_consistency",
+        "warning_consistency"
+      ],
+      "severityOnFail": "P1"
     }
   ]
 }

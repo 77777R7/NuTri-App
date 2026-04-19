@@ -202,16 +202,20 @@ test("food-like route honesty stable pack promotes only user-surface-impacting d
   const routeHonestyPack = buildCuratedValidationPack({ pack: mergedPack, config });
   assert.equal(routeHonestyPack.metadata.releaseBlocker, true);
   assert.equal(routeHonestyPack.metadata.runner, "runtime_contract_runner");
-  assert.equal(routeHonestyPack.summary.total, 4);
-  assert.equal(routeHonestyPack.summary.surfaces.barcode_scan, 2);
-  assert.equal(routeHonestyPack.summary.surfaces.search_origin_result, 2);
-  assert.equal(routeHonestyPack.summary.categories.food_like, 4);
+  assert.equal(routeHonestyPack.summary.total, 8);
+  assert.equal(routeHonestyPack.summary.surfaces.barcode_scan, 4);
+  assert.equal(routeHonestyPack.summary.surfaces.search_origin_result, 4);
+  assert.equal(routeHonestyPack.summary.categories.food_like, 8);
 
   for (const id of [
     "scan_food_like_bulletproof_mct_oil_route_honesty",
     "search_origin_food_like_bulletproof_mct_oil_route_honesty",
     "scan_food_like_gfuel_hydration_focus_route_honesty",
     "search_origin_food_like_gfuel_hydration_focus_route_honesty",
+    "scan_food_like_powerup_mega_omega_route_honesty",
+    "search_origin_food_like_powerup_mega_omega_route_honesty",
+    "scan_food_like_mt_capra_clean_whey_route_honesty",
+    "search_origin_food_like_mt_capra_clean_whey_route_honesty",
   ]) {
     assert.ok(routeHonestyPack.scenarios.some((scenario) => scenario.id === id), `missing ${id}`);
   }
