@@ -50,7 +50,15 @@
     "scan_food_like_eas_platinum_whey_route_honesty",
     "search_origin_food_like_eas_platinum_whey_route_honesty",
     "scan_food_like_muscletech_nitro_tech_whey_route_honesty",
-    "search_origin_food_like_muscletech_nitro_tech_whey_route_honesty"
+    "search_origin_food_like_muscletech_nitro_tech_whey_route_honesty",
+    "scan_food_like_betterbody_coconut_aminos_route_honesty",
+    "search_origin_food_like_betterbody_coconut_aminos_route_honesty",
+    "scan_food_like_celestial_sleepytime_melatonin_tea_route_honesty",
+    "search_origin_food_like_celestial_sleepytime_melatonin_tea_route_honesty",
+    "scan_food_like_lake_avenue_energy_drink_mix_route_honesty",
+    "search_origin_food_like_lake_avenue_energy_drink_mix_route_honesty",
+    "scan_food_like_amazing_grass_kidz_superfood_route_honesty",
+    "search_origin_food_like_amazing_grass_kidz_superfood_route_honesty"
   ],
   "releaseBlocker": true,
   "runner": "runtime_contract_runner",
@@ -63,6 +71,7 @@
     "Electrolyte drink mix, soy milk powder, and flavored milk drink were promoted after live canary showed brand/mineral noise could otherwise drift the default anchor.",
     "Protein bites, milk chocolate, choco latte, and liquid aminos seasoning are promoted after live canary showed macro/protein rows could otherwise drift food-like anchors.",
     "Ener-C multi-vitamin drink mix barcode-scan and search-origin route honesty are promoted after the Pauling Labs/Raspberry bundle display-identity drift was resolved.",
-    "Pure Indian Foods MCT Oil, Catalina Crunch Protein Snack Mix, EAS Platinum Whey, and MuscleTech Nitro-Tech Whey are promoted from the latest discovery report because they cover user-visible omega oil, snack/protein, and dairy source route boundaries."
+    "Pure Indian Foods MCT Oil, Catalina Crunch Protein Snack Mix, EAS Platinum Whey, and MuscleTech Nitro-Tech Whey are promoted from the latest discovery report because they cover user-visible omega oil, snack/protein, and dairy source route boundaries.",
+    "BetterBody Coconut Aminos, Celestial Sleepytime Melatonin Tea, Lake Avenue Energy Drink Mix, and Amazing Grass Kidz Superfood are promoted from nightly discovery because they cover user-visible condiment/source, sleep beverage, stimulant drink mix, and kids greens route boundaries."
   ]
 }

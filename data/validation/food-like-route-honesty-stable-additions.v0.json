@@ -2611,6 +2611,454 @@
         "warning_consistency"
       ],
       "severityOnFail": "P1"
+    },
+    {
+      "id": "scan_food_like_betterbody_coconut_aminos_route_honesty",
+      "surface": "barcode_scan",
+      "origin": "barcode_scan",
+      "category": "food_like",
+      "personas": [],
+      "input": {
+        "barcode": "00856260006937"
+      },
+      "product": {
+        "productId": "114934",
+        "brand": "BetterBody Foods",
+        "name": "BetterBody Foods, Organic Coconut Aminos, Soy Sauce Replacement, 16.9 fl oz (500 ml)",
+        "barcode": "00856260006937"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "Coconut Aminos",
+            "Soy Sauce Replacement"
+          ],
+          "warn": [
+            "Aminos"
+          ],
+          "fail": [
+            "Niacin",
+            "Calories",
+            "Sodium",
+            "Serving Size"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        }
+      },
+      "gates": [
+        "route_health",
+        "selected_anchor_consistency",
+        "unsafe_language"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_origin_food_like_betterbody_coconut_aminos_route_honesty",
+      "surface": "search_origin_result",
+      "origin": "search_result",
+      "category": "food_like",
+      "personas": [],
+      "input": {
+        "query": "betterbody organic coconut aminos soy sauce replacement",
+        "queryType": "brand_product",
+        "searchResultSeed": {
+          "productId": "114934",
+          "barcode": "00856260006937",
+          "upcCode": "856260006937",
+          "name": "BetterBody Foods, Organic Coconut Aminos, Soy Sauce Replacement, 16.9 fl oz (500 ml)",
+          "brand": "BetterBody Foods",
+          "category": "Food",
+          "benefit": "Food-like coconut aminos condiment source boundary",
+          "dose": "16.9 fl oz",
+          "factsStatus": "partial",
+          "coverageStatus": "not_enough_structured_data"
+        }
+      },
+      "product": {
+        "productId": "114934",
+        "brand": "BetterBody Foods",
+        "name": "BetterBody Foods, Organic Coconut Aminos, Soy Sauce Replacement, 16.9 fl oz (500 ml)",
+        "barcode": "00856260006937"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "Coconut Aminos",
+            "Soy Sauce Replacement"
+          ],
+          "warn": [
+            "Aminos"
+          ],
+          "fail": [
+            "Niacin",
+            "Calories",
+            "Sodium",
+            "Serving Size"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        },
+        "consistency": {
+          "productId": "114934",
+          "barcode": "00856260006937",
+          "selectedAnchor": "Coconut Aminos"
+        }
+      },
+      "gates": [
+        "click_through_seed_consistency",
+        "canonical_product_consistency",
+        "selected_anchor_consistency",
+        "warning_consistency"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "scan_food_like_celestial_sleepytime_melatonin_tea_route_honesty",
+      "surface": "barcode_scan",
+      "origin": "barcode_scan",
+      "category": "food_like",
+      "personas": [],
+      "input": {
+        "barcode": "00070734546877"
+      },
+      "product": {
+        "productId": "134837",
+        "brand": "Celestial Seasonings",
+        "name": "Celestial Seasonings, Wellness Tea, Sleepytime® Melatonin, Caffeine Free, 18 Tea Bags, 0.75 oz (21 g)",
+        "barcode": "00070734546877"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "Tea blend",
+            "Sleepytime Melatonin",
+            "Melatonin Tea"
+          ],
+          "warn": [
+            "Melatonin"
+          ],
+          "fail": [
+            "Caffeine",
+            "Calories",
+            "Serving Size"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        }
+      },
+      "gates": [
+        "route_health",
+        "selected_anchor_consistency",
+        "unsafe_language"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_origin_food_like_celestial_sleepytime_melatonin_tea_route_honesty",
+      "surface": "search_origin_result",
+      "origin": "search_result",
+      "category": "food_like",
+      "personas": [],
+      "input": {
+        "query": "celestial sleepytime melatonin caffeine free tea",
+        "queryType": "brand_product",
+        "searchResultSeed": {
+          "productId": "134837",
+          "barcode": "00070734546877",
+          "upcCode": "070734546877",
+          "name": "Celestial Seasonings, Wellness Tea, Sleepytime® Melatonin, Caffeine Free, 18 Tea Bags, 0.75 oz (21 g)",
+          "brand": "Celestial Seasonings",
+          "category": "Food",
+          "benefit": "Food-like sleep tea with melatonin boundary",
+          "dose": "18 tea bags",
+          "factsStatus": "partial",
+          "coverageStatus": "not_enough_structured_data"
+        }
+      },
+      "product": {
+        "productId": "134837",
+        "brand": "Celestial Seasonings",
+        "name": "Celestial Seasonings, Wellness Tea, Sleepytime® Melatonin, Caffeine Free, 18 Tea Bags, 0.75 oz (21 g)",
+        "barcode": "00070734546877"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "Tea blend",
+            "Sleepytime Melatonin",
+            "Melatonin Tea"
+          ],
+          "warn": [
+            "Melatonin"
+          ],
+          "fail": [
+            "Caffeine",
+            "Calories",
+            "Serving Size"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        },
+        "consistency": {
+          "productId": "134837",
+          "barcode": "00070734546877",
+          "selectedAnchor": "Tea blend"
+        }
+      },
+      "gates": [
+        "click_through_seed_consistency",
+        "canonical_product_consistency",
+        "selected_anchor_consistency",
+        "warning_consistency"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "scan_food_like_lake_avenue_energy_drink_mix_route_honesty",
+      "surface": "barcode_scan",
+      "origin": "barcode_scan",
+      "category": "food_like",
+      "personas": [],
+      "input": {
+        "barcode": "00898220020980"
+      },
+      "product": {
+        "productId": "108263",
+        "brand": "Lake Avenue Nutrition",
+        "name": "Lake Avenue Nutrition, Energy Powder Drink Mix with Potassium, Sodium, Caffeine, and Vitamin C, Lemon Ginger, 20 Packets, 0.41 oz (11.6 g) Each",
+        "barcode": "00898220020980"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "Caffeine",
+            "Energy Powder Drink Mix",
+            "Green Coffee Bean Extract",
+            "Green Tea Leaf Extract"
+          ],
+          "warn": [
+            "Energy Drink Mix"
+          ],
+          "fail": [
+            "Vitamin C",
+            "Potassium",
+            "Sodium",
+            "Calories",
+            "Total Carbohydrate",
+            "Serving Size"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        }
+      },
+      "gates": [
+        "route_health",
+        "selected_anchor_consistency",
+        "unsafe_language"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_origin_food_like_lake_avenue_energy_drink_mix_route_honesty",
+      "surface": "search_origin_result",
+      "origin": "search_result",
+      "category": "food_like",
+      "personas": [],
+      "input": {
+        "query": "lake avenue energy powder drink mix lemon ginger caffeine",
+        "queryType": "brand_product",
+        "searchResultSeed": {
+          "productId": "108263",
+          "barcode": "00898220020980",
+          "upcCode": "898220020980",
+          "name": "Lake Avenue Nutrition, Energy Powder Drink Mix with Potassium, Sodium, Caffeine, and Vitamin C, Lemon Ginger, 20 Packets, 0.41 oz (11.6 g) Each",
+          "brand": "Lake Avenue Nutrition",
+          "category": "Food",
+          "benefit": "Food-like stimulant energy drink mix boundary",
+          "dose": "20 packets",
+          "factsStatus": "partial",
+          "coverageStatus": "not_enough_structured_data"
+        }
+      },
+      "product": {
+        "productId": "108263",
+        "brand": "Lake Avenue Nutrition",
+        "name": "Lake Avenue Nutrition, Energy Powder Drink Mix with Potassium, Sodium, Caffeine, and Vitamin C, Lemon Ginger, 20 Packets, 0.41 oz (11.6 g) Each",
+        "barcode": "00898220020980"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "Caffeine",
+            "Energy Powder Drink Mix",
+            "Green Coffee Bean Extract",
+            "Green Tea Leaf Extract"
+          ],
+          "warn": [
+            "Energy Drink Mix"
+          ],
+          "fail": [
+            "Vitamin C",
+            "Potassium",
+            "Sodium",
+            "Calories",
+            "Total Carbohydrate",
+            "Serving Size"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        },
+        "consistency": {
+          "productId": "108263",
+          "barcode": "00898220020980",
+          "selectedAnchor": "Caffeine (from Green Coffee Bean Extract and Green Tea Leaf Extract)"
+        }
+      },
+      "gates": [
+        "click_through_seed_consistency",
+        "canonical_product_consistency",
+        "selected_anchor_consistency",
+        "warning_consistency"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "scan_food_like_amazing_grass_kidz_superfood_route_honesty",
+      "surface": "barcode_scan",
+      "origin": "barcode_scan",
+      "category": "food_like",
+      "personas": [],
+      "input": {
+        "barcode": "00829835543731"
+      },
+      "product": {
+        "productId": "11229",
+        "brand": "Amazing Grass",
+        "name": "Amazing Grass, Kidz Superfood® Blend, Outrageous Chocolate, 6.35 oz (180 g)",
+        "barcode": "00829835543731"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "Greens",
+            "Kidz Superfood",
+            "Superfood Blend"
+          ],
+          "warn": [
+            "Superfood"
+          ],
+          "fail": [
+            "Calories",
+            "Total Fat",
+            "Sodium",
+            "Vitamin A",
+            "Serving Size"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        }
+      },
+      "gates": [
+        "route_health",
+        "selected_anchor_consistency",
+        "unsafe_language"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_origin_food_like_amazing_grass_kidz_superfood_route_honesty",
+      "surface": "search_origin_result",
+      "origin": "search_result",
+      "category": "food_like",
+      "personas": [],
+      "input": {
+        "query": "amazing grass kidz superfood outrageous chocolate",
+        "queryType": "brand_product",
+        "searchResultSeed": {
+          "productId": "11229",
+          "barcode": "00829835543731",
+          "upcCode": "829835543731",
+          "name": "Amazing Grass, Kidz Superfood® Blend, Outrageous Chocolate, 6.35 oz (180 g)",
+          "brand": "Amazing Grass",
+          "category": "Food",
+          "benefit": "Food-like kids greens superfood boundary",
+          "dose": "6.35 oz",
+          "factsStatus": "partial",
+          "coverageStatus": "not_enough_structured_data"
+        }
+      },
+      "product": {
+        "productId": "11229",
+        "brand": "Amazing Grass",
+        "name": "Amazing Grass, Kidz Superfood® Blend, Outrageous Chocolate, 6.35 oz (180 g)",
+        "barcode": "00829835543731"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "Greens",
+            "Kidz Superfood",
+            "Superfood Blend"
+          ],
+          "warn": [
+            "Superfood"
+          ],
+          "fail": [
+            "Calories",
+            "Total Fat",
+            "Sodium",
+            "Vitamin A",
+            "Serving Size"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        },
+        "consistency": {
+          "productId": "11229",
+          "barcode": "00829835543731",
+          "selectedAnchor": "Greens"
+        }
+      },
+      "gates": [
+        "click_through_seed_consistency",
+        "canonical_product_consistency",
+        "selected_anchor_consistency",
+        "warning_consistency"
+      ],
+      "severityOnFail": "P1"
     }
   ]
 }
