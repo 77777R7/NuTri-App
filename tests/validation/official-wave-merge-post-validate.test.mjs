@@ -718,6 +718,27 @@ test("post-merge validation accepts title-led aliases for official limit1 probe 
   });
   assert.ok(b12EnergyAnchors.some((anchor) => /b12 energy|vitamin b12/i.test(anchor)));
 
+  const vitaminBPlusAnchors = inferDynamicPassAnchors({
+    title: "BodyBio, Vitamin B+, 90 Capsules",
+    supplementFacts: {
+      nutritionalFacts: [
+        { substancy: "Vitamin B1 (as thiamine HCL)", amountPerServing: "84 mg" },
+        { substancy: "Inositol", amountPerServing: "84 mg" },
+      ],
+    },
+  });
+  assert.ok(vitaminBPlusAnchors.some((anchor) => /b-complex|vitamin b complex/i.test(anchor)));
+
+  const teaAnchors = inferDynamicPassAnchors({
+    title: "NOW Foods, Better Off Red™ Tea, Caffeine Free, 24 Tea Bags, 1.7 oz (48 g)",
+    supplementFacts: {
+      nutritionalFacts: [
+        { substancy: "Protein", amountPerServing: "0 g" },
+      ],
+    },
+  });
+  assert.ok(teaAnchors.some((anchor) => /tea/i.test(anchor)));
+
   const jointSkinAnchors = inferDynamicPassAnchors({
     title: "Purity Products, H.A. Joint & Skin™, Super Formula, 90 Capsules",
     supplementFacts: {

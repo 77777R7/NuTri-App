@@ -140,6 +140,7 @@ const MAX_PRELIMINARY_CANDIDATES = 180;
 const MAX_SUGGESTION_BRANDS = 6;
 const COLD_FALLBACK_QUERY_LIMIT = 220;
 const COLD_FALLBACK_BROWSE_LIMIT = 320;
+const COLD_FALLBACK_MAX_QUERY_TERMS = 8;
 const POPULAR_SEARCHES = ["Magnesium", "Vitamin D", "Omega-3", "Probiotic", "Ashwagandha"];
 const SEARCH_BROWSE_CATEGORIES = [
   "All",
@@ -509,6 +510,46 @@ const buildBrowseCacheKey = (params: SearchParams): string => {
 const toPostgrestIlikeValue = (value: string | null | undefined): string | null => {
   const normalized = normalizeLookupText(value).replace(/[%_,]/g, " ").trim();
   return normalized.length > 0 ? normalized : null;
+};
+
+const isDigitsOnlyQueryTerm = (value: string): boolean => /^\d{8,14}$/.test(value);
+
+export const buildColdFallbackOrClauses = (query: string | null | undefined): string[] => {
+  const normalizedQuery = toPostgrestIlikeValue(query);
+  if (!normalizedQuery) return [];
+
+  const queryPlan = buildSearchQueryPlan(query);
+  const candidateTerms = [
+    normalizedQuery,
+    ...queryPlan.requiredGroups.flatMap((group) => group),
+  ];
+
+  if (queryPlan.requiredGroups.length === 0) {
+    candidateTerms.push(...normalizedQuery.split(/\s+/));
+  }
+
+  const normalizedTerms = Array.from(
+    new Set(
+      candidateTerms
+        .map((term) => toPostgrestIlikeValue(term))
+        .filter((term): term is string => Boolean(term)),
+    ),
+  ).slice(0, COLD_FALLBACK_MAX_QUERY_TERMS);
+
+  const clauses: string[] = [];
+  for (const term of normalizedTerms) {
+    if (isDigitsOnlyQueryTerm(term)) {
+      clauses.push(`upc_code.ilike.%${term}%`, `barcode_gtin14.ilike.%${term}%`);
+      continue;
+    }
+
+    clauses.push(`title.ilike.%${term}%`, `brand_name.ilike.%${term}%`);
+    if (term === normalizedQuery) {
+      clauses.push(`upc_code.ilike.%${term}%`, `barcode_gtin14.ilike.%${term}%`);
+    }
+  }
+
+  return Array.from(new Set(clauses));
 };
 
 const getFallbackBrandPopularity = (brandName: string, batchCount: number): number =>
@@ -1385,6 +1426,21 @@ export const isLikelyNonSupplementTitle = (
 const isLikelyNonSupplement = (item: EnrichedCandidate): boolean =>
   isLikelyNonSupplementTitle(item.card.name, item.row.description);
 
+export const shouldAllowExactBarcodeNonSupplementResult = (params: {
+  name: string | null | undefined;
+  description: string | null | undefined;
+  barcode: string | null | undefined;
+  upcCode: string | null | undefined;
+  query: string | null | undefined;
+}): boolean => {
+  if (!isLikelyNonSupplementTitle(params.name, params.description)) return false;
+  const queryDigits = getBarcodeExactSearchDigits(params.query);
+  if (!queryDigits) return false;
+  return [normalizeBarcodeDigits(params.barcode), normalizeBarcodeDigits(params.upcCode)].some((candidate) =>
+    barcodeDigitsMatch(candidate, queryDigits),
+  );
+};
+
 const diversifyByBrand = (items: EnrichedCandidate[]): EnrichedCandidate[] => {
   const order: string[] = [];
   const buckets = new Map<string, EnrichedCandidate[]>();
@@ -1539,9 +1595,9 @@ const buildFallbackRows = (batch: OverlaySearchTableRow[]): ProductSearchIndexRo
 };
 
 const fetchColdFallbackRows = async (params: SearchParams): Promise<ProductSearchIndexRow[]> => {
-  const queryLike = toPostgrestIlikeValue(params.query);
+  const fallbackOrClauses = buildColdFallbackOrClauses(params.query);
   const brandLike = toPostgrestIlikeValue(params.brand);
-  const hasQuery = Boolean(queryLike);
+  const hasQuery = fallbackOrClauses.length > 0;
   const shouldUsePopularBrandBrowse = !hasQuery && !brandLike;
 
   let query = supabase
@@ -1554,15 +1610,8 @@ const fetchColdFallbackRows = async (params: SearchParams): Promise<ProductSearc
     query = query.ilike("brand_name", `%${brandLike}%`);
   }
 
-  if (queryLike) {
-    query = query.or(
-      [
-        `title.ilike.%${queryLike}%`,
-        `brand_name.ilike.%${queryLike}%`,
-        `upc_code.ilike.%${queryLike}%`,
-        `barcode_gtin14.ilike.%${queryLike}%`,
-      ].join(","),
-    );
+  if (fallbackOrClauses.length > 0) {
+    query = query.or(fallbackOrClauses.join(","));
   } else if (shouldUsePopularBrandBrowse) {
     query = query.in("brand_name", [...POPULAR_FALLBACK_BRANDS]);
   }
@@ -1627,7 +1676,16 @@ const buildSearchResponseFromRows = (
 
   enriched.sort((left, right) => sortCandidates(left, right, hasQuery));
   enriched = dedupeCandidates(enriched);
-  enriched = enriched.filter((entry) => !isLikelyNonSupplement(entry));
+  enriched = enriched.filter((entry) =>
+    !isLikelyNonSupplement(entry) ||
+    shouldAllowExactBarcodeNonSupplementResult({
+      name: entry.card.name,
+      description: entry.row.description,
+      barcode: entry.card.barcode,
+      upcCode: entry.card.upcCode,
+      query: params.query,
+    }),
+  );
   if (!hasQuery) {
     enriched = diversifyByBrand(enriched);
   }

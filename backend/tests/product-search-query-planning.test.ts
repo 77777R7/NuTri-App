@@ -2,12 +2,14 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  buildColdFallbackOrClauses,
   buildSearchQueryPlan,
   computeSearchQueryIntentBonus,
   computeSearchScoreForQueryPlan,
   getBarcodeExactSearchDigits,
   isLikelyNonSupplementTitle,
   productSearchResponseHasExactBarcodeMatch,
+  shouldAllowExactBarcodeNonSupplementResult,
   shouldUseColdBarcodeExactFallback,
   type ProductSearchResponse,
   type ProductSearchIndexRow,
@@ -63,6 +65,25 @@ test("buildSearchQueryPlan keeps barcode-length numeric queries as required sear
   assert.deepEqual(plan.optionalGroups, []);
 });
 
+test("buildColdFallbackOrClauses expands tokenized family terms for cold title misses", () => {
+  const clauses = buildColdFallbackOrClauses("tropical oasis trace minerals");
+
+  assert.ok(clauses.includes("title.ilike.%tropical oasis trace minerals%"));
+  assert.ok(clauses.includes("title.ilike.%tropical%"));
+  assert.ok(clauses.includes("brand_name.ilike.%oasis%"));
+  assert.ok(clauses.includes("title.ilike.%trace%"));
+  assert.ok(clauses.includes("title.ilike.%minerals%"));
+});
+
+test("buildColdFallbackOrClauses keeps barcode-like queries exact and numeric", () => {
+  const clauses = buildColdFallbackOrClauses("00617279334578");
+
+  assert.deepEqual(clauses, [
+    "upc_code.ilike.%00617279334578%",
+    "barcode_gtin14.ilike.%00617279334578%",
+  ]);
+});
+
 test("barcode exact search detects warm-index misses that need cold fallback", () => {
   const emptyResponse: ProductSearchResponse = {
     supplements: [],
@@ -110,6 +131,29 @@ test("non-supplement filtering keeps green tea capsule supplements searchable", 
     false,
   );
   assert.equal(isLikelyNonSupplementTitle("Organic Green Tea Bags", "Premium steeping tea"), true);
+});
+
+test("exact barcode search can return a food-like product without opening generic tea search", () => {
+  assert.equal(
+    shouldAllowExactBarcodeNonSupplementResult({
+      name: "NOW Foods, Better Off Red Tea, Caffeine Free, 24 Tea Bags",
+      description: "Premium steeping tea",
+      barcode: "00733739042217",
+      upcCode: "733739042217",
+      query: "00733739042217",
+    }),
+    true,
+  );
+  assert.equal(
+    shouldAllowExactBarcodeNonSupplementResult({
+      name: "NOW Foods, Better Off Red Tea, Caffeine Free, 24 Tea Bags",
+      description: "Premium steeping tea",
+      barcode: "00733739042217",
+      upcCode: "733739042217",
+      query: "Better Off Red Tea",
+    }),
+    false,
+  );
 });
 
 test("computeSearchScoreForQueryPlan matches trademark aliases even when generic goal text is absent", () => {

@@ -1072,6 +1072,25 @@ test('science context treats daily multi formula titles as multivitamin family a
   assert.notEqual(context.ingredientRows[0]?.name, 'Magnesium (magnesium oxide)');
 });
 
+test('science context treats Vitamin B+ titles as B-complex family anchors', () => {
+  const context = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-bodybio-vitamin-b-plus',
+      productName: 'BodyBio, Vitamin B+, 90 Capsules',
+      dosageForm: 'Capsule',
+      actives: [
+        { name: 'Vitamin B1 (as thiamine HCL)', amount: 84, unit: 'mg' },
+        { name: 'Vitamin B2 (as riboflavin)', amount: 67, unit: 'mg' },
+        { name: 'Inositol', amount: 84, unit: 'mg' },
+      ],
+    }),
+    overlayClaims: null,
+  });
+
+  assert.match(context.ingredientRows[0]?.name ?? '', /b-complex|vitamin b/i);
+  assert.notEqual(context.ingredientRows[0]?.name, 'Inositol');
+});
+
 test('science context treats male multiple titles as multivitamin family anchors', () => {
   const context = buildIngredientScienceContext({
     digest: buildDigest({
