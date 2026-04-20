@@ -289,3 +289,220 @@ test("selector emits a runtime canary pack from promote_now without hand-written
   assert.equal(JSON.parse(await fs.readFile(outputs.configPath, "utf8")).scenarioIds.length, 4);
   assert.equal(JSON.parse(await fs.readFile(outputs.additionsPath, "utf8")).scenarios.length, 4);
 });
+
+test("selector builds a larger stable candidate pool and large canary without growing promote_now", () => {
+  const candidates = [
+    candidate({
+      id: "pool_whey",
+      productId: "pool-whey",
+      brandName: "Pool Protein",
+      title: "Pool Protein, Whey Protein Isolate, Vanilla, 2 lb",
+      bucket: "source_protein_boundary",
+      riskTags: [
+        "food_like_route_honesty",
+        "barcode_exact",
+        "source_sensitive",
+        "supplement_signal_overlap",
+        "search_detail_route_risk",
+      ],
+    }),
+    candidate({
+      id: "pool_krill",
+      productId: "pool-krill",
+      brandName: "Pool Omega",
+      title: "Pool Omega, Krill Oil Omega-3, 60 Softgels",
+      bucket: "omega_source_oil_boundary",
+      riskTags: [
+        "food_like_route_honesty",
+        "barcode_exact",
+        "source_sensitive",
+        "allergy_or_dietary_source",
+        "search_detail_route_risk",
+      ],
+    }),
+    candidate({
+      id: "pool_hydration",
+      productId: "pool-hydration",
+      brandName: "Pool Hydration",
+      title: "Pool Hydration, Electrolyte Drink Mix, Lemon",
+      bucket: "sports_hydration_boundary",
+      riskTags: [
+        "food_like_route_honesty",
+        "barcode_exact",
+        "supplement_signal_overlap",
+        "search_detail_route_risk",
+        "sports_context_route",
+      ],
+    }),
+    candidate({
+      id: "pool_green_tea",
+      productId: "pool-green-tea",
+      brandName: "Pool Tea",
+      title: "Pool Tea, Green Tea Energy Drink Mix with Caffeine",
+      bucket: "tea_beverage_boundary",
+      riskTags: [
+        "food_like_route_honesty",
+        "barcode_exact",
+        "supplement_signal_overlap",
+        "search_detail_route_risk",
+        "beverage_context_honesty",
+      ],
+    }),
+    candidate({
+      id: "pool_coconut",
+      productId: "pool-coconut",
+      brandName: "Pool Aminos",
+      title: "Pool Aminos, Coconut Aminos, Soy Sauce Alternative",
+      bucket: "condiment_sweetener_boundary",
+      riskTags: [
+        "food_like_route_honesty",
+        "barcode_exact",
+        "source_sensitive",
+        "search_detail_route_risk",
+      ],
+    }),
+    candidate({
+      id: "pool_duplicate",
+      productId: "stable-duplicate",
+      brandName: "Stable Brand",
+      title: "Stable Brand, Stable Whey Protein, Vanilla",
+      bucket: "source_protein_boundary",
+      riskTags: ["food_like_route_honesty", "barcode_exact", "source_sensitive"],
+    }),
+    candidate({
+      id: "pool_residual",
+      productId: "pool-residual",
+      brandName: "Pool Grocery",
+      title: "Pool Grocery, Organic Pasta, 16 oz",
+      bucket: "pure_grocery_boundary",
+      riskTags: ["food_like_route_honesty", "barcode_exact"],
+    }),
+  ];
+  const report = classifyStablePromotionCandidates({
+    candidates,
+    stableScenarios: [
+      stableScenario({
+        productId: "stable-duplicate",
+        barcode: "00011111111105",
+        brandName: "Stable Brand",
+        title: "Stable Brand, Stable Whey Protein, Vanilla",
+      }),
+    ],
+    maxPromote: 2,
+    perBucketPromoteLimit: 1,
+    stableCandidatePoolLimit: 3,
+    largeCanaryLimit: 5,
+    generatedAt: "2026-04-19T00:00:00.000Z",
+  });
+
+  assert.equal(report.summary.promote_now, 2);
+  assert.equal(report.summary.stable_candidate_pool, 3);
+  assert.equal(report.summary.large_canary, 5);
+  assert.equal(report.promote_now.length, 2);
+  assert.equal(report.stable_candidate_pool.length, 3);
+  assert.equal(report.large_canary.length, 5);
+  assert.deepEqual(
+    report.large_canary.map((row) => row.id),
+    [...report.promote_now, ...report.stable_candidate_pool].map((row) => row.id),
+  );
+  assert.ok(report.skip_duplicate_coverage.some((row) => row.id === "pool_duplicate"));
+  assert.ok(report.residual.some((row) => row.id === "pool_residual"));
+});
+
+test("runtime canary pack can target large_canary for pre-release replay", () => {
+  const selection = classifyStablePromotionCandidates({
+    candidates: [
+      candidate({
+        id: "whey",
+        productId: "134706",
+        barcode: "00649908211905",
+        brandName: "NutraBio",
+        title: "NutraBio, Classic Whey Protein, Pistachio Delight, 2 lb (907 g)",
+        bucket: "source_protein_boundary",
+        riskTags: [
+          "food_like_route_honesty",
+          "barcode_exact",
+          "source_sensitive",
+          "supplement_signal_overlap",
+          "search_detail_route_risk",
+        ],
+      }),
+      candidate({
+        id: "krill",
+        productId: "111111",
+        barcode: "00011111111105",
+        brandName: "Omega Fixture",
+        title: "Omega Fixture, Krill Oil Omega-3, 60 Softgels",
+        bucket: "omega_source_oil_boundary",
+        riskTags: [
+          "food_like_route_honesty",
+          "barcode_exact",
+          "source_sensitive",
+          "allergy_or_dietary_source",
+          "search_detail_route_risk",
+        ],
+      }),
+      candidate({
+        id: "tea",
+        productId: "222222",
+        barcode: "00022222222205",
+        brandName: "Tea Fixture",
+        title: "Tea Fixture, Green Tea Energy Drink Mix with Caffeine",
+        bucket: "tea_beverage_boundary",
+        riskTags: [
+          "food_like_route_honesty",
+          "barcode_exact",
+          "supplement_signal_overlap",
+          "search_detail_route_risk",
+        ],
+      }),
+      candidate({
+        id: "same_line_tea_10_count",
+        productId: "333333",
+        barcode: "00033333333305",
+        brandName: "Teeccino",
+        title: "Teeccino, Organic Mushroom Herbal Tea, Chaga Ashwagandha, Butterscotch Cream, Caffeine Free, 10 Tea Bags, 2.12 oz (60 g)",
+        bucket: "tea_beverage_boundary",
+        riskTags: [
+          "food_like_route_honesty",
+          "barcode_exact",
+          "supplement_signal_overlap",
+          "search_detail_route_risk",
+        ],
+      }),
+      candidate({
+        id: "same_line_tea_25_count",
+        productId: "444444",
+        barcode: "00044444444405",
+        brandName: "Teeccino",
+        title: "Teeccino, Organic Mushroom Herbal Tea, Chaga Ashwagandha, Butterscotch Cream, Caffeine Free, 25 Tea Bags, 5.3 oz (150 g)",
+        bucket: "tea_beverage_boundary",
+        riskTags: [
+          "food_like_route_honesty",
+          "barcode_exact",
+          "supplement_signal_overlap",
+          "search_detail_route_risk",
+        ],
+      }),
+    ],
+    stableScenarios: [],
+    maxPromote: 1,
+    stableCandidatePoolLimit: 4,
+    largeCanaryLimit: 5,
+    generatedAt: "2026-04-19T00:00:00.000Z",
+  });
+
+  const pack = buildRuntimeCanaryPack({
+    report: selection,
+    candidateSection: "large_canary",
+    configPath: "output/test/stable-promotion-large-canary.json",
+    additionsPath: "output/test/stable-promotion-large-canary-additions.json",
+  });
+
+  assert.equal(selection.promote_now.length, 1);
+  assert.equal(selection.large_canary.length, 5);
+  assert.equal(pack.additions.scenarios.length, 10);
+  assert.equal(new Set(pack.additions.scenarios.map((scenario) => scenario.id)).size, 10);
+  assert.equal(pack.config.packRole, "stable_promotion_large_canary");
+  assert.match(pack.additions.description, /large_canary/);
+});

@@ -202,10 +202,10 @@ test("food-like route honesty stable pack promotes only user-surface-impacting d
   const routeHonestyPack = buildCuratedValidationPack({ pack: mergedPack, config });
   assert.equal(routeHonestyPack.metadata.releaseBlocker, true);
   assert.equal(routeHonestyPack.metadata.runner, "runtime_contract_runner");
-  assert.equal(routeHonestyPack.summary.total, 60);
-  assert.equal(routeHonestyPack.summary.surfaces.barcode_scan, 30);
-  assert.equal(routeHonestyPack.summary.surfaces.search_origin_result, 30);
-  assert.equal(routeHonestyPack.summary.categories.food_like, 60);
+  assert.equal(routeHonestyPack.summary.total, 120);
+  assert.equal(routeHonestyPack.summary.surfaces.barcode_scan, 60);
+  assert.equal(routeHonestyPack.summary.surfaces.search_origin_result, 60);
+  assert.equal(routeHonestyPack.summary.categories.food_like, 120);
 
   for (const id of [
     "scan_food_like_bulletproof_mct_oil_route_honesty",
@@ -268,6 +268,16 @@ test("food-like route honesty stable pack promotes only user-surface-impacting d
     "search_origin_food_like_coconut_secret_coconut_aminos_route_honesty",
     "scan_food_like_celestial_authentic_green_tea_route_honesty",
     "search_origin_food_like_celestial_authentic_green_tea_route_honesty",
+    "scan_food_like_orgain_grass_fed_whey_protein_powder_81281_route_honesty",
+    "search_origin_food_like_orgain_grass_fed_whey_protein_powder_81281_route_honesty",
+    "scan_food_like_swanson_full_potential_whey_protein_123607_route_honesty",
+    "search_origin_food_like_swanson_full_potential_whey_protein_123607_route_honesty",
+    "scan_food_like_bio_nutrition_bedtime_zzz_wellness_tea_148110_route_honesty",
+    "search_origin_food_like_bio_nutrition_bedtime_zzz_wellness_tea_148110_route_honesty",
+    "scan_food_like_san_j_organic_tamari_brewed_soy_sauce_146952_route_honesty",
+    "search_origin_food_like_san_j_organic_tamari_brewed_soy_sauce_146952_route_honesty",
+    "scan_food_like_chamberlain_coffee_lavender_matcha_latte_with_oat_142580_route_honesty",
+    "search_origin_food_like_chamberlain_coffee_lavender_matcha_latte_with_oat_142580_route_honesty",
   ]) {
     assert.ok(routeHonestyPack.scenarios.some((scenario) => scenario.id === id), `missing ${id}`);
   }

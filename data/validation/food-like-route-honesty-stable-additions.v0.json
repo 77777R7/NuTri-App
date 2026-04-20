@@ -3400,6 +3400,3296 @@
         "warning_consistency"
       ],
       "severityOnFail": "P1"
+    },
+    {
+      "id": "scan_food_like_orgain_grass_fed_whey_protein_powder_81281_route_honesty",
+      "surface": "barcode_scan",
+      "origin": "barcode_scan",
+      "category": "food_like",
+      "personas": [],
+      "input": {
+        "barcode": "00851770006156"
+      },
+      "product": {
+        "productId": "81281",
+        "brand": "Orgain",
+        "name": "Orgain, Grass-Fed Whey™ Protein Powder, Creamy Chocolate Fudge, 1.82 lb (828 g)",
+        "barcode": "00851770006156"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "Whey Protein",
+            "Protein"
+          ],
+          "warn": [
+            "Whey"
+          ],
+          "fail": [
+            "Calories",
+            "Serving Size",
+            "Sugars",
+            "Magnesium",
+            "Calcium",
+            "Phosphorus",
+            "Potassium",
+            "Total Carbs"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        }
+      },
+      "gates": [
+        "route_health",
+        "selected_anchor_consistency",
+        "unsafe_language"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_origin_food_like_orgain_grass_fed_whey_protein_powder_81281_route_honesty",
+      "surface": "search_origin_result",
+      "origin": "search_result",
+      "category": "food_like",
+      "personas": [],
+      "input": {
+        "query": "Orgain Grass-Fed Whey™ Protein Powder",
+        "queryType": "brand_product",
+        "searchResultSeed": {
+          "productId": "81281",
+          "barcode": "00851770006156",
+          "upcCode": "00851770006156",
+          "name": "Orgain, Grass-Fed Whey™ Protein Powder, Creamy Chocolate Fudge, 1.82 lb (828 g)",
+          "brand": "Orgain",
+          "category": "Food",
+          "benefit": "Food-like source_protein_boundary boundary",
+          "dose": null,
+          "factsStatus": "partial",
+          "coverageStatus": "not_enough_structured_data"
+        }
+      },
+      "product": {
+        "productId": "81281",
+        "brand": "Orgain",
+        "name": "Orgain, Grass-Fed Whey™ Protein Powder, Creamy Chocolate Fudge, 1.82 lb (828 g)",
+        "barcode": "00851770006156"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "Whey Protein",
+            "Protein"
+          ],
+          "warn": [
+            "Whey"
+          ],
+          "fail": [
+            "Calories",
+            "Serving Size",
+            "Sugars",
+            "Magnesium",
+            "Calcium",
+            "Phosphorus",
+            "Potassium",
+            "Total Carbs"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        },
+        "consistency": {
+          "productId": "81281",
+          "barcode": "00851770006156",
+          "selectedAnchor": "Whey Protein"
+        }
+      },
+      "gates": [
+        "click_through_seed_consistency",
+        "canonical_product_consistency",
+        "selected_anchor_consistency",
+        "warning_consistency"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "scan_food_like_celestial_seasonings_green_tea_9083_route_honesty",
+      "surface": "barcode_scan",
+      "origin": "barcode_scan",
+      "category": "food_like",
+      "personas": [],
+      "input": {
+        "barcode": "00070734070358"
+      },
+      "product": {
+        "productId": "9083",
+        "brand": "Celestial Seasonings",
+        "name": "Celestial Seasonings, Green Tea, Decaf , 20 Tea Bags, 1.3 oz (36 g)",
+        "barcode": "00070734070358"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "Green Tea"
+          ],
+          "warn": [
+            "Tea"
+          ],
+          "fail": [
+            "Calories",
+            "Serving Size",
+            "Sugars"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        }
+      },
+      "gates": [
+        "route_health",
+        "selected_anchor_consistency",
+        "unsafe_language"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_origin_food_like_celestial_seasonings_green_tea_9083_route_honesty",
+      "surface": "search_origin_result",
+      "origin": "search_result",
+      "category": "food_like",
+      "personas": [],
+      "input": {
+        "query": "Celestial Seasonings Green Tea",
+        "queryType": "brand_product",
+        "searchResultSeed": {
+          "productId": "9083",
+          "barcode": "00070734070358",
+          "upcCode": "00070734070358",
+          "name": "Celestial Seasonings, Green Tea, Decaf , 20 Tea Bags, 1.3 oz (36 g)",
+          "brand": "Celestial Seasonings",
+          "category": "Food",
+          "benefit": "Food-like greens_superfood_boundary boundary",
+          "dose": null,
+          "factsStatus": "partial",
+          "coverageStatus": "not_enough_structured_data"
+        }
+      },
+      "product": {
+        "productId": "9083",
+        "brand": "Celestial Seasonings",
+        "name": "Celestial Seasonings, Green Tea, Decaf , 20 Tea Bags, 1.3 oz (36 g)",
+        "barcode": "00070734070358"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "Green Tea"
+          ],
+          "warn": [
+            "Tea"
+          ],
+          "fail": [
+            "Calories",
+            "Serving Size",
+            "Sugars"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        },
+        "consistency": {
+          "productId": "9083",
+          "barcode": "00070734070358",
+          "selectedAnchor": "Green Tea"
+        }
+      },
+      "gates": [
+        "click_through_seed_consistency",
+        "canonical_product_consistency",
+        "selected_anchor_consistency",
+        "warning_consistency"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "scan_food_like_bio_nutrition_bedtime_zzz_wellness_tea_148110_route_honesty",
+      "surface": "barcode_scan",
+      "origin": "barcode_scan",
+      "category": "food_like",
+      "personas": [],
+      "input": {
+        "barcode": "00850061160010"
+      },
+      "product": {
+        "productId": "148110",
+        "brand": "Bio Nutrition",
+        "name": "Bio Nutrition, Bedtime zzz Wellness Tea, Caffeine Free , 30 Tea Bags, 1.6 oz (45 g)",
+        "barcode": "00850061160010"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "Tea",
+            "Bedtime zzz Wellness Tea"
+          ],
+          "warn": [
+            "Beverage"
+          ],
+          "fail": [
+            "Calories",
+            "Serving Size",
+            "Sugars"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        }
+      },
+      "gates": [
+        "route_health",
+        "selected_anchor_consistency",
+        "unsafe_language"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_origin_food_like_bio_nutrition_bedtime_zzz_wellness_tea_148110_route_honesty",
+      "surface": "search_origin_result",
+      "origin": "search_result",
+      "category": "food_like",
+      "personas": [],
+      "input": {
+        "query": "Bio Nutrition Bedtime zzz Wellness Tea",
+        "queryType": "brand_product",
+        "searchResultSeed": {
+          "productId": "148110",
+          "barcode": "00850061160010",
+          "upcCode": "00850061160010",
+          "name": "Bio Nutrition, Bedtime zzz Wellness Tea, Caffeine Free , 30 Tea Bags, 1.6 oz (45 g)",
+          "brand": "Bio Nutrition",
+          "category": "Food",
+          "benefit": "Food-like tea_beverage_boundary boundary",
+          "dose": null,
+          "factsStatus": "partial",
+          "coverageStatus": "not_enough_structured_data"
+        }
+      },
+      "product": {
+        "productId": "148110",
+        "brand": "Bio Nutrition",
+        "name": "Bio Nutrition, Bedtime zzz Wellness Tea, Caffeine Free , 30 Tea Bags, 1.6 oz (45 g)",
+        "barcode": "00850061160010"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "Tea",
+            "Bedtime zzz Wellness Tea"
+          ],
+          "warn": [
+            "Beverage"
+          ],
+          "fail": [
+            "Calories",
+            "Serving Size",
+            "Sugars"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        },
+        "consistency": {
+          "productId": "148110",
+          "barcode": "00850061160010",
+          "selectedAnchor": "Tea"
+        }
+      },
+      "gates": [
+        "click_through_seed_consistency",
+        "canonical_product_consistency",
+        "selected_anchor_consistency",
+        "warning_consistency"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "scan_food_like_swanson_full_potential_whey_protein_123607_route_honesty",
+      "surface": "barcode_scan",
+      "origin": "barcode_scan",
+      "category": "food_like",
+      "personas": [],
+      "input": {
+        "barcode": "00087614118925"
+      },
+      "product": {
+        "productId": "123607",
+        "brand": "Swanson",
+        "name": "Swanson, Full Potential Whey Protein, Vanilla, 2.31 lbs (1,050 g)",
+        "barcode": "00087614118925"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "Whey Protein",
+            "Protein"
+          ],
+          "warn": [
+            "Whey"
+          ],
+          "fail": [
+            "Calories",
+            "Serving Size",
+            "Sugars",
+            "Magnesium",
+            "Calcium",
+            "Phosphorus",
+            "Potassium",
+            "Total Carbs"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        }
+      },
+      "gates": [
+        "route_health",
+        "selected_anchor_consistency",
+        "unsafe_language"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_origin_food_like_swanson_full_potential_whey_protein_123607_route_honesty",
+      "surface": "search_origin_result",
+      "origin": "search_result",
+      "category": "food_like",
+      "personas": [],
+      "input": {
+        "query": "Swanson Full Potential Whey Protein",
+        "queryType": "brand_product",
+        "searchResultSeed": {
+          "productId": "123607",
+          "barcode": "00087614118925",
+          "upcCode": "00087614118925",
+          "name": "Swanson, Full Potential Whey Protein, Vanilla, 2.31 lbs (1,050 g)",
+          "brand": "Swanson",
+          "category": "Food",
+          "benefit": "Food-like source_protein_boundary boundary",
+          "dose": null,
+          "factsStatus": "partial",
+          "coverageStatus": "not_enough_structured_data"
+        }
+      },
+      "product": {
+        "productId": "123607",
+        "brand": "Swanson",
+        "name": "Swanson, Full Potential Whey Protein, Vanilla, 2.31 lbs (1,050 g)",
+        "barcode": "00087614118925"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "Whey Protein",
+            "Protein"
+          ],
+          "warn": [
+            "Whey"
+          ],
+          "fail": [
+            "Calories",
+            "Serving Size",
+            "Sugars",
+            "Magnesium",
+            "Calcium",
+            "Phosphorus",
+            "Potassium",
+            "Total Carbs"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        },
+        "consistency": {
+          "productId": "123607",
+          "barcode": "00087614118925",
+          "selectedAnchor": "Whey Protein"
+        }
+      },
+      "gates": [
+        "click_through_seed_consistency",
+        "canonical_product_consistency",
+        "selected_anchor_consistency",
+        "warning_consistency"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "scan_food_like_ener_c_bubbly_multivitamin_drink_mix_108316_route_honesty",
+      "surface": "barcode_scan",
+      "origin": "barcode_scan",
+      "category": "food_like",
+      "personas": [],
+      "input": {
+        "barcode": "00873024001328"
+      },
+      "product": {
+        "productId": "108316",
+        "brand": "Ener-C",
+        "name": "Ener-C, Bubbly Multivitamin Drink Mix, Mixed Berry, 30 Packets, 0.2 oz (5.46 g) Each",
+        "barcode": "00873024001328"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "Drink Mix",
+            "Hydration",
+            "Electrolyte"
+          ],
+          "warn": [
+            "Sports Drink"
+          ],
+          "fail": [
+            "Calories",
+            "Serving Size",
+            "Sugars",
+            "Vitamin C",
+            "Potassium",
+            "Sodium"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        }
+      },
+      "gates": [
+        "route_health",
+        "selected_anchor_consistency",
+        "unsafe_language"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_origin_food_like_ener_c_bubbly_multivitamin_drink_mix_108316_route_honesty",
+      "surface": "search_origin_result",
+      "origin": "search_result",
+      "category": "food_like",
+      "personas": [],
+      "input": {
+        "query": "Ener-C Bubbly Multivitamin Drink Mix",
+        "queryType": "brand_product",
+        "searchResultSeed": {
+          "productId": "108316",
+          "barcode": "00873024001328",
+          "upcCode": "00873024001328",
+          "name": "Ener-C, Bubbly Multivitamin Drink Mix, Mixed Berry, 30 Packets, 0.2 oz (5.46 g) Each",
+          "brand": "Ener-C",
+          "category": "Food",
+          "benefit": "Food-like sports_hydration_boundary boundary",
+          "dose": null,
+          "factsStatus": "partial",
+          "coverageStatus": "not_enough_structured_data"
+        }
+      },
+      "product": {
+        "productId": "108316",
+        "brand": "Ener-C",
+        "name": "Ener-C, Bubbly Multivitamin Drink Mix, Mixed Berry, 30 Packets, 0.2 oz (5.46 g) Each",
+        "barcode": "00873024001328"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "Drink Mix",
+            "Hydration",
+            "Electrolyte"
+          ],
+          "warn": [
+            "Sports Drink"
+          ],
+          "fail": [
+            "Calories",
+            "Serving Size",
+            "Sugars",
+            "Vitamin C",
+            "Potassium",
+            "Sodium"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        },
+        "consistency": {
+          "productId": "108316",
+          "barcode": "00873024001328",
+          "selectedAnchor": "Drink Mix"
+        }
+      },
+      "gates": [
+        "click_through_seed_consistency",
+        "canonical_product_consistency",
+        "selected_anchor_consistency",
+        "warning_consistency"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "scan_food_like_san_j_organic_tamari_brewed_soy_sauce_146952_route_honesty",
+      "surface": "barcode_scan",
+      "origin": "barcode_scan",
+      "category": "food_like",
+      "personas": [],
+      "input": {
+        "barcode": "00075810004258"
+      },
+      "product": {
+        "productId": "146952",
+        "brand": "San-J",
+        "name": "San-J, Organic Tamari Brewed Soy Sauce, 25% Less Sodium, 10 fl oz (296 ml)",
+        "barcode": "00075810004258"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "Organic Tamari Brewed Soy Sauce",
+            "Condiment"
+          ],
+          "warn": [
+            "Food"
+          ],
+          "fail": [
+            "Calories",
+            "Serving Size",
+            "Sugars",
+            "Sodium",
+            "Potassium"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        }
+      },
+      "gates": [
+        "route_health",
+        "selected_anchor_consistency",
+        "unsafe_language"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_origin_food_like_san_j_organic_tamari_brewed_soy_sauce_146952_route_honesty",
+      "surface": "search_origin_result",
+      "origin": "search_result",
+      "category": "food_like",
+      "personas": [],
+      "input": {
+        "query": "San-J Organic Tamari Brewed Soy Sauce",
+        "queryType": "brand_product",
+        "searchResultSeed": {
+          "productId": "146952",
+          "barcode": "00075810004258",
+          "upcCode": "00075810004258",
+          "name": "San-J, Organic Tamari Brewed Soy Sauce, 25% Less Sodium, 10 fl oz (296 ml)",
+          "brand": "San-J",
+          "category": "Food",
+          "benefit": "Food-like condiment_sweetener_boundary boundary",
+          "dose": null,
+          "factsStatus": "partial",
+          "coverageStatus": "not_enough_structured_data"
+        }
+      },
+      "product": {
+        "productId": "146952",
+        "brand": "San-J",
+        "name": "San-J, Organic Tamari Brewed Soy Sauce, 25% Less Sodium, 10 fl oz (296 ml)",
+        "barcode": "00075810004258"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "Organic Tamari Brewed Soy Sauce",
+            "Condiment"
+          ],
+          "warn": [
+            "Food"
+          ],
+          "fail": [
+            "Calories",
+            "Serving Size",
+            "Sugars",
+            "Sodium",
+            "Potassium"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        },
+        "consistency": {
+          "productId": "146952",
+          "barcode": "00075810004258",
+          "selectedAnchor": "Organic Tamari Brewed Soy Sauce"
+        }
+      },
+      "gates": [
+        "click_through_seed_consistency",
+        "canonical_product_consistency",
+        "selected_anchor_consistency",
+        "warning_consistency"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "scan_food_like_san_j_organic_tamari_146949_route_honesty",
+      "surface": "barcode_scan",
+      "origin": "barcode_scan",
+      "category": "food_like",
+      "personas": [],
+      "input": {
+        "barcode": "00075810001257"
+      },
+      "product": {
+        "productId": "146949",
+        "brand": "San-J",
+        "name": "San-J, Organic Tamari, Brewed Soy Sauce, 10 fl oz (296 ml)",
+        "barcode": "00075810001257"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "Organic Tamari",
+            "Condiment"
+          ],
+          "warn": [
+            "Food"
+          ],
+          "fail": [
+            "Calories",
+            "Serving Size",
+            "Sugars",
+            "Sodium",
+            "Potassium"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        }
+      },
+      "gates": [
+        "route_health",
+        "selected_anchor_consistency",
+        "unsafe_language"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_origin_food_like_san_j_organic_tamari_146949_route_honesty",
+      "surface": "search_origin_result",
+      "origin": "search_result",
+      "category": "food_like",
+      "personas": [],
+      "input": {
+        "query": "San-J Organic Tamari",
+        "queryType": "brand_product",
+        "searchResultSeed": {
+          "productId": "146949",
+          "barcode": "00075810001257",
+          "upcCode": "00075810001257",
+          "name": "San-J, Organic Tamari, Brewed Soy Sauce, 10 fl oz (296 ml)",
+          "brand": "San-J",
+          "category": "Food",
+          "benefit": "Food-like condiment_sweetener_boundary boundary",
+          "dose": null,
+          "factsStatus": "partial",
+          "coverageStatus": "not_enough_structured_data"
+        }
+      },
+      "product": {
+        "productId": "146949",
+        "brand": "San-J",
+        "name": "San-J, Organic Tamari, Brewed Soy Sauce, 10 fl oz (296 ml)",
+        "barcode": "00075810001257"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "Organic Tamari",
+            "Condiment"
+          ],
+          "warn": [
+            "Food"
+          ],
+          "fail": [
+            "Calories",
+            "Serving Size",
+            "Sugars",
+            "Sodium",
+            "Potassium"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        },
+        "consistency": {
+          "productId": "146949",
+          "barcode": "00075810001257",
+          "selectedAnchor": "Organic Tamari"
+        }
+      },
+      "gates": [
+        "click_through_seed_consistency",
+        "canonical_product_consistency",
+        "selected_anchor_consistency",
+        "warning_consistency"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "scan_food_like_sempio_soy_sauce_138170_route_honesty",
+      "surface": "barcode_scan",
+      "origin": "barcode_scan",
+      "category": "food_like",
+      "personas": [],
+      "input": {
+        "barcode": "08801005205511"
+      },
+      "product": {
+        "productId": "138170",
+        "brand": "Sempio",
+        "name": "Sempio, Soy Sauce, 8.45 fl oz (250 ml)",
+        "barcode": "08801005205511"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "Soy Sauce",
+            "Condiment"
+          ],
+          "warn": [
+            "Food"
+          ],
+          "fail": [
+            "Calories",
+            "Serving Size",
+            "Sugars",
+            "Sodium",
+            "Potassium"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        }
+      },
+      "gates": [
+        "route_health",
+        "selected_anchor_consistency",
+        "unsafe_language"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_origin_food_like_sempio_soy_sauce_138170_route_honesty",
+      "surface": "search_origin_result",
+      "origin": "search_result",
+      "category": "food_like",
+      "personas": [],
+      "input": {
+        "query": "Sempio Soy Sauce",
+        "queryType": "brand_product",
+        "searchResultSeed": {
+          "productId": "138170",
+          "barcode": "08801005205511",
+          "upcCode": "08801005205511",
+          "name": "Sempio, Soy Sauce, 8.45 fl oz (250 ml)",
+          "brand": "Sempio",
+          "category": "Food",
+          "benefit": "Food-like condiment_sweetener_boundary boundary",
+          "dose": null,
+          "factsStatus": "partial",
+          "coverageStatus": "not_enough_structured_data"
+        }
+      },
+      "product": {
+        "productId": "138170",
+        "brand": "Sempio",
+        "name": "Sempio, Soy Sauce, 8.45 fl oz (250 ml)",
+        "barcode": "08801005205511"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "Soy Sauce",
+            "Condiment"
+          ],
+          "warn": [
+            "Food"
+          ],
+          "fail": [
+            "Calories",
+            "Serving Size",
+            "Sugars",
+            "Sodium",
+            "Potassium"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        },
+        "consistency": {
+          "productId": "138170",
+          "barcode": "08801005205511",
+          "selectedAnchor": "Soy Sauce"
+        }
+      },
+      "gates": [
+        "click_through_seed_consistency",
+        "canonical_product_consistency",
+        "selected_anchor_consistency",
+        "warning_consistency"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "scan_food_like_a_taste_of_thai_green_curry_paste_112066_route_honesty",
+      "surface": "barcode_scan",
+      "origin": "barcode_scan",
+      "category": "food_like",
+      "personas": [],
+      "input": {
+        "barcode": "00070650800169"
+      },
+      "product": {
+        "productId": "112066",
+        "brand": "A Taste Of Thai",
+        "name": "A Taste Of Thai, Green Curry Paste, 1.75 oz (50 g)",
+        "barcode": "00070650800169"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "Greens",
+            "Superfood Blend",
+            "Greens Blend",
+            "Green Curry Paste"
+          ],
+          "warn": [
+            "Superfood"
+          ],
+          "fail": [
+            "Calories",
+            "Serving Size",
+            "Sugars",
+            "Sodium",
+            "Total Carbohydrate"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        }
+      },
+      "gates": [
+        "route_health",
+        "selected_anchor_consistency",
+        "unsafe_language"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_origin_food_like_a_taste_of_thai_green_curry_paste_112066_route_honesty",
+      "surface": "search_origin_result",
+      "origin": "search_result",
+      "category": "food_like",
+      "personas": [],
+      "input": {
+        "query": "A Taste Of Thai Green Curry Paste",
+        "queryType": "brand_product",
+        "searchResultSeed": {
+          "productId": "112066",
+          "barcode": "00070650800169",
+          "upcCode": "00070650800169",
+          "name": "A Taste Of Thai, Green Curry Paste, 1.75 oz (50 g)",
+          "brand": "A Taste Of Thai",
+          "category": "Food",
+          "benefit": "Food-like greens_superfood_boundary boundary",
+          "dose": null,
+          "factsStatus": "partial",
+          "coverageStatus": "not_enough_structured_data"
+        }
+      },
+      "product": {
+        "productId": "112066",
+        "brand": "A Taste Of Thai",
+        "name": "A Taste Of Thai, Green Curry Paste, 1.75 oz (50 g)",
+        "barcode": "00070650800169"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "Greens",
+            "Superfood Blend",
+            "Greens Blend",
+            "Green Curry Paste"
+          ],
+          "warn": [
+            "Superfood"
+          ],
+          "fail": [
+            "Calories",
+            "Serving Size",
+            "Sugars",
+            "Sodium",
+            "Total Carbohydrate"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        },
+        "consistency": {
+          "productId": "112066",
+          "barcode": "00070650800169",
+          "selectedAnchor": "Greens"
+        }
+      },
+      "gates": [
+        "click_through_seed_consistency",
+        "canonical_product_consistency",
+        "selected_anchor_consistency",
+        "warning_consistency"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "scan_food_like_bucked_up_organic_greens_140661_route_honesty",
+      "surface": "barcode_scan",
+      "origin": "barcode_scan",
+      "category": "food_like",
+      "personas": [],
+      "input": {
+        "barcode": "00811374031688"
+      },
+      "product": {
+        "productId": "140661",
+        "brand": "Bucked Up",
+        "name": "Bucked Up, Organic Greens, Mixed Berry, 11.17 oz (316.8 g)",
+        "barcode": "00811374031688"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "Greens",
+            "Superfood Blend",
+            "Greens Blend",
+            "Organic Greens"
+          ],
+          "warn": [
+            "Superfood"
+          ],
+          "fail": [
+            "Calories",
+            "Serving Size",
+            "Sugars",
+            "Sodium",
+            "Total Carbohydrate"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        }
+      },
+      "gates": [
+        "route_health",
+        "selected_anchor_consistency",
+        "unsafe_language"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_origin_food_like_bucked_up_organic_greens_140661_route_honesty",
+      "surface": "search_origin_result",
+      "origin": "search_result",
+      "category": "food_like",
+      "personas": [],
+      "input": {
+        "query": "Bucked Up Organic Greens",
+        "queryType": "brand_product",
+        "searchResultSeed": {
+          "productId": "140661",
+          "barcode": "00811374031688",
+          "upcCode": "00811374031688",
+          "name": "Bucked Up, Organic Greens, Mixed Berry, 11.17 oz (316.8 g)",
+          "brand": "Bucked Up",
+          "category": "Food",
+          "benefit": "Food-like greens_superfood_boundary boundary",
+          "dose": null,
+          "factsStatus": "partial",
+          "coverageStatus": "not_enough_structured_data"
+        }
+      },
+      "product": {
+        "productId": "140661",
+        "brand": "Bucked Up",
+        "name": "Bucked Up, Organic Greens, Mixed Berry, 11.17 oz (316.8 g)",
+        "barcode": "00811374031688"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "Greens",
+            "Superfood Blend",
+            "Greens Blend",
+            "Organic Greens"
+          ],
+          "warn": [
+            "Superfood"
+          ],
+          "fail": [
+            "Calories",
+            "Serving Size",
+            "Sugars",
+            "Sodium",
+            "Total Carbohydrate"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        },
+        "consistency": {
+          "productId": "140661",
+          "barcode": "00811374031688",
+          "selectedAnchor": "Greens"
+        }
+      },
+      "gates": [
+        "click_through_seed_consistency",
+        "canonical_product_consistency",
+        "selected_anchor_consistency",
+        "warning_consistency"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "scan_food_like_dr_john_s_healthy_sweets_gummy_squares_146199_route_honesty",
+      "surface": "barcode_scan",
+      "origin": "barcode_scan",
+      "category": "food_like",
+      "personas": [],
+      "input": {
+        "barcode": "00605245010564"
+      },
+      "product": {
+        "productId": "146199",
+        "brand": "Dr. John's Healthy Sweets",
+        "name": "Dr. John's Healthy Sweets, Gummy Squares, Sugar Free, Green Apple, Blue Raspberry, & Strawberry, 1.8 oz (50 g)",
+        "barcode": "00605245010564"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "Greens",
+            "Superfood Blend",
+            "Greens Blend",
+            "Gummy Squares"
+          ],
+          "warn": [
+            "Superfood"
+          ],
+          "fail": [
+            "Calories",
+            "Serving Size",
+            "Sugars",
+            "Sodium",
+            "Total Carbohydrate"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        }
+      },
+      "gates": [
+        "route_health",
+        "selected_anchor_consistency",
+        "unsafe_language"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_origin_food_like_dr_john_s_healthy_sweets_gummy_squares_146199_route_honesty",
+      "surface": "search_origin_result",
+      "origin": "search_result",
+      "category": "food_like",
+      "personas": [],
+      "input": {
+        "query": "Dr. John's Healthy Sweets Gummy Squares",
+        "queryType": "brand_product",
+        "searchResultSeed": {
+          "productId": "146199",
+          "barcode": "00605245010564",
+          "upcCode": "00605245010564",
+          "name": "Dr. John's Healthy Sweets, Gummy Squares, Sugar Free, Green Apple, Blue Raspberry, & Strawberry, 1.8 oz (50 g)",
+          "brand": "Dr. John's Healthy Sweets",
+          "category": "Food",
+          "benefit": "Food-like greens_superfood_boundary boundary",
+          "dose": null,
+          "factsStatus": "partial",
+          "coverageStatus": "not_enough_structured_data"
+        }
+      },
+      "product": {
+        "productId": "146199",
+        "brand": "Dr. John's Healthy Sweets",
+        "name": "Dr. John's Healthy Sweets, Gummy Squares, Sugar Free, Green Apple, Blue Raspberry, & Strawberry, 1.8 oz (50 g)",
+        "barcode": "00605245010564"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "Greens",
+            "Superfood Blend",
+            "Greens Blend",
+            "Gummy Squares"
+          ],
+          "warn": [
+            "Superfood"
+          ],
+          "fail": [
+            "Calories",
+            "Serving Size",
+            "Sugars",
+            "Sodium",
+            "Total Carbohydrate"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        },
+        "consistency": {
+          "productId": "146199",
+          "barcode": "00605245010564",
+          "selectedAnchor": "Greens"
+        }
+      },
+      "gates": [
+        "click_through_seed_consistency",
+        "canonical_product_consistency",
+        "selected_anchor_consistency",
+        "warning_consistency"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "scan_food_like_wisdom_of_the_ancients_yerba_mate_plain_5105_route_honesty",
+      "surface": "barcode_scan",
+      "origin": "barcode_scan",
+      "category": "food_like",
+      "personas": [],
+      "input": {
+        "barcode": "00716123123761"
+      },
+      "product": {
+        "productId": "5105",
+        "brand": "Wisdom Of The Ancients",
+        "name": "Wisdom Of The Ancients, Yerba Mate Plain, Instant Herbal Tea, Unsweetened, 2.82 oz (79.9 g)",
+        "barcode": "00716123123761"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "Tea",
+            "Yerba Mate Plain"
+          ],
+          "warn": [
+            "Beverage"
+          ],
+          "fail": [
+            "Calories",
+            "Serving Size",
+            "Sugars"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        }
+      },
+      "gates": [
+        "route_health",
+        "selected_anchor_consistency",
+        "unsafe_language"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_origin_food_like_wisdom_of_the_ancients_yerba_mate_plain_5105_route_honesty",
+      "surface": "search_origin_result",
+      "origin": "search_result",
+      "category": "food_like",
+      "personas": [],
+      "input": {
+        "query": "Wisdom Of The Ancients Yerba Mate Plain",
+        "queryType": "brand_product",
+        "searchResultSeed": {
+          "productId": "5105",
+          "barcode": "00716123123761",
+          "upcCode": "00716123123761",
+          "name": "Wisdom Of The Ancients, Yerba Mate Plain, Instant Herbal Tea, Unsweetened, 2.82 oz (79.9 g)",
+          "brand": "Wisdom Of The Ancients",
+          "category": "Food",
+          "benefit": "Food-like tea_beverage_boundary boundary",
+          "dose": null,
+          "factsStatus": "partial",
+          "coverageStatus": "not_enough_structured_data"
+        }
+      },
+      "product": {
+        "productId": "5105",
+        "brand": "Wisdom Of The Ancients",
+        "name": "Wisdom Of The Ancients, Yerba Mate Plain, Instant Herbal Tea, Unsweetened, 2.82 oz (79.9 g)",
+        "barcode": "00716123123761"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "Tea",
+            "Yerba Mate Plain"
+          ],
+          "warn": [
+            "Beverage"
+          ],
+          "fail": [
+            "Calories",
+            "Serving Size",
+            "Sugars"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        },
+        "consistency": {
+          "productId": "5105",
+          "barcode": "00716123123761",
+          "selectedAnchor": "Tea"
+        }
+      },
+      "gates": [
+        "click_through_seed_consistency",
+        "canonical_product_consistency",
+        "selected_anchor_consistency",
+        "warning_consistency"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "scan_food_like_wisdom_of_the_ancients_yerba_mate_royale_5104_route_honesty",
+      "surface": "barcode_scan",
+      "origin": "barcode_scan",
+      "category": "food_like",
+      "personas": [],
+      "input": {
+        "barcode": "00716123123563"
+      },
+      "product": {
+        "productId": "5104",
+        "brand": "Wisdom Of The Ancients",
+        "name": "Wisdom Of The Ancients, Yerba Mate Royale®, Instant Herbal Tea with Stevia, 2.82 oz (79.9 g)",
+        "barcode": "00716123123563"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "Tea",
+            "Yerba Mate Royale®"
+          ],
+          "warn": [
+            "Beverage"
+          ],
+          "fail": [
+            "Calories",
+            "Serving Size",
+            "Sugars"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        }
+      },
+      "gates": [
+        "route_health",
+        "selected_anchor_consistency",
+        "unsafe_language"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_origin_food_like_wisdom_of_the_ancients_yerba_mate_royale_5104_route_honesty",
+      "surface": "search_origin_result",
+      "origin": "search_result",
+      "category": "food_like",
+      "personas": [],
+      "input": {
+        "query": "Wisdom Of The Ancients Yerba Mate Royale®",
+        "queryType": "brand_product",
+        "searchResultSeed": {
+          "productId": "5104",
+          "barcode": "00716123123563",
+          "upcCode": "00716123123563",
+          "name": "Wisdom Of The Ancients, Yerba Mate Royale®, Instant Herbal Tea with Stevia, 2.82 oz (79.9 g)",
+          "brand": "Wisdom Of The Ancients",
+          "category": "Food",
+          "benefit": "Food-like tea_beverage_boundary boundary",
+          "dose": null,
+          "factsStatus": "partial",
+          "coverageStatus": "not_enough_structured_data"
+        }
+      },
+      "product": {
+        "productId": "5104",
+        "brand": "Wisdom Of The Ancients",
+        "name": "Wisdom Of The Ancients, Yerba Mate Royale®, Instant Herbal Tea with Stevia, 2.82 oz (79.9 g)",
+        "barcode": "00716123123563"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "Tea",
+            "Yerba Mate Royale®"
+          ],
+          "warn": [
+            "Beverage"
+          ],
+          "fail": [
+            "Calories",
+            "Serving Size",
+            "Sugars"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        },
+        "consistency": {
+          "productId": "5104",
+          "barcode": "00716123123563",
+          "selectedAnchor": "Tea"
+        }
+      },
+      "gates": [
+        "click_through_seed_consistency",
+        "canonical_product_consistency",
+        "selected_anchor_consistency",
+        "warning_consistency"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "scan_food_like_cederberg_tea_co_mandarin_rooibos_152570_route_honesty",
+      "surface": "barcode_scan",
+      "origin": "barcode_scan",
+      "category": "food_like",
+      "personas": [],
+      "input": {
+        "barcode": "00850068446049"
+      },
+      "product": {
+        "productId": "152570",
+        "brand": "Cederberg Tea Co",
+        "name": "Cederberg Tea Co, Caramel Mandarin Orange Rooibos, Caffeine Free, 30 Tea Bags, 2.1 oz (60 g)",
+        "barcode": "00850068446049"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "Tea",
+            "Caramel Mandarin Orange Rooibos"
+          ],
+          "warn": [
+            "Beverage"
+          ],
+          "fail": [
+            "Calories",
+            "Serving Size",
+            "Sugars"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        }
+      },
+      "gates": [
+        "route_health",
+        "selected_anchor_consistency",
+        "unsafe_language"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_origin_food_like_cederberg_tea_co_mandarin_rooibos_152570_route_honesty",
+      "surface": "search_origin_result",
+      "origin": "search_result",
+      "category": "food_like",
+      "personas": [],
+      "input": {
+        "query": "Cederberg Tea Co Caramel Mandarin Orange Rooibos",
+        "queryType": "brand_product",
+        "searchResultSeed": {
+          "productId": "152570",
+          "barcode": "00850068446049",
+          "upcCode": "00850068446049",
+          "name": "Cederberg Tea Co, Caramel Mandarin Orange Rooibos, Caffeine Free, 30 Tea Bags, 2.1 oz (60 g)",
+          "brand": "Cederberg Tea Co",
+          "category": "Food",
+          "benefit": "Food-like tea_beverage_boundary boundary",
+          "dose": null,
+          "factsStatus": "partial",
+          "coverageStatus": "not_enough_structured_data"
+        }
+      },
+      "product": {
+        "productId": "152570",
+        "brand": "Cederberg Tea Co",
+        "name": "Cederberg Tea Co, Caramel Mandarin Orange Rooibos, Caffeine Free, 30 Tea Bags, 2.1 oz (60 g)",
+        "barcode": "00850068446049"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "Tea",
+            "Caramel Mandarin Orange Rooibos"
+          ],
+          "warn": [
+            "Beverage"
+          ],
+          "fail": [
+            "Calories",
+            "Serving Size",
+            "Sugars"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        },
+        "consistency": {
+          "productId": "152570",
+          "barcode": "00850068446049",
+          "selectedAnchor": "Tea"
+        }
+      },
+      "gates": [
+        "click_through_seed_consistency",
+        "canonical_product_consistency",
+        "selected_anchor_consistency",
+        "warning_consistency"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "scan_food_like_cederberg_tea_co_honeycomb_rooibos_152569_route_honesty",
+      "surface": "barcode_scan",
+      "origin": "barcode_scan",
+      "category": "food_like",
+      "personas": [],
+      "input": {
+        "barcode": "00850068446056"
+      },
+      "product": {
+        "productId": "152569",
+        "brand": "Cederberg Tea Co",
+        "name": "Cederberg Tea Co, Lemon Honeycomb Rooibos, Caffeine Free, 30 Tea Bags, 2.1 oz (60 g)",
+        "barcode": "00850068446056"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "Tea",
+            "Lemon Honeycomb Rooibos"
+          ],
+          "warn": [
+            "Beverage"
+          ],
+          "fail": [
+            "Calories",
+            "Serving Size",
+            "Sugars"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        }
+      },
+      "gates": [
+        "route_health",
+        "selected_anchor_consistency",
+        "unsafe_language"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_origin_food_like_cederberg_tea_co_honeycomb_rooibos_152569_route_honesty",
+      "surface": "search_origin_result",
+      "origin": "search_result",
+      "category": "food_like",
+      "personas": [],
+      "input": {
+        "query": "Cederberg Tea Co Lemon Honeycomb Rooibos",
+        "queryType": "brand_product",
+        "searchResultSeed": {
+          "productId": "152569",
+          "barcode": "00850068446056",
+          "upcCode": "00850068446056",
+          "name": "Cederberg Tea Co, Lemon Honeycomb Rooibos, Caffeine Free, 30 Tea Bags, 2.1 oz (60 g)",
+          "brand": "Cederberg Tea Co",
+          "category": "Food",
+          "benefit": "Food-like tea_beverage_boundary boundary",
+          "dose": null,
+          "factsStatus": "partial",
+          "coverageStatus": "not_enough_structured_data"
+        }
+      },
+      "product": {
+        "productId": "152569",
+        "brand": "Cederberg Tea Co",
+        "name": "Cederberg Tea Co, Lemon Honeycomb Rooibos, Caffeine Free, 30 Tea Bags, 2.1 oz (60 g)",
+        "barcode": "00850068446056"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "Tea",
+            "Lemon Honeycomb Rooibos"
+          ],
+          "warn": [
+            "Beverage"
+          ],
+          "fail": [
+            "Calories",
+            "Serving Size",
+            "Sugars"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        },
+        "consistency": {
+          "productId": "152569",
+          "barcode": "00850068446056",
+          "selectedAnchor": "Tea"
+        }
+      },
+      "gates": [
+        "click_through_seed_consistency",
+        "canonical_product_consistency",
+        "selected_anchor_consistency",
+        "warning_consistency"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "scan_food_like_celestial_seasonings_cold_brew_iced_tea_111143_route_honesty",
+      "surface": "barcode_scan",
+      "origin": "barcode_scan",
+      "category": "food_like",
+      "personas": [],
+      "input": {
+        "barcode": "00070734546006"
+      },
+      "product": {
+        "productId": "111143",
+        "brand": "Celestial Seasonings",
+        "name": "Celestial Seasonings, Cold Brew Iced Tea, Citrus Sunrise, Caffeine Free, 18 Tea Bags, 1.2 oz (35 g)",
+        "barcode": "00070734546006"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "Tea",
+            "Cold Brew Iced Tea"
+          ],
+          "warn": [
+            "Beverage"
+          ],
+          "fail": [
+            "Calories",
+            "Serving Size",
+            "Sugars"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        }
+      },
+      "gates": [
+        "route_health",
+        "selected_anchor_consistency",
+        "unsafe_language"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_origin_food_like_celestial_seasonings_cold_brew_iced_tea_111143_route_honesty",
+      "surface": "search_origin_result",
+      "origin": "search_result",
+      "category": "food_like",
+      "personas": [],
+      "input": {
+        "query": "Celestial Seasonings Cold Brew Iced Tea",
+        "queryType": "brand_product",
+        "searchResultSeed": {
+          "productId": "111143",
+          "barcode": "00070734546006",
+          "upcCode": "00070734546006",
+          "name": "Celestial Seasonings, Cold Brew Iced Tea, Citrus Sunrise, Caffeine Free, 18 Tea Bags, 1.2 oz (35 g)",
+          "brand": "Celestial Seasonings",
+          "category": "Food",
+          "benefit": "Food-like tea_beverage_boundary boundary",
+          "dose": null,
+          "factsStatus": "partial",
+          "coverageStatus": "not_enough_structured_data"
+        }
+      },
+      "product": {
+        "productId": "111143",
+        "brand": "Celestial Seasonings",
+        "name": "Celestial Seasonings, Cold Brew Iced Tea, Citrus Sunrise, Caffeine Free, 18 Tea Bags, 1.2 oz (35 g)",
+        "barcode": "00070734546006"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "Tea",
+            "Cold Brew Iced Tea"
+          ],
+          "warn": [
+            "Beverage"
+          ],
+          "fail": [
+            "Calories",
+            "Serving Size",
+            "Sugars"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        },
+        "consistency": {
+          "productId": "111143",
+          "barcode": "00070734546006",
+          "selectedAnchor": "Tea"
+        }
+      },
+      "gates": [
+        "click_through_seed_consistency",
+        "canonical_product_consistency",
+        "selected_anchor_consistency",
+        "warning_consistency"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "scan_food_like_kevala_organic_coconut_aminos_86444_route_honesty",
+      "surface": "barcode_scan",
+      "origin": "barcode_scan",
+      "category": "food_like",
+      "personas": [],
+      "input": {
+        "barcode": "00816536012741"
+      },
+      "product": {
+        "productId": "86444",
+        "brand": "Kevala",
+        "name": "Kevala, Organic Coconut Aminos, 8 fl oz (236 ml)",
+        "barcode": "00816536012741"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "Coconut Aminos",
+            "Soy-Free Soy Sauce Alternative",
+            "Soy Sauce Alternative"
+          ],
+          "warn": [
+            "Aminos"
+          ],
+          "fail": [
+            "Calories",
+            "Serving Size",
+            "Sugars",
+            "Iron",
+            "Potassium",
+            "Fiber",
+            "Added Sugars"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        }
+      },
+      "gates": [
+        "route_health",
+        "selected_anchor_consistency",
+        "unsafe_language"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_origin_food_like_kevala_organic_coconut_aminos_86444_route_honesty",
+      "surface": "search_origin_result",
+      "origin": "search_result",
+      "category": "food_like",
+      "personas": [],
+      "input": {
+        "query": "Kevala Organic Coconut Aminos",
+        "queryType": "brand_product",
+        "searchResultSeed": {
+          "productId": "86444",
+          "barcode": "00816536012741",
+          "upcCode": "00816536012741",
+          "name": "Kevala, Organic Coconut Aminos, 8 fl oz (236 ml)",
+          "brand": "Kevala",
+          "category": "Food",
+          "benefit": "Food-like condiment_sweetener_boundary boundary",
+          "dose": null,
+          "factsStatus": "partial",
+          "coverageStatus": "not_enough_structured_data"
+        }
+      },
+      "product": {
+        "productId": "86444",
+        "brand": "Kevala",
+        "name": "Kevala, Organic Coconut Aminos, 8 fl oz (236 ml)",
+        "barcode": "00816536012741"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "Coconut Aminos",
+            "Soy-Free Soy Sauce Alternative",
+            "Soy Sauce Alternative"
+          ],
+          "warn": [
+            "Aminos"
+          ],
+          "fail": [
+            "Calories",
+            "Serving Size",
+            "Sugars",
+            "Iron",
+            "Potassium",
+            "Fiber",
+            "Added Sugars"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        },
+        "consistency": {
+          "productId": "86444",
+          "barcode": "00816536012741",
+          "selectedAnchor": "Coconut Aminos"
+        }
+      },
+      "gates": [
+        "click_through_seed_consistency",
+        "canonical_product_consistency",
+        "selected_anchor_consistency",
+        "warning_consistency"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "scan_food_like_chamberlain_coffee_lavender_matcha_latte_with_oat_142580_route_honesty",
+      "surface": "barcode_scan",
+      "origin": "barcode_scan",
+      "category": "food_like",
+      "personas": [],
+      "input": {
+        "barcode": "00810070875176"
+      },
+      "product": {
+        "productId": "142580",
+        "brand": "Chamberlain Coffee",
+        "name": "Chamberlain Coffee, Lavender Matcha Latte with Oat Milk, 10 oz (283 g)",
+        "barcode": "00810070875176"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "Lavender Matcha Latte with Oat Milk",
+            "Chamberlain Coffee, Lavender Matcha Latte with Oat Milk, 10 oz (283 g)"
+          ],
+          "warn": [
+            "Food-like Product"
+          ],
+          "fail": [
+            "Calories",
+            "Serving Size",
+            "Sugars"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        }
+      },
+      "gates": [
+        "route_health",
+        "selected_anchor_consistency",
+        "unsafe_language"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_origin_food_like_chamberlain_coffee_lavender_matcha_latte_with_oat_142580_route_honesty",
+      "surface": "search_origin_result",
+      "origin": "search_result",
+      "category": "food_like",
+      "personas": [],
+      "input": {
+        "query": "Chamberlain Coffee Lavender Matcha Latte with Oat Milk",
+        "queryType": "brand_product",
+        "searchResultSeed": {
+          "productId": "142580",
+          "barcode": "00810070875176",
+          "upcCode": "00810070875176",
+          "name": "Chamberlain Coffee, Lavender Matcha Latte with Oat Milk, 10 oz (283 g)",
+          "brand": "Chamberlain Coffee",
+          "category": "Food",
+          "benefit": "Food-like greens_superfood_boundary boundary",
+          "dose": null,
+          "factsStatus": "partial",
+          "coverageStatus": "not_enough_structured_data"
+        }
+      },
+      "product": {
+        "productId": "142580",
+        "brand": "Chamberlain Coffee",
+        "name": "Chamberlain Coffee, Lavender Matcha Latte with Oat Milk, 10 oz (283 g)",
+        "barcode": "00810070875176"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "Lavender Matcha Latte with Oat Milk",
+            "Chamberlain Coffee, Lavender Matcha Latte with Oat Milk, 10 oz (283 g)"
+          ],
+          "warn": [
+            "Food-like Product"
+          ],
+          "fail": [
+            "Calories",
+            "Serving Size",
+            "Sugars"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        },
+        "consistency": {
+          "productId": "142580",
+          "barcode": "00810070875176",
+          "selectedAnchor": "Lavender Matcha Latte with Oat Milk"
+        }
+      },
+      "gates": [
+        "click_through_seed_consistency",
+        "canonical_product_consistency",
+        "selected_anchor_consistency",
+        "warning_consistency"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "scan_food_like_binggrae_milk_drink_142902_route_honesty",
+      "surface": "barcode_scan",
+      "origin": "barcode_scan",
+      "category": "food_like",
+      "personas": [],
+      "input": {
+        "barcode": "08801104940245"
+      },
+      "product": {
+        "productId": "142902",
+        "brand": "Binggrae",
+        "name": "Binggrae, Flavored Milk Drink, Coffee, 6 Cartons, 6.8 fl oz (200 ml) Each",
+        "barcode": "08801104940245"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "Tea",
+            "Flavored Milk Drink"
+          ],
+          "warn": [
+            "Beverage"
+          ],
+          "fail": [
+            "Calories",
+            "Serving Size",
+            "Sugars"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        }
+      },
+      "gates": [
+        "route_health",
+        "selected_anchor_consistency",
+        "unsafe_language"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_origin_food_like_binggrae_milk_drink_142902_route_honesty",
+      "surface": "search_origin_result",
+      "origin": "search_result",
+      "category": "food_like",
+      "personas": [],
+      "input": {
+        "query": "Binggrae Flavored Milk Drink",
+        "queryType": "brand_product",
+        "searchResultSeed": {
+          "productId": "142902",
+          "barcode": "08801104940245",
+          "upcCode": "08801104940245",
+          "name": "Binggrae, Flavored Milk Drink, Coffee, 6 Cartons, 6.8 fl oz (200 ml) Each",
+          "brand": "Binggrae",
+          "category": "Food",
+          "benefit": "Food-like tea_beverage_boundary boundary",
+          "dose": null,
+          "factsStatus": "partial",
+          "coverageStatus": "not_enough_structured_data"
+        }
+      },
+      "product": {
+        "productId": "142902",
+        "brand": "Binggrae",
+        "name": "Binggrae, Flavored Milk Drink, Coffee, 6 Cartons, 6.8 fl oz (200 ml) Each",
+        "barcode": "08801104940245"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "Tea",
+            "Flavored Milk Drink"
+          ],
+          "warn": [
+            "Beverage"
+          ],
+          "fail": [
+            "Calories",
+            "Serving Size",
+            "Sugars"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        },
+        "consistency": {
+          "productId": "142902",
+          "barcode": "08801104940245",
+          "selectedAnchor": "Tea"
+        }
+      },
+      "gates": [
+        "click_through_seed_consistency",
+        "canonical_product_consistency",
+        "selected_anchor_consistency",
+        "warning_consistency"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "scan_food_like_legendairy_milk_sunflower_lecithin_146379_route_honesty",
+      "surface": "barcode_scan",
+      "origin": "barcode_scan",
+      "category": "food_like",
+      "personas": [],
+      "input": {
+        "barcode": "00853792007128"
+      },
+      "product": {
+        "productId": "146379",
+        "brand": "Legendairy Milk",
+        "name": "Legendairy Milk, Sunflower Lecithin, 1,200 mg, 200 Softgels",
+        "barcode": "00853792007128"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "Sunflower Lecithin",
+            "Legendairy Milk, Sunflower Lecithin, 1,200 mg, 200 Softgels"
+          ],
+          "warn": [
+            "Food-like Product"
+          ],
+          "fail": [
+            "Calories",
+            "Serving Size",
+            "Sugars"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        }
+      },
+      "gates": [
+        "route_health",
+        "selected_anchor_consistency",
+        "unsafe_language"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_origin_food_like_legendairy_milk_sunflower_lecithin_146379_route_honesty",
+      "surface": "search_origin_result",
+      "origin": "search_result",
+      "category": "food_like",
+      "personas": [],
+      "input": {
+        "query": "Legendairy Milk Sunflower Lecithin",
+        "queryType": "brand_product",
+        "searchResultSeed": {
+          "productId": "146379",
+          "barcode": "00853792007128",
+          "upcCode": "00853792007128",
+          "name": "Legendairy Milk, Sunflower Lecithin, 1,200 mg, 200 Softgels",
+          "brand": "Legendairy Milk",
+          "category": "Food",
+          "benefit": "Food-like unclassified_food_like_boundary boundary",
+          "dose": null,
+          "factsStatus": "partial",
+          "coverageStatus": "not_enough_structured_data"
+        }
+      },
+      "product": {
+        "productId": "146379",
+        "brand": "Legendairy Milk",
+        "name": "Legendairy Milk, Sunflower Lecithin, 1,200 mg, 200 Softgels",
+        "barcode": "00853792007128"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "Sunflower Lecithin",
+            "Legendairy Milk, Sunflower Lecithin, 1,200 mg, 200 Softgels"
+          ],
+          "warn": [
+            "Food-like Product"
+          ],
+          "fail": [
+            "Calories",
+            "Serving Size",
+            "Sugars"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        },
+        "consistency": {
+          "productId": "146379",
+          "barcode": "00853792007128",
+          "selectedAnchor": "Sunflower Lecithin"
+        }
+      },
+      "gates": [
+        "click_through_seed_consistency",
+        "canonical_product_consistency",
+        "selected_anchor_consistency",
+        "warning_consistency"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "scan_food_like_bell_lifestyle_ezee_digestion_tea_129819_route_honesty",
+      "surface": "barcode_scan",
+      "origin": "barcode_scan",
+      "category": "food_like",
+      "personas": [],
+      "input": {
+        "barcode": "00771733113007"
+      },
+      "product": {
+        "productId": "129819",
+        "brand": "Bell Lifestyle",
+        "name": "Bell Lifestyle, Ezee Digestion Tea™, 30 Tea Bags, 45 g",
+        "barcode": "00771733113007"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "Tea",
+            "Ezee Digestion Tea™"
+          ],
+          "warn": [
+            "Beverage"
+          ],
+          "fail": [
+            "Calories",
+            "Serving Size",
+            "Sugars"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        }
+      },
+      "gates": [
+        "route_health",
+        "selected_anchor_consistency",
+        "unsafe_language"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_origin_food_like_bell_lifestyle_ezee_digestion_tea_129819_route_honesty",
+      "surface": "search_origin_result",
+      "origin": "search_result",
+      "category": "food_like",
+      "personas": [],
+      "input": {
+        "query": "Bell Lifestyle Ezee Digestion Tea™",
+        "queryType": "brand_product",
+        "searchResultSeed": {
+          "productId": "129819",
+          "barcode": "00771733113007",
+          "upcCode": "00771733113007",
+          "name": "Bell Lifestyle, Ezee Digestion Tea™, 30 Tea Bags, 45 g",
+          "brand": "Bell Lifestyle",
+          "category": "Food",
+          "benefit": "Food-like tea_beverage_boundary boundary",
+          "dose": null,
+          "factsStatus": "partial",
+          "coverageStatus": "not_enough_structured_data"
+        }
+      },
+      "product": {
+        "productId": "129819",
+        "brand": "Bell Lifestyle",
+        "name": "Bell Lifestyle, Ezee Digestion Tea™, 30 Tea Bags, 45 g",
+        "barcode": "00771733113007"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "Tea",
+            "Ezee Digestion Tea™"
+          ],
+          "warn": [
+            "Beverage"
+          ],
+          "fail": [
+            "Calories",
+            "Serving Size",
+            "Sugars"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        },
+        "consistency": {
+          "productId": "129819",
+          "barcode": "00771733113007",
+          "selectedAnchor": "Tea"
+        }
+      },
+      "gates": [
+        "click_through_seed_consistency",
+        "canonical_product_consistency",
+        "selected_anchor_consistency",
+        "warning_consistency"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "scan_food_like_chocolove_almonds_and_seal_salt_in_112969_route_honesty",
+      "surface": "barcode_scan",
+      "origin": "barcode_scan",
+      "category": "food_like",
+      "personas": [],
+      "input": {
+        "barcode": "00716270001370"
+      },
+      "product": {
+        "productId": "112969",
+        "brand": "Chocolove",
+        "name": "Chocolove, Almonds & Seal Salt in Milk Chocolate, 33% Cocoa, 3.2 oz (90 g)",
+        "barcode": "00716270001370"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "Almonds & Seal Salt in Milk Chocolate",
+            "Chocolove, Almonds & Seal Salt in Milk Chocolate, 33% Cocoa, 3.2 oz (90 g)"
+          ],
+          "warn": [
+            "Food-like Product"
+          ],
+          "fail": [
+            "Calories",
+            "Serving Size",
+            "Sugars"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        }
+      },
+      "gates": [
+        "route_health",
+        "selected_anchor_consistency",
+        "unsafe_language"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_origin_food_like_chocolove_almonds_and_seal_salt_in_112969_route_honesty",
+      "surface": "search_origin_result",
+      "origin": "search_result",
+      "category": "food_like",
+      "personas": [],
+      "input": {
+        "query": "Chocolove Almonds & Seal Salt in Milk Chocolate",
+        "queryType": "brand_product",
+        "searchResultSeed": {
+          "productId": "112969",
+          "barcode": "00716270001370",
+          "upcCode": "00716270001370",
+          "name": "Chocolove, Almonds & Seal Salt in Milk Chocolate, 33% Cocoa, 3.2 oz (90 g)",
+          "brand": "Chocolove",
+          "category": "Food",
+          "benefit": "Food-like snack_bar_boundary boundary",
+          "dose": null,
+          "factsStatus": "partial",
+          "coverageStatus": "not_enough_structured_data"
+        }
+      },
+      "product": {
+        "productId": "112969",
+        "brand": "Chocolove",
+        "name": "Chocolove, Almonds & Seal Salt in Milk Chocolate, 33% Cocoa, 3.2 oz (90 g)",
+        "barcode": "00716270001370"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "Almonds & Seal Salt in Milk Chocolate",
+            "Chocolove, Almonds & Seal Salt in Milk Chocolate, 33% Cocoa, 3.2 oz (90 g)"
+          ],
+          "warn": [
+            "Food-like Product"
+          ],
+          "fail": [
+            "Calories",
+            "Serving Size",
+            "Sugars"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        },
+        "consistency": {
+          "productId": "112969",
+          "barcode": "00716270001370",
+          "selectedAnchor": "Almonds & Seal Salt in Milk Chocolate"
+        }
+      },
+      "gates": [
+        "click_through_seed_consistency",
+        "canonical_product_consistency",
+        "selected_anchor_consistency",
+        "warning_consistency"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "scan_food_like_chocolove_pecans_154580_route_honesty",
+      "surface": "barcode_scan",
+      "origin": "barcode_scan",
+      "category": "food_like",
+      "personas": [],
+      "input": {
+        "barcode": "00716270001394"
+      },
+      "product": {
+        "productId": "154580",
+        "brand": "Chocolove",
+        "name": "Chocolove, Pecans, Cookies & Sea Salt in Milk Chocolate, 33% Cocoa, 3.2 oz (90 g)",
+        "barcode": "00716270001394"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "Pecans",
+            "Chocolove, Pecans, Cookies & Sea Salt in Milk Chocolate, 33% Cocoa, 3.2 oz (90 g)"
+          ],
+          "warn": [
+            "Food-like Product"
+          ],
+          "fail": [
+            "Calories",
+            "Serving Size",
+            "Sugars"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        }
+      },
+      "gates": [
+        "route_health",
+        "selected_anchor_consistency",
+        "unsafe_language"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_origin_food_like_chocolove_pecans_154580_route_honesty",
+      "surface": "search_origin_result",
+      "origin": "search_result",
+      "category": "food_like",
+      "personas": [],
+      "input": {
+        "query": "Chocolove Pecans",
+        "queryType": "brand_product",
+        "searchResultSeed": {
+          "productId": "154580",
+          "barcode": "00716270001394",
+          "upcCode": "00716270001394",
+          "name": "Chocolove, Pecans, Cookies & Sea Salt in Milk Chocolate, 33% Cocoa, 3.2 oz (90 g)",
+          "brand": "Chocolove",
+          "category": "Food",
+          "benefit": "Food-like snack_bar_boundary boundary",
+          "dose": null,
+          "factsStatus": "partial",
+          "coverageStatus": "not_enough_structured_data"
+        }
+      },
+      "product": {
+        "productId": "154580",
+        "brand": "Chocolove",
+        "name": "Chocolove, Pecans, Cookies & Sea Salt in Milk Chocolate, 33% Cocoa, 3.2 oz (90 g)",
+        "barcode": "00716270001394"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "Pecans",
+            "Chocolove, Pecans, Cookies & Sea Salt in Milk Chocolate, 33% Cocoa, 3.2 oz (90 g)"
+          ],
+          "warn": [
+            "Food-like Product"
+          ],
+          "fail": [
+            "Calories",
+            "Serving Size",
+            "Sugars"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        },
+        "consistency": {
+          "productId": "154580",
+          "barcode": "00716270001394",
+          "selectedAnchor": "Pecans"
+        }
+      },
+      "gates": [
+        "click_through_seed_consistency",
+        "canonical_product_consistency",
+        "selected_anchor_consistency",
+        "warning_consistency"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "scan_food_like_choczero_bestie_candy_bar_155213_route_honesty",
+      "surface": "barcode_scan",
+      "origin": "barcode_scan",
+      "category": "food_like",
+      "personas": [],
+      "input": {
+        "barcode": "00850055502222"
+      },
+      "product": {
+        "productId": "155213",
+        "brand": "ChocZero",
+        "name": "ChocZero, Bestie Candy Bar, Milk, Caramel & Shortbread, 8 Individually Wrapped Bars, 1 oz (28 g) Each",
+        "barcode": "00850055502222"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "Bestie Candy Bar",
+            "ChocZero, Bestie Candy Bar, Milk, Caramel & Shortbread, 8 Individually Wrapped Bars, 1 oz (28 g) Each"
+          ],
+          "warn": [
+            "Food-like Product"
+          ],
+          "fail": [
+            "Calories",
+            "Serving Size",
+            "Sugars"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        }
+      },
+      "gates": [
+        "route_health",
+        "selected_anchor_consistency",
+        "unsafe_language"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_origin_food_like_choczero_bestie_candy_bar_155213_route_honesty",
+      "surface": "search_origin_result",
+      "origin": "search_result",
+      "category": "food_like",
+      "personas": [],
+      "input": {
+        "query": "ChocZero Bestie Candy Bar",
+        "queryType": "brand_product",
+        "searchResultSeed": {
+          "productId": "155213",
+          "barcode": "00850055502222",
+          "upcCode": "00850055502222",
+          "name": "ChocZero, Bestie Candy Bar, Milk, Caramel & Shortbread, 8 Individually Wrapped Bars, 1 oz (28 g) Each",
+          "brand": "ChocZero",
+          "category": "Food",
+          "benefit": "Food-like snack_bar_boundary boundary",
+          "dose": null,
+          "factsStatus": "partial",
+          "coverageStatus": "not_enough_structured_data"
+        }
+      },
+      "product": {
+        "productId": "155213",
+        "brand": "ChocZero",
+        "name": "ChocZero, Bestie Candy Bar, Milk, Caramel & Shortbread, 8 Individually Wrapped Bars, 1 oz (28 g) Each",
+        "barcode": "00850055502222"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "Bestie Candy Bar",
+            "ChocZero, Bestie Candy Bar, Milk, Caramel & Shortbread, 8 Individually Wrapped Bars, 1 oz (28 g) Each"
+          ],
+          "warn": [
+            "Food-like Product"
+          ],
+          "fail": [
+            "Calories",
+            "Serving Size",
+            "Sugars"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        },
+        "consistency": {
+          "productId": "155213",
+          "barcode": "00850055502222",
+          "selectedAnchor": "Bestie Candy Bar"
+        }
+      },
+      "gates": [
+        "click_through_seed_consistency",
+        "canonical_product_consistency",
+        "selected_anchor_consistency",
+        "warning_consistency"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "scan_food_like_chuao_chocolatier_milk_bar_154599_route_honesty",
+      "surface": "barcode_scan",
+      "origin": "barcode_scan",
+      "category": "food_like",
+      "personas": [],
+      "input": {
+        "barcode": "00872629000248"
+      },
+      "product": {
+        "productId": "154599",
+        "brand": "Chuao Chocolatier",
+        "name": "Chuao Chocolatier, Milk Chocolate Bar, Baconluxious® with Plant-Based Bacon, 2.8 oz (80 g)",
+        "barcode": "00872629000248"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "Milk Chocolate Bar",
+            "Chuao Chocolatier, Milk Chocolate Bar, Baconluxious® with Plant-Based Bacon, 2.8 oz (80 g)"
+          ],
+          "warn": [
+            "Food-like Product"
+          ],
+          "fail": [
+            "Calories",
+            "Serving Size",
+            "Sugars"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        }
+      },
+      "gates": [
+        "route_health",
+        "selected_anchor_consistency",
+        "unsafe_language"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_origin_food_like_chuao_chocolatier_milk_bar_154599_route_honesty",
+      "surface": "search_origin_result",
+      "origin": "search_result",
+      "category": "food_like",
+      "personas": [],
+      "input": {
+        "query": "Chuao Chocolatier Milk Chocolate Bar",
+        "queryType": "brand_product",
+        "searchResultSeed": {
+          "productId": "154599",
+          "barcode": "00872629000248",
+          "upcCode": "00872629000248",
+          "name": "Chuao Chocolatier, Milk Chocolate Bar, Baconluxious® with Plant-Based Bacon, 2.8 oz (80 g)",
+          "brand": "Chuao Chocolatier",
+          "category": "Food",
+          "benefit": "Food-like snack_bar_boundary boundary",
+          "dose": null,
+          "factsStatus": "partial",
+          "coverageStatus": "not_enough_structured_data"
+        }
+      },
+      "product": {
+        "productId": "154599",
+        "brand": "Chuao Chocolatier",
+        "name": "Chuao Chocolatier, Milk Chocolate Bar, Baconluxious® with Plant-Based Bacon, 2.8 oz (80 g)",
+        "barcode": "00872629000248"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "Milk Chocolate Bar",
+            "Chuao Chocolatier, Milk Chocolate Bar, Baconluxious® with Plant-Based Bacon, 2.8 oz (80 g)"
+          ],
+          "warn": [
+            "Food-like Product"
+          ],
+          "fail": [
+            "Calories",
+            "Serving Size",
+            "Sugars"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        },
+        "consistency": {
+          "productId": "154599",
+          "barcode": "00872629000248",
+          "selectedAnchor": "Milk Chocolate Bar"
+        }
+      },
+      "gates": [
+        "click_through_seed_consistency",
+        "canonical_product_consistency",
+        "selected_anchor_consistency",
+        "warning_consistency"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "scan_food_like_chuao_chocolatier_milk_bar_154603_route_honesty",
+      "surface": "barcode_scan",
+      "origin": "barcode_scan",
+      "category": "food_like",
+      "personas": [],
+      "input": {
+        "barcode": "00872629003577"
+      },
+      "product": {
+        "productId": "154603",
+        "brand": "Chuao Chocolatier",
+        "name": "Chuao Chocolatier, Milk Chocolate Bar, Milk & Cookies, 2.8 oz (80 g)",
+        "barcode": "00872629003577"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "Milk Chocolate Bar",
+            "Chuao Chocolatier, Milk Chocolate Bar, Milk & Cookies, 2.8 oz (80 g)"
+          ],
+          "warn": [
+            "Food-like Product"
+          ],
+          "fail": [
+            "Calories",
+            "Serving Size",
+            "Sugars"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        }
+      },
+      "gates": [
+        "route_health",
+        "selected_anchor_consistency",
+        "unsafe_language"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_origin_food_like_chuao_chocolatier_milk_bar_154603_route_honesty",
+      "surface": "search_origin_result",
+      "origin": "search_result",
+      "category": "food_like",
+      "personas": [],
+      "input": {
+        "query": "Chuao Chocolatier Milk Chocolate Bar",
+        "queryType": "brand_product",
+        "searchResultSeed": {
+          "productId": "154603",
+          "barcode": "00872629003577",
+          "upcCode": "00872629003577",
+          "name": "Chuao Chocolatier, Milk Chocolate Bar, Milk & Cookies, 2.8 oz (80 g)",
+          "brand": "Chuao Chocolatier",
+          "category": "Food",
+          "benefit": "Food-like snack_bar_boundary boundary",
+          "dose": null,
+          "factsStatus": "partial",
+          "coverageStatus": "not_enough_structured_data"
+        }
+      },
+      "product": {
+        "productId": "154603",
+        "brand": "Chuao Chocolatier",
+        "name": "Chuao Chocolatier, Milk Chocolate Bar, Milk & Cookies, 2.8 oz (80 g)",
+        "barcode": "00872629003577"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "Milk Chocolate Bar",
+            "Chuao Chocolatier, Milk Chocolate Bar, Milk & Cookies, 2.8 oz (80 g)"
+          ],
+          "warn": [
+            "Food-like Product"
+          ],
+          "fail": [
+            "Calories",
+            "Serving Size",
+            "Sugars"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        },
+        "consistency": {
+          "productId": "154603",
+          "barcode": "00872629003577",
+          "selectedAnchor": "Milk Chocolate Bar"
+        }
+      },
+      "gates": [
+        "click_through_seed_consistency",
+        "canonical_product_consistency",
+        "selected_anchor_consistency",
+        "warning_consistency"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "scan_food_like_hu_almond_butter_almond_crunch_milk_116209_route_honesty",
+      "surface": "barcode_scan",
+      "origin": "barcode_scan",
+      "category": "food_like",
+      "personas": [],
+      "input": {
+        "barcode": "00850024267978"
+      },
+      "product": {
+        "productId": "116209",
+        "brand": "Hu",
+        "name": "Hu, Almond Butter + Almond Crunch Milk Chocolate, 2.1 oz (60 g)",
+        "barcode": "00850024267978"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "Almond Butter + Almond Crunch Milk Chocolate",
+            "Hu, Almond Butter + Almond Crunch Milk Chocolate, 2.1 oz (60 g)"
+          ],
+          "warn": [
+            "Food-like Product"
+          ],
+          "fail": [
+            "Calories",
+            "Serving Size",
+            "Sugars"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        }
+      },
+      "gates": [
+        "route_health",
+        "selected_anchor_consistency",
+        "unsafe_language"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_origin_food_like_hu_almond_butter_almond_crunch_milk_116209_route_honesty",
+      "surface": "search_origin_result",
+      "origin": "search_result",
+      "category": "food_like",
+      "personas": [],
+      "input": {
+        "query": "Hu Almond Butter + Almond Crunch Milk Chocolate",
+        "queryType": "brand_product",
+        "searchResultSeed": {
+          "productId": "116209",
+          "barcode": "00850024267978",
+          "upcCode": "00850024267978",
+          "name": "Hu, Almond Butter + Almond Crunch Milk Chocolate, 2.1 oz (60 g)",
+          "brand": "Hu",
+          "category": "Food",
+          "benefit": "Food-like snack_bar_boundary boundary",
+          "dose": null,
+          "factsStatus": "partial",
+          "coverageStatus": "not_enough_structured_data"
+        }
+      },
+      "product": {
+        "productId": "116209",
+        "brand": "Hu",
+        "name": "Hu, Almond Butter + Almond Crunch Milk Chocolate, 2.1 oz (60 g)",
+        "barcode": "00850024267978"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "Almond Butter + Almond Crunch Milk Chocolate",
+            "Hu, Almond Butter + Almond Crunch Milk Chocolate, 2.1 oz (60 g)"
+          ],
+          "warn": [
+            "Food-like Product"
+          ],
+          "fail": [
+            "Calories",
+            "Serving Size",
+            "Sugars"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        },
+        "consistency": {
+          "productId": "116209",
+          "barcode": "00850024267978",
+          "selectedAnchor": "Almond Butter + Almond Crunch Milk Chocolate"
+        }
+      },
+      "gates": [
+        "click_through_seed_consistency",
+        "canonical_product_consistency",
+        "selected_anchor_consistency",
+        "warning_consistency"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "scan_food_like_hu_cashew_butter_116206_route_honesty",
+      "surface": "barcode_scan",
+      "origin": "barcode_scan",
+      "category": "food_like",
+      "personas": [],
+      "input": {
+        "barcode": "00850024267961"
+      },
+      "product": {
+        "productId": "116206",
+        "brand": "Hu",
+        "name": "Hu, Cashew Butter, Milk Chocolate, 2.1 oz (60 g)",
+        "barcode": "00850024267961"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "Cashew Butter",
+            "Hu, Cashew Butter, Milk Chocolate, 2.1 oz (60 g)"
+          ],
+          "warn": [
+            "Food-like Product"
+          ],
+          "fail": [
+            "Calories",
+            "Serving Size",
+            "Sugars"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        }
+      },
+      "gates": [
+        "route_health",
+        "selected_anchor_consistency",
+        "unsafe_language"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_origin_food_like_hu_cashew_butter_116206_route_honesty",
+      "surface": "search_origin_result",
+      "origin": "search_result",
+      "category": "food_like",
+      "personas": [],
+      "input": {
+        "query": "Hu Cashew Butter",
+        "queryType": "brand_product",
+        "searchResultSeed": {
+          "productId": "116206",
+          "barcode": "00850024267961",
+          "upcCode": "00850024267961",
+          "name": "Hu, Cashew Butter, Milk Chocolate, 2.1 oz (60 g)",
+          "brand": "Hu",
+          "category": "Food",
+          "benefit": "Food-like snack_bar_boundary boundary",
+          "dose": null,
+          "factsStatus": "partial",
+          "coverageStatus": "not_enough_structured_data"
+        }
+      },
+      "product": {
+        "productId": "116206",
+        "brand": "Hu",
+        "name": "Hu, Cashew Butter, Milk Chocolate, 2.1 oz (60 g)",
+        "barcode": "00850024267961"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "Cashew Butter",
+            "Hu, Cashew Butter, Milk Chocolate, 2.1 oz (60 g)"
+          ],
+          "warn": [
+            "Food-like Product"
+          ],
+          "fail": [
+            "Calories",
+            "Serving Size",
+            "Sugars"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        },
+        "consistency": {
+          "productId": "116206",
+          "barcode": "00850024267961",
+          "selectedAnchor": "Cashew Butter"
+        }
+      },
+      "gates": [
+        "click_through_seed_consistency",
+        "canonical_product_consistency",
+        "selected_anchor_consistency",
+        "warning_consistency"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "scan_food_like_act_dry_mouth_lozenges_with_xylitol_111718_route_honesty",
+      "surface": "barcode_scan",
+      "origin": "barcode_scan",
+      "category": "food_like",
+      "personas": [],
+      "input": {
+        "barcode": "00041167099346"
+      },
+      "product": {
+        "productId": "111718",
+        "brand": "Act",
+        "name": "ACT, Dry Mouth Lozenges with Xylitol, Honey-Lemon, 36 Lozenges",
+        "barcode": "00041167099346"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "Dry Mouth Lozenges with Xylitol",
+            "Condiment"
+          ],
+          "warn": [
+            "Food"
+          ],
+          "fail": [
+            "Calories",
+            "Serving Size",
+            "Sugars",
+            "Sodium",
+            "Potassium"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        }
+      },
+      "gates": [
+        "route_health",
+        "selected_anchor_consistency",
+        "unsafe_language"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_origin_food_like_act_dry_mouth_lozenges_with_xylitol_111718_route_honesty",
+      "surface": "search_origin_result",
+      "origin": "search_result",
+      "category": "food_like",
+      "personas": [],
+      "input": {
+        "query": "Act Dry Mouth Lozenges with Xylitol",
+        "queryType": "brand_product",
+        "searchResultSeed": {
+          "productId": "111718",
+          "barcode": "00041167099346",
+          "upcCode": "00041167099346",
+          "name": "ACT, Dry Mouth Lozenges with Xylitol, Honey-Lemon, 36 Lozenges",
+          "brand": "Act",
+          "category": "Food",
+          "benefit": "Food-like condiment_sweetener_boundary boundary",
+          "dose": null,
+          "factsStatus": "partial",
+          "coverageStatus": "not_enough_structured_data"
+        }
+      },
+      "product": {
+        "productId": "111718",
+        "brand": "Act",
+        "name": "ACT, Dry Mouth Lozenges with Xylitol, Honey-Lemon, 36 Lozenges",
+        "barcode": "00041167099346"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "Dry Mouth Lozenges with Xylitol",
+            "Condiment"
+          ],
+          "warn": [
+            "Food"
+          ],
+          "fail": [
+            "Calories",
+            "Serving Size",
+            "Sugars",
+            "Sodium",
+            "Potassium"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        },
+        "consistency": {
+          "productId": "111718",
+          "barcode": "00041167099346",
+          "selectedAnchor": "Dry Mouth Lozenges with Xylitol"
+        }
+      },
+      "gates": [
+        "click_through_seed_consistency",
+        "canonical_product_consistency",
+        "selected_anchor_consistency",
+        "warning_consistency"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "scan_food_like_alessi_premium_all_natural_sea_salt_116418_route_honesty",
+      "surface": "barcode_scan",
+      "origin": "barcode_scan",
+      "category": "food_like",
+      "personas": [],
+      "input": {
+        "barcode": "00071072012161"
+      },
+      "product": {
+        "productId": "116418",
+        "brand": "Alessi",
+        "name": "Alessi, Premium All Natural Sea Salt, Fine, 24 oz (680 g)",
+        "barcode": "00071072012161"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "Premium All Natural Sea Salt",
+            "Condiment"
+          ],
+          "warn": [
+            "Food"
+          ],
+          "fail": [
+            "Calories",
+            "Serving Size",
+            "Sugars",
+            "Sodium",
+            "Potassium"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        }
+      },
+      "gates": [
+        "route_health",
+        "selected_anchor_consistency",
+        "unsafe_language"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_origin_food_like_alessi_premium_all_natural_sea_salt_116418_route_honesty",
+      "surface": "search_origin_result",
+      "origin": "search_result",
+      "category": "food_like",
+      "personas": [],
+      "input": {
+        "query": "Alessi Premium All Natural Sea Salt",
+        "queryType": "brand_product",
+        "searchResultSeed": {
+          "productId": "116418",
+          "barcode": "00071072012161",
+          "upcCode": "00071072012161",
+          "name": "Alessi, Premium All Natural Sea Salt, Fine, 24 oz (680 g)",
+          "brand": "Alessi",
+          "category": "Food",
+          "benefit": "Food-like condiment_sweetener_boundary boundary",
+          "dose": null,
+          "factsStatus": "partial",
+          "coverageStatus": "not_enough_structured_data"
+        }
+      },
+      "product": {
+        "productId": "116418",
+        "brand": "Alessi",
+        "name": "Alessi, Premium All Natural Sea Salt, Fine, 24 oz (680 g)",
+        "barcode": "00071072012161"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "Premium All Natural Sea Salt",
+            "Condiment"
+          ],
+          "warn": [
+            "Food"
+          ],
+          "fail": [
+            "Calories",
+            "Serving Size",
+            "Sugars",
+            "Sodium",
+            "Potassium"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        },
+        "consistency": {
+          "productId": "116418",
+          "barcode": "00071072012161",
+          "selectedAnchor": "Premium All Natural Sea Salt"
+        }
+      },
+      "gates": [
+        "click_through_seed_consistency",
+        "canonical_product_consistency",
+        "selected_anchor_consistency",
+        "warning_consistency"
+      ],
+      "severityOnFail": "P1"
     }
   ]
 }

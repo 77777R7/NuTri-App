@@ -29,8 +29,11 @@ const parseArgs = () => {
     outDir: "output/stable_promotion_candidate_selector",
     maxPromote: 4,
     perBucketPromoteLimit: 1,
+    stableCandidatePoolLimit: 100,
+    largeCanaryLimit: 4,
     printMarkdown: false,
     emitRuntimeCanaryPack: false,
+    canarySource: "promote_now",
     canaryConfigOut: "",
     canaryAdditionsOut: "",
   };
@@ -53,12 +56,29 @@ const parseArgs = () => {
     } else if (arg === "--per-bucket-promote-limit" && next) {
       values.perBucketPromoteLimit = Math.max(1, Number(next) || 1);
       index += 1;
+    } else if (arg === "--stable-candidate-pool-limit" && next) {
+      values.stableCandidatePoolLimit = Math.max(0, Number(next) || 0);
+      index += 1;
+    } else if (arg === "--large-canary-limit" && next) {
+      values.largeCanaryLimit = Math.max(0, Number(next) || 0);
+      index += 1;
     } else if (arg === "--print-markdown") {
       values.printMarkdown = true;
     } else if (arg === "--emit-runtime-canary-pack") {
       values.emitRuntimeCanaryPack = true;
+    } else if (arg === "--emit-large-canary-pack") {
+      values.emitRuntimeCanaryPack = true;
+      values.canarySource = "large_canary";
+    } else if (arg === "--canary-source" && next) {
+      values.canarySource = next;
+      index += 1;
     } else if (arg === "--canary-config-out" && next) {
       values.canaryConfigOut = next;
+      values.emitRuntimeCanaryPack = true;
+      index += 1;
+    } else if (arg === "--large-canary-config-out" && next) {
+      values.canaryConfigOut = next;
+      values.canarySource = "large_canary";
       values.emitRuntimeCanaryPack = true;
       index += 1;
     } else if (arg === "--canary-additions-out" && next) {
@@ -115,6 +135,8 @@ const main = async () => {
     stableScenarios,
     maxPromote: args.maxPromote,
     perBucketPromoteLimit: args.perBucketPromoteLimit,
+    stableCandidatePoolLimit: args.stableCandidatePoolLimit,
+    largeCanaryLimit: args.largeCanaryLimit,
   });
   const outputs = await writeStablePromotionCandidateOutputs({
     report: {
@@ -135,6 +157,7 @@ const main = async () => {
       || path.join(args.outDir, "live_canary", "stable-promotion-live-canary.json");
     const canaryPack = buildRuntimeCanaryPack({
       report,
+      candidateSection: args.canarySource,
       configPath: canaryConfigPath,
       additionsPath: args.canaryAdditionsOut || null,
     });
@@ -148,6 +171,8 @@ const main = async () => {
   }
   console.error(`[stable-promotion-selector] total=${report.summary.totalCandidates}`);
   console.error(`[stable-promotion-selector] promote_now=${report.summary.promote_now}`);
+  console.error(`[stable-promotion-selector] stable_candidate_pool=${report.summary.stable_candidate_pool}`);
+  console.error(`[stable-promotion-selector] large_canary=${report.summary.large_canary}`);
   console.error(`[stable-promotion-selector] keep_nightly=${report.summary.keep_nightly}`);
   console.error(`[stable-promotion-selector] residual=${report.summary.residual}`);
   console.error(`[stable-promotion-selector] needs_data_fix=${report.summary.needs_data_fix}`);
