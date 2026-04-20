@@ -366,16 +366,23 @@ const validateRow = async (row, index, total) => {
   const top = supplements[0] ?? null;
   const expectedBarcode = normalizeBarcode(row.barcode_gtin14 || row.upcCode);
   const topBarcode = normalizeBarcode(top?.barcode || top?.upcCode);
+  const topBrandMatches = normalizeLooseText(top?.brand) === normalizeLooseText(row.brandName);
+  const topProductIdMatches = normalizeText(top?.productId) === normalizeText(row.productId);
+  const canonicalIdentityMatches = topBarcode === expectedBarcode && topBrandMatches;
   const searchDetail = {
     ok: Boolean(
       searchResponse.ok &&
         top &&
-        topBarcode === expectedBarcode &&
-        normalizeText(top.productId) === normalizeText(row.productId) &&
-        normalizeLooseText(top.brand) === normalizeLooseText(row.brandName),
+        canonicalIdentityMatches,
     ),
     status: searchResponse.status,
     elapsedMs: searchResponse.elapsedMs,
+    identityResolution: topProductIdMatches
+      ? "staging_product_id"
+      : canonicalIdentityMatches
+        ? "existing_product_same_barcode_brand"
+        : null,
+    productIdStrictMatch: topProductIdMatches,
     top: top
       ? {
           productId: top.productId,
@@ -395,9 +402,7 @@ const validateRow = async (row, index, total) => {
         ? "search_no_results"
         : topBarcode !== expectedBarcode
           ? "search_top_barcode_mismatch"
-          : normalizeText(top.productId) !== normalizeText(row.productId)
-            ? "search_top_product_id_mismatch"
-            : normalizeLooseText(top.brand) !== normalizeLooseText(row.brandName)
+          : !topBrandMatches
               ? "search_top_brand_mismatch"
               : null,
   };

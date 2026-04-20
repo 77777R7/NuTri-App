@@ -171,6 +171,7 @@ const main = async () => {
     const highConfidenceUsProductPageReady =
       row?.readiness?.highConfidenceUsProductPageReady ??
       qualifiesHighConfidenceUsProductPage(row, completeness);
+    const canadianOfficialFullOverlayReady = Boolean(row?.readiness?.canadianOfficialFullOverlayReady);
     const hasUsIherbPage = Boolean(row?.sourceSummary?.hasUsIherbPage);
     const npnIgnored = Boolean(row?.sourceSummary?.npnIgnored);
     const sourceTypes = new Set(Array.isArray(row?.sourceSummary?.sourceTypes) ? row.sourceSummary.sourceTypes : []);
@@ -178,7 +179,9 @@ const main = async () => {
       !npnIgnored &&
       Boolean(gtin14) &&
       stillMissingFields.length === 0 &&
-      sourceTypes.has("official_product_page");
+      (sourceTypes.has("official_product_page") ||
+        sourceTypes.has("official_product_image") ||
+        canadianOfficialFullOverlayReady);
     const fullAuthoritativeDsldReady =
       !npnIgnored &&
       Boolean(gtin14) &&
