@@ -43,11 +43,42 @@ const normalizeText = (value) =>
 
 const normalizeLower = (value) => normalizeText(value).toLowerCase();
 
+const decodeUrlText = (value) => {
+  const text = normalizeText(value);
+  if (!text || !/%[0-9a-f]{2}/i.test(text)) return text;
+  try {
+    return decodeURIComponent(text);
+  } catch {
+    return text;
+  }
+};
+
+const stripSiteTitleSuffix = (value) =>
+  normalizeText(value).replace(/\s+[-|]\s+CanPrev(?:\s+Premium Health Products)?\s*$/i, "");
+
+const sanitizeSectionText = (value) =>
+  normalizeText(decodeEntities(value))
+    .replace(/\s+\d+(?:\.\d+)?\s+\d+(?:\.\d+)?\s+out of 5 stars[\s\S]*$/i, "")
+    .replace(/\s+out of 5 stars[\s\S]*$/i, "")
+    .replace(/\s+\(\s*based on\s+\d+[\s\S]*$/i, "")
+    .trim();
+
 const normalizeGtin14 = (value) => {
   const digits = String(value ?? "").replace(/\D/g, "");
   if (!digits) return null;
   if (digits.length >= 14) return digits.slice(-14);
   return digits.padStart(14, "0");
+};
+
+const isValidGtin = (value) => {
+  const digits = String(value ?? "").replace(/\D/g, "");
+  if (!/^\d{8,14}$/.test(digits)) return false;
+  const body = digits.slice(0, -1);
+  const expected = Number(digits.at(-1));
+  const sum = [...body]
+    .reverse()
+    .reduce((acc, digit, index) => acc + Number(digit) * (index % 2 === 0 ? 3 : 1), 0);
+  return (10 - (sum % 10)) % 10 === expected;
 };
 
 const slugify = (value) =>
@@ -138,7 +169,18 @@ const extractMetaContent = (html, propertyName) => {
   return normalizeText(match?.[1] ?? match?.[2] ?? null) || null;
 };
 
-const extractBarcode = (html, candidate) => {
+const extractBarcodeFromUrls = (urls) => {
+  for (const url of urls) {
+    const text = normalizeText(url);
+    for (const match of text.matchAll(/(?:^|[^\d])(\d{12,14})(?=[^\d]|$)/g)) {
+      const digits = match[1];
+      if (isValidGtin(digits)) return normalizeGtin14(digits);
+    }
+  }
+  return null;
+};
+
+const extractBarcode = (html, candidate, imageUrls = []) => {
   const direct = normalizeGtin14(candidate?.barcode_gtin14 ?? candidate?.upcCode);
   if (direct) return direct;
 
@@ -153,6 +195,14 @@ const extractBarcode = (html, candidate) => {
     const gtin = normalizeGtin14(value);
     if (gtin) return gtin;
   }
+  const htmlImageUrls = [
+    ...imageUrls,
+    ...[...String(html ?? "").matchAll(/https?:\\?\/\\?\/[^"'\s<>]+?\.(?:png|jpe?g|webp)(?:\?[^"'\s<>]*)?/gi)].map(
+      (match) => decodeEntities(match[0].replace(/\\\//g, "/")),
+    ),
+  ];
+  const imageBarcode = extractBarcodeFromUrls(htmlImageUrls);
+  if (imageBarcode) return imageBarcode;
   return null;
 };
 
@@ -184,9 +234,10 @@ const extractImages = (html, candidate, pageUrl) => {
 };
 
 const extractTitle = (html, candidate) =>
-  normalizeText(candidate?.title) ||
-  normalizeText(extractMetaContent(html, "og:title")) ||
-  normalizeText(html.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1]) ||
+  stripSiteTitleSuffix(stripTags(html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i)?.[1])) ||
+  stripSiteTitleSuffix(extractMetaContent(html, "og:title")) ||
+  stripSiteTitleSuffix(html.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1]) ||
+  decodeUrlText(candidate?.title) ||
   null;
 
 const extractServing = (html, factsText) => {
@@ -242,6 +293,7 @@ const parseTableFacts = (html) => {
 
 const sanitizeFacts = (facts) => {
   const cleaned = [];
+  const seen = new Set();
   for (const row of Array.isArray(facts) ? facts : []) {
     let substancy = normalizeText(row?.substancy)
       .replace(/\bMedicinal\s*:?\s*/gi, "")
@@ -263,6 +315,9 @@ const sanitizeFacts = (facts) => {
     if (/\b(?:our dose|well under|per day|risk of side effects|clinical trial)\b/i.test(substancy)) continue;
     if (substancy.length > 180) continue;
 
+    const key = normalizeLower(`${substancy}|${amountPerServing}|${dailyValuePercent ?? ""}`);
+    if (seen.has(key)) continue;
+    seen.add(key);
     cleaned.push({ substancy, amountPerServing, dailyValuePercent });
   }
   return cleaned.slice(0, 16);
@@ -369,26 +424,34 @@ const extractSections = (html) => {
   return {
     facts,
     descriptionSections: {
-      Description: description,
-      "Suggested use": normalizeText(suggestedUse),
-      "Other ingredients": normalizeText(otherIngredients || ingredientBlock?.rawText),
-    Warnings: normalizeText(warnings).replace(/^and warnings:\s*/i, ""),
+      Description: sanitizeSectionText(description),
+      "Suggested use": sanitizeSectionText(suggestedUse),
+      "Other ingredients": sanitizeSectionText(otherIngredients || ingredientBlock?.rawText),
+      Warnings: sanitizeSectionText(warnings).replace(/^and warnings:\s*/i, ""),
     },
     factsText: ingredientBlock?.rawText || text,
   };
 };
 
-const inferCountAndForm = (title, candidate, serving) => {
-  const source = [title, candidate?.variantTitle, candidate?.count, serving?.servingSize].map(normalizeText).join(" ");
-  const count = normalizeText(candidate?.count) || source.match(/\b\d+\s+(?:capsules?|softgels?|tablets?|sachets?|servings?|gummies|packets?)\b/i)?.[0] || null;
+const inferCountAndForm = (title, candidate, serving, images = []) => {
+  const source = [title, candidate?.variantTitle, candidate?.count, serving?.servingSize, ...images]
+    .map(normalizeText)
+    .join(" ");
+  const countMatch =
+    source.match(/\b\d+\s+(?:v?caps|capsules?|softgels?|tablets?|sachets?|servings?|gummies|packets?)\b/i)?.[0] ||
+    source.match(/\b\d+\s*(?:v?caps|softgels?|tablets?|sachets?|servings?|gummies|packets?)\b/i)?.[0];
   const lower = normalizeLower(source);
-  const dosageForm = lower.includes("softgel")
+  const countFromImage = countMatch ? countMatch.replace(/(\d)([a-z])/i, "$1 $2") : null;
+  const count =
+    normalizeText(candidate?.count) ||
+    (countFromImage && lower.includes("chewable") ? countFromImage.replace(/\bv?caps\b/i, "tablets") : countFromImage);
+  const dosageForm = lower.includes("chewable") || lower.includes("tablet")
+    ? "tablets"
+    : lower.includes("softgel")
     ? "softgels"
-    : lower.includes("capsule") || lower.includes("caps")
+    : lower.includes("capsule") || lower.includes("caps") || lower.includes("vcaps")
       ? "capsules"
-      : lower.includes("tablet")
-        ? "tablets"
-        : lower.includes("sachet")
+      : lower.includes("sachet")
           ? "sachets"
           : lower.includes("powder") || lower.includes("scoop")
             ? "powder"
@@ -475,12 +538,12 @@ const buildCandidates = ({ officialCandidates, officialCatalog, targetBrands }) 
 };
 
 const buildOverlayRecord = ({ candidate, html, pageUrl, waveId }) => {
-  const barcodeGtin14 = extractBarcode(html, candidate);
   const title = extractTitle(html, candidate);
   const images = extractImages(html, candidate, pageUrl);
+  const barcodeGtin14 = extractBarcode(html, candidate, images);
   const { facts, descriptionSections, factsText } = extractSections(html);
   const serving = extractServing(html, factsText);
-  const { count, dosageForm } = inferCountAndForm(title, candidate, serving);
+  const { count, dosageForm } = inferCountAndForm(title, candidate, serving, images);
   const npn = extractNpn(html);
   const productId =
     normalizeText(candidate.productId) ||
