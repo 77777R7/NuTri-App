@@ -61,6 +61,7 @@ const sanitizeSectionText = (value) =>
     .replace(/\s+\d+(?:\.\d+)?\s+\d+(?:\.\d+)?\s+out of 5 stars[\s\S]*$/i, "")
     .replace(/\s+out of 5 stars[\s\S]*$/i, "")
     .replace(/\s+\(\s*based on\s+\d+[\s\S]*$/i, "")
+    .replace(/\s+\b(?:Drug Interactions?|Contra-?indications?|Known adverse reactions?)\b\s*$/i, "")
     .trim();
 
 const normalizeGtin14 = (value) => {
