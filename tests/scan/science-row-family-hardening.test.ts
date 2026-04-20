@@ -1246,6 +1246,24 @@ test('science context treats No. 7 joint support titles as joint complex anchors
   assert.notEqual(context.ingredientRows[0]?.name, 'Vitamin C');
 });
 
+test('science context keeps turmeric gummies anchored to turmeric instead of food-like form', () => {
+  const context = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-jamieson-turmeric-gummies',
+      productName: 'Jamieson, Turmeric Gummies, Joint Pain Relief',
+      dosageForm: 'Gummy',
+      actives: [
+        { name: 'Turmeric (25:1) extract (Curcuma longa, rhizome)', amount: 6250, unit: 'mg' },
+      ],
+    }),
+    overlayClaims: null,
+  });
+
+  assert.match(context.ingredientRows[0]?.name ?? '', /\bturmeric\b|\bcurcumin\b/i);
+  assert.notEqual(context.ingredientRows[0]?.name, 'Food-based product');
+  assert.equal(context.anchorIngredient?.ingredientFamily, 'curcumin');
+});
+
 test('science context rescues ParaFight titles ahead of opaque blend rows', () => {
   const context = buildIngredientScienceContext({
     digest: buildDigest({
@@ -1736,6 +1754,157 @@ test('science context keeps title-led multi-vitamin drink mixes ahead of formula
   assert.doesNotMatch(context.ingredientRows[0]?.name ?? '', /multivitamin\s+&\s+mineral\s+formula|vitamin\s+c|magnesium|zinc|total\s+carb/i);
 });
 
+test('science context keeps antioxidant drink mixes on a title-led drink mix anchor', () => {
+  const context = buildIngredientScienceContext({
+    digest: withBrand(
+      buildDigest({
+        labelId: 'fixture-phytoberry-antioxidant-drink-mix',
+        productName: 'Progressive, Daily Antioxidant Drink Mix',
+        dosageForm: 'Powder',
+        actives: [
+          { name: 'Berry & Fruit Concentrates Goji (Lycium barbarum, Fruit)', amount: 1200, unit: 'mg' },
+          { name: 'Organic Acai (Euterpe oleracea, Fruit)', amount: 600, unit: 'mg' },
+          { name: 'Pomegranate (Punica granatum, Fruit)', amount: 300, unit: 'mg' },
+        ],
+      }),
+      'Progressive',
+    ),
+    overlayClaims: null,
+  });
+
+  assert.equal(context.productArchetype, 'functional_food_like');
+  assert.match(context.ingredientRows[0]?.name ?? '', /antioxidant\s+drink\s+mix|phytoberry/i);
+  assert.doesNotMatch(context.ingredientRows[0]?.name ?? '', /food-based\s+powder|goji|acai|pomegranate/i);
+});
+
+test('science context keeps apple cider vinegar gummies anchored to apple cider vinegar', () => {
+  const context = buildIngredientScienceContext({
+    digest: withBrand(
+      buildDigest({
+        labelId: 'fixture-apple-cider-vinegar-gummies',
+        productName: 'Jamieson, Apple Cider Vinegar Gummies, with Chromium',
+        dosageForm: 'Gummy',
+        actives: [
+          { name: 'Apple Cider Vinegar (Malus pumila Mill, Fruit)', amount: 500, unit: 'mg' },
+          { name: 'Chromium', amount: 150, unit: 'mcg' },
+        ],
+      }),
+      'Jamieson',
+    ),
+    overlayClaims: null,
+  });
+
+  assert.equal(context.productArchetype, 'functional_food_like');
+  assert.match(context.ingredientRows[0]?.name ?? '', /apple\s+cider\s+vinegar/i);
+  assert.doesNotMatch(context.ingredientRows[0]?.name ?? '', /food-based\s+product|gumm(?:y|ies)|chromium/i);
+});
+
+test('science context keeps berberine formulas ahead of green coffee food-like wording', () => {
+  const context = buildIngredientScienceContext({
+    digest: withBrand(
+      buildDigest({
+        labelId: 'fixture-berberine-green-coffee',
+        productName: 'Webber Naturals, Berberine Plus with Green Coffee Bean',
+        dosageForm: 'Capsule',
+        actives: [
+          { name: 'Berberine (hydrochloride) (Berberis vulgaris) (root bark)', amount: 250, unit: 'mg' },
+          { name: 'Green Coffee Bean Extract', amount: 200, unit: 'mg' },
+        ],
+      }),
+      'Webber Naturals',
+    ),
+    overlayClaims: null,
+  });
+
+  assert.notEqual(context.productArchetype, 'functional_food_like');
+  assert.match(context.ingredientRows[0]?.name ?? '', /berberine/i);
+  assert.doesNotMatch(context.ingredientRows[0]?.name ?? '', /food-based\s+product|green\s+coffee/i);
+});
+
+test('science context keeps CoQ10 gummies anchored to coenzyme Q10', () => {
+  const context = buildIngredientScienceContext({
+    digest: withBrand(
+      buildDigest({
+        labelId: 'fixture-coq10-gummy',
+        productName: 'Jamieson, CoQ10, Gummy',
+        dosageForm: 'Gummy',
+        actives: [
+          { name: 'Coenzyme Q10', amount: 100, unit: 'mg' },
+        ],
+      }),
+      'Jamieson',
+    ),
+    overlayClaims: null,
+  });
+
+  assert.equal(context.productArchetype, 'functional_food_like');
+  assert.match(context.ingredientRows[0]?.name ?? '', /coq10|coenzyme\s+q10/i);
+  assert.doesNotMatch(context.ingredientRows[0]?.name ?? '', /food-based\s+product|gumm(?:y|ies)/i);
+});
+
+test('science context keeps biotin gummies anchored to biotin', () => {
+  const context = buildIngredientScienceContext({
+    digest: withBrand(
+      buildDigest({
+        labelId: 'fixture-biotin-gummies',
+        productName: 'Webber Naturals, Biotin Gummies 10,000 mcg',
+        dosageForm: 'Gummy',
+        actives: [
+          { name: 'Biotin', amount: 10000, unit: 'mcg' },
+        ],
+      }),
+      'Webber Naturals',
+    ),
+    overlayClaims: null,
+  });
+
+  assert.equal(context.productArchetype, 'functional_food_like');
+  assert.match(context.ingredientRows[0]?.name ?? '', /biotin/i);
+  assert.doesNotMatch(context.ingredientRows[0]?.name ?? '', /food-based\s+product|gumm(?:y|ies)/i);
+});
+
+test('science context keeps collagen peptide gummies anchored to collagen', () => {
+  const context = buildIngredientScienceContext({
+    digest: withBrand(
+      buildDigest({
+        labelId: 'fixture-collagen-peptides-gummies',
+        productName: 'Webber Naturals, Collagen30 Collagen Peptides Gummies',
+        dosageForm: 'Gummy',
+        actives: [
+          { name: 'VERISOL BIOACTIVE COLLAGEN PEPTIDES Type I and III Hydrolyzed Collagen (bovine)', amount: 833.34, unit: 'mg' },
+        ],
+      }),
+      'Webber Naturals',
+    ),
+    overlayClaims: null,
+  });
+
+  assert.equal(context.productArchetype, 'functional_food_like');
+  assert.match(context.ingredientRows[0]?.name ?? '', /collagen/i);
+  assert.doesNotMatch(context.ingredientRows[0]?.name ?? '', /food-based\s+product|gumm(?:y|ies)/i);
+});
+
+test('science context keeps cranberry gummies anchored to cranberry', () => {
+  const context = buildIngredientScienceContext({
+    digest: withBrand(
+      buildDigest({
+        labelId: 'fixture-cranberry-gummies',
+        productName: 'Webber Naturals, UltraCran Cranberry 10,000 mg Gummies',
+        dosageForm: 'Gummy',
+        actives: [
+          { name: 'Cranberry Extract 50:1 (Vaccinium macrocarpon) (fruit)', amount: 200, unit: 'mg' },
+        ],
+      }),
+      'Webber Naturals',
+    ),
+    overlayClaims: null,
+  });
+
+  assert.equal(context.productArchetype, 'functional_food_like');
+  assert.match(context.ingredientRows[0]?.name ?? '', /cranberry|ultracran/i);
+  assert.doesNotMatch(context.ingredientRows[0]?.name ?? '', /food-based\s+product|gumm(?:y|ies)/i);
+});
+
 test('science context creates label-context rows for title-only Greens First and Project 1 powders', () => {
   const greensFirstContext = buildIngredientScienceContext({
     digest: buildDigest({
@@ -2112,6 +2281,64 @@ test('omega-3 fallback copy distinguishes flax seed oil sources from fish oil so
 
   assert.match(overviewCopy, /flax seed oil|plant oil/i);
   assert.doesNotMatch(overviewCopy, /fish[-\s]?oil/i);
+});
+
+test('omega-3 fallback copy follows the selected fish oil anchor in mixed fish flax borage formulas', async () => {
+  const context = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-mixed-fish-flax-borage-source-copy',
+      productName: 'Webber Naturals, Omega 3-6-9 1200 mg Fish, Flax & Borage',
+      dosageForm: 'Softgel',
+      actives: [
+        { name: 'Fish Oil Concentrate* (anchovy, sardine, and/or mackerel)', amount: 400, unit: 'mg' },
+        { name: 'Flaxseed Oil', amount: 400, unit: 'mg' },
+        { name: 'Borage Oil', amount: 400, unit: 'mg' },
+        { name: 'Omega-3 EPA', amount: 70, unit: 'mg' },
+        { name: 'Omega-3 DHA', amount: 45, unit: 'mg' },
+      ],
+    }),
+    overlayClaims: null,
+  });
+
+  const overview = await compileIngredientOverviewAsync(context);
+  const overviewCopy = [
+    overview.ingredientOverview.titleLine,
+    overview.ingredientOverview.paragraph1,
+    overview.ingredientOverview.paragraph2,
+    overview.ingredientOverview.compareHint,
+  ].join(' ');
+
+  assert.match(context.anchorIngredient?.name ?? '', /fish\s+oil|oil\s+concentrate/i);
+  assert.match(overviewCopy, /fish\s+oil|oil\s+concentrate|anchovy|sardine|mackerel/i);
+  assert.doesNotMatch(overview.ingredientOverview.titleLine ?? '', /flax seed oil/i);
+});
+
+test('omega-3 fallback copy keeps salmon oil visible when it is the selected source anchor', async () => {
+  const context = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-salmon-oil-source-copy',
+      productName: 'Webber Naturals, Wild Alaskan Salmon Oil 1000 mg',
+      dosageForm: 'Softgel',
+      actives: [
+        { name: 'Wild Alaskan Salmon Oil', amount: 1000, unit: 'mg' },
+        { name: 'Omega-3 EPA', amount: 80, unit: 'mg' },
+        { name: 'Omega-3 DHA', amount: 70, unit: 'mg' },
+      ],
+    }),
+    overlayClaims: null,
+  });
+
+  const overview = await compileIngredientOverviewAsync(context);
+  const overviewCopy = [
+    overview.ingredientOverview.titleLine,
+    overview.ingredientOverview.paragraph1,
+    overview.ingredientOverview.paragraph2,
+    overview.ingredientOverview.compareHint,
+  ].join(' ');
+
+  assert.match(context.anchorIngredient?.name ?? '', /salmon\s+oil/i);
+  assert.match(overviewCopy, /salmon\s+oil/i);
+  assert.doesNotMatch(overview.ingredientOverview.titleLine ?? '', /omega-3 formula/i);
 });
 
 test('science context rescues sparse title-led food-like anchors from residue rows', () => {

@@ -115,6 +115,7 @@ const OMEGA3_SOURCE_PATTERN = /\bfish\s*oil\b|\bkrill\s*oil\b|\balgal\s*oil\b|\b
 const OMEGA3_BREAKDOWN_PATTERN = /\bepa\b|\bdha\b|eicosapentaenoic|docosahexaenoic/i;
 const VITAMIN_D_PATTERN = /\bvitamin\s*d(?:2|3)?\b|\bcholecalciferol\b|\bergocalciferol\b/i;
 const B12_PATTERN = /\bvitamin\s*b12\b|\bb12\b|\bmethylcobalamin\b|\bcyanocobalamin\b|\badenosylcobalamin\b|\bhydroxocobalamin\b/i;
+const BIOTIN_TITLE_PATTERN = /\bbiotin\b/i;
 const FOLATE_PATTERN = /\bfolate\b|\bfolic\s+acid\b|\bmethylfolate\b|\b5[\s-]*mthf\b/i;
 const B6_PATTERN = /\bvitamin\s*b6\b|\bb6\b|\bpyridoxine\b|\bpyridoxal(?:\s|-)?5(?:\s|-)?phosphate\b|\bp-?5-?p\b/i;
 const HTP5_PATTERN = /\b5[\s-]*htp\b|\b5[\s-]*hydroxytryptophan\b|\bgriffonia\b/i;
@@ -125,7 +126,7 @@ const INOSITOL_PATTERN = /\b(?:myo[\s-]*)?inositol\b|\bd[\s-]*chiro[\s-]*inosito
 const SEVEN_KETO_PATTERN = /\b7[\s-]*keto\b|\bacetate[\s-]*7[\s-]*one\b|\bdhea[\s-]*acetate[\s-]*7[\s-]*one\b/i;
 const CLA_PATTERN = /\bcla(?:\d+)?\b|\bconjugated\s+linoleic\s+acid\b/i;
 const CARNITINE_PATTERN = /\bacetyl[\s-]*l[\s-]*carnitine\b|\bl[\s-]*carnitine\b|\bcarnitine\b|\balcar\b/i;
-const CURCUMIN_PATTERN = /\bcurcumin\b|\bturmeric\s+extract\b|\bcurcuminoids?\b/i;
+const CURCUMIN_PATTERN = /\bcurcumin\b|\bturmeric\b|\bcurcuminoids?\b/i;
 const ASHWAGANDHA_PATTERN = /\bashwagandha\b|\bwithania\s+somnifera\b|\bksm-?66\b|\bsensoril\b/i;
 const GINSENG_PATTERN = /\bginseng\b|\bpanax\b|\bamerican\s+ginseng\b|\bred\s+ginseng\b/i;
 const GREEN_TEA_EXTRACT_PATTERN = /\bgreen\s+tea(?:\s+extract)?\b|\begcg\b|\bcatechins?\b|\bcamellia\s+sinensis\b/i;
@@ -138,12 +139,17 @@ const CALCIUM_PATTERN =
 const IRON_PATTERN = /\biron\b|\bferrous\b|\bferric\b/i;
 const POTASSIUM_SUPPLEMENT_PATTERN = /\bpotassium\s+(?:gluconate|citrate|chloride|iodide|bicarbonate)\b/i;
 const MELATONIN_PATTERN = /\bmelatonin\b/i;
+const COQ10_TITLE_PATTERN = /\bco\s*Q\s*10\b|\bcoq10\b|\bcoenzyme\s+q10\b|\bubiquinol\b|\bubiquinone\b/i;
+const BERBERINE_TITLE_PATTERN = /\bberberine\b/i;
+const APPLE_CIDER_VINEGAR_TITLE_PATTERN = /\bapple\s+cider\s+vinegar\b|\bacv\b/i;
 const COCONUT_AMINOS_TITLE_PATTERN = /\bcoconut\s+aminos\b|\bsoy\s+sauce\s+replacement\b/i;
 const SOY_SAUCE_TITLE_PATTERN = /\btamari\b|\bsoy\s+sauce\b/i;
 const FOOD_LIKE_LOZENGE_TITLE_PATTERN = /\bdry\s+mouth\s+lozenges?\b|\blozenges?\s+with\s+xylitol\b/i;
 const MATCHA_LATTE_TITLE_PATTERN = /\bmatcha\s+latte\b/i;
 const MULTIVITAMIN_DRINK_MIX_TITLE_PATTERN =
   /\b(?:bubbly\s+)?(?:multi[\s-]*vitamin|vitamin)\s+drink\s+mix\b/i;
+const ANTIOXIDANT_DRINK_MIX_TITLE_PATTERN =
+  /\b(?:daily\s+)?antioxidant(?:\s+\+\s+multi)?\s+drink\s+mix\b|\bphytoberry(?:\s+multi)?\b/i;
 const CRISPY_FRUIT_TITLE_PATTERN = /\bcrispy\s+fruit\b|\ball\s+(?:apple|mango)\b/i;
 const GUMMY_CANDY_TITLE_PATTERN = /\bgummy\s+squares\b|\bhealthy\s+sweets\b/i;
 const CHOCOLATE_TRUFFLE_TITLE_PATTERN = /\bchocolate\b.*\btruffles?\b|\btruffles?\b/i;
@@ -157,6 +163,7 @@ const CHOCOLATE_FOOD_TITLE_PATTERN =
 const LIQUID_AMINOS_TITLE_PATTERN = /\bliquid\s+aminos\b|\bsoy\s+protein\s+seasoning\b/i;
 const PROTEIN_BAR_TITLE_PATTERN = /\b(?:protein|collagen)\s+bars?\b|\b(?:crispy\s+)?snack\s+bars?\b/i;
 const SOURCE_PROTEIN_TITLE_PATTERN = /\bwhey\s+(?:isolate|protein)\b|\bpure\s+whey\b|\bclean\s+whey\b|\bsoy\s+protein\b|\bpea\s+protein\b|\bcollagen\s+protein\b/i;
+const COLLAGEN_SUPPLEMENT_TITLE_PATTERN = /\bcollagen(?:30)?\b|\bcollagen\s+peptides?\b|\bverisol\b/i;
 const TRAIL_MIX_TITLE_PATTERN = /\btrail\s+mix\b/i;
 const ENERGY_DRINK_MIX_TITLE_PATTERN = /\benergy\s+drink\s+mix\b|\benergy\s+mix\b/i;
 const ENERGY_CHEWS_TITLE_PATTERN = /\benergy\s+chews?\b/i;
@@ -228,6 +235,7 @@ const NON_INGREDIENT_AUDIENCE_ROW_PATTERN = /^(?:men|women|adults?|children|kids
 const BRAND_PREFIX_SEGMENT_PATTERN = /^[a-z0-9][a-z0-9 '&.+-]{1,24}$/i;
 const PARAFIGHT_TITLE_PATTERN = /\bpara\s*fight\b/i;
 const TART_CHERRY_TITLE_PATTERN = /\btart\s+cherr(?:y|ies)\b/i;
+const CRANBERRY_TITLE_PATTERN = /\bcranberry\b|\bultracran\b|\bvaccinium\s+macrocarpon\b/i;
 const QUERCETIN_TITLE_PATTERN = /\bquercetin\b/i;
 const BROTH_TITLE_PATTERN = /\bbroth\b/i;
 
@@ -1027,6 +1035,13 @@ const deriveScienceTitleRescueRows = (params: {
   }
 
   if (
+    CRANBERRY_TITLE_PATTERN.test(titleWithoutBrand) &&
+    !hasNamedTitleAlignedRow(params.existingRows, CRANBERRY_TITLE_PATTERN)
+  ) {
+    pushRow("Cranberry");
+  }
+
+  if (
     QUERCETIN_TITLE_PATTERN.test(titleWithoutBrand) &&
     !hasNamedTitleAlignedRow(params.existingRows, QUERCETIN_TITLE_PATTERN)
   ) {
@@ -1148,6 +1163,9 @@ const deriveScienceTitleRescueRows = (params: {
   const hasMeaningfulCoverage =
     params.existingRows.length > 0 &&
     existingFamilies.some((family) => family !== "generic");
+  const hasBiotinTitleActiveCoverage =
+    BIOTIN_TITLE_PATTERN.test(titleWithoutBrand) &&
+    params.existingRows.some((row) => BIOTIN_TITLE_PATTERN.test(row.name));
 
   if (
     titleMineralFamilies.includes("calcium") &&
@@ -1232,8 +1250,26 @@ const deriveScienceTitleRescueRows = (params: {
       extractTitleMatch(titleWithoutBrand, MULTIVITAMIN_DRINK_MIX_TITLE_PATTERN) ??
         "Multi-Vitamin Drink Mix",
     );
+  } else if (ANTIOXIDANT_DRINK_MIX_TITLE_PATTERN.test(titleWithoutBrand)) {
+    pushRow(
+      extractTitleMatch(titleWithoutBrand, ANTIOXIDANT_DRINK_MIX_TITLE_PATTERN) ??
+        "Antioxidant Drink Mix",
+    );
   } else if (CRISPY_FRUIT_TITLE_PATTERN.test(titleWithoutBrand)) {
     pushRow(extractTitleMatch(titleWithoutBrand, /\bcrispy\s+fruit\b|\ball\s+(?:apple|mango)\b/i) ?? "Crispy Fruit");
+  } else if (APPLE_CIDER_VINEGAR_TITLE_PATTERN.test(titleWithoutBrand)) {
+    pushRow(extractTitleMatch(titleWithoutBrand, APPLE_CIDER_VINEGAR_TITLE_PATTERN) ?? "Apple Cider Vinegar");
+  } else if (BERBERINE_TITLE_PATTERN.test(titleWithoutBrand)) {
+    pushRow(extractTitleMatch(titleWithoutBrand, BERBERINE_TITLE_PATTERN) ?? "Berberine");
+  } else if (COQ10_TITLE_PATTERN.test(titleWithoutBrand)) {
+    pushRow(extractTitleMatch(titleWithoutBrand, COQ10_TITLE_PATTERN) ?? "Coenzyme Q10");
+  } else if (
+    COLLAGEN_SUPPLEMENT_TITLE_PATTERN.test(titleWithoutBrand) &&
+    !PROTEIN_BAR_TITLE_PATTERN.test(titleWithoutBrand)
+  ) {
+    pushRow(extractTitleMatch(titleWithoutBrand, /\bcollagen(?:30)?\b|\bcollagen\s+peptides?\b|\bverisol\b/i) ?? "Collagen Peptides");
+  } else if (CRANBERRY_TITLE_PATTERN.test(titleWithoutBrand)) {
+    pushRow(extractTitleMatch(titleWithoutBrand, /\bcranberry\b|\bultracran\b/i) ?? "Cranberry");
   } else if (GUMMY_CANDY_TITLE_PATTERN.test(titleWithoutBrand)) {
     pushRow(extractTitleMatch(titleWithoutBrand, /\bgummy\s+squares\b|\bgumm(?:y|ies)\b/i) ?? "Gummy Squares");
   } else if (CHOCOLATE_TRUFFLE_TITLE_PATTERN.test(titleWithoutBrand)) {
@@ -1296,7 +1332,7 @@ const deriveScienceTitleRescueRows = (params: {
     pushRow(extractTitleMatch(titleWithoutBrand, POTASSIUM_SUPPLEMENT_PATTERN) ?? "Potassium Gluconate");
   } else if (brandContextLooksGreens) {
     pushRow("Greens");
-  } else if (!hasMeaningfulCoverage && isFoodLikeTitle) {
+  } else if (!hasMeaningfulCoverage && !hasBiotinTitleActiveCoverage && isFoodLikeTitle) {
     pushRow(FOOD_LIKE_POWDER_TITLE_PATTERN.test(titleWithoutBrand) ? "Food-based powder" : "Food-based product");
   }
 

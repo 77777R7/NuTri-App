@@ -98,6 +98,9 @@ const ALGAL_OMEGA_SOURCE_PATTERN =
   /\balgal(?:\b|\s+oil)\b|\balgae\b|\bschizochytrium\b|\bplant\s+based\s+omega\s*-?\s*3\b/i;
 const FLAX_OMEGA_SOURCE_PATTERN =
   /\bflax(?:\s+seed)?\s+oil\b|\bflaxseed\s+oil\b|\blinseed\s+oil\b/i;
+const KRILL_OMEGA_SOURCE_PATTERN = /\bkrill\s+oil\b/i;
+const SALMON_OMEGA_SOURCE_PATTERN = /\bsalmon\s+oil\b/i;
+const FISH_OMEGA_SOURCE_PATTERN = /\bfish\s+oil\b|\bsalmon\s+oil\b|\boil\s+concentrate\b/i;
 
 const normalizeText = (value: string | null | undefined): string =>
   String(value ?? "")
@@ -267,30 +270,59 @@ const resolveOmega3SourceCopy = (context: IngredientScienceContext): {
     .join(" ");
   if (!sourceEvidence) return null;
 
-  if (ALGAL_OMEGA_SOURCE_PATTERN.test(sourceEvidence)) {
+  if (ALGAL_OMEGA_SOURCE_PATTERN.test(anchorName)) {
     return {
-      titleLine: ALGAL_OMEGA_SOURCE_PATTERN.test(anchorName) ? anchorName : "Algal Oil",
+      titleLine: anchorName,
       sourcePhrase: "algal oil",
     };
   }
-  if (FLAX_OMEGA_SOURCE_PATTERN.test(sourceEvidence)) {
+  if (KRILL_OMEGA_SOURCE_PATTERN.test(anchorName)) {
     return {
-      titleLine: FLAX_OMEGA_SOURCE_PATTERN.test(anchorName) ? anchorName : "Flax Seed Oil",
+      titleLine: anchorName,
+      sourcePhrase: "krill oil",
+    };
+  }
+  if (FISH_OMEGA_SOURCE_PATTERN.test(anchorName)) {
+    const sourcePhrase = SALMON_OMEGA_SOURCE_PATTERN.test(anchorName) ? "salmon oil" : "fish oil";
+    return {
+      titleLine: anchorName,
+      sourcePhrase,
+    };
+  }
+  if (FLAX_OMEGA_SOURCE_PATTERN.test(anchorName)) {
+    return {
+      titleLine: anchorName,
       sourcePhrase: "flax seed oil",
       detailPhrase: "the omega-3, omega-6, and omega-9 fatty acid lines underneath it",
       compareHint: "When comparing flax seed oil products, focus on the source oil and the disclosed omega-3, omega-6, and omega-9 amounts rather than treating it like a marine EPA/DHA label.",
     };
   }
-  if (/\bkrill\s+oil\b/i.test(sourceEvidence)) {
+
+  if (ALGAL_OMEGA_SOURCE_PATTERN.test(sourceEvidence)) {
     return {
-      titleLine: /\bkrill\s+oil\b/i.test(anchorName) ? anchorName : "Krill Oil",
+      titleLine: "Algal Oil",
+      sourcePhrase: "algal oil",
+    };
+  }
+  if (FLAX_OMEGA_SOURCE_PATTERN.test(sourceEvidence)) {
+    return {
+      titleLine: "Flax Seed Oil",
+      sourcePhrase: "flax seed oil",
+      detailPhrase: "the omega-3, omega-6, and omega-9 fatty acid lines underneath it",
+      compareHint: "When comparing flax seed oil products, focus on the source oil and the disclosed omega-3, omega-6, and omega-9 amounts rather than treating it like a marine EPA/DHA label.",
+    };
+  }
+  if (KRILL_OMEGA_SOURCE_PATTERN.test(sourceEvidence)) {
+    return {
+      titleLine: "Krill Oil",
       sourcePhrase: "krill oil",
     };
   }
-  if (/\bfish\s+oil\b|\boil\s+concentrate\b/i.test(sourceEvidence)) {
+  if (FISH_OMEGA_SOURCE_PATTERN.test(sourceEvidence)) {
+    const sourcePhrase = SALMON_OMEGA_SOURCE_PATTERN.test(sourceEvidence) ? "salmon oil" : "fish oil";
     return {
-      titleLine: /\bfish\s+oil\b|\boil\s+concentrate\b/i.test(anchorName) ? anchorName : "Fish Oil",
-      sourcePhrase: "fish oil",
+      titleLine: SALMON_OMEGA_SOURCE_PATTERN.test(sourceEvidence) ? "Salmon Oil" : "Fish Oil",
+      sourcePhrase,
     };
   }
   return null;
