@@ -160,6 +160,11 @@ const stripPackageNoise = (value) =>
 const escapeRegExp = (value) =>
   String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
+const slugifyUnderscore = (value) =>
+  normalizeLoose(value)
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+
 const productLineKey = ({ brand, title, bucket }) => {
   const normalizedBrand = normalizeLoose(brand);
   const parts = normalizeText(title)
@@ -176,6 +181,30 @@ const productLineKey = ({ brand, title, bucket }) => {
   }
   const normalizedLine = stripPackageNoise(line);
   return [normalizeLoose(bucket), normalizedBrand, normalizedLine].filter(Boolean).join("::");
+};
+
+const productLineName = ({ brand, title }) => {
+  const normalizedBrand = normalizeLoose(brand);
+  const parts = normalizeText(title)
+    .split(",")
+    .map((part) => part.trim())
+    .filter(Boolean);
+  if (parts.length >= 2 && normalizeLoose(parts[0]).includes(normalizedBrand.split(" ")[0] ?? "")) {
+    return parts[1];
+  }
+  if (parts.length >= 2) return parts[0];
+  return normalizeText(title).replace(new RegExp(`^${escapeRegExp(brand)}\\b`, "i"), "").trim();
+};
+
+const canarySlug = (candidate) => {
+  const line = stripPackageNoise(productLineName({
+    brand: candidate.brandName,
+    title: candidate.title,
+  }))
+    .split(/\s+/)
+    .slice(0, 5)
+    .join(" ");
+  return slugifyUnderscore(`${candidate.brandName ?? "unknown"} ${line || candidate.title || candidate.productId}`);
 };
 
 const buildStableCoverage = (stableScenarios) => {
@@ -300,6 +329,194 @@ const summarizeBuckets = (rows) =>
     acc[bucket] = (acc[bucket] ?? 0) + 1;
     return acc;
   }, {});
+
+const defaultAnchorExpectationForCandidate = (candidate) => {
+  const title = normalizeText(candidate.title);
+  const bucket = scenarioBucket(candidate);
+  const pass = [];
+  const warn = [];
+  const fail = ["Calories", "Serving Size", "Sugars"];
+
+  const add = (target, values) => {
+    for (const value of values) {
+      if (normalizeText(value) && !target.includes(value)) target.push(value);
+    }
+  };
+
+  if (/\bcoconut aminos\b/i.test(title)) {
+    add(pass, ["Coconut Aminos", "Soy-Free Soy Sauce Alternative", "Soy Sauce Alternative"]);
+    add(warn, ["Aminos"]);
+    add(fail, ["Iron", "Potassium", "Fiber", "Added Sugars"]);
+  } else if (/\bwhey\b/i.test(title)) {
+    add(pass, ["Whey Protein", "Protein"]);
+    add(warn, ["Whey"]);
+    add(fail, ["Magnesium", "Calcium", "Phosphorus", "Potassium", "Total Carbs"]);
+  } else if (/\bgreen tea\b/i.test(title)) {
+    add(pass, ["Green Tea", productLineName({ brand: candidate.brandName, title })]);
+    add(warn, ["Tea"]);
+  } else if (/\bmelatonin\b/i.test(title) && /\btea\b/i.test(title)) {
+    add(pass, ["Tea blend", "Melatonin Tea", "Sleepytime Melatonin"]);
+    add(warn, ["Melatonin", "Tea"]);
+    add(fail, ["Caffeine"]);
+  } else if (/\bcaffeine\b|\benergy\b/i.test(title) && /\bdrink mix\b/i.test(title)) {
+    add(pass, ["Caffeine", "Energy Powder Drink Mix", "Energy Drink Mix", "Green Coffee Bean Extract", "Green Tea Leaf Extract"]);
+    add(warn, ["Drink Mix"]);
+    add(fail, ["Vitamin C", "Potassium", "Sodium", "Total Carbohydrate"]);
+  } else if (/\bgreens?\b|\bsuperfood\b|\bkyo-green\b/i.test(title)) {
+    add(pass, ["Greens", "Superfood Blend", "Greens Blend", productLineName({ brand: candidate.brandName, title })]);
+    add(warn, ["Superfood"]);
+    add(fail, ["Sodium", "Total Carbohydrate"]);
+  } else if (/\bmct\b/i.test(title)) {
+    add(pass, ["MCT Oil", productLineName({ brand: candidate.brandName, title })]);
+    add(warn, ["Oil"]);
+    add(fail, ["Total Fat"]);
+  } else if (/\bomega|dha|epa|krill|fish oil|algal|algae/i.test(title)) {
+    add(pass, ["Omega-3", "Omega-3 Source Oil", productLineName({ brand: candidate.brandName, title })]);
+    add(warn, ["Oil"]);
+    add(fail, ["Total Fat"]);
+  } else if (bucket === "sports_hydration_boundary") {
+    add(pass, ["Drink Mix", "Hydration", "Electrolyte"]);
+    add(warn, ["Sports Drink"]);
+    add(fail, ["Vitamin C", "Potassium", "Sodium"]);
+  } else if (bucket === "source_protein_boundary") {
+    add(pass, ["Protein", productLineName({ brand: candidate.brandName, title })]);
+    add(warn, ["Protein Source"]);
+    add(fail, ["Potassium", "Total Carbs"]);
+  } else if (bucket === "tea_beverage_boundary") {
+    add(pass, ["Tea", productLineName({ brand: candidate.brandName, title })]);
+    add(warn, ["Beverage"]);
+  } else if (bucket === "condiment_sweetener_boundary") {
+    add(pass, [productLineName({ brand: candidate.brandName, title }), "Condiment"]);
+    add(warn, ["Food"]);
+    add(fail, ["Sodium", "Potassium"]);
+  } else {
+    add(pass, [productLineName({ brand: candidate.brandName, title }), candidate.title]);
+    add(warn, ["Food-like Product"]);
+  }
+
+  return { pass: pass.filter(Boolean), warn, fail };
+};
+
+const selectedAnchorExpectation = (defaultAnchor) =>
+  defaultAnchor.pass[0] ?? defaultAnchor.warn[0] ?? null;
+
+const searchQueryForCandidate = (candidate) =>
+  normalizeText(`${candidate.brandName ?? ""} ${productLineName({
+    brand: candidate.brandName,
+    title: candidate.title,
+  }) || candidate.title || ""}`);
+
+const canaryScenarioPairForCandidate = (candidate) => {
+  const slug = canarySlug(candidate);
+  const defaultAnchor = defaultAnchorExpectationForCandidate(candidate);
+  const product = {
+    productId: candidate.productId,
+    brand: candidate.brandName,
+    name: candidate.title,
+    barcode: candidate.barcode,
+  };
+  const expectedBase = {
+    defaultAnchor,
+    profileWarnings: {
+      mustInclude: [],
+      mustNotInclude: ["safe for you"],
+    },
+  };
+  return [
+    {
+      id: `canary_scan_food_like_${slug}_route_honesty`,
+      surface: "barcode_scan",
+      origin: "barcode_scan",
+      category: "food_like",
+      personas: [],
+      input: { barcode: candidate.barcode },
+      product,
+      expected: expectedBase,
+      gates: ["route_health", "selected_anchor_consistency", "unsafe_language"],
+      severityOnFail: "P1",
+    },
+    {
+      id: `canary_search_origin_food_like_${slug}_route_honesty`,
+      surface: "search_origin_result",
+      origin: "search_result",
+      category: "food_like",
+      personas: [],
+      input: {
+        query: searchQueryForCandidate(candidate),
+        queryType: "brand_product",
+        searchResultSeed: {
+          productId: candidate.productId,
+          barcode: candidate.barcode,
+          upcCode: candidate.barcode,
+          name: candidate.title,
+          brand: candidate.brandName,
+          category: "Food",
+          benefit: `Food-like ${candidate.bucket} boundary`,
+          dose: null,
+          factsStatus: "partial",
+          coverageStatus: "not_enough_structured_data",
+        },
+      },
+      product,
+      expected: {
+        ...expectedBase,
+        consistency: {
+          productId: candidate.productId,
+          barcode: candidate.barcode,
+          selectedAnchor: selectedAnchorExpectation(defaultAnchor),
+        },
+      },
+      gates: [
+        "click_through_seed_consistency",
+        "canonical_product_consistency",
+        "selected_anchor_consistency",
+        "warning_consistency",
+      ],
+      severityOnFail: "P1",
+    },
+  ];
+};
+
+const relativePathForConfig = (filePath) => {
+  const resolved = path.resolve(ROOT_DIR, filePath);
+  const relative = path.relative(ROOT_DIR, resolved);
+  return relative.startsWith("..") ? resolved : relative;
+};
+
+const defaultAdditionsPathForConfig = (configPath) => {
+  const resolved = path.resolve(ROOT_DIR, configPath);
+  const parsed = path.parse(resolved);
+  return path.join(parsed.dir, `${parsed.name}-additions${parsed.ext || ".json"}`);
+};
+
+export const buildRuntimeCanaryPack = ({
+  report,
+  configPath = "output/stable_promotion_candidate_selector/live_canary/stable-promotion-live-canary.json",
+  additionsPath = null,
+} = {}) => {
+  const resolvedAdditionsPath = additionsPath ?? defaultAdditionsPathForConfig(configPath);
+  const additionsRelativePath = relativePathForConfig(resolvedAdditionsPath);
+  const scenarios = toArray(report?.promote_now).flatMap(canaryScenarioPairForCandidate);
+  const additions = {
+    version: "stable-promotion-live-canary.v0",
+    description: "Temporary runtime canary generated from stable-promotion selector promote_now.",
+    generatedAt: report?.generatedAt ?? new Date().toISOString(),
+    scenarios,
+  };
+  const config = {
+    version: "stable-promotion-live-canary.v0",
+    sourcePackPath: "data/validation/golden-journey-pack.v1.json",
+    additionalPackPaths: [additionsRelativePath],
+    scenarioIds: scenarios.map((scenario) => scenario.id),
+    releaseBlocker: false,
+    runner: "runtime_contract_runner",
+    packRole: "stable_promotion_live_canary",
+    notes: [
+      "Temporary canary artifact generated by build-stable-promotion-candidate-selector.mjs; do not commit output artifacts.",
+    ],
+  };
+  return { config, additions };
+};
 
 export const classifyStablePromotionCandidates = ({
   candidates,
@@ -463,4 +680,24 @@ export const writeStablePromotionCandidateOutputs = async ({ report, outDir }) =
   await writeJson(jsonPath, report);
   await writeText(markdownPath, renderStablePromotionCandidateMarkdown(report));
   return { outputDir: relativeDir, jsonPath, markdownPath };
+};
+
+export const writeRuntimeCanaryPackOutputs = async ({ pack, configPath, additionsPath = null }) => {
+  const resolvedConfigPath = path.resolve(ROOT_DIR, configPath);
+  const resolvedAdditionsPath = additionsPath
+    ? path.resolve(ROOT_DIR, additionsPath)
+    : path.resolve(ROOT_DIR, pack.config.additionalPackPaths[0]);
+  const configRelativePath = relativePathForConfig(resolvedConfigPath);
+  const additionsRelativePath = relativePathForConfig(resolvedAdditionsPath);
+  await writeJson(additionsRelativePath, pack.additions);
+  await writeJson(configRelativePath, {
+    ...pack.config,
+    additionalPackPaths: [additionsRelativePath],
+  });
+  return {
+    configPath: resolvedConfigPath,
+    additionsPath: resolvedAdditionsPath,
+    configRelativePath,
+    additionsRelativePath,
+  };
 };

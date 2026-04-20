@@ -5,9 +5,11 @@ import path from "node:path";
 import test from "node:test";
 
 import {
+  buildRuntimeCanaryPack,
   classifyStablePromotionCandidates,
   collectPromotionCandidateScenarios,
   renderStablePromotionCandidateMarkdown,
+  writeRuntimeCanaryPackOutputs,
   writeStablePromotionCandidateOutputs,
 } from "../../scripts/maintainer/lib/stable-promotion-candidate-selector.mjs";
 
@@ -210,4 +212,80 @@ test("selector can collect scenarios from discovery report shapes and render ope
   });
   assert.ok(outputs.jsonPath.endsWith("stable_promotion_candidate_selector_report.json"));
   assert.ok(outputs.markdownPath.endsWith("stable_promotion_candidate_selector_report.md"));
+});
+
+test("selector emits a runtime canary pack from promote_now without hand-written scenario JSON", async () => {
+  const selection = classifyStablePromotionCandidates({
+    candidates: [
+      candidate({
+        id: "whey",
+        productId: "134706",
+        barcode: "00649908211905",
+        brandName: "NutraBio",
+        title: "NutraBio, Classic Whey Protein, Pistachio Delight, 2 lb (907 g)",
+        bucket: "source_protein_boundary",
+        riskTags: [
+          "food_like_route_honesty",
+          "barcode_exact",
+          "source_sensitive",
+          "supplement_signal_overlap",
+          "search_detail_route_risk",
+        ],
+      }),
+      candidate({
+        id: "coconut_aminos",
+        productId: "119309",
+        barcode: "00851492002948",
+        brandName: "Coconut Secret",
+        title: "Coconut Secret, Coconut Aminos, Soy-Free Soy Sauce Alternative, Medium Spicy, 10 fl oz (296 ml)",
+        bucket: "condiment_sweetener_boundary",
+        riskTags: [
+          "food_like_route_honesty",
+          "barcode_exact",
+          "source_sensitive",
+          "search_detail_route_risk",
+        ],
+      }),
+    ],
+    stableScenarios: [],
+    maxPromote: 2,
+    generatedAt: "2026-04-19T00:00:00.000Z",
+  });
+
+  const pack = buildRuntimeCanaryPack({
+    report: selection,
+    configPath: "output/test/stable-promotion-live-canary.json",
+    additionsPath: "output/test/stable-promotion-live-canary-additions.json",
+  });
+
+  assert.equal(pack.additions.scenarios.length, 4);
+  assert.equal(pack.config.scenarioIds.length, 4);
+  assert.deepEqual(pack.config.additionalPackPaths, ["output/test/stable-promotion-live-canary-additions.json"]);
+  assert.ok(pack.config.scenarioIds.includes("canary_scan_food_like_nutrabio_classic_whey_protein_route_honesty"));
+  assert.ok(pack.config.scenarioIds.includes("canary_search_origin_food_like_coconut_secret_coconut_aminos_route_honesty"));
+
+  const wheyScan = pack.additions.scenarios.find((scenario) =>
+    scenario.id === "canary_scan_food_like_nutrabio_classic_whey_protein_route_honesty");
+  assert.deepEqual(wheyScan.gates, ["route_health", "selected_anchor_consistency", "unsafe_language"]);
+  assert.ok(wheyScan.expected.defaultAnchor.pass.includes("Whey Protein"));
+  assert.ok(wheyScan.expected.defaultAnchor.fail.includes("Potassium"));
+
+  const coconutSearch = pack.additions.scenarios.find((scenario) =>
+    scenario.id === "canary_search_origin_food_like_coconut_secret_coconut_aminos_route_honesty");
+  assert.equal(coconutSearch.input.searchResultSeed.productId, "119309");
+  assert.deepEqual(coconutSearch.gates, [
+    "click_through_seed_consistency",
+    "canonical_product_consistency",
+    "selected_anchor_consistency",
+    "warning_consistency",
+  ]);
+  assert.ok(coconutSearch.expected.defaultAnchor.pass.includes("Coconut Aminos"));
+
+  const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "stable-promotion-canary-pack-"));
+  const outputs = await writeRuntimeCanaryPackOutputs({
+    pack,
+    configPath: path.join(tempDir, "stable-promotion-live-canary.json"),
+  });
+  assert.equal(JSON.parse(await fs.readFile(outputs.configPath, "utf8")).scenarioIds.length, 4);
+  assert.equal(JSON.parse(await fs.readFile(outputs.additionsPath, "utf8")).scenarios.length, 4);
 });

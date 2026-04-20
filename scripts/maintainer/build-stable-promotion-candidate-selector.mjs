@@ -11,9 +11,11 @@ import {
   loadCuratedValidationSourcePack,
 } from "./lib/validation-governance.mjs";
 import {
+  buildRuntimeCanaryPack,
   classifyStablePromotionCandidates,
   collectPromotionCandidateScenarios,
   renderStablePromotionCandidateMarkdown,
+  writeRuntimeCanaryPackOutputs,
   writeStablePromotionCandidateOutputs,
 } from "./lib/stable-promotion-candidate-selector.mjs";
 import { ROOT_DIR } from "./lib/science-validation-reporting.mjs";
@@ -28,6 +30,9 @@ const parseArgs = () => {
     maxPromote: 4,
     perBucketPromoteLimit: 1,
     printMarkdown: false,
+    emitRuntimeCanaryPack: false,
+    canaryConfigOut: "",
+    canaryAdditionsOut: "",
   };
   const args = process.argv.slice(2);
   for (let index = 0; index < args.length; index += 1) {
@@ -50,6 +55,15 @@ const parseArgs = () => {
       index += 1;
     } else if (arg === "--print-markdown") {
       values.printMarkdown = true;
+    } else if (arg === "--emit-runtime-canary-pack") {
+      values.emitRuntimeCanaryPack = true;
+    } else if (arg === "--canary-config-out" && next) {
+      values.canaryConfigOut = next;
+      values.emitRuntimeCanaryPack = true;
+      index += 1;
+    } else if (arg === "--canary-additions-out" && next) {
+      values.canaryAdditionsOut = next;
+      index += 1;
     }
   }
   return values;
@@ -115,6 +129,22 @@ const main = async () => {
 
   if (args.printMarkdown) {
     console.log(renderStablePromotionCandidateMarkdown(report));
+  }
+  if (args.emitRuntimeCanaryPack) {
+    const canaryConfigPath = args.canaryConfigOut
+      || path.join(args.outDir, "live_canary", "stable-promotion-live-canary.json");
+    const canaryPack = buildRuntimeCanaryPack({
+      report,
+      configPath: canaryConfigPath,
+      additionsPath: args.canaryAdditionsOut || null,
+    });
+    const canaryOutputs = await writeRuntimeCanaryPackOutputs({
+      pack: canaryPack,
+      configPath: canaryConfigPath,
+      additionsPath: args.canaryAdditionsOut || null,
+    });
+    console.error(`[stable-promotion-selector] wrote canary config ${canaryOutputs.configRelativePath}`);
+    console.error(`[stable-promotion-selector] wrote canary additions ${canaryOutputs.additionsRelativePath}`);
   }
   console.error(`[stable-promotion-selector] total=${report.summary.totalCandidates}`);
   console.error(`[stable-promotion-selector] promote_now=${report.summary.promote_now}`);
