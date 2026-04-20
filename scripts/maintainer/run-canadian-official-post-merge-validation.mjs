@@ -190,6 +190,7 @@ const ANCHOR_COPY_TOKEN_STOPLIST = new Set([
 const resolveAnchorCopyToken = (anchor) => {
   const normalized = normalizeLooseText(anchor);
   if (!normalized) return "";
+  if (/^vitamin\s+[a-z0-9]\b/.test(normalized)) return "vitamin";
   for (const preferred of [
     "zinc",
     "magnesium",
