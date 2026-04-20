@@ -3059,6 +3059,347 @@
         "warning_consistency"
       ],
       "severityOnFail": "P1"
+    },
+    {
+      "id": "scan_food_like_nutrabio_classic_whey_protein_route_honesty",
+      "surface": "barcode_scan",
+      "origin": "barcode_scan",
+      "category": "food_like",
+      "personas": [],
+      "input": {
+        "barcode": "00649908211905"
+      },
+      "product": {
+        "productId": "134706",
+        "brand": "NutraBio",
+        "name": "NutraBio, Classic Whey Protein, Pistachio Delight, 2 lb (907 g)",
+        "barcode": "00649908211905"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "Whey Protein",
+            "Classic Whey Protein",
+            "Protein"
+          ],
+          "warn": [
+            "Whey"
+          ],
+          "fail": [
+            "Magnesium",
+            "Calcium",
+            "Phosphorus",
+            "Potassium",
+            "Calories",
+            "Serving Size",
+            "Sugars"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        }
+      },
+      "gates": [
+        "route_health",
+        "selected_anchor_consistency",
+        "unsafe_language"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_origin_food_like_nutrabio_classic_whey_protein_route_honesty",
+      "surface": "search_origin_result",
+      "origin": "search_result",
+      "category": "food_like",
+      "personas": [],
+      "input": {
+        "query": "nutrabio classic whey protein pistachio delight",
+        "queryType": "brand_product",
+        "searchResultSeed": {
+          "productId": "134706",
+          "barcode": "00649908211905",
+          "upcCode": "649908211905",
+          "name": "NutraBio, Classic Whey Protein, Pistachio Delight, 2 lb (907 g)",
+          "brand": "NutraBio",
+          "category": "Food",
+          "benefit": "Food-like whey protein source boundary",
+          "dose": "2 lb",
+          "factsStatus": "partial",
+          "coverageStatus": "not_enough_structured_data"
+        }
+      },
+      "product": {
+        "productId": "134706",
+        "brand": "NutraBio",
+        "name": "NutraBio, Classic Whey Protein, Pistachio Delight, 2 lb (907 g)",
+        "barcode": "00649908211905"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "Whey Protein",
+            "Classic Whey Protein",
+            "Protein"
+          ],
+          "warn": [
+            "Whey"
+          ],
+          "fail": [
+            "Magnesium",
+            "Calcium",
+            "Phosphorus",
+            "Potassium",
+            "Calories",
+            "Serving Size",
+            "Sugars"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        },
+        "consistency": {
+          "productId": "134706",
+          "barcode": "00649908211905",
+          "selectedAnchor": "Whey Protein"
+        }
+      },
+      "gates": [
+        "click_through_seed_consistency",
+        "canonical_product_consistency",
+        "selected_anchor_consistency",
+        "warning_consistency"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "scan_food_like_coconut_secret_coconut_aminos_route_honesty",
+      "surface": "barcode_scan",
+      "origin": "barcode_scan",
+      "category": "food_like",
+      "personas": [],
+      "input": {
+        "barcode": "00851492002948"
+      },
+      "product": {
+        "productId": "119309",
+        "brand": "Coconut Secret",
+        "name": "Coconut Secret, Coconut Aminos, Soy-Free Soy Sauce Alternative, Medium Spicy, 10 fl oz (296 ml)",
+        "barcode": "00851492002948"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "Coconut Aminos",
+            "Soy-Free Soy Sauce Alternative",
+            "Soy Sauce Alternative"
+          ],
+          "warn": [
+            "Aminos"
+          ],
+          "fail": [
+            "Iron",
+            "Potassium",
+            "Fiber",
+            "Added Sugars",
+            "Sugars",
+            "Calories",
+            "Serving Size"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        }
+      },
+      "gates": [
+        "route_health",
+        "selected_anchor_consistency",
+        "unsafe_language"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_origin_food_like_coconut_secret_coconut_aminos_route_honesty",
+      "surface": "search_origin_result",
+      "origin": "search_result",
+      "category": "food_like",
+      "personas": [],
+      "input": {
+        "query": "coconut secret coconut aminos soy-free soy sauce alternative",
+        "queryType": "brand_product",
+        "searchResultSeed": {
+          "productId": "119309",
+          "barcode": "00851492002948",
+          "upcCode": "851492002948",
+          "name": "Coconut Secret, Coconut Aminos, Soy-Free Soy Sauce Alternative, Medium Spicy, 10 fl oz (296 ml)",
+          "brand": "Coconut Secret",
+          "category": "Food",
+          "benefit": "Food-like coconut aminos condiment source boundary",
+          "dose": "10 fl oz",
+          "factsStatus": "partial",
+          "coverageStatus": "not_enough_structured_data"
+        }
+      },
+      "product": {
+        "productId": "119309",
+        "brand": "Coconut Secret",
+        "name": "Coconut Secret, Coconut Aminos, Soy-Free Soy Sauce Alternative, Medium Spicy, 10 fl oz (296 ml)",
+        "barcode": "00851492002948"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "Coconut Aminos",
+            "Soy-Free Soy Sauce Alternative",
+            "Soy Sauce Alternative"
+          ],
+          "warn": [
+            "Aminos"
+          ],
+          "fail": [
+            "Iron",
+            "Potassium",
+            "Fiber",
+            "Added Sugars",
+            "Sugars",
+            "Calories",
+            "Serving Size"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        },
+        "consistency": {
+          "productId": "119309",
+          "barcode": "00851492002948",
+          "selectedAnchor": "Coconut Aminos"
+        }
+      },
+      "gates": [
+        "click_through_seed_consistency",
+        "canonical_product_consistency",
+        "selected_anchor_consistency",
+        "warning_consistency"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "scan_food_like_celestial_authentic_green_tea_route_honesty",
+      "surface": "barcode_scan",
+      "origin": "barcode_scan",
+      "category": "food_like",
+      "personas": [],
+      "input": {
+        "barcode": "00070734005015"
+      },
+      "product": {
+        "productId": "134829",
+        "brand": "Celestial Seasonings",
+        "name": "Celestial Seasonings, Authentic Green Tea, 40 Tea Bags, 2.9 oz (82 g)",
+        "barcode": "00070734005015"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "Authentic Green Tea",
+            "Green Tea"
+          ],
+          "warn": [
+            "Tea"
+          ],
+          "fail": [
+            "Sugars",
+            "Calories",
+            "Serving Size"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        }
+      },
+      "gates": [
+        "route_health",
+        "selected_anchor_consistency",
+        "unsafe_language"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_origin_food_like_celestial_authentic_green_tea_route_honesty",
+      "surface": "search_origin_result",
+      "origin": "search_result",
+      "category": "food_like",
+      "personas": [],
+      "input": {
+        "query": "celestial authentic green tea 40 tea bags",
+        "queryType": "brand_product",
+        "searchResultSeed": {
+          "productId": "134829",
+          "barcode": "00070734005015",
+          "upcCode": "070734005015",
+          "name": "Celestial Seasonings, Authentic Green Tea, 40 Tea Bags, 2.9 oz (82 g)",
+          "brand": "Celestial Seasonings",
+          "category": "Food",
+          "benefit": "Food-like green tea beverage boundary",
+          "dose": "40 tea bags",
+          "factsStatus": "partial",
+          "coverageStatus": "not_enough_structured_data"
+        }
+      },
+      "product": {
+        "productId": "134829",
+        "brand": "Celestial Seasonings",
+        "name": "Celestial Seasonings, Authentic Green Tea, 40 Tea Bags, 2.9 oz (82 g)",
+        "barcode": "00070734005015"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": [
+            "Authentic Green Tea",
+            "Green Tea"
+          ],
+          "warn": [
+            "Tea"
+          ],
+          "fail": [
+            "Sugars",
+            "Calories",
+            "Serving Size"
+          ]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": [
+            "safe for you"
+          ]
+        },
+        "consistency": {
+          "productId": "134829",
+          "barcode": "00070734005015",
+          "selectedAnchor": "Authentic Green Tea"
+        }
+      },
+      "gates": [
+        "click_through_seed_consistency",
+        "canonical_product_consistency",
+        "selected_anchor_consistency",
+        "warning_consistency"
+      ],
+      "severityOnFail": "P1"
     }
   ]
 }
