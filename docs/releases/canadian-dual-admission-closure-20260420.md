@@ -766,3 +766,52 @@ Artifacts:
 - `output/canadian_brand_full_coverage_wave_v0/admission_waves/canadian_upc_explicit_canary_progressive_01/apply/canadian_search_ready_apply_report.json`
 - `output/canadian_brand_full_coverage_wave_v0/admission_waves/canadian_upc_explicit_canary_progressive_01/validation/canadian_search_ready_validation.json`
 - `output/canadian_brand_full_coverage_wave_v0/admission_waves/canadian_upc_explicit_canary_progressive_01/validation_warm_pass_01/canadian_search_ready_validation.json`
+
+### Popular-brand proof pack v0
+
+- pack: `data/validation/canadian-popular-brand-proof-pack.v0.json`
+- rows selected: `39`
+- brands covered: `14`
+- cold validation: `39/39 pass`
+- warm rerun: `39/39 pass`
+- gate failures: `0`
+
+Brands covered:
+
+- `Jamieson`
+- `Webber Naturals`
+- `Progressive`
+- `Natural Factors`
+- `CanPrev`
+- `AOR`
+- `Organika`
+- `New Roots Herbal`
+- `Prairie Naturals`
+- `Genuine Health`
+- `Genestra`
+- `Sisu`
+- `NOW Canada`
+- `Codeage Canada`
+
+Interpretation:
+
+- the Canadian line is no longer just a Jamieson-only stable baseline
+- we now have a fresh multi-brand proof pack that revalidates the most important Canadian brands on the current runtime and product surface
+- active promotion queues are intentionally empty after this replay; the remaining residual buckets are discovery-only or future-lane material, not unfinished blocker work for the current release scope
+
+Artifacts:
+
+- `data/validation/canadian-popular-brand-proof-pack.v0.json`
+- `data/validation/canadian-popular-brand-proof-pack.v0.md`
+- `output/canadian_brand_full_coverage_wave_v0/stable_packs/canadian_popular_brand_proof_pack_v0/validation/canadian_official_post_merge_validation.json`
+- `output/canadian_brand_full_coverage_wave_v0/stable_packs/canadian_popular_brand_proof_pack_v0/validation_warm_pass_01/canadian_official_post_merge_validation.json`
+- `data/validation/canadian-brand-closure-matrix.v0.json`
+- `data/validation/canadian-lane-closure.v0.json`
+
+### Final closure call
+
+- `nextScanWave = 0`
+- `nextSearchReadyWave = 0`
+- `Jamieson` is closed into a formal stable promotion baseline
+- the broader Canadian popular-brand line is covered by a fresh `39/39` cold+warm proof pack
+- `Webber Naturals`, `Progressive`, `Organika`, `New Roots Herbal`, and `Natural Factors` still have residual discovery buckets, but those are explicitly classified as non-blocking future-lane work rather than current-release closure gaps

@@ -1,0 +1,160 @@
+{
+  "schemaVersion": "canadian_brand_closure_matrix.v0",
+  "generatedAt": "2026-04-20T00:00:00.000Z",
+  "purpose": "Popular Canadian supplement brand closure matrix for the current release scope.",
+  "summary": {
+    "popularBrandsCovered": 14,
+    "proofPackProducts": 39,
+    "coldValidation": "39/39 pass",
+    "warmValidation": "39/39 pass",
+    "activeNextScanWave": 0,
+    "activeNextSearchReadyWave": 0
+  },
+  "brands": [
+    {
+      "brand": "Jamieson",
+      "status": "stable_promotion_baseline",
+      "proofPackCount": 3,
+      "postMergeEvidenceHits": 218,
+      "notes": "Formal 32-product Jamieson stable baseline is green cold and warm; this is the strongest Canadian release-grade promotion cohort.",
+      "evidenceRoots": [
+        "data/validation/canadian-jamieson-promotion-pack.v0.json",
+        "output/canadian_brand_full_coverage_wave_v0/stable_packs/canadian_jamieson_promotion_pack_v0"
+      ]
+    },
+    {
+      "brand": "Webber Naturals",
+      "status": "release_ready_examples_with_residual_generalization",
+      "proofPackCount": 3,
+      "postMergeEvidenceHits": 328,
+      "notes": "Representative proof-pack products are green, while broader explicit-UPC canaries stayed search-identity unstable and remain discovery only.",
+      "evidenceRoots": [
+        "output/canadian_brand_full_coverage_wave_v0/merge_wave_19/post_merge_validation",
+        "output/canadian_brand_full_coverage_wave_v0/merge_wave_05/post_merge_validation"
+      ]
+    },
+    {
+      "brand": "Progressive",
+      "status": "release_ready_examples_with_residual_generalization",
+      "proofPackCount": 3,
+      "postMergeEvidenceHits": 46,
+      "notes": "Representative proof-pack products are green, but the broader explicit-UPC canary remained search-identity unstable and is not promoted.",
+      "evidenceRoots": [
+        "output/canadian_brand_full_coverage_wave_v0/merge_wave_04/post_merge_validation",
+        "output/canadian_brand_full_coverage_wave_v0/merge_wave_05/post_merge_validation"
+      ]
+    },
+    {
+      "brand": "Natural Factors",
+      "status": "release_ready_examples_with_detail_limited_official_residual",
+      "proofPackCount": 3,
+      "postMergeEvidenceHits": 13,
+      "notes": "Parser-backed protein/collagen rows and retailer-backed magnesium pass cleanly; the broader official-catalog residual is still mostly UPC-only rows without accepted detail sections.",
+      "evidenceRoots": [
+        "output/canadian_brand_full_coverage_wave_v0/wave_set_2_parser_lane_02_final/post_merge_validation",
+        "output/canadian_brand_full_coverage_wave_v0/retailer_ocr_lane_01/mixed_exact_upc_retailer_canary_21/post_merge_validation"
+      ]
+    },
+    {
+      "brand": "CanPrev",
+      "status": "release_ready_small_official_html_cohort",
+      "proofPackCount": 3,
+      "postMergeEvidenceHits": 49,
+      "notes": "Official HTML canary-backed products are green and sufficient for current release scope.",
+      "evidenceRoots": [
+        "output/canadian_brand_full_coverage_wave_v0/retailer_ocr_lane_01/canprev_official_html_canary_13/post_merge_validation"
+      ]
+    },
+    {
+      "brand": "AOR",
+      "status": "release_ready_retailer_upc_clean_cohort",
+      "proofPackCount": 3,
+      "postMergeEvidenceHits": 105,
+      "notes": "Retailer UPC clean cohort validates strongly; remaining official catalog residual is discovery-only and not needed for release.",
+      "evidenceRoots": [
+        "output/canadian_brand_full_coverage_wave_v0/retailer_ocr_lane_01/current_session_consolidated_validation_04/post_merge_validation"
+      ]
+    },
+    {
+      "brand": "Organika",
+      "status": "release_ready_examples_with_catalog_holdout",
+      "proofPackCount": 2,
+      "postMergeEvidenceHits": 10,
+      "notes": "Representative parser-backed products pass, but the broader catalog-strong no-UPC lane remains on hold after a failed live canary.",
+      "evidenceRoots": [
+        "output/canadian_brand_full_coverage_wave_v0/wave_set_2_parser_lane_02_final/post_merge_validation"
+      ]
+    },
+    {
+      "brand": "New Roots Herbal",
+      "status": "release_ready_examples_with_residual_404_and_weak_detail",
+      "proofPackCount": 3,
+      "postMergeEvidenceHits": 31,
+      "notes": "Representative parser-backed products pass; the broader official residual is dominated by weak-detail and 404-like rows and stays discovery-only.",
+      "evidenceRoots": [
+        "output/canadian_brand_full_coverage_wave_v0/wave_set_2_parser_lane_02_final/post_merge_validation",
+        "output/canadian_brand_full_coverage_wave_v0/retailer_ocr_lane_01/current_session_consolidated_validation_05/post_merge_validation"
+      ]
+    },
+    {
+      "brand": "Prairie Naturals",
+      "status": "release_ready_retailer_clean_cohort",
+      "proofPackCount": 3,
+      "postMergeEvidenceHits": 55,
+      "notes": "Retailer/OCR clean wave and consolidated validations already cover this brand well for current release scope.",
+      "evidenceRoots": [
+        "output/canadian_brand_full_coverage_wave_v0/retailer_ocr_lane_01/current_session_consolidated_validation_04/post_merge_validation"
+      ]
+    },
+    {
+      "brand": "Genuine Health",
+      "status": "release_ready_gtin_retailer_ocr_cohort",
+      "proofPackCount": 3,
+      "postMergeEvidenceHits": 66,
+      "notes": "GTIN-ready retailer/OCR cohorts are green and sufficient for current release scope.",
+      "evidenceRoots": [
+        "output/canadian_brand_full_coverage_wave_v0/retailer_ocr_lane_01/current_session_consolidated_validation_04/post_merge_validation"
+      ]
+    },
+    {
+      "brand": "Genestra",
+      "status": "release_ready_small_retailer_official_cohort",
+      "proofPackCount": 3,
+      "postMergeEvidenceHits": 13,
+      "notes": "Representative probiotic and omega products are green and covered in the proof pack.",
+      "evidenceRoots": [
+        "output/canadian_brand_full_coverage_wave_v0/retailer_ocr_lane_01/current_session_consolidated_validation_04/post_merge_validation"
+      ]
+    },
+    {
+      "brand": "Sisu",
+      "status": "release_ready_small_retailer_official_cohort",
+      "proofPackCount": 3,
+      "postMergeEvidenceHits": 13,
+      "notes": "Representative vitamin C, vitamin D, and cal-mag products are green and covered in the proof pack.",
+      "evidenceRoots": [
+        "output/canadian_brand_full_coverage_wave_v0/retailer_ocr_lane_01/current_session_consolidated_validation_04/post_merge_validation"
+      ]
+    },
+    {
+      "brand": "NOW Canada",
+      "status": "release_ready_small_retailer_official_cohort",
+      "proofPackCount": 3,
+      "postMergeEvidenceHits": 15,
+      "notes": "Representative cal-mag and magnesium products are green and covered in the proof pack.",
+      "evidenceRoots": [
+        "output/canadian_brand_full_coverage_wave_v0/retailer_ocr_lane_01/current_session_consolidated_validation_04/post_merge_validation"
+      ]
+    },
+    {
+      "brand": "Codeage Canada",
+      "status": "release_ready_singleton",
+      "proofPackCount": 1,
+      "postMergeEvidenceHits": 5,
+      "notes": "The Canadian Codeage ADK product continues to validate cleanly as a singleton proof product.",
+      "evidenceRoots": [
+        "output/canadian_brand_full_coverage_wave_v0/retailer_ocr_lane_01/current_session_consolidated_validation_04/post_merge_validation"
+      ]
+    }
+  ]
+}

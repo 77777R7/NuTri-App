@@ -1,0 +1,3739 @@
+{
+  "schemaVersion": "canadian_popular_brand_proof_pack.v0",
+  "generatedAt": "2026-04-21T06:24:12.980Z",
+  "purpose": "Fresh popular-brand Canadian proof pack spanning the current release-grade Canadian brands across official, parser, and retailer/OCR lanes.",
+  "sources": {
+    "jamieson_pack": "data/validation/canadian-jamieson-promotion-pack.v0.json",
+    "merge_wave_05": "output/canadian_brand_full_coverage_wave_v0/merge_wave_05/staging_products.canadian_official_wave_05.json",
+    "merge_wave_19": "output/canadian_brand_full_coverage_wave_v0/merge_wave_19/staging_products.canadian_official_wave_19.json",
+    "wave2_final": "output/canadian_brand_full_coverage_wave_v0/wave_set_2_parser_lane_02_final/staging_products.canadian_wave_set_2_parser_lane_02_final.json",
+    "consolidated_04": "output/canadian_brand_full_coverage_wave_v0/retailer_ocr_lane_01/current_session_consolidated_validation_04/staging_products.canadian_current_session_consolidated_validation_04.json",
+    "canprev_13": "output/canadian_brand_full_coverage_wave_v0/retailer_ocr_lane_01/canprev_official_html_canary_13/clean_staging/staging_products.canadian_retailer_ocr_canprev_official_html_canary_13.json",
+    "mixed_21": "output/canadian_brand_full_coverage_wave_v0/retailer_ocr_lane_01/mixed_exact_upc_retailer_canary_21/staging_products.canadian_retailer_ocr_mixed_exact_upc_canary_21.json"
+  },
+  "summary": {
+    "selected": 39,
+    "brandCount": 14,
+    "byBrand": {
+      "Jamieson": 3,
+      "Webber Naturals": 3,
+      "Progressive": 3,
+      "Natural Factors": 3,
+      "CanPrev": 3,
+      "AOR": 3,
+      "Organika": 2,
+      "New Roots Herbal": 3,
+      "Prairie Naturals": 3,
+      "Genuine Health": 3,
+      "Genestra": 3,
+      "Sisu": 3,
+      "NOW Canada": 3,
+      "Codeage Canada": 1
+    }
+  },
+  "products": [
+    {
+      "productId": "ca-official-jamieson-00064642103413",
+      "title": "100 % Pure Magnesium L-Threonate",
+      "upcCode": "064642103413",
+      "source": "promotionCohort",
+      "sourceWaveId": "canadian_upc_explicit_head_wave_jamieson_03",
+      "brandName": "Jamieson",
+      "proofPackSource": {
+        "alias": "jamieson_pack",
+        "path": "data/validation/canadian-jamieson-promotion-pack.v0.json"
+      }
+    },
+    {
+      "productId": "ca-official-jamieson-00064642074775",
+      "title": "Jamieson Vitamin B12 2,500 mcg Fast‑Dissolving Tablets",
+      "upcCode": "064642074775",
+      "source": "adjacentExpansion",
+      "sourceWaveId": "canadian_upc_explicit_adjacent_wave_jamieson_07",
+      "brandName": "Jamieson",
+      "proofPackSource": {
+        "alias": "jamieson_pack",
+        "path": "data/validation/canadian-jamieson-promotion-pack.v0.json"
+      }
+    },
+    {
+      "productId": "ca-official-jamieson-00064642069252",
+      "title": "Vitamin D3 for Babies: Liquid Drops",
+      "upcCode": "064642069252",
+      "source": "adjacentExpansion",
+      "sourceWaveId": "canadian_upc_explicit_adjacent_wave_jamieson_07",
+      "brandName": "Jamieson",
+      "proofPackSource": {
+        "alias": "jamieson_pack",
+        "path": "data/validation/canadian-jamieson-promotion-pack.v0.json"
+      }
+    },
+    {
+      "brandName": "Webber Naturals",
+      "title": "The Right Fibre4 Tablets",
+      "normalizedTitle": "the right fibre4 tablets",
+      "productId": "ca-official-webber-naturals-00625273039597",
+      "upcCode": "625273039597",
+      "barcode_gtin14": "00625273039597",
+      "link": "https://webbernaturals.com/products/fibre-4-tablets",
+      "productCatalogImage": "https://webbernaturals.com/cdn/shop/files/a3oyrd09jiwo7ws0j1j8.png?v=1753134941",
+      "productImages": [
+        "https://webbernaturals.com/cdn/shop/files/a3oyrd09jiwo7ws0j1j8.png?v=1753134941",
+        "https://cdn.shopify.com/s/files/1/0556/0185/6591/files/a3oyrd09jiwo7ws0j1j8.png?v=1753134941",
+        "https://cdn.shopify.com/s/files/1/0556/0185/6591/files/xbpisqhw53qowp7ppftr.jpg?v=1753134941",
+        "https://cdn.shopify.com/s/files/1/0556/0185/6591/files/gert8drfyr8drgr9x8gl.jpg?v=1753134941",
+        "https://cdn.shopify.com/s/files/1/0556/0185/6591/files/dauafusx93ktbxqbisvf.jpg?v=1753134941"
+      ],
+      "categories": [
+        "Probiotics & Digestion"
+      ],
+      "count": "150 Tablets",
+      "dosageForm": "tablets",
+      "serving": {
+        "servingType": null,
+        "servingDescription": null,
+        "servingSize": null,
+        "servingsPerContainer": null
+      },
+      "supplementFacts": {
+        "servingSize": null,
+        "servingsPerContainer": null,
+        "nutritionalFacts": [
+          {
+            "substancy": "Fibre4 (partially hydrolyzed guar gum)",
+            "amountPerServing": "1 g",
+            "dailyValuePercent": null
+          }
+        ]
+      },
+      "descriptionSections": {
+        "Description": "",
+        "Suggested use": "Recommended dosage (adults, adolescents, and children 12 years and older): For fibre: 3 tablets daily or as directed by a physician. For IBS, diarrhea, constipation, glycemic index: 5 tablets daily or as directed by a physician. Take with a full glass of water. Recommended Purpose Helps improve intestinal regularity, including constipation and diarrhea. Helps improve bowel regularity in people with irritable bowel syndrome (IBS). Helps reduce the need for laxative use. Helps reduce glycemic response and glycemic index when taken with food. Source of fibre for the maintenance of healthy gastrointestinal function.",
+        "Other ingredients": "Each tablet contains: Fibre4 (partially hydrolyzed guar gum) 1 g",
+        "Warnings": "Consult a physician prior to use if you have diabetes mellitus in which blood sugar is difficult to regulate, are taking medications which inhibit peristaltic movement (e.g., opioids, loperamide), have symptoms such as abdominal pain, nausea, vomiting, or fever (as these could be signs of other serious conditions), are pregnant or breastfeeding, or are experiencing a sudden change in bowel habits that has persisted for more than 2 weeks, undiagnosed rectal bleeding, or failure to defecate following the use of another laxative product. Consult a physician if symptoms persist or worsen or if laxative effect does not occur within 7 days. Keep out of reach of children. Allergen Statement Free of artificial colours, preservatives, or sweeteners; no dairy, sugar, wheat, gluten, yeast, soy, egg, fish, shellfish, animal products, or GMOs. Suitable for vegetarians/vegans."
+      },
+      "sourceSummary": {
+        "sourceKind": "canadian_official_product_page",
+        "sourceTypes": [
+          "official_product_page"
+        ],
+        "marketSources": [
+          "ca"
+        ],
+        "sourceUrls": [
+          "https://webbernaturals.com/products/fibre-4-tablets"
+        ],
+        "sourceNotes": [
+          "Amazon.ca specific product page may supplement UPC/ASIN/item form/unit count/diet/allergen/material/ingredient string",
+          "Canadian official product detail pass cleaned v2",
+          "Title cleaning preserves hyphenated product names and drops low-confidence page-navigation captures",
+          "canadian_official_wave_19: Canadian official complete fields with conservative facts parse"
+        ],
+        "npnIgnored": false,
+        "hasUsIherbPage": false,
+        "sourceRank": 90
+      },
+      "canadianCoverage": {
+        "sourceBrand": "Webber Naturals",
+        "originalCatalogTitle": "The Right Fibre4 Tablets",
+        "officialDetailStatus": 200,
+        "finalUrl": "https://webbernaturals.com/products/fibre-4-tablets",
+        "hasOfficialUpc": true,
+        "hasAcceptedIngredientString": true,
+        "hasAcceptedSuggestedUse": true,
+        "hasAcceptedWarnings": true,
+        "isHumanSupplement": true,
+        "admissionLane": "official_upc_ready_overlay_candidate_cleaned"
+      },
+      "readiness": {
+        "canadianOfficialFullOverlayReady": true,
+        "highConfidenceUsProductPageReady": false,
+        "factParseMethod": "official_other_ingredients_amount_rows_v2",
+        "factParseRowCount": 1
+      },
+      "overlayRecordKey": "gtin14:00625273039597",
+      "proofPackSource": {
+        "alias": "merge_wave_19",
+        "path": "output/canadian_brand_full_coverage_wave_v0/merge_wave_19/staging_products.canadian_official_wave_19.json"
+      }
+    },
+    {
+      "brandName": "Webber Naturals",
+      "title": "Vitamin B12 Methylcobalamin 1000 mcg",
+      "normalizedTitle": "vitamin b12 methylcobalamin 1000 mcg",
+      "productId": "ca-official-webber-naturals-00625273038149",
+      "upcCode": "625273038149",
+      "barcode_gtin14": "00625273038149",
+      "link": "https://webbernaturals.com/products/vitamin-b12-methylcobalamin-1000-mcg",
+      "productCatalogImage": "https://webbernaturals.com/cdn/shop/files/wn3814__image-hi-res__vitamin-b12-methylcobalamin-1000-mcg__1061963.png?v=1774388509",
+      "productImages": [
+        "https://webbernaturals.com/cdn/shop/files/wn3814__image-hi-res__vitamin-b12-methylcobalamin-1000-mcg__1061963.png?v=1774388509",
+        "https://cdn.shopify.com/s/files/1/0556/0185/6591/files/wn3814__image-hi-res__vitamin-b12-methylcobalamin-1000-mcg__1061963.png?v=1774388509",
+        "https://cdn.shopify.com/s/files/1/0556/0185/6591/files/wn3077__image-hi-res__vitamin-b12-methylcobalamin-1000-mcg__2095464.png?v=1774388509",
+        "https://cdn.shopify.com/s/files/1/0556/0185/6591/files/image-enhanced-pill__vitamin-b12-methylcobalamin-1000-mcg__252580.jpg?v=1774306284",
+        "https://cdn.shopify.com/s/files/1/0556/0185/6591/files/image-certificate__vitamin-b12-methylcobalamin-1000-mcg__268567.jpg?v=1774306284",
+        "https://cdn.shopify.com/s/files/1/0556/0185/6591/files/image-misc__vitamin-b12-methylcobalamin-1000-mcg__246087.jpg?v=1774306284"
+      ],
+      "categories": [
+        "Vitamins"
+      ],
+      "count": "80 Sublingual Tablets",
+      "dosageForm": "tablets",
+      "serving": {
+        "servingType": null,
+        "servingDescription": null,
+        "servingSize": null,
+        "servingsPerContainer": null
+      },
+      "supplementFacts": {
+        "servingSize": null,
+        "servingsPerContainer": null,
+        "nutritionalFacts": [
+          {
+            "substancy": "Vitamin B12 (methylcobalamin)",
+            "amountPerServing": "1000 mcg",
+            "dailyValuePercent": null
+          }
+        ]
+      },
+      "descriptionSections": {
+        "Description": "",
+        "Suggested use": "Recommended dosage (adults): Dissolve 1 tablet under the tongue daily or as directed by a physician. Recommended Purpose Helps in energy metabolism and immune function. Helps form red blood cells and maintain a healthy metabolism. Supports good health.",
+        "Other ingredients": "Each sublingual tablet contains: Vitamin B12 (methylcobalamin) 1000 mcg",
+        "Warnings": "Keep out of reach of children. Allergen Statement Free of artificial colours, preservatives, or sweeteners; no starch, sugar, wheat, gluten, yeast, soy, corn, egg, fish, shellfish, salt, tree nuts, or GMOs. Suitable for vegetarians."
+      },
+      "sourceSummary": {
+        "sourceKind": "canadian_official_product_page",
+        "sourceTypes": [
+          "official_product_page"
+        ],
+        "marketSources": [
+          "ca"
+        ],
+        "sourceUrls": [
+          "https://webbernaturals.com/products/vitamin-b12-methylcobalamin-1000-mcg"
+        ],
+        "sourceNotes": [
+          "Amazon.ca specific product page may supplement UPC/ASIN/item form/unit count/diet/allergen/material/ingredient string",
+          "Canadian official product detail pass cleaned v2",
+          "Title cleaning preserves hyphenated product names and drops low-confidence page-navigation captures",
+          "canadian_official_wave_19: Canadian official complete fields with conservative facts parse"
+        ],
+        "npnIgnored": false,
+        "hasUsIherbPage": false,
+        "sourceRank": 90
+      },
+      "canadianCoverage": {
+        "sourceBrand": "Webber Naturals",
+        "originalCatalogTitle": "Vitamin B12 Methylcobalamin 1000 mcg Sublingual Tablets",
+        "officialDetailStatus": 200,
+        "finalUrl": "https://webbernaturals.com/products/vitamin-b12-methylcobalamin-1000-mcg",
+        "hasOfficialUpc": true,
+        "hasAcceptedIngredientString": true,
+        "hasAcceptedSuggestedUse": true,
+        "hasAcceptedWarnings": true,
+        "isHumanSupplement": true,
+        "admissionLane": "official_upc_ready_overlay_candidate_cleaned"
+      },
+      "readiness": {
+        "canadianOfficialFullOverlayReady": true,
+        "highConfidenceUsProductPageReady": false,
+        "factParseMethod": "official_other_ingredients_amount_rows_v2",
+        "factParseRowCount": 1
+      },
+      "overlayRecordKey": "gtin14:00625273038149",
+      "proofPackSource": {
+        "alias": "merge_wave_19",
+        "path": "output/canadian_brand_full_coverage_wave_v0/merge_wave_19/staging_products.canadian_official_wave_19.json"
+      }
+    },
+    {
+      "brandName": "Webber Naturals",
+      "title": "Triple Strength Omega-3 with CoQ10",
+      "normalizedTitle": "triple strength omega-3 with coq10",
+      "productId": "ca-official-webber-naturals-00625273033779",
+      "upcCode": "625273033779",
+      "barcode_gtin14": "00625273033779",
+      "link": "https://webbernaturals.com/products/triple-strength-omega-3-900-mg-coq10-no-fishy-aftertaste",
+      "productCatalogImage": "https://webbernaturals.com/cdn/shop/files/lbiromgbc7dfwj4unwip.png?v=1740688239",
+      "productImages": [
+        "https://webbernaturals.com/cdn/shop/files/lbiromgbc7dfwj4unwip.png?v=1740688239",
+        "https://cdn.shopify.com/s/files/1/0556/0185/6591/files/lbiromgbc7dfwj4unwip.png?v=1740688239",
+        "https://cdn.shopify.com/s/files/1/0556/0185/6591/files/qnzavih2ejlewb5jqc9w.jpg?v=1740688239",
+        "https://cdn.shopify.com/s/files/1/0556/0185/6591/files/ysn0tsliflpq2v9uqxre_9090d752-16ef-4e78-914d-e6163e69b9d5.jpg?v=1740688239"
+      ],
+      "categories": [
+        "Omega-3"
+      ],
+      "count": "80 Clear Enteric Softgels",
+      "dosageForm": "softgels",
+      "serving": {
+        "servingType": null,
+        "servingDescription": null,
+        "servingSize": null,
+        "servingsPerContainer": null
+      },
+      "supplementFacts": {
+        "servingSize": null,
+        "servingsPerContainer": null,
+        "nutritionalFacts": [
+          {
+            "substancy": "Fish Oil Concentrate* (anchovy, sardine and/or mackerel)",
+            "amountPerServing": "1407 mg",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Omega-3 Fatty Acids",
+            "amountPerServing": "900 mg",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Eicosapentaenoic Acid (EPA)",
+            "amountPerServing": "600 mg",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Docosahexaenoic Acid (DHA)",
+            "amountPerServing": "300 mg",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Coenzyme Q10 (microorganism)",
+            "amountPerServing": "100 mg",
+            "dailyValuePercent": null
+          }
+        ]
+      },
+      "descriptionSections": {
+        "Description": "",
+        "Suggested use": "Recommended dosage (adults): 1 softgel daily or as directed by a physician. Reduce triglycerides/triacylglycerols and promote healthy mood balance:: 1 softgel 2 times daily or as directed by a physician. Recommended Purpose Helps support cardiovascular health, cognitive health, and brain function. Helps reduce serum triglycerides/triacylglycerols. Helps promote healthy mood balance. Coenzyme Q10 is used to promote healthy heart function.",
+        "Other ingredients": "Each clear enteric softgel contains: Fish Oil Concentrate* (anchovy, sardine and/or mackerel) 1407 mg Omega-3 Fatty Acids 900 mg Providing: Eicosapentaenoic Acid (EPA) 600 mg Docosahexaenoic Acid (DHA) 300 mg Coenzyme Q10 (microorganism) 100 mg * Molecularly distilled, ultra purified.",
+        "Warnings": "Consult a physician prior to use if you are pregnant or breastfeeding, or if you are taking blood thinners or blood pressure medication. Keep out of reach of children. Allergen Statement Free of artificial colours, preservatives, or sweeteners; no dairy, sugar, wheat, gluten, yeast, soy, corn, egg, shellfish, salt, tree nuts, or GMOs."
+      },
+      "sourceSummary": {
+        "sourceKind": "canadian_official_product_page",
+        "sourceTypes": [
+          "official_product_page"
+        ],
+        "marketSources": [
+          "ca"
+        ],
+        "sourceUrls": [
+          "https://webbernaturals.com/products/triple-strength-omega-3-900-mg-coq10-no-fishy-aftertaste"
+        ],
+        "sourceNotes": [
+          "Amazon.ca specific product page may supplement UPC/ASIN/item form/unit count/diet/allergen/material/ingredient string",
+          "Canadian official product detail pass cleaned v2",
+          "Title cleaning preserves hyphenated product names and drops low-confidence page-navigation captures",
+          "canadian_official_merge_wave_05: Canadian official complete fields with conservative facts parse"
+        ],
+        "npnIgnored": false,
+        "hasUsIherbPage": false,
+        "sourceRank": 90
+      },
+      "canadianCoverage": {
+        "sourceBrand": "Webber Naturals",
+        "originalCatalogTitle": "Omega-3 with CoQ10 Triple Strength 900 mg EPA/DHA",
+        "officialDetailStatus": 200,
+        "finalUrl": "https://webbernaturals.com/products/triple-strength-omega-3-900-mg-coq10-no-fishy-aftertaste",
+        "hasOfficialUpc": true,
+        "hasAcceptedIngredientString": true,
+        "hasAcceptedSuggestedUse": true,
+        "hasAcceptedWarnings": true,
+        "isHumanSupplement": true,
+        "admissionLane": "official_upc_ready_overlay_candidate_cleaned"
+      },
+      "readiness": {
+        "canadianOfficialFullOverlayReady": true,
+        "highConfidenceUsProductPageReady": false,
+        "factParseMethod": "official_other_ingredients_amount_rows_v2",
+        "factParseRowCount": 5
+      },
+      "overlayRecordKey": "gtin14:00625273033779",
+      "proofPackSource": {
+        "alias": "merge_wave_05",
+        "path": "output/canadian_brand_full_coverage_wave_v0/merge_wave_05/staging_products.canadian_official_wave_05.json"
+      }
+    },
+    {
+      "brandName": "Progressive",
+      "title": "Non-GMO Fermented Vegan Protein",
+      "normalizedTitle": "non-gmo fermented vegan protein",
+      "productId": "ca-official-progressive-00837229007578",
+      "upcCode": "837229007578",
+      "barcode_gtin14": "00837229007578",
+      "link": "https://progressivenutritional.com/products/harmonized-fermented-vegan-protein",
+      "productCatalogImage": "http://www.progressivenutritional.com/cdn/shop/files/PV3412_MAIN.jpg?v=1753881932",
+      "productImages": [
+        "http://www.progressivenutritional.com/cdn/shop/files/PV3412_MAIN.jpg?v=1753881932",
+        "https://cdn.shopify.com/s/files/1/0369/4578/9060/files/PV3412_MAIN.jpg?v=1753881932",
+        "https://cdn.shopify.com/s/files/1/0369/4578/9060/files/PV3395_MAIN.jpg?v=1753881932",
+        "https://cdn.shopify.com/s/files/1/0369/4578/9060/files/PV3411_MAIN.jpg?v=1753881932",
+        "https://cdn.shopify.com/s/files/1/0369/4578/9060/files/PV3411_MK1.jpg?v=1753881932",
+        "https://cdn.shopify.com/s/files/1/0369/4578/9060/files/PV3410_MAIN.jpg?v=1753881932"
+      ],
+      "categories": [
+        "Sports Nutrition"
+      ],
+      "count": "Unflavoured",
+      "dosageForm": "powder",
+      "serving": {
+        "servingType": null,
+        "servingDescription": null,
+        "servingSize": "Fermented",
+        "servingsPerContainer": null
+      },
+      "supplementFacts": {
+        "servingSize": "Fermented",
+        "servingsPerContainer": null,
+        "nutritionalFacts": [
+          {
+            "substancy": "Fermented Pea Protein Isolate (80% Protein) (Pisum sativum, Seed)",
+            "amountPerServing": "27 g",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Organic Fermented Sprouted Pumpkin Seed (Cucurbita pepo, Seed)",
+            "amountPerServing": "250 mg",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Organic Fermented Sprouted Amaranth (Amaranthus cruentus, Seed)",
+            "amountPerServing": "250 mg",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Organic Fermented Sprouted Quinoa (Chenopodium quinoa, Seed)",
+            "amountPerServing": "250 mg",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Organic Fermented Sprouted Millet (Pennisetum glaucum, Seed)",
+            "amountPerServing": "250 mg",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Inulin (Helianthus tuberosus, Tuber)",
+            "amountPerServing": "2 g",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Pineapple (Ananas comosus var. comosus, Fruit)",
+            "amountPerServing": "50 g",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Papaya (Carica papaya, Fruit)",
+            "amountPerServing": "50 g",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Bitter Melon (Momordica charantia, Fruit)",
+            "amountPerServing": "40 mg",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Corn Silk (Zea mays, Stigma)",
+            "amountPerServing": "5 mg",
+            "dailyValuePercent": null
+          }
+        ]
+      },
+      "descriptionSections": {
+        "Description": "",
+        "Suggested use": "Directions: Mix 1 scoop of Harmonized FERMENTED Vegan Protein into 300 ml of the beverage of your choice. Consume 1 serving daily. Can be enjoyed at any time of day including between meals or immediately following exercise.",
+        "Other ingredients": "Medicinal Ingredients Per 1 Scoop Fermented Pea Protein Isolate (80% Protein) (Pisum sativum, Seed) 27 g Organic Fermented Sprouted Pumpkin Seed (Cucurbita pepo, Seed) 250 mg Organic Fermented Sprouted Amaranth (Amaranthus cruentus, Seed) 250 mg Organic Fermented Sprouted Quinoa (Chenopodium quinoa, Seed) 250 mg Organic Fermented Sprouted Millet (Pennisetum glaucum, Seed) 250 mg Botanicals Inulin (Helianthus tuberosus, Tuber) 2 g Pineapple (Ananas comosus var. comosus, Fruit) 50 g Papaya (Carica papaya, Fruit) 50 g Bitter Melon (Momordica charantia, Fruit) 40 mg Corn Silk (Zea mays, Stigma) 5 mg Non-Medicinal Ingredients: Natural and Organic Flavours, Stevia Leaf Extract, Monk Fruit, Xanthan Gum.",
+        "Warnings": "Consult a health care prior to use is you are pregnant or breastfeeding, or if you have liver or kidney disease. Hypersensitivity has been known to occur."
+      },
+      "sourceSummary": {
+        "sourceKind": "canadian_official_product_page",
+        "sourceTypes": [
+          "official_product_page"
+        ],
+        "marketSources": [
+          "ca"
+        ],
+        "sourceUrls": [
+          "https://progressivenutritional.com/products/harmonized-fermented-vegan-protein"
+        ],
+        "sourceNotes": [
+          "Amazon.ca specific product page may supplement UPC/ASIN/item form/unit count/diet/allergen/material/ingredient string",
+          "Canadian official product detail pass cleaned v2",
+          "Title cleaning preserves hyphenated product names and drops low-confidence page-navigation captures",
+          "canadian_official_merge_wave_05: Canadian official complete fields with conservative facts parse"
+        ],
+        "npnIgnored": false,
+        "hasUsIherbPage": false,
+        "sourceRank": 90
+      },
+      "canadianCoverage": {
+        "sourceBrand": "Progressive",
+        "originalCatalogTitle": "Harmonized Fermented Vegan Protein",
+        "officialDetailStatus": 200,
+        "finalUrl": "https://www.progressivenutritional.com/products/harmonized-fermented-vegan-protein",
+        "hasOfficialUpc": true,
+        "hasAcceptedIngredientString": true,
+        "hasAcceptedSuggestedUse": true,
+        "hasAcceptedWarnings": true,
+        "isHumanSupplement": true,
+        "admissionLane": "official_upc_ready_overlay_candidate_cleaned"
+      },
+      "readiness": {
+        "canadianOfficialFullOverlayReady": true,
+        "highConfidenceUsProductPageReady": false,
+        "factParseMethod": "official_other_ingredients_amount_rows_v2",
+        "factParseRowCount": 10
+      },
+      "overlayRecordKey": "gtin14:00837229007578",
+      "proofPackSource": {
+        "alias": "merge_wave_05",
+        "path": "output/canadian_brand_full_coverage_wave_v0/merge_wave_05/staging_products.canadian_official_wave_05.json"
+      }
+    },
+    {
+      "brandName": "Progressive",
+      "title": "Ultra Strength Probiotic 120 Billion",
+      "normalizedTitle": "ultra strength probiotic 120 billion",
+      "productId": "ca-official-progressive-00837229001392",
+      "upcCode": "837229001392",
+      "barcode_gtin14": "00837229001392",
+      "link": "https://progressivenutritional.com/products/perfect-probiotic-120-billion",
+      "productCatalogImage": "http://www.progressivenutritional.com/cdn/shop/files/31001793_PRO_PerfectProbiotics_120B_30ct_729549_CTN_MAIN.png?v=1753881934",
+      "productImages": [
+        "http://www.progressivenutritional.com/cdn/shop/files/31001793_PRO_PerfectProbiotics_120B_30ct_729549_CTN_MAIN.png?v=1753881934",
+        "https://cdn.shopify.com/s/files/1/0369/4578/9060/files/31001793_PRO_PerfectProbiotics_120B_30ct_729549_CTN_MAIN.png?v=1753881934",
+        "https://cdn.shopify.com/s/files/1/0369/4578/9060/files/31001793_PRO_PerfectProbiotics_120B_30ct_729549_CTN_MAIN2.png?v=1753881934",
+        "https://cdn.shopify.com/s/files/1/0369/4578/9060/files/31001793_PRO_PerfectProbiotics_120B_30ct_729549_EN_NFP.png?v=1753881934",
+        "https://cdn.shopify.com/s/files/1/0369/4578/9060/files/31001793_PRO_PerfectProbiotics_120B_30ct_729549_FR_NFP2.png?v=1753881934",
+        "https://cdn.shopify.com/s/files/1/0369/4578/9060/files/PV1392_MK1.jpg?v=1753881934",
+        "https://cdn.shopify.com/s/files/1/0369/4578/9060/files/31001793_PRO_PerfectProbiotics_120B_30ct_729548_BTL_ALT.png?v=1753881934",
+        "https://cdn.shopify.com/s/files/1/0369/4578/9060/files/31001793_PRO_PerfectProbiotics_120B_30ct_729548_BTL_ALT2.png?v=1753881934"
+      ],
+      "categories": [
+        "Probiotics & Digestion"
+      ],
+      "count": "Default Title",
+      "dosageForm": "capsule",
+      "serving": {
+        "servingType": null,
+        "servingDescription": null,
+        "servingSize": null,
+        "servingsPerContainer": null
+      },
+      "supplementFacts": {
+        "servingSize": null,
+        "servingsPerContainer": null,
+        "nutritionalFacts": [
+          {
+            "substancy": "Lactobacillus plantarum (UALp-05)",
+            "amountPerServing": "65 Billion CFU",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Lactobacillus rhamnosus (UALr-18)",
+            "amountPerServing": "23 Billion CFU",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Lactobacillus acidophilus (DDS-1)",
+            "amountPerServing": "20.5 Billion CFU",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Bifidobacterium animalis subsp. Lactis (UABla-12)",
+            "amountPerServing": "10 Billion CFU",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Bifidobacterium breve (UABbr-11)",
+            "amountPerServing": "0.5 Billion CFU",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Lactobacillus paracasei (UALpc-04)",
+            "amountPerServing": "0.3 Billion CFU",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Lactobacillus casei (UALc-03)",
+            "amountPerServing": "0.25 Billion CFU",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Lactobacillus gasseri (UALg-05)",
+            "amountPerServing": "0.1 Billion CFU",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Lactobacillus reuteri (UALre-16)",
+            "amountPerServing": "0.1 Billion CFU",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Bifidobacterium bifidum (UABb-10)",
+            "amountPerServing": "0.1 Billion CFU",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Bifidobacterium longum subsp. longum (UABI-14)",
+            "amountPerServing": "0.1 Billion CFU",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Total at time of expiry",
+            "amountPerServing": "120 Billion CFU",
+            "dailyValuePercent": null
+          }
+        ]
+      },
+      "descriptionSections": {
+        "Description": "",
+        "Suggested use": "Directions: (Adults): Consume 1 capsule once daily. Take at least 2-3 hours before or after antibiotics. Requires refrigeration.",
+        "Other ingredients": "Lactobacillus plantarum (UALp-05) 65 Billion CFU Lactobacillus rhamnosus (UALr-18) 23 Billion CFU Lactobacillus acidophilus (DDS-1) 20.5 Billion CFU Bifidobacterium animalis subsp. Lactis (UABla-12) 10 Billion CFU Bifidobacterium breve (UABbr-11) 0.5 Billion CFU Lactobacillus paracasei (UALpc-04) 0.3 Billion CFU Lactobacillus casei (UALc-03) 0.25 Billion CFU Lactobacillus gasseri (UALg-05) 0.1 Billion CFU Lactobacillus reuteri (UALre-16) 0.1 Billion CFU Bifidobacterium bifidum (UABb-10) 0.1 Billion CFU Bifidobacterium longum subsp. longum (UABI-14) 0.1 Billion CFU Total at time of expiry: 120 Billion CFU *Total active cells as colony forming units (CFUs), in billions. Guaranteed to expiry. Other Ingredients: Perfect Prebiotic Blend (Acacia Gum, Green Banana Flour, Xylooligosaccharides, Kiwi Fruit Powder, Cranberry Fruit Powder). Non-Medicinal Ingredients: Hypromellose, Gellan Gum, Microcrystalline Cellulose, Magnesium Stearate, Silica, Cryprotectants (Trehalose, Dextrose, Sucrose, Trisodium Citrate, Tripotassium Citrate, Dipotassium Phosphate, Monopotasium Phosphate, Sodium Ascorbate, Sodium Chloride).",
+        "Warnings": "Do not use this product if you have an immune-compromised condition (e.g. AIDs, lymphoma, patients undergoing long-term corticosteroid treatment). Consult a health care practitioner prior to use if you have fever, vomiting, bloody diarrhea or severe abdominal pain. Stop use and consult a health care practitioner if symptoms of digestive upset (e.g. diarrhea) occur, worsen and/or persists beyond 3 days."
+      },
+      "sourceSummary": {
+        "sourceKind": "canadian_official_product_page",
+        "sourceTypes": [
+          "official_product_page"
+        ],
+        "marketSources": [
+          "ca"
+        ],
+        "sourceUrls": [
+          "https://progressivenutritional.com/products/perfect-probiotic-120-billion"
+        ],
+        "sourceNotes": [
+          "Amazon.ca specific product page may supplement UPC/ASIN/item form/unit count/diet/allergen/material/ingredient string",
+          "Canadian official product detail pass cleaned v2",
+          "Title cleaning preserves hyphenated product names and drops low-confidence page-navigation captures",
+          "canadian_official_merge_wave_05: Canadian official complete fields with conservative facts parse"
+        ],
+        "npnIgnored": false,
+        "hasUsIherbPage": false,
+        "sourceRank": 90
+      },
+      "canadianCoverage": {
+        "sourceBrand": "Progressive",
+        "originalCatalogTitle": "Perfect Probiotic 120 Billion",
+        "officialDetailStatus": 200,
+        "finalUrl": "https://www.progressivenutritional.com/products/perfect-probiotic-120-billion",
+        "hasOfficialUpc": true,
+        "hasAcceptedIngredientString": true,
+        "hasAcceptedSuggestedUse": true,
+        "hasAcceptedWarnings": true,
+        "isHumanSupplement": true,
+        "admissionLane": "official_upc_ready_overlay_candidate_cleaned"
+      },
+      "readiness": {
+        "canadianOfficialFullOverlayReady": true,
+        "highConfidenceUsProductPageReady": false,
+        "factParseMethod": "official_other_ingredients_amount_rows_v2",
+        "factParseRowCount": 12
+      },
+      "overlayRecordKey": "gtin14:00837229001392",
+      "proofPackSource": {
+        "alias": "merge_wave_05",
+        "path": "output/canadian_brand_full_coverage_wave_v0/merge_wave_05/staging_products.canadian_official_wave_05.json"
+      }
+    },
+    {
+      "brandName": "Progressive",
+      "title": "Progressive Kids Multi Chewables | Children’s Multivitamin",
+      "normalizedTitle": "progressive kids multi chewables | children’s multivitamin",
+      "productId": "ca-official-progressive-00081342002050",
+      "upcCode": "081342002050",
+      "barcode_gtin14": "00081342002050",
+      "link": "https://progressivenutritional.com/products/multivitamin-for-kids",
+      "productCatalogImage": "http://www.progressivenutritional.com/cdn/shop/files/31002378_PRO_KidsMulti_Chewable_Orange_120caps_21004790_BTL_MAIN.png?v=1773941099",
+      "productImages": [
+        "http://www.progressivenutritional.com/cdn/shop/files/31002378_PRO_KidsMulti_Chewable_Orange_120caps_21004790_BTL_MAIN.png?v=1773941099",
+        "https://cdn.shopify.com/s/files/1/0369/4578/9060/files/31002378_PRO_KidsMulti_Chewable_Orange_120caps_21004790_BTL_MAIN.png?v=1773941099",
+        "https://cdn.shopify.com/s/files/1/0369/4578/9060/files/31002378_PRO_KidsMulti_Chewable_Orange_120caps_21004790_NFP.png?v=1773941099",
+        "https://cdn.shopify.com/s/files/1/0369/4578/9060/files/31002377_PRO_Kidsmulti_Chewable_Orange_60caps_21004789_MAIN.png?v=1773941099",
+        "https://cdn.shopify.com/s/files/1/0369/4578/9060/files/31002377_PRO_Kidsmulti_Chewable_Orange_60caps_21004789_NFP.png?v=1773941099",
+        "https://cdn.shopify.com/s/files/1/0369/4578/9060/files/31002377_PRO_Kidsmulti_Chewable_Orange_60caps_21004789_BTL_NFP.png?v=1773941099",
+        "https://cdn.shopify.com/s/files/1/0369/4578/9060/files/31002377_PRO_MultiKids_Orange_Chewable_PIL_19mm_21004789_CONTENTS.png?v=1773941099",
+        "https://cdn.shopify.com/s/files/1/0369/4578/9060/files/31002377_PRO_Kidsmulti_Chewable_Orange_60caps_21004789_BTL_DIR.png?v=1773941099"
+      ],
+      "categories": [
+        "Multivitamins"
+      ],
+      "count": "60 Chewables",
+      "dosageForm": "chewables",
+      "serving": {
+        "servingType": null,
+        "servingDescription": null,
+        "servingSize": "Vitamins",
+        "servingsPerContainer": null
+      },
+      "supplementFacts": {
+        "servingSize": "Vitamins",
+        "servingsPerContainer": null,
+        "nutritionalFacts": [
+          {
+            "substancy": "Vitamins Vitamin A (Acetate)",
+            "amountPerServing": "180 mcg",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "RAE Beta-carotene",
+            "amountPerServing": "720 mcg",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Vitamin B1 (Thiamine mononitrate)",
+            "amountPerServing": "3.5 mg",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Vitamin B2 (Riboflavin)",
+            "amountPerServing": "3.5 mg",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Vitamin B3 (Niacinamide)",
+            "amountPerServing": "10 mg",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Vitamin B5 (Calcium D-pantothenate)",
+            "amountPerServing": "7.5 mg",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Vitamin B6 (Pyridoxal‑5'-phosphate, Pyridoxine hydrochloride)",
+            "amountPerServing": "2.5 mg",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Vitamin B12 (Methylcobalamin)",
+            "amountPerServing": "5 mcg",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Vitamin C (Ascorbic acid)",
+            "amountPerServing": "22.5 mg",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Vitamin D3 (Cholecalciferol)",
+            "amountPerServing": "300 IU",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Vitamin E (D-alpha-tocopheryl acetate)",
+            "amountPerServing": "5.5 mg",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "AT Vitamin K2 (Menaquinone‑7)",
+            "amountPerServing": "25 mcg",
+            "dailyValuePercent": null
+          }
+        ]
+      },
+      "descriptionSections": {
+        "Description": "",
+        "Suggested use": "Directions: Children 4-8 years: Chew 1 tablet daily with a meal. Adolescents 9-13 years: Chew 2 tablets daily with a meal. Take a few hours before or after taking other medications or natural health products.",
+        "Other ingredients": "Ingredient Amount per Serving Vitamins Vitamin A (Acetate) 180 mcg RAE Beta-carotene 720 mcg Vitamin B1 (Thiamine mononitrate) 3.5 mg Vitamin B2 (Riboflavin) 3.5 mg Vitamin B3 (Niacinamide) 10 mg Vitamin B5 (Calcium D-pantothenate) 7.5 mg Vitamin B6 (Pyridoxal‑5'-phosphate, Pyridoxine hydrochloride) 2.5 mg Vitamin B12 (Methylcobalamin) 5 mcg Vitamin C (Ascorbic acid) 22.5 mg Vitamin D3 (Cholecalciferol) (300 IU) 7.5 mcg Vitamin E (D-alpha-tocopheryl acetate) 5.5 mg AT Vitamin K2 (Menaquinone‑7) 25 mcg Vitamin K1 (Phytonadione) Amount not legible - please confirm Biotin 25 mcg Folate (L‑5‑Methyltetrahydrofolate, Calcium salt) 150 mcg Choline (Bitartrate) 2.5 mg Inositol 2.5 mg Minerals Calcium (Citrate; Phosphate dibasic/tribasic) 37.5 mg Iron (Ferrous fumarate) 2.5 mg",
+        "Warnings": "Keep out of reach of children. There is enough iron in this package to seriously harm a child. Consult a health care practitioner prior to use if you are taking blood thinners. Stop use if hypersensitivity occurs."
+      },
+      "sourceSummary": {
+        "sourceKind": "canadian_official_product_page",
+        "sourceTypes": [
+          "official_product_page"
+        ],
+        "marketSources": [
+          "ca"
+        ],
+        "sourceUrls": [
+          "https://progressivenutritional.com/products/multivitamin-for-kids"
+        ],
+        "sourceNotes": [
+          "Amazon.ca specific product page may supplement UPC/ASIN/item form/unit count/diet/allergen/material/ingredient string",
+          "Canadian official product detail pass cleaned v2",
+          "Title cleaning preserves hyphenated product names and drops low-confidence page-navigation captures",
+          "canadian_official_merge_wave_05: Canadian official complete fields with conservative facts parse"
+        ],
+        "npnIgnored": false,
+        "hasUsIherbPage": false,
+        "sourceRank": 90
+      },
+      "canadianCoverage": {
+        "sourceBrand": "Progressive",
+        "originalCatalogTitle": "Chewable Multivitamin for Kids",
+        "officialDetailStatus": 200,
+        "finalUrl": "https://www.progressivenutritional.com/products/multivitamin-for-kids",
+        "hasOfficialUpc": true,
+        "hasAcceptedIngredientString": true,
+        "hasAcceptedSuggestedUse": true,
+        "hasAcceptedWarnings": true,
+        "isHumanSupplement": true,
+        "admissionLane": "official_upc_ready_overlay_candidate_cleaned"
+      },
+      "readiness": {
+        "canadianOfficialFullOverlayReady": true,
+        "highConfidenceUsProductPageReady": false,
+        "factParseMethod": "official_other_ingredients_amount_rows_v2",
+        "factParseRowCount": 12
+      },
+      "overlayRecordKey": "gtin14:00081342002050",
+      "proofPackSource": {
+        "alias": "merge_wave_05",
+        "path": "output/canadian_brand_full_coverage_wave_v0/merge_wave_05/staging_products.canadian_official_wave_05.json"
+      }
+    },
+    {
+      "brandName": "Natural Factors",
+      "title": "Raw, Organic, 100% Plant-Based Protein",
+      "normalizedTitle": "raw, organic, 100% plant-based protein",
+      "productId": "ca-official-natural-factors-00068958355641",
+      "upcCode": "068958355641",
+      "barcode_gtin14": "00068958355641",
+      "link": "https://naturalfactors.com/products/whole-earth-sea-protein-chocolate",
+      "productCatalogImage": "https://naturalfactors.com/cdn/shop/files/35564u__image-hi-res__raw-organic-100pct-plant-based-protein-chocolate__3974230.png?v=1771349048",
+      "productImages": [
+        "https://naturalfactors.com/cdn/shop/files/35564u__image-hi-res__raw-organic-100pct-plant-based-protein-chocolate__3974230.png?v=1771349048",
+        "https://cdn.shopify.com/s/files/1/0630/0313/2160/files/35564u__image-hi-res__raw-organic-100pct-plant-based-protein-chocolate__3974230.png?v=1771349048",
+        "https://cdn.shopify.com/s/files/1/0630/0313/2160/files/35564u__image-lifestyle__raw-organic-100pct-plant-based-protein-chocolate__4202679.png?v=1771349048",
+        "img:nth-child(1)",
+        "img:nth-child(1):not([class*=\\",
+        "https://naturalfactors.com/products/.card__media%20img:nth-child(1)",
+        "https://naturalfactors.com//cdn//shop//files//35564u__image-hi-res__raw-organic-100pct-plant-based-protein-chocolate__3974230.png?v=1771349048",
+        "https://cdn.shopify.com//s//files//1//0629//5411//1163//files//sg_default_logo.png?v=1662362897",
+        "https://naturalfactors.com//cdn//shop//files//35564u__image-lifestyle__raw-organic-100pct-plant-based-protein-chocolate__4202679.png?v=1771349048"
+      ],
+      "categories": [
+        "Sports Nutrition"
+      ],
+      "count": "1.19 lb",
+      "dosageForm": null,
+      "serving": {
+        "servingType": null,
+        "servingDescription": null,
+        "servingSize": null,
+        "servingsPerContainer": null
+      },
+      "supplementFacts": {
+        "servingSize": null,
+        "servingsPerContainer": null,
+        "nutritionalFacts": [
+          {
+            "substancy": "Vitamin D3",
+            "amountPerServing": "50 mcg",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Vitamin D3",
+            "amountPerServing": "50 mcg",
+            "dailyValuePercent": null
+          }
+        ]
+      },
+      "descriptionSections": {
+        "Description": "Raw organic 100% plant-based protein provides 20 g of protein from peas, rice, pumpkin, quinoa, spirulina, and chlorella. Shop now.",
+        "Suggested use": "Add 1 scoop (approx. 36.1 g) per day to 8.5 oz (250 mL) of water, or your preferred beverage, and shake or blend until smooth. Use this product as a food supplement only.",
+        "Other ingredients": "",
+        "Warnings": "Do not use for weight reduction. Keep out of the reach of children."
+      },
+      "sourceSummary": {
+        "sourceKind": "canadian_official_product_page",
+        "sourceTypes": [
+          "official_product_page"
+        ],
+        "marketSources": [
+          "ca"
+        ],
+        "sourceUrls": [
+          "https://naturalfactors.com/products/whole-earth-sea-protein-chocolate"
+        ],
+        "sourceNotes": [
+          "canadian_wave_set_2_parser_lane_02_final: Canadian Wave Set 2 parser lane",
+          "official_overlay_candidates: live official page parse"
+        ],
+        "npnIgnored": false,
+        "hasUsIherbPage": false,
+        "sourceRank": 90
+      },
+      "readiness": {
+        "canadianOfficialFullOverlayReady": true,
+        "highConfidenceUsProductPageReady": false,
+        "factParseMethod": "canadian_wave_set_2_live_html_v1",
+        "factParseRowCount": 2
+      },
+      "overlayRecordKey": "gtin14:00068958355641",
+      "proofPackSource": {
+        "alias": "wave2_final",
+        "path": "output/canadian_brand_full_coverage_wave_v0/wave_set_2_parser_lane_02_final/staging_products.canadian_wave_set_2_parser_lane_02_final.json"
+      }
+    },
+    {
+      "brandName": "Natural Factors",
+      "title": "Total Body Collagen Bioactive Peptides Powder (Vanilla)",
+      "normalizedTitle": "total body collagen bioactive peptides powder (vanilla)",
+      "productId": "ca-official-natural-factors-00068958026473",
+      "upcCode": "068958026473",
+      "barcode_gtin14": "00068958026473",
+      "link": "https://naturalfactors.com/products/total-body-collagen-vanilla-powder",
+      "productCatalogImage": "https://naturalfactors.com/cdn/shop/files/2647u__image-hi-res__total-body-collagen-vanilla-powder__3407274.png?v=1774884411",
+      "productImages": [
+        "https://naturalfactors.com/cdn/shop/files/2647u__image-hi-res__total-body-collagen-vanilla-powder__3407274.png?v=1774884411",
+        "https://cdn.shopify.com/s/files/1/0630/0313/2160/files/2647u__image-hi-res__total-body-collagen-vanilla-powder__3407274.png?v=1774884411",
+        "https://naturalfactors.com//cdn//shop//files//2647u__image-hi-res__total-body-collagen-vanilla-powder__3407274.png?v=1774884411",
+        "img:nth-child(1)",
+        "img:nth-child(1):not([class*=\\",
+        "https://naturalfactors.com/products/.card__media%20img:nth-child(1)",
+        "https://cdn.shopify.com//s//files//1//0629//5411//1163//files//sg_default_logo.png?v=1662362897"
+      ],
+      "categories": [
+        "Sports Nutrition"
+      ],
+      "count": "1 lb",
+      "dosageForm": "powder",
+      "serving": {
+        "servingType": null,
+        "servingDescription": null,
+        "servingSize": null,
+        "servingsPerContainer": null
+      },
+      "supplementFacts": {
+        "servingSize": null,
+        "servingsPerContainer": null,
+        "nutritionalFacts": [
+          {
+            "substancy": "Carbohydrates &lt;1 g &lt;1% ‡",
+            "amountPerServing": "2 g",
+            "dailyValuePercent": "&lt;1%‡"
+          },
+          {
+            "substancy": "Protein 10 g 4% ‡",
+            "amountPerServing": "20 g",
+            "dailyValuePercent": "8% ‡"
+          },
+          {
+            "substancy": "Vitamin C (as calcium ascorbate) 60 mg 67%",
+            "amountPerServing": "120 mg",
+            "dailyValuePercent": "133%"
+          },
+          {
+            "substancy": "Biotin 500 mcg 1,667%",
+            "amountPerServing": "1,000 mcg",
+            "dailyValuePercent": "3,333%"
+          },
+          {
+            "substancy": "Calcium 30 mg 2%",
+            "amountPerServing": "60 mg",
+            "dailyValuePercent": "5%"
+          },
+          {
+            "substancy": "Sodium 45 mg 2%",
+            "amountPerServing": "90 mg",
+            "dailyValuePercent": "4%"
+          },
+          {
+            "substancy": "VERISOL Hydrolyzed Collagen (from bovine) Type I and III 10 g **",
+            "amountPerServing": "20 g",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "L-Glutamine 500 mg **",
+            "amountPerServing": "1,000 mg",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "L-Tryptophan 100 mg **",
+            "amountPerServing": "200 mg",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Hyaluronic Acid 50 mg **",
+            "amountPerServing": "100 mg",
+            "dailyValuePercent": null
+          }
+        ]
+      },
+      "descriptionSections": {
+        "Description": "Explore Total Body Collagen Bioactive Peptides powder in Vanilla flavor to help support healthy skin, muscles, joints, and gut health.",
+        "Suggested use": "Add 1 scoop (11.7 g) or 1.5 tablespoons, 1-2 times per day into 6–8 fl oz of water or beverage of choice and shake or blend until smooth or use as directed by a health care professional.",
+        "Other ingredients": "Natural flavors, salt, purified stevia leaf extract.",
+        "Warnings": "Consult a health care professional before use, especially if you are pregnant or breastfeeding, are taking medication, or have a medical condition. Keep out of the reach of children."
+      },
+      "sourceSummary": {
+        "sourceKind": "canadian_official_product_page",
+        "sourceTypes": [
+          "official_product_page"
+        ],
+        "marketSources": [
+          "ca"
+        ],
+        "sourceUrls": [
+          "https://naturalfactors.com/products/total-body-collagen-vanilla-powder"
+        ],
+        "sourceNotes": [
+          "canadian_wave_set_2_parser_lane_02_final: Canadian Wave Set 2 parser lane",
+          "official_overlay_candidates: live official page parse"
+        ],
+        "npnIgnored": false,
+        "hasUsIherbPage": false,
+        "sourceRank": 90
+      },
+      "readiness": {
+        "canadianOfficialFullOverlayReady": true,
+        "highConfidenceUsProductPageReady": false,
+        "factParseMethod": "canadian_wave_set_2_live_html_v1",
+        "factParseRowCount": 10
+      },
+      "overlayRecordKey": "gtin14:00068958026473",
+      "proofPackSource": {
+        "alias": "wave2_final",
+        "path": "output/canadian_brand_full_coverage_wave_v0/wave_set_2_parser_lane_02_final/staging_products.canadian_wave_set_2_parser_lane_02_final.json"
+      }
+    },
+    {
+      "brandName": "Natural Factors",
+      "normalizedTitle": "natural factors magnesium bisglycinate 200mg pure 290g",
+      "productId": "ca-retailer-natural-factors-00627765016673",
+      "barcode_gtin14": "00627765016673",
+      "productCatalogImage": "https://smhttp-ssl-68201.nexcesscdn.net/media/catalog/product/cache/1/image/9df78eab33525d08d6e5fb8d27136e95/n/a/natural-factors-magnesium-bisglycinate-200mg-pure-290g.1775062120.png",
+      "productImages": [
+        "https://smhttp-ssl-68201.nexcesscdn.net/media/catalog/product/cache/1/image/9df78eab33525d08d6e5fb8d27136e95/n/a/natural-factors-magnesium-bisglycinate-200mg-pure-290g.1775062120.png"
+      ],
+      "sourceSummary": {
+        "sourceKind": "canadian_retailer_exact_upc_clean_facts",
+        "sourceTypes": [
+          "trusted_retailer_product_page"
+        ],
+        "marketSources": [
+          "ca"
+        ],
+        "sourceUrls": [
+          "https://www.nationalnutrition.ca/natural-factors-magnesium-bisglycinate-200mg-pure-290g.html"
+        ],
+        "sourceNotes": [
+          "NationalNutrition exact UPC 627765016673 supplies clean facts/use/warnings."
+        ],
+        "sourceRank": 84
+      },
+      "readiness": {
+        "canadianOfficialFullOverlayReady": true,
+        "highConfidenceUsProductPageReady": false,
+        "factParseMethod": "canadian_retailer_exact_upc_clean_facts_manual_v1",
+        "factParseRowCount": 1,
+        "imageOcrEvidenceApplied": false,
+        "retailerCleanFactsApplied": true
+      },
+      "overlayRecordKey": "gtin14:00627765016673",
+      "title": "Natural Factors Magnesium Bisglycinate 200mg Pure - 290g",
+      "upcCode": "627765016673",
+      "gtin14": "00627765016673",
+      "link": "https://www.nationalnutrition.ca/natural-factors-magnesium-bisglycinate-200mg-pure-290g.html",
+      "images": [
+        "https://smhttp-ssl-68201.nexcesscdn.net/media/catalog/product/cache/1/image/9df78eab33525d08d6e5fb8d27136e95/n/a/natural-factors-magnesium-bisglycinate-200mg-pure-290g.1775062120.png"
+      ],
+      "sourceUrls": [
+        "https://www.nationalnutrition.ca/natural-factors-magnesium-bisglycinate-200mg-pure-290g.html"
+      ],
+      "categories": [
+        "Magnesium",
+        "Mineral",
+        "Powder"
+      ],
+      "count": "290g",
+      "dosageForm": "powder",
+      "serving": {
+        "servingType": null,
+        "servingDescription": null,
+        "servingSize": "2.9 g",
+        "servingsPerContainer": null
+      },
+      "supplementFacts": {
+        "servingSize": "2.9 g",
+        "servingsPerContainer": null,
+        "nutritionalFacts": [
+          {
+            "substancy": "Magnesium (bisglycinate)",
+            "amountPerServing": "200 mg",
+            "dailyValuePercent": null
+          }
+        ]
+      },
+      "descriptionSections": {
+        "Description": "Natural Factors Magnesium Bisglycinate 200mg Pure is a powder magnesium bisglycinate supplement.",
+        "Suggested use": "Mix one serving (2.9g) into water or as directed by a health practitioner.",
+        "Other ingredients": "Citric acid.",
+        "Warnings": "Keep out of the reach of children."
+      },
+      "proofPackSource": {
+        "alias": "mixed_21",
+        "path": "output/canadian_brand_full_coverage_wave_v0/retailer_ocr_lane_01/mixed_exact_upc_retailer_canary_21/staging_products.canadian_retailer_ocr_mixed_exact_upc_canary_21.json"
+      }
+    },
+    {
+      "brandName": "CanPrev",
+      "title": "ACES + Zinc & Copper",
+      "normalizedTitle": "aces + zinc & copper",
+      "productId": "ca-official-canprev-aces-zinc-copper",
+      "upcCode": "886646503705",
+      "barcode_gtin14": "00886646503705",
+      "link": "https://canprev.ca/products/aces-zinc-copper/",
+      "productCatalogImage": "https://canprev.ca/wp-content/uploads/2025/09/1750693148_886646503705-CP-ACESZincCopper-90vcaps-RGB-195699-V1_839_1430.png",
+      "productImages": [
+        "https://canprev.ca/wp-content/uploads/2025/09/1750693148_886646503705-CP-ACESZincCopper-90vcaps-RGB-195699-V1_839_1430.png"
+      ],
+      "categories": [
+        "Antioxidant",
+        "Zinc",
+        "Minerals",
+        "Pro Essentials"
+      ],
+      "count": "90 v-caps",
+      "dosageForm": "capsules",
+      "serving": {
+        "servingType": null,
+        "servingDescription": null,
+        "servingSize": null,
+        "servingsPerContainer": null
+      },
+      "supplementFacts": {
+        "servingSize": null,
+        "servingsPerContainer": null,
+        "nutritionalFacts": [
+          {
+            "substancy": "Vitamin C (PureWay-C ascorbic acid)*",
+            "amountPerServing": "275mg",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Mixed tocopherol concentrate (seed, Brassica napus )",
+            "amountPerServing": "50mg AT",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Zinc (Albion zinc bis-glycinate chelate)**",
+            "amountPerServing": "10mg",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Citrus bioflavonoids (fruit, Citrus sinensis, Citrus limon, Citrus reticulata, Citrus paradisi, Citrus aurantiifolia )",
+            "amountPerServing": "6mg",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Copper (Albion copper bis-glycinate chelate)**",
+            "amountPerServing": "1000mcg",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Vitamin A (all-trans retinyl palmitate)",
+            "amountPerServing": "755.5mcg RAE (2500 IU)",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Selenium (Albion selenium glycinate complex)**",
+            "amountPerServing": "70mcg",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Vitamin C (PureWay-C ascorbic acid)*",
+            "amountPerServing": "275mg",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Mixed tocopherol concentrate (seed, Brassica napus )",
+            "amountPerServing": "50mg AT",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Zinc (Albion zinc bis-glycinate chelate)**",
+            "amountPerServing": "10mg",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Citrus bioflavonoids (fruit, Citrus sinensis, Citrus limon, Citrus reticulata, Citrus paradisi, Citrus aurantiifolia )",
+            "amountPerServing": "6mg",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Copper (Albion copper bis-glycinate chelate)**",
+            "amountPerServing": "1000mcg",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Vitamin A (all-trans retinyl palmitate)",
+            "amountPerServing": "755.5mcg RAE (2500 IU)",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Selenium (Albion selenium glycinate complex)**",
+            "amountPerServing": "70mcg",
+            "dailyValuePercent": null
+          }
+        ]
+      },
+      "descriptionSections": {
+        "Description": "ACES + Zinc &amp; Copper is a full spectrum antioxidant formula, made with a combination of water soluble and fat soluble, herb-free ingredients.",
+        "Suggested use": "Adults (19 years and older) - Take 1 capsule, 1-2 times per day. Take with food, a few hours before or after other medications.",
+        "Other ingredients": "",
+        "Warnings": "Ask a healthcare practitioner before use if &bull; you have a history of non-melanoma skin cancer. Keep out of reach of children."
+      },
+      "sourceSummary": {
+        "sourceKind": "canadian_official_product_page",
+        "sourceTypes": [
+          "official_product_page",
+          "retailer_upc_evidence"
+        ],
+        "marketSources": [
+          "ca"
+        ],
+        "sourceUrls": [
+          "https://canprev.ca/products/aces-zinc-copper/",
+          "https://canprev.ca/wp-content/uploads/2025/09/1750693148_886646503705-CP-ACESZincCopper-90vcaps-RGB-195699-V1_839_1430.png"
+        ],
+        "sourceNotes": [
+          "UPC appears in the official CanPrev product image filename for the exact 90 v-caps SKU.",
+          "canadian_retailer_ocr_canprev_official_html_canary_13: Canadian Wave Set 2 parser lane",
+          "canadian_retailer_ocr_canprev_official_html_canary_13: UPC supplied by retailer evidence (CanPrev official product image)",
+          "official_catalog: live official page parse"
+        ],
+        "npnIgnored": false,
+        "hasUsIherbPage": false,
+        "sourceRank": 90
+      },
+      "readiness": {
+        "canadianOfficialFullOverlayReady": true,
+        "highConfidenceUsProductPageReady": false,
+        "factParseMethod": "canadian_wave_set_2_live_html_v1",
+        "factParseRowCount": 14,
+        "retailerUpcEvidenceApplied": true
+      },
+      "overlayRecordKey": "gtin14:00886646503705",
+      "proofPackSource": {
+        "alias": "canprev_13",
+        "path": "output/canadian_brand_full_coverage_wave_v0/retailer_ocr_lane_01/canprev_official_html_canary_13/clean_staging/staging_products.canadian_retailer_ocr_canprev_official_html_canary_13.json"
+      }
+    },
+    {
+      "brandName": "CanPrev",
+      "title": "Ashwagandha Body & Mind",
+      "normalizedTitle": "ashwagandha body & mind",
+      "productId": "ca-official-canprev-ashwagandha-body-mind",
+      "upcCode": "886646503453",
+      "barcode_gtin14": "00886646503453",
+      "link": "https://canprev.ca/products/ashwagandha-body-mind-60-v-caps/",
+      "productCatalogImage": "https://canprevprd.wpengine.com/wp-content/uploads/2024/03/1709130485_886646503453-CP-AshwagandhaBodyandMind-60vcaps-RGB-195674-V1_839_1430.png",
+      "productImages": [
+        "https://canprevprd.wpengine.com/wp-content/uploads/2024/03/1709130485_886646503453-CP-AshwagandhaBodyandMind-60vcaps-RGB-195674-V1_839_1430.png"
+      ],
+      "categories": [
+        "Ashwagandha",
+        "Adaptogen",
+        "Sleep & Stress",
+        "Pro Essentials"
+      ],
+      "count": "60 v-caps",
+      "dosageForm": "capsules",
+      "serving": {
+        "servingType": null,
+        "servingDescription": null,
+        "servingSize": null,
+        "servingsPerContainer": null
+      },
+      "supplementFacts": {
+        "servingSize": null,
+        "servingsPerContainer": null,
+        "nutritionalFacts": [
+          {
+            "substancy": "KSM-66 Ashwagandha (root, Withania somnifera ) 12:1 extract equivalent to 7200mg dried root, standardized to 5.0% withanolides*",
+            "amountPerServing": "600mg",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "KSM-66 Ashwagandha (root, Withania somnifera ) 12:1 extract equivalent to 7200mg dried root, standardized to 5.0% withanolides*",
+            "amountPerServing": "600mg",
+            "dailyValuePercent": null
+          }
+        ]
+      },
+      "descriptionSections": {
+        "Description": "Ashwagandha Body &amp; Mind features award-winning KSM-66 ashwagandha to help provide you with the uplifting support you need for body and mind.",
+        "Suggested use": "Adults (19 years and older) - Take 1 capsule per day. Use for a minimum of 8 weeks to see a beneficial effect.",
+        "Other ingredients": "",
+        "Warnings": "Consult a healthcare professional prior to use if &bull; you are pregnant &bull; you are breastfeeding &bull; you have benign prostate hypertrophy &bull; you have prostate cancer &bull; you have a thyroid disease. Consult a healthcare professional if you have been diagnosed with &bull; hypoactive sexual disorder &bull; sexual dysfunction &bull; erectile dysfunction. Consult a healthcare professional if you suffer from any psychological disorder/condition such as &bull; frequent anxiety &bull; depression. |Sleep Aid: Consult healthcare professional if sleeplessness persists for more than 4 weeks. Some people may experience drowsiness. Exercise caution if operating heavy machinery, driving a motor vehicle or involved in activities requiring mental alertness. Consumption with alcohol, other drugs or natural health products with sedative properties is not recommended. Keep out of reach of children."
+      },
+      "sourceSummary": {
+        "sourceKind": "canadian_official_product_page",
+        "sourceTypes": [
+          "official_product_page",
+          "retailer_upc_evidence"
+        ],
+        "marketSources": [
+          "ca"
+        ],
+        "sourceUrls": [
+          "https://canprev.ca/products/ashwagandha-body-mind-60-v-caps/",
+          "https://canprev.ca/wp-content/uploads/2024/03/1709130485_886646503453-CP-AshwagandhaBodyandMind-60vcaps-RGB-195674-V1_839_1430.png"
+        ],
+        "sourceNotes": [
+          "UPC appears in the official CanPrev product image filename for the exact 60 v-caps SKU.",
+          "canadian_retailer_ocr_canprev_official_html_canary_13: Canadian Wave Set 2 parser lane",
+          "canadian_retailer_ocr_canprev_official_html_canary_13: UPC supplied by retailer evidence (CanPrev official product image)",
+          "official_catalog: live official page parse"
+        ],
+        "npnIgnored": false,
+        "hasUsIherbPage": false,
+        "sourceRank": 90
+      },
+      "readiness": {
+        "canadianOfficialFullOverlayReady": true,
+        "highConfidenceUsProductPageReady": false,
+        "factParseMethod": "canadian_wave_set_2_live_html_v1",
+        "factParseRowCount": 2,
+        "retailerUpcEvidenceApplied": true
+      },
+      "overlayRecordKey": "gtin14:00886646503453",
+      "proofPackSource": {
+        "alias": "canprev_13",
+        "path": "output/canadian_brand_full_coverage_wave_v0/retailer_ocr_lane_01/canprev_official_html_canary_13/clean_staging/staging_products.canadian_retailer_ocr_canprev_official_html_canary_13.json"
+      }
+    },
+    {
+      "brandName": "CanPrev",
+      "title": "B12 Methyl 500mcg Drops - Blueberry",
+      "normalizedTitle": "b12 methyl 500mcg drops - blueberry",
+      "productId": "ca-official-canprev-b12-methyl-500mcg-drops-blueberry",
+      "upcCode": "886646502784",
+      "barcode_gtin14": "00886646502784",
+      "link": "https://canprev.ca/products/b12-methyl-drops",
+      "productCatalogImage": "https://canprevprd.wpengine.com/wp-content/uploads/2023/03/1647438755_CP-B12Methyldrops-15mlbox-RGB-195602-V1_839_1430.png",
+      "productImages": [
+        "https://canprevprd.wpengine.com/wp-content/uploads/2023/03/1647438755_CP-B12Methyldrops-15mlbox-RGB-195602-V1_839_1430.png"
+      ],
+      "categories": [
+        "Vitamin B12",
+        "Vegan",
+        "Drops",
+        "Pro Essentials"
+      ],
+      "count": "15 ml",
+      "dosageForm": "drops",
+      "serving": {
+        "servingType": null,
+        "servingDescription": null,
+        "servingSize": null,
+        "servingsPerContainer": null
+      },
+      "supplementFacts": {
+        "servingSize": null,
+        "servingsPerContainer": null,
+        "nutritionalFacts": [
+          {
+            "substancy": "Vitamin B12 (methylcobalamin)",
+            "amountPerServing": "500mcg",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Vitamin B12 (methylcobalamin)",
+            "amountPerServing": "500mcg",
+            "dailyValuePercent": null
+          }
+        ]
+      },
+      "descriptionSections": {
+        "Description": "CanPrev’s B12 Methyl Drops feature methylcobalamin, the preferred and active form of vitamin B12 that&#039;s body-ready. In a natural blueberry flavoured drops.",
+        "Suggested use": "Children, adolescents and adults (1 year and older) - Take 1 to 2 drops per day.",
+        "Other ingredients": "",
+        "Warnings": "Keep out of reach of children."
+      },
+      "sourceSummary": {
+        "sourceKind": "canadian_official_product_page",
+        "sourceTypes": [
+          "official_product_page",
+          "retailer_upc_evidence"
+        ],
+        "marketSources": [
+          "ca"
+        ],
+        "sourceUrls": [
+          "https://canprev.ca/products/b12-methyl-drops",
+          "https://canprev.ca/wp-content/uploads/2025/11/1762889589_886646502784-CP-B12Methyl-15mldropsCarton-RGB-195602-V2_839_1430.png"
+        ],
+        "sourceNotes": [
+          "UPC appears in the official CanPrev product image filename for the exact 15 ml drops SKU.",
+          "canadian_retailer_ocr_canprev_official_html_canary_13: Canadian Wave Set 2 parser lane",
+          "canadian_retailer_ocr_canprev_official_html_canary_13: UPC supplied by retailer evidence (CanPrev official product image)",
+          "official_catalog: live official page parse"
+        ],
+        "npnIgnored": false,
+        "hasUsIherbPage": false,
+        "sourceRank": 90
+      },
+      "readiness": {
+        "canadianOfficialFullOverlayReady": true,
+        "highConfidenceUsProductPageReady": false,
+        "factParseMethod": "canadian_wave_set_2_live_html_v1",
+        "factParseRowCount": 2,
+        "retailerUpcEvidenceApplied": true
+      },
+      "overlayRecordKey": "gtin14:00886646502784",
+      "proofPackSource": {
+        "alias": "canprev_13",
+        "path": "output/canadian_brand_full_coverage_wave_v0/retailer_ocr_lane_01/canprev_official_html_canary_13/clean_staging/staging_products.canadian_retailer_ocr_canprev_official_html_canary_13.json"
+      }
+    },
+    {
+      "brandName": "AOR",
+      "normalizedTitle": "aor 5-htp 50mg 90 v-caps",
+      "productId": "ca-retailer-aor-00624917043297",
+      "barcode_gtin14": "00624917043297",
+      "productCatalogImage": "https://smhttp-ssl-68201.nexcesscdn.net/media/catalog/product/cache/1/image/9df78eab33525d08d6e5fb8d27136e95/a/o/aor1780_2.1775142535.jpg",
+      "productImages": [
+        "https://smhttp-ssl-68201.nexcesscdn.net/media/catalog/product/cache/1/image/9df78eab33525d08d6e5fb8d27136e95/a/o/aor1780_2.1775142535.jpg"
+      ],
+      "sourceSummary": {
+        "sourceKind": "canadian_retailer_clean_facts",
+        "sourceTypes": [
+          "trusted_retailer_product_page",
+          "official_brand_product_page"
+        ],
+        "marketSources": [
+          "ca"
+        ],
+        "sourceUrls": [
+          "https://aor.ca/product/5-htp/",
+          "https://www.nationalnutrition.ca/aor-5-htp-50-mg-90-vcaps.html",
+          "https://smhttp-ssl-68201.nexcesscdn.net/media/catalog/product/cache/1/image/9df78eab33525d08d6e5fb8d27136e95/a/o/aor1780_2.1775142535.jpg"
+        ],
+        "sourceNotes": [
+          "NationalNutrition exact UPC 624917043297 supplies clean facts/use/warnings.",
+          "AOR official page is retained as brand/product identity context.",
+          "NationalNutrition product image added to satisfy product_image completeness for this exact retailer product page."
+        ],
+        "sourceRank": 86
+      },
+      "readiness": {
+        "canadianOfficialFullOverlayReady": true,
+        "highConfidenceUsProductPageReady": false,
+        "factParseMethod": "canadian_retailer_clean_facts_manual_v1",
+        "factParseRowCount": 1,
+        "imageOcrEvidenceApplied": false,
+        "retailerCleanFactsApplied": true
+      },
+      "overlayRecordKey": "gtin14:00624917043297",
+      "title": "AOR 5-HTP 50mg - 90 V-Caps",
+      "upcCode": "624917043297",
+      "gtin14": "00624917043297",
+      "link": "https://aor.ca/product/5-htp/",
+      "images": [
+        "https://smhttp-ssl-68201.nexcesscdn.net/media/catalog/product/cache/1/image/9df78eab33525d08d6e5fb8d27136e95/a/o/aor1780_2.1775142535.jpg"
+      ],
+      "sourceUrls": [
+        "https://www.nationalnutrition.ca/aor-5-htp-50-mg-90-vcaps.html",
+        "https://smhttp-ssl-68201.nexcesscdn.net/media/catalog/product/cache/1/image/9df78eab33525d08d6e5fb8d27136e95/a/o/aor1780_2.1775142535.jpg"
+      ],
+      "categories": [
+        "5-HTP",
+        "Sleep",
+        "Mood"
+      ],
+      "count": "90 V-caps",
+      "dosageForm": "capsules",
+      "serving": {
+        "servingType": null,
+        "servingDescription": null,
+        "servingSize": "1 capsule",
+        "servingsPerContainer": null
+      },
+      "supplementFacts": {
+        "servingSize": "1 capsule",
+        "servingsPerContainer": null,
+        "nutritionalFacts": [
+          {
+            "substancy": "L-5-Hydroxytryptophan (griffonia seed extract)",
+            "amountPerServing": "50 mg",
+            "dailyValuePercent": null
+          }
+        ]
+      },
+      "descriptionSections": {
+        "Description": "AOR 5-HTP 50mg is a 5-HTP supplement in vegetable capsules.",
+        "Suggested use": "For healthy mood balance, take one to two capsules three times daily with food; for relief of symptoms of fibromyalgia, take two capsules three to four times daily with food. To minimize gastrointestinal side effect risk, start at 50 to 100 mg two to three times daily and slowly increase to an effective dose over two weeks.",
+        "Other ingredients": "Microcrystalline cellulose, sodium stearyl fumarate. Capsule: hypromellose.",
+        "Warnings": "Consult a health care practitioner prior to use if taking carbidopa or drugs/supplements with serotonergic activity. May cause drowsiness; exercise caution if driving or operating heavy machinery. Do not use if you have scleroderma, if you are pregnant, breastfeeding, trying to conceive, under 18, or have a medical condition. This product contains corn; do not use if you have an allergy."
+      },
+      "proofPackSource": {
+        "alias": "consolidated_04",
+        "path": "output/canadian_brand_full_coverage_wave_v0/retailer_ocr_lane_01/current_session_consolidated_validation_04/staging_products.canadian_current_session_consolidated_validation_04.json"
+      }
+    },
+    {
+      "brandName": "AOR",
+      "normalizedTitle": "aor advanced b complex 180 caps",
+      "productId": "ca-retailer-aor-00624917042061",
+      "barcode_gtin14": "00624917042061",
+      "productCatalogImage": "https://aor.ca/wp-content/uploads/2023/01/AOR04167-Advanced-B-Complex.png",
+      "productImages": [
+        "https://aor.ca/wp-content/uploads/2023/01/AOR04167-Advanced-B-Complex.png"
+      ],
+      "sourceSummary": {
+        "sourceKind": "canadian_retailer_clean_facts",
+        "sourceTypes": [
+          "trusted_retailer_product_page",
+          "official_product_page"
+        ],
+        "marketSources": [
+          "ca"
+        ],
+        "sourceUrls": [
+          "https://aor.ca/product/advanced-b-complex/",
+          "https://www.nationalnutrition.ca/aor-advanced-b-complex-180-caps.html",
+          "https://aor.ca/wp-content/uploads/2023/01/AOR04167-Advanced-B-Complex.png"
+        ],
+        "sourceNotes": [
+          "NationalNutrition exact UPC 624917042061 supplies clean facts/use/warnings.",
+          "AOR official page supplies brand/product identity and product image context."
+        ],
+        "sourceRank": 86
+      },
+      "readiness": {
+        "canadianOfficialFullOverlayReady": true,
+        "highConfidenceUsProductPageReady": false,
+        "factParseMethod": "canadian_retailer_clean_facts_manual_v1",
+        "factParseRowCount": 10,
+        "imageOcrEvidenceApplied": false,
+        "retailerCleanFactsApplied": true
+      },
+      "overlayRecordKey": "gtin14:00624917042061",
+      "title": "AOR Advanced B-Complex - 180 Caps",
+      "upcCode": "624917042061",
+      "gtin14": "00624917042061",
+      "link": "https://aor.ca/product/advanced-b-complex/",
+      "images": [
+        "https://aor.ca/wp-content/uploads/2023/01/AOR04167-Advanced-B-Complex.png"
+      ],
+      "sourceUrls": [
+        "https://www.nationalnutrition.ca/aor-advanced-b-complex-180-caps.html",
+        "https://aor.ca/wp-content/uploads/2023/01/AOR04167-Advanced-B-Complex.png"
+      ],
+      "categories": [
+        "B-Complex",
+        "Vitamin B",
+        "Energy Support"
+      ],
+      "count": "180 V-caps",
+      "dosageForm": "capsules",
+      "serving": {
+        "servingType": null,
+        "servingDescription": null,
+        "servingSize": "3 capsules",
+        "servingsPerContainer": null
+      },
+      "supplementFacts": {
+        "servingSize": "3 capsules",
+        "servingsPerContainer": null,
+        "nutritionalFacts": [
+          {
+            "substancy": "Vitamin B1 (Benfotiamine)",
+            "amountPerServing": "100 mg",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Vitamin B2 (Riboflavin-5-Phosphate)",
+            "amountPerServing": "7.5 mg",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Vitamin B3 (Niacin from Inositol Hexanicotinate)",
+            "amountPerServing": "353 mg",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Vitamin B5 (Pantethine)",
+            "amountPerServing": "300 mg",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Vitamin B6 (Pyridoxal-5-phosphate)",
+            "amountPerServing": "100 mg",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Vitamin B12 (Methylcobalamin)",
+            "amountPerServing": "1000 mcg",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Folic Acid (calcium L-5-MTHF)",
+            "amountPerServing": "1000 mcg",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Biotin",
+            "amountPerServing": "500 mcg",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Choline bitartrate",
+            "amountPerServing": "600 mg",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Inositol",
+            "amountPerServing": "393 mg",
+            "dailyValuePercent": null
+          }
+        ]
+      },
+      "descriptionSections": {
+        "Description": "AOR Advanced B-Complex - 180 Caps is a Canadian AOR supplement with label facts from an exact retailer product page.",
+        "Suggested use": "Take one capsule one to three times daily with food, or as directed by a qualified health care practitioner.",
+        "Other ingredients": "Microcrystalline cellulose, dicalcium phosphate, silicon dioxide, sodium stearyl fumarate, ethylcellulose, dibutyl sebacate, mannitol (corn). Capsule: hypromellose and chlorophyll.",
+        "Warnings": "Consult a health care practitioner prior to use if you are pregnant or breastfeeding or for use beyond eight weeks. People with thiamine hypersensitivity should not take this product. This product contains corn; do not use if you have a corn allergy."
+      },
+      "proofPackSource": {
+        "alias": "consolidated_04",
+        "path": "output/canadian_brand_full_coverage_wave_v0/retailer_ocr_lane_01/current_session_consolidated_validation_04/staging_products.canadian_current_session_consolidated_validation_04.json"
+      }
+    },
+    {
+      "brandName": "AOR",
+      "normalizedTitle": "aor berberine 60 caps",
+      "productId": "ca-retailer-aor-00624917044829",
+      "barcode_gtin14": "00624917044829",
+      "productCatalogImage": "https://smhttp-ssl-68201.nexcesscdn.net/media/catalog/product/cache/1/image/9df78eab33525d08d6e5fb8d27136e95/a/o/aor-berberine-60-caps.1775064839.png",
+      "productImages": [
+        "https://smhttp-ssl-68201.nexcesscdn.net/media/catalog/product/cache/1/image/9df78eab33525d08d6e5fb8d27136e95/a/o/aor-berberine-60-caps.1775064839.png"
+      ],
+      "sourceSummary": {
+        "sourceKind": "canadian_retailer_clean_facts",
+        "sourceTypes": [
+          "trusted_retailer_product_page",
+          "official_brand_product_page"
+        ],
+        "marketSources": [
+          "ca"
+        ],
+        "sourceUrls": [
+          "https://aor.ca/product/berberine/",
+          "https://www.nationalnutrition.ca/aor-berberine-60-caps.html",
+          "https://smhttp-ssl-68201.nexcesscdn.net/media/catalog/product/cache/1/image/9df78eab33525d08d6e5fb8d27136e95/a/o/aor-berberine-60-caps.1775064839.png"
+        ],
+        "sourceNotes": [
+          "NationalNutrition exact UPC 624917044829 supplies clean facts/use/warnings.",
+          "AOR official page is retained as brand/product identity context.",
+          "NationalNutrition product image added to satisfy product_image completeness for this exact retailer product page."
+        ],
+        "sourceRank": 86
+      },
+      "readiness": {
+        "canadianOfficialFullOverlayReady": true,
+        "highConfidenceUsProductPageReady": false,
+        "factParseMethod": "canadian_retailer_clean_facts_manual_v1",
+        "factParseRowCount": 1,
+        "imageOcrEvidenceApplied": false,
+        "retailerCleanFactsApplied": true
+      },
+      "overlayRecordKey": "gtin14:00624917044829",
+      "title": "AOR Berberine - 60 Caps",
+      "upcCode": "624917044829",
+      "gtin14": "00624917044829",
+      "link": "https://aor.ca/product/berberine/",
+      "images": [
+        "https://smhttp-ssl-68201.nexcesscdn.net/media/catalog/product/cache/1/image/9df78eab33525d08d6e5fb8d27136e95/a/o/aor-berberine-60-caps.1775064839.png"
+      ],
+      "sourceUrls": [
+        "https://www.nationalnutrition.ca/aor-berberine-60-caps.html",
+        "https://smhttp-ssl-68201.nexcesscdn.net/media/catalog/product/cache/1/image/9df78eab33525d08d6e5fb8d27136e95/a/o/aor-berberine-60-caps.1775064839.png"
+      ],
+      "categories": [
+        "Berberine",
+        "Metabolic Support"
+      ],
+      "count": "60 Caps",
+      "dosageForm": "capsules",
+      "serving": {
+        "servingType": null,
+        "servingDescription": null,
+        "servingSize": "1 capsule",
+        "servingsPerContainer": null
+      },
+      "supplementFacts": {
+        "servingSize": "1 capsule",
+        "servingsPerContainer": null,
+        "nutritionalFacts": [
+          {
+            "substancy": "Berberine (berberine HCl from Berberis aristata stem bark)",
+            "amountPerServing": "500 mg",
+            "dailyValuePercent": null
+          }
+        ]
+      },
+      "descriptionSections": {
+        "Description": "AOR Berberine provides berberine HCl from Berberis aristata stem bark.",
+        "Suggested use": "Adults (18 years and over): Take one capsule, two times a day, with food; or as directed by health care practitioner.",
+        "Other ingredients": "Microcrystalline cellulose, sodium stearyl fumarate. Capsule: hypromellose.",
+        "Warnings": "Do not open capsules, as this may compromise the stability of the medicinal ingredients. Do not exceed daily dose unless instructed by a healthcare practitioner."
+      },
+      "proofPackSource": {
+        "alias": "consolidated_04",
+        "path": "output/canadian_brand_full_coverage_wave_v0/retailer_ocr_lane_01/current_session_consolidated_validation_04/staging_products.canadian_current_session_consolidated_validation_04.json"
+      }
+    },
+    {
+      "brandName": "Organika",
+      "title": "Belli-Bliss Glucose Fibre",
+      "normalizedTitle": "belli-bliss glucose fibre",
+      "productId": "ca-official-organika-00620365042530",
+      "upcCode": "620365042530",
+      "barcode_gtin14": "00620365042530",
+      "link": "https://organika.com/products/belli-bliss-glucose-fibre",
+      "productCatalogImage": "http://organika.com/cdn/shop/files/belli-bliss-glucose-fibre-6-g-x-30-sachets-4253-8103000.png?v=1775684176",
+      "productImages": [
+        "http://organika.com/cdn/shop/files/belli-bliss-glucose-fibre-6-g-x-30-sachets-4253-8103000.png?v=1775684176",
+        "https://cdn.shopify.com/s/files/1/0355/5537/7197/files/belli-bliss-glucose-fibre-6-g-x-30-sachets-4253-8103000.png?v=1775684176",
+        "https://cdn.shopify.com/s/files/1/0355/5537/7197/files/belli-bliss-glucose-fibre-6-g-x-30-sachets-4253-8844097.png?v=1775684176",
+        "https://organika.com//cdn//shop//files//belli-bliss-glucose-fibre-6-g-x-30-sachets-4253-8103000.png?v=1775684176",
+        "https://organika.com//cdn//shop//files//belli-bliss-glucose-fibre-6-g-x-30-sachets-4253-8844097.png?v=1775684176",
+        "https://organika.com//cdn//shop//collections//all-products-4090281.png?v=1758727692",
+        "https://organika.com//cdn//shop//collections//benefits-908306.png?v=1758661336",
+        "https://organika.com//cdn//shop//collections//black-friday-480875.png?v=1758661368",
+        "https://organika.com//cdn//shop//collections//boxing-week-377893.png?v=1758661376",
+        "https://organika.com//cdn//shop//collections//fibre-1795045.jpg?v=1774357506",
+        "https://organika.com//cdn//shop//collections//gut-and-digestive-health-5613554.png?v=1758727776",
+        "https://organika.com//cdn//shop//collections//gut-health-304709.png?v=1759948888",
+        "https://organika.com//cdn//shop//collections//lifestyle-440751.png?v=1758661333",
+        "https://organika.com//cdn//shop//collections//new-at-organika-6374815.png?v=1758727793",
+        "https://organika.com//cdn//shop//collections//on-the-go-256766.png?v=1758661321",
+        "https://organika.com//cdn//shop//collections//organika-products-823651.png?v=1758661346",
+        "https://organika.com//cdn//shop//collections//shop-by-health-goal-9371799.png?v=1758727800",
+        "https://organika.com//cdn//shop//collections//shop-by-product-2337142.png?v=1758727802",
+        "https://organika.com//cdn//shop//collections//vegetarian-9856367.png?v=1758727806"
+      ],
+      "categories": [
+        "Probiotics & Digestion"
+      ],
+      "count": "6 g",
+      "dosageForm": "sachets",
+      "serving": {
+        "servingType": null,
+        "servingDescription": null,
+        "servingSize": "1 SACHET = 6 g",
+        "servingsPerContainer": 1
+      },
+      "supplementFacts": {
+        "servingSize": "1 SACHET = 6 g",
+        "servingsPerContainer": 1,
+        "nutritionalFacts": [
+          {
+            "substancy": "Inulin (Cichorium intybus, Root)",
+            "amountPerServing": "2 g",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Chromium [Chromium (III) Nicotinate Glycinate]",
+            "amountPerServing": "10 mcg",
+            "dailyValuePercent": null
+          }
+        ]
+      },
+      "descriptionSections": {
+        "Description": "Belli-Bliss Glucose Fibre is a convenient, once-daily sachet designed to support steady blood sugar levels, gut health, and digestive regularity in one convenient sachet. Each serving delivers 4 g of fibre from two clinically studied sources—inulin and Fibersol—plus chromium to support normal glucose metabolism. * Inu",
+        "Suggested use": "Take 1 serving, 1 time per day. Mix well with liquid and drink immediately",
+        "Other ingredients": "Fibersol prebiotic soluble vegetable fibre, Stevia Leaf Extract, Citric Acid, Natural Lemonade Flavour.",
+        "Warnings": "Stop use if hypersensitivity / allergy occurs. For constipation / irregularity: Ask a health care practitioner if symptoms worsen or if laxative effect does not occur within 7 days. Do not use if you have fever or any undiagnosed gastrointestinal trouble."
+      },
+      "sourceSummary": {
+        "sourceKind": "canadian_official_product_page",
+        "sourceTypes": [
+          "official_product_page"
+        ],
+        "marketSources": [
+          "ca"
+        ],
+        "sourceUrls": [
+          "https://organika.com/products/belli-bliss-glucose-fibre"
+        ],
+        "sourceNotes": [
+          "canadian_wave_set_2_parser_lane_02_final: Canadian Wave Set 2 parser lane",
+          "official_overlay_candidates: live official page parse"
+        ],
+        "npnIgnored": false,
+        "hasUsIherbPage": false,
+        "sourceRank": 90
+      },
+      "readiness": {
+        "canadianOfficialFullOverlayReady": true,
+        "highConfidenceUsProductPageReady": false,
+        "factParseMethod": "canadian_wave_set_2_live_html_v1",
+        "factParseRowCount": 2
+      },
+      "overlayRecordKey": "gtin14:00620365042530",
+      "proofPackSource": {
+        "alias": "wave2_final",
+        "path": "output/canadian_brand_full_coverage_wave_v0/wave_set_2_parser_lane_02_final/staging_products.canadian_wave_set_2_parser_lane_02_final.json"
+      }
+    },
+    {
+      "brandName": "Organika",
+      "title": "Black Cumin Seed Oil",
+      "normalizedTitle": "black cumin seed oil",
+      "productId": "ca-official-organika-00620365013837",
+      "upcCode": "620365013837",
+      "barcode_gtin14": "00620365013837",
+      "link": "https://organika.com/products/black-cumin-seed-oil",
+      "productCatalogImage": "http://organika.com/cdn/shop/files/black-cumin-seed-oil-60-sftgl-1383-5618376.png?v=1758810949",
+      "productImages": [
+        "http://organika.com/cdn/shop/files/black-cumin-seed-oil-60-sftgl-1383-5618376.png?v=1758810949",
+        "https://cdn.shopify.com/s/files/1/0355/5537/7197/files/black-cumin-seed-oil-60-sftgl-1383-5618376.png?v=1758810949",
+        "https://cdn.shopify.com/s/files/1/0355/5537/7197/files/black-cumin-seed-oil-60-sftgl-1383-6432789.png?v=1758810949",
+        "https://cdn.shopify.com/s/files/1/0355/5537/7197/files/black-cumin-seed-oil-60-sftgl-1383-4103842.png?v=1758810950",
+        "https://cdn.shopify.com/s/files/1/0355/5537/7197/files/black-cumin-seed-oil-60-sftgl-1383-7426022.png?v=1758810951",
+        "https://cdn.shopify.com/s/files/1/0355/5537/7197/files/black-cumin-seed-oil-120-sftgl-1384-9364219.png?v=1758810950",
+        "https://cdn.shopify.com/s/files/1/0355/5537/7197/files/black-cumin-seed-oil-120-sftgl-1384-1059939.png?v=1758810950",
+        "https://cdn.shopify.com/s/files/1/0355/5537/7197/files/black-cumin-seed-oil-120-sftgl-1384-8011652.png?v=1758810951",
+        "https://cdn.shopify.com/s/files/1/0355/5537/7197/files/black-cumin-seed-oil-120-sftgl-1384-6858979.png?v=1758810951",
+        "https://organika.com//cdn//shop//files//black-cumin-seed-oil-60-sftgl-1383-5618376.png?v=1758810949",
+        "https://organika.com//cdn//shop//files//black-cumin-seed-oil-120-sftgl-1384-9364219.png?v=1758810950",
+        "https://organika.com//cdn//shop//files//black-cumin-seed-oil-60-sftgl-1383-6432789.png?v=1758810949",
+        "https://organika.com//cdn//shop//files//black-cumin-seed-oil-60-sftgl-1383-4103842.png?v=1758810950",
+        "https://organika.com//cdn//shop//files//black-cumin-seed-oil-60-sftgl-1383-7426022.png?v=1758810951",
+        "https://organika.com//cdn//shop//files//black-cumin-seed-oil-120-sftgl-1384-1059939.png?v=1758810950",
+        "https://organika.com//cdn//shop//files//black-cumin-seed-oil-120-sftgl-1384-8011652.png?v=1758810951",
+        "https://organika.com//cdn//shop//files//black-cumin-seed-oil-120-sftgl-1384-6858979.png?v=1758810951",
+        "https://organika.com//cdn//shop//collections//all-products-4090281.png?v=1758727692",
+        "https://organika.com//cdn//shop//collections//allergy-relief-prevention-8384881.png?v=1758727696",
+        "https://organika.com//cdn//shop//collections//benefits-908306.png?v=1758661336",
+        "https://organika.com//cdn//shop//collections//black-friday-480875.png?v=1758661368",
+        "https://organika.com//cdn//shop//collections//boxing-week-377893.png?v=1758661376",
+        "https://organika.com//cdn//shop//collections//herbs-704239.png?v=1759947873",
+        "https://organika.com//cdn//shop//collections//immunity-625327.png?v=1760038693",
+        "https://organika.com//cdn//shop//collections//ingredients-327307.png?v=1758661333",
+        "https://organika.com//cdn//shop//collections//organika-products-823651.png?v=1758661346",
+        "https://organika.com//cdn//shop//collections//shop-by-health-goal-9371799.png?v=1758727800",
+        "https://organika.com//cdn//shop//collections//shop-by-product-2337142.png?v=1758727802",
+        "https://organika.com//cdn//shop//collections//supplements-893970.jpg?v=1758661331"
+      ],
+      "categories": [
+        "Herbs & Botanicals"
+      ],
+      "count": "60 sftgl",
+      "dosageForm": null,
+      "serving": {
+        "servingType": null,
+        "servingDescription": null,
+        "servingSize": null,
+        "servingsPerContainer": null
+      },
+      "supplementFacts": {
+        "servingSize": null,
+        "servingsPerContainer": null,
+        "nutritionalFacts": [
+          {
+            "substancy": "EACH SOFTGEL CAPSULE Black Cumin Seed Oil (Nigella sativa)",
+            "amountPerServing": "500 mg",
+            "dailyValuePercent": null
+          }
+        ]
+      },
+      "descriptionSections": {
+        "Description": "Discover the ancient healing power of black cumin seed oil, rich in linoleic acid for balancing inflammation. Traditional wellness at its best.",
+        "Suggested use": "Supportive therapy for symptoms of allergic rhinitis (hay fever). Recommended dose — (oral) adults only: Take 2 softgel capsules three times per day with meals.",
+        "Other ingredients": "MEDICINAL INGREDIENT - EACH SOFTGEL CAPSULE CONTAINS: Black Cumin Seed Oil (Nigella sativa) 500 mg NON-MEDICINAL INGREDIENT S: Gelatin (Capsule), Glycerin, Purified Water, Mixed Tocopherol Concentrate Recommended use: Supportive therapy for symptoms of allergic rhinitis (hay fever). Recommended dose — (oral) adults only: Take 2 softgel capsules three times per day with meals. Cautions: Do not take if you are pregnant, breastfeeding or trying to conceive. Consult a health care practitioner prior to use if you have a serious immune disorder. Consult a health care practitioner if you have diabetes, hypertension or hypotension; and/or are taking hypoglycemic or antihypertensive agents. If symptoms persist or worsen, discontinue use and consult a health care practitioner.",
+        "Warnings": "Do not take if you are pregnant, breastfeeding or trying to conceive. Consult a health care practitioner prior to use if you have a serious immune disorder. Consult a health care practitioner if you have diabetes, hypertension or hypotension; and/or are taking hypoglycemic or antihypertensive agents. If symptoms persist or worsen, discontinue use and consult a health care practitioner."
+      },
+      "sourceSummary": {
+        "sourceKind": "canadian_official_product_page",
+        "sourceTypes": [
+          "official_product_page"
+        ],
+        "marketSources": [
+          "ca"
+        ],
+        "sourceUrls": [
+          "https://organika.com/products/black-cumin-seed-oil"
+        ],
+        "sourceNotes": [
+          "canadian_wave_set_2_parser_lane_02_final: Canadian Wave Set 2 parser lane",
+          "official_overlay_candidates: live official page parse"
+        ],
+        "npnIgnored": false,
+        "hasUsIherbPage": false,
+        "sourceRank": 90
+      },
+      "readiness": {
+        "canadianOfficialFullOverlayReady": true,
+        "highConfidenceUsProductPageReady": false,
+        "factParseMethod": "canadian_wave_set_2_live_html_v1",
+        "factParseRowCount": 1
+      },
+      "overlayRecordKey": "gtin14:00620365013837",
+      "proofPackSource": {
+        "alias": "wave2_final",
+        "path": "output/canadian_brand_full_coverage_wave_v0/wave_set_2_parser_lane_02_final/staging_products.canadian_wave_set_2_parser_lane_02_final.json"
+      }
+    },
+    {
+      "brandName": "New Roots Herbal",
+      "title": "active mag",
+      "normalizedTitle": "active mag",
+      "productId": "ca-official-new-roots-herbal-00628747131858",
+      "upcCode": "628747131858",
+      "barcode_gtin14": "00628747131858",
+      "link": "https://newrootsherbal.com/shop/active-mag",
+      "productCatalogImage": "https://newrootsherbal.com/uploads/products/thumbnails/3185_NRH_-_Active_Mag_120c_EN.webp",
+      "productImages": [
+        "https://newrootsherbal.com/uploads/products/thumbnails/3185_NRH_-_Active_Mag_120c_EN.webp"
+      ],
+      "categories": [],
+      "count": null,
+      "dosageForm": null,
+      "serving": {
+        "servingType": null,
+        "servingDescription": null,
+        "servingSize": null,
+        "servingsPerContainer": null
+      },
+      "supplementFacts": {
+        "servingSize": null,
+        "servingsPerContainer": null,
+        "nutritionalFacts": [
+          {
+            "substancy": "Taurine (2‑aminoethanesulfonic acid)",
+            "amountPerServing": "375 mg",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Magnesium (from magnesium citrate)",
+            "amountPerServing": "70 mg",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Potassium (from potassium chloride)",
+            "amountPerServing": "25 mg",
+            "dailyValuePercent": null
+          }
+        ]
+      },
+      "descriptionSections": {
+        "Description": "Synergistic formula featuring magnesium, potassium, and taurine, pivotal nutrients for energy metabolism, electrolyte balance, and cardiovascular function to fuel your active lifestyle.",
+        "Suggested use": "Adults: Take 1 capsule four times daily or as directed by your health-care practitioner.",
+        "Other ingredients": "Vegetable magnesium stearate and silicon dioxide in a non‑GMO vegetable capsule composed of vegetable carbohydrate gum and purified water. Product ingredients listed here refer to our most recent production runs. Improvements to formulas and access to particular raw materials may create instances whereby ingredients on our web differ from ingredients in finished products available at retail. Always refer to ingredients, directions of use, and warnings on the label of the product you have on hand to ensure it is right for you. Code: V0776-R1 No reviews available for this product yet. Be the first to leave a review! Write a Review for \"Active Mag\" Your email address will not be published. Your rating: * Your Review * Name * Email address * Save my name, email, and website in this browser for the next time I comment. Submit You may also consider Wild Omega 3 EPA 660 mg DHA 330 mg Vitamin C⁸ (Capsules) Strong Bones Grass-Fed Beef Liver Beef Bone Broth Protein Magnesium Bisglycinate Plus Plant Sterols Wild Omega 3 EPA 660 mg DHA 330 mg Lemon Flavour Laboratory Find a store Careers Contact Us 1 800 268-9486 info@newrootsherbal.com Subscribe to Our Newsletter! &times; Your subscription could not be saved to New Roots Herbal. Please try again. You've successfully subscribed to New Roots Herbal Newsletter! New Roots Herbal Newsletter How can we contact you? How may we call you? What country do you live in? Preferred reading language English Français Sign up for our newsletter. You can unsubscribe at any time. See our Privacy Policy for more details. SUBSCRIBE New Roots Herbal Inc., 3405 Rue F.-X.-Tessier, Vaudreuil-Dorion, QC J7V 5V5 ©2026 New Roots Herbal Inc. Disclaimer | Privacy Policy | Terms and Sales Policy Home Products 3 Wishlist &times; Your current country: Would you like to stay on this domain or be redirected to the recommended site for your region? Stay on this domain www.newrootsherbal.com Go to Recommended Site &times; &minus; Reset &plus; We use cookies to enhance your experience. By continuing to visit this site you agree to our use of cookies. Learn more in our Privacy Policy. Decline Accept",
+        "Warnings": "Consult a health-care practitioner prior to use if you are pregnant or breast-feeding. Do not use if seal is broken. Keep out of reach of children."
+      },
+      "sourceSummary": {
+        "sourceKind": "canadian_official_product_page",
+        "sourceTypes": [
+          "official_product_page"
+        ],
+        "marketSources": [
+          "ca"
+        ],
+        "sourceUrls": [
+          "https://newrootsherbal.com/shop/active-mag"
+        ],
+        "sourceNotes": [
+          "canadian_wave_set_2_parser_lane_02_final: Canadian Wave Set 2 parser lane",
+          "official_catalog: live official page parse",
+          "NPN captured for reference only: 80082220"
+        ],
+        "npnIgnored": false,
+        "hasUsIherbPage": false,
+        "sourceRank": 90
+      },
+      "readiness": {
+        "canadianOfficialFullOverlayReady": true,
+        "highConfidenceUsProductPageReady": false,
+        "factParseMethod": "canadian_wave_set_2_live_html_v1",
+        "factParseRowCount": 3
+      },
+      "overlayRecordKey": "gtin14:00628747131858",
+      "proofPackSource": {
+        "alias": "wave2_final",
+        "path": "output/canadian_brand_full_coverage_wave_v0/wave_set_2_parser_lane_02_final/staging_products.canadian_wave_set_2_parser_lane_02_final.json"
+      }
+    },
+    {
+      "brandName": "New Roots Herbal",
+      "title": "alpha lipoic 250 mg",
+      "normalizedTitle": "alpha lipoic 250 mg",
+      "productId": "ca-official-new-roots-herbal-00628747107709",
+      "upcCode": "628747107709",
+      "barcode_gtin14": "00628747107709",
+      "link": "https://newrootsherbal.com/shop/alpha-lipoic-250-mg",
+      "productCatalogImage": "https://newrootsherbal.com/uploads/products/thumbnails/0770_NRH_-_Alpha_Lipoic_250mg_60c_EN.webp",
+      "productImages": [
+        "https://newrootsherbal.com/uploads/products/thumbnails/0770_NRH_-_Alpha_Lipoic_250mg_60c_EN.webp"
+      ],
+      "categories": [],
+      "count": null,
+      "dosageForm": null,
+      "serving": {
+        "servingType": null,
+        "servingDescription": null,
+        "servingSize": null,
+        "servingsPerContainer": null
+      },
+      "supplementFacts": {
+        "servingSize": null,
+        "servingsPerContainer": null,
+        "nutritionalFacts": [
+          {
+            "substancy": "ᴅʟ‑ alpha ‑Lipoic acid",
+            "amountPerServing": "250 mg",
+            "dailyValuePercent": null
+          }
+        ]
+      },
+      "descriptionSections": {
+        "Description": "alpha-Lipoic acid exerts antioxidant action at the cellular level for the preservation of good health.",
+        "Suggested use": "Adults: As a dietary supplement, take 1–2 capsules daily with food or as directed by your health-care practitioner.",
+        "Other ingredients": "Microcrystalline cellulose and vegetable magnesium stearate in a non‑GMO vegetable capsule composed of vegetable carbohydrate gum and purified water. Product ingredients listed here refer to our most recent production runs. Improvements to formulas and access to particular raw materials may create instances whereby ingredients on our web differ from ingredients in finished products available at retail. Always refer to ingredients, directions of use, and warnings on the label of the product you have on hand to ensure it is right for you. Code: V0096-R1 No reviews available for this product yet. Be the first to leave a review! Write a Review for \"Alpha Lipoic 250 mg\" Your email address will not be published. Your rating: * Your Review * Name * Email address * Save my name, email, and website in this browser for the next time I comment. Submit You may also consider Wild Oregano C93 Grass-Fed Beef Liver Vitamin E⁸ · 400 IU Acidophilus Ultra 11 Billion+ Vitamin D3 2,500 IU Extra Strength (Softgels) Liver Protection N-AcetylCysteine Glutathione Laboratory Find a store Careers Contact Us 1 800 268-9486 info@newrootsherbal.com Subscribe to Our Newsletter! &times; Your subscription could not be saved to New Roots Herbal. Please try again. You've successfully subscribed to New Roots Herbal Newsletter! New Roots Herbal Newsletter How can we contact you? How may we call you? What country do you live in? Preferred reading language English Français Sign up for our newsletter. You can unsubscribe at any time. See our Privacy Policy for more details. SUBSCRIBE New Roots Herbal Inc., 3405 Rue F.-X.-Tessier, Vaudreuil-Dorion, QC J7V 5V5 ©2026 New Roots Herbal Inc. Disclaimer | Privacy Policy | Terms and Sales Policy Home Products 3 Wishlist &times; Your current country: Would you like to stay on this domain or be redirected to the recommended site for your region? Stay on this domain www.newrootsherbal.com Go to Recommended Site &times; &minus; Reset &plus; We use cookies to enhance your experience. By continuing to visit this site you agree to our use of cookies. Learn more in our Privacy Policy. Decline Accept",
+        "Warnings": "Consult a health-care practitioner prior to use if you are pregnant or breast-feeding, or if you have diabetes. Discontinue use and consult a health-care practitioner in case of sweating, paleness, chills, headache, dizziness, or confusion, as these may be symptoms of serious low blood sugar. Store in a cool dry place. Do not use if seal is broken. Keep out of reach of children."
+      },
+      "sourceSummary": {
+        "sourceKind": "canadian_official_product_page",
+        "sourceTypes": [
+          "official_product_page"
+        ],
+        "marketSources": [
+          "ca"
+        ],
+        "sourceUrls": [
+          "https://newrootsherbal.com/shop/alpha-lipoic-250-mg"
+        ],
+        "sourceNotes": [
+          "canadian_wave_set_2_parser_lane_02_final: Canadian Wave Set 2 parser lane",
+          "official_catalog: live official page parse",
+          "NPN captured for reference only: 80017724"
+        ],
+        "npnIgnored": false,
+        "hasUsIherbPage": false,
+        "sourceRank": 90
+      },
+      "readiness": {
+        "canadianOfficialFullOverlayReady": true,
+        "highConfidenceUsProductPageReady": false,
+        "factParseMethod": "canadian_wave_set_2_live_html_v1",
+        "factParseRowCount": 1
+      },
+      "overlayRecordKey": "gtin14:00628747107709",
+      "proofPackSource": {
+        "alias": "wave2_final",
+        "path": "output/canadian_brand_full_coverage_wave_v0/wave_set_2_parser_lane_02_final/staging_products.canadian_wave_set_2_parser_lane_02_final.json"
+      }
+    },
+    {
+      "brandName": "New Roots Herbal",
+      "title": "ashwagandha",
+      "normalizedTitle": "ashwagandha",
+      "productId": "ca-official-new-roots-herbal-00628747121132",
+      "upcCode": "628747121132",
+      "barcode_gtin14": "00628747121132",
+      "link": "https://newrootsherbal.com/shop/ashwagandha",
+      "productCatalogImage": "https://newrootsherbal.com/uploads/products/thumbnails/2113_NRH_-_Ashwaganda_Extract_30c_EN.webp",
+      "productImages": [
+        "https://newrootsherbal.com/uploads/products/thumbnails/2113_NRH_-_Ashwaganda_Extract_30c_EN.webp",
+        "https://newrootsherbal.com/uploads/products/2113_NRH_-_Ashwaganda_Extract_30c_EN.webp",
+        "https://newrootsherbal.com/uploads/products/2115_NRH_-_Ashwaganda_Extract_60c_EN.webp"
+      ],
+      "categories": [],
+      "count": null,
+      "dosageForm": null,
+      "serving": {
+        "servingType": null,
+        "servingDescription": null,
+        "servingSize": null,
+        "servingsPerContainer": null
+      },
+      "supplementFacts": {
+        "servingSize": null,
+        "servingsPerContainer": null,
+        "nutritionalFacts": [
+          {
+            "substancy": "Ashwagandha ( Withania somnifera ) root extract, 5% withanolides",
+            "amountPerServing": "500 mg",
+            "dailyValuePercent": null
+          }
+        ]
+      },
+      "descriptionSections": {
+        "Description": "Ashwagandha is an adaptogenic botanical which can help shield the brain and central nervous system from the effects of chronic stress.",
+        "Suggested use": "Adults: Take 1 capsule daily or as directed by your health-care practitioner.",
+        "Other ingredients": "Vegetable magnesium stearate and silicon dioxide in a non‑GMO vegetable capsule composed of carbohydrate gum and purified water. Product ingredients listed here refer to our most recent production runs. Improvements to formulas and access to particular raw materials may create instances whereby ingredients on our web differ from ingredients in finished products available at retail. Always refer to ingredients, directions of use, and warnings on the label of the product you have on hand to ensure it is right for you. Code: V0581-R1 No reviews available for this product yet. Be the first to leave a review! Write a Review for \"Ashwagandha\" Your email address will not be published. Your rating: * Your Review * Name * Email address * Save my name, email, and website in this browser for the next time I comment. Submit You may also consider Curcumin Plus Piperine Wild Omega 3 EPA 660 mg DHA 330 mg Ultra Zinc 30 mg Maca Grapefruit Seed Extract (Liquid Concentrate) Wormwood Magnesium Bisglycinate Plus Pure Magnesium Bisglycinate 130 mg Elemental Magnesium Laboratory Find a store Careers Contact Us 1 800 268-9486 info@newrootsherbal.com Subscribe to Our Newsletter! &times; Your subscription could not be saved to New Roots Herbal. Please try again. You've successfully subscribed to New Roots Herbal Newsletter! New Roots Herbal Newsletter How can we contact you? How may we call you? What country do you live in? Preferred reading language English Français Sign up for our newsletter. You can unsubscribe at any time. See our Privacy Policy for more details. SUBSCRIBE New Roots Herbal Inc., 3405 Rue F.-X.-Tessier, Vaudreuil-Dorion, QC J7V 5V5 ©2026 New Roots Herbal Inc. Disclaimer | Privacy Policy | Terms and Sales Policy Home Products 3 Wishlist &times; Your current country: Would you like to stay on this domain or be redirected to the recommended site for your region? Stay on this domain www.newrootsherbal.com Go to Recommended Site &times; &minus; Reset &plus; We use cookies to enhance your experience. By continuing to visit this site you agree to our use of cookies. Learn more in our Privacy Policy. Decline Accept",
+        "Warnings": "Consult a health-care practitioner prior to use if you are pregnant or breast-feeding; if you have benign prostate hypertrophy and/or prostate cancer; if you have been diagnosed with hypoactive sexual disorder, sexual dysfunction, or erectile dysfunction; or if you suffer from any psychological disorder and/or condition such as anxiety or depression. Contraindications: Consumption with alcohol, other drugs, or natural health products with sedative properties is not recommended."
+      },
+      "sourceSummary": {
+        "sourceKind": "canadian_official_product_page",
+        "sourceTypes": [
+          "official_product_page"
+        ],
+        "marketSources": [
+          "ca"
+        ],
+        "sourceUrls": [
+          "https://newrootsherbal.com/shop/ashwagandha"
+        ],
+        "sourceNotes": [
+          "canadian_wave_set_2_parser_lane_02_final: Canadian Wave Set 2 parser lane",
+          "official_catalog: live official page parse",
+          "NPN captured for reference only: 80071783"
+        ],
+        "npnIgnored": false,
+        "hasUsIherbPage": false,
+        "sourceRank": 90
+      },
+      "readiness": {
+        "canadianOfficialFullOverlayReady": true,
+        "highConfidenceUsProductPageReady": false,
+        "factParseMethod": "canadian_wave_set_2_live_html_v1",
+        "factParseRowCount": 1
+      },
+      "overlayRecordKey": "gtin14:00628747121132",
+      "proofPackSource": {
+        "alias": "wave2_final",
+        "path": "output/canadian_brand_full_coverage_wave_v0/wave_set_2_parser_lane_02_final/staging_products.canadian_wave_set_2_parser_lane_02_final.json"
+      }
+    },
+    {
+      "brandName": "Prairie Naturals",
+      "normalizedTitle": "prairie naturals astaxanthin plus 60 softgels",
+      "productId": "ca-retailer-prairie-naturals-00067953004783",
+      "barcode_gtin14": "00067953004783",
+      "productCatalogImage": "https://smhttp-ssl-68201.nexcesscdn.net/media/catalog/product/cache/1/image/9df78eab33525d08d6e5fb8d27136e95/p/n/pn0250_1.1775062597.jpg",
+      "productImages": [
+        "https://smhttp-ssl-68201.nexcesscdn.net/media/catalog/product/cache/1/image/9df78eab33525d08d6e5fb8d27136e95/p/n/pn0250_1.1775062597.jpg"
+      ],
+      "sourceSummary": {
+        "sourceKind": "canadian_retailer_clean_facts",
+        "sourceTypes": [
+          "trusted_retailer_product_page",
+          "official_product_page"
+        ],
+        "marketSources": [
+          "ca"
+        ],
+        "sourceUrls": [
+          "https://www.prairienaturals.ca/products/astaxanthin/",
+          "https://www.nationalnutrition.ca/prairie-naturals-astaxanthin-plus-60-softgels.html",
+          "https://smhttp-ssl-68201.nexcesscdn.net/media/catalog/product/cache/1/image/9df78eab33525d08d6e5fb8d27136e95/p/n/pn0250_1.1775062597.jpg"
+        ],
+        "sourceNotes": [
+          "NationalNutrition exact UPC 067953004783 supplies clean facts/use/warnings.",
+          "Prairie Naturals official page supplies brand/product identity context."
+        ],
+        "sourceRank": 84
+      },
+      "readiness": {
+        "canadianOfficialFullOverlayReady": true,
+        "highConfidenceUsProductPageReady": false,
+        "factParseMethod": "canadian_retailer_clean_facts_manual_v1",
+        "factParseRowCount": 3,
+        "imageOcrEvidenceApplied": false,
+        "retailerCleanFactsApplied": true
+      },
+      "overlayRecordKey": "gtin14:00067953004783",
+      "title": "Prairie Naturals Astaxanthin Plus - 60 Softgels",
+      "upcCode": "067953004783",
+      "gtin14": "00067953004783",
+      "link": "https://www.prairienaturals.ca/products/astaxanthin/",
+      "images": [
+        "https://smhttp-ssl-68201.nexcesscdn.net/media/catalog/product/cache/1/image/9df78eab33525d08d6e5fb8d27136e95/p/n/pn0250_1.1775062597.jpg"
+      ],
+      "sourceUrls": [
+        "https://www.nationalnutrition.ca/prairie-naturals-astaxanthin-plus-60-softgels.html",
+        "https://smhttp-ssl-68201.nexcesscdn.net/media/catalog/product/cache/1/image/9df78eab33525d08d6e5fb8d27136e95/p/n/pn0250_1.1775062597.jpg"
+      ],
+      "categories": [
+        "Astaxanthin",
+        "Lutein",
+        "Eye Support"
+      ],
+      "count": "60 softgels",
+      "dosageForm": "softgels",
+      "serving": {
+        "servingType": null,
+        "servingDescription": null,
+        "servingSize": "1 softgel",
+        "servingsPerContainer": null
+      },
+      "supplementFacts": {
+        "servingSize": "1 softgel",
+        "servingsPerContainer": null,
+        "nutritionalFacts": [
+          {
+            "substancy": "Astaxanthin (Haematococcus pluvialis)",
+            "amountPerServing": "4 mg",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Lutein (Tagetes erecta)",
+            "amountPerServing": "10 mg",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Zeaxanthin (Tagetes erecta)",
+            "amountPerServing": "2 mg",
+            "dailyValuePercent": null
+          }
+        ]
+      },
+      "descriptionSections": {
+        "Description": "Prairie Naturals Astaxanthin Plus - 60 Softgels is a Canadian Prairie Naturals supplement with label facts from an exact retailer product page.",
+        "Suggested use": "Take 1 softgel daily with a meal containing oil/fat, or as directed by a health care practitioner.",
+        "Other ingredients": "See product label for full non-medicinal ingredients.",
+        "Warnings": "Consult a health care practitioner prior to use if you are pregnant or breastfeeding. Do not use if you are allergic to plants of the Asteraceae/Compositae/Daisy family. If seal around cap is broken or missing, do not use. Store in tightly sealed, light and oxygen-resistant container in a cool, dry place."
+      },
+      "proofPackSource": {
+        "alias": "consolidated_04",
+        "path": "output/canadian_brand_full_coverage_wave_v0/retailer_ocr_lane_01/current_session_consolidated_validation_04/staging_products.canadian_current_session_consolidated_validation_04.json"
+      }
+    },
+    {
+      "brandName": "Prairie Naturals",
+      "normalizedTitle": "prairie naturals activated b force 50 60 v caps",
+      "productId": "ca-retailer-prairie-naturals-00067953005360",
+      "barcode_gtin14": "00067953005360",
+      "productCatalogImage": "https://smhttp-ssl-68201.nexcesscdn.net/media/catalog/product/cache/1/image/9df78eab33525d08d6e5fb8d27136e95/p/r/prairie-naturals-activated-b-force-50-60vcap.1775116676.png",
+      "productImages": [
+        "https://smhttp-ssl-68201.nexcesscdn.net/media/catalog/product/cache/1/image/9df78eab33525d08d6e5fb8d27136e95/p/r/prairie-naturals-activated-b-force-50-60vcap.1775116676.png"
+      ],
+      "sourceSummary": {
+        "sourceKind": "canadian_retailer_clean_facts",
+        "sourceTypes": [
+          "trusted_retailer_product_page",
+          "official_product_page"
+        ],
+        "marketSources": [
+          "ca"
+        ],
+        "sourceUrls": [
+          "https://www.prairienaturals.ca/products/activated-b-force-50/",
+          "https://www.nationalnutrition.ca/prairie-naturals-activated-b-force-50-60-v-caps.html",
+          "https://smhttp-ssl-68201.nexcesscdn.net/media/catalog/product/cache/1/image/9df78eab33525d08d6e5fb8d27136e95/p/r/prairie-naturals-activated-b-force-50-60vcap.1775116676.png"
+        ],
+        "sourceNotes": [
+          "NationalNutrition exact UPC 067953005360 supplies clean facts/use/warnings.",
+          "Prairie Naturals official page supplies brand/product identity context."
+        ],
+        "sourceRank": 84
+      },
+      "readiness": {
+        "canadianOfficialFullOverlayReady": true,
+        "highConfidenceUsProductPageReady": false,
+        "factParseMethod": "canadian_retailer_clean_facts_manual_v1",
+        "factParseRowCount": 8,
+        "imageOcrEvidenceApplied": false,
+        "retailerCleanFactsApplied": true
+      },
+      "overlayRecordKey": "gtin14:00067953005360",
+      "title": "Prairie Naturals Activated B-Force 50 - 60 V-Caps",
+      "upcCode": "067953005360",
+      "gtin14": "00067953005360",
+      "link": "https://www.prairienaturals.ca/products/activated-b-force-50/",
+      "images": [
+        "https://smhttp-ssl-68201.nexcesscdn.net/media/catalog/product/cache/1/image/9df78eab33525d08d6e5fb8d27136e95/p/r/prairie-naturals-activated-b-force-50-60vcap.1775116676.png"
+      ],
+      "sourceUrls": [
+        "https://www.nationalnutrition.ca/prairie-naturals-activated-b-force-50-60-v-caps.html",
+        "https://smhttp-ssl-68201.nexcesscdn.net/media/catalog/product/cache/1/image/9df78eab33525d08d6e5fb8d27136e95/p/r/prairie-naturals-activated-b-force-50-60vcap.1775116676.png"
+      ],
+      "categories": [
+        "B-Complex",
+        "Vitamin B",
+        "Energy Support"
+      ],
+      "count": "60 V-caps",
+      "dosageForm": "capsules",
+      "serving": {
+        "servingType": null,
+        "servingDescription": null,
+        "servingSize": "1 capsule",
+        "servingsPerContainer": null
+      },
+      "supplementFacts": {
+        "servingSize": "1 capsule",
+        "servingsPerContainer": null,
+        "nutritionalFacts": [
+          {
+            "substancy": "Vitamin B1 (Thiamine as Benfotiamine)",
+            "amountPerServing": "50 mg",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Vitamin B2 (Riboflavin and Riboflavin-5-phosphate)",
+            "amountPerServing": "50 mg",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Vitamin B3 (Niacin as Inositol hexanicotinate)",
+            "amountPerServing": "50 mg",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Vitamin B5 (Pantothenic acid)",
+            "amountPerServing": "50 mg",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Vitamin B6 (Pyridoxal-5-phosphate)",
+            "amountPerServing": "50 mg",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Folate (5-MTHF)",
+            "amountPerServing": "1000 mcg",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Vitamin B12 (Methylcobalamin)",
+            "amountPerServing": "150 mcg",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Biotin",
+            "amountPerServing": "500 mcg",
+            "dailyValuePercent": null
+          }
+        ]
+      },
+      "descriptionSections": {
+        "Description": "Prairie Naturals Activated B-Force 50 - 60 V-Caps is a Canadian Prairie Naturals supplement with label facts from an exact retailer product page.",
+        "Suggested use": "Adults: Take 1 V-Capsule daily.",
+        "Other ingredients": "See product label for full non-medicinal ingredients.",
+        "Warnings": "Consult a healthcare practitioner prior to use if you are taking sulfonamides. Inform your healthcare practitioner that you are taking this product, as it provides biotin in amounts which may interfere with laboratory tests. Do not take if you are pregnant or breastfeeding or if you have renal or kidney disease. Discontinue use if hypersensitivity occurs. Do not use if seal is broken. Keep out of reach of children. Store in a cool, dry place."
+      },
+      "proofPackSource": {
+        "alias": "consolidated_04",
+        "path": "output/canadian_brand_full_coverage_wave_v0/retailer_ocr_lane_01/current_session_consolidated_validation_04/staging_products.canadian_current_session_consolidated_validation_04.json"
+      }
+    },
+    {
+      "brandName": "Prairie Naturals",
+      "normalizedTitle": "prairie naturals vitamin k2 mk 7 100mcg 60 v caps",
+      "productId": "ca-retailer-prairie-naturals-00067953004325",
+      "barcode_gtin14": "00067953004325",
+      "productCatalogImage": "https://smhttp-ssl-68201.nexcesscdn.net/media/catalog/product/cache/1/image/9df78eab33525d08d6e5fb8d27136e95/p/n/pn1094.1775070239.jpg",
+      "productImages": [
+        "https://smhttp-ssl-68201.nexcesscdn.net/media/catalog/product/cache/1/image/9df78eab33525d08d6e5fb8d27136e95/p/n/pn1094.1775070239.jpg"
+      ],
+      "sourceSummary": {
+        "sourceKind": "canadian_retailer_clean_facts",
+        "sourceTypes": [
+          "trusted_retailer_product_page",
+          "official_product_page"
+        ],
+        "marketSources": [
+          "ca"
+        ],
+        "sourceUrls": [
+          "https://www.prairienaturals.ca/products/vitamin-k2-100-mcg/",
+          "https://www.nationalnutrition.ca/prairie-naturals-vitamin-k2-mk-7-100mcg-60vcaps.html",
+          "https://smhttp-ssl-68201.nexcesscdn.net/media/catalog/product/cache/1/image/9df78eab33525d08d6e5fb8d27136e95/p/n/pn1094.1775070239.jpg"
+        ],
+        "sourceNotes": [
+          "NationalNutrition exact UPC 067953004325 supplies clean facts/use/warnings.",
+          "Prairie Naturals official page supplies brand/product identity context."
+        ],
+        "sourceRank": 84
+      },
+      "readiness": {
+        "canadianOfficialFullOverlayReady": true,
+        "highConfidenceUsProductPageReady": false,
+        "factParseMethod": "canadian_retailer_clean_facts_manual_v1",
+        "factParseRowCount": 2,
+        "imageOcrEvidenceApplied": false,
+        "retailerCleanFactsApplied": true
+      },
+      "overlayRecordKey": "gtin14:00067953004325",
+      "title": "Prairie Naturals Vitamin K2 MK-7 100mcg - 60 V-Caps",
+      "upcCode": "067953004325",
+      "gtin14": "00067953004325",
+      "link": "https://www.prairienaturals.ca/products/vitamin-k2-100-mcg/",
+      "images": [
+        "https://smhttp-ssl-68201.nexcesscdn.net/media/catalog/product/cache/1/image/9df78eab33525d08d6e5fb8d27136e95/p/n/pn1094.1775070239.jpg"
+      ],
+      "sourceUrls": [
+        "https://www.nationalnutrition.ca/prairie-naturals-vitamin-k2-mk-7-100mcg-60vcaps.html",
+        "https://smhttp-ssl-68201.nexcesscdn.net/media/catalog/product/cache/1/image/9df78eab33525d08d6e5fb8d27136e95/p/n/pn1094.1775070239.jpg"
+      ],
+      "categories": [
+        "Vitamin K2",
+        "MK-7",
+        "Bone Support"
+      ],
+      "count": "60 V-caps",
+      "dosageForm": "capsules",
+      "serving": {
+        "servingType": null,
+        "servingDescription": null,
+        "servingSize": "1 capsule",
+        "servingsPerContainer": null
+      },
+      "supplementFacts": {
+        "servingSize": "1 capsule",
+        "servingsPerContainer": null,
+        "nutritionalFacts": [
+          {
+            "substancy": "Vitamin K2 (as Menaquinone MK-7)",
+            "amountPerServing": "100 mcg",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Alfalfa (Medicago sativa)",
+            "amountPerServing": "300 mg",
+            "dailyValuePercent": null
+          }
+        ]
+      },
+      "descriptionSections": {
+        "Description": "Prairie Naturals Vitamin K2 MK-7 100mcg - 60 V-Caps is a Canadian Prairie Naturals supplement with label facts from an exact retailer product page.",
+        "Suggested use": "Take 1 capsule daily or as directed by your health care practitioner.",
+        "Other ingredients": "Rice flour, cellulose capsule, maltodextrin, magnesium stearate (vegetable source) and silica.",
+        "Warnings": "Consult a healthcare practitioner prior to use if you are taking blood thinners. Use only as directed. Always read the label. Store in a cool, dry place. Keep out of reach of children. Keep in bottle. As with any dietary or herbal supplement, advise your health care practitioner of the use of this product."
+      },
+      "proofPackSource": {
+        "alias": "consolidated_04",
+        "path": "output/canadian_brand_full_coverage_wave_v0/retailer_ocr_lane_01/current_session_consolidated_validation_04/staging_products.canadian_current_session_consolidated_validation_04.json"
+      }
+    },
+    {
+      "brandName": "Genuine Health",
+      "normalizedTitle": "genuine health high fibre gut superfoods unflavoured unsweetened stevia free",
+      "productId": "ca-official-genuine-health-00624777009303",
+      "barcode_gtin14": "00624777009303",
+      "productCatalogImage": "https://cdn.shopify.com/s/files/1/0504/9968/2476/files/GenuineHealth_CA-9303highfibregutsuperfoods_-EN-front-S07.png?v=1747836122",
+      "productImages": [
+        "https://cdn.shopify.com/s/files/1/0504/9968/2476/files/GenuineHealth_CA-9303highfibregutsuperfoods_-EN-front-S07.png?v=1747836122",
+        "https://cdn.shopify.com/s/files/1/0504/9968/2476/files/GenuineHealth_CA-9303highfibregutsuperfoods_-BIL-nutritionpanel-S07.jpg?v=1747836154",
+        "https://cdn.shopify.com/s/files/1/0504/9968/2476/files/GenuineHealth_CA-9303highfibregutsuperfoods_-EN-ingredients-S07.jpg?v=1747836154",
+        "https://cdn.shopify.com/s/files/1/0504/9968/2476/files/GenuineHealth_CA-9303highfibregutsuperfoods_-EN-directions-S07.jpg?v=1747836154"
+      ],
+      "sourceSummary": {
+        "sourceKind": "canadian_official_product_image_ocr",
+        "sourceTypes": [
+          "official_shopify_product_json",
+          "official_product_image",
+          "image_ocr_manual_review"
+        ],
+        "marketSources": [
+          "ca"
+        ],
+        "sourceUrls": [
+          "https://genuinehealth.ca/products/high-fibre-gut-superfoods-unflavoured-unsweetened-229g",
+          "https://cdn.shopify.com/s/files/1/0504/9968/2476/files/GenuineHealth_CA-9303highfibregutsuperfoods_-BIL-nutritionpanel-S07.jpg?v=1747836154",
+          "https://cdn.shopify.com/s/files/1/0504/9968/2476/files/GenuineHealth_CA-9303highfibregutsuperfoods_-EN-ingredients-S07.jpg?v=1747836154",
+          "https://cdn.shopify.com/s/files/1/0504/9968/2476/files/GenuineHealth_CA-9303highfibregutsuperfoods_-EN-directions-S07.jpg?v=1747836154"
+        ],
+        "sourceNotes": [
+          "Official Shopify endpoint supplies exact UPC 624777009303.",
+          "Official nutrition, ingredients, and directions images were OCR-reviewed for exact UPC 624777009303."
+        ],
+        "sourceRank": 94
+      },
+      "readiness": {
+        "canadianOfficialFullOverlayReady": true,
+        "highConfidenceUsProductPageReady": false,
+        "factParseMethod": "canadian_official_image_ocr_manual_v1",
+        "factParseRowCount": 10,
+        "imageOcrEvidenceApplied": true,
+        "retailerCleanFactsApplied": false
+      },
+      "overlayRecordKey": "gtin14:00624777009303",
+      "title": "Genuine Health high fibre gut superfoods+ unflavoured unsweetened, stevia free",
+      "upcCode": "624777009303",
+      "gtin14": "00624777009303",
+      "link": "https://genuinehealth.ca/products/high-fibre-gut-superfoods-unflavoured-unsweetened-229g",
+      "images": [
+        "https://cdn.shopify.com/s/files/1/0504/9968/2476/files/GenuineHealth_CA-9303highfibregutsuperfoods_-EN-front-S07.png?v=1747836122",
+        "https://cdn.shopify.com/s/files/1/0504/9968/2476/files/GenuineHealth_CA-9303highfibregutsuperfoods_-BIL-nutritionpanel-S07.jpg?v=1747836154",
+        "https://cdn.shopify.com/s/files/1/0504/9968/2476/files/GenuineHealth_CA-9303highfibregutsuperfoods_-EN-ingredients-S07.jpg?v=1747836154",
+        "https://cdn.shopify.com/s/files/1/0504/9968/2476/files/GenuineHealth_CA-9303highfibregutsuperfoods_-EN-directions-S07.jpg?v=1747836154"
+      ],
+      "sourceUrls": [
+        "https://cdn.shopify.com/s/files/1/0504/9968/2476/files/GenuineHealth_CA-9303highfibregutsuperfoods_-BIL-nutritionpanel-S07.jpg?v=1747836154",
+        "https://cdn.shopify.com/s/files/1/0504/9968/2476/files/GenuineHealth_CA-9303highfibregutsuperfoods_-EN-ingredients-S07.jpg?v=1747836154",
+        "https://cdn.shopify.com/s/files/1/0504/9968/2476/files/GenuineHealth_CA-9303highfibregutsuperfoods_-EN-directions-S07.jpg?v=1747836154"
+      ],
+      "categories": [
+        "Fiber",
+        "Greens",
+        "Digestive support"
+      ],
+      "count": "21 servings",
+      "dosageForm": "powder",
+      "serving": {
+        "servingType": null,
+        "servingDescription": null,
+        "servingSize": "1 scoop (10.9 g)",
+        "servingsPerContainer": 21
+      },
+      "supplementFacts": {
+        "servingSize": "1 scoop (10.9 g)",
+        "servingsPerContainer": 21,
+        "nutritionalFacts": [
+          {
+            "substancy": "Fibre",
+            "amountPerServing": "6 g",
+            "dailyValuePercent": "21%"
+          },
+          {
+            "substancy": "Carbohydrate",
+            "amountPerServing": "5 g",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Sugars",
+            "amountPerServing": "1 g",
+            "dailyValuePercent": "1%"
+          },
+          {
+            "substancy": "Protein",
+            "amountPerServing": "2 g",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Sodium",
+            "amountPerServing": "60 mg",
+            "dailyValuePercent": "3%"
+          },
+          {
+            "substancy": "Potassium",
+            "amountPerServing": "100 mg",
+            "dailyValuePercent": "3%"
+          },
+          {
+            "substancy": "Calcium",
+            "amountPerServing": "50 mg",
+            "dailyValuePercent": "4%"
+          },
+          {
+            "substancy": "Iron",
+            "amountPerServing": "2.25 mg",
+            "dailyValuePercent": "13%"
+          },
+          {
+            "substancy": "Magnesium",
+            "amountPerServing": "6 mg",
+            "dailyValuePercent": "1%"
+          },
+          {
+            "substancy": "Fermented Organic Superfood Blend",
+            "amountPerServing": "10.9 g",
+            "dailyValuePercent": null
+          }
+        ]
+      },
+      "descriptionSections": {
+        "Description": "high fibre gut superfoods+ is an unflavoured fibre and fermented organic superfood powder.",
+        "Suggested use": "Mix 1 scoop (10.9 g) in 1 cup (250 mL) of water. Shake well and enjoy.",
+        "Other ingredients": "Fermented Organic Superfood Blend (organic spirulina, organic beetroot, organic carrot, organic zucchini, organic ginger root, organic blueberry, organic tart cherry juice powder, organic sweet potato, organic raspberry, organic shiitake mushroom, organic pineapple juice powder), organic acacia gum (fibre), organic oat hull fibre, organic apple fibre, organic red beet juice powder, xanthan gum.",
+        "Warnings": "Store in a cool, dry place. Contains no peanuts, gluten, wheat, dairy, soy, animal products, artificial colours, flavours or sweeteners."
+      },
+      "proofPackSource": {
+        "alias": "consolidated_04",
+        "path": "output/canadian_brand_full_coverage_wave_v0/retailer_ocr_lane_01/current_session_consolidated_validation_04/staging_products.canadian_current_session_consolidated_validation_04.json"
+      }
+    },
+    {
+      "brandName": "Genuine Health",
+      "normalizedTitle": "genuine health clean collagen bovine unflavoured unsweetened stevia free",
+      "productId": "ca-official-genuine-health-00624777010408",
+      "barcode_gtin14": "00624777010408",
+      "productCatalogImage": "https://cdn.shopify.com/s/files/1/0504/9968/2476/files/CA-10408-EN-front-S01.png?v=1761336869",
+      "productImages": [
+        "https://cdn.shopify.com/s/files/1/0504/9968/2476/files/CA-10408-EN-front-S01.png?v=1761336869"
+      ],
+      "sourceSummary": {
+        "sourceKind": "canadian_retailer_clean_facts",
+        "sourceTypes": [
+          "official_shopify_product_json",
+          "trusted_retailer_product_page"
+        ],
+        "marketSources": [
+          "ca"
+        ],
+        "sourceUrls": [
+          "https://genuinehealth.ca/products/clean-collagen-bovine-unflavoured",
+          "https://www.nationalnutrition.ca/genuine-health-clean-collagen-bovine-unflavoured-160g.html",
+          "https://www.jeancoutu.com/en/shop/categories/health/natural-products/articulation/clean-collagen-unflavored/p/624777010408"
+        ],
+        "sourceNotes": [
+          "Official Shopify endpoint supplies exact UPC 624777010408 and 16 servings variant.",
+          "NationalNutrition and Jean Coutu exact-UPC pages supply clean facts/use/warnings for UPC 624777010408."
+        ],
+        "sourceRank": 88
+      },
+      "readiness": {
+        "canadianOfficialFullOverlayReady": true,
+        "highConfidenceUsProductPageReady": false,
+        "factParseMethod": "canadian_retailer_clean_facts_manual_v1",
+        "factParseRowCount": 8,
+        "imageOcrEvidenceApplied": false,
+        "retailerCleanFactsApplied": true
+      },
+      "overlayRecordKey": "gtin14:00624777010408",
+      "title": "Genuine Health clean collagen bovine unflavoured unsweetened, stevia free",
+      "upcCode": "624777010408",
+      "gtin14": "00624777010408",
+      "link": "https://genuinehealth.ca/products/clean-collagen-bovine-unflavoured",
+      "images": [
+        "https://cdn.shopify.com/s/files/1/0504/9968/2476/files/CA-10408-EN-front-S01.png?v=1761336869"
+      ],
+      "sourceUrls": [
+        "https://www.nationalnutrition.ca/genuine-health-clean-collagen-bovine-unflavoured-160g.html",
+        "https://www.jeancoutu.com/en/shop/categories/health/natural-products/articulation/clean-collagen-unflavored/p/624777010408"
+      ],
+      "categories": [
+        "Collagen",
+        "Protein",
+        "Bovine collagen"
+      ],
+      "count": "16 servings",
+      "dosageForm": "powder",
+      "serving": {
+        "servingType": null,
+        "servingDescription": null,
+        "servingSize": "1 scoop (10.76 g)",
+        "servingsPerContainer": 16
+      },
+      "supplementFacts": {
+        "servingSize": "1 scoop (10.76 g)",
+        "servingsPerContainer": 16,
+        "nutritionalFacts": [
+          {
+            "substancy": "Hydrolyzed collagen (bovine skin)",
+            "amountPerServing": "10 g",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Protein",
+            "amountPerServing": "9 g",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Calories",
+            "amountPerServing": "40",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Fat",
+            "amountPerServing": "0 g",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Carbohydrate",
+            "amountPerServing": "0 g",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Fibre",
+            "amountPerServing": "0 g",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Sugars",
+            "amountPerServing": "0 g",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Sodium",
+            "amountPerServing": "10 mg",
+            "dailyValuePercent": null
+          }
+        ]
+      },
+      "descriptionSections": {
+        "Description": "Clean collagen bovine unflavoured is a bovine-source hydrolyzed collagen powder.",
+        "Suggested use": "Adults: Add one scoop per day to a hot or cold beverage of your choice and shake or stir until fully dissolved.",
+        "Other ingredients": "Hydrolyzed collagen (bovine skin). Contains no gluten, dairy, artificial colours or flavours.",
+        "Warnings": "Consult a health care practitioner prior to use if you are pregnant or breastfeeding. May cause mild gastrointestinal disturbances. Store in a cool, dry place."
+      },
+      "proofPackSource": {
+        "alias": "consolidated_04",
+        "path": "output/canadian_brand_full_coverage_wave_v0/retailer_ocr_lane_01/current_session_consolidated_validation_04/staging_products.canadian_current_session_consolidated_validation_04.json"
+      }
+    },
+    {
+      "brandName": "Genuine Health",
+      "normalizedTitle": "genuine health clean collagen marine unflavoured unsweetened stevia free",
+      "productId": "ca-official-genuine-health-00624777010422",
+      "barcode_gtin14": "00624777010422",
+      "productCatalogImage": "https://cdn.shopify.com/s/files/1/0504/9968/2476/files/CA-10422-EN-front-S00.png?v=1761335473",
+      "productImages": [
+        "https://cdn.shopify.com/s/files/1/0504/9968/2476/files/CA-10422-EN-front-S00.png?v=1761335473"
+      ],
+      "sourceSummary": {
+        "sourceKind": "canadian_retailer_clean_facts",
+        "sourceTypes": [
+          "official_shopify_product_json",
+          "trusted_retailer_product_page"
+        ],
+        "marketSources": [
+          "ca"
+        ],
+        "sourceUrls": [
+          "https://genuinehealth.ca/products/clean-collagen-marine-unflavoured",
+          "https://www.nationalnutrition.ca/genuine-health-clean-collagen-marine-unflavoured-140g.html",
+          "https://www.jeancoutu.com/en/shop/categories/health/natural-products/articulation/marine-clean-collagen-unflavored/p/624777010422"
+        ],
+        "sourceNotes": [
+          "Official Shopify endpoint supplies exact UPC 624777010422 and 14 servings variant.",
+          "NationalNutrition and Jean Coutu exact-UPC pages supply clean facts/use/warnings for UPC 624777010422."
+        ],
+        "sourceRank": 88
+      },
+      "readiness": {
+        "canadianOfficialFullOverlayReady": true,
+        "highConfidenceUsProductPageReady": false,
+        "factParseMethod": "canadian_retailer_clean_facts_manual_v1",
+        "factParseRowCount": 8,
+        "imageOcrEvidenceApplied": false,
+        "retailerCleanFactsApplied": true
+      },
+      "overlayRecordKey": "gtin14:00624777010422",
+      "title": "Genuine Health clean collagen marine unflavoured unsweetened, stevia free",
+      "upcCode": "624777010422",
+      "gtin14": "00624777010422",
+      "link": "https://genuinehealth.ca/products/clean-collagen-marine-unflavoured",
+      "images": [
+        "https://cdn.shopify.com/s/files/1/0504/9968/2476/files/CA-10422-EN-front-S00.png?v=1761335473"
+      ],
+      "sourceUrls": [
+        "https://www.nationalnutrition.ca/genuine-health-clean-collagen-marine-unflavoured-140g.html",
+        "https://www.jeancoutu.com/en/shop/categories/health/natural-products/articulation/marine-clean-collagen-unflavored/p/624777010422"
+      ],
+      "categories": [
+        "Collagen",
+        "Protein",
+        "Marine collagen"
+      ],
+      "count": "14 servings",
+      "dosageForm": "powder",
+      "serving": {
+        "servingType": null,
+        "servingDescription": null,
+        "servingSize": "1 scoop (10.89 g)",
+        "servingsPerContainer": 14
+      },
+      "supplementFacts": {
+        "servingSize": "1 scoop (10.89 g)",
+        "servingsPerContainer": 14,
+        "nutritionalFacts": [
+          {
+            "substancy": "Hydrolyzed collagen (fish skin)",
+            "amountPerServing": "10 g",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Protein",
+            "amountPerServing": "10 g",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Calories",
+            "amountPerServing": "40",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Fat",
+            "amountPerServing": "0 g",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Carbohydrate",
+            "amountPerServing": "0 g",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Fibre",
+            "amountPerServing": "0 g",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Sugars",
+            "amountPerServing": "0 g",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Sodium",
+            "amountPerServing": "5 mg",
+            "dailyValuePercent": null
+          }
+        ]
+      },
+      "descriptionSections": {
+        "Description": "Clean collagen marine unflavoured is a fish-source hydrolyzed collagen powder.",
+        "Suggested use": "Adults: Add one scoop per day to a hot or cold beverage of your choice and shake or stir until fully dissolved.",
+        "Other ingredients": "Hydrolyzed collagen (fish skin). Contains no gluten, dairy, artificial colours or flavours.",
+        "Warnings": "Consult a health care practitioner prior to use if you are pregnant or breastfeeding. May cause mild gastrointestinal disturbances. Store in a cool, dry place."
+      },
+      "proofPackSource": {
+        "alias": "consolidated_04",
+        "path": "output/canadian_brand_full_coverage_wave_v0/retailer_ocr_lane_01/current_session_consolidated_validation_04/staging_products.canadian_current_session_consolidated_validation_04.json"
+      }
+    },
+    {
+      "brandName": "Genestra",
+      "normalizedTitle": "genestra hmf super powder 138g",
+      "productId": "ca-retailer-genestra-00883196156252",
+      "barcode_gtin14": "00883196156252",
+      "productCatalogImage": "https://smhttp-ssl-68201.nexcesscdn.net/media/catalog/product/cache/1/image/9df78eab33525d08d6e5fb8d27136e95/g/s/gsr1520.1775083134.png",
+      "productImages": [
+        "https://smhttp-ssl-68201.nexcesscdn.net/media/catalog/product/cache/1/image/9df78eab33525d08d6e5fb8d27136e95/g/s/gsr1520.1775083134.png"
+      ],
+      "sourceSummary": {
+        "sourceKind": "canadian_retailer_exact_upc_clean_facts",
+        "sourceTypes": [
+          "trusted_retailer_product_page"
+        ],
+        "marketSources": [
+          "ca"
+        ],
+        "sourceUrls": [
+          "https://www.nationalnutrition.ca/genestra-hmf-super-powder-120g.html"
+        ],
+        "sourceNotes": [
+          "NationalNutrition exact UPC 883196156252 supplies clean probiotic CFU facts/use/warnings."
+        ],
+        "sourceRank": 84
+      },
+      "readiness": {
+        "canadianOfficialFullOverlayReady": true,
+        "highConfidenceUsProductPageReady": false,
+        "factParseMethod": "canadian_retailer_exact_upc_clean_facts_manual_v1",
+        "factParseRowCount": 3,
+        "imageOcrEvidenceApplied": false,
+        "retailerCleanFactsApplied": true
+      },
+      "overlayRecordKey": "gtin14:00883196156252",
+      "title": "Genestra HMF Super Powder - 138g",
+      "upcCode": "883196156252",
+      "gtin14": "00883196156252",
+      "link": "https://www.nationalnutrition.ca/genestra-hmf-super-powder-120g.html",
+      "images": [
+        "https://smhttp-ssl-68201.nexcesscdn.net/media/catalog/product/cache/1/image/9df78eab33525d08d6e5fb8d27136e95/g/s/gsr1520.1775083134.png"
+      ],
+      "sourceUrls": [
+        "https://www.nationalnutrition.ca/genestra-hmf-super-powder-120g.html"
+      ],
+      "categories": [
+        "Probiotic",
+        "Microbiome",
+        "Powder"
+      ],
+      "count": "138g",
+      "dosageForm": "powder",
+      "serving": {
+        "servingType": null,
+        "servingDescription": null,
+        "servingSize": "1 heaped scoop (1.15 g)",
+        "servingsPerContainer": null
+      },
+      "supplementFacts": {
+        "servingSize": "1 heaped scoop (1.15 g)",
+        "servingsPerContainer": null,
+        "nutritionalFacts": [
+          {
+            "substancy": "Probiotic Consortium",
+            "amountPerServing": "10 billion CFU",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Lactobacillus acidophilus (CUL-60 & CUL-21)",
+            "amountPerServing": "8 billion CFU",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Bifidobacterium animalis subsp. lactis (CUL-34) and Bifidobacterium bifidum (CUL-20)",
+            "amountPerServing": "2 billion CFU",
+            "dailyValuePercent": null
+          }
+        ]
+      },
+      "descriptionSections": {
+        "Description": "Genestra HMF Super Powder is a moderate-level probiotic powder with human-sourced Lactobacillus and Bifidobacterium strains plus fructooligosaccharides.",
+        "Suggested use": "Adults and Children (1 year and older): In a glass, add water to 1 heaped scoop (1.15 g) of HMF Super Powder and mix. Take 2 times daily with meals, at least 2 to 3 hours before or after taking antibiotics, or as recommended by your healthcare practitioner.",
+        "Other ingredients": "Fructooligosaccharides (FOS). Ingredients used to maintain viability of probiotics: dipotassium phosphate, monopotassium phosphate, trehalose, sucrose.",
+        "Warnings": "Do not use this product if you have an immune-compromised condition. Consult your healthcare practitioner prior to use if you have fever, vomiting, bloody diarrhoea or severe abdominal pain. Stop use and consult your healthcare practitioner if symptoms of digestive upset occur, worsen or persist beyond 3 days. Keep out of the reach of children. Use only if safety seal is intact. Store under refrigeration (below 8 C)."
+      },
+      "proofPackSource": {
+        "alias": "consolidated_04",
+        "path": "output/canadian_brand_full_coverage_wave_v0/retailer_ocr_lane_01/current_session_consolidated_validation_04/staging_products.canadian_current_session_consolidated_validation_04.json"
+      }
+    },
+    {
+      "brandName": "Genestra",
+      "normalizedTitle": "genestra super efa caps 120 caps",
+      "productId": "ca-retailer-genestra-00883196115402",
+      "barcode_gtin14": "00883196115402",
+      "productCatalogImage": "https://smhttp-ssl-68201.nexcesscdn.net/media/catalog/product/cache/1/image/9df78eab33525d08d6e5fb8d27136e95/g/s/gsr1210.1775117757.jpg",
+      "productImages": [
+        "https://smhttp-ssl-68201.nexcesscdn.net/media/catalog/product/cache/1/image/9df78eab33525d08d6e5fb8d27136e95/g/s/gsr1210.1775117757.jpg"
+      ],
+      "sourceSummary": {
+        "sourceKind": "canadian_retailer_exact_upc_clean_facts",
+        "sourceTypes": [
+          "trusted_retailer_product_page"
+        ],
+        "marketSources": [
+          "ca"
+        ],
+        "sourceUrls": [
+          "https://www.nationalnutrition.ca/genestra-super-efa-capsules-120-caps.html"
+        ],
+        "sourceNotes": [
+          "NationalNutrition exact UPC 883196115402 supplies clean omega-source facts/use/warnings.",
+          "DSLD canonical barcode match exists and will be used by merge audit if available."
+        ],
+        "sourceRank": 84
+      },
+      "readiness": {
+        "canadianOfficialFullOverlayReady": true,
+        "highConfidenceUsProductPageReady": false,
+        "factParseMethod": "canadian_retailer_exact_upc_clean_facts_manual_v1",
+        "factParseRowCount": 9,
+        "imageOcrEvidenceApplied": false,
+        "retailerCleanFactsApplied": true
+      },
+      "overlayRecordKey": "gtin14:00883196115402",
+      "title": "Genestra Super EFA Caps - 120 Caps",
+      "upcCode": "883196115402",
+      "gtin14": "00883196115402",
+      "link": "https://www.nationalnutrition.ca/genestra-super-efa-capsules-120-caps.html",
+      "images": [
+        "https://smhttp-ssl-68201.nexcesscdn.net/media/catalog/product/cache/1/image/9df78eab33525d08d6e5fb8d27136e95/g/s/gsr1210.1775117757.jpg"
+      ],
+      "sourceUrls": [
+        "https://www.nationalnutrition.ca/genestra-super-efa-capsules-120-caps.html"
+      ],
+      "categories": [
+        "Omega-3",
+        "Fish Oil",
+        "Flax Oil",
+        "Evening Primrose Oil"
+      ],
+      "count": "120 caps",
+      "dosageForm": "softgels",
+      "serving": {
+        "servingType": null,
+        "servingDescription": null,
+        "servingSize": "1 capsule",
+        "servingsPerContainer": null
+      },
+      "supplementFacts": {
+        "servingSize": "1 capsule",
+        "servingsPerContainer": null,
+        "nutritionalFacts": [
+          {
+            "substancy": "Flax (Linum usitatissimum) Seed Oil",
+            "amountPerServing": "3765 mg",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "ALA (Alpha-Linolenic Acid)",
+            "amountPerServing": "1883 mg",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "LA (Linoleic Acid)",
+            "amountPerServing": "600 mg",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Fish Oil (Sardine and Anchovy)",
+            "amountPerServing": "500 mg",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "DHA (Docosahexaenoic Acid)",
+            "amountPerServing": "80 mg",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "EPA (Eicosapentaenoic Acid)",
+            "amountPerServing": "50 mg",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Total Omega-3 Fatty Acids",
+            "amountPerServing": "2025 mg",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Evening Primrose (Oenothera biennis) Seed Oil",
+            "amountPerServing": "140 mg",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "GLA (Gamma-Linolenic Acid)",
+            "amountPerServing": "14 mg",
+            "dailyValuePercent": null
+          }
+        ]
+      },
+      "descriptionSections": {
+        "Description": "Genestra Super EFA Caps combine flax seed oil, fish oil from sardine and anchovy, and evening primrose oil as an omega fatty acid supplement.",
+        "Suggested use": "Adults and Children (9 years and older): Take two capsules twice daily with meals, or as recommended by your healthcare practitioner.",
+        "Other ingredients": "Natural orange flavour, d-alpha tocopheryl.",
+        "Warnings": "Guaranteed to contain no added wheat, starch, yeast, gluten, corn, soy, sodium, sugar, artificial colouring or flavouring, antimicrobial preservatives or dairy products."
+      },
+      "proofPackSource": {
+        "alias": "consolidated_04",
+        "path": "output/canadian_brand_full_coverage_wave_v0/retailer_ocr_lane_01/current_session_consolidated_validation_04/staging_products.canadian_current_session_consolidated_validation_04.json"
+      }
+    },
+    {
+      "brandName": "Genestra",
+      "normalizedTitle": "genestra hmf multi strain powder 60g",
+      "productId": "ca-retailer-genestra-00883196152957",
+      "barcode_gtin14": "00883196152957",
+      "productCatalogImage": "https://smhttp-ssl-68201.nexcesscdn.net/media/catalog/product/cache/1/image/9df78eab33525d08d6e5fb8d27136e95/g/s/gsr1440.1775070877.png",
+      "productImages": [
+        "https://smhttp-ssl-68201.nexcesscdn.net/media/catalog/product/cache/1/image/9df78eab33525d08d6e5fb8d27136e95/g/s/gsr1440.1775070877.png"
+      ],
+      "sourceSummary": {
+        "sourceKind": "canadian_retailer_exact_upc_clean_facts",
+        "sourceTypes": [
+          "trusted_retailer_product_page"
+        ],
+        "marketSources": [
+          "ca"
+        ],
+        "sourceUrls": [
+          "https://www.nationalnutrition.ca/genestra-hmf-multi-strain-powder-60g.html"
+        ],
+        "sourceNotes": [
+          "NationalNutrition exact UPC 883196152957 supplies clean facts/use/warnings."
+        ],
+        "sourceRank": 84
+      },
+      "readiness": {
+        "canadianOfficialFullOverlayReady": true,
+        "highConfidenceUsProductPageReady": false,
+        "factParseMethod": "canadian_retailer_exact_upc_clean_facts_manual_v1",
+        "factParseRowCount": 16,
+        "imageOcrEvidenceApplied": false,
+        "retailerCleanFactsApplied": true
+      },
+      "overlayRecordKey": "gtin14:00883196152957",
+      "title": "Genestra HMF Multi Strain Powder - 60g",
+      "upcCode": "883196152957",
+      "gtin14": "00883196152957",
+      "link": "https://www.nationalnutrition.ca/genestra-hmf-multi-strain-powder-60g.html",
+      "images": [
+        "https://smhttp-ssl-68201.nexcesscdn.net/media/catalog/product/cache/1/image/9df78eab33525d08d6e5fb8d27136e95/g/s/gsr1440.1775070877.png"
+      ],
+      "sourceUrls": [
+        "https://www.nationalnutrition.ca/genestra-hmf-multi-strain-powder-60g.html"
+      ],
+      "categories": [
+        "Probiotic",
+        "Microbiome",
+        "Powder"
+      ],
+      "count": "60g",
+      "dosageForm": "powder",
+      "serving": {
+        "servingType": null,
+        "servingDescription": null,
+        "servingSize": "1 scoop (0.5 g)",
+        "servingsPerContainer": null
+      },
+      "supplementFacts": {
+        "servingSize": "1 scoop (0.5 g)",
+        "servingsPerContainer": null,
+        "nutritionalFacts": [
+          {
+            "substancy": "Probiotic Consortium",
+            "amountPerServing": "8 billion CFU",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Lactobacillus acidophilus (CUL-60 & CUL-21)",
+            "amountPerServing": "5 billion CFU",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Bifidobacterium animalis subsp. lactis (CUL-34) and Bifidobacterium bifidum (CUL-20)",
+            "amountPerServing": "1.25 billion CFU",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Lactobacillus acidophilus (NCFM)",
+            "amountPerServing": "0.5 billion CFU",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Bifidobacterium animalis subsp. lactis (HN019)",
+            "amountPerServing": "0.5 billion CFU",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Lactobacillus salivarius (CUL-61)",
+            "amountPerServing": "0.25 billion CFU",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Lactobacillus rhamnosus (CUL-63)",
+            "amountPerServing": "50 million CFU",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Lactobacillus gasseri (CUL-09)",
+            "amountPerServing": "50 million CFU",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Bifidobacterium breve (CUL-74)",
+            "amountPerServing": "50 million CFU",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Lactobacillus paracasei (CUL-08)",
+            "amountPerServing": "50 million CFU",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Lactobacillus casei (CUL-06)",
+            "amountPerServing": "50 million CFU",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Bifidobacterium animalis subsp. lactis (CUL-62)",
+            "amountPerServing": "50 million CFU",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Lactobacillus plantarum (CUL-66)",
+            "amountPerServing": "50 million CFU",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Lactobacillus fermentum (CUL-67)",
+            "amountPerServing": "50 million CFU",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Bifidobacterium longum (CUL-75)",
+            "amountPerServing": "50 million CFU",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Bifidobacterium animalis subsp. lactis (BI-04)",
+            "amountPerServing": "50 million CFU",
+            "dailyValuePercent": null
+          }
+        ]
+      },
+      "descriptionSections": {
+        "Description": "Genestra HMF Multi Strain Powder is a multi-strain probiotic powder with Lactobacillus and Bifidobacterium strains.",
+        "Suggested use": "Adults, Adolescents and Children (3 years and older): In a glass, add water to 2 level scoops and mix. Take once daily, at least 2 to 3 hours before or after taking antibiotics, or as recommended by your healthcare practitioner.",
+        "Other ingredients": "Potato maltodextrin. Ingredients used to maintain viability of probiotics: dipotassium phosphate, monopotassium phosphate, trehalose, sucrose, sodium chloride, sodium ascorbate, maltodextrin.",
+        "Warnings": "Do not use if you have an immune-compromised condition. Consult your healthcare practitioner prior to use if you are experiencing fever, vomiting, bloody diarrhoea or severe abdominal pain. Stop use and consult your healthcare practitioner if symptoms of digestive upset occur, worsen or persist beyond 3 days. Keep out of the reach of children. Use only if safety seal is intact. Store under refrigeration (below 8 C)."
+      },
+      "proofPackSource": {
+        "alias": "consolidated_04",
+        "path": "output/canadian_brand_full_coverage_wave_v0/retailer_ocr_lane_01/current_session_consolidated_validation_04/staging_products.canadian_current_session_consolidated_validation_04.json"
+      }
+    },
+    {
+      "brandName": "Sisu",
+      "normalizedTitle": "sisu vitamin d 1000 iu 400 tabs",
+      "productId": "ca-retailer-sisu-00777672025616",
+      "barcode_gtin14": "00777672025616",
+      "productCatalogImage": "https://smhttp-ssl-68201.nexcesscdn.net/media/catalog/product/cache/1/image/9df78eab33525d08d6e5fb8d27136e95/s/i/si11245.1775062787.jpg",
+      "productImages": [
+        "https://smhttp-ssl-68201.nexcesscdn.net/media/catalog/product/cache/1/image/9df78eab33525d08d6e5fb8d27136e95/s/i/si11245.1775062787.jpg"
+      ],
+      "sourceSummary": {
+        "sourceKind": "canadian_retailer_exact_upc_clean_facts",
+        "sourceTypes": [
+          "trusted_retailer_product_page"
+        ],
+        "marketSources": [
+          "ca"
+        ],
+        "sourceUrls": [
+          "https://www.nationalnutrition.ca/sisu-vitamin-d-1000iu-400-tabs.html"
+        ],
+        "sourceNotes": [
+          "NationalNutrition exact UPC 777672025616 supplies clean vitamin D facts/use/warnings."
+        ],
+        "sourceRank": 84
+      },
+      "readiness": {
+        "canadianOfficialFullOverlayReady": true,
+        "highConfidenceUsProductPageReady": false,
+        "factParseMethod": "canadian_retailer_exact_upc_clean_facts_manual_v1",
+        "factParseRowCount": 1,
+        "imageOcrEvidenceApplied": false,
+        "retailerCleanFactsApplied": true
+      },
+      "overlayRecordKey": "gtin14:00777672025616",
+      "title": "Sisu Vitamin D 1000 IU - 400 Tabs",
+      "upcCode": "777672025616",
+      "gtin14": "00777672025616",
+      "link": "https://www.nationalnutrition.ca/sisu-vitamin-d-1000iu-400-tabs.html",
+      "images": [
+        "https://smhttp-ssl-68201.nexcesscdn.net/media/catalog/product/cache/1/image/9df78eab33525d08d6e5fb8d27136e95/s/i/si11245.1775062787.jpg"
+      ],
+      "sourceUrls": [
+        "https://www.nationalnutrition.ca/sisu-vitamin-d-1000iu-400-tabs.html"
+      ],
+      "categories": [
+        "Vitamin D",
+        "Single Active Nutrient"
+      ],
+      "count": "400 tabs",
+      "dosageForm": "tablets",
+      "serving": {
+        "servingType": null,
+        "servingDescription": null,
+        "servingSize": "1 tablet",
+        "servingsPerContainer": null
+      },
+      "supplementFacts": {
+        "servingSize": "1 tablet",
+        "servingsPerContainer": null,
+        "nutritionalFacts": [
+          {
+            "substancy": "Vitamin D (Vitamin D3) equivalent to 1000 IU of vitamin D (cholecalciferol) activity",
+            "amountPerServing": "25 mcg",
+            "dailyValuePercent": null
+          }
+        ]
+      },
+      "descriptionSections": {
+        "Description": "Sisu Vitamin D 1000 IU is a single-active vitamin D3 tablet supplement.",
+        "Suggested use": "Take orally 1 tablet daily or as directed by a health care practitioner.",
+        "Other ingredients": "Lactose, croscarmellose sodium, silicon dioxide, microcrystalline cellulose, magnesium stearate (vegetable), calcium silicate.",
+        "Warnings": "Contains no wheat, gluten or peanuts."
+      },
+      "proofPackSource": {
+        "alias": "consolidated_04",
+        "path": "output/canadian_brand_full_coverage_wave_v0/retailer_ocr_lane_01/current_session_consolidated_validation_04/staging_products.canadian_current_session_consolidated_validation_04.json"
+      }
+    },
+    {
+      "brandName": "Sisu",
+      "normalizedTitle": "sisu ester c 500mg chewable wildberry 90 tabs",
+      "productId": "ca-retailer-sisu-00777672025821",
+      "barcode_gtin14": "00777672025821",
+      "productCatalogImage": "https://smhttp-ssl-68201.nexcesscdn.net/media/catalog/product/cache/1/image/9df78eab33525d08d6e5fb8d27136e95/s/i/si10060.1775142208.jpg",
+      "productImages": [
+        "https://smhttp-ssl-68201.nexcesscdn.net/media/catalog/product/cache/1/image/9df78eab33525d08d6e5fb8d27136e95/s/i/si10060.1775142208.jpg"
+      ],
+      "sourceSummary": {
+        "sourceKind": "canadian_retailer_exact_upc_clean_facts",
+        "sourceTypes": [
+          "trusted_retailer_product_page"
+        ],
+        "marketSources": [
+          "ca"
+        ],
+        "sourceUrls": [
+          "https://www.nationalnutrition.ca/sisu-ester-c-500mg-chewable-wildberry-90-tabs.html"
+        ],
+        "sourceNotes": [
+          "NationalNutrition exact UPC 777672025821 supplies clean chewable vitamin C facts/use/warnings."
+        ],
+        "sourceRank": 84
+      },
+      "readiness": {
+        "canadianOfficialFullOverlayReady": true,
+        "highConfidenceUsProductPageReady": false,
+        "factParseMethod": "canadian_retailer_exact_upc_clean_facts_manual_v1",
+        "factParseRowCount": 1,
+        "imageOcrEvidenceApplied": false,
+        "retailerCleanFactsApplied": true
+      },
+      "overlayRecordKey": "gtin14:00777672025821",
+      "title": "Sisu Ester-C 500mg Chewable Wildberry - 90 Tabs",
+      "upcCode": "777672025821",
+      "gtin14": "00777672025821",
+      "link": "https://www.nationalnutrition.ca/sisu-ester-c-500mg-chewable-wildberry-90-tabs.html",
+      "images": [
+        "https://smhttp-ssl-68201.nexcesscdn.net/media/catalog/product/cache/1/image/9df78eab33525d08d6e5fb8d27136e95/s/i/si10060.1775142208.jpg"
+      ],
+      "sourceUrls": [
+        "https://www.nationalnutrition.ca/sisu-ester-c-500mg-chewable-wildberry-90-tabs.html"
+      ],
+      "categories": [
+        "Vitamin C",
+        "Chewable"
+      ],
+      "count": "90 tabs",
+      "dosageForm": "chewable tablets",
+      "serving": {
+        "servingType": null,
+        "servingDescription": null,
+        "servingSize": "1 tablet",
+        "servingsPerContainer": null
+      },
+      "supplementFacts": {
+        "servingSize": "1 tablet",
+        "servingsPerContainer": null,
+        "nutritionalFacts": [
+          {
+            "substancy": "Vitamin C (from Ester-C brand calcium ascorbate and sodium ascorbate)",
+            "amountPerServing": "500 mg",
+            "dailyValuePercent": null
+          }
+        ]
+      },
+      "descriptionSections": {
+        "Description": "Sisu Ester-C 500mg Chewable is a chewable vitamin C supplement using Ester-C brand calcium ascorbate and sodium ascorbate.",
+        "Suggested use": "Children (4 and over): 1-2 tablets daily. Adults: 2-6 tablets daily.",
+        "Other ingredients": "Chewable tablet excipients and wildberry flavour listed by retailer page.",
+        "Warnings": "Contains no dairy, gluten, peanuts, artificial sweeteners, colours or preservatives."
+      },
+      "proofPackSource": {
+        "alias": "consolidated_04",
+        "path": "output/canadian_brand_full_coverage_wave_v0/retailer_ocr_lane_01/current_session_consolidated_validation_04/staging_products.canadian_current_session_consolidated_validation_04.json"
+      }
+    },
+    {
+      "brandName": "Sisu",
+      "normalizedTitle": "sisu cal mag citrate creamy strawberry 450ml",
+      "productId": "ca-retailer-sisu-00777672026170",
+      "barcode_gtin14": "00777672026170",
+      "productCatalogImage": "https://smhttp-ssl-68201.nexcesscdn.net/media/catalog/product/cache/1/image/9df78eab33525d08d6e5fb8d27136e95/s/i/si02060_2.1775142131.jpg",
+      "productImages": [
+        "https://smhttp-ssl-68201.nexcesscdn.net/media/catalog/product/cache/1/image/9df78eab33525d08d6e5fb8d27136e95/s/i/si02060_2.1775142131.jpg"
+      ],
+      "sourceSummary": {
+        "sourceKind": "canadian_retailer_exact_upc_clean_facts",
+        "sourceTypes": [
+          "trusted_retailer_product_page"
+        ],
+        "marketSources": [
+          "ca"
+        ],
+        "sourceUrls": [
+          "https://www.nationalnutrition.ca/sisu-cal-mag-citrate-creamy-strawberry-450ml.html"
+        ],
+        "sourceNotes": [
+          "NationalNutrition exact UPC 777672026170 supplies clean facts/use/warnings."
+        ],
+        "sourceRank": 84
+      },
+      "readiness": {
+        "canadianOfficialFullOverlayReady": true,
+        "highConfidenceUsProductPageReady": false,
+        "factParseMethod": "canadian_retailer_exact_upc_clean_facts_manual_v1",
+        "factParseRowCount": 3,
+        "imageOcrEvidenceApplied": false,
+        "retailerCleanFactsApplied": true
+      },
+      "overlayRecordKey": "gtin14:00777672026170",
+      "title": "Sisu Cal Mag Citrate Creamy Strawberry - 450ml",
+      "upcCode": "777672026170",
+      "gtin14": "00777672026170",
+      "link": "https://www.nationalnutrition.ca/sisu-cal-mag-citrate-creamy-strawberry-450ml.html",
+      "images": [
+        "https://smhttp-ssl-68201.nexcesscdn.net/media/catalog/product/cache/1/image/9df78eab33525d08d6e5fb8d27136e95/s/i/si02060_2.1775142131.jpg"
+      ],
+      "sourceUrls": [
+        "https://www.nationalnutrition.ca/sisu-cal-mag-citrate-creamy-strawberry-450ml.html"
+      ],
+      "categories": [
+        "Calcium Magnesium Mineral Stack",
+        "Vitamin D",
+        "Liquid"
+      ],
+      "count": "450ml",
+      "dosageForm": "liquid",
+      "serving": {
+        "servingType": null,
+        "servingDescription": null,
+        "servingSize": "1 tbsp",
+        "servingsPerContainer": null
+      },
+      "supplementFacts": {
+        "servingSize": "1 tbsp",
+        "servingsPerContainer": null,
+        "nutritionalFacts": [
+          {
+            "substancy": "Calcium (citrate)",
+            "amountPerServing": "500 mg",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Magnesium (citrate)",
+            "amountPerServing": "200 mg",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Vitamin D2 (ergocalciferol)",
+            "amountPerServing": "200 IU",
+            "dailyValuePercent": null
+          }
+        ]
+      },
+      "descriptionSections": {
+        "Description": "Sisu Cal Mag Citrate Creamy Strawberry is a liquid calcium and magnesium citrate supplement with vitamin D.",
+        "Suggested use": "Take 1-2 tablespoons (15-30ml) daily, or as directed by a health professional.",
+        "Other ingredients": "Glycerin (vegetable), natural flavour, potassium sorbate, purified water, vitamin E (d-alpha tocopheryl acetate), xanthan gum.",
+        "Warnings": "Contains no dairy or animal products, wheat, gluten, peanuts, sugar, artificial sweeteners or artificial colours."
+      },
+      "proofPackSource": {
+        "alias": "consolidated_04",
+        "path": "output/canadian_brand_full_coverage_wave_v0/retailer_ocr_lane_01/current_session_consolidated_validation_04/staging_products.canadian_current_session_consolidated_validation_04.json"
+      }
+    },
+    {
+      "brandName": "NOW Canada",
+      "normalizedTitle": "now calcium magnesium with vitamin d and zinc 120 softgels",
+      "productId": "ca-retailer-now-canada-00733739812513",
+      "barcode_gtin14": "00733739812513",
+      "productCatalogImage": "https://smhttp-ssl-68201.nexcesscdn.net/media/catalog/product/cache/1/image/9df78eab33525d08d6e5fb8d27136e95/n/o/now0829_2.1775121079.jpg",
+      "productImages": [
+        "https://smhttp-ssl-68201.nexcesscdn.net/media/catalog/product/cache/1/image/9df78eab33525d08d6e5fb8d27136e95/n/o/now0829_2.1775121079.jpg"
+      ],
+      "sourceSummary": {
+        "sourceKind": "canadian_retailer_exact_upc_clean_facts",
+        "sourceTypes": [
+          "trusted_retailer_product_page"
+        ],
+        "marketSources": [
+          "ca"
+        ],
+        "sourceUrls": [
+          "https://www.nationalnutrition.ca/now-calcium-magnesium-with-vitamin-d-and-zinc-120-softgels.html"
+        ],
+        "sourceNotes": [
+          "NationalNutrition exact UPC 733739812513 supplies clean calcium/magnesium/vitamin D/zinc facts/use/warnings.",
+          "Brand stored as NOW Canada to keep the Canadian barcode variant distinct from existing US NOW products."
+        ],
+        "sourceRank": 84
+      },
+      "readiness": {
+        "canadianOfficialFullOverlayReady": true,
+        "highConfidenceUsProductPageReady": false,
+        "factParseMethod": "canadian_retailer_exact_upc_clean_facts_manual_v1",
+        "factParseRowCount": 4,
+        "imageOcrEvidenceApplied": false,
+        "retailerCleanFactsApplied": true
+      },
+      "overlayRecordKey": "gtin14:00733739812513",
+      "title": "NOW Calcium Magnesium with Vitamin D and Zinc - 120 Softgels",
+      "upcCode": "733739812513",
+      "gtin14": "00733739812513",
+      "link": "https://www.nationalnutrition.ca/now-calcium-magnesium-with-vitamin-d-and-zinc-120-softgels.html",
+      "images": [
+        "https://smhttp-ssl-68201.nexcesscdn.net/media/catalog/product/cache/1/image/9df78eab33525d08d6e5fb8d27136e95/n/o/now0829_2.1775121079.jpg"
+      ],
+      "sourceUrls": [
+        "https://www.nationalnutrition.ca/now-calcium-magnesium-with-vitamin-d-and-zinc-120-softgels.html"
+      ],
+      "categories": [
+        "Calcium Magnesium Mineral Stack",
+        "Vitamin D",
+        "Zinc"
+      ],
+      "count": "120 softgels",
+      "dosageForm": "softgels",
+      "serving": {
+        "servingType": null,
+        "servingDescription": null,
+        "servingSize": "1 softgel",
+        "servingsPerContainer": null
+      },
+      "supplementFacts": {
+        "servingSize": "1 softgel",
+        "servingsPerContainer": null,
+        "nutritionalFacts": [
+          {
+            "substancy": "Calcium (from Calcium Carbonate and Citrate)",
+            "amountPerServing": "333.33 mg",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Magnesium (from Magnesium Oxide and Citrate)",
+            "amountPerServing": "166.66 mg",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Vitamin D3 (as Cholecalciferol)",
+            "amountPerServing": "5 mcg (200 IU)",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Zinc (from Zinc Oxide)",
+            "amountPerServing": "3.34 mg",
+            "dailyValuePercent": null
+          }
+        ]
+      },
+      "descriptionSections": {
+        "Description": "NOW Calcium Magnesium with Vitamin D and Zinc is a mineral stack supplement with calcium, magnesium, vitamin D3, and zinc.",
+        "Suggested use": "Take 3 softgels daily with meals. Take a few hours before or after taking other medications.",
+        "Other ingredients": "Rice bran oil, softgel (gelatin, glycerin, water, calcium carbonate), soy lecithin, yellow beeswax.",
+        "Warnings": "Contains no sugar, salt, yeast, wheat, gluten, corn, soy, milk, egg, preservatives. Some people may experience diarrhea."
+      },
+      "proofPackSource": {
+        "alias": "consolidated_04",
+        "path": "output/canadian_brand_full_coverage_wave_v0/retailer_ocr_lane_01/current_session_consolidated_validation_04/staging_products.canadian_current_session_consolidated_validation_04.json"
+      }
+    },
+    {
+      "brandName": "NOW Canada",
+      "normalizedTitle": "now magnesium citrate 133mg 120 v caps",
+      "productId": "ca-retailer-now-canada-00733739812940",
+      "barcode_gtin14": "00733739812940",
+      "productCatalogImage": "https://smhttp-ssl-68201.nexcesscdn.net/media/catalog/product/cache/1/image/9df78eab33525d08d6e5fb8d27136e95/n/o/now-magnesium-citrate-133-mg-120-v-caps_1.17750",
+      "productImages": [
+        "https://smhttp-ssl-68201.nexcesscdn.net/media/catalog/product/cache/1/image/9df78eab33525d08d6e5fb8d27136e95/n/o/now-magnesium-citrate-133-mg-120-v-caps_1.17750"
+      ],
+      "sourceSummary": {
+        "sourceKind": "canadian_retailer_exact_upc_clean_facts",
+        "sourceTypes": [
+          "trusted_retailer_product_page"
+        ],
+        "marketSources": [
+          "ca"
+        ],
+        "sourceUrls": [
+          "https://www.nationalnutrition.ca/now-magnesium-citrate-133mg-120-v-caps.html"
+        ],
+        "sourceNotes": [
+          "NationalNutrition exact UPC 733739812940 supplies clean magnesium citrate facts/use/warnings."
+        ],
+        "sourceRank": 84
+      },
+      "readiness": {
+        "canadianOfficialFullOverlayReady": true,
+        "highConfidenceUsProductPageReady": false,
+        "factParseMethod": "canadian_retailer_exact_upc_clean_facts_manual_v1",
+        "factParseRowCount": 1,
+        "imageOcrEvidenceApplied": false,
+        "retailerCleanFactsApplied": true
+      },
+      "overlayRecordKey": "gtin14:00733739812940",
+      "title": "NOW Magnesium Citrate 133mg - 120 V-Caps",
+      "upcCode": "733739812940",
+      "gtin14": "00733739812940",
+      "link": "https://www.nationalnutrition.ca/now-magnesium-citrate-133mg-120-v-caps.html",
+      "images": [
+        "https://smhttp-ssl-68201.nexcesscdn.net/media/catalog/product/cache/1/image/9df78eab33525d08d6e5fb8d27136e95/n/o/now-magnesium-citrate-133-mg-120-v-caps_1.17750"
+      ],
+      "sourceUrls": [
+        "https://www.nationalnutrition.ca/now-magnesium-citrate-133mg-120-v-caps.html"
+      ],
+      "categories": [
+        "Magnesium",
+        "Mineral"
+      ],
+      "count": "120 v-caps",
+      "dosageForm": "capsules",
+      "serving": {
+        "servingType": null,
+        "servingDescription": null,
+        "servingSize": "1 capsule",
+        "servingsPerContainer": null
+      },
+      "supplementFacts": {
+        "servingSize": "1 capsule",
+        "servingsPerContainer": null,
+        "nutritionalFacts": [
+          {
+            "substancy": "Magnesium (from Magnesium Citrate)",
+            "amountPerServing": "133 mg",
+            "dailyValuePercent": null
+          }
+        ]
+      },
+      "descriptionSections": {
+        "Description": "NOW Magnesium Citrate 133mg is a single-mineral magnesium citrate capsule supplement.",
+        "Suggested use": "Adult Dosage: Take 3 capsules daily. Adolescents 9-18 years: Take 2 capsules daily.",
+        "Other ingredients": "Vegetarian capsule excipients listed by retailer page.",
+        "Warnings": "Some people may experience diarrhea. Keep out of reach of children."
+      },
+      "proofPackSource": {
+        "alias": "consolidated_04",
+        "path": "output/canadian_brand_full_coverage_wave_v0/retailer_ocr_lane_01/current_session_consolidated_validation_04/staging_products.canadian_current_session_consolidated_validation_04.json"
+      }
+    },
+    {
+      "brandName": "NOW Canada",
+      "normalizedTitle": "now magnesium bisglycinate 100mg 180 tabs",
+      "productId": "ca-retailer-now-canada-00733739812896",
+      "barcode_gtin14": "00733739812896",
+      "productCatalogImage": "https://smhttp-ssl-68201.nexcesscdn.net/media/catalog/product/cache/1/image/9df78eab33525d08d6e5fb8d27136e95/n/o/now-magnesium-bisglycinate-100-mg-180-tabs.1775",
+      "productImages": [
+        "https://smhttp-ssl-68201.nexcesscdn.net/media/catalog/product/cache/1/image/9df78eab33525d08d6e5fb8d27136e95/n/o/now-magnesium-bisglycinate-100-mg-180-tabs.1775"
+      ],
+      "sourceSummary": {
+        "sourceKind": "canadian_retailer_exact_upc_clean_facts",
+        "sourceTypes": [
+          "trusted_retailer_product_page"
+        ],
+        "marketSources": [
+          "ca"
+        ],
+        "sourceUrls": [
+          "https://www.nationalnutrition.ca/now-magnesium-bisglycinate-100mg-180-tabs.html"
+        ],
+        "sourceNotes": [
+          "NationalNutrition exact UPC 733739812896 supplies clean magnesium bisglycinate facts/use/warnings."
+        ],
+        "sourceRank": 84
+      },
+      "readiness": {
+        "canadianOfficialFullOverlayReady": true,
+        "highConfidenceUsProductPageReady": false,
+        "factParseMethod": "canadian_retailer_exact_upc_clean_facts_manual_v1",
+        "factParseRowCount": 1,
+        "imageOcrEvidenceApplied": false,
+        "retailerCleanFactsApplied": true
+      },
+      "overlayRecordKey": "gtin14:00733739812896",
+      "title": "NOW Magnesium Bisglycinate 100mg - 180 Tabs",
+      "upcCode": "733739812896",
+      "gtin14": "00733739812896",
+      "link": "https://www.nationalnutrition.ca/now-magnesium-bisglycinate-100mg-180-tabs.html",
+      "images": [
+        "https://smhttp-ssl-68201.nexcesscdn.net/media/catalog/product/cache/1/image/9df78eab33525d08d6e5fb8d27136e95/n/o/now-magnesium-bisglycinate-100-mg-180-tabs.1775"
+      ],
+      "sourceUrls": [
+        "https://www.nationalnutrition.ca/now-magnesium-bisglycinate-100mg-180-tabs.html"
+      ],
+      "categories": [
+        "Magnesium",
+        "Mineral"
+      ],
+      "count": "180 tabs",
+      "dosageForm": "tablets",
+      "serving": {
+        "servingType": null,
+        "servingDescription": null,
+        "servingSize": "1 tablet",
+        "servingsPerContainer": null
+      },
+      "supplementFacts": {
+        "servingSize": "1 tablet",
+        "servingsPerContainer": null,
+        "nutritionalFacts": [
+          {
+            "substancy": "Magnesium (from Magnesium Bisglycinate TRAACS)",
+            "amountPerServing": "100 mg",
+            "dailyValuePercent": null
+          }
+        ]
+      },
+      "descriptionSections": {
+        "Description": "NOW Magnesium Bisglycinate 100mg is a magnesium bisglycinate tablet supplement using the TRAACS bisglycinate chelate system.",
+        "Suggested use": "Adult Dosage: Take 2 tablets twice daily with food.",
+        "Other ingredients": "Tablet excipients listed by retailer page.",
+        "Warnings": "Some people may experience diarrhea."
+      },
+      "proofPackSource": {
+        "alias": "consolidated_04",
+        "path": "output/canadian_brand_full_coverage_wave_v0/retailer_ocr_lane_01/current_session_consolidated_validation_04/staging_products.canadian_current_session_consolidated_validation_04.json"
+      }
+    },
+    {
+      "brandName": "Codeage Canada",
+      "normalizedTitle": "codeage adk vitamins 180 capsules",
+      "productId": "ca-retailer-codeage-canada-00850049609098",
+      "barcode_gtin14": "00850049609098",
+      "productCatalogImage": "https://www.codeage.com/cdn/shop/files/ADKVitamins-CA_front.jpg?v=1775940659",
+      "productImages": [
+        "https://www.codeage.com/cdn/shop/files/ADKVitamins-CA_front.jpg?v=1775940659"
+      ],
+      "sourceSummary": {
+        "sourceKind": "canadian_retailer_exact_upc_clean_facts",
+        "sourceTypes": [
+          "official_product_page",
+          "user_barcode_photo"
+        ],
+        "marketSources": [
+          "ca"
+        ],
+        "sourceUrls": [
+          "https://www.codeage.com/en-ca/products/a-d-k-vitamins"
+        ],
+        "sourceNotes": [
+          "Codeage Canada official page supplies Canada-specific ADK facts/use/warnings and NPN 80121466.",
+          "User-provided Canadian bottle photo confirms UPC 850049609098 / GTIN14 00850049609098."
+        ],
+        "sourceRank": 90
+      },
+      "readiness": {
+        "canadianOfficialFullOverlayReady": true,
+        "highConfidenceUsProductPageReady": false,
+        "factParseMethod": "canadian_retailer_exact_upc_clean_facts_manual_v1",
+        "factParseRowCount": 5,
+        "imageOcrEvidenceApplied": false,
+        "retailerCleanFactsApplied": true
+      },
+      "overlayRecordKey": "gtin14:00850049609098",
+      "title": "Codeage ADK Vitamins - 180 Capsules",
+      "upcCode": "850049609098",
+      "gtin14": "00850049609098",
+      "link": "https://www.codeage.com/en-ca/products/a-d-k-vitamins",
+      "images": [
+        "https://www.codeage.com/cdn/shop/files/ADKVitamins-CA_front.jpg?v=1775940659"
+      ],
+      "sourceUrls": [
+        "https://www.codeage.com/en-ca/products/a-d-k-vitamins"
+      ],
+      "categories": [
+        "ADK Vitamins",
+        "Vitamin A",
+        "Vitamin D",
+        "Vitamin K",
+        "Canada NPN 80121466"
+      ],
+      "count": "180 capsules",
+      "dosageForm": "capsules",
+      "serving": {
+        "servingType": null,
+        "servingDescription": null,
+        "servingSize": "1 capsule",
+        "servingsPerContainer": 180
+      },
+      "supplementFacts": {
+        "servingSize": "1 capsule",
+        "servingsPerContainer": 180,
+        "nutritionalFacts": [
+          {
+            "substancy": "Vitamin A (Vitamin A palmitate)",
+            "amountPerServing": "495 mcg RAE",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Vitamin D3 (Cholecalciferol)",
+            "amountPerServing": "25 mcg",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Vitamin K1 (Phytonadione)",
+            "amountPerServing": "42 mcg",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Vitamin K2 (Menaquinone 4)",
+            "amountPerServing": "63 mcg",
+            "dailyValuePercent": null
+          },
+          {
+            "substancy": "Vitamin K2 (Menaquinone 7)",
+            "amountPerServing": "15 mcg",
+            "dailyValuePercent": null
+          }
+        ]
+      },
+      "descriptionSections": {
+        "Description": "Codeage ADK Vitamins Canada combines vitamins A, D3, K1, and K2 in one capsule with Canada-specific NPN labeling.",
+        "Suggested use": "Adults 19 years and older: Take 1 capsule 1 time per day with food. Take a few hours prior to or after taking medication or natural health products.",
+        "Other ingredients": "Methylcellulose capsule.",
+        "Warnings": "Consult a health care practitioner prior to use if you are pregnant or breastfeeding. Consult a health care practitioner prior to use if you are taking blood thinners. Store in a cool, dry place. Store in an airtight container, protected from light, heat and moisture. Do not use if product has been opened or tampered with in any way. Keep out of reach of children."
+      },
+      "proofPackSource": {
+        "alias": "consolidated_04",
+        "path": "output/canadian_brand_full_coverage_wave_v0/retailer_ocr_lane_01/current_session_consolidated_validation_04/staging_products.canadian_current_session_consolidated_validation_04.json"
+      }
+    }
+  ]
+}

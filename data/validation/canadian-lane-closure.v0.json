@@ -1,7 +1,8 @@
 {
   "schemaVersion": "canadian_lane_closure.v0",
   "generatedAt": "2026-04-20T00:00:00.000Z",
-  "purpose": "Closure snapshot for the current Canadian data lane after Jamieson promotion stabilization",
+  "purpose": "Closure snapshot for the current Canadian lane after Jamieson promotion stabilization and the fresh popular-brand proof-pack replay",
+  "closureVerdict": "canadian_popular_brand_line_closed_for_current_release_scope",
   "activeQueues": {
     "nextScanWave": 0,
     "nextSearchReadyWave": 0
@@ -15,6 +16,15 @@
       "warmValidation": "32/32 pass",
       "detailRuntimeReady": "32/32",
       "artifactRoot": "output/canadian_brand_full_coverage_wave_v0/stable_packs/canadian_jamieson_promotion_pack_v0"
+    },
+    {
+      "baselineId": "canadian_popular_brand_proof_pack_v0",
+      "brand": "multi_brand",
+      "brandsCovered": 14,
+      "productCount": 39,
+      "coldValidation": "39/39 pass",
+      "warmValidation": "39/39 pass",
+      "artifactRoot": "output/canadian_brand_full_coverage_wave_v0/stable_packs/canadian_popular_brand_proof_pack_v0"
     }
   ],
   "promotionSummary": {
@@ -22,18 +32,31 @@
     "jamiesonKeepWarnProducts": 1,
     "jamiesonResidualProducts": 2
   },
+  "closureArtifacts": {
+    "popularBrandProofPack": "data/validation/canadian-popular-brand-proof-pack.v0.json",
+    "popularBrandMatrix": "data/validation/canadian-brand-closure-matrix.v0.json",
+    "releaseNote": "docs/releases/canadian-dual-admission-closure-20260420.md"
+  },
   "residualBrandBuckets": [
     {
       "brand": "Webber Naturals",
-      "reason": "UPC-explicit canary opened detail cleanly but stayed search-identity unstable"
+      "reason": "Broader explicit-UPC generalization stayed search-identity unstable, but representative proof-pack products are green for current release scope."
     },
     {
       "brand": "Progressive",
-      "reason": "UPC-explicit canary opened detail cleanly but stayed search-identity unstable"
+      "reason": "Broader explicit-UPC generalization stayed search-identity unstable, but representative proof-pack products are green for current release scope."
     },
     {
       "brand": "Organika",
-      "reason": "catalog-strong no-UPC holdout remains discovery only after failed live canary"
+      "reason": "Catalog-strong no-UPC holdout remains discovery only after failed live canary; representative parser-backed products are green for current release scope."
+    },
+    {
+      "brand": "New Roots Herbal",
+      "reason": "Representative parser-backed products are green, but the broader official catalog residual is dominated by weak-detail or 404-like rows and stays discovery only."
+    },
+    {
+      "brand": "Natural Factors",
+      "reason": "Representative parser and retailer-backed products are green, while the broader official-catalog residual remains mostly UPC-only catalog rows without enough accepted detail."
     }
   ]
 }
