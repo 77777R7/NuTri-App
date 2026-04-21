@@ -114,6 +114,74 @@ export type SearchBootstrapAPIResponse =
       data: SearchBootstrapResponse;
     };
 
+export type SearchProductDetailResponse = {
+  product: {
+    productId: string;
+    barcode: string | null;
+    upcCode: string | null;
+    name: string;
+    brand: string;
+    category: string | null;
+    benefit: string | null;
+    dose: string | null;
+    imageUrl: string | null;
+    link: string | null;
+    factsStatus: 'full' | 'partial' | 'none';
+    coverageStatus: 'coverage_ready' | 'not_enough_structured_data';
+  };
+  defaultAnchor: {
+    name: string | null;
+    dose: string | null;
+    sourceTier: string | null;
+  };
+  ingredientOverview: {
+    mode: 'single_anchor' | 'multi_anchor' | 'blend_anchor';
+    titleLine: string | null;
+    paragraph1: string;
+    paragraph2: string | null;
+    compareHint: string | null;
+  } | null;
+  ingredientOverviewSource: 'api' | 'fallback' | null;
+  scientificBackground: {
+    mode: 'research_mode' | 'label_context_mode';
+    selectedLabel: string;
+    selectedDose: string | null;
+    introLine: string | null;
+    sections: Array<{
+      heading: string;
+      summary: string;
+      bullets: string[];
+      evidenceRead: string;
+      shopperMeaning: string | null;
+    }>;
+    closingNote: string | null;
+  } | null;
+  scientificBackgroundSource: 'api' | 'fallback' | null;
+  usageBlock?: {
+    directions?: {
+      text?: string | null;
+      lines?: string[] | null;
+      sourceTier?: string | null;
+      hasDirectionsTextVisible?: boolean | null;
+    } | null;
+  } | null;
+  safetyBlock?: {
+    labelWarnings?: Array<{ text?: string | null; label?: string | null } | string> | null;
+    generalWatchouts?: Array<{ text?: string | null; label?: string | null } | string> | null;
+    ulGuidance?: Array<{ text?: string | null; label?: string | null } | string> | null;
+  } | null;
+  suggestedUse: string | null;
+  warnings: string | null;
+  decisionDigest: string;
+};
+
+export type SearchProductDetailAPIResponse =
+  | SearchProductDetailResponse
+  | {
+      success: boolean;
+      data: SearchProductDetailResponse;
+    };
+
 export type AnalyzeRequest = {
   scanId?: string;
   text: string;
@@ -420,6 +488,16 @@ export const apiClient = {
       method: 'GET',
       ...options,
     }),
+
+  searchProductDetail: (productId: string, options?: AuthenticatedRequestOptions) =>
+    requestTo<SearchProductDetailAPIResponse>(
+      ENV.searchApiBaseUrl,
+      `/api/search/product-detail?${new URLSearchParams({ productId }).toString()}`,
+      {
+        method: 'GET',
+        ...options,
+      },
+    ),
 
   analyze: (payload: AnalyzeRequest, options?: AuthenticatedRequestOptions) =>
     request<AnalyzeResponse>('/api/analyze', {

@@ -434,35 +434,52 @@ const SearchPage = () => {
 
   const handleOpenResult = React.useCallback((item: SearchSupplement) => {
     const scanCode = item.barcode?.trim() || item.upcCode?.trim();
-    if (!scanCode) return;
+    if (scanCode) {
+      const sessionId = ensureSessionId();
+      setScanSession({
+        id: sessionId,
+        mode: 'barcode',
+        input: { barcode: scanCode },
+        isLoading: true,
+        source: 'search',
+        searchResultSeed: {
+          productId: item.productId,
+          barcode: item.barcode ?? null,
+          upcCode: item.upcCode ?? null,
+          name: item.name,
+          brand: item.brand,
+          category: item.category,
+          benefit: item.benefit,
+          dose: item.dose,
+          imageUrl: item.imageUrl ?? null,
+          factsStatus: item.factsStatus,
+          coverageStatus: item.coverageStatus,
+        },
+      });
 
-    const sessionId = ensureSessionId();
-    setScanSession({
-      id: sessionId,
-      mode: 'barcode',
-      input: { barcode: scanCode },
-      isLoading: true,
-      source: 'search',
-      searchResultSeed: {
-        productId: item.productId,
-        barcode: item.barcode ?? null,
-        upcCode: item.upcCode ?? null,
+      router.push({
+        pathname: '/scan/result',
+        params: {
+          sessionId,
+          source: 'search',
+        },
+      });
+      return;
+    }
+
+    const productId = item.productId?.trim();
+    if (!productId) return;
+
+    router.push({
+      pathname: '/search/detail',
+      params: {
+        productId,
         name: item.name,
         brand: item.brand,
         category: item.category,
         benefit: item.benefit,
         dose: item.dose,
-        imageUrl: item.imageUrl ?? null,
-        factsStatus: item.factsStatus,
-        coverageStatus: item.coverageStatus,
-      },
-    });
-
-    router.push({
-      pathname: '/scan/result',
-      params: {
-        sessionId,
-        source: 'search',
+        imageUrl: item.imageUrl ?? '',
       },
     });
   }, []);
@@ -798,7 +815,7 @@ const SearchPage = () => {
                     >
                       <Pressable
                         accessibilityRole="button"
-                        disabled={!(item.barcode?.trim() || item.upcCode?.trim())}
+                        disabled={!(item.barcode?.trim() || item.upcCode?.trim() || item.productId?.trim())}
                         onPress={() => handleOpenResult(item)}
                         style={styles.resultRow}
                       >

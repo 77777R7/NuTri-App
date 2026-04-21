@@ -9668,6 +9668,162 @@ app.get("/api/search/bootstrap", async (_req: Request, res: Response) => {
   }
 });
 
+app.get("/api/search/product-detail", async (req: Request, res: Response) => {
+  const productId = typeof req.query.productId === "string" ? req.query.productId.trim() : "";
+  if (!productId) {
+    return res
+      .status(400)
+      .json({ error: "invalid_request", detail: "productId is required" } satisfies ErrorResponse);
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from("iherb_overlay_products")
+      .select(
+        "product_id,upc_code,barcode_gtin14,brand_name,title,link,product_catalog_image,product_images,categories,supplement_facts,serving,description_sections,source_zip_path,updated_at",
+      )
+      .eq("product_id", productId)
+      .order("updated_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (error) {
+      throw new Error(error.message);
+    }
+    if (!data) {
+      return res
+        .status(404)
+        .json({ error: "not_found", detail: "search product detail not found" } satisfies ErrorResponse);
+    }
+
+    const overlayClaims = toDecisionSupportOverlayClaims(data as Record<string, unknown>);
+    const normalizeSearchDetailText = (value: string | null | undefined): string =>
+      String(value ?? "")
+        .replace(/\s+/g, " ")
+        .trim();
+    const overlayFactLines = (overlayClaims.nutritionalFacts ?? [])
+      .map((fact) => [fact.substancy, fact.amountPerServing].filter(Boolean).join(" "))
+      .map((line) => normalizeSearchDetailText(line))
+      .filter(Boolean);
+    const ingredientText = overlayFactLines.length > 0
+      ? overlayFactLines.join("\n")
+      : normalizeSearchDetailText(overlayClaims.otherIngredients);
+    const canonicalDomain = (() => {
+      if (!overlayClaims.link) return null;
+      try {
+        return new URL(overlayClaims.link).hostname;
+      } catch {
+        return null;
+      }
+    })();
+    const digest = buildFactsDigestFromWeb({
+      facts: {
+        barcode:
+          overlayClaims.barcodeGtin14 ??
+          overlayClaims.upcCode ??
+          overlayClaims.productId ??
+          productId,
+        canonical: {
+          name: overlayClaims.title,
+          brand: overlayClaims.brandName,
+          url: overlayClaims.link,
+          domain: canonicalDomain,
+        },
+        identifiers: {},
+        textFacts: {
+          ingredientsText: ingredientText || null,
+          directionsText: normalizeSearchDetailText(overlayClaims.suggestedUse) || null,
+          warningsText: normalizeSearchDetailText(overlayClaims.warnings) || null,
+          servingSizeText: normalizeSearchDetailText(overlayClaims.servingSize) || null,
+        },
+        coverageScore: 100,
+        missingFields: [],
+      },
+      identityType: "webCanonicalId",
+      identityValue: overlayClaims.productId ?? productId,
+    });
+    const factsDigestHash = computeFactsDigestHash(digest);
+    const decisionSupport = compileDecisionSupport({
+      digest,
+      factsDigestHash,
+      viewMode: "details",
+      locale: "en",
+      flagsSnapshot: collectDecisionSupportFlagsSnapshot(),
+      patchActivation: null,
+      overlayClaims,
+      allergyContext: null,
+      personalizationContext: null,
+    });
+    const ingredientScienceContext = buildIngredientScienceContext({
+      digest,
+      overlayClaims,
+    });
+    const selectedDescriptor =
+      ingredientScienceContext.ingredientDescriptors[0] ??
+      (ingredientScienceContext.anchorIngredient
+        ? ingredientScienceContext.ingredientDescriptors.find(
+          (descriptor) => descriptor.name === ingredientScienceContext.anchorIngredient?.name,
+        ) ?? null
+        : null);
+
+    const [ingredientOverview, scientificBackground] = await Promise.all([
+      compileIngredientOverviewAsync(ingredientScienceContext, {
+        timeoutMs: 1_200,
+        maxRetries: 0,
+      }),
+      selectedDescriptor
+        ? compileScientificBackgroundAsync(ingredientScienceContext, selectedDescriptor.name, {
+          timeoutMs: 1_500,
+          maxRetries: 0,
+        })
+        : Promise.resolve(null),
+    ]);
+
+    const defaultRow = decisionSupport.scienceBlock?.ingredientRows?.[0] ?? null;
+    const category = Array.isArray(overlayClaims.categories) ? overlayClaims.categories[0] ?? null : null;
+    const factsStatus = ingredientText ? (overlayFactLines.length > 0 ? "full" : "partial") : "none";
+
+    return res.json({
+      success: true,
+      data: {
+        product: {
+          productId: overlayClaims.productId ?? productId,
+          barcode: overlayClaims.barcodeGtin14 ?? null,
+          upcCode: overlayClaims.upcCode ?? null,
+          name: overlayClaims.title ?? "Supplement detail",
+          brand: overlayClaims.brandName ?? "Unknown brand",
+          category,
+          benefit: decisionSupport.overviewBlock?.bestForBullets?.[0] ?? null,
+          dose: defaultRow?.dose ?? null,
+          imageUrl: overlayClaims.imageUrl ?? null,
+          link: overlayClaims.link ?? null,
+          factsStatus,
+          coverageStatus: factsStatus === "full" ? "coverage_ready" : "not_enough_structured_data",
+        },
+        defaultAnchor: {
+          name: defaultRow?.name ?? ingredientScienceContext.anchorIngredient?.name ?? null,
+          dose: defaultRow?.dose ?? ingredientScienceContext.anchorIngredient?.dose ?? null,
+          sourceTier: decisionSupport.scienceBlock?.ingredientSourceTier ?? null,
+        },
+        ingredientOverview: ingredientOverview.ingredientOverview,
+        ingredientOverviewSource: ingredientOverview.source,
+        scientificBackground: scientificBackground?.scientificBackground ?? null,
+        scientificBackgroundSource: scientificBackground?.source ?? null,
+        usageBlock: decisionSupport.usageBlock,
+        safetyBlock: decisionSupport.safetyBlock,
+        suggestedUse: overlayClaims.suggestedUse ?? null,
+        warnings: overlayClaims.warnings ?? null,
+        decisionDigest: decisionSupport.digest,
+      },
+    });
+  } catch (error) {
+    captureException(error, { route: "/api/search/product-detail" });
+    console.error("/api/search/product-detail unexpected error", error);
+    const detail = error instanceof Error ? `${error.name}: ${error.message}` : String(error);
+    return res.status(500).json({ error: "unexpected_error", detail } satisfies ErrorResponse);
+  }
+});
+
 /**
  * Legacy endpoint for barcode search only (no AI analysis)
  */
