@@ -1,0 +1,209 @@
+{
+  "schemaVersion": "canadian_upc_explicit_next_lane.v0",
+  "generatedAt": "2026-04-20T00:00:00.000Z",
+  "purpose": "Prioritized shortlist and closure snapshot for the Canadian UPC-explicit lane after Organika catalog-strong holdout",
+  "selectionRule": "officialUpc=true and detailSignalCount>=2 and not currently in active Organika catalog-strong holdout",
+  "recommendedNextLanes": [
+    {
+      "laneId": "jamieson_upc_explicit_detail_rich_canary",
+      "brand": "Jamieson",
+      "eligibleCount": 110,
+      "currentStatus": {
+        "promotionCohortWaveId": "canadian_upc_explicit_head_wave_jamieson_03",
+        "promotionCohortValidation": "9/9 cold pass, 9/9 warm pass",
+        "adjacentCanaryWaveId": "canadian_upc_explicit_adjacent_wave_jamieson_05",
+        "adjacentCanaryValidation": "wave 05: 8/10 pass, 1/10 warn, 1/10 fail; wave 06: 7/8 pass, 0/8 warn, 1/8 fail; wave 07: 8/8 pass, 0/8 warn, 0/8 fail",
+        "detailRuntimeReady": "wave 05: 10/10, wave 06: 8/8, wave 07: 8/8",
+        "stablePackValidation": "32/32 cold pass, 32/32 warm pass",
+        "note": "formal head-only promotion cohort is green; adjacent expansion has now added 23 more promotable singles, with only Zinc 25 mg kept as warn and Vitamin D3 400 IU plus Vitamin D3 2,500 IU Softgels kept as residual; the consolidated 32-row Jamieson stable pack is fully green"
+      },
+      "whyHighRoi": [
+        "UPC already present",
+        "detail signal is consistently strong",
+        "suggested use coverage is high once rebuilt from the rich official candidate set",
+        "Jamieson is the only current UPC-explicit lane with a formal promotion cohort plus adjacent wins"
+      ],
+      "sampleProducts": [
+        {
+          "productId": "ca-official-jamieson-00064642103413",
+          "title": "100 % Pure Magnesium L-Threonate",
+          "upcCode": "064642103413"
+        },
+        {
+          "productId": "ca-official-jamieson-00064642092045",
+          "title": "100% Pure Magnesium Bisglycinate Gummies",
+          "upcCode": "064642092045"
+        },
+        {
+          "productId": "ca-official-jamieson-00064642020154",
+          "title": "B Complex & Vitamin C",
+          "upcCode": "064642020154"
+        },
+        {
+          "productId": "ca-official-jamieson-00064642090737",
+          "title": "Baby Omega Drops",
+          "upcCode": "064642090737"
+        },
+        {
+          "productId": "ca-official-jamieson-00064642061065",
+          "title": "Vitamin D | Premium | 1,000 IU | Softgels",
+          "upcCode": "064642061065"
+        },
+        {
+          "productId": "ca-official-jamieson-00064642079572",
+          "title": "Jamieson Vitamin B12 1,000 mcg Fast‑Dissolving Tablets",
+          "upcCode": "064642079572"
+        },
+        {
+          "productId": "ca-official-jamieson-00064642027078",
+          "title": "Magnesium | Ultra Strength",
+          "upcCode": "064642027078"
+        },
+        {
+          "productId": "ca-official-jamieson-00064642021915",
+          "title": "Zinc 25 mg",
+          "upcCode": "064642021915"
+        },
+        {
+          "productId": "ca-official-jamieson-00064642023308",
+          "title": "Jamieson Zinc 50 mg | Ultra Strength Zinc Supplement For Immunity",
+          "upcCode": "064642023308"
+        },
+        {
+          "productId": "ca-official-jamieson-00064642096586",
+          "title": "Vitamin D3 2,500 IU",
+          "upcCode": "064642096586"
+        },
+        {
+          "productId": "ca-official-jamieson-00064642099945",
+          "title": "Zinc Gummies for Immune Health",
+          "upcCode": "064642099945"
+        },
+        {
+          "productId": "ca-official-jamieson-00064642069252",
+          "title": "Vitamin D3 for Babies: Liquid Drops",
+          "upcCode": "064642069252"
+        },
+        {
+          "productId": "ca-official-jamieson-00064642091260",
+          "title": "Jamieson Vitamin B12 2,500 mcg Timed Release Tablets",
+          "upcCode": "064642091260"
+        },
+        {
+          "productId": "ca-official-jamieson-00064642021595",
+          "title": "Zinc Tablets 10 mg: Immune Support",
+          "upcCode": "064642021595"
+        },
+        {
+          "productId": "ca-official-jamieson-00064642074775",
+          "title": "Jamieson Vitamin B12 2,500 mcg Fast‑Dissolving Tablets",
+          "upcCode": "064642074775"
+        },
+        {
+          "productId": "ca-official-jamieson-00064642061713",
+          "title": "Vitamin D Chewables: Immune & Bone Support",
+          "upcCode": "064642061713"
+        },
+        {
+          "productId": "ca-official-jamieson-00064642058690",
+          "title": "Vitamin D3 for Kids",
+          "upcCode": "064642058690"
+        },
+        {
+          "productId": "ca-official-jamieson-00064642049629",
+          "title": "Zinc Lozenges: 4 Delicious Flavours for Immune Support",
+          "upcCode": "064642049629"
+        }
+      ]
+    },
+    {
+      "laneId": "webber_upc_explicit_detail_rich_canary",
+      "brand": "Webber Naturals",
+      "eligibleCount": 18,
+      "currentStatus": {
+        "canaryWaveId": "canadian_upc_explicit_canary_webber_01",
+        "coldValidation": "0/10 pass",
+        "warmValidation": "0/10 pass",
+        "detailRuntimeReady": "10/10",
+        "note": "search identity remained missing across probiotic-heavy cohort even after warm replay"
+      },
+      "whyHighRoi": [
+        "UPC already present",
+        "warnings coverage is unusually strong for the residual pool",
+        "brand already performs well in Canadian merge flow"
+      ],
+      "sampleProducts": [
+        {
+          "productId": "ca-official-webber-naturals-00625273039603",
+          "title": "Sesame Street Incredible Power Multi Chewables",
+          "upcCode": "625273039603"
+        },
+        {
+          "productId": "ca-official-webber-naturals-00625273050073",
+          "title": "Acidophilus Bifidus with FOS 6 Billion",
+          "upcCode": "62527350073"
+        },
+        {
+          "productId": "ca-official-webber-naturals-00625273052794",
+          "title": "Complete Digestive Enzymes Full Spectrum",
+          "upcCode": "62527352794"
+        },
+        {
+          "productId": "ca-official-webber-naturals-00625273038446",
+          "title": "Probiotic 10 Billion 5 Probiotic Strains",
+          "upcCode": "62527338446"
+        }
+      ]
+    },
+    {
+      "laneId": "progressive_upc_explicit_detail_rich_canary",
+      "brand": "Progressive",
+      "eligibleCount": 8,
+      "currentStatus": {
+        "canaryWaveId": "canadian_upc_explicit_canary_progressive_01",
+        "coldValidation": "0/8 pass",
+        "warmValidation": "0/8 pass",
+        "detailRuntimeReady": "8/8",
+        "note": "detail opened cleanly but search identity stayed missing across the entire canary"
+      },
+      "whyHighRoi": [
+        "UPC already present",
+        "compact canary size",
+        "titles are user-visible and likely to influence search/detail quality quickly"
+      ],
+      "sampleProducts": [
+        {
+          "productId": "ca-official-progressive-00837229009954",
+          "title": "Bioavailable Magnesium Bisglycinate",
+          "upcCode": "837229009954"
+        },
+        {
+          "productId": "ca-official-progressive-00837229004607",
+          "title": "High Potency Fish Oil + Vitamin D | Shop OmegEssential",
+          "upcCode": "837229004607"
+        },
+        {
+          "productId": "ca-official-progressive-00837229004584",
+          "title": "High Potency Fish Oil With EPA & DHA",
+          "upcCode": "837229004584"
+        },
+        {
+          "productId": "ca-official-progressive-00837229009244",
+          "title": "Vitamin D3 For Immunity & Bone Health",
+          "upcCode": "837229009244"
+        }
+      ]
+    }
+  ],
+  "holdouts": [
+    {
+      "brand": "Organika",
+      "reason": "catalog-strong no-UPC lane failed live canary and is intentionally held in residual/discovery"
+    }
+  ],
+  "closureStatus": {
+    "activeNextScanWave": 0,
+    "activeNextSearchReadyWave": 0,
+    "note": "Current Canadian active queue is empty; Jamieson is closed into a stable promotion baseline while the remaining brands stay residual/discovery until a new higher-yield lane is opened."
+  }
+}

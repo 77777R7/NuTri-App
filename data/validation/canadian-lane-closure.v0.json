@@ -1,0 +1,39 @@
+{
+  "schemaVersion": "canadian_lane_closure.v0",
+  "generatedAt": "2026-04-20T00:00:00.000Z",
+  "purpose": "Closure snapshot for the current Canadian data lane after Jamieson promotion stabilization",
+  "activeQueues": {
+    "nextScanWave": 0,
+    "nextSearchReadyWave": 0
+  },
+  "stableBaselines": [
+    {
+      "baselineId": "canadian_jamieson_promotion_pack_v0",
+      "brand": "Jamieson",
+      "productCount": 32,
+      "coldValidation": "32/32 pass",
+      "warmValidation": "32/32 pass",
+      "detailRuntimeReady": "32/32",
+      "artifactRoot": "output/canadian_brand_full_coverage_wave_v0/stable_packs/canadian_jamieson_promotion_pack_v0"
+    }
+  ],
+  "promotionSummary": {
+    "jamiesonFormalPromotionProducts": 32,
+    "jamiesonKeepWarnProducts": 1,
+    "jamiesonResidualProducts": 2
+  },
+  "residualBrandBuckets": [
+    {
+      "brand": "Webber Naturals",
+      "reason": "UPC-explicit canary opened detail cleanly but stayed search-identity unstable"
+    },
+    {
+      "brand": "Progressive",
+      "reason": "UPC-explicit canary opened detail cleanly but stayed search-identity unstable"
+    },
+    {
+      "brand": "Organika",
+      "reason": "catalog-strong no-UPC holdout remains discovery only after failed live canary"
+    }
+  ]
+}

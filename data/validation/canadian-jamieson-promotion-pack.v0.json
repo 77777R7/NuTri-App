@@ -1,0 +1,267 @@
+{
+  "schemaVersion": "canadian_jamieson_promotion_pack.v0",
+  "generatedAt": "2026-04-21T06:09:18.935Z",
+  "purpose": "Stable replay pack for the full promotable Canadian Jamieson UPC-explicit cohort",
+  "summary": {
+    "brand": "Jamieson",
+    "selected": 32
+  },
+  "products": [
+    {
+      "productId": "ca-official-jamieson-00064642103413",
+      "title": "100 % Pure Magnesium L-Threonate",
+      "upcCode": "064642103413",
+      "source": "promotionCohort",
+      "sourceWaveId": "canadian_upc_explicit_head_wave_jamieson_03",
+      "brandName": "Jamieson"
+    },
+    {
+      "productId": "ca-official-jamieson-00064642092045",
+      "title": "100% Pure Magnesium Bisglycinate Gummies",
+      "upcCode": "064642092045",
+      "source": "promotionCohort",
+      "sourceWaveId": "canadian_upc_explicit_head_wave_jamieson_03",
+      "brandName": "Jamieson"
+    },
+    {
+      "productId": "ca-official-jamieson-00064642020154",
+      "title": "B Complex & Vitamin C",
+      "upcCode": "064642020154",
+      "source": "promotionCohort",
+      "sourceWaveId": "canadian_upc_explicit_head_wave_jamieson_03",
+      "brandName": "Jamieson"
+    },
+    {
+      "productId": "ca-official-jamieson-00064642021700",
+      "title": "B Complex | Timed Release",
+      "upcCode": "064642021700",
+      "source": "promotionCohort",
+      "sourceWaveId": "canadian_upc_explicit_head_wave_jamieson_03",
+      "brandName": "Jamieson"
+    },
+    {
+      "productId": "ca-official-jamieson-00064642022547",
+      "title": "B75 Complex",
+      "upcCode": "064642022547",
+      "source": "promotionCohort",
+      "sourceWaveId": "canadian_upc_explicit_head_wave_jamieson_03",
+      "brandName": "Jamieson"
+    },
+    {
+      "productId": "ca-official-jamieson-00064642090737",
+      "title": "Baby Omega Drops",
+      "upcCode": "064642090737",
+      "source": "promotionCohort",
+      "sourceWaveId": "canadian_upc_explicit_head_wave_jamieson_03",
+      "brandName": "Jamieson"
+    },
+    {
+      "productId": "ca-official-jamieson-00064642061164",
+      "title": "Calcium & Vitamin D3",
+      "upcCode": "064642061164",
+      "source": "promotionCohort",
+      "sourceWaveId": "canadian_upc_explicit_head_wave_jamieson_03",
+      "brandName": "Jamieson"
+    },
+    {
+      "productId": "ca-official-jamieson-00064642074911",
+      "title": "Calcium + Vitamin D3 | Gummies",
+      "upcCode": "064642074911",
+      "source": "promotionCohort",
+      "sourceWaveId": "canadian_upc_explicit_head_wave_jamieson_03",
+      "brandName": "Jamieson"
+    },
+    {
+      "productId": "ca-official-jamieson-00064642028471",
+      "title": "Calcium Citrate & Vitamin D3",
+      "upcCode": "064642028471",
+      "source": "promotionCohort",
+      "sourceWaveId": "canadian_upc_explicit_head_wave_jamieson_03",
+      "brandName": "Jamieson"
+    },
+    {
+      "productId": "ca-official-jamieson-00064642061065",
+      "title": "Vitamin D | Premium | 1,000 IU | Softgels",
+      "upcCode": "064642061065",
+      "source": "adjacentExpansion",
+      "sourceWaveId": "canadian_upc_explicit_adjacent_wave_jamieson_05",
+      "brandName": "Jamieson"
+    },
+    {
+      "productId": "ca-official-jamieson-00064642052544",
+      "title": "Vitamin D3 1,000 IU: Tablets",
+      "upcCode": "064642052544",
+      "source": "adjacentExpansion",
+      "sourceWaveId": "canadian_upc_explicit_adjacent_wave_jamieson_05",
+      "brandName": "Jamieson"
+    },
+    {
+      "productId": "ca-official-jamieson-00064642020208",
+      "title": "Jamieson Vitamin B1 100 mg Thiamine Supplement",
+      "upcCode": "064642020208",
+      "source": "adjacentExpansion",
+      "sourceWaveId": "canadian_upc_explicit_adjacent_wave_jamieson_05",
+      "brandName": "Jamieson"
+    },
+    {
+      "productId": "ca-official-jamieson-00064642022097",
+      "title": "Jamieson Vitamin B2 Riboflavin 100 mg",
+      "upcCode": "064642022097",
+      "source": "adjacentExpansion",
+      "sourceWaveId": "canadian_upc_explicit_adjacent_wave_jamieson_05",
+      "brandName": "Jamieson"
+    },
+    {
+      "productId": "ca-official-jamieson-00064642020222",
+      "title": "Jamieson Vitamin B6 100 mg Pyridoxine Supplement",
+      "upcCode": "064642020222",
+      "source": "adjacentExpansion",
+      "sourceWaveId": "canadian_upc_explicit_adjacent_wave_jamieson_05",
+      "brandName": "Jamieson"
+    },
+    {
+      "productId": "ca-official-jamieson-00064642079572",
+      "title": "Jamieson Vitamin B12 1,000 mcg Fast‑Dissolving Tablets",
+      "upcCode": "064642079572",
+      "source": "adjacentExpansion",
+      "sourceWaveId": "canadian_upc_explicit_adjacent_wave_jamieson_05",
+      "brandName": "Jamieson"
+    },
+    {
+      "productId": "ca-official-jamieson-00064642020444",
+      "title": "Jamieson Vitamin B12 Methylcobalamin 100 mcg Tablets",
+      "upcCode": "064642020444",
+      "source": "adjacentExpansion",
+      "sourceWaveId": "canadian_upc_explicit_adjacent_wave_jamieson_05",
+      "brandName": "Jamieson"
+    },
+    {
+      "productId": "ca-official-jamieson-00064642027078",
+      "title": "Magnesium | Ultra Strength",
+      "upcCode": "064642027078",
+      "source": "adjacentExpansion",
+      "sourceWaveId": "canadian_upc_explicit_adjacent_wave_jamieson_05",
+      "brandName": "Jamieson"
+    },
+    {
+      "productId": "ca-official-jamieson-00064642028235",
+      "title": "Jamieson Vitamin B12 1,200 mcg Timed Release",
+      "upcCode": "064642028235",
+      "source": "adjacentExpansion",
+      "sourceWaveId": "canadian_upc_explicit_adjacent_wave_jamieson_06",
+      "brandName": "Jamieson"
+    },
+    {
+      "productId": "ca-official-jamieson-00064642023308",
+      "title": "Jamieson Zinc 50 mg | Ultra Strength Zinc Supplement For Immunity",
+      "upcCode": "064642023308",
+      "source": "adjacentExpansion",
+      "sourceWaveId": "canadian_upc_explicit_adjacent_wave_jamieson_06",
+      "brandName": "Jamieson"
+    },
+    {
+      "productId": "ca-official-jamieson-00064642020697",
+      "title": "Jamieson Vitamin B12 250 mcg Methycobalamin Supplement",
+      "upcCode": "064642020697",
+      "source": "adjacentExpansion",
+      "sourceWaveId": "canadian_upc_explicit_adjacent_wave_jamieson_06",
+      "brandName": "Jamieson"
+    },
+    {
+      "productId": "ca-official-jamieson-00064642096586",
+      "title": "Vitamin D3 2,500 IU",
+      "upcCode": "064642096586",
+      "source": "adjacentExpansion",
+      "sourceWaveId": "canadian_upc_explicit_adjacent_wave_jamieson_06",
+      "brandName": "Jamieson"
+    },
+    {
+      "productId": "ca-official-jamieson-00064642020192",
+      "title": "Jamieson High Potency Vitamin B6 Pyridoxine 250 mg",
+      "upcCode": "064642020192",
+      "source": "adjacentExpansion",
+      "sourceWaveId": "canadian_upc_explicit_adjacent_wave_jamieson_06",
+      "brandName": "Jamieson"
+    },
+    {
+      "productId": "ca-official-jamieson-00064642022073",
+      "title": "Jamieson Niacin Vitamin B3 500 mg",
+      "upcCode": "064642022073",
+      "source": "adjacentExpansion",
+      "sourceWaveId": "canadian_upc_explicit_adjacent_wave_jamieson_06",
+      "brandName": "Jamieson"
+    },
+    {
+      "productId": "ca-official-jamieson-00064642069269",
+      "title": "Vitamin D3 1,000 IU | Fast Dissolving",
+      "upcCode": "064642069269",
+      "source": "adjacentExpansion",
+      "sourceWaveId": "canadian_upc_explicit_adjacent_wave_jamieson_06",
+      "brandName": "Jamieson"
+    },
+    {
+      "productId": "ca-official-jamieson-00064642099945",
+      "title": "Zinc Gummies for Immune Health",
+      "upcCode": "064642099945",
+      "source": "adjacentExpansion",
+      "sourceWaveId": "canadian_upc_explicit_adjacent_wave_jamieson_07",
+      "brandName": "Jamieson"
+    },
+    {
+      "productId": "ca-official-jamieson-00064642069252",
+      "title": "Vitamin D3 for Babies: Liquid Drops",
+      "upcCode": "064642069252",
+      "source": "adjacentExpansion",
+      "sourceWaveId": "canadian_upc_explicit_adjacent_wave_jamieson_07",
+      "brandName": "Jamieson"
+    },
+    {
+      "productId": "ca-official-jamieson-00064642091260",
+      "title": "Jamieson Vitamin B12 2,500 mcg Timed Release Tablets",
+      "upcCode": "064642091260",
+      "source": "adjacentExpansion",
+      "sourceWaveId": "canadian_upc_explicit_adjacent_wave_jamieson_07",
+      "brandName": "Jamieson"
+    },
+    {
+      "productId": "ca-official-jamieson-00064642021595",
+      "title": "Zinc Tablets 10 mg: Immune Support",
+      "upcCode": "064642021595",
+      "source": "adjacentExpansion",
+      "sourceWaveId": "canadian_upc_explicit_adjacent_wave_jamieson_07",
+      "brandName": "Jamieson"
+    },
+    {
+      "productId": "ca-official-jamieson-00064642074775",
+      "title": "Jamieson Vitamin B12 2,500 mcg Fast‑Dissolving Tablets",
+      "upcCode": "064642074775",
+      "source": "adjacentExpansion",
+      "sourceWaveId": "canadian_upc_explicit_adjacent_wave_jamieson_07",
+      "brandName": "Jamieson"
+    },
+    {
+      "productId": "ca-official-jamieson-00064642061713",
+      "title": "Vitamin D Chewables: Immune & Bone Support",
+      "upcCode": "064642061713",
+      "source": "adjacentExpansion",
+      "sourceWaveId": "canadian_upc_explicit_adjacent_wave_jamieson_07",
+      "brandName": "Jamieson"
+    },
+    {
+      "productId": "ca-official-jamieson-00064642058690",
+      "title": "Vitamin D3 for Kids",
+      "upcCode": "064642058690",
+      "source": "adjacentExpansion",
+      "sourceWaveId": "canadian_upc_explicit_adjacent_wave_jamieson_07",
+      "brandName": "Jamieson"
+    },
+    {
+      "productId": "ca-official-jamieson-00064642049629",
+      "title": "Zinc Lozenges: 4 Delicious Flavours for Immune Support",
+      "upcCode": "064642049629",
+      "source": "adjacentExpansion",
+      "sourceWaveId": "canadian_upc_explicit_adjacent_wave_jamieson_07",
+      "brandName": "Jamieson"
+    }
+  ]
+}

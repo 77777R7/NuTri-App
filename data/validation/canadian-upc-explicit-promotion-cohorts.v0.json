@@ -1,0 +1,260 @@
+{
+  "schemaVersion": "canadian_upc_explicit_promotion_cohorts.v0",
+  "generatedAt": "2026-04-20T00:00:00.000Z",
+  "purpose": "Formal promotion cohorts and adjacent expansion outcomes for the Canadian UPC-explicit lane",
+  "promotionCohorts": [
+    {
+      "cohortId": "jamieson_head_only_03",
+      "brand": "Jamieson",
+      "status": "formal_promotion_cohort",
+      "waveId": "canadian_upc_explicit_head_wave_jamieson_03",
+      "coldValidation": "9/9 pass",
+      "warmValidation": "9/9 pass",
+      "detailRuntimeReady": "9/9",
+      "focus": [
+        "magnesium",
+        "B-complex",
+        "calcium/D3",
+        "baby omega"
+      ],
+      "products": [
+        {
+          "productId": "ca-official-jamieson-00064642103413",
+          "title": "100 % Pure Magnesium L-Threonate",
+          "upcCode": "064642103413"
+        },
+        {
+          "productId": "ca-official-jamieson-00064642092045",
+          "title": "100% Pure Magnesium Bisglycinate Gummies",
+          "upcCode": "064642092045"
+        },
+        {
+          "productId": "ca-official-jamieson-00064642020154",
+          "title": "B Complex & Vitamin C",
+          "upcCode": "064642020154"
+        },
+        {
+          "productId": "ca-official-jamieson-00064642021700",
+          "title": "B Complex | Timed Release",
+          "upcCode": "064642021700"
+        },
+        {
+          "productId": "ca-official-jamieson-00064642022547",
+          "title": "B75 Complex",
+          "upcCode": "064642022547"
+        },
+        {
+          "productId": "ca-official-jamieson-00064642090737",
+          "title": "Baby Omega Drops",
+          "upcCode": "064642090737"
+        },
+        {
+          "productId": "ca-official-jamieson-00064642061164",
+          "title": "Calcium & Vitamin D3",
+          "upcCode": "064642061164"
+        },
+        {
+          "productId": "ca-official-jamieson-00064642074911",
+          "title": "Calcium + Vitamin D3 | Gummies",
+          "upcCode": "064642074911"
+        },
+        {
+          "productId": "ca-official-jamieson-00064642028471",
+          "title": "Calcium Citrate & Vitamin D3",
+          "upcCode": "064642028471"
+        }
+      ]
+    }
+  ],
+  "adjacentExpansionCanaries": [
+    {
+      "canaryId": "jamieson_adjacent_05",
+      "brand": "Jamieson",
+      "status": "partial_promotion_expansion",
+      "waveId": "canadian_upc_explicit_adjacent_wave_jamieson_05",
+      "coldValidation": "8/10 pass, 1/10 warn, 1/10 fail",
+      "warmValidation": "8/10 pass, 1/10 warn, 1/10 fail",
+      "detailRuntimeReady": "10/10",
+      "focus": [
+        "cleaner Vitamin D singles",
+        "cleaner Vitamin B singles",
+        "cleaner Zinc/Magnesium singles"
+      ],
+      "promoteNow": [
+        {
+          "productId": "ca-official-jamieson-00064642061065",
+          "title": "Vitamin D | Premium | 1,000 IU | Softgels",
+          "upcCode": "064642061065"
+        },
+        {
+          "productId": "ca-official-jamieson-00064642052544",
+          "title": "Vitamin D3 1,000 IU: Tablets",
+          "upcCode": "064642052544"
+        },
+        {
+          "productId": "ca-official-jamieson-00064642020208",
+          "title": "Jamieson Vitamin B1 100 mg Thiamine Supplement",
+          "upcCode": "064642020208"
+        },
+        {
+          "productId": "ca-official-jamieson-00064642022097",
+          "title": "Jamieson Vitamin B2 Riboflavin 100 mg",
+          "upcCode": "064642022097"
+        },
+        {
+          "productId": "ca-official-jamieson-00064642020222",
+          "title": "Jamieson Vitamin B6 100 mg Pyridoxine Supplement",
+          "upcCode": "064642020222"
+        },
+        {
+          "productId": "ca-official-jamieson-00064642079572",
+          "title": "Jamieson Vitamin B12 1,000 mcg Fast‑Dissolving Tablets",
+          "upcCode": "064642079572"
+        },
+        {
+          "productId": "ca-official-jamieson-00064642020444",
+          "title": "Jamieson Vitamin B12 Methylcobalamin 100 mcg Tablets",
+          "upcCode": "064642020444"
+        },
+        {
+          "productId": "ca-official-jamieson-00064642027078",
+          "title": "Magnesium | Ultra Strength",
+          "upcCode": "064642027078"
+        }
+      ],
+      "keepWarn": [
+        {
+          "productId": "ca-official-jamieson-00064642021915",
+          "title": "Zinc 25 mg",
+          "upcCode": "064642021915",
+          "reason": "search_top5_exact_identity_hit_rank_4"
+        }
+      ],
+      "residual": [
+        {
+          "productId": "ca-official-jamieson-00064642024299",
+          "title": "Vitamin D3 400 IU",
+          "upcCode": "064642024299",
+          "reason": "search_top5_exact_identity_hit_rank_7"
+        }
+      ]
+    },
+    {
+      "canaryId": "jamieson_adjacent_06",
+      "brand": "Jamieson",
+      "status": "strong_promotion_expansion",
+      "waveId": "canadian_upc_explicit_adjacent_wave_jamieson_06",
+      "coldValidation": "7/8 pass, 0/8 warn, 1/8 fail",
+      "warmValidation": "7/8 pass, 0/8 warn, 1/8 fail",
+      "detailRuntimeReady": "8/8",
+      "focus": [
+        "higher-strength Vitamin D singles",
+        "higher-strength Vitamin B singles",
+        "higher-strength Zinc single"
+      ],
+      "promoteNow": [
+        {
+          "productId": "ca-official-jamieson-00064642028235",
+          "title": "Jamieson Vitamin B12 1,200 mcg Timed Release",
+          "upcCode": "064642028235"
+        },
+        {
+          "productId": "ca-official-jamieson-00064642023308",
+          "title": "Jamieson Zinc 50 mg | Ultra Strength Zinc Supplement For Immunity",
+          "upcCode": "064642023308"
+        },
+        {
+          "productId": "ca-official-jamieson-00064642020697",
+          "title": "Jamieson Vitamin B12 250 mcg Methycobalamin Supplement",
+          "upcCode": "064642020697"
+        },
+        {
+          "productId": "ca-official-jamieson-00064642096586",
+          "title": "Vitamin D3 2,500 IU",
+          "upcCode": "064642096586"
+        },
+        {
+          "productId": "ca-official-jamieson-00064642020192",
+          "title": "Jamieson High Potency Vitamin B6 Pyridoxine 250 mg",
+          "upcCode": "064642020192"
+        },
+        {
+          "productId": "ca-official-jamieson-00064642022073",
+          "title": "Jamieson Niacin Vitamin B3 500 mg",
+          "upcCode": "064642022073"
+        },
+        {
+          "productId": "ca-official-jamieson-00064642069269",
+          "title": "Vitamin D3 1,000 IU | Fast Dissolving",
+          "upcCode": "064642069269"
+        }
+      ],
+      "residual": [
+        {
+          "productId": "ca-official-jamieson-00064642097552",
+          "title": "Vitamin D3 2,500 IU | Softgels",
+          "upcCode": "064642097552",
+          "reason": "search_top5_exact_identity_hit_rank_6"
+        }
+      ]
+    },
+    {
+      "canaryId": "jamieson_adjacent_07",
+      "brand": "Jamieson",
+      "status": "full_promotion_expansion",
+      "waveId": "canadian_upc_explicit_adjacent_wave_jamieson_07",
+      "coldValidation": "8/8 pass, 0/8 warn, 0/8 fail",
+      "warmValidation": "8/8 pass, 0/8 warn, 0/8 fail",
+      "detailRuntimeReady": "8/8",
+      "focus": [
+        "Vitamin D chewables",
+        "Vitamin D3 kids and babies",
+        "Vitamin B12 2500 mcg",
+        "cleaner zinc family"
+      ],
+      "promoteNow": [
+        {
+          "productId": "ca-official-jamieson-00064642099945",
+          "title": "Zinc Gummies for Immune Health",
+          "upcCode": "064642099945"
+        },
+        {
+          "productId": "ca-official-jamieson-00064642069252",
+          "title": "Vitamin D3 for Babies: Liquid Drops",
+          "upcCode": "064642069252"
+        },
+        {
+          "productId": "ca-official-jamieson-00064642091260",
+          "title": "Jamieson Vitamin B12 2,500 mcg Timed Release Tablets",
+          "upcCode": "064642091260"
+        },
+        {
+          "productId": "ca-official-jamieson-00064642021595",
+          "title": "Zinc Tablets 10 mg: Immune Support",
+          "upcCode": "064642021595"
+        },
+        {
+          "productId": "ca-official-jamieson-00064642074775",
+          "title": "Jamieson Vitamin B12 2,500 mcg Fast‑Dissolving Tablets",
+          "upcCode": "064642074775"
+        },
+        {
+          "productId": "ca-official-jamieson-00064642061713",
+          "title": "Vitamin D Chewables: Immune & Bone Support",
+          "upcCode": "064642061713"
+        },
+        {
+          "productId": "ca-official-jamieson-00064642058690",
+          "title": "Vitamin D3 for Kids",
+          "upcCode": "064642058690"
+        },
+        {
+          "productId": "ca-official-jamieson-00064642049629",
+          "title": "Zinc Lozenges: 4 Delicious Flavours for Immune Support",
+          "upcCode": "064642049629"
+        }
+      ],
+      "residual": []
+    }
+  ]
+}
