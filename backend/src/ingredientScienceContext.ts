@@ -21,6 +21,14 @@ export type IngredientScienceProductArchetype = "standard_supplement" | "functio
 export type IngredientScienceIngredientFamily =
   | "astaxanthin_carotenoid"
   | "curcumin"
+  | "turmeric"
+  | "coq10"
+  | "creatine"
+  | "berberine"
+  | "nac"
+  | "collagen"
+  | "protein"
+  | "fiber"
   | "ashwagandha"
   | "ginseng"
   | "green_tea_extract"
@@ -119,6 +127,8 @@ const BIOTIN_TITLE_PATTERN = /\bbiotin\b/i;
 const FOLATE_PATTERN = /\bfolate\b|\bfolic\s+acid\b|\bmethylfolate\b|\b5[\s-]*mthf\b/i;
 const B6_PATTERN = /\bvitamin\s*b6\b|\bb6\b|\bpyridoxine\b|\bpyridoxal(?:\s|-)?5(?:\s|-)?phosphate\b|\bp-?5-?p\b/i;
 const HTP5_PATTERN = /\b5[\s-]*htp\b|\b5[\s-]*hydroxytryptophan\b|\bgriffonia\b/i;
+const BCAA_TITLE_PATTERN = /\bbcaas?\b|\bbranched[\s-]*chain\s+amino\s+acids?\b/i;
+const RESVERATROL_TITLE_PATTERN = /\b(?:trans[\s-]*)?resveratrol\b/i;
 const B3_PATTERN = /\bvitamin\s*b3\b|\bb3\b|\bniacinamide\b|\bniacin\b|\bnicotinamide\b/i;
 const GLYCINE_PATTERN = /\bglycine\b/i;
 const TAURINE_PATTERN = /\btaurine\b/i;
@@ -126,7 +136,16 @@ const INOSITOL_PATTERN = /\b(?:myo[\s-]*)?inositol\b|\bd[\s-]*chiro[\s-]*inosito
 const SEVEN_KETO_PATTERN = /\b7[\s-]*keto\b|\bacetate[\s-]*7[\s-]*one\b|\bdhea[\s-]*acetate[\s-]*7[\s-]*one\b/i;
 const CLA_PATTERN = /\bcla(?:\d+)?\b|\bconjugated\s+linoleic\s+acid\b/i;
 const CARNITINE_PATTERN = /\bacetyl[\s-]*l[\s-]*carnitine\b|\bl[\s-]*carnitine\b|\bcarnitine\b|\balcar\b/i;
-const CURCUMIN_PATTERN = /\bcurcumin\b|\bturmeric\b|\bcurcuminoids?\b/i;
+const CURCUMIN_PATTERN = /\bcurcumin\b|\bcurcuminoids?\b/i;
+const TURMERIC_PATTERN = /\bturmeric\b|\bcurcuma\s+longa\b/i;
+const CREATINE_PATTERN = /\bcreatine(?:\s+monohydrate)?\b|\bcreapure\b|\bcreatine\s+hcl\b|\bcreatine\s+hydrochloride\b/i;
+const BERBERINE_PATTERN = /\bberberine(?:\s+hcl)?\b|\bberberis\b|\bbarberry\b/i;
+const NAC_PATTERN = /\bn[\s-]*acetyl[\s-]*cysteine\b|\bnac\b|\bacetylcysteine\b/i;
+const COLLAGEN_PATTERN =
+  /\bcollagen\b|\bcollagen\s+peptides?\b|\bverisol\b|\bhydroly[sz]ed\s+collagen\b|\btype\s+(?:i|ii|iii|iv|v|1|2|3|4|5)\s+collagen\b/i;
+const PROTEIN_PATTERN =
+  /\b(?:advanced\s+)?whey(?:\s+(?:isolate|protein))?\b|\bpure\s+whey\b|\bclean\s+whey\b|\b(?:pea|rice|soy|hemp|collagen)\s+protein\b|\bprotein\s+(?:isolate|concentrate|blend|powder)\b/i;
+const FIBER_PATTERN = /\b(?:apple|psyllium|acacia|inulin|prebiotic)\s+fiber\b|\bsoluble\s+fiber\b/i;
 const ASHWAGANDHA_PATTERN = /\bashwagandha\b|\bwithania\s+somnifera\b|\bksm-?66\b|\bsensoril\b/i;
 const GINSENG_PATTERN = /\bginseng\b|\bpanax\b|\bamerican\s+ginseng\b|\bred\s+ginseng\b/i;
 const GREEN_TEA_EXTRACT_PATTERN = /\bgreen\s+tea(?:\s+extract)?\b|\begcg\b|\bcatechins?\b|\bcamellia\s+sinensis\b/i;
@@ -141,6 +160,8 @@ const POTASSIUM_SUPPLEMENT_PATTERN = /\bpotassium\s+(?:gluconate|citrate|chlorid
 const MELATONIN_PATTERN = /\bmelatonin\b/i;
 const COQ10_TITLE_PATTERN = /\bco\s*Q\s*10\b|\bcoq10\b|\bcoenzyme\s+q10\b|\bubiquinol\b|\bubiquinone\b/i;
 const BERBERINE_TITLE_PATTERN = /\bberberine\b/i;
+const NAC_TITLE_PATTERN = /\bn[\s-]*acetyl[\s-]*cysteine\b|\bnac\b/i;
+const CREATINE_TITLE_PATTERN = /\bcreatine(?:\s+monohydrate)?\b|\bcreapure\b/i;
 const APPLE_CIDER_VINEGAR_TITLE_PATTERN = /\bapple\s+cider\s+vinegar\b|\bacv\b/i;
 const COCONUT_AMINOS_TITLE_PATTERN = /\bcoconut\s+aminos\b|\bsoy\s+sauce\s+replacement\b/i;
 const SOY_SAUCE_TITLE_PATTERN = /\btamari\b|\bsoy\s+sauce\b/i;
@@ -151,7 +172,8 @@ const MULTIVITAMIN_DRINK_MIX_TITLE_PATTERN =
 const ANTIOXIDANT_DRINK_MIX_TITLE_PATTERN =
   /\b(?:daily\s+)?antioxidant(?:\s+\+\s+multi)?\s+drink\s+mix\b|\bphytoberry(?:\s+multi)?\b/i;
 const CRISPY_FRUIT_TITLE_PATTERN = /\bcrispy\s+fruit\b|\ball\s+(?:apple|mango)\b/i;
-const GUMMY_CANDY_TITLE_PATTERN = /\bgummy\s+squares\b|\bhealthy\s+sweets\b/i;
+const GUMMY_CANDY_TITLE_PATTERN =
+  /\bgummy\s+squares\b|\bgummy\s+bears?\b|\b(?:organic\s+)?jelly\s+beans?\b|\bhealthy\s+sweets\b/i;
 const CHOCOLATE_TRUFFLE_TITLE_PATTERN = /\bchocolate\b.*\btruffles?\b|\btruffles?\b/i;
 const GREEN_CURRY_PASTE_TITLE_PATTERN = /\bgreen\s+curry\s+paste\b|\bcurry\s+paste\b/i;
 const FOOD_LIKE_SALT_TITLE_PATTERN = /\b(?:sea|himalayan|crystal)\s+salt\b/i;
@@ -162,7 +184,7 @@ const CHOCOLATE_FOOD_TITLE_PATTERN =
   /\bchoco\s+latte\b|\b(?:milk|dark)\s+chocolate\b|\bchocolate\s+bars?\b|\bcandy\s+bars?\b/i;
 const LIQUID_AMINOS_TITLE_PATTERN = /\bliquid\s+aminos\b|\bsoy\s+protein\s+seasoning\b/i;
 const PROTEIN_BAR_TITLE_PATTERN = /\b(?:protein|collagen)\s+bars?\b|\b(?:crispy\s+)?snack\s+bars?\b/i;
-const SOURCE_PROTEIN_TITLE_PATTERN = /\bwhey\s+(?:isolate|protein)\b|\bpure\s+whey\b|\bclean\s+whey\b|\bsoy\s+protein\b|\bpea\s+protein\b|\bcollagen\s+protein\b/i;
+const SOURCE_PROTEIN_TITLE_PATTERN = /\b(?:advanced\s+)?whey(?:\s+(?:isolate|protein))?\b|\bpure\s+whey\b|\bclean\s+whey\b|\bsoy\s+protein\b|\bpea\s+protein\b|\bcollagen\s+protein\b/i;
 const COLLAGEN_SUPPLEMENT_TITLE_PATTERN = /\bcollagen(?:30)?\b|\bcollagen\s+peptides?\b|\bverisol\b/i;
 const TRAIL_MIX_TITLE_PATTERN = /\btrail\s+mix\b/i;
 const ENERGY_DRINK_MIX_TITLE_PATTERN = /\benergy\s+drink\s+mix\b|\benergy\s+mix\b/i;
@@ -170,7 +192,7 @@ const ENERGY_CHEWS_TITLE_PATTERN = /\benergy\s+chews?\b/i;
 const SEA_MOSS_GEL_TITLE_PATTERN = /\bsea\s+moss\s+gel\b|\bliposomal\s+sea\s+moss\b/i;
 const GEL_FUEL_TITLE_PATTERN = /\bgo\s+gel\b|\bendurance\s+gel\b|\benergy\s+gel\b/i;
 const ELECTROLYTE_DRINK_MIX_TITLE_PATTERN =
-  /\bhydrationup\b|\belectrolyte\s+drink\s+mix\b|\belectrolyte\s+(?:formula|mix)\b/i;
+  /\bhydrationup\b|\belectrolytes?\+?\b|\belectrolyte\s+drink\s+mix\b|\belectrolyte\s+(?:formula|mix)\b/i;
 const REDS_SUPERFOOD_TITLE_PATTERN =
   /\breds?\s+pak\b|\bred\s+(?:fruits?|vegetables?)\b/i;
 const SPIRULINA_TITLE_PATTERN = /\bspirulina\b/i;
@@ -186,7 +208,7 @@ const FUNCTIONAL_FOOD_LIKE_TITLE_PATTERN =
   /\b(?:ag1|athletic\s+greens|gum|gums|gumm(?:y|ies)|mints?|lozenge|lozenges|freeze\s+dried|crispy\s+fruit|juice\s+powder|fruit\s+powder|dragon\s+fruit|smoothie|drink\s+mix|matcha\s+latte|tea\s+bags?|herbal\s+slimming\s+tea|greens\b|green\s+superfood|superfood|vegetable\s+powder|whole\s+food\s+powder|soy\s+milk\s+powder|flavored\s+milk\s+drink|milk\s+drink|snacks?|snackable|crackers?|crisps?|trail\s+mix|energy\s+chews?|protein\s+bites?|protein\s+snack\s+mix|protein\s+bars?|collagen\s+bars?|snack\s+bars?|choco\s+latte|milk\s+chocolate|dark\s+chocolate|chocolate\s+bars?|candy\s+bars?|chocolate\s+truffles?|sea\s+moss\s+gel|coconut\s+aminos|soy\s+sauce\s+replacement|liquid\s+aminos|soy\s+protein\s+seasoning|tamari|soy\s+sauce|curry\s+paste|sea\s+salt|himalayan\s+(?:crystal\s+)?salt|crystal\s+salt|go\s+gel|endurance\s+gel|energy\s+gel)\b/i;
 const FUNCTIONAL_FOOD_LIKE_INGREDIENT_PATTERN =
   /\b(?:xylitol|erythritol|fiber|dragon\s+fruit|fruit\s+powder|juice\s+powder|spirulina|chlorella|barley\s+grass|wheat\s+grass|digestive\s+enzyme|enzyme\s+assimilation|greens\b|green\s+superfood|superfood)\b/i;
-const FUNCTIONAL_FOOD_LIKE_FORM_PATTERN = /\b(?:gum|mint|lozenge|tea|powder|drink\s*mix|gel)\b/i;
+const FUNCTIONAL_FOOD_LIKE_FORM_PATTERN = /\b(?:gum|gumm(?:y|ies)|mint|lozenge|tea|powder|drink\s*mix|gel)\b/i;
 const PROBIOTIC_TITLE_PATTERN =
   /\b(?:probiotics?|pro-bio|probiology|oralbiotic|essential[\s-]*biotic|(?:gut|intestinal|digestive)[\s-]+flora|flora\s+support|live cultures?|cfu|protectis|floraphage|osfortis|cytoflora|acidophilus|bifidus?)\b/i;
 const PROBIOTIC_SPECIFIC_ROW_PATTERN =
@@ -208,7 +230,7 @@ const FOOD_LIKE_MACRO_ANCHOR_PATTERN =
   /\b(?:calories|total\s+carbs?|total\s+carbohydrates?|total\s+sugars?|added\s+sugars?|sugar\s+alcohols?|dietary\s+fiber|fiber|sodium|protein|potassium|potas)\b/i;
 const FOOD_LIKE_PRODUCT_TITLE_PATTERN =
   /\b(?:ag1|athletic\s+greens|greens?\b|supergreens?\b|green\s+superfood|superfood|juice\s+powder|fruit\s+powder|crispy\s+fruit|vegetable\s+powder|whole\s+food\s+powder|soy\s+milk\s+powder|flavored\s+milk\s+drink|milk\s+drink|drink\s+mix|smoothie|matcha\s+latte|tea\s+bags?|snacks?|snackable|crackers?|crisps?|trail\s+mix|energy\s+chews?|gumm(?:y|ies)|protein\s+bites?|protein\s+snack\s+mix|protein\s+bars?|collagen\s+bars?|snack\s+bars?|choco\s+latte|milk\s+chocolate|dark\s+chocolate|chocolate\s+bars?|candy\s+bars?|chocolate\s+truffles?|sea\s+moss\s+gel|coconut\s+aminos|soy\s+sauce\s+replacement|liquid\s+aminos|soy\s+protein\s+seasoning|tamari|soy\s+sauce|curry\s+paste|sea\s+salt|himalayan\s+(?:crystal\s+)?salt|crystal\s+salt|go\s+gel|endurance\s+gel|energy\s+gel)\b/i;
-const PROTEIN_PRODUCT_TITLE_PATTERN = /\bprotein\b|\bwhey\s+(?:isolate|protein)\b|\bpure\s+whey\b|\bclean\s+whey\b/i;
+const PROTEIN_PRODUCT_TITLE_PATTERN = /\bprotein\b|\b(?:advanced\s+)?whey(?:\s+(?:isolate|protein))?\b|\bpure\s+whey\b|\bclean\s+whey\b/i;
 const FIBER_PRODUCT_TITLE_PATTERN = /\b(?:apple|psyllium|acacia|inulin|prebiotic)?\s*fiber\b/i;
 const ALOE_VERA_TITLE_PATTERN = /\baloe\s+vera\b/i;
 const IMMUNE_BLEND_TITLE_PATTERN =
@@ -220,7 +242,7 @@ const MULTIVITAMIN_TITLE_PATTERN =
 const MINIMAL_ESSENTIAL_BROAD_NUTRIENT_TITLE_PATTERN = /\bminimal\s+and\s+essential\b/i;
 const BROAD_VITAMIN_MINERAL_ROW_PATTERN =
   /\b(?:vitamin\s*[a-z0-9]*|thiamin|riboflavin|niacin|folate|biotin|pantothenic|calcium|magnesium|zinc|selenium|copper|manganese|chromium|molybdenum|iodine|iron)\b/i;
-const JOINT_SUPPORT_TITLE_PATTERN = /\bjoint\s+support\b|\bno\.?\s*7\b|\bh\.?\s*a\.?\b.*\bjoint\b|\bjoint\b.*\bskin\b/i;
+const JOINT_SUPPORT_TITLE_PATTERN = /\bjoint\s+(?:support|care)\b|\bnem\b|\bno\.?\s*7\b|\bh\.?\s*a\.?\b.*\bjoint\b|\bjoint\b.*\bskin\b/i;
 const B_COMPLEX_FORMULA_ROW_PATTERN =
   /\bb[\s-]*complex\b|\bvitamin\s*b\s*complex\b/i;
 const MULTIVITAMIN_FORMULA_ROW_PATTERN =
@@ -313,6 +335,10 @@ const normalizeContextualIngredientRow = (
     name = `Green Tea ${name}`;
   }
 
+  if (/^affron\b/i.test(name) && /\bsaffron\b/i.test(name)) {
+    name = name.replace(/^affron\s*(?:®|\(r\))?\s*/i, "");
+  }
+
   if (
     /\bglutathione\b/i.test(productName) &&
     /\bglutathione\b/i.test(name) &&
@@ -353,6 +379,14 @@ const normalizeContextualIngredientRows = (
 const inferFamilyFromText = (combined: string): IngredientScienceIngredientFamily => {
   if (/astaxanthin|carotenoid/.test(combined)) return "astaxanthin_carotenoid";
   if (CURCUMIN_PATTERN.test(combined)) return "curcumin";
+  if (TURMERIC_PATTERN.test(combined)) return "turmeric";
+  if (COQ10_TITLE_PATTERN.test(combined)) return "coq10";
+  if (CREATINE_PATTERN.test(combined)) return "creatine";
+  if (BERBERINE_PATTERN.test(combined)) return "berberine";
+  if (NAC_PATTERN.test(combined)) return "nac";
+  if (COLLAGEN_PATTERN.test(combined)) return "collagen";
+  if (PROTEIN_PATTERN.test(combined)) return "protein";
+  if (FIBER_PATTERN.test(combined)) return "fiber";
   if (ASHWAGANDHA_PATTERN.test(combined)) return "ashwagandha";
   if (GINSENG_PATTERN.test(combined)) return "ginseng";
   if (GREEN_TEA_EXTRACT_PATTERN.test(combined)) return "green_tea_extract";
@@ -394,15 +428,19 @@ const inferRowIngredientFamily = (params: {
   const rowText = normalizeText(params.rowName).toLowerCase();
   if (!rowText) return "generic";
 
+  const productText = normalizeText(params.productName);
+  if (/^protein$/i.test(rowText) && PROTEIN_PRODUCT_TITLE_PATTERN.test(productText)) return "protein";
+  if (/^fiber$/i.test(rowText) && FIBER_PRODUCT_TITLE_PATTERN.test(productText)) return "fiber";
+
   const rowFamily = inferFamilyFromText(rowText);
   if (rowFamily !== "generic") return rowFamily;
 
-  const productText = normalizeText(params.productName).toLowerCase();
-  if (!productText) return "generic";
+  const normalizedProductText = productText.toLowerCase();
+  if (!normalizedProductText) return "generic";
 
   // Only use product-level hints when the selected row is too generic to classify on its own.
   if (HARD_BLEND_LIKE_PATTERN.test(rowText) || SOFT_BLEND_LIKE_PATTERN.test(rowText)) {
-    return inferFamilyFromText(`${rowText} ${productText}`);
+    return inferFamilyFromText(`${rowText} ${normalizedProductText}`);
   }
 
   return "generic";
@@ -429,6 +467,14 @@ const categoryHintForFamily = (
   if (rowName && isBlendLike(rowName, family)) return "blend";
   if (family === "astaxanthin_carotenoid") return "carotenoid";
   if (family === "curcumin") return "botanical extract";
+  if (family === "turmeric") return "botanical extract";
+  if (family === "coq10") return "coenzyme";
+  if (family === "creatine") return "performance compound";
+  if (family === "berberine") return "botanical alkaloid";
+  if (family === "nac") return "amino acid derivative";
+  if (family === "collagen") return "structural protein";
+  if (family === "protein") return "protein";
+  if (family === "fiber") return "fiber ingredient";
   if (family === "ashwagandha") return "botanical extract";
   if (family === "ginseng") return "botanical extract";
   if (family === "green_tea_extract") return "botanical extract";
@@ -457,6 +503,8 @@ const categoryHintForFamily = (
 
 const isBotanicalExtractFamily = (family: IngredientScienceIngredientFamily | null | undefined): boolean =>
   family === "curcumin" ||
+  family === "turmeric" ||
+  family === "berberine" ||
   family === "ashwagandha" ||
   family === "ginseng" ||
   family === "green_tea_extract";
@@ -489,9 +537,23 @@ const inferFormContext = (
   if (lineRole === "blend_line") return "blend-style line";
   if (/\bextract\b/i.test(normalized)) return "extract line";
   if (/\boil\b/i.test(normalized)) return "oil line";
+  if (family === "coq10" && /\bubiquinol\b|\bubiquinone\b/i.test(normalized)) return "coenzyme-form line";
+  if (family === "creatine" && /\bmonohydrate\b|\bhcl\b|\bhydrochloride\b|\bkre-?alkalyn\b/i.test(normalized)) {
+    return "named form line";
+  }
+  if (family === "collagen" && /\bmarine\b|\bbovine\b|\bpeptides?\b|\bhydroly[sz]ed\b|\btype\b/i.test(normalized)) {
+    return "source/type line";
+  }
+  if (family === "protein" && /\bwhey\b|\bpea\b|\bsoy\b|\brice\b|\bhemp\b|\bisolate\b|\bconcentrate\b/i.test(normalized)) {
+    return "protein-source line";
+  }
+  if (family === "fiber" && /\bpsyllium\b|\binulin\b|\bacacia\b|\bprebiotic\b|\bsoluble\b/i.test(normalized)) {
+    return "fiber-type line";
+  }
   if (/\bchelate\b|\bcitrate\b|\bglycinate\b|\bmalate\b|\boxide\b|\btaurate\b|\bthreonate\b/i.test(normalized)) {
     return "named form line";
   }
+  if (family === "nac") return "amino-acid derivative line";
   if (family === "5htp") return "amino-acid derivative line";
   if (family === "b3_niacinamide" || family === "b6" || family === "b12" || family === "folate") {
     return "vitamin-form line";
@@ -532,6 +594,14 @@ const MINERAL_STACK_FAMILIES = new Set<IngredientScienceIngredientFamily>([
 const STRONG_LEAD_ACTIVE_FAMILIES = new Set<IngredientScienceIngredientFamily>([
   "5htp",
   "curcumin",
+  "turmeric",
+  "coq10",
+  "creatine",
+  "berberine",
+  "nac",
+  "collagen",
+  "protein",
+  "fiber",
   "ashwagandha",
   "ginseng",
   "green_tea_extract",
@@ -548,6 +618,14 @@ const STRONG_LEAD_ACTIVE_FAMILIES = new Set<IngredientScienceIngredientFamily>([
 const PRIMARY_ACTIVE_FAMILIES = new Set<IngredientScienceIngredientFamily>([
   "5htp",
   "curcumin",
+  "turmeric",
+  "coq10",
+  "creatine",
+  "berberine",
+  "nac",
+  "collagen",
+  "protein",
+  "fiber",
   "ashwagandha",
   "ginseng",
   "green_tea_extract",
@@ -573,7 +651,15 @@ const FAMILY_TITLE_HINTS: Array<{ family: IngredientScienceIngredientFamily; pat
     pattern: /\bomega\s*-?\s*3\b|\bfish\s*oil\b|\bsalmon\s*oil\b|\bepa\b|\bdha\b|\bkrill\s*oil\b|\balgal\s+oil\b|\balgae\b|\bplant\s+based\s+omega\s*-?\s*3\b|\bschizochytrium\b/i,
   },
   { family: "7keto_dhea_metabolite", pattern: /\b7[\s-]*keto\b/i },
-  { family: "curcumin", pattern: /\bcurcumin\b|\bturmeric\b/i },
+  { family: "curcumin", pattern: /\bcurcumin\b|\bcurcuminoids?\b/i },
+  { family: "turmeric", pattern: /\bturmeric\b|\bcurcuma\s+longa\b/i },
+  { family: "coq10", pattern: COQ10_TITLE_PATTERN },
+  { family: "creatine", pattern: CREATINE_TITLE_PATTERN },
+  { family: "berberine", pattern: BERBERINE_TITLE_PATTERN },
+  { family: "nac", pattern: NAC_TITLE_PATTERN },
+  { family: "collagen", pattern: COLLAGEN_SUPPLEMENT_TITLE_PATTERN },
+  { family: "protein", pattern: PROTEIN_PRODUCT_TITLE_PATTERN },
+  { family: "fiber", pattern: FIBER_PRODUCT_TITLE_PATTERN },
   { family: "ashwagandha", pattern: /\bashwagandha\b/i },
   { family: "ginseng", pattern: /\bginseng\b/i },
   { family: "melatonin", pattern: /\bmelatonin\b/i },
@@ -676,6 +762,14 @@ const isLiquidAminosProteinAmountRow = (
 
 const hasTitleRescueContext = (productName: string): boolean =>
   isLeadAloeVeraTitle(productName) ||
+  BCAA_TITLE_PATTERN.test(productName) ||
+  RESVERATROL_TITLE_PATTERN.test(productName) ||
+  CREATINE_TITLE_PATTERN.test(productName) ||
+  NAC_TITLE_PATTERN.test(productName) ||
+  COQ10_TITLE_PATTERN.test(productName) ||
+  BERBERINE_TITLE_PATTERN.test(productName) ||
+  hasTitleFamily("turmeric", productName) ||
+  COLLAGEN_SUPPLEMENT_TITLE_PATTERN.test(productName) ||
   FIBER_PRODUCT_TITLE_PATTERN.test(productName) ||
   PROTEIN_PRODUCT_TITLE_PATTERN.test(productName) ||
   SOURCE_PROTEIN_TITLE_PATTERN.test(productName) ||
@@ -723,6 +817,11 @@ const getTitleLedBotanicalPattern = (productName: string): RegExp | null => {
   if (/\blemon balm\b|\bmelissa\b/i.test(titleWithoutBrand)) {
     return /\blemon balm\b|\bmelissa\b/i;
   }
+  const saffronIndex = titleWithoutBrand.search(/\bsaffron\b/i);
+  const ashwagandhaIndex = titleWithoutBrand.search(/\bashwagandha\b/i);
+  if (saffronIndex >= 0 && (ashwagandhaIndex < 0 || saffronIndex < ashwagandhaIndex)) {
+    return /\bsaffron\b|\bcrocus\s+sativus\b/i;
+  }
   if (EYE_HEALTH_TITLE_LED_ACTIVE_PATTERN.test(titleWithoutBrand)) {
     return EYE_HEALTH_TITLE_LED_ACTIVE_PATTERN;
   }
@@ -752,6 +851,8 @@ const isTitleRescueAnchorRow = (
   const normalizedRow = normalizeText(rowName);
   return (
     (isLeadAloeVeraTitle(productName) && ALOE_VERA_TITLE_PATTERN.test(normalizedRow)) ||
+    (BCAA_TITLE_PATTERN.test(productName) && BCAA_TITLE_PATTERN.test(normalizedRow)) ||
+    (RESVERATROL_TITLE_PATTERN.test(productName) && RESVERATROL_TITLE_PATTERN.test(normalizedRow)) ||
     (TART_CHERRY_TITLE_PATTERN.test(productName) && TART_CHERRY_TITLE_PATTERN.test(normalizedRow)) ||
     (QUERCETIN_TITLE_PATTERN.test(productName) && QUERCETIN_TITLE_PATTERN.test(normalizedRow)) ||
     (FIBER_PRODUCT_TITLE_PATTERN.test(productName) && /\bfiber\b/i.test(normalizedRow)) ||
@@ -787,7 +888,7 @@ const isTitleRescueAnchorRow = (
     ) ||
     (
       GUMMY_CANDY_TITLE_PATTERN.test(productName) &&
-      /\bgummy\s+squares\b|\bgumm(?:y|ies)\b|\bhealthy\s+sweets\b/i.test(normalizedRow)
+      /\bgummy\s+squares\b|\bgummy\s+bears?\b|\b(?:organic\s+)?jelly\s+beans?\b|\bhealthy\s+sweets\b/i.test(normalizedRow)
     ) ||
     (
       CHOCOLATE_TRUFFLE_TITLE_PATTERN.test(productName) &&
@@ -866,7 +967,7 @@ const isTitleRescueAnchorRow = (
     ) ||
     (
       JOINT_SUPPORT_TITLE_PATTERN.test(productName) &&
-      /\bjoint\s+support\b|\bcollagen\b|\bcartilage\b|\bno\.?\s*7\b/i.test(normalizedRow)
+      /\bjoint\s+(?:support|care)\b|\bnem\b|\beggshell\s+membrane\b|\bcollagen\b|\bcartilage\b|\bno\.?\s*7\b/i.test(normalizedRow)
     )
   );
 };
@@ -886,6 +987,7 @@ const isNonZincCompanionInZincTitle = (
 ): boolean =>
   hasTitleFamily("zinc", productName) &&
   family !== "zinc" &&
+  !(family === "probiotic_or_blend" && isProbioticLedZincCompanionTitle(productName)) &&
   (
     family === "vitamin_c" ||
     family === "vitamin_d" ||
@@ -988,6 +1090,26 @@ const deriveScienceTitleRescueRows = (params: {
     pushRow(extractTitleMatch(titleWithoutBrand, /\b5[\s-]*htp\b|\b5[\s-]*hydroxytryptophan\b/i) ?? "5-HTP");
   }
 
+  if (BCAA_TITLE_PATTERN.test(titleWithoutBrand)) {
+    pushRow(extractTitleMatch(titleWithoutBrand, BCAA_TITLE_PATTERN) ?? "BCAA");
+  }
+
+  if (RESVERATROL_TITLE_PATTERN.test(titleWithoutBrand)) {
+    pushRow(extractTitleMatch(titleWithoutBrand, RESVERATROL_TITLE_PATTERN) ?? "Resveratrol");
+  }
+
+  if (hasTitleFamily("turmeric", titleWithoutBrand) && !hasDedicatedFamilyRow("turmeric")) {
+    pushRow(extractTitleMatch(titleWithoutBrand, /\bturmeric\b|\bcurcuma\s+longa\b/i) ?? "Turmeric");
+  }
+
+  if (CREATINE_TITLE_PATTERN.test(titleWithoutBrand) && !hasDedicatedFamilyRow("creatine")) {
+    pushRow(extractTitleMatch(titleWithoutBrand, CREATINE_TITLE_PATTERN) ?? "Creatine");
+  }
+
+  if (NAC_TITLE_PATTERN.test(titleWithoutBrand) && !hasDedicatedFamilyRow("nac")) {
+    pushRow(extractTitleMatch(titleWithoutBrand, /\bn[\s-]*acetyl[\s-]*cysteine\b|\bnac\b/i) ?? "N-Acetyl-Cysteine");
+  }
+
   if (hasTitleFamily("carnitine", titleWithoutBrand) && !hasDedicatedFamilyRow("carnitine")) {
     pushRow(
       extractTitleMatch(
@@ -1050,7 +1172,7 @@ const deriveScienceTitleRescueRows = (params: {
 
   if (
     JOINT_SUPPORT_TITLE_PATTERN.test(titleWithoutBrand) &&
-    !hasNamedTitleAlignedRow(params.existingRows, /\bjoint\s+support\b|\bcollagen\b|\bcartilage\b/i)
+    !hasNamedTitleAlignedRow(params.existingRows, /\bjoint\s+(?:support|care)\b|\bnem\b|\beggshell\s+membrane\b|\bcollagen\b|\bcartilage\b/i)
   ) {
     pushRow("Joint Support Complex");
   }
@@ -1271,7 +1393,12 @@ const deriveScienceTitleRescueRows = (params: {
   } else if (CRANBERRY_TITLE_PATTERN.test(titleWithoutBrand)) {
     pushRow(extractTitleMatch(titleWithoutBrand, /\bcranberry\b|\bultracran\b/i) ?? "Cranberry");
   } else if (GUMMY_CANDY_TITLE_PATTERN.test(titleWithoutBrand)) {
-    pushRow(extractTitleMatch(titleWithoutBrand, /\bgummy\s+squares\b|\bgumm(?:y|ies)\b/i) ?? "Gummy Squares");
+    pushRow(
+      extractTitleMatch(
+        titleWithoutBrand,
+        /\bgummy\s+squares\b|\bgummy\s+bears?\b|\b(?:organic\s+)?jelly\s+beans?\b/i,
+      ) ?? "Gummy Squares",
+    );
   } else if (CHOCOLATE_TRUFFLE_TITLE_PATTERN.test(titleWithoutBrand)) {
     pushRow(extractTitleMatch(titleWithoutBrand, /\bchocolate\s+truffles?\b|\btruffles?\b/i) ?? "Chocolate Truffles");
   } else if (GREEN_CURRY_PASTE_TITLE_PATTERN.test(titleWithoutBrand)) {
@@ -1295,7 +1422,7 @@ const deriveScienceTitleRescueRows = (params: {
     pushRow(extractTitleMatch(titleWithoutBrand, /\b(?:sea|himalayan|crystal)\s+salt\b/i) ?? "Salt");
   } else if (SOURCE_PROTEIN_TITLE_PATTERN.test(titleWithoutBrand)) {
     pushRow(
-      extractTitleMatch(titleWithoutBrand, /\b(?:pure\s+)?whey\s+isolate\b|\bclean\s+whey\s+protein\b|\bwhey\s+protein\b|\bsoy\s+protein\b|\bpea\s+protein\b|\bcollagen\s+protein\b/i) ??
+      extractTitleMatch(titleWithoutBrand, /\b(?:pure\s+)?whey\s+isolate\b|\bclean\s+whey\s+protein\b|\badvanced\s+whey\b|\bwhey\s+protein\b|\bwhey\b|\bsoy\s+protein\b|\bpea\s+protein\b|\bcollagen\s+protein\b/i) ??
         "Whey Protein",
     );
   } else if (TRAIL_MIX_TITLE_PATTERN.test(titleWithoutBrand)) {
@@ -1319,7 +1446,7 @@ const deriveScienceTitleRescueRows = (params: {
     );
   } else if (ELECTROLYTE_DRINK_MIX_TITLE_PATTERN.test(titleWithoutBrand)) {
     pushRow(
-      extractTitleMatch(titleWithoutBrand, /\belectrolyte\s+drink\s+mix\b|\bhydrationup\b|\belectrolyte\b/i) ??
+      extractTitleMatch(titleWithoutBrand, /\belectrolyte\s+drink\s+mix\b|\bhydrationup\b|\belectrolytes?\+?\b/i) ??
         "Electrolyte Drink Mix",
     );
   } else if (isLeadAloeVeraTitle(titleWithoutBrand)) {
@@ -1388,6 +1515,13 @@ const titleStartsWithFamily = (
   const titleWithoutBrand = normalizeText(productName.replace(/^[^,]{1,40},\s*/, ""));
   return familyPattern.test(titleWithoutBrand.slice(0, 48));
 };
+
+function isProbioticLedZincCompanionTitle(productName: string): boolean {
+  const titleWithoutBrand = normalizeText(productName.replace(/^[^,]{1,40},\s*/, ""));
+  const probioticIndex = titleWithoutBrand.search(PROBIOTIC_TITLE_PATTERN);
+  const zincIndex = titleWithoutBrand.search(/\bzinc\b/i);
+  return probioticIndex >= 0 && zincIndex >= 0 && probioticIndex < zincIndex && !titleStartsWithFamily("zinc", productName);
+}
 
 const hasMineralStackLeadSignal = (
   rows: ScienceIngredientRow[],
@@ -1519,6 +1653,10 @@ const pickPrimaryActiveRowIndex = (
           ? 720
           : 620
         : 0;
+    const zincInProbioticTitlePenalty =
+      family === "zinc" && isProbioticLedZincCompanionTitle(productName)
+        ? 1120
+        : 0;
     const nonZincInZincTitlePenalty = isNonZincCompanionInZincTitle(family, row.name, productName) ? 360 : 0;
     const vitaminCImmuneCompanionPenalty =
       family === "vitamin_c"
@@ -1601,6 +1739,7 @@ const pickPrimaryActiveRowIndex = (
       (COMPANION_FAMILIES.has(family) ? 48 : 0) -
       supportingPenalty -
       vitaminDInProbioticTitlePenalty -
+      zincInProbioticTitlePenalty -
       probioticFormulaCompanionPenalty -
       nonZincInZincTitlePenalty -
       carnitineInClaCombinationPenalty -
@@ -1742,6 +1881,10 @@ const scoreIngredientDescriptorForDisplay = (params: {
         ? 740
         : 630
       : 0;
+  const zincInProbioticTitlePenalty =
+    descriptor.ingredientFamily === "zinc" && isProbioticLedZincCompanionTitle(productName)
+      ? 1120
+      : 0;
   const nonZincInZincTitlePenalty =
     isNonZincCompanionInZincTitle(descriptor.ingredientFamily, row.name, productName) ? 360 : 0;
   const vitaminCImmuneCompanionPenalty =
@@ -1828,6 +1971,7 @@ const scoreIngredientDescriptorForDisplay = (params: {
     (descriptor.lineRole === "companion_nutrient" ? 62 : 0) -
     supportingPenalty -
     vitaminDInProbioticTitlePenalty -
+    zincInProbioticTitlePenalty -
     probioticFormulaCompanionPenalty -
     nonZincInZincTitlePenalty -
     carnitineInClaCombinationPenalty -
@@ -1962,6 +2106,11 @@ const classifyProductArchetype = (params: {
     family === "5htp" ||
     family === "omega_3" ||
     family === "curcumin" ||
+    family === "turmeric" ||
+    family === "creatine" ||
+    family === "berberine" ||
+    family === "nac" ||
+    family === "collagen" ||
     family === "ashwagandha" ||
     family === "ginseng" ||
     family === "7keto_dhea_metabolite" ||

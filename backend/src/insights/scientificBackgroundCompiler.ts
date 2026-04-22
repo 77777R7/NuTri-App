@@ -420,6 +420,180 @@ const buildResearchPlan = (
     ];
   }
 
+  if (descriptor.ingredientFamily === "turmeric") {
+    return [
+      buildSectionPlan(
+        "turmeric_traditional_and_modern_context",
+        "Turmeric traditional and modern context",
+        "Explain the broader traditional and modern supplement context for turmeric without treating every turmeric label like a concentrated curcumin product.",
+        ["Turmeric can appear as whole-root powder, extract, or curcuminoid-adjacent ingredient", "This lane is broader than tightly standardized curcumin positioning", "Keep the interpretation supplement-specific rather than generic anti-inflammatory folklore"],
+        "Show that turmeric has a recognizable context, but not every turmeric label carries the same comparison value as a concentrated curcuminoid product.",
+        "Help the shopper read a plain turmeric row differently from a tightly specified curcumin extract.",
+      ),
+      buildSectionPlan(
+        "extract_and_curcuminoid_detail",
+        "Extract and curcuminoid detail",
+        "Explain why extract identity, curcuminoid standardization, and bioavailability phrasing can materially change how turmeric products are compared.",
+        ["Whole-root and extract products are not automatically the same comparison set", "Curcuminoid detail improves comparison much more than broad turmeric headlines", "Do not turn enhanced-absorption language into a universal best-product claim"],
+        "Make clear that exact extract disclosure carries more interpretive weight than generic turmeric branding.",
+        "Tell the shopper to check extract detail and standardization before assuming two turmeric products are similar.",
+      ),
+      buildSectionPlan(
+        "where_turmeric_and_curcumin_diverge",
+        "Where turmeric and curcumin diverge",
+        "Explain that turmeric should not automatically be read as a curcumin-equivalent label or as proof of high active delivery.",
+        ["Turmeric labels are not always curcumin-dense", "Some formulas lean on a whole-root story rather than a concentrated active story", "Do not infer concentrated actives when the line stays broad"],
+        "Set a clear boundary between broad turmeric positioning and more specific curcuminoid comparison.",
+        "Help the shopper avoid treating turmeric products as interchangeable with concentrated curcumin extracts.",
+      ),
+    ];
+  }
+
+  if (descriptor.ingredientFamily === "coq10") {
+    return [
+      buildSectionPlan(
+        "energy_metabolism_context",
+        "Energy metabolism context",
+        "Explain the main mitochondrial and cellular-energy lane that usually anchors CoQ10 interpretation on supplement labels.",
+        ["Energy-metabolism context is the clearest lane", "This is more specific than generic vitality marketing", "Keep the interpretation product-aware rather than mechanistic for its own sake"],
+        "Show that energy-related positioning is the most recognizable CoQ10 lane without making it infinitely broad.",
+        "Help the shopper understand why CoQ10 is easier to compare through its energy-metabolism role than through vague wellness copy.",
+      ),
+      buildSectionPlan(
+        "heart_related_context",
+        "Heart-related context",
+        "Explain the narrower heart-related and statin-adjacent discussion around CoQ10 without turning it into a broad heart-health promise.",
+        ["Heart-related context appears often", "Statin-adjacent positioning is common on some labels", "Not every broad heart claim is equally specific"],
+        "Keep this as a supportive but narrower lane than generic cardiovascular marketing.",
+        "Help the shopper keep broad heart language in proportion when comparing CoQ10 products.",
+      ),
+      buildSectionPlan(
+        "what_form_disclosure_changes",
+        "What form disclosure changes",
+        "Explain why ubiquinone versus ubiquinol disclosure can change label interpretation and comparison value without turning the card into a best-form ranking.",
+        ["Ubiquinone and ubiquinol lines can change comparison value", "Form detail often matters more than a generic CoQ10 headline", "Do not turn form differences into a universal superiority claim"],
+        "Keep this section comparison-oriented and careful.",
+        "Tell the shopper why disclosed CoQ10 form is often one of the first things worth checking.",
+      ),
+    ];
+  }
+
+  if (descriptor.ingredientFamily === "creatine") {
+    return [
+      buildSectionPlan(
+        "strength_and_power_context",
+        "Strength and power context",
+        "Explain the main strength, power, and repeated high-intensity performance lane for creatine without flattening it into generic sports hype.",
+        ["Strength and high-intensity performance are the clearest creatine lane", "This is more specific than broad performance marketing", "Keep the interpretation anchored to supplementation context"],
+        "Show that creatine has a strong core lane, but not every athletic promise is equally specific.",
+        "Help the shopper compare creatine products through the clearest performance-relevant context rather than generic gym copy.",
+      ),
+      buildSectionPlan(
+        "exercise_recovery_context",
+        "Exercise recovery context",
+        "Explain the secondary recovery and training-volume context for creatine without making it sound identical to protein or general recovery ingredients.",
+        ["Recovery-related interpretation appears often", "Training-volume or repeated-effort context can matter", "This is secondary to the core strength-and-power lane"],
+        "Make clear that recovery language is real but should not outrank the primary lane.",
+        "Help the shopper understand why creatine can appear in recovery positioning without meaning every creatine product serves the same job.",
+      ),
+      buildSectionPlan(
+        "what_product_comparison_depends_on",
+        "What product comparison depends on",
+        "Explain which label details matter most when comparing creatine products.",
+        ["Monohydrate disclosure often matters most", "Disclosed grams matter more than broad athlete language", "Simple formulas and loaded blends should not be read the same way"],
+        "Keep this practical and comparison-focused.",
+        "Tell the shopper what to check before assuming two creatine labels are interchangeable.",
+      ),
+    ];
+  }
+
+  if (descriptor.ingredientFamily === "berberine") {
+    return [
+      buildSectionPlan(
+        "glucose_metabolic_context",
+        "Glucose-metabolic context",
+        "Explain the main glucose-metabolic lane that usually anchors berberine interpretation without turning it into a universal metabolic cure story.",
+        ["Glucose-metabolic context is the clearest lane", "This is more specific than generic metabolism marketing", "Keep the wording evidence-aware and bounded"],
+        "Show that berberine has a recognizable metabolic lane, but not an infinitely broad one.",
+        "Help the shopper understand why glucose-oriented positioning is easier to justify than broad all-purpose metabolic language.",
+      ),
+      buildSectionPlan(
+        "lipid_related_context",
+        "Lipid-related context",
+        "Explain the secondary lipid-related lane for berberine without making it sound equally strong across every endpoint.",
+        ["Lipid-related discussion appears often", "This lane is supportive but broader than the clearest glucose lane", "Outcome specificity still matters"],
+        "Keep this section secondary and more interpretive than the primary lane.",
+        "Help the shopper keep broad lipid-support copy in proportion when comparing berberine products.",
+      ),
+      buildSectionPlan(
+        "dose_and_extract_context",
+        "Dose and extract context",
+        "Explain why exact berberine form, dose, and formula setting change product comparison.",
+        ["Berberine HCl disclosure improves comparison", "Dose matters more than broad botanical storytelling", "Combo formulas can change how central berberine really is"],
+        "Make this a practical interpretation section rather than a generic caveat section.",
+        "Tell the shopper what to compare on the label before assuming two berberine products do the same thing.",
+      ),
+    ];
+  }
+
+  if (descriptor.ingredientFamily === "nac") {
+    return [
+      buildSectionPlan(
+        "glutathione_precursor_context",
+        "Glutathione precursor context",
+        "Explain the main glutathione-precursor lane for NAC without turning it into generic antioxidant filler.",
+        ["Precursor framing is the clearest NAC lane", "This is more useful than broad detox-style marketing", "Keep the interpretation ingredient-specific and shopper-safe"],
+        "Show that NAC is easiest to interpret through a narrower precursor lens rather than vague wellness language.",
+        "Help the shopper understand why NAC comparison should start with the exact ingredient line and amount.",
+      ),
+      buildSectionPlan(
+        "respiratory_and_mucus_context",
+        "Respiratory and mucus context",
+        "Explain the respiratory and mucus-related lane that can appear around NAC without drifting into treatment language.",
+        ["Respiratory-adjacent interpretation appears often", "This lane is narrower than broad immune marketing", "Keep the section bounded and non-medical"],
+        "Make clear that this is a recognizable but more context-sensitive lane.",
+        "Help the shopper understand why NAC can appear in some respiratory-support formulas without meaning every NAC product is positioned the same way.",
+      ),
+      buildSectionPlan(
+        "what_dose_and_use_context_can_change",
+        "What dose and use-context can change",
+        "Explain why dose, intended use context, and surrounding formula design meaningfully change how NAC labels should be read.",
+        ["Dose changes interpretation", "Use context changes label meaning", "Blend formulas and single-ingredient formulas should not be read the same way"],
+        "Keep this section practical and label-aware.",
+        "Tell the shopper what to compare before assuming two NAC products belong in the same comparison set.",
+      ),
+    ];
+  }
+
+  if (descriptor.ingredientFamily === "collagen") {
+    return [
+      buildSectionPlan(
+        "skin_and_connective_tissue_context",
+        "Skin and connective-tissue context",
+        "Explain the main skin and connective-tissue lane that usually anchors collagen interpretation on supplement labels.",
+        ["Skin and connective-tissue context is the clearest lane", "This is more specific than generic beauty marketing", "Keep the section grounded in supplement comparison rather than aspirational copy"],
+        "Show that collagen has a strong recognizable lane without turning every claim into the same promise.",
+        "Help the shopper understand why collagen products are often easiest to compare through their skin or connective-tissue framing.",
+      ),
+      buildSectionPlan(
+        "joint_and_structure_context",
+        "Joint and structure context",
+        "Explain the secondary joint and structural-support lane for collagen without making it sound identical to glucosamine-style products.",
+        ["Joint-related interpretation appears often", "Structural-support wording is broader than the clearest beauty lane", "Formula setting still changes what collagen is doing in the product"],
+        "Keep this section secondary and context-aware.",
+        "Help the shopper understand why some collagen products lean more structural than cosmetic without meaning all collagen labels tell the same story.",
+      ),
+      buildSectionPlan(
+        "source_and_type_context",
+        "Source and type context",
+        "Explain why source, peptide type, and hydrolyzed-collagen disclosure can change product comparison.",
+        ["Marine and bovine collagen should not be treated as identical shorthand", "Type or peptide detail improves comparison", "Do not turn source differences into a universal superiority claim"],
+        "Make this a comparison lane, not a best-source ranking.",
+        "Tell the shopper why source and type disclosure often matter more than a generic collagen headline.",
+      ),
+    ];
+  }
+
   if (descriptor.ingredientFamily === "ashwagandha") {
     return [
       buildSectionPlan(
@@ -1164,6 +1338,33 @@ const buildLabelContextPlan = (
   ];
 };
 
+const buildMissingDescriptorLabelContextPlan = (): ScientificBackgroundSectionPlan[] => [
+  buildSectionPlan(
+    "what_this_line_means",
+    "What this line means on the label",
+    "Explain this product line as a label-context interpretation, not as a stand-alone research claim.",
+    [
+      "This line helps decode label structure",
+      "It should be read with nearby ingredient rows",
+      "Comparability depends on surrounding disclosure detail",
+    ],
+    "Keep this grounded in label interpretation and comparison value.",
+    "Help the shopper decide how much weight this line should carry before comparing products.",
+  ),
+  buildSectionPlan(
+    "why_it_matters_for_comparison",
+    "Why it matters for comparison",
+    "Explain how this line changes confidence and comparability when products are compared side by side.",
+    [
+      "This line provides context, not the full answer",
+      "Other rows may carry stronger decision weight",
+      "Cleaner disclosure improves comparison confidence",
+    ],
+    "Keep this practical and shopper-facing.",
+    "Help the shopper avoid overweighting one vague line when the rest of the label is thin.",
+  ),
+];
+
 export const planScientificBackgroundSections = (params: {
   context: IngredientScienceContext;
   selectedIngredientName: string;
@@ -1172,16 +1373,23 @@ export const planScientificBackgroundSections = (params: {
     getSelectedDescriptor(params.context, params.selectedIngredientName) ??
     params.context.ingredientDescriptors[0] ??
     null;
-  const selectedLabel = descriptor?.name ?? (normalizeText(params.selectedIngredientName) || "Ingredient");
+  const selectedLabel =
+    (
+      descriptor?.name
+      ?? normalizeText(params.selectedIngredientName)
+      ?? normalizeText(params.context.anchorIngredient?.name)
+      ?? normalizeText(params.context.productName)
+    )
+    || "Supplement label context";
   const selectedDose = descriptor?.dose ?? null;
   const family = descriptor?.ingredientFamily ?? params.context.ingredientFamily;
-  const mode = resolveScientificBackgroundMode(params.context, descriptor);
+  const mode = descriptor ? resolveScientificBackgroundMode(params.context, descriptor) : "label_context_mode";
   const sections =
-    descriptor && mode === "label_context_mode"
-      ? buildLabelContextPlan(descriptor)
-      : descriptor
-        ? buildResearchPlan(params.context, descriptor)
-        : buildResearchPlan(params.context, params.context.ingredientDescriptors[0]!);
+    !descriptor
+      ? buildMissingDescriptorLabelContextPlan()
+      : mode === "label_context_mode"
+        ? buildLabelContextPlan(descriptor)
+        : buildResearchPlan(params.context, descriptor);
 
   return {
     mode,
@@ -1533,6 +1741,48 @@ const buildPrompt = (params: {
         "Keep curcumin grounded in outcome-specific and extract-aware interpretation rather than generic anti-inflammatory hype.",
         "Do not turn standardized extracts or curcuminoid wording into a universal best-extract claim.",
         "Make shopper meaning practical by tying comparison to extract detail, standardization, and what the label actually discloses.",
+      ];
+    }
+    if (params.plan.family === "turmeric") {
+      return [
+        "Keep turmeric distinct from concentrated curcumin products and explain when it is being used as a broader root or extract story.",
+        "Do not turn extract, curcuminoid, or enhanced-absorption wording into a universal superiority claim.",
+        "Make shopper meaning practical by tying comparison to extract detail, standardization, and whether the label stays broad or gets specific.",
+      ];
+    }
+    if (params.plan.family === "coq10") {
+      return [
+        "Keep CoQ10 grounded in energy-metabolism context first, with heart-related discussion as a narrower secondary lane.",
+        "Do not turn ubiquinone or ubiquinol wording into a universal best-form claim.",
+        "Make shopper meaning practical by tying comparison to exact form disclosure, amount, and how broad heart language is being used on the label.",
+      ];
+    }
+    if (params.plan.family === "creatine") {
+      return [
+        "Keep creatine anchored to strength and high-intensity performance first, with recovery as a secondary lane.",
+        "Do not flatten every creatine label into generic gym-performance hype or treat every form as a universal upgrade over monohydrate.",
+        "Make comparison meaning practical by tying it to disclosed grams, exact form, and whether the formula stays simple or gets heavily blended.",
+      ];
+    }
+    if (params.plan.family === "berberine") {
+      return [
+        "Keep berberine grounded in glucose-metabolic context first, with lipid-related discussion as a secondary lane.",
+        "Do not turn broad metabolic storytelling into a universal cure-style summary.",
+        "Make shopper meaning practical by tying comparison to exact berberine disclosure, dose, and whether combo formulas change how central berberine really is.",
+      ];
+    }
+    if (params.plan.family === "nac") {
+      return [
+        "Keep NAC anchored to glutathione-precursor context first, with respiratory and mucus-related discussion as a narrower secondary lane.",
+        "Do not drift into treatment language or generic detox marketing.",
+        "Make shopper meaning practical by tying comparison to exact ingredient disclosure, dose, and how the intended use context changes label interpretation.",
+      ];
+    }
+    if (params.plan.family === "collagen") {
+      return [
+        "Keep collagen grounded in skin and connective-tissue context first, with joint or structural context as a secondary lane.",
+        "Do not flatten every collagen label into the same beauty or mobility promise.",
+        "Make shopper meaning practical by tying comparison to source, peptide or type disclosure, and whether the formula is beauty-led, joint-led, or more general.",
       ];
     }
     if (params.plan.family === "ashwagandha") {
@@ -2318,6 +2568,198 @@ const buildSectionFallback = (
         evidenceRead: "This is a supporting lane rather than a broad umbrella claim.",
         shopperMeaning: "It adds useful product context, but it usually should not outweigh the main ingredient and dose comparison.",
       };
+    case "turmeric_traditional_and_modern_context":
+      return {
+        heading: section.heading,
+        summary: `${label} is often easier to read through a broader turmeric lane that includes whole-root and extract products, instead of assuming every turmeric label works like a tightly standardized curcuminoid product.`,
+        bullets: [
+          "Turmeric can appear as whole-root powder, extract, or a curcuminoid-adjacent ingredient line.",
+          "That makes the turmeric lane broader than a more tightly standardized curcumin lane.",
+          "It is more useful to read the exact ingredient line first than to rely on broad anti-inflammatory folklore.",
+        ],
+        evidenceRead: "This is the clearest shopper-facing turmeric orientation section, but it is broader than a tightly standardized curcumin claim.",
+        shopperMeaning: "Use it to separate plain turmeric products from more concentrated extract-style products before comparing labels.",
+      };
+    case "extract_and_curcuminoid_detail":
+      return {
+        heading: section.heading,
+        summary: `Extract detail changes the comparison value of ${label} because whole-root products, standardized extracts, and curcuminoid-heavy formulas are not all saying the same thing on the label.`,
+        bullets: [
+          "Curcuminoid or standardization detail usually makes a turmeric label much easier to compare.",
+          "Whole-root and extract products should not be treated as the same comparison bucket by default.",
+          "Bioavailability wording can matter, but it should not be turned into a universal best-product claim.",
+        ],
+        evidenceRead: "This is mainly a comparison and label-interpretation section, not a blanket endorsement of every enhanced-absorption claim.",
+        shopperMeaning: "Check extract identity, curcuminoid detail, and standardization before assuming two turmeric products are close substitutes.",
+      };
+    case "where_turmeric_and_curcumin_diverge":
+      return {
+        heading: section.heading,
+        summary: `${label} should not automatically be read as a curcumin-equivalent line, because some turmeric products lean on a broader whole-root story while others are clearly built around concentrated curcuminoid disclosure.`,
+        bullets: [
+          "A turmeric label is not automatically a curcumin-dense label.",
+          "Some products are built around broad turmeric positioning, while others emphasize concentrated actives.",
+          "That distinction changes how interchangeable two turmeric or curcumin products really are.",
+        ],
+        evidenceRead: "This section sets a boundary between broad turmeric positioning and concentrated curcuminoid comparison.",
+        shopperMeaning: "Use it to avoid treating turmeric products as interchangeable with more extract-specific curcumin formulas.",
+      };
+    case "energy_metabolism_context":
+      return {
+        heading: section.heading,
+        summary: `${label} is easiest to interpret through energy-metabolism context, which is a cleaner and more specific lane than vague vitality language when shoppers compare CoQ10 products.`,
+        bullets: [
+          "Energy-metabolism context is the clearest lane for reading a CoQ10 line.",
+          "This is more specific than generic vitality or daily-wellness marketing.",
+          "Exact form and amount still matter when two CoQ10 products are compared.",
+        ],
+        evidenceRead: "This is the clearest CoQ10 lane, but it should stay narrower than generic energy-marketing language.",
+        shopperMeaning: "Compare CoQ10 products through the exact ingredient line, form, and amount before leaning on broader packaging language.",
+      };
+    case "heart_related_context":
+      return {
+        heading: section.heading,
+        summary: `${label} also appears in narrower heart-related and statin-adjacent discussion, but that lane is less precise than the core energy-metabolism reading and should not be stretched into a universal heart-health promise.`,
+        bullets: [
+          "Heart-related positioning appears often, but it is broader than the clearest CoQ10 lane.",
+          "Statin-adjacent framing can matter, yet not every broad heart claim is equally specific.",
+          "This lane is most useful as supporting context rather than the whole comparison story.",
+        ],
+        evidenceRead: "This is a real but narrower CoQ10 lane and should stay secondary to the core energy-metabolism context.",
+        shopperMeaning: "Use it as supporting context, then compare products through exact CoQ10 disclosure instead of broad heart wording alone.",
+      };
+    case "strength_and_power_context":
+      return {
+        heading: section.heading,
+        summary: `${label} is easiest to read through strength and repeated high-intensity performance context, which is a cleaner lane than broad sports-marketing language when creatine products are compared.`,
+        bullets: [
+          "Strength and high-intensity performance are the clearest creatine lanes.",
+          "This is more specific than generic gym or athlete-marketing copy.",
+          "Exact disclosed grams still matter before two creatine labels can be treated as close substitutes.",
+        ],
+        evidenceRead: "This is the clearest creatine lane, but it should stay anchored to the label rather than broad performance hype.",
+        shopperMeaning: "Compare creatine products through the exact creatine line and disclosed grams before giving extra weight to broad performance language.",
+      };
+    case "exercise_recovery_context":
+      return {
+        heading: section.heading,
+        summary: `${label} also appears in exercise-recovery and training-volume language, but that lane is secondary to the main strength-and-power reading and should not be confused with generic recovery ingredients.`,
+        bullets: [
+          "Recovery-related interpretation appears often, especially in training-focused formulas.",
+          "This lane is narrower and more secondary than the main strength-and-power context.",
+          "Formula setting still changes whether creatine is the clear lead active or one part of a broader sports stack.",
+        ],
+        evidenceRead: "This is a useful secondary lane, but it should not replace the clearest creatine comparison anchor.",
+        shopperMeaning: "Use it to understand product positioning, then compare labels through the main creatine line and amount.",
+      };
+    case "glucose_metabolic_context":
+      return {
+        heading: section.heading,
+        summary: `${label} is easiest to interpret through glucose-metabolic context, which is a cleaner and more specific lane than broad metabolism marketing when berberine products are compared.`,
+        bullets: [
+          "Glucose-metabolic context is the clearest berberine lane.",
+          "This is more specific than generic metabolism or blood-sugar-support headlines by themselves.",
+          "Exact berberine disclosure and dose still matter before products can be treated as direct substitutes.",
+        ],
+        evidenceRead: "This is the clearest berberine lane, but it should stay bounded and outcome-aware rather than turning into a universal metabolic story.",
+        shopperMeaning: "Compare berberine products through the exact berberine line and dose before leaning on broad metabolic packaging claims.",
+      };
+    case "lipid_related_context":
+      return {
+        heading: section.heading,
+        summary: `${label} also appears in lipid-related discussion, but that lane is broader and less clean than the main glucose-metabolic reading, so it should stay secondary when products are compared.`,
+        bullets: [
+          "Lipid-related interpretation appears often, but it is broader than the clearest berberine lane.",
+          "Outcome specificity still matters more than packaging usually suggests.",
+          "This lane is most useful as supporting context rather than the whole comparison story.",
+        ],
+        evidenceRead: "This is a secondary berberine lane and should not replace the more concrete glucose-metabolic anchor.",
+        shopperMeaning: "Use it as supporting context, then compare products through exact berberine disclosure, dose, and formula setting.",
+      };
+    case "dose_and_extract_context":
+      return {
+        heading: section.heading,
+        summary: `Exact berberine disclosure matters for ${label} because dose, extract wording, and combo-formula context can change how central berberine really is in the product.`,
+        bullets: [
+          "Berberine HCl or more exact extract wording improves comparison.",
+          "Dose matters more than broad botanical storytelling when similar products are compared.",
+          "Combo formulas can change whether berberine is the main anchor or one part of a wider metabolic stack.",
+        ],
+        evidenceRead: "This is mainly a comparison and label-reading section rather than a universal claim about what berberine always does.",
+        shopperMeaning: "Check dose, exact berberine wording, and whether the formula is combo-driven before assuming two berberine products do the same job.",
+      };
+    case "glutathione_precursor_context":
+      return {
+        heading: section.heading,
+        summary: `${label} is easiest to interpret through glutathione-precursor context, which is a cleaner and more specific NAC lane than broad detox or antioxidant wording.`,
+        bullets: [
+          "Precursor framing is the clearest way to understand why NAC appears on the label.",
+          "This is more useful than broad detox-style marketing when products are compared.",
+          "Exact NAC amount still matters before two formulas can be treated as close substitutes.",
+        ],
+        evidenceRead: "This is the clearest NAC lane, but it should stay narrower than vague antioxidant or detox copy.",
+        shopperMeaning: "Compare NAC products through the named active and disclosed amount before giving extra weight to broader wellness language.",
+      };
+    case "respiratory_and_mucus_context":
+      return {
+        heading: section.heading,
+        summary: `${label} also appears in narrower respiratory and mucus-related discussion, but that lane is more context-sensitive than the core glutathione-precursor reading and should stay carefully bounded.`,
+        bullets: [
+          "Respiratory-adjacent interpretation appears often, but it is narrower than generic immune marketing.",
+          "This lane is more context-sensitive than the core precursor lane.",
+          "Formula setting and use context still change how much weight the shopper should give the NAC row.",
+        ],
+        evidenceRead: "This is a real but narrower NAC lane and should stay secondary to the core precursor context.",
+        shopperMeaning: "Use it as secondary context, then compare products through the exact NAC line, dose, and formula setting.",
+      };
+    case "what_dose_and_use_context_can_change":
+      return {
+        heading: section.heading,
+        summary: `Dose and use context matter for ${label} because similar NAC labels can still carry different comparison value once the amount and broader formula job are read closely.`,
+        bullets: [
+          "Dose changes interpretation more than the category name alone.",
+          "Use context changes how central NAC is to the product story.",
+          "Single-ingredient and blend formulas should not be read as the same comparison bucket by default.",
+        ],
+        evidenceRead: "This section is about practical label interpretation and comparison, not about claiming that one NAC setup is universally best.",
+        shopperMeaning: "Read the NAC amount, use context, and surrounding formula together before assuming two NAC products belong in the same comparison set.",
+      };
+    case "skin_and_connective_tissue_context":
+      return {
+        heading: section.heading,
+        summary: `${label} is easiest to interpret through skin and connective-tissue context, which is a cleaner and more specific collagen lane than generic beauty marketing by itself.`,
+        bullets: [
+          "Skin and connective-tissue context is the clearest collagen lane.",
+          "This is more specific than broad beauty or healthy-aging packaging language.",
+          "Exact collagen source, type, and amount still matter before products are treated as close substitutes.",
+        ],
+        evidenceRead: "This is the clearest collagen lane, but it should stay narrower than generic beauty-style copy.",
+        shopperMeaning: "Compare collagen products through the exact source, type, and disclosed amount before leaning on broad beauty positioning.",
+      };
+    case "joint_and_structure_context":
+      return {
+        heading: section.heading,
+        summary: `${label} also appears in joint and structural-support discussion, but that lane is secondary to the clearest connective-tissue reading and should not be treated as identical to other mobility ingredients.`,
+        bullets: [
+          "Joint-related interpretation appears often, but it is broader than the clearest collagen lane.",
+          "Structural-support wording can matter without making every collagen label tell the same story.",
+          "Formula setting still changes whether a product leans more cosmetic, structural, or blended in its positioning.",
+        ],
+        evidenceRead: "This is a useful secondary collagen lane, but it should stay context-aware and bounded.",
+        shopperMeaning: "Use it to understand whether a collagen product leans more structural or cosmetic before comparing it with other formulas.",
+      };
+    case "source_and_type_context":
+      return {
+        heading: section.heading,
+        summary: `Source and type detail change the comparison value of ${label} because marine, bovine, hydrolyzed, and type-specific collagen lines are not all saying the same thing on the label.`,
+        bullets: [
+          "Marine and bovine collagen should not be flattened into identical shorthand.",
+          "Type or peptide detail usually improves comparison much more than a generic collagen headline.",
+          "Source differences can matter without turning the section into a universal best-source ranking.",
+        ],
+        evidenceRead: "This is mainly a comparison and disclosure section rather than a hard ranking section.",
+        shopperMeaning: "Check source, type, and peptide detail before assuming two collagen products belong in the same comparison set.",
+      };
     case "common_use_contexts":
       return {
         heading: section.heading,
@@ -2910,26 +3352,28 @@ const buildSectionFallback = (
     case "what_this_line_means":
       return {
         heading: section.heading,
-        summary: `This selected line is better understood as part of the label structure than as a stand-alone research target.`,
+        summary: `${narrativeLabel} is better interpreted as a label-structure line for this product than as a stand-alone research claim.`,
         bullets: [
-          "It gives context about how the formula is described.",
-          "It is not always the row that carries the most research value by itself.",
-          "Its meaning depends on the surrounding ingredient rows.",
+          "It gives context about how this formula is disclosed on the label.",
+          companionNames.length > 0
+            ? `Read it together with ${joinReadableList(companionNames)} before deciding which row should carry primary comparison weight.`
+            : "Read it together with nearby ingredient rows before deciding which line should carry primary comparison weight.",
+          "Its interpretation depends on surrounding disclosure detail, not on this line alone.",
         ],
         evidenceRead: "This is a label-meaning section rather than a traditional research summary.",
-        shopperMeaning: "It helps the shopper read the formula more accurately before deciding which rows deserve the most weight.",
+        shopperMeaning: `Use ${narrativeLabel} as context first, then rank comparison weight using the clearer ingredient rows around it.`,
       };
     case "why_it_matters_for_comparison":
       return {
         heading: section.heading,
-        summary: `Even when a line is not the main research target, it can still matter because it changes how comparable the product is to clearer labels.`,
+        summary: `${narrativeLabel} still affects comparison confidence because thinner disclosure around this line makes side-by-side product ranking less reliable.`,
         bullets: [
-          "Some rows add context rather than carrying the whole comparison on their own.",
-          "Comparison quality depends on how much the rest of the label explains.",
-          "A more detailed label usually makes research interpretation easier.",
+          "Some rows add context but do not carry the whole comparison on their own.",
+          "Comparison quality depends on how clearly the rest of the label explains related actives.",
+          "More itemized disclosure usually improves interpretation and product-to-product comparability.",
         ],
         evidenceRead: "This is about comparability and disclosure quality, not about claiming a direct effect.",
-        shopperMeaning: "It helps the shopper decide how much confidence to place in the label structure itself.",
+        shopperMeaning: `Treat ${narrativeLabel} as a confidence signal for disclosure quality, then compare products through the better-explained rows.`,
       };
     case "what_this_blend_line_shows":
       if (isPhageBlend(plan.selectedLabel)) {

@@ -208,6 +208,41 @@ test('scientific background planner changes headings for clear ingredients versu
   );
 });
 
+test('scientific background still returns label-context fallback when descriptor rows are missing', async () => {
+  const baseContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-missing-descriptor',
+      productName: 'Quality Sleep Spray',
+      dosageForm: 'Spray',
+      actives: [],
+    }),
+    overlayClaims: null,
+  });
+
+  const context = {
+    ...baseContext,
+    ingredientRows: [],
+    ingredientSnapshotNames: [],
+    ingredientDescriptors: [],
+    anchorIngredient: null,
+    coIngredients: [],
+    relationshipCandidates: [],
+    labelConstraints: {
+      hasOpaqueBlend: false,
+      ingredientDisclosureLimited: true,
+    },
+  };
+
+  const result = await compileScientificBackgroundAsync(context, 'Quality Sleep Spray');
+
+  assert.equal(result.source, 'fallback');
+  assert.equal(result.scientificBackground.mode, 'label_context_mode');
+  assert.equal(result.scientificBackground.selectedLabel, 'Quality Sleep Spray');
+  assert.equal(result.scientificBackground.sections.length, 2);
+  assert.match(result.scientificBackground.sections[0]?.summary ?? '', /quality sleep spray/i);
+  assert.match(result.scientificBackground.sections[1]?.shopperMeaning ?? '', /quality sleep spray/i);
+});
+
 test('scientific background uses phage-specific label-context fallback for phage blend lines', async () => {
   const phageContext = buildIngredientScienceContext({
     digest: buildDigest({
@@ -1665,7 +1700,7 @@ test('botanical families get longer execution budgets than the generic research 
   assert.ok(greenTeaProfile.timeoutMs > vitaminCProfile.timeoutMs);
 });
 
-test('planner assigns dedicated section packs to magnesium, vitamin D, calcium, iron, melatonin, b-vitamin, and botanical families', () => {
+test('planner assigns dedicated section packs to magnesium, vitamin D, calcium, iron, melatonin, b-vitamin, and expanded botanical families', () => {
   const magnesiumContext = buildIngredientScienceContext({
     digest: buildDigest({
       labelId: 'fixture-magnesium-glycinate',
@@ -1747,6 +1782,51 @@ test('planner assigns dedicated section packs to magnesium, vitamin D, calcium, 
     }),
     overlayClaims: null,
   });
+  const turmericContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-turmeric-pack',
+      productName: 'Turmeric Curcuminoid Complex 500 mg',
+      dosageForm: 'Capsule',
+      actives: [{ name: 'Turmeric Extract (Curcuma longa)', amount: 500, unit: 'mg' }],
+    }),
+    overlayClaims: null,
+  });
+  const coq10Context = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-coq10-pack',
+      productName: 'CoQ10 Ubiquinol 100 mg',
+      dosageForm: 'Softgel',
+      actives: [{ name: 'Coenzyme Q10 (Ubiquinol)', amount: 100, unit: 'mg' }],
+    }),
+    overlayClaims: null,
+  });
+  const berberineContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-berberine-pack',
+      productName: 'Berberine HCl 500 mg',
+      dosageForm: 'Capsule',
+      actives: [{ name: 'Berberine HCl', amount: 500, unit: 'mg' }],
+    }),
+    overlayClaims: null,
+  });
+  const nacContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-nac-pack',
+      productName: 'N-Acetyl-Cysteine 600 mg',
+      dosageForm: 'Capsule',
+      actives: [{ name: 'N-Acetyl-Cysteine', amount: 600, unit: 'mg' }],
+    }),
+    overlayClaims: null,
+  });
+  const collagenContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-collagen-pack',
+      productName: 'Marine Collagen Peptides 5 g',
+      dosageForm: 'Powder',
+      actives: [{ name: 'Marine Collagen Peptides', amount: 5, unit: 'g' }],
+    }),
+    overlayClaims: null,
+  });
   const ashwagandhaContext = buildIngredientScienceContext({
     digest: buildDigest({
       labelId: 'fixture-ashwagandha-pack',
@@ -1810,6 +1890,26 @@ test('planner assigns dedicated section packs to magnesium, vitamin D, calcium, 
   assert.deepEqual(
     planScientificBackgroundSections({ context: curcuminContext, selectedIngredientName: 'Curcumin C3 Complex' }).sections.map((section) => section.heading),
     ['Most studied outcomes', 'Why extract detail matters', 'Where evidence remains mixed'],
+  );
+  assert.deepEqual(
+    planScientificBackgroundSections({ context: turmericContext, selectedIngredientName: 'Turmeric Extract (Curcuma longa)' }).sections.map((section) => section.heading),
+    ['Turmeric traditional and modern context', 'Extract and curcuminoid detail', 'Where turmeric and curcumin diverge'],
+  );
+  assert.deepEqual(
+    planScientificBackgroundSections({ context: coq10Context, selectedIngredientName: 'Coenzyme Q10 (Ubiquinol)' }).sections.map((section) => section.heading),
+    ['Energy metabolism context', 'Heart-related context', 'What form disclosure changes'],
+  );
+  assert.deepEqual(
+    planScientificBackgroundSections({ context: berberineContext, selectedIngredientName: 'Berberine HCl' }).sections.map((section) => section.heading),
+    ['Glucose-metabolic context', 'Lipid-related context', 'Dose and extract context'],
+  );
+  assert.deepEqual(
+    planScientificBackgroundSections({ context: nacContext, selectedIngredientName: 'N-Acetyl-Cysteine' }).sections.map((section) => section.heading),
+    ['Glutathione precursor context', 'Respiratory and mucus context', 'What dose and use-context can change'],
+  );
+  assert.deepEqual(
+    planScientificBackgroundSections({ context: collagenContext, selectedIngredientName: 'Marine Collagen Peptides' }).sections.map((section) => section.heading),
+    ['Skin and connective-tissue context', 'Joint and structure context', 'Source and type context'],
   );
   assert.deepEqual(
     planScientificBackgroundSections({ context: ashwagandhaContext, selectedIngredientName: 'Ashwagandha (KSM-66)' }).sections.map((section) => section.heading),
@@ -1907,6 +2007,51 @@ test('new family fallbacks stay specific and do not collapse back to generic pro
     }),
     overlayClaims: null,
   });
+  const turmericContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-turmeric-fallback',
+      productName: 'Turmeric Curcuminoid Complex 500 mg',
+      dosageForm: 'Capsule',
+      actives: [{ name: 'Turmeric Extract (Curcuma longa)', amount: 500, unit: 'mg' }],
+    }),
+    overlayClaims: null,
+  });
+  const coq10Context = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-coq10-fallback',
+      productName: 'CoQ10 Ubiquinol 100 mg',
+      dosageForm: 'Softgel',
+      actives: [{ name: 'Coenzyme Q10 (Ubiquinol)', amount: 100, unit: 'mg' }],
+    }),
+    overlayClaims: null,
+  });
+  const berberineContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-berberine-fallback',
+      productName: 'Berberine HCl 500 mg',
+      dosageForm: 'Capsule',
+      actives: [{ name: 'Berberine HCl', amount: 500, unit: 'mg' }],
+    }),
+    overlayClaims: null,
+  });
+  const nacContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-nac-fallback',
+      productName: 'N-Acetyl-Cysteine 600 mg',
+      dosageForm: 'Capsule',
+      actives: [{ name: 'N-Acetyl-Cysteine', amount: 600, unit: 'mg' }],
+    }),
+    overlayClaims: null,
+  });
+  const collagenContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-collagen-fallback',
+      productName: 'Marine Collagen Peptides 5 g',
+      dosageForm: 'Powder',
+      actives: [{ name: 'Marine Collagen Peptides', amount: 5, unit: 'g' }],
+    }),
+    overlayClaims: null,
+  });
   const ashwagandhaContext = buildIngredientScienceContext({
     digest: buildDigest({
       labelId: 'fixture-ashwagandha-fallback',
@@ -1944,6 +2089,11 @@ test('new family fallbacks stay specific and do not collapse back to generic pro
   const folateResult = await compileScientificBackgroundAsync(folateContext, 'Folate (as 5-MTHF)');
   const b6Result = await compileScientificBackgroundAsync(b6Context, 'Vitamin B6 (as Pyridoxal-5-Phosphate)');
   const curcuminResult = await compileScientificBackgroundAsync(curcuminContext, 'Curcumin C3 Complex');
+  const turmericResult = await compileScientificBackgroundAsync(turmericContext, 'Turmeric Extract (Curcuma longa)');
+  const coq10Result = await compileScientificBackgroundAsync(coq10Context, 'Coenzyme Q10 (Ubiquinol)');
+  const berberineResult = await compileScientificBackgroundAsync(berberineContext, 'Berberine HCl');
+  const nacResult = await compileScientificBackgroundAsync(nacContext, 'N-Acetyl-Cysteine');
+  const collagenResult = await compileScientificBackgroundAsync(collagenContext, 'Marine Collagen Peptides');
   const ashwagandhaResult = await compileScientificBackgroundAsync(ashwagandhaContext, 'Ashwagandha (KSM-66)');
   const ginsengResult = await compileScientificBackgroundAsync(ginsengContext, 'Panax Ginseng Extract');
   const greenTeaResult = await compileScientificBackgroundAsync(greenTeaContext, 'Green Tea Extract (EGCG)');
@@ -1962,6 +2112,17 @@ test('new family fallbacks stay specific and do not collapse back to generic pro
   assert.match(b6Result.scientificBackground.sections[2]?.shopperMeaning ?? '', /dose|formula role|comparison bucket/i);
   assert.match(curcuminResult.scientificBackground.sections[1]?.summary ?? '', /extract|curcuminoid|standardized/i);
   assert.match(curcuminResult.scientificBackground.sections[2]?.shopperMeaning ?? '', /extract detail|broadest promise|package/i);
+  assert.match(turmericResult.scientificBackground.sections[0]?.summary ?? '', /turmeric|whole-root|broader/i);
+  assert.match(turmericResult.scientificBackground.sections[1]?.summary ?? '', /extract|curcuminoid|standardization/i);
+  assert.match(turmericResult.scientificBackground.sections[2]?.shopperMeaning ?? '', /formula map|lead active|companion|curcumin|interchangeable|extracts/i);
+  assert.match(coq10Result.scientificBackground.sections[0]?.summary ?? '', /energy|coq10|coenzyme q10|mitochond/i);
+  assert.match(coq10Result.scientificBackground.sections[2]?.shopperMeaning ?? '', /ubiquinol|ubiquinone|form|comparison/i);
+  assert.match(berberineResult.scientificBackground.sections[0]?.summary ?? '', /glucose|metabolic|berberine/i);
+  assert.match(berberineResult.scientificBackground.sections[2]?.shopperMeaning ?? '', /dose|berberine|combo|label/i);
+  assert.match(nacResult.scientificBackground.sections[0]?.summary ?? '', /glutathione|precursor|nac/i);
+  assert.match(nacResult.scientificBackground.sections[2]?.shopperMeaning ?? '', /dose|use context|comparison|label/i);
+  assert.match(collagenResult.scientificBackground.sections[0]?.summary ?? '', /collagen|connective|skin/i);
+  assert.match(collagenResult.scientificBackground.sections[2]?.shopperMeaning ?? '', /source|type|collagen|comparison/i);
   assert.match(ashwagandhaResult.scientificBackground.sections[0]?.summary ?? '', /stress|mood|resilience/i);
   assert.match(ashwagandhaResult.scientificBackground.sections[2]?.shopperMeaning ?? '', /extract identity|comparison set|ashwagandha/i);
   assert.match(ginsengResult.scientificBackground.sections[0]?.summary ?? '', /energy|fatigue|ginseng/i);

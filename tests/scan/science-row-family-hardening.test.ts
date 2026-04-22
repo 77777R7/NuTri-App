@@ -281,6 +281,60 @@ test('row-level family inference keeps 7-keto, cla, and carnitine distinct insid
   );
 });
 
+test('row-level family inference keeps creatine and NAC distinct inside a performance formula', () => {
+  const digest = buildDigest({
+    labelId: 'fixture-creatine-nac-formula',
+    productName: 'Creatine Recovery + NAC',
+    dosageForm: 'Powder',
+    actives: [
+      { name: 'Creatine Monohydrate', amount: 5000, unit: 'mg' },
+      { name: 'N-Acetyl-Cysteine', amount: 600, unit: 'mg' },
+      { name: 'Magnesium', amount: 50, unit: 'mg' },
+    ],
+  });
+
+  const context = buildIngredientScienceContext({ digest, overlayClaims: null });
+  const familyByName = new Map(context.ingredientDescriptors.map((descriptor) => [descriptor.name, descriptor.ingredientFamily]));
+
+  assert.equal(familyByName.get('Creatine Monohydrate'), 'creatine');
+  assert.equal(familyByName.get('N-Acetyl-Cysteine'), 'nac');
+  assert.equal(context.anchorIngredient?.ingredientFamily, 'creatine');
+});
+
+test('food-like gummy snack titles rescue a food-like anchor instead of drifting to vitamin rows', async () => {
+  const digest = withBrand(buildDigest({
+    labelId: 'fixture-yumearth-gummy-bears',
+    productName: 'YumEarth, Gummy Bears, Assorted, 35 Snack Packs, 0.7 oz (19.8 g) Each',
+    dosageForm: 'Gummy',
+    actives: [],
+  }), 'YumEarth');
+
+  const context = buildIngredientScienceContext({
+    digest,
+    overlayClaims: {
+      title: 'YumEarth, Gummy Bears, Assorted, 35 Snack Packs, 0.7 oz (19.8 g) Each',
+      brandName: 'YumEarth',
+      nutritionalFacts: [
+        { substancy: 'Vitamin C', amountPerServing: '111 mg', dailyValuePercent: null },
+        { substancy: 'Total Carb', amountPerServing: '15 g', dailyValuePercent: null },
+        { substancy: 'Fiber', amountPerServing: '0 g', dailyValuePercent: null },
+      ],
+      description: null,
+      suggestedUse: null,
+    },
+  });
+
+  assert.equal(context.productArchetype, 'functional_food_like');
+  assert.equal(context.anchorIngredient?.name, 'Gummy Bears');
+
+  const overview = await compileIngredientOverviewAsync(context, {
+    maxTokens: 400,
+    timeoutMs: 1500,
+  });
+
+  assert.equal(overview.ingredientOverview.titleLine, 'Gummy Bears');
+});
+
 test('ingredient overview rejects factual A-card restatement and falls back to formula-reading copy', async () => {
   const digest = buildDigest({
     labelId: 'fixture-omega3',
@@ -950,8 +1004,10 @@ test('science context rescues common title-led actives from macro residue rows',
   assert.notEqual(aloeTitleWithSizeContext.ingredientRows[0]?.name, 'Sugars');
   assert.match(fiberContext.ingredientRows[0]?.name ?? '', /apple fiber/i);
   assert.notEqual(fiberContext.ingredientRows[0]?.name, 'Potassium');
+  assert.equal(fiberContext.anchorIngredient?.ingredientFamily, 'fiber');
   assert.match(potassiumContext.ingredientRows[0]?.name ?? '', /potassium gluconate/i);
   assert.match(proteinContext.ingredientRows[0]?.name ?? '', /whey protein/i);
+  assert.equal(proteinContext.anchorIngredient?.ingredientFamily, 'protein');
 });
 
 test('science context rescues trace minerals titles ahead of aloe and macro residue rows', async () => {
@@ -1261,7 +1317,32 @@ test('science context keeps turmeric gummies anchored to turmeric instead of foo
 
   assert.match(context.ingredientRows[0]?.name ?? '', /\bturmeric\b|\bcurcumin\b/i);
   assert.notEqual(context.ingredientRows[0]?.name, 'Food-based product');
-  assert.equal(context.anchorIngredient?.ingredientFamily, 'curcumin');
+  assert.equal(context.anchorIngredient?.ingredientFamily, 'turmeric');
+});
+
+test('science context gives standard turmeric extracts a turmeric-specific research plan', () => {
+  const context = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-turmeric-curcuminoid-capsule',
+      productName: 'Turmeric Curcuminoid Complex',
+      dosageForm: 'Capsule',
+      actives: [
+        { name: 'Turmeric Extract (Curcuma longa)', amount: 500, unit: 'mg' },
+      ],
+    }),
+    overlayClaims: null,
+  });
+  const turmericPlan = planScientificBackgroundSections({
+    context,
+    selectedIngredientName: context.anchorIngredient?.name ?? 'Turmeric Extract (Curcuma longa)',
+  });
+
+  assert.equal(context.anchorIngredient?.ingredientFamily, 'turmeric');
+  assert.equal(turmericPlan.mode, 'research_mode');
+  assert.deepEqual(
+    turmericPlan.sections.map((section) => section.heading),
+    ['Turmeric traditional and modern context', 'Extract and curcuminoid detail', 'Where turmeric and curcumin diverge'],
+  );
 });
 
 test('science context rescues ParaFight titles ahead of opaque blend rows', () => {
@@ -1361,11 +1442,41 @@ test('science context rescues title-led botanicals ahead of proprietary blend an
     }),
     overlayClaims: null,
   });
+  const moodSaffronContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-genuine-health-mood-saffron-turmeric',
+      productName: 'Genuine Health, mood with saffron and turmeric',
+      dosageForm: 'Capsule',
+      actives: [
+        { name: 'affron Saffron Standardized Extract (Crocus sativus)', amount: 14, unit: 'mg' },
+        { name: 'Turmeric Standardized Extract (Curcuma longa)', amount: 75, unit: 'mg' },
+      ],
+    }),
+    overlayClaims: null,
+  });
+  const stressAshwagandhaContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-genuine-health-stress-ashwagandha-saffron',
+      productName: 'Genuine Health, stress with ashwagandha saffron and passionflower',
+      dosageForm: 'Capsule',
+      actives: [
+        { name: 'affron Saffron Standardized Extract (Crocus sativus)', amount: 14, unit: 'mg' },
+        { name: 'KSM-66 Ashwagandha Standardized Extract (Withania somnifera)', amount: 300, unit: 'mg' },
+        { name: 'Passionflower Extract (Passiflora incarnata)', amount: 250, unit: 'mg' },
+      ],
+    }),
+    overlayClaims: null,
+  });
 
   assert.match(echinaceaContext.ingredientRows[0]?.name ?? '', /echinacea|goldenseal/i);
   assert.doesNotMatch(echinaceaContext.ingredientRows[0]?.name ?? '', /proprietary blend/i);
   assert.match(lemonBalmContext.ingredientRows[0]?.name ?? '', /lemon balm/i);
   assert.notEqual(lemonBalmContext.ingredientRows[0]?.name, 'Alcohol');
+  assert.match(moodSaffronContext.ingredientRows[0]?.name ?? '', /saffron|crocus/i);
+  assert.match(moodSaffronContext.ingredientRows[0]?.name ?? '', /^saffron\b/i);
+  assert.doesNotMatch(moodSaffronContext.ingredientRows[0]?.name ?? '', /^affron\b/i);
+  assert.doesNotMatch(moodSaffronContext.ingredientRows[0]?.name ?? '', /turmeric/i);
+  assert.match(stressAshwagandhaContext.ingredientRows[0]?.name ?? '', /ashwagandha/i);
 });
 
 test('science context rescues tart cherry titles ahead of sugars', () => {
@@ -1449,9 +1560,24 @@ test('science context treats joint and skin titles as joint support or collagen-
     }),
     overlayClaims: null,
   });
+  const genuineHealthNemContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-genuine-health-fast-joint-care-nem-turmeric',
+      productName: 'Genuine Health, fast joint care with NEM and turmeric',
+      dosageForm: 'Capsule',
+      actives: [
+        { name: 'NEM Partially Hydrolysed Chicken Eggshell Membrane (egg shell) (Gallus gallus)', amount: 250, unit: 'mg' },
+        { name: 'Fermented Organic Turmeric (rhizome) (Curcuma longa)', amount: 250, unit: 'mg' },
+        { name: 'Turmeric Standardized Extract (Curcuma longa)', amount: 62.5, unit: 'mg' },
+      ],
+    }),
+    overlayClaims: null,
+  });
 
   assert.match(context.ingredientRows[0]?.name ?? '', /joint support|collagen/i);
   assert.notEqual(context.ingredientRows[0]?.name, 'Calcium-Magnesium Inositol Hexaphosphate (IP6)');
+  assert.match(genuineHealthNemContext.ingredientRows[0]?.name ?? '', /nem|eggshell membrane/i);
+  assert.doesNotMatch(genuineHealthNemContext.ingredientRows[0]?.name ?? '', /turmeric/i);
 });
 
 test('science context does not let alcohol solvent rows outrank title-led lemon balm extract rows', () => {
@@ -1563,6 +1689,25 @@ test('science context keeps title-led beverage foods ahead of brand and mineral 
     ),
     overlayClaims: null,
   });
+  const genuineElectrolytesContext = buildIngredientScienceContext({
+    digest: withBrand(
+      buildDigest({
+        labelId: 'fixture-genuine-health-enhanced-electrolytes-plus',
+        productName: 'Genuine Health, enhanced electrolytes+ raspberry lemonade',
+        dosageForm: 'Powder',
+        actives: [
+          { name: 'Fermented Beet Root', amount: 500, unit: 'mg' },
+          { name: 'Guava Leaf Standardized Extract', amount: 150, unit: 'mg' },
+          { name: 'Magnesium', amount: 35, unit: 'mg' },
+          { name: 'Potassium', amount: 30, unit: 'mg' },
+          { name: 'Calcium', amount: 30, unit: 'mg' },
+          { name: 'Vitamin D3', amount: 10, unit: 'mcg' },
+        ],
+      }),
+      'Genuine Health',
+    ),
+    overlayClaims: null,
+  });
   const soyMilkContext = buildIngredientScienceContext({
     digest: withBrand(
       buildDigest({
@@ -1617,6 +1762,8 @@ test('science context keeps title-led beverage foods ahead of brand and mineral 
   assert.equal(lairdContext.productArchetype, 'functional_food_like');
   assert.match(lairdContext.ingredientRows[0]?.name ?? '', /electrolyte\s+drink\s+mix|hydrate\s+coconut\s+water|electrolyte/i);
   assert.doesNotMatch(lairdContext.ingredientRows[0]?.name ?? '', /greens|magnesium|calcium|iron|potassium/i);
+  assert.match(genuineElectrolytesContext.ingredientRows[0]?.name ?? '', /electrolytes?\+?/i);
+  assert.doesNotMatch(genuineElectrolytesContext.ingredientRows[0]?.name ?? '', /beet|magnesium|potassium|calcium|vitamin d/i);
   assert.equal(soyMilkContext.productArchetype, 'functional_food_like');
   assert.match(soyMilkContext.ingredientRows[0]?.name ?? '', /soy\s+milk\s+powder/i);
   assert.doesNotMatch(soyMilkContext.ingredientRows[0]?.name ?? '', /potassium|calcium|iron|fiber/i);
@@ -1819,6 +1966,7 @@ test('science context keeps berberine formulas ahead of green coffee food-like w
   assert.notEqual(context.productArchetype, 'functional_food_like');
   assert.match(context.ingredientRows[0]?.name ?? '', /berberine/i);
   assert.doesNotMatch(context.ingredientRows[0]?.name ?? '', /food-based\s+product|green\s+coffee/i);
+  assert.equal(context.anchorIngredient?.ingredientFamily, 'berberine');
 });
 
 test('science context keeps CoQ10 gummies anchored to coenzyme Q10', () => {
@@ -1840,6 +1988,7 @@ test('science context keeps CoQ10 gummies anchored to coenzyme Q10', () => {
   assert.equal(context.productArchetype, 'functional_food_like');
   assert.match(context.ingredientRows[0]?.name ?? '', /coq10|coenzyme\s+q10/i);
   assert.doesNotMatch(context.ingredientRows[0]?.name ?? '', /food-based\s+product|gumm(?:y|ies)/i);
+  assert.equal(context.anchorIngredient?.ingredientFamily, 'coq10');
 });
 
 test('science context keeps biotin gummies anchored to biotin', () => {
@@ -1882,6 +2031,7 @@ test('science context keeps collagen peptide gummies anchored to collagen', () =
   assert.equal(context.productArchetype, 'functional_food_like');
   assert.match(context.ingredientRows[0]?.name ?? '', /collagen/i);
   assert.doesNotMatch(context.ingredientRows[0]?.name ?? '', /food-based\s+product|gumm(?:y|ies)/i);
+  assert.equal(context.anchorIngredient?.ingredientFamily, 'collagen');
 });
 
 test('science context keeps cranberry gummies anchored to cranberry', () => {
@@ -1985,6 +2135,19 @@ test('default science ingredient ordering follows title-led actives over compani
     }),
     overlayClaims: null,
   });
+  const probioticLedZincContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-probiotic-immune-d-zinc-title-order',
+      productName: 'Genuine Health, advanced gut health probiotic immune + vitamin D and Zinc 50 billion',
+      dosageForm: 'Capsule',
+      actives: [
+        { name: 'Probiotic Blend', amount: 50, unit: 'Billion CFU' },
+        { name: 'Vitamin D3', amount: 10, unit: 'mcg' },
+        { name: 'Zinc (zinc gluconate)', amount: 5, unit: 'mg' },
+      ],
+    }),
+    overlayClaims: null,
+  });
   const packageAnchorContext = buildIngredientScienceContext({
     digest: buildDigest({
       labelId: 'fixture-package-anchor-noise',
@@ -2003,6 +2166,8 @@ test('default science ingredient ordering follows title-led actives over compani
   assert.notEqual(htpContext.ingredientRows[0]?.name, 'Melatonin');
   assert.match(probioticZincContext.ingredientRows[0]?.name ?? '', /\bzinc\b/i);
   assert.doesNotMatch(probioticZincContext.ingredientRows[0]?.name ?? '', /carbohydrate/i);
+  assert.match(probioticLedZincContext.ingredientRows[0]?.name ?? '', /probiotic/i);
+  assert.doesNotMatch(probioticLedZincContext.ingredientRows[0]?.name ?? '', /\bzinc\b/i);
   assert.match(packageAnchorContext.ingredientRows[0]?.name ?? '', /\bmagnesium\b/i);
   assert.doesNotMatch(packageAnchorContext.ingredientRows[0]?.name ?? '', /capsules|calories/i);
 });
@@ -2447,6 +2612,47 @@ test('science context rescues sparse title-led food-like anchors from residue ro
     }),
     overlayClaims: null,
   });
+  const advancedWheyContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-advanced-whey-title-rescue',
+      productName: 'AOR Advanced Whey Vanilla',
+      dosageForm: 'Powder',
+      actives: [
+        { name: 'Alpha-lactalbumin', amount: 4.3, unit: 'g' },
+        { name: 'Glycomacropeptides', amount: 3.3, unit: 'g' },
+        { name: 'Protein', amount: 22, unit: 'g' },
+        { name: 'Sugars', amount: 0.7, unit: 'g' },
+      ],
+    }),
+    overlayClaims: null,
+  });
+  const bcaaContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-bcaa-title-rescue',
+      productName: 'AOR BCAA',
+      dosageForm: 'Powder',
+      actives: [
+        { name: 'L-Leucine', amount: 2500, unit: 'mg' },
+        { name: 'L-Isoleucine', amount: 1250, unit: 'mg' },
+        { name: 'L-Valine', amount: 1250, unit: 'mg' },
+      ],
+    }),
+    overlayClaims: null,
+  });
+  const actaResveratrolContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-acta-resveratrol-title-rescue',
+      productName: 'AOR Acta-Resveratrol',
+      dosageForm: 'Capsule',
+      actives: [
+        { name: 'Trans-resveratrol', amount: 40, unit: 'mg' },
+        { name: 'Vitamin C (ascorbic acid)', amount: 40, unit: 'mg' },
+        { name: 'Quercetin', amount: 50, unit: 'mg' },
+        { name: 'Rosemary extract', amount: 10, unit: 'mg' },
+      ],
+    }),
+    overlayClaims: null,
+  });
   const energyChewsContext = buildIngredientScienceContext({
     digest: buildDigest({
       labelId: 'fixture-energy-chews-title-rescue',
@@ -2600,6 +2806,16 @@ test('science context rescues sparse title-led food-like anchors from residue ro
   assert.match(wheyIsolateContext.ingredientRows[0]?.name ?? '', /\bwhey(?:\s+protein|\s+isolate)?\b|\bprotein\b/i);
   assert.doesNotMatch(wheyIsolateContext.ingredientRows[0]?.name ?? '', /\bsugars?\b|\bpotassium\b|\bcalcium\b/i);
   assert.equal(wheyIsolateContext.productArchetype, 'functional_food_like');
+
+  assert.match(advancedWheyContext.ingredientRows[0]?.name ?? '', /\badvanced whey\b|\bwhey\b|\bprotein\b/i);
+  assert.doesNotMatch(advancedWheyContext.ingredientRows[0]?.name ?? '', /\balpha-lactalbumin\b|\bglycomacropeptides\b|\bsugars?\b/i);
+  assert.equal(advancedWheyContext.productArchetype, 'functional_food_like');
+
+  assert.match(bcaaContext.ingredientRows[0]?.name ?? '', /\bbcaas?\b|\bbranched[\s-]*chain\s+amino\s+acids?\b/i);
+  assert.doesNotMatch(bcaaContext.ingredientRows[0]?.name ?? '', /\bleucine\b|\bisoleucine\b|\bvaline\b/i);
+
+  assert.match(actaResveratrolContext.ingredientRows[0]?.name ?? '', /\bresveratrol\b/i);
+  assert.doesNotMatch(actaResveratrolContext.ingredientRows[0]?.name ?? '', /\bvitamin c\b|\bquercetin\b/i);
 
   assert.match(energyChewsContext.ingredientRows[0]?.name ?? '', /\benergy chews?\b/i);
   assert.doesNotMatch(energyChewsContext.ingredientRows[0]?.name ?? '', /\bvitamin c\b|\biron\b|\bpotassium\b|\bfiber\b/i);
