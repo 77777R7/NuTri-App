@@ -899,6 +899,84 @@ test('scientific background accepts iron live-style output when supplementation 
   assert.match(result.scientificBackground.sections[2]?.shopperMeaning ?? '', /paired-nutrient context|comparison goal/i);
 });
 
+test('scientific background live prompt includes reviewed evidence grounding when evidence-backed section rows exist', async () => {
+  const digest = buildDigest({
+    labelId: 'fixture-protein-prompt-grounding',
+    productName: 'Whey Protein Isolate 25 g',
+    dosageForm: 'Powder',
+    actives: [{ name: 'Whey Protein Isolate', amount: 25, unit: 'g' }],
+  });
+
+  const context = buildIngredientScienceContext({ digest, overlayClaims: null });
+  let capturedPrompt = '';
+  const result = await compileScientificBackgroundAsync(context, 'Whey Protein Isolate', {
+    llmFn: async (prompt) => {
+      capturedPrompt = prompt;
+      return JSON.stringify({
+        introLine:
+          'Protein is easiest to read through the exact protein line, the disclosed grams, and whether the label is really built around recovery, meal support, or a broader blended formula.',
+        sections: [
+          {
+            headingId: 'muscle_and_recovery_context',
+            heading: 'Muscle and recovery context',
+            summary:
+              'Protein products are most straightforward to compare through muscle and recovery context when the label clearly discloses the protein source and the amount delivered per serving.',
+            bullets: [
+              'This keeps the shopper anchored to the exact active line instead of broad gym-style branding.',
+              'Recovery wording is more useful when it stays tied to actual protein grams and training context.',
+              'That gives the label a clearer comparison anchor than generic fitness marketing alone.',
+            ],
+            evidenceRead:
+              'This is the main and most practical protein lane, but it still needs to stay tied to the exact protein line and the amount actually delivered.',
+            shopperMeaning:
+              'Start by comparing the protein grams and the named source before assuming two recovery-focused products belong in the same bucket.',
+          },
+          {
+            headingId: 'satiety_and_meal_support_context',
+            heading: 'Satiety and meal-support context',
+            summary:
+              'Some protein products lean more toward satiety or meal-support framing, which makes them read differently from simpler recovery-led protein labels.',
+            bullets: [
+              'This lane is real, but it is broader than the clearest muscle-and-recovery context.',
+              'Added fats, carbohydrates, or meal-replacement framing can change how central the protein line really is.',
+              'That is one reason two protein products can sound similar but still behave like different comparison sets.',
+            ],
+            evidenceRead:
+              'This is a secondary interpretation lane and should stay narrower than the clearest protein-comparison anchor.',
+            shopperMeaning:
+              'Read meal-support language as context, then go back to the actual protein grams and source before comparing products head to head.',
+          },
+          {
+            headingId: 'protein_type_and_disclosure_context',
+            heading: 'Protein type and disclosure context',
+            summary:
+              'Protein source and disclosure detail change comparison value because whey, plant, isolate, and blended labels do not always imply the same recovery or lean-mass story.',
+            bullets: [
+              'Exact source disclosure is usually more useful than broad protein branding.',
+              'Isolate-versus-blend detail can change how directly two labels should be compared.',
+              'That makes the ingredient line and the grams per serving more decision-useful than generic fitness language alone.',
+            ],
+            evidenceRead:
+              'This is a comparison section that helps with label reading, not a hard ranking of every protein source.',
+            shopperMeaning:
+              'Use the source, the grams, and the blend complexity together before assuming two protein products are interchangeable.',
+          },
+        ],
+        closingNote:
+          'Protein labels are usually most useful to compare through the named source, the grams per serving, and the clearest role the product is playing in the formula.',
+      });
+    },
+  });
+
+  assert.equal(result.source, 'api');
+  assert.equal(result.fallbackUsed, false);
+  assert.match(capturedPrompt, /"evidenceGrounding":\[/);
+  assert.match(capturedPrompt, /muscle_and_recovery_context/);
+  assert.match(capturedPrompt, /protein_type_and_disclosure_context/);
+  assert.match(capturedPrompt, /A systematic review, meta-analysis and meta-regression of the effect of protein supplementation/i);
+  assert.match(capturedPrompt, /When a label discloses source and grams clearly/i);
+});
+
 test('scientific background accepts melatonin live-style output when timing context stays primary and dose framing remains practical', async () => {
   const digest = buildDigest({
     labelId: 'fixture-melatonin-live-style',

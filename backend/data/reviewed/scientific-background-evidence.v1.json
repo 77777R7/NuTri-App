@@ -568,6 +568,551 @@
           "url": "https://pubmed.ncbi.nlm.nih.gov/15743016/"
         }
       ]
+    },
+    {
+      "ingredient_family": "omega_3",
+      "section_key": "inflammation_and_recovery_context",
+      "evidence_grade": "B",
+      "overall_confidence": 0.76,
+      "display_text": "Exercise-recovery omega-3 literature supports a real but secondary inflammation-and-muscle-damage lane, while still leaving lipid endpoints as the cleaner comparison anchor.",
+      "segments": {
+        "summary_support": {
+          "en": [
+            {
+              "text": "Systematic reviews and randomized trials support a real omega-3 exercise-recovery lane, but they still read as a secondary context rather than the cleanest primary comparison anchor.",
+              "sentence_id": "omega3_inflammation_summary_001",
+              "evidence_snippet_id": "omega3_inflammation_excerpt_001",
+              "evidence_reference_id": "pmid:38999792",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "evidence_read_support": {
+          "en": [
+            {
+              "text": "The review-level evidence is strongest when it stays tied to post-exercise inflammation or muscle-damage markers instead of broad performance promises.",
+              "sentence_id": "omega3_inflammation_evidence_001",
+              "evidence_snippet_id": "omega3_inflammation_excerpt_001",
+              "evidence_reference_id": "pmid:34760272",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "shopper_meaning_support": {
+          "en": [
+            {
+              "text": "Use recovery-oriented omega-3 positioning as a secondary comparison signal and still check the exact EPA or DHA breakdown before treating two labels as equivalent.",
+              "sentence_id": "omega3_inflammation_shopper_001",
+              "evidence_snippet_id": "omega3_inflammation_excerpt_001",
+              "evidence_reference_id": "pmid:38051142",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "caveats": {
+          "en": [
+            {
+              "text": "Do not turn exercise-recovery findings into a blanket claim that every fish-oil product is a general performance supplement.",
+              "sentence_id": "omega3_inflammation_caveat_001",
+              "evidence_snippet_id": "omega3_inflammation_excerpt_001",
+              "evidence_reference_id": "pmid:38999792",
+              "evidence_grade": "C",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        }
+      },
+      "supporting_references": [
+        {
+          "id": "pmid:38999792",
+          "source": "pubmed",
+          "title": "Omega-3 Fatty Acid Supplementation on Post-Exercise Inflammation, Muscle Damage, Oxidative Response, and Sports Performance in Physically Healthy Adults-A Systematic Review of Randomized Controlled Trials.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/38999792/"
+        },
+        {
+          "id": "pmid:34760272",
+          "source": "pubmed",
+          "title": "Effect of omega-3 fatty acids supplementation on indirect blood markers of exercise-induced muscle damage: Systematic review and meta-analysis of randomized controlled trials.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/34760272/"
+        },
+        {
+          "id": "pmid:38051142",
+          "source": "pubmed",
+          "title": "Long-Chain Omega-3 Fatty Acid Supplementation and Exercise-Induced Muscle Damage: EPA or DHA?",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/38051142/"
+        }
+      ]
+    },
+    {
+      "ingredient_family": "omega_3",
+      "section_key": "brain_and_eye_context",
+      "evidence_grade": "B",
+      "overall_confidence": 0.78,
+      "display_text": "Brain-and-eye omega-3 discussion is most defensible when it stays tied to DHA-heavy or eye-specific contexts rather than broad cognition slogans.",
+      "segments": {
+        "summary_support": {
+          "en": [
+            {
+              "text": "Brain-and-eye omega-3 discussion is strongest when it stays tied to DHA-heavy or eye-specific contexts instead of broad cognition marketing.",
+              "sentence_id": "omega3_brain_summary_001",
+              "evidence_snippet_id": "omega3_brain_excerpt_001",
+              "evidence_reference_id": "pmid:23644932",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "evidence_read_support": {
+          "en": [
+            {
+              "text": "Clinical and review-level sources support a real brain-and-eye lane, but the exact population and endpoint still matter more here than a generic omega-3 headline suggests.",
+              "sentence_id": "omega3_brain_evidence_001",
+              "evidence_snippet_id": "omega3_brain_excerpt_001",
+              "evidence_reference_id": "pmid:32690472",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "shopper_meaning_support": {
+          "en": [
+            {
+              "text": "If a label leans on brain or eye wording, the most useful comparison step is to read the DHA emphasis and the exact active breakdown instead of treating all omega-3 products alike.",
+              "sentence_id": "omega3_brain_shopper_001",
+              "evidence_snippet_id": "omega3_brain_excerpt_001",
+              "evidence_reference_id": "pmid:36381743",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "caveats": {
+          "en": [
+            {
+              "text": "Do not collapse eye-specific or DHA-specific findings into a universal claim about every combined omega-3 formula.",
+              "sentence_id": "omega3_brain_caveat_001",
+              "evidence_snippet_id": "omega3_brain_excerpt_001",
+              "evidence_reference_id": "pmid:23644932",
+              "evidence_grade": "C",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        }
+      },
+      "supporting_references": [
+        {
+          "id": "pmid:23644932",
+          "source": "pubmed",
+          "title": "Lutein + zeaxanthin and omega-3 fatty acids for age-related macular degeneration: the Age-Related Eye Disease Study 2 (AREDS2) randomized clinical trial.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/23644932/"
+        },
+        {
+          "id": "pmid:32690472",
+          "source": "pubmed",
+          "title": "Brain delivery of supplemental docosahexaenoic acid (DHA): A randomized placebo-controlled clinical trial.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/32690472/"
+        },
+        {
+          "id": "pmid:36381743",
+          "source": "pubmed",
+          "title": "Effects of Omega-3 Polyunsaturated Fatty Acids on Brain Functions: A Systematic Review.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/36381743/"
+        }
+      ]
+    },
+    {
+      "ingredient_family": "omega_3",
+      "section_key": "broader_cardiovascular_context",
+      "evidence_grade": "B",
+      "overall_confidence": 0.74,
+      "display_text": "Broad cardiovascular omega-3 discussion is real, but it is wider and less tidy than the cleanest lipid and triglyceride comparison lane.",
+      "segments": {
+        "summary_support": {
+          "en": [
+            {
+              "text": "Broad cardiovascular omega-3 discussion is real, but it is wider and less tidy than the cleanest lipid and triglyceride comparison lane.",
+              "sentence_id": "omega3_cardio_summary_001",
+              "evidence_snippet_id": "omega3_cardio_excerpt_001",
+              "evidence_reference_id": "pmid:32114706",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "evidence_read_support": {
+          "en": [
+            {
+              "text": "Review and meta-analysis sources keep showing that cardiovascular interpretation depends heavily on the exact endpoint, dose, and baseline-risk setting.",
+              "sentence_id": "omega3_cardio_evidence_001",
+              "evidence_snippet_id": "omega3_cardio_excerpt_001",
+              "evidence_reference_id": "pmid:37264945",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "shopper_meaning_support": {
+          "en": [
+            {
+              "text": "Treat broad heart language as a boundary-setting section and keep the actual comparison anchored to more specific omega-3 disclosure and endpoint framing.",
+              "sentence_id": "omega3_cardio_shopper_001",
+              "evidence_snippet_id": "omega3_cardio_excerpt_001",
+              "evidence_reference_id": "pmid:33445534",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "caveats": {
+          "en": [
+            {
+              "text": "Do not read a broad cardiovascular section like proof that every omega-3 label carries the same heart-related signal.",
+              "sentence_id": "omega3_cardio_caveat_001",
+              "evidence_snippet_id": "omega3_cardio_excerpt_001",
+              "evidence_reference_id": "pmid:32114706",
+              "evidence_grade": "C",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        }
+      },
+      "supporting_references": [
+        {
+          "id": "pmid:32114706",
+          "source": "pubmed",
+          "title": "Omega-3 fatty acids for the primary and secondary prevention of cardiovascular disease.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/32114706/"
+        },
+        {
+          "id": "pmid:33445534",
+          "source": "pubmed",
+          "title": "An Update on Omega-3 Polyunsaturated Fatty Acids and Cardiovascular Health.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/33445534/"
+        },
+        {
+          "id": "pmid:37264945",
+          "source": "pubmed",
+          "title": "Association Between Omega-3 Fatty Acid Intake and Dyslipidemia: A Continuous Dose-Response Meta-Analysis of Randomized Controlled Trials.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/37264945/"
+        }
+      ]
+    },
+    {
+      "ingredient_family": "protein",
+      "section_key": "muscle_and_recovery_context",
+      "evidence_grade": "B",
+      "overall_confidence": 0.84,
+      "display_text": "Protein supplementation has a clear muscle-and-recovery lane, with the cleanest comparison value coming from disclosed protein amount and training context rather than gym-style front-label language.",
+      "segments": {
+        "summary_support": {
+          "en": [
+            {
+              "text": "Protein supplementation has a clear muscle-and-recovery lane, and the most useful interpretation usually starts with disclosed grams and training context rather than broad fitness branding.",
+              "sentence_id": "protein_muscle_summary_001",
+              "evidence_snippet_id": "protein_muscle_excerpt_001",
+              "evidence_reference_id": "pmid:28698222",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "evidence_read_support": {
+          "en": [
+            {
+              "text": "Systematic reviews support a meaningful recovery-oriented protein lane, but the result still depends on the exact training setting and the amount actually delivered by the serving.",
+              "sentence_id": "protein_muscle_evidence_001",
+              "evidence_snippet_id": "protein_muscle_excerpt_001",
+              "evidence_reference_id": "pmid:29462923",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "shopper_meaning_support": {
+          "en": [
+            {
+              "text": "Compare protein products through the exact protein grams and source before assuming that two recovery-focused labels are interchangeable.",
+              "sentence_id": "protein_muscle_shopper_001",
+              "evidence_snippet_id": "protein_muscle_excerpt_001",
+              "evidence_reference_id": "pmid:33670701",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "caveats": {
+          "en": [
+            {
+              "text": "A strong muscle-and-recovery lane does not make every protein format or every blended product equally comparable.",
+              "sentence_id": "protein_muscle_caveat_001",
+              "evidence_snippet_id": "protein_muscle_excerpt_001",
+              "evidence_reference_id": "pmid:28698222",
+              "evidence_grade": "C",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        }
+      },
+      "supporting_references": [
+        {
+          "id": "pmid:28698222",
+          "source": "pubmed",
+          "title": "A systematic review, meta-analysis and meta-regression of the effect of protein supplementation on resistance training-induced gains in muscle mass and strength in healthy adults.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/28698222/"
+        },
+        {
+          "id": "pmid:29462923",
+          "source": "pubmed",
+          "title": "The Effect of Whey Protein Supplementation on the Temporal Recovery of Muscle Function Following Resistance Training: A Systematic Review and Meta-Analysis.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/29462923/"
+        },
+        {
+          "id": "pmid:33670701",
+          "source": "pubmed",
+          "title": "Animal Protein versus Plant Protein in Supporting Lean Mass and Muscle Strength: A Systematic Review and Meta-Analysis of Randomized Controlled Trials.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/33670701/"
+        }
+      ]
+    },
+    {
+      "ingredient_family": "protein",
+      "section_key": "protein_type_and_disclosure_context",
+      "evidence_grade": "B",
+      "overall_confidence": 0.77,
+      "display_text": "Protein source and disclosure detail matter because whey, plant, isolate, and blended labels do not always imply the same lean-mass or recovery comparison story.",
+      "segments": {
+        "summary_support": {
+          "en": [
+            {
+              "text": "Protein source and disclosure detail matter because whey, plant, isolate, and blended labels do not always imply the same comparison story on the shelf.",
+              "sentence_id": "protein_type_summary_001",
+              "evidence_snippet_id": "protein_type_excerpt_001",
+              "evidence_reference_id": "pmid:33670701",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "evidence_read_support": {
+          "en": [
+            {
+              "text": "Meta-analytic comparisons support reading animal-versus-plant and source-specific protein claims carefully instead of flattening them into one universal protein lane.",
+              "sentence_id": "protein_type_evidence_001",
+              "evidence_snippet_id": "protein_type_excerpt_001",
+              "evidence_reference_id": "pmid:39813010",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "shopper_meaning_support": {
+          "en": [
+            {
+              "text": "When a label discloses source and grams clearly, that detail is more useful for comparison than generic protein branding alone.",
+              "sentence_id": "protein_type_shopper_001",
+              "evidence_snippet_id": "protein_type_excerpt_001",
+              "evidence_reference_id": "pmid:33670701",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "caveats": {
+          "en": [
+            {
+              "text": "Do not turn source differences into a blanket ranking without also checking total protein amount, blend complexity, and use context.",
+              "sentence_id": "protein_type_caveat_001",
+              "evidence_snippet_id": "protein_type_excerpt_001",
+              "evidence_reference_id": "pmid:39813010",
+              "evidence_grade": "C",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        }
+      },
+      "supporting_references": [
+        {
+          "id": "pmid:33670701",
+          "source": "pubmed",
+          "title": "Animal Protein versus Plant Protein in Supporting Lean Mass and Muscle Strength: A Systematic Review and Meta-Analysis of Randomized Controlled Trials.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/33670701/"
+        },
+        {
+          "id": "pmid:39813010",
+          "source": "pubmed",
+          "title": "Effect of Plant Versus Animal Protein on Muscle Mass, Strength, Physical Performance, and Sarcopenia: A Systematic Review and Meta-analysis of Randomized Controlled Trials.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/39813010/"
+        },
+        {
+          "id": "pmid:28698222",
+          "source": "pubmed",
+          "title": "A systematic review, meta-analysis and meta-regression of the effect of protein supplementation on resistance training-induced gains in muscle mass and strength in healthy adults.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/28698222/"
+        },
+        {
+          "id": "pmid:29462923",
+          "source": "pubmed",
+          "title": "The Effect of Whey Protein Supplementation on the Temporal Recovery of Muscle Function Following Resistance Training: A Systematic Review and Meta-Analysis.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/29462923/"
+        }
+      ]
+    },
+    {
+      "ingredient_family": "fiber",
+      "section_key": "digestive_regularity_context",
+      "evidence_grade": "B",
+      "overall_confidence": 0.82,
+      "display_text": "Digestive regularity is the clearest shopper-facing fiber lane, and review-level evidence is strongest when products are compared through the exact fiber ingredient rather than broad gut branding.",
+      "segments": {
+        "summary_support": {
+          "en": [
+            {
+              "text": "Digestive regularity is the clearest shopper-facing fiber lane, and review-level evidence is strongest when products are compared through the exact fiber ingredient rather than broad gut branding.",
+              "sentence_id": "fiber_regularity_summary_001",
+              "evidence_snippet_id": "fiber_regularity_excerpt_001",
+              "evidence_reference_id": "pmid:35816465",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "evidence_read_support": {
+          "en": [
+            {
+              "text": "Constipation-focused and symptom-focused studies support a real regularity lane, but the exact ingredient and product setup still change how comparable two fiber labels really are.",
+              "sentence_id": "fiber_regularity_evidence_001",
+              "evidence_snippet_id": "fiber_regularity_excerpt_001",
+              "evidence_reference_id": "pmid:37078654",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "shopper_meaning_support": {
+          "en": [
+            {
+              "text": "Use the specific fiber type as the first comparison handle before assuming two digestive-support products belong in the same bucket.",
+              "sentence_id": "fiber_regularity_shopper_001",
+              "evidence_snippet_id": "fiber_regularity_excerpt_001",
+              "evidence_reference_id": "pmid:33767108",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "caveats": {
+          "en": [
+            {
+              "text": "A stronger regularity lane does not mean every fiber product should be read as doing the same job in the same way.",
+              "sentence_id": "fiber_regularity_caveat_001",
+              "evidence_snippet_id": "fiber_regularity_excerpt_001",
+              "evidence_reference_id": "pmid:35816465",
+              "evidence_grade": "C",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        }
+      },
+      "supporting_references": [
+        {
+          "id": "pmid:35816465",
+          "source": "pubmed",
+          "title": "The Effect of Fiber Supplementation on Chronic Constipation in Adults: An Updated Systematic Review and Meta-Analysis of Randomized Controlled Trials.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/35816465/"
+        },
+        {
+          "id": "pmid:37078654",
+          "source": "pubmed",
+          "title": "Effects of dietary fibers or probiotics on functional constipation symptoms and roles of gut microbiota: a double-blinded randomized placebo trial.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/37078654/"
+        },
+        {
+          "id": "pmid:31707507",
+          "source": "pubmed",
+          "title": "The effects of inulin on gut microbial composition: a systematic review of evidence from human studies.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/31707507/"
+        }
+      ]
+    },
+    {
+      "ingredient_family": "fiber",
+      "section_key": "source_and_solubility_context",
+      "evidence_grade": "C",
+      "overall_confidence": 0.71,
+      "display_text": "Fiber source and solubility detail matter because inulin-type, prebiotic-style, and mixed-fiber labels do not all map cleanly onto the same digestive comparison story.",
+      "segments": {
+        "summary_support": {
+          "en": [
+            {
+              "text": "Fiber source and solubility detail matter because inulin-type, prebiotic-style, and mixed-fiber labels do not all map cleanly onto the same digestive comparison story.",
+              "sentence_id": "fiber_source_summary_001",
+              "evidence_snippet_id": "fiber_source_excerpt_001",
+              "evidence_reference_id": "pmid:34555168",
+              "evidence_grade": "C",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "evidence_read_support": {
+          "en": [
+            {
+              "text": "Human inulin and prebiotic reviews support source-sensitive interpretation, which means exact fiber disclosure often matters more than a generic gut-health headline.",
+              "sentence_id": "fiber_source_evidence_001",
+              "evidence_snippet_id": "fiber_source_excerpt_001",
+              "evidence_reference_id": "pmid:31707507",
+              "evidence_grade": "C",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "shopper_meaning_support": {
+          "en": [
+            {
+              "text": "When a label clearly discloses psyllium, inulin, acacia, or a mixed-fiber setup, that source detail is more useful for comparison than broad digestive-support branding.",
+              "sentence_id": "fiber_source_shopper_001",
+              "evidence_snippet_id": "fiber_source_excerpt_001",
+              "evidence_reference_id": "pmid:34555168",
+              "evidence_grade": "C",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "caveats": {
+          "en": [
+            {
+              "text": "Do not generalize source-specific inulin or prebiotic findings to every fiber ingredient or every mixed-fiber product.",
+              "sentence_id": "fiber_source_caveat_001",
+              "evidence_snippet_id": "fiber_source_excerpt_001",
+              "evidence_reference_id": "pmid:31707507",
+              "evidence_grade": "C",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        }
+      },
+      "supporting_references": [
+        {
+          "id": "pmid:34555168",
+          "source": "pubmed",
+          "title": "The Prebiotic Potential of Inulin-Type Fructans: A Systematic Review.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/34555168/"
+        },
+        {
+          "id": "pmid:31707507",
+          "source": "pubmed",
+          "title": "The effects of inulin on gut microbial composition: a systematic review of evidence from human studies.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/31707507/"
+        },
+        {
+          "id": "pmid:37078654",
+          "source": "pubmed",
+          "title": "Effects of dietary fibers or probiotics on functional constipation symptoms and roles of gut microbiota: a double-blinded randomized placebo trial.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/37078654/"
+        }
+      ]
     }
   ],
   "candidate_pubmed_searches": [

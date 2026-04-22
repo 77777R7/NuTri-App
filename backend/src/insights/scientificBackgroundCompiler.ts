@@ -94,7 +94,7 @@ export type ScientificBackgroundExecutionProfile = {
   cacheTtlMs: number;
 };
 
-export const SCIENTIFIC_BACKGROUND_PROMPT_VERSION = "scientific_background_v16";
+export const SCIENTIFIC_BACKGROUND_PROMPT_VERSION = "scientific_background_v17";
 
 const RESEARCH_MODE_TIMEOUT_MS = 2_500;
 const CURCUMIN_RESEARCH_MODE_TIMEOUT_MS = 2_900;
@@ -1806,6 +1806,12 @@ const buildPrompt = (params: {
     }
   })();
 
+  const evidenceGrounding = buildPromptEvidenceGrounding({
+    context: params.context,
+    plan: params.plan,
+    selectedDescriptor: params.selectedDescriptor,
+  });
+
   const payload = {
     selectedItem: {
       name: params.plan.selectedLabel,
@@ -1837,6 +1843,7 @@ const buildPrompt = (params: {
       evidenceGoal: section.evidenceGoal,
       shopperMeaningGoal: section.shopperMeaningGoal,
     })),
+    ...(evidenceGrounding ? { evidenceGrounding } : {}),
   };
 
   const familyWritingRules = (() => {
@@ -2103,6 +2110,9 @@ const buildPrompt = (params: {
     "Each section summary should read like an interpretation for a shopper, not a textbook intro or a restatement of the heading.",
     "Use bullets for concrete endpoints, research settings, or interpretation boundaries that add new information.",
     "Make evidence texture visible: stronger, narrower, mixed, context-dependent, or harder to compare.",
+    "If evidenceGrounding is present for a section, use it as the strongest phrasing boundary for that section's summary, evidenceRead, and shopperMeaning.",
+    "Do not mention PMID numbers, journal names, or formal citations in the shopper-facing card; use evidenceGrounding only to stay specific and comparison-safe.",
+    "If evidenceGrounding exists for only some sections, keep the other sections specific without inventing equally strong support.",
     "Do not use treatment, prevention, cure, diagnosis, or superiority language.",
     "Use the provided headings exactly and in the same order.",
     "Write in English only.",
@@ -3803,6 +3813,83 @@ const resolveEvidenceVariantKey = (params: {
   return undefined;
 };
 
+const getReviewedEvidenceForSection = (params: {
+  plan: ScientificBackgroundPlan;
+  planned: ScientificBackgroundSectionPlan;
+  context: IngredientScienceContext;
+  selectedDescriptor?: IngredientScienceDescriptor | null;
+}): ScientificBackgroundEvidenceRow | null => {
+  const selectedDescriptor =
+    params.selectedDescriptor ??
+    getSelectedDescriptor(params.context, params.plan.selectedLabel);
+  const variantKey = resolveEvidenceVariantKey({
+    plan: params.plan,
+    section: params.planned,
+    selectedDescriptor,
+  });
+  return getScientificBackgroundEvidence(
+    params.plan.family,
+    params.planned.headingId,
+    "en",
+    variantKey,
+  );
+};
+
+const buildPromptEvidenceGrounding = (params: {
+  context: IngredientScienceContext;
+  plan: ScientificBackgroundPlan;
+  selectedDescriptor: IngredientScienceDescriptor | null;
+}):
+  | Array<{
+      headingId: string;
+      heading: string;
+      variantKey?: string;
+      displayText?: string;
+      summarySupport?: string;
+      evidenceReadSupport?: string;
+      shopperMeaningSupport?: string;
+      caveat?: string;
+      references: Array<{ id: string; title: string | null }>;
+    }>
+  | undefined => {
+  const rows = params.plan.sections.flatMap((section) => {
+    const evidence = getReviewedEvidenceForSection({
+      context: params.context,
+      plan: params.plan,
+      planned: section,
+      selectedDescriptor: params.selectedDescriptor,
+    });
+    if (!evidence) return [];
+
+    return [
+      {
+        headingId: section.headingId,
+        heading: section.heading,
+        ...(evidence.variantKey ? { variantKey: evidence.variantKey } : {}),
+        ...(evidence.displayText ? { displayText: evidence.displayText } : {}),
+        ...(firstEvidenceSentence(evidence.segments.summarySupport)
+          ? { summarySupport: firstEvidenceSentence(evidence.segments.summarySupport) ?? undefined }
+          : {}),
+        ...(firstEvidenceSentence(evidence.segments.evidenceReadSupport)
+          ? { evidenceReadSupport: firstEvidenceSentence(evidence.segments.evidenceReadSupport) ?? undefined }
+          : {}),
+        ...(firstEvidenceSentence(evidence.segments.shopperMeaningSupport)
+          ? { shopperMeaningSupport: firstEvidenceSentence(evidence.segments.shopperMeaningSupport) ?? undefined }
+          : {}),
+        ...(firstEvidenceSentence(evidence.segments.caveats)
+          ? { caveat: firstEvidenceSentence(evidence.segments.caveats) ?? undefined }
+          : {}),
+        references: evidence.supportingReferences.slice(0, 3).map((reference) => ({
+          id: reference.id,
+          title: reference.title,
+        })),
+      },
+    ];
+  });
+
+  return rows.length > 0 ? rows : undefined;
+};
+
 const enrichSectionWithReviewedEvidence = (params: {
   plan: ScientificBackgroundPlan;
   planned: ScientificBackgroundSectionPlan;
@@ -3810,20 +3897,11 @@ const enrichSectionWithReviewedEvidence = (params: {
   section: ScientificBackgroundSection;
 }): ScientificBackgroundSection => {
   if (!params.context) return params.section;
-  if (params.plan.family !== "magnesium" && params.plan.family !== "iron") return params.section;
-
-  const selectedDescriptor = getSelectedDescriptor(params.context, params.plan.selectedLabel);
-  const variantKey = resolveEvidenceVariantKey({
+  const evidence = getReviewedEvidenceForSection({
+    context: params.context,
     plan: params.plan,
-    section: params.planned,
-    selectedDescriptor,
+    planned: params.planned,
   });
-  const evidence = getScientificBackgroundEvidence(
-    params.plan.family,
-    params.planned.headingId,
-    "en",
-    variantKey,
-  );
   if (!evidence) return params.section;
 
   const summaryText = firstEvidenceSentence(evidence.segments.summarySupport) ?? evidence.displayText ?? null;
