@@ -3561,6 +3561,11 @@
           ],
           "url": "https://pubmed.ncbi.nlm.nih.gov/40931546/"
         }
+      ],
+      "priority": "P0",
+      "selection_notes": [
+        "Prefer human oral comparison studies and review-level discussions that compare named magnesium forms in shopper-safe absorption or tolerability language.",
+        "Skip mechanistic-only or animal-only papers unless they help explain why label comparison differs without implying a universal best form."
       ]
     },
     {
@@ -3602,6 +3607,11 @@
           ],
           "url": "https://pubmed.ncbi.nlm.nih.gov/2407766/"
         }
+      ],
+      "priority": "P1",
+      "selection_notes": [
+        "Prefer review papers or comparison-safe summaries that explain how disclosed form, elemental amount, and formula setting change magnesium comparison.",
+        "Avoid papers that only rank forms without practical label-reading relevance."
       ]
     },
     {
@@ -3656,6 +3666,11 @@
           ],
           "url": "https://pubmed.ncbi.nlm.nih.gov/15743016/"
         }
+      ],
+      "priority": "P0",
+      "selection_notes": [
+        "Prefer oral supplementation reviews and named-form comparison studies that stay practical about tolerability and label interpretation.",
+        "Avoid IV-only, disease-management-only, or treatment-protocol papers unless they still help explain shopper-safe form comparison."
       ]
     },
     {
@@ -3699,6 +3714,11 @@
           ],
           "url": "https://pubmed.ncbi.nlm.nih.gov/15743016/"
         }
+      ],
+      "priority": "P1",
+      "selection_notes": [
+        "Prefer review-level papers that help compare exact form, elemental amount, and formula setting rather than proclaiming a universal best iron product.",
+        "Keep the lane label-reading focused and avoid disease-specific management papers unless they support cofactor-aware comparison."
       ]
     },
     {
@@ -3758,6 +3778,11 @@
           ],
           "url": "https://pubmed.ncbi.nlm.nih.gov/32383739/"
         }
+      ],
+      "priority": "P1",
+      "selection_notes": [
+        "Prefer systematic reviews and randomized-trial summaries that keep exercise-recovery or inflammation language secondary to the primary lipid lane.",
+        "Avoid broad anti-inflammatory marketing papers that flatten EPA and DHA into the same story."
       ]
     },
     {
@@ -3810,6 +3835,11 @@
           ],
           "url": "https://pubmed.ncbi.nlm.nih.gov/36381743/"
         }
+      ],
+      "priority": "P1",
+      "selection_notes": [
+        "Prefer DHA-anchored review literature with clear brain or eye context and shopper-safe scope.",
+        "Avoid generic fish-oil reviews that do not distinguish DHA-led interpretation."
       ]
     },
     {
@@ -3876,6 +3906,11 @@
           ],
           "url": "https://pubmed.ncbi.nlm.nih.gov/36501174/"
         }
+      ],
+      "priority": "P1",
+      "selection_notes": [
+        "Prefer review papers that set cardiovascular context boundaries without overstating broader heart claims.",
+        "Keep the lane evidence-grounded and avoid papers that blur triglyceride endpoints with every cardiovascular outcome."
       ]
     },
     {
@@ -3941,6 +3976,11 @@
           ],
           "url": "https://pubmed.ncbi.nlm.nih.gov/33670701/"
         }
+      ],
+      "priority": "P1",
+      "selection_notes": [
+        "Prefer review or position-stand papers that treat disclosed protein amount and training context as the comparison anchor.",
+        "Avoid meal replacement or weight-loss papers unless they still help compare protein-forward supplement labels."
       ]
     },
     {
@@ -3995,6 +4035,11 @@
           ],
           "url": "https://pubmed.ncbi.nlm.nih.gov/37196876/"
         }
+      ],
+      "priority": "P1",
+      "selection_notes": [
+        "Prefer papers that help compare source, isolate-versus-concentrate, or blend disclosure rather than generic protein marketing.",
+        "Keep shopper-facing label interpretation ahead of physiology-only papers."
       ]
     },
     {
@@ -4038,6 +4083,11 @@
           ],
           "url": "https://pubmed.ncbi.nlm.nih.gov/33767108/"
         }
+      ],
+      "priority": "P1",
+      "selection_notes": [
+        "Prefer review-level literature on digestive regularity, soluble-versus-insoluble distinction, and labeled fiber type.",
+        "Avoid highly therapeutic GI-disease papers unless they directly improve label-reading context."
       ]
     },
     {
@@ -4090,6 +4140,11 @@
           ],
           "url": "https://pubmed.ncbi.nlm.nih.gov/37078654/"
         }
+      ],
+      "priority": "P1",
+      "selection_notes": [
+        "Prefer source-aware or solubility-aware papers that help compare psyllium, inulin, acacia, and mixed-fiber labels.",
+        "Do not let microbiome-only mechanistic papers outweigh practical source and solubility comparison."
       ]
     },
     {
@@ -4130,6 +4185,11 @@
           ],
           "url": "https://pubmed.ncbi.nlm.nih.gov/10948381/"
         }
+      ],
+      "priority": "P0",
+      "selection_notes": [
+        "Prefer review papers where vitamin C is explicitly paired with iron or iron supplementation, because that co-formulation is the runtime trigger.",
+        "Avoid generic vitamin C immunity papers for this lane unless they also support iron co-administration context."
       ]
     },
     {
@@ -4160,6 +4220,11 @@
           ],
           "url": "https://pubmed.ncbi.nlm.nih.gov/29099763/"
         }
+      ],
+      "priority": "P0",
+      "selection_notes": [
+        "Prefer delivery-aware vitamin C papers that mention liposomal, buffered, sustained-release, or bioavailability framing, because the runtime variant is delivery-triggered.",
+        "Avoid generic vitamin C review papers that do not help distinguish plain tablets from alternative delivery formats."
       ]
     },
     {
@@ -4200,6 +4265,11 @@
           ],
           "url": "https://pubmed.ncbi.nlm.nih.gov/35755397/"
         }
+      ],
+      "priority": "P0",
+      "selection_notes": [
+        "Prefer review or meta-analytic papers where iron is discussed with vitamin C, folate, or B12, because the runtime variant is a cofactor-aware formula lane.",
+        "Avoid single-ingredient iron papers unless they still explain why paired nutrients change interpretation."
       ]
     },
     {
@@ -4241,6 +4311,11 @@
           ],
           "url": "https://pubmed.ncbi.nlm.nih.gov/32340216/"
         }
+      ],
+      "priority": "P0",
+      "selection_notes": [
+        "Prefer zinc-plus-vitamin-C review literature or co-supplementation discussions because that pairing is the runtime trigger.",
+        "Avoid broad zinc immune papers that do not help compare paired formulas against single-zinc products."
       ]
     },
     {
@@ -4270,6 +4345,144 @@
             "Systematic Review"
           ],
           "url": "https://pubmed.ncbi.nlm.nih.gov/21328251/"
+        }
+      ],
+      "priority": "P0",
+      "selection_notes": [
+        "Prefer short-term lozenge-style immune-context literature because this variant should stay label-context-safe rather than becoming a broad research lane.",
+        "Avoid using these candidates to promote long-term or generalized zinc immune claims."
+      ]
+    },
+    {
+      "family": "b6",
+      "lane": "why_dose_context_matters",
+      "variant_key": "b_complex_pairing",
+      "source": "life-science-research:ncbi-entrez-skill",
+      "retrieved_at": "2026-04-22",
+      "query": "((vitamin b6 OR pyridoxine) AND (b-complex OR homocysteine OR folate OR vitamin b12)) AND (Review[pt] OR systematic[sb] OR meta-analysis[pt])",
+      "priority": "P0",
+      "selection_notes": [
+        "Prefer multi-B or homocysteine-style supplementation reviews that help explain why B6 inside a B-complex compares differently from standalone B6.",
+        "Keep the lane formula-aware; avoid toxicity-only or disease-specialty papers unless they still clarify multi-B label interpretation."
+      ],
+      "candidates": [
+        {
+          "pmid": "31915511",
+          "title": "A Randomized Pilot Trial to Evaluate the Bioavailability of Natural versus Synthetic Vitamin B Complexes in Healthy Humans and Their Effects on Homocysteine, Oxidative Stress, and Antioxidant Levels.",
+          "pubdate": "2019",
+          "pubtype": [
+            "Journal Article"
+          ],
+          "url": "https://pubmed.ncbi.nlm.nih.gov/31915511/"
+        },
+        {
+          "pmid": "40218880",
+          "title": "Effects of B Vitamins on Homocysteine Lowering and Thrombotic Risk Reduction-A Review of Randomized Controlled Trials Published Since January 1996.",
+          "pubdate": "2025 Mar 24",
+          "pubtype": [
+            "Journal Article",
+            "Review"
+          ],
+          "url": "https://pubmed.ncbi.nlm.nih.gov/40218880/"
+        },
+        {
+          "pmid": "41615824",
+          "title": "Combined B-vitamin supplementation on homocysteine and vascular outcomes in coronary heart disease: a meta-analysis.",
+          "pubdate": "2026 Dec",
+          "pubtype": [
+            "Journal Article",
+            "Meta-Analysis"
+          ],
+          "url": "https://pubmed.ncbi.nlm.nih.gov/41615824/"
+        }
+      ]
+    },
+    {
+      "family": "folate",
+      "lane": "folate_status_and_supplementation_context",
+      "variant_key": "b_complex_pairing",
+      "source": "life-science-research:ncbi-entrez-skill",
+      "retrieved_at": "2026-04-22",
+      "query": "((folate OR folic acid OR methylfolate) AND (b-complex OR homocysteine OR vitamin b6 OR vitamin b12)) AND (Review[pt] OR systematic[sb] OR meta-analysis[pt])",
+      "priority": "P0",
+      "selection_notes": [
+        "Prefer multi-B or one-carbon-metabolism reviews that help explain how folate reads differently inside a B-complex or homocysteine-aware formula.",
+        "Avoid prenatal-only or highly specialized disease papers unless they still help compare general supplement formulas."
+      ],
+      "candidates": [
+        {
+          "pmid": "41615824",
+          "title": "Combined B-vitamin supplementation on homocysteine and vascular outcomes in coronary heart disease: a meta-analysis.",
+          "pubdate": "2026 Dec",
+          "pubtype": [
+            "Journal Article",
+            "Meta-Analysis"
+          ],
+          "url": "https://pubmed.ncbi.nlm.nih.gov/41615824/"
+        },
+        {
+          "pmid": "41890215",
+          "title": "One-carbon metabolism and cardiovascular disease: Molecular mechanisms, genetic influences, and epigenetic regulation.",
+          "pubdate": "2026 Jun",
+          "pubtype": [
+            "Journal Article",
+            "Review"
+          ],
+          "url": "https://pubmed.ncbi.nlm.nih.gov/41890215/"
+        },
+        {
+          "pmid": "40218880",
+          "title": "Effects of B Vitamins on Homocysteine Lowering and Thrombotic Risk Reduction-A Review of Randomized Controlled Trials Published Since January 1996.",
+          "pubdate": "2025 Mar 24",
+          "pubtype": [
+            "Journal Article",
+            "Review"
+          ],
+          "url": "https://pubmed.ncbi.nlm.nih.gov/40218880/"
+        }
+      ]
+    },
+    {
+      "family": "b12",
+      "lane": "deficiency_and_supplementation_context",
+      "variant_key": "b_complex_pairing",
+      "source": "life-science-research:ncbi-entrez-skill",
+      "retrieved_at": "2026-04-22",
+      "query": "((vitamin b12 OR cobalamin OR methylcobalamin) AND (b-complex OR homocysteine OR folate OR vitamin b6)) AND (Review[pt] OR systematic[sb] OR meta-analysis[pt])",
+      "priority": "P0",
+      "selection_notes": [
+        "Prefer review or meta-analytic literature where B12 is discussed alongside folate or B6, because the goal is a multi-B comparison lane rather than a standalone B12 deficiency lane.",
+        "Keep the candidate pool shopper-safe and avoid developmental-delay or specialty-diagnostic papers unless they also illuminate B-complex formula interpretation."
+      ],
+      "candidates": [
+        {
+          "pmid": "31915511",
+          "title": "A Randomized Pilot Trial to Evaluate the Bioavailability of Natural versus Synthetic Vitamin B Complexes in Healthy Humans and Their Effects on Homocysteine, Oxidative Stress, and Antioxidant Levels.",
+          "pubdate": "2019",
+          "pubtype": [
+            "Journal Article"
+          ],
+          "url": "https://pubmed.ncbi.nlm.nih.gov/31915511/"
+        },
+        {
+          "pmid": "40218880",
+          "title": "Effects of B Vitamins on Homocysteine Lowering and Thrombotic Risk Reduction-A Review of Randomized Controlled Trials Published Since January 1996.",
+          "pubdate": "2025 Mar 24",
+          "pubtype": [
+            "Journal Article",
+            "Review"
+          ],
+          "url": "https://pubmed.ncbi.nlm.nih.gov/40218880/"
+        },
+        {
+          "pmid": "41615824",
+          "title": "Combined B-vitamin supplementation on homocysteine and vascular outcomes in coronary heart disease: a meta-analysis.",
+          "pubdate": "2026 Dec",
+          "pubtype": [
+            "Journal Article",
+            "Meta-Analysis"
+          ],
+          "url": "https://pubmed.ncbi.nlm.nih.gov/41615824/"
         }
       ]
     }

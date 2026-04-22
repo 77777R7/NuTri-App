@@ -394,6 +394,8 @@ test("scientific background evidence json keeps variant candidate registry entri
       lane: string;
       variant_key?: string;
       source?: string;
+      priority?: string;
+      selection_notes?: string[];
       candidates?: Array<unknown>;
     }>;
   };
@@ -423,17 +425,75 @@ test("scientific background evidence json keeps variant candidate registry entri
   );
 
   assert.equal(vitaminCAltDelivery?.source, "life-science-research:ncbi-entrez-skill");
+  assert.equal(vitaminCAltDelivery?.priority, "P0");
+  assert.ok((vitaminCAltDelivery?.selection_notes?.length ?? 0) >= 1);
   assert.ok((vitaminCAltDelivery?.candidates?.length ?? 0) >= 1);
 
   assert.equal(vitaminCWithIron?.source, "life-science-research:ncbi-entrez-skill");
+  assert.equal(vitaminCWithIron?.priority, "P0");
+  assert.ok((vitaminCWithIron?.selection_notes?.length ?? 0) >= 1);
   assert.ok((vitaminCWithIron?.candidates?.length ?? 0) >= 2);
 
   assert.equal(ironWithCofactors?.source, "life-science-research:ncbi-entrez-skill");
+  assert.equal(ironWithCofactors?.priority, "P0");
+  assert.ok((ironWithCofactors?.selection_notes?.length ?? 0) >= 1);
   assert.ok((ironWithCofactors?.candidates?.length ?? 0) >= 2);
 
   assert.equal(zincWithVitaminC?.source, "life-science-research:ncbi-entrez-skill");
+  assert.equal(zincWithVitaminC?.priority, "P0");
+  assert.ok((zincWithVitaminC?.selection_notes?.length ?? 0) >= 1);
   assert.ok((zincWithVitaminC?.candidates?.length ?? 0) >= 2);
 
   assert.equal(zincLozenge?.source, "life-science-research:ncbi-entrez-skill");
+  assert.equal(zincLozenge?.priority, "P0");
+  assert.ok((zincLozenge?.selection_notes?.length ?? 0) >= 1);
   assert.ok((zincLozenge?.candidates?.length ?? 0) >= 1);
+});
+
+test("scientific background evidence json seeds b-complex-aware candidate templates for b6, folate, and b12", () => {
+  const raw = fs.readFileSync(
+    new URL("../../backend/data/reviewed/scientific-background-evidence.v1.json", import.meta.url),
+    "utf8",
+  );
+  const parsed = JSON.parse(raw) as {
+    candidate_pubmed_searches: Array<{
+      family: string;
+      lane: string;
+      variant_key?: string;
+      source?: string;
+      priority?: string;
+      selection_notes?: string[];
+      candidates?: Array<{ pmid?: string }>;
+    }>;
+  };
+
+  const findTemplate = (family: string, lane: string) =>
+    parsed.candidate_pubmed_searches.find(
+      (entry) =>
+        entry.family === family &&
+        entry.lane === lane &&
+        (entry.variant_key ?? "") === "b_complex_pairing",
+    );
+
+  const b6 = findTemplate("b6", "why_dose_context_matters");
+  const folate = findTemplate("folate", "folate_status_and_supplementation_context");
+  const b12 = findTemplate("b12", "deficiency_and_supplementation_context");
+
+  assert.equal(b6?.source, "life-science-research:ncbi-entrez-skill");
+  assert.equal(b6?.priority, "P0");
+  assert.ok((b6?.selection_notes?.length ?? 0) >= 1);
+  assert.ok((b6?.candidates?.length ?? 0) >= 3);
+  assert.equal(b6?.candidates?.[0]?.pmid, "31915511");
+
+  assert.equal(folate?.source, "life-science-research:ncbi-entrez-skill");
+  assert.equal(folate?.priority, "P0");
+  assert.ok((folate?.selection_notes?.length ?? 0) >= 1);
+  assert.ok((folate?.candidates?.length ?? 0) >= 3);
+  assert.equal(folate?.candidates?.[0]?.pmid, "41615824");
+
+  assert.equal(b12?.source, "life-science-research:ncbi-entrez-skill");
+  assert.equal(b12?.priority, "P0");
+  assert.ok((b12?.selection_notes?.length ?? 0) >= 1);
+  assert.ok((b12?.candidates?.length ?? 0) >= 3);
+  assert.equal(b12?.candidates?.[0]?.pmid, "31915511");
 });
