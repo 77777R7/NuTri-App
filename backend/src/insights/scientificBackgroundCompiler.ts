@@ -326,12 +326,28 @@ const hasOtherResearchReadyOmega3Lines = (
     return descriptor.lineRole === "breakdown_line" || descriptor.lineRole === "primary_active";
   });
 
+const PROTEIN_OR_FIBER_POWDER_PATTERN = /\bpowder\b/i;
+const FOOD_LIKE_PROTEIN_OR_FIBER_BLOCKER_PATTERN =
+  /\b(?:bars?|bites?|snack|cookies?|crackers?|chews?|gumm(?:y|ies)|drink|latte|smoothie|trail\s+mix)\b/i;
+
+const hasResearchReadyFunctionalFoodOverride = (
+  context: IngredientScienceContext,
+  descriptor: IngredientScienceDescriptor,
+): boolean => {
+  if (descriptor.ingredientFamily !== "protein" && descriptor.ingredientFamily !== "fiber") return false;
+  if (descriptor.lineRole === "blend_line" || descriptor.lineRole === "aggregate_line") return false;
+  if (!PROTEIN_OR_FIBER_POWDER_PATTERN.test(context.productName)) return false;
+  if (FOOD_LIKE_PROTEIN_OR_FIBER_BLOCKER_PATTERN.test(context.productName)) return false;
+  return true;
+};
+
 const resolveScientificBackgroundMode = (
   context: IngredientScienceContext,
   descriptor: IngredientScienceDescriptor | null,
 ): ScientificBackgroundMode => {
   if (!descriptor) return "research_mode";
   if (context.productArchetype === "functional_food_like") {
+    if (hasResearchReadyFunctionalFoodOverride(context, descriptor)) return "research_mode";
     return "label_context_mode";
   }
   if (descriptor.lineRole === "blend_line" || descriptor.lineRole === "aggregate_line") return "label_context_mode";
@@ -590,6 +606,64 @@ const buildResearchPlan = (
         ["Marine and bovine collagen should not be treated as identical shorthand", "Type or peptide detail improves comparison", "Do not turn source differences into a universal superiority claim"],
         "Make this a comparison lane, not a best-source ranking.",
         "Tell the shopper why source and type disclosure often matter more than a generic collagen headline.",
+      ),
+    ];
+  }
+
+  if (descriptor.ingredientFamily === "protein") {
+    return [
+      buildSectionPlan(
+        "muscle_and_recovery_context",
+        "Muscle and recovery context",
+        "Explain the main muscle-support and recovery lane for protein powders and protein-forward supplements.",
+        ["Muscle-support context is the clearest lane", "Recovery wording is common but should stay specific", "Keep the interpretation anchored to disclosed protein rather than broad fitness marketing"],
+        "Show that protein has a straightforward core lane without making every label equivalent.",
+        "Help the shopper compare protein products through the clearest recovery and protein-content story.",
+      ),
+      buildSectionPlan(
+        "satiety_and_meal_support_context",
+        "Satiety and meal-support context",
+        "Explain the secondary satiety and meal-support lane for protein without flattening it into weight-loss marketing.",
+        ["Satiety-related interpretation appears often", "Meal-support positioning is broader than the clearest muscle lane", "Do not let this drift into generic slimming copy"],
+        "Keep this section secondary and bounded.",
+        "Help the shopper understand why some protein products are positioned more like meal support than pure performance support.",
+      ),
+      buildSectionPlan(
+        "protein_type_and_disclosure_context",
+        "Protein type and disclosure context",
+        "Explain why protein source, isolate-versus-concentrate detail, and blend complexity change product comparison.",
+        ["Whey, pea, soy, and blended protein lines should not be flattened together", "Isolate or concentrate detail changes comparison value", "Flavor systems and add-on actives can make two protein products less comparable than they look"],
+        "Make this a practical comparison section.",
+        "Tell the shopper what to read before assuming two protein products belong in the same comparison set.",
+      ),
+    ];
+  }
+
+  if (descriptor.ingredientFamily === "fiber") {
+    return [
+      buildSectionPlan(
+        "digestive_regularity_context",
+        "Digestive regularity context",
+        "Explain the main digestive-regularity lane that makes fiber easier to interpret than broad gut-wellness marketing.",
+        ["Digestive-regularity context is the clearest lane", "This is more specific than vague gut-health copy", "Keep the section shopper-facing and product-relevant"],
+        "Show that fiber has a recognizable primary lane without making every fiber product interchangeable.",
+        "Help the shopper anchor comparison on the clearest and most practical fiber context.",
+      ),
+      buildSectionPlan(
+        "satiety_and_gut_context",
+        "Satiety and gut context",
+        "Explain the secondary satiety and gut-environment lane for fiber without turning it into a catch-all digestive promise.",
+        ["Satiety-related interpretation appears often", "Broader gut-environment language is wider than the clearest regularity lane", "This lane is more context-dependent than the primary lane"],
+        "Keep this section secondary and bounded.",
+        "Help the shopper keep broad gut-support wording in proportion when comparing fiber products.",
+      ),
+      buildSectionPlan(
+        "source_and_solubility_context",
+        "Source and solubility context",
+        "Explain why source and solubility detail can materially change fiber comparison.",
+        ["Psyllium, inulin, acacia, and mixed fibers should not be read as identical", "Soluble-versus-insoluble context changes label meaning", "Blend complexity can make comparison harder even when the front label sounds similar"],
+        "Make this a comparison-oriented section rather than a best-fiber ranking.",
+        "Tell the shopper why exact fiber type often matters more than generic digestive-support branding.",
       ),
     ];
   }
@@ -1785,6 +1859,20 @@ const buildPrompt = (params: {
         "Make shopper meaning practical by tying comparison to source, peptide or type disclosure, and whether the formula is beauty-led, joint-led, or more general.",
       ];
     }
+    if (params.plan.family === "protein") {
+      return [
+        "Keep protein anchored to muscle and recovery context first, with satiety or meal-support language as a secondary lane.",
+        "Do not flatten every protein label into generic fitness or weight-loss marketing.",
+        "Make shopper meaning practical by tying comparison to exact protein source, isolate or concentrate detail, disclosed grams, and whether the formula stays simple or heavily blended.",
+      ];
+    }
+    if (params.plan.family === "fiber") {
+      return [
+        "Keep fiber grounded in digestive-regularity context first, with satiety or broader gut-environment language as a secondary lane.",
+        "Do not turn broad gut-health branding into a catch-all summary that ignores source and solubility.",
+        "Make shopper meaning practical by tying comparison to exact fiber type, source, solubility detail, and whether the product is a simple fiber ingredient or a more complex blend.",
+      ];
+    }
     if (params.plan.family === "ashwagandha") {
       return [
         "Keep ashwagandha anchored to stress- and mood-related context first, with sleep or recovery as narrower secondary lanes.",
@@ -2759,6 +2847,78 @@ const buildSectionFallback = (
         ],
         evidenceRead: "This is mainly a comparison and disclosure section rather than a hard ranking section.",
         shopperMeaning: "Check source, type, and peptide detail before assuming two collagen products belong in the same comparison set.",
+      };
+    case "muscle_and_recovery_context":
+      return {
+        heading: section.heading,
+        summary: `${label} is easiest to interpret through muscle and recovery context, which is a cleaner and more specific protein lane than broad fitness marketing by itself.`,
+        bullets: [
+          "Muscle-support and recovery language is the clearest lane for reading a protein label.",
+          "This is more specific than generic fitness, lean-body, or active-lifestyle copy.",
+          "Exact disclosed protein and source still matter before two protein products can be treated as close substitutes.",
+        ],
+        evidenceRead: "This is the clearest protein lane, but it should stay anchored to the actual protein line rather than broad gym-style packaging language.",
+        shopperMeaning: "Compare protein products through exact protein source and disclosed grams before leaning on broader fitness copy.",
+      };
+    case "satiety_and_meal_support_context":
+      return {
+        heading: section.heading,
+        summary: `${label} also appears in satiety and meal-support positioning, but that lane is broader than the clearest muscle-and-recovery reading and should not be flattened into generic weight-loss marketing.`,
+        bullets: [
+          "Satiety-related interpretation appears often, especially in powders and meal-support products.",
+          "This lane is broader and more context-dependent than the clearest protein lane.",
+          "The rest of the formula changes whether the product reads like straightforward protein support or a more meal-like blend.",
+        ],
+        evidenceRead: "This is a useful secondary protein lane, but it should stay bounded and product-aware.",
+        shopperMeaning: "Use it to understand whether a protein product leans more recovery-oriented or meal-support oriented before comparing formulas.",
+      };
+    case "protein_type_and_disclosure_context":
+      return {
+        heading: section.heading,
+        summary: `Protein type and disclosure matter for ${label} because whey, pea, soy, isolate, concentrate, and blended protein lines are not all saying the same thing on the label.`,
+        bullets: [
+          "Exact protein source usually improves comparison much more than a generic protein headline.",
+          "Isolate, concentrate, and blend wording can change how directly products should be compared.",
+          "Flavor systems and add-on actives can make similar-looking protein products less interchangeable than they first appear.",
+        ],
+        evidenceRead: "This is mainly a comparison and label-reading section rather than a hard ranking section.",
+        shopperMeaning: "Check source, isolate or blend detail, and disclosed grams before assuming two protein products belong in the same comparison set.",
+      };
+    case "digestive_regularity_context":
+      return {
+        heading: section.heading,
+        summary: `${label} is easiest to interpret through digestive-regularity context, which is a cleaner and more specific fiber lane than vague gut-wellness marketing.`,
+        bullets: [
+          "Digestive-regularity context is the clearest lane for reading a fiber label.",
+          "This is more specific than generic gut-health or daily-wellness packaging language.",
+          "Exact fiber type still matters before two fiber products can be treated as close substitutes.",
+        ],
+        evidenceRead: "This is the clearest fiber lane, but it should stay anchored to the exact fiber line rather than broad gut-branding language.",
+        shopperMeaning: "Compare fiber products through the named fiber type and disclosed amount before leaning on broad gut-health copy.",
+      };
+    case "satiety_and_gut_context":
+      return {
+        heading: section.heading,
+        summary: `${label} also appears in satiety and broader gut-environment positioning, but that lane is more secondary and context-dependent than the clearest digestive-regularity reading.`,
+        bullets: [
+          "Satiety-related interpretation appears often, but it is broader than the main regularity lane.",
+          "Broader gut-environment language can matter without making every fiber label tell the same story.",
+          "Formula setting still changes whether a product reads like straightforward fiber support or a wider digestive blend.",
+        ],
+        evidenceRead: "This is a useful secondary fiber lane, but it should stay bounded and product-aware.",
+        shopperMeaning: "Use it to understand whether a fiber product is framed more around regularity, satiety, or a broader digestive story before comparing labels.",
+      };
+    case "source_and_solubility_context":
+      return {
+        heading: section.heading,
+        summary: `Source and solubility detail change the comparison value of ${label} because psyllium, inulin, acacia, and mixed-fiber lines are not all saying the same thing on the label.`,
+        bullets: [
+          "Exact fiber type usually improves comparison much more than a generic digestive-support headline.",
+          "Soluble-versus-insoluble framing can change how the label should be interpreted.",
+          "Blend complexity can make similar-looking fiber products less interchangeable than they first appear.",
+        ],
+        evidenceRead: "This is mainly a comparison and disclosure section rather than a best-fiber ranking section.",
+        shopperMeaning: "Check fiber source, solubility detail, and whether the formula is simple or blended before assuming two fiber products belong in the same comparison set.",
       };
     case "common_use_contexts":
       return {

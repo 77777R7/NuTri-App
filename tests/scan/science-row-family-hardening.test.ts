@@ -1010,6 +1010,51 @@ test('science context rescues common title-led actives from macro residue rows',
   assert.equal(proteinContext.anchorIngredient?.ingredientFamily, 'protein');
 });
 
+test('science context gives protein and fiber anchors family-specific research plans', () => {
+  const fiberContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-apple-fiber-research',
+      productName: 'Apple Fiber Pure Powder',
+      dosageForm: 'Powder',
+      actives: [
+        { name: 'Apple Fiber', amount: 5, unit: 'g' },
+      ],
+    }),
+    overlayClaims: null,
+  });
+  const proteinContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-whey-protein-research',
+      productName: '100% Whey Protein Powder',
+      dosageForm: 'Powder',
+      actives: [
+        { name: 'Whey Protein Isolate', amount: 25, unit: 'g' },
+      ],
+    }),
+    overlayClaims: null,
+  });
+
+  const fiberPlan = planScientificBackgroundSections({
+    context: fiberContext,
+    selectedIngredientName: 'Apple Fiber',
+  });
+  const proteinPlan = planScientificBackgroundSections({
+    context: proteinContext,
+    selectedIngredientName: 'Whey Protein Isolate',
+  });
+
+  assert.equal(fiberPlan.mode, 'research_mode');
+  assert.deepEqual(
+    fiberPlan.sections.map((section) => section.heading),
+    ['Digestive regularity context', 'Satiety and gut context', 'Source and solubility context'],
+  );
+  assert.equal(proteinPlan.mode, 'research_mode');
+  assert.deepEqual(
+    proteinPlan.sections.map((section) => section.heading),
+    ['Muscle and recovery context', 'Satiety and meal-support context', 'Protein type and disclosure context'],
+  );
+});
+
 test('science context rescues trace minerals titles ahead of aloe and macro residue rows', async () => {
   const context = buildIngredientScienceContext({
     digest: buildDigest({

@@ -1700,7 +1700,7 @@ test('botanical families get longer execution budgets than the generic research 
   assert.ok(greenTeaProfile.timeoutMs > vitaminCProfile.timeoutMs);
 });
 
-test('planner assigns dedicated section packs to magnesium, vitamin D, calcium, iron, melatonin, b-vitamin, and expanded botanical families', () => {
+test('planner assigns dedicated section packs to magnesium, vitamin D, calcium, iron, melatonin, b-vitamin, and expanded ingredient families', () => {
   const magnesiumContext = buildIngredientScienceContext({
     digest: buildDigest({
       labelId: 'fixture-magnesium-glycinate',
@@ -1827,6 +1827,24 @@ test('planner assigns dedicated section packs to magnesium, vitamin D, calcium, 
     }),
     overlayClaims: null,
   });
+  const proteinContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-protein-pack',
+      productName: '100% Whey Protein Powder',
+      dosageForm: 'Powder',
+      actives: [{ name: 'Whey Protein Isolate', amount: 25, unit: 'g' }],
+    }),
+    overlayClaims: null,
+  });
+  const fiberContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-fiber-pack',
+      productName: 'Apple Fiber Pure Powder',
+      dosageForm: 'Powder',
+      actives: [{ name: 'Apple Fiber', amount: 5, unit: 'g' }],
+    }),
+    overlayClaims: null,
+  });
   const ashwagandhaContext = buildIngredientScienceContext({
     digest: buildDigest({
       labelId: 'fixture-ashwagandha-pack',
@@ -1910,6 +1928,14 @@ test('planner assigns dedicated section packs to magnesium, vitamin D, calcium, 
   assert.deepEqual(
     planScientificBackgroundSections({ context: collagenContext, selectedIngredientName: 'Marine Collagen Peptides' }).sections.map((section) => section.heading),
     ['Skin and connective-tissue context', 'Joint and structure context', 'Source and type context'],
+  );
+  assert.deepEqual(
+    planScientificBackgroundSections({ context: proteinContext, selectedIngredientName: 'Whey Protein Isolate' }).sections.map((section) => section.heading),
+    ['Muscle and recovery context', 'Satiety and meal-support context', 'Protein type and disclosure context'],
+  );
+  assert.deepEqual(
+    planScientificBackgroundSections({ context: fiberContext, selectedIngredientName: 'Apple Fiber' }).sections.map((section) => section.heading),
+    ['Digestive regularity context', 'Satiety and gut context', 'Source and solubility context'],
   );
   assert.deepEqual(
     planScientificBackgroundSections({ context: ashwagandhaContext, selectedIngredientName: 'Ashwagandha (KSM-66)' }).sections.map((section) => section.heading),
@@ -2052,6 +2078,24 @@ test('new family fallbacks stay specific and do not collapse back to generic pro
     }),
     overlayClaims: null,
   });
+  const proteinContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-protein-fallback',
+      productName: '100% Whey Protein Powder',
+      dosageForm: 'Powder',
+      actives: [{ name: 'Whey Protein Isolate', amount: 25, unit: 'g' }],
+    }),
+    overlayClaims: null,
+  });
+  const fiberContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-fiber-fallback',
+      productName: 'Apple Fiber Pure Powder',
+      dosageForm: 'Powder',
+      actives: [{ name: 'Apple Fiber', amount: 5, unit: 'g' }],
+    }),
+    overlayClaims: null,
+  });
   const ashwagandhaContext = buildIngredientScienceContext({
     digest: buildDigest({
       labelId: 'fixture-ashwagandha-fallback',
@@ -2094,6 +2138,8 @@ test('new family fallbacks stay specific and do not collapse back to generic pro
   const berberineResult = await compileScientificBackgroundAsync(berberineContext, 'Berberine HCl');
   const nacResult = await compileScientificBackgroundAsync(nacContext, 'N-Acetyl-Cysteine');
   const collagenResult = await compileScientificBackgroundAsync(collagenContext, 'Marine Collagen Peptides');
+  const proteinResult = await compileScientificBackgroundAsync(proteinContext, 'Whey Protein Isolate');
+  const fiberResult = await compileScientificBackgroundAsync(fiberContext, 'Apple Fiber');
   const ashwagandhaResult = await compileScientificBackgroundAsync(ashwagandhaContext, 'Ashwagandha (KSM-66)');
   const ginsengResult = await compileScientificBackgroundAsync(ginsengContext, 'Panax Ginseng Extract');
   const greenTeaResult = await compileScientificBackgroundAsync(greenTeaContext, 'Green Tea Extract (EGCG)');
@@ -2123,6 +2169,10 @@ test('new family fallbacks stay specific and do not collapse back to generic pro
   assert.match(nacResult.scientificBackground.sections[2]?.shopperMeaning ?? '', /dose|use context|comparison|label/i);
   assert.match(collagenResult.scientificBackground.sections[0]?.summary ?? '', /collagen|connective|skin/i);
   assert.match(collagenResult.scientificBackground.sections[2]?.shopperMeaning ?? '', /source|type|collagen|comparison/i);
+  assert.match(proteinResult.scientificBackground.sections[0]?.summary ?? '', /protein|muscle|recovery/i);
+  assert.match(proteinResult.scientificBackground.sections[2]?.shopperMeaning ?? '', /source|blend|grams|protein|comparison/i);
+  assert.match(fiberResult.scientificBackground.sections[0]?.summary ?? '', /fiber|digestive|regularity/i);
+  assert.match(fiberResult.scientificBackground.sections[2]?.shopperMeaning ?? '', /fiber|source|solubility|comparison/i);
   assert.match(ashwagandhaResult.scientificBackground.sections[0]?.summary ?? '', /stress|mood|resilience/i);
   assert.match(ashwagandhaResult.scientificBackground.sections[2]?.shopperMeaning ?? '', /extract identity|comparison set|ashwagandha/i);
   assert.match(ginsengResult.scientificBackground.sections[0]?.summary ?? '', /energy|fatigue|ginseng/i);
