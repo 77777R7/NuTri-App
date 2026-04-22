@@ -247,6 +247,18 @@ test("scientific background evidence package loads vitamin d completion rows plu
     "en",
     "b_complex_pairing",
   );
+  const folateBComplex = getScientificBackgroundEvidence(
+    "folate",
+    "folate_status_and_supplementation_context",
+    "en",
+    "b_complex_pairing",
+  );
+  const b12BComplex = getScientificBackgroundEvidence(
+    "b12",
+    "deficiency_and_supplementation_context",
+    "en",
+    "b_complex_pairing",
+  );
   const zincWithVitaminC = getScientificBackgroundEvidence(
     "zinc",
     "immune_function_context",
@@ -310,6 +322,17 @@ test("scientific background evidence package loads vitamin d completion rows plu
   assert.equal(b6BComplex.variantKey, "b_complex_pairing");
   assert.match(b6BComplex.displayText ?? "", /B-complex|multi-B|vitamin B6/i);
   assert.equal(b6BComplex.supportingReferences[0]?.id, "pmid:31915511");
+  assert.equal(b6BComplex.supportingReferences[2]?.id, "pmid:41615824");
+
+  assert.ok(folateBComplex);
+  assert.equal(folateBComplex.variantKey, "b_complex_pairing");
+  assert.match(folateBComplex.displayText ?? "", /B-complex|multi-B|folate/i);
+  assert.equal(folateBComplex.supportingReferences[0]?.id, "pmid:41615824");
+
+  assert.ok(b12BComplex);
+  assert.equal(b12BComplex.variantKey, "b_complex_pairing");
+  assert.match(b12BComplex.displayText ?? "", /B-complex|multi-B|B12/i);
+  assert.equal(b12BComplex.supportingReferences[0]?.id, "pmid:31915511");
 
   assert.ok(zincWithVitaminC);
   assert.equal(zincWithVitaminC.variantKey, "with_vitamin_c");

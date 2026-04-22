@@ -94,7 +94,9 @@ export type ScientificBackgroundExecutionProfile = {
   cacheTtlMs: number;
 };
 
-export const SCIENTIFIC_BACKGROUND_PROMPT_VERSION = "scientific_background_v22";
+export const SCIENTIFIC_BACKGROUND_PROMPT_VERSION = "scientific_background_v23";
+const B_COMPLEX_PAIRING_PATTERN =
+  /\bb-complex\b|\bvitamin b12\b|\bb12\b|\bcobalamin\b|\bfolate\b|\bfolic acid\b|\bmethylfolate\b|\briboflavin\b|\bthiamin\b|\bthiamine\b|\bniacin\b|\bvitamin b1\b|\bvitamin b2\b|\bvitamin b3\b|\bvitamin b6\b|\bpyridox(?:ine|al)?\b/i;
 
 const RESEARCH_MODE_TIMEOUT_MS = 2_500;
 const CURCUMIN_RESEARCH_MODE_TIMEOUT_MS = 2_900;
@@ -3787,6 +3789,8 @@ const resolveEvidenceVariantKey = (params: {
 }): string | undefined => {
   const evidenceEligibleSection =
     params.section.headingId === "antioxidant_and_immune_research" ||
+    params.section.headingId === "deficiency_and_supplementation_context" ||
+    params.section.headingId === "folate_status_and_supplementation_context" ||
     params.section.headingId === "form_and_tolerability_context" ||
     params.section.headingId === "what_product_comparison_depends_on" ||
     params.section.headingId === "iron_absorption_context" ||
@@ -3861,13 +3865,23 @@ const resolveEvidenceVariantKey = (params: {
   }
 
   if (params.plan.family === "b6" && params.section.headingId === "why_dose_context_matters") {
-    if (
-      /\bb-complex\b|\bvitamin b12\b|\bb12\b|\bcobalamin\b|\bfolate\b|\bfolic acid\b|\bmethylfolate\b|\briboflavin\b|\bthiamin\b|\bthiamine\b|\bniacin\b|\bvitamin b1\b|\bvitamin b2\b|\bvitamin b3\b/i.test(
-        contextText,
-      )
-    ) {
-      return "b_complex_pairing";
-    }
+    if (B_COMPLEX_PAIRING_PATTERN.test(contextText)) return "b_complex_pairing";
+    return undefined;
+  }
+
+  if (
+    params.plan.family === "folate" &&
+    params.section.headingId === "folate_status_and_supplementation_context"
+  ) {
+    if (B_COMPLEX_PAIRING_PATTERN.test(contextText)) return "b_complex_pairing";
+    return undefined;
+  }
+
+  if (
+    params.plan.family === "b12" &&
+    params.section.headingId === "deficiency_and_supplementation_context"
+  ) {
+    if (B_COMPLEX_PAIRING_PATTERN.test(contextText)) return "b_complex_pairing";
     return undefined;
   }
 

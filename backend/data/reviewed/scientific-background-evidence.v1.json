@@ -3368,7 +3368,7 @@
       "ingredient_family": "b6",
       "section_key": "why_dose_context_matters",
       "evidence_grade": "B",
-      "overall_confidence": 0.73,
+      "overall_confidence": 0.75,
       "display_text": "When vitamin B6 appears inside a B-complex or homocysteine-style formula, it belongs in a broader multi-B comparison lane than a standalone B6 product.",
       "segments": {
         "summary_support": {
@@ -3386,10 +3386,10 @@
         "evidence_read_support": {
           "en": [
             {
-              "text": "B-complex bioavailability work and homocysteine-lowering review data support treating B6-plus-folate-or-B12 formulas as a different comparison set from simple single-B6 labels.",
+              "text": "B-complex bioavailability work, homocysteine-lowering review data, and combined B-vitamin meta-analysis support treating B6-plus-folate-or-B12 formulas as a different comparison set from simple single-B6 labels.",
               "sentence_id": "b6_bcomplex_evidence_001",
               "evidence_snippet_id": "b6_bcomplex_excerpt_001",
-              "evidence_reference_id": "pmid:40218880",
+              "evidence_reference_id": "pmid:41615824",
               "evidence_grade": "B",
               "source": "reviewed_curated_v1"
             }
@@ -3401,7 +3401,7 @@
               "text": "If the label pairs B6 with folate, B12, or several other B vitamins, compare the whole B-complex profile instead of isolating the B6 row by itself.",
               "sentence_id": "b6_bcomplex_shopper_001",
               "evidence_snippet_id": "b6_bcomplex_excerpt_001",
-              "evidence_reference_id": "pmid:31915511",
+              "evidence_reference_id": "pmid:40218880",
               "evidence_grade": "B",
               "source": "reviewed_curated_v1"
             }
@@ -3432,6 +3432,12 @@
           "source": "PubMed",
           "title": "Effects of B Vitamins on Homocysteine Lowering and Thrombotic Risk Reduction-A Review of Randomized Controlled Trials Published Since January 1996.",
           "url": "https://pubmed.ncbi.nlm.nih.gov/40218880/"
+        },
+        {
+          "id": "pmid:41615824",
+          "source": "PubMed",
+          "title": "Combined B-vitamin supplementation on homocysteine and vascular outcomes in coronary heart disease: a meta-analysis.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/41615824/"
         }
       ],
       "variant_key": "b_complex_pairing",
@@ -3507,6 +3513,164 @@
           "url": "https://pubmed.ncbi.nlm.nih.gov/40395441/"
         }
       ]
+    },
+    {
+      "ingredient_family": "folate",
+      "section_key": "folate_status_and_supplementation_context",
+      "evidence_grade": "B",
+      "overall_confidence": 0.72,
+      "display_text": "When folate appears inside a B-complex or homocysteine-aware formula, it belongs in a broader multi-B comparison lane than a standalone folate product.",
+      "segments": {
+        "summary_support": {
+          "en": [
+            {
+              "text": "When folate appears inside a B-complex or homocysteine-aware formula, it belongs in a broader multi-B comparison lane than a standalone folate product.",
+              "sentence_id": "folate_bcomplex_summary_001",
+              "evidence_snippet_id": "folate_bcomplex_excerpt_001",
+              "evidence_reference_id": "pmid:41615824",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "evidence_read_support": {
+          "en": [
+            {
+              "text": "Combined B-vitamin meta-analysis and one-carbon-metabolism review literature support treating folate-plus-B6-or-B12 formulas as a broader multi-B comparison set instead of an isolated folate lane.",
+              "sentence_id": "folate_bcomplex_evidence_001",
+              "evidence_snippet_id": "folate_bcomplex_excerpt_001",
+              "evidence_reference_id": "pmid:41890215",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "shopper_meaning_support": {
+          "en": [
+            {
+              "text": "If the label pairs folate with B6, B12, or a broader B-complex stack, compare the whole multi-B profile before treating it like a standalone folate supplement.",
+              "sentence_id": "folate_bcomplex_shopper_001",
+              "evidence_snippet_id": "folate_bcomplex_excerpt_001",
+              "evidence_reference_id": "pmid:40218880",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "caveats": {
+          "en": [
+            {
+              "text": "Do not infer that every B-complex makes folate the lead story; co-formulation changes interpretation more than it proves a better folate form.",
+              "sentence_id": "folate_bcomplex_caveat_001",
+              "evidence_snippet_id": "folate_bcomplex_excerpt_001",
+              "evidence_reference_id": "pmid:41890215",
+              "evidence_grade": "C",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        }
+      },
+      "supporting_references": [
+        {
+          "id": "pmid:41615824",
+          "source": "PubMed",
+          "title": "Combined B-vitamin supplementation on homocysteine and vascular outcomes in coronary heart disease: a meta-analysis.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/41615824/"
+        },
+        {
+          "id": "pmid:41890215",
+          "source": "PubMed",
+          "title": "One-carbon metabolism and cardiovascular disease: Molecular mechanisms, genetic influences, and epigenetic regulation.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/41890215/"
+        },
+        {
+          "id": "pmid:40218880",
+          "source": "PubMed",
+          "title": "Effects of B Vitamins on Homocysteine Lowering and Thrombotic Risk Reduction-A Review of Randomized Controlled Trials Published Since January 1996.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/40218880/"
+        }
+      ],
+      "variant_key": "b_complex_pairing",
+      "variant_label": "Folate in B-complex pairing"
+    },
+    {
+      "ingredient_family": "b12",
+      "section_key": "deficiency_and_supplementation_context",
+      "evidence_grade": "B",
+      "overall_confidence": 0.71,
+      "display_text": "When vitamin B12 appears inside a B-complex or homocysteine-style formula, it belongs in a broader multi-B comparison lane than a standalone B12 product.",
+      "segments": {
+        "summary_support": {
+          "en": [
+            {
+              "text": "When vitamin B12 appears inside a B-complex or homocysteine-style formula, it belongs in a broader multi-B comparison lane than a standalone B12 product.",
+              "sentence_id": "b12_bcomplex_summary_001",
+              "evidence_snippet_id": "b12_bcomplex_excerpt_001",
+              "evidence_reference_id": "pmid:31915511",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "evidence_read_support": {
+          "en": [
+            {
+              "text": "B-complex bioavailability work, homocysteine-lowering review data, and combined B-vitamin meta-analysis support treating B12-plus-folate-or-B6 formulas as a broader multi-B comparison set rather than a pure standalone B12 lane.",
+              "sentence_id": "b12_bcomplex_evidence_001",
+              "evidence_snippet_id": "b12_bcomplex_excerpt_001",
+              "evidence_reference_id": "pmid:41615824",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "shopper_meaning_support": {
+          "en": [
+            {
+              "text": "If the label pairs B12 with folate, B6, or several other B vitamins, compare the whole B-complex profile before treating it like a simple standalone B12 supplement.",
+              "sentence_id": "b12_bcomplex_shopper_001",
+              "evidence_snippet_id": "b12_bcomplex_excerpt_001",
+              "evidence_reference_id": "pmid:40218880",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "caveats": {
+          "en": [
+            {
+              "text": "Do not infer that every multi-B formula should be read as a stronger standalone B12 product; co-formulation changes interpretation more than it proves superiority.",
+              "sentence_id": "b12_bcomplex_caveat_001",
+              "evidence_snippet_id": "b12_bcomplex_excerpt_001",
+              "evidence_reference_id": "pmid:40218880",
+              "evidence_grade": "C",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        }
+      },
+      "supporting_references": [
+        {
+          "id": "pmid:31915511",
+          "source": "PubMed",
+          "title": "A Randomized Pilot Trial to Evaluate the Bioavailability of Natural versus Synthetic Vitamin B Complexes in Healthy Humans and Their Effects on Homocysteine, Oxidative Stress, and Antioxidant Levels.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/31915511/"
+        },
+        {
+          "id": "pmid:40218880",
+          "source": "PubMed",
+          "title": "Effects of B Vitamins on Homocysteine Lowering and Thrombotic Risk Reduction-A Review of Randomized Controlled Trials Published Since January 1996.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/40218880/"
+        },
+        {
+          "id": "pmid:41615824",
+          "source": "PubMed",
+          "title": "Combined B-vitamin supplementation on homocysteine and vascular outcomes in coronary heart disease: a meta-analysis.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/41615824/"
+        }
+      ],
+      "variant_key": "b_complex_pairing",
+      "variant_label": "Vitamin B12 in B-complex pairing"
     }
   ],
   "candidate_pubmed_searches": [

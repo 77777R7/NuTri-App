@@ -2394,6 +2394,32 @@ test('reviewed evidence variants sharpen vitamin C, B6, zinc, iron, and melatoni
     }),
     overlayClaims: null,
   });
+  const folateComplexContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-folate-b-complex-variant',
+      productName: 'Methyl Folate B-Complex Balance',
+      dosageForm: 'Capsule',
+      actives: [
+        { name: 'Folate (as 5-MTHF)', amount: 400, unit: 'mcg DFE' },
+        { name: 'Vitamin B6 (as Pyridoxal-5-Phosphate)', amount: 20, unit: 'mg' },
+        { name: 'Vitamin B12 (as Methylcobalamin)', amount: 500, unit: 'mcg' },
+      ],
+    }),
+    overlayClaims: null,
+  });
+  const b12ComplexContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-b12-b-complex-variant',
+      productName: 'Methyl B12 + Folate B-Complex',
+      dosageForm: 'Capsule',
+      actives: [
+        { name: 'Vitamin B12 (as Methylcobalamin)', amount: 1000, unit: 'mcg' },
+        { name: 'Folate (as 5-MTHF)', amount: 400, unit: 'mcg DFE' },
+        { name: 'Vitamin B6 (as Pyridoxal-5-Phosphate)', amount: 10, unit: 'mg' },
+      ],
+    }),
+    overlayClaims: null,
+  });
   const zincWithVitaminCContext = buildIngredientScienceContext({
     digest: buildDigest({
       labelId: 'fixture-zinc-vitamin-c-variant',
@@ -2450,6 +2476,14 @@ test('reviewed evidence variants sharpen vitamin C, B6, zinc, iron, and melatoni
     b6ComplexContext,
     'Vitamin B6 (as Pyridoxal-5-Phosphate)',
   );
+  const folateComplexResult = await compileScientificBackgroundAsync(
+    folateComplexContext,
+    'Folate (as 5-MTHF)',
+  );
+  const b12ComplexResult = await compileScientificBackgroundAsync(
+    b12ComplexContext,
+    'Vitamin B12 (as Methylcobalamin)',
+  );
   const zincWithVitaminCResult = await compileScientificBackgroundAsync(
     zincWithVitaminCContext,
     'Zinc (as Zinc Picolinate)',
@@ -2496,6 +2530,22 @@ test('reviewed evidence variants sharpen vitamin C, B6, zinc, iron, and melatoni
   assert.match(
     b6ComplexResult.scientificBackground.sections[2]?.shopperMeaning ?? '',
     /whole B-complex profile|isolating the B6 row/i,
+  );
+  assert.match(
+    folateComplexResult.scientificBackground.sections[0]?.summary ?? '',
+    /B-complex|homocysteine|multi-B|standalone folate/i,
+  );
+  assert.match(
+    folateComplexResult.scientificBackground.sections[0]?.shopperMeaning ?? '',
+    /whole multi-B profile|standalone folate supplement/i,
+  );
+  assert.match(
+    b12ComplexResult.scientificBackground.sections[0]?.summary ?? '',
+    /B-complex|homocysteine|multi-B|standalone B12/i,
+  );
+  assert.match(
+    b12ComplexResult.scientificBackground.sections[0]?.shopperMeaning ?? '',
+    /whole B-complex profile|standalone B12 supplement/i,
   );
 
   assert.match(
