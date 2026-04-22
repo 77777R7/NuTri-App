@@ -197,6 +197,78 @@ test("scientific background evidence package loads b12 and calcium completion ro
   assert.equal(melatoninDose.supportingReferences[0]?.id, "pmid:38888087");
 });
 
+test("scientific background evidence package loads vitamin d completion rows plus vitamin c and second-wave zinc and melatonin variants", () => {
+  const vitaminDInterpretation = getScientificBackgroundEvidence(
+    "vitamin_d",
+    "what_interpretation_depends_on",
+    "en",
+  );
+  const vitaminCImmune = getScientificBackgroundEvidence(
+    "vitamin_c",
+    "antioxidant_and_immune_research",
+    "en",
+  );
+  const vitaminCCollagen = getScientificBackgroundEvidence(
+    "vitamin_c",
+    "collagen_and_tissue_support",
+    "en",
+  );
+  const vitaminCIron = getScientificBackgroundEvidence(
+    "vitamin_c",
+    "iron_absorption_context",
+    "en",
+  );
+  const vitaminCIronPair = getScientificBackgroundEvidence(
+    "vitamin_c",
+    "iron_absorption_context",
+    "en",
+    "with_iron",
+  );
+  const zincLozenge = getScientificBackgroundEvidence(
+    "zinc",
+    "immune_function_context",
+    "en",
+    "lozenge_short_term_context",
+  );
+  const melatoninExtended = getScientificBackgroundEvidence(
+    "melatonin",
+    "what_dose_and_use_context_can_change",
+    "en",
+    "extended_release",
+  );
+
+  assert.ok(vitaminDInterpretation);
+  assert.match(vitaminDInterpretation.displayText ?? "", /dose|baseline status|vitamin D/i);
+  assert.equal(vitaminDInterpretation.supportingReferences[0]?.id, "pmid:30313003");
+
+  assert.ok(vitaminCImmune);
+  assert.match(vitaminCImmune.displayText ?? "", /immune|antioxidant|vitamin C/i);
+  assert.equal(vitaminCImmune.supportingReferences[0]?.id, "pmid:29099763");
+
+  assert.ok(vitaminCCollagen);
+  assert.match(vitaminCCollagen.displayText ?? "", /collagen|tissue-support|vitamin C/i);
+  assert.equal(vitaminCCollagen.supportingReferences[0]?.id, "pmid:36009324");
+
+  assert.ok(vitaminCIron);
+  assert.match(vitaminCIron.displayText ?? "", /iron-absorption|vitamin C|context-specific/i);
+  assert.equal(vitaminCIron.supportingReferences[0]?.id, "pmid:35755397");
+
+  assert.ok(vitaminCIronPair);
+  assert.equal(vitaminCIronPair.variantKey, "with_iron");
+  assert.match(vitaminCIronPair.displayText ?? "", /paired with iron|co-formulation|vitamin C/i);
+  assert.equal(vitaminCIronPair.supportingReferences[0]?.id, "pmid:32650997");
+
+  assert.ok(zincLozenge);
+  assert.equal(zincLozenge.variantKey, "lozenge_short_term_context");
+  assert.match(zincLozenge.displayText ?? "", /lozenge-style|short-term immune-context|zinc/i);
+  assert.equal(zincLozenge.supportingReferences[0]?.id, "pmid:23775705");
+
+  assert.ok(melatoninExtended);
+  assert.equal(melatoninExtended.variantKey, "extended_release");
+  assert.match(melatoninExtended.displayText ?? "", /extended-release|release style|melatonin/i);
+  assert.equal(melatoninExtended.supportingReferences[0]?.id, "pmid:38713204");
+});
+
 test("scientific background evidence package falls back from missing variant rows to generic section rows", () => {
   const magnesium = getScientificBackgroundEvidence(
     "magnesium",

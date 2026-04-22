@@ -94,7 +94,7 @@ export type ScientificBackgroundExecutionProfile = {
   cacheTtlMs: number;
 };
 
-export const SCIENTIFIC_BACKGROUND_PROMPT_VERSION = "scientific_background_v19";
+export const SCIENTIFIC_BACKGROUND_PROMPT_VERSION = "scientific_background_v20";
 
 const RESEARCH_MODE_TIMEOUT_MS = 2_500;
 const CURCUMIN_RESEARCH_MODE_TIMEOUT_MS = 2_900;
@@ -3782,12 +3782,26 @@ const appendUniqueSentence = (base: string, addition: string | null): string => 
 const resolveEvidenceVariantKey = (params: {
   plan: ScientificBackgroundPlan;
   section: ScientificBackgroundSectionPlan;
+  context: IngredientScienceContext;
   selectedDescriptor: IngredientScienceDescriptor | null;
 }): string | undefined => {
   const evidenceEligibleSection =
     params.section.headingId === "form_and_tolerability_context" ||
-    params.section.headingId === "what_product_comparison_depends_on";
+    params.section.headingId === "what_product_comparison_depends_on" ||
+    params.section.headingId === "iron_absorption_context" ||
+    params.section.headingId === "immune_function_context" ||
+    params.section.headingId === "what_dose_and_use_context_can_change";
   if (!evidenceEligibleSection) return undefined;
+
+  const contextText = normalizeText(
+    [
+      params.context.productName,
+      ...params.context.ingredientRows.map((row) => row.name),
+      ...params.context.ingredientSnapshotNames,
+    ]
+      .filter(Boolean)
+      .join(" "),
+  );
 
   const descriptorText = normalizeText(
     [
@@ -3795,6 +3809,7 @@ const resolveEvidenceVariantKey = (params: {
       params.selectedDescriptor?.formContext,
       params.selectedDescriptor?.sourceContext,
       params.plan.selectedLabel,
+      contextText,
     ]
       .filter(Boolean)
       .join(" "),
@@ -3808,6 +3823,30 @@ const resolveEvidenceVariantKey = (params: {
   if (params.plan.family === "iron") {
     if (/\bbisglycinate\b/i.test(descriptorText)) return "ferrous_bisglycinate_anchor";
     return "generic_form_comparison";
+  }
+
+  if (params.plan.family === "vitamin_c" && params.section.headingId === "iron_absorption_context") {
+    if (/\biron\b|\bferrous\b/i.test(contextText)) return "with_iron";
+    return undefined;
+  }
+
+  if (params.plan.family === "zinc" && params.section.headingId === "immune_function_context") {
+    if (/\blozenge\b/i.test(contextText)) return "lozenge_short_term_context";
+    return undefined;
+  }
+
+  if (
+    params.plan.family === "melatonin" &&
+    params.section.headingId === "what_dose_and_use_context_can_change"
+  ) {
+    if (
+      /\bextended release\b|\bextended-release\b|\btime release\b|\btime-release\b|\btimed release\b|\bprolonged release\b|\bcontrolled release\b|\bsustained release\b|\bslow release\b/i.test(
+        descriptorText,
+      )
+    ) {
+      return "extended_release";
+    }
+    return undefined;
   }
 
   return undefined;
@@ -3825,6 +3864,7 @@ const getReviewedEvidenceForSection = (params: {
   const variantKey = resolveEvidenceVariantKey({
     plan: params.plan,
     section: params.planned,
+    context: params.context,
     selectedDescriptor,
   });
   return getScientificBackgroundEvidence(

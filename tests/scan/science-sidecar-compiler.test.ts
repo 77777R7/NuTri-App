@@ -2084,6 +2084,15 @@ test('new family fallbacks stay specific and do not collapse back to generic pro
     }),
     overlayClaims: null,
   });
+  const vitaminCContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-vitamin-c-fallback',
+      productName: 'Vitamin C 1000 mg',
+      dosageForm: 'Capsule',
+      actives: [{ name: 'Vitamin C (as Ascorbic Acid)', amount: 1000, unit: 'mg' }],
+    }),
+    overlayClaims: null,
+  });
   const calciumContext = buildIngredientScienceContext({
     digest: buildDigest({
       labelId: 'fixture-calcium-fallback',
@@ -2262,6 +2271,7 @@ test('new family fallbacks stay specific and do not collapse back to generic pro
 
   const magnesiumResult = await compileScientificBackgroundAsync(magnesiumContext, 'Magnesium (as Magnesium Glycinate)');
   const vitaminDResult = await compileScientificBackgroundAsync(vitaminDContext, 'Vitamin D3 (as Cholecalciferol)');
+  const vitaminCResult = await compileScientificBackgroundAsync(vitaminCContext, 'Vitamin C (as Ascorbic Acid)');
   const calciumResult = await compileScientificBackgroundAsync(calciumContext, 'Calcium (as Calcium Citrate)');
   const zincResult = await compileScientificBackgroundAsync(zincContext, 'Zinc (as Zinc Picolinate)');
   const ironResult = await compileScientificBackgroundAsync(ironContext, 'Iron (as Ferrous Bisglycinate Chelate)');
@@ -2286,6 +2296,10 @@ test('new family fallbacks stay specific and do not collapse back to generic pro
   assert.match(magnesiumResult.scientificBackground.sections[2]?.shopperMeaning ?? '', /form|magnesium amount|comparison set/i);
   assert.match(vitaminDResult.scientificBackground.sections[0]?.summary ?? '', /bone and calcium-regulation|vitamin d positioning/i);
   assert.match(vitaminDResult.scientificBackground.sections[1]?.summary ?? '', /immune|broader health|bone-and-calcium lane/i);
+  assert.match(vitaminDResult.scientificBackground.sections[2]?.summary ?? '', /dose|baseline status|label setting|similar-looking products/i);
+  assert.match(vitaminCResult.scientificBackground.sections[0]?.summary ?? '', /antioxidant-and-immune|immune-everything|vitamin C/i);
+  assert.match(vitaminCResult.scientificBackground.sections[1]?.summary ?? '', /collagen|tissue-support|healing context/i);
+  assert.match(vitaminCResult.scientificBackground.sections[2]?.shopperMeaning ?? '', /formula actually includes iron|co-administration|narrower comparison lane/i);
   assert.match(calciumResult.scientificBackground.sections[1]?.summary ?? '', /citrate-versus-carbonate|bioavailability literature|calcium form comparison/i);
   assert.match(calciumResult.scientificBackground.sections[2]?.shopperMeaning ?? '', /vitamin D|broader formula|direct substitutes|lead story/i);
   assert.match(zincResult.scientificBackground.sections[0]?.summary ?? '', /immune-function context|zinc lane|immune-everything/i);
@@ -2333,6 +2347,80 @@ test('new family fallbacks stay specific and do not collapse back to generic pro
   assert.match(ginsengResult.scientificBackground.sections[2]?.shopperMeaning ?? '', /species|extract|ginseng alone|head to head/i);
   assert.match(greenTeaResult.scientificBackground.sections[0]?.summary ?? '', /catechin|EGCG|green tea extract/i);
   assert.match(greenTeaResult.scientificBackground.sections[2]?.shopperMeaning ?? '', /concentration detail|comparison set|green tea extract/i);
+});
+
+test('reviewed evidence variants sharpen vitamin C with iron and extended-release melatonin while zinc lozenges stay label-context', async () => {
+  const vitaminCIronContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-vitamin-c-iron-variant',
+      productName: 'Iron + Vitamin C Gentle Support',
+      dosageForm: 'Capsule',
+      actives: [
+        { name: 'Vitamin C (as Ascorbic Acid)', amount: 250, unit: 'mg' },
+        { name: 'Iron (as Ferrous Bisglycinate Chelate)', amount: 18, unit: 'mg' },
+      ],
+    }),
+    overlayClaims: null,
+  });
+  const zincLozengeContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-zinc-lozenge-variant',
+      productName: 'Zinc Citrus Lozenges',
+      dosageForm: 'Lozenge',
+      actives: [{ name: 'Zinc (as Zinc Acetate)', amount: 18, unit: 'mg' }],
+    }),
+    overlayClaims: null,
+  });
+  const melatoninExtendedContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-melatonin-extended-variant',
+      productName: 'Time Release Melatonin 5 mg',
+      dosageForm: 'Tablet',
+      actives: [{ name: 'Melatonin', amount: 5, unit: 'mg' }],
+    }),
+    overlayClaims: null,
+  });
+
+  const vitaminCIronResult = await compileScientificBackgroundAsync(
+    vitaminCIronContext,
+    'Vitamin C (as Ascorbic Acid)',
+  );
+  const zincLozengePlan = planScientificBackgroundSections({
+    context: zincLozengeContext,
+    selectedIngredientName: 'Zinc (as Zinc Acetate)',
+  });
+  const zincLozengeResult = await compileScientificBackgroundAsync(
+    zincLozengeContext,
+    'Zinc (as Zinc Acetate)',
+  );
+  const melatoninExtendedResult = await compileScientificBackgroundAsync(
+    melatoninExtendedContext,
+    'Melatonin',
+  );
+
+  assert.match(
+    vitaminCIronResult.scientificBackground.sections[2]?.summary ?? '',
+    /paired with iron|co-formulation|standalone vitamin C/i,
+  );
+  assert.match(
+    vitaminCIronResult.scientificBackground.sections[2]?.shopperMeaning ?? '',
+    /paired amounts|exact iron line|generic vitamin C formula/i,
+  );
+
+  assert.equal(zincLozengePlan.mode, 'label_context_mode');
+  assert.match(
+    zincLozengeResult.scientificBackground.sections[0]?.summary ?? '',
+    /label-structure line|stand-alone research claim/i,
+  );
+
+  assert.match(
+    melatoninExtendedResult.scientificBackground.sections[1]?.summary ?? '',
+    /extended-release|release style|immediate-release|timing-and-routine/i,
+  );
+  assert.match(
+    melatoninExtendedResult.scientificBackground.sections[1]?.shopperMeaning ?? '',
+    /extended-release|time-release|same bucket as every standard melatonin/i,
+  );
 });
 
 test('electrolyte drink mixes use family-specific label-context sections instead of the generic label-context fallback', async () => {

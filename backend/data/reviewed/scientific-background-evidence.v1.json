@@ -2475,6 +2475,527 @@
           "url": "https://pubmed.ncbi.nlm.nih.gov/33962317/"
         }
       ]
+    },
+    {
+      "ingredient_family": "vitamin_d",
+      "section_key": "what_interpretation_depends_on",
+      "evidence_grade": "B",
+      "overall_confidence": 0.71,
+      "display_text": "Vitamin D comparison still depends heavily on dose, baseline status, and the exact label setting, which is why similar-looking products can still read differently in practice.",
+      "segments": {
+        "summary_support": {
+          "en": [
+            {
+              "text": "Vitamin D comparison still depends heavily on dose, baseline status, and the exact label setting, which is why similar-looking products can still read differently in practice.",
+              "sentence_id": "vitd_interpret_summary_001",
+              "evidence_snippet_id": "vitd_interpret_excerpt_001",
+              "evidence_reference_id": "pmid:30313003",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "evidence_read_support": {
+          "en": [
+            {
+              "text": "Systematic reviews of vitamin D outcomes and status-response data support a practical interpretation lane where dose and baseline context matter more than broad wellness packaging alone.",
+              "sentence_id": "vitd_interpret_evidence_001",
+              "evidence_snippet_id": "vitd_interpret_excerpt_001",
+              "evidence_reference_id": "pmid:30032221",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "shopper_meaning_support": {
+          "en": [
+            {
+              "text": "Before comparing two vitamin D products, check the stated amount and the broader formula setting instead of assuming all vitamin D labels imply the same use case.",
+              "sentence_id": "vitd_interpret_shopper_001",
+              "evidence_snippet_id": "vitd_interpret_excerpt_001",
+              "evidence_reference_id": "pmid:34520402",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "caveats": {
+          "en": [
+            {
+              "text": "Do not treat a higher dose or a stronger top-line claim as proof that one vitamin D product is automatically more appropriate in every setting.",
+              "sentence_id": "vitd_interpret_caveat_001",
+              "evidence_snippet_id": "vitd_interpret_excerpt_001",
+              "evidence_reference_id": "pmid:30313003",
+              "evidence_grade": "C",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        }
+      },
+      "supporting_references": [
+        {
+          "id": "pmid:30313003",
+          "source": "PubMed",
+          "title": "Vitamin D and Calcium: A Systematic Review of Health Outcomes (Update).",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/30313003/"
+        },
+        {
+          "id": "pmid:30032221",
+          "source": "PubMed",
+          "title": "Effect of Vitamin D Supplementation, Food Fortification, or Bolus Injection on Vitamin D Status in Children Aged 2-18 Years: A Meta-Analysis.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/30032221/"
+        },
+        {
+          "id": "pmid:34520402",
+          "source": "PubMed",
+          "title": "How Much Does Serum 25(OH)D Improve by Vitamin D Supplement and Fortified Food in Children? A Systematic Review and Meta-Analysis.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/34520402/"
+        }
+      ]
+    },
+    {
+      "ingredient_family": "vitamin_c",
+      "section_key": "antioxidant_and_immune_research",
+      "evidence_grade": "B",
+      "overall_confidence": 0.76,
+      "display_text": "Vitamin C has a real antioxidant-and-immune lane, but the cleanest reading still stays narrower than generic immune-everything marketing.",
+      "segments": {
+        "summary_support": {
+          "en": [
+            {
+              "text": "Vitamin C has a real antioxidant-and-immune lane, but the cleanest reading still stays narrower than generic immune-everything marketing.",
+              "sentence_id": "vitc_immune_summary_001",
+              "evidence_snippet_id": "vitc_immune_excerpt_001",
+              "evidence_reference_id": "pmid:29099763",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "evidence_read_support": {
+          "en": [
+            {
+              "text": "Review-level vitamin C literature supports immune-function interpretation while still tying the signal to specific mechanisms, populations, and product settings rather than to blanket prevention claims.",
+              "sentence_id": "vitc_immune_evidence_001",
+              "evidence_snippet_id": "vitc_immune_excerpt_001",
+              "evidence_reference_id": "pmid:31487891",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "shopper_meaning_support": {
+          "en": [
+            {
+              "text": "Use immune-oriented vitamin C wording as a legitimate but still bounded comparison cue, then go back to the exact vitamin C amount and formula context before grouping products together.",
+              "sentence_id": "vitc_immune_shopper_001",
+              "evidence_snippet_id": "vitc_immune_excerpt_001",
+              "evidence_reference_id": "pmid:29099763",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "caveats": {
+          "en": [
+            {
+              "text": "Do not stretch a general immune section into proof that every high-dose vitamin C label carries the same shopper meaning.",
+              "sentence_id": "vitc_immune_caveat_001",
+              "evidence_snippet_id": "vitc_immune_excerpt_001",
+              "evidence_reference_id": "pmid:29099763",
+              "evidence_grade": "C",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        }
+      },
+      "supporting_references": [
+        {
+          "id": "pmid:29099763",
+          "source": "PubMed",
+          "title": "Vitamin C and Immune Function.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/29099763/"
+        },
+        {
+          "id": "pmid:31487891",
+          "source": "PubMed",
+          "title": "Vitamin C and Neutrophil Function: Findings from Randomized Controlled Trials.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/31487891/"
+        }
+      ]
+    },
+    {
+      "ingredient_family": "vitamin_c",
+      "section_key": "collagen_and_tissue_support",
+      "evidence_grade": "B",
+      "overall_confidence": 0.73,
+      "display_text": "Collagen and tissue-support research gives vitamin C a second lane beyond immune framing, especially when labels lean on structure, recovery, or healing context.",
+      "segments": {
+        "summary_support": {
+          "en": [
+            {
+              "text": "Collagen and tissue-support research gives vitamin C a second lane beyond immune framing, especially when labels lean on structure, recovery, or healing context.",
+              "sentence_id": "vitc_collagen_summary_001",
+              "evidence_snippet_id": "vitc_collagen_excerpt_001",
+              "evidence_reference_id": "pmid:36009324",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "evidence_read_support": {
+          "en": [
+            {
+              "text": "Systematic review evidence supports a tissue-healing and connective-tissue interpretation for vitamin C, while still leaving the exact product setting important for comparison.",
+              "sentence_id": "vitc_collagen_evidence_001",
+              "evidence_snippet_id": "vitc_collagen_excerpt_001",
+              "evidence_reference_id": "pmid:38345088",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "shopper_meaning_support": {
+          "en": [
+            {
+              "text": "If a vitamin C label leans on collagen or tissue-support wording, treat that as a narrower comparison lane than general immune branding and still check the rest of the formula.",
+              "sentence_id": "vitc_collagen_shopper_001",
+              "evidence_snippet_id": "vitc_collagen_excerpt_001",
+              "evidence_reference_id": "pmid:36009324",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "caveats": {
+          "en": [
+            {
+              "text": "Do not assume every vitamin C product belongs in a collagen-oriented comparison bucket just because the ingredient can appear in that context.",
+              "sentence_id": "vitc_collagen_caveat_001",
+              "evidence_snippet_id": "vitc_collagen_excerpt_001",
+              "evidence_reference_id": "pmid:36009324",
+              "evidence_grade": "C",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        }
+      },
+      "supporting_references": [
+        {
+          "id": "pmid:36009324",
+          "source": "PubMed",
+          "title": "A Systematic Review on the Role of Vitamin C in Tissue Healing.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/36009324/"
+        },
+        {
+          "id": "pmid:38345088",
+          "source": "PubMed",
+          "title": "Nutritional interventions for preventing and treating pressure ulcers.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/38345088/"
+        }
+      ]
+    },
+    {
+      "ingredient_family": "vitamin_c",
+      "section_key": "iron_absorption_context",
+      "evidence_grade": "B",
+      "overall_confidence": 0.72,
+      "display_text": "Vitamin C has a real iron-absorption lane, but it is a context-specific comparison signal rather than a generic reason to equate every vitamin C product.",
+      "segments": {
+        "summary_support": {
+          "en": [
+            {
+              "text": "Vitamin C has a real iron-absorption lane, but it is a context-specific comparison signal rather than a generic reason to equate every vitamin C product.",
+              "sentence_id": "vitc_iron_summary_001",
+              "evidence_snippet_id": "vitc_iron_excerpt_001",
+              "evidence_reference_id": "pmid:35755397",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "evidence_read_support": {
+          "en": [
+            {
+              "text": "Iron-absorption reviews support keeping this section tied to co-administration and formula setting, because not every vitamin C product is being used in an iron-support context.",
+              "sentence_id": "vitc_iron_evidence_001",
+              "evidence_snippet_id": "vitc_iron_excerpt_001",
+              "evidence_reference_id": "pmid:32650997",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "shopper_meaning_support": {
+          "en": [
+            {
+              "text": "Treat iron-absorption wording as a narrower comparison lane and check whether the formula actually includes iron or is obviously positioned for that use case before grouping products together.",
+              "sentence_id": "vitc_iron_shopper_001",
+              "evidence_snippet_id": "vitc_iron_excerpt_001",
+              "evidence_reference_id": "pmid:35755397",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "caveats": {
+          "en": [
+            {
+              "text": "Do not generalize an iron-co-administration section to every standalone vitamin C product or every immune-support formula.",
+              "sentence_id": "vitc_iron_caveat_001",
+              "evidence_snippet_id": "vitc_iron_excerpt_001",
+              "evidence_reference_id": "pmid:35755397",
+              "evidence_grade": "C",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        }
+      },
+      "supporting_references": [
+        {
+          "id": "pmid:35755397",
+          "source": "PubMed",
+          "title": "Iron Absorption: Factors, Limitations, and Improvement Methods.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/35755397/"
+        },
+        {
+          "id": "pmid:32650997",
+          "source": "PubMed",
+          "title": "Oral iron supplementation in iron-deficient women: How much and how often?",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/32650997/"
+        },
+        {
+          "id": "pmid:11029010",
+          "source": "PubMed",
+          "title": "Effect of tea and other dietary factors on iron absorption.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/11029010/"
+        }
+      ]
+    },
+    {
+      "ingredient_family": "vitamin_c",
+      "section_key": "iron_absorption_context",
+      "evidence_grade": "B",
+      "overall_confidence": 0.77,
+      "display_text": "When vitamin C is paired with iron on the same label, that co-formulation makes the iron-absorption lane more directly relevant than it would be on a standalone vitamin C product.",
+      "segments": {
+        "summary_support": {
+          "en": [
+            {
+              "text": "When vitamin C is paired with iron on the same label, that co-formulation makes the iron-absorption lane more directly relevant than it would be on a standalone vitamin C product.",
+              "sentence_id": "vitc_iron_pair_summary_001",
+              "evidence_snippet_id": "vitc_iron_pair_excerpt_001",
+              "evidence_reference_id": "pmid:32650997",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "evidence_read_support": {
+          "en": [
+            {
+              "text": "Review-level iron-absorption evidence supports giving more comparison weight to vitamin C when the formula actually discloses iron, because the co-administered context is explicit instead of implied.",
+              "sentence_id": "vitc_iron_pair_evidence_001",
+              "evidence_snippet_id": "vitc_iron_pair_excerpt_001",
+              "evidence_reference_id": "pmid:35755397",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "shopper_meaning_support": {
+          "en": [
+            {
+              "text": "If a product discloses both vitamin C and iron, compare the paired amounts and the exact iron line before treating it like a generic vitamin C formula.",
+              "sentence_id": "vitc_iron_pair_shopper_001",
+              "evidence_snippet_id": "vitc_iron_pair_excerpt_001",
+              "evidence_reference_id": "pmid:32650997",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "caveats": {
+          "en": [
+            {
+              "text": "Do not assume that every vitamin C product inherits the same comparison meaning just because some formulas intentionally pair it with iron.",
+              "sentence_id": "vitc_iron_pair_caveat_001",
+              "evidence_snippet_id": "vitc_iron_pair_excerpt_001",
+              "evidence_reference_id": "pmid:35755397",
+              "evidence_grade": "C",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        }
+      },
+      "supporting_references": [
+        {
+          "id": "pmid:32650997",
+          "source": "PubMed",
+          "title": "Oral iron supplementation in iron-deficient women: How much and how often?",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/32650997/"
+        },
+        {
+          "id": "pmid:35755397",
+          "source": "PubMed",
+          "title": "Iron Absorption: Factors, Limitations, and Improvement Methods.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/35755397/"
+        }
+      ],
+      "variant_key": "with_iron",
+      "variant_label": "Vitamin C paired with iron"
+    },
+    {
+      "ingredient_family": "melatonin",
+      "section_key": "what_dose_and_use_context_can_change",
+      "evidence_grade": "B",
+      "overall_confidence": 0.81,
+      "display_text": "Extended-release melatonin products belong in a more specific timing-and-routine comparison lane than immediate-release products, because release style changes how shoppers should read the label.",
+      "segments": {
+        "summary_support": {
+          "en": [
+            {
+              "text": "Extended-release melatonin products belong in a more specific timing-and-routine comparison lane than immediate-release products, because release style changes how shoppers should read the label.",
+              "sentence_id": "melatonin_extended_summary_001",
+              "evidence_snippet_id": "melatonin_extended_excerpt_001",
+              "evidence_reference_id": "pmid:38713204",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "evidence_read_support": {
+          "en": [
+            {
+              "text": "Systematic review evidence on prolonged-release melatonin and broader melatonin dose-response data supports using release style as a practical interpretation signal rather than treating all melatonin products alike.",
+              "sentence_id": "melatonin_extended_evidence_001",
+              "evidence_snippet_id": "melatonin_extended_excerpt_001",
+              "evidence_reference_id": "pmid:38888087",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "shopper_meaning_support": {
+          "en": [
+            {
+              "text": "If a label says extended-release, time-release, or prolonged-release melatonin, compare it against similar release-style products instead of dropping it into the same bucket as every standard melatonin tablet.",
+              "sentence_id": "melatonin_extended_shopper_001",
+              "evidence_snippet_id": "melatonin_extended_excerpt_001",
+              "evidence_reference_id": "pmid:37434463",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "caveats": {
+          "en": [
+            {
+              "text": "Do not treat extended-release wording like proof of universal superiority; it mainly changes the comparison lane and use-context framing.",
+              "sentence_id": "melatonin_extended_caveat_001",
+              "evidence_snippet_id": "melatonin_extended_excerpt_001",
+              "evidence_reference_id": "pmid:38713204",
+              "evidence_grade": "C",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        }
+      },
+      "supporting_references": [
+        {
+          "id": "pmid:38713204",
+          "source": "PubMed",
+          "title": "The use of prolonged-release melatonin in circadian medicine: a systematic review.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/38713204/"
+        },
+        {
+          "id": "pmid:38888087",
+          "source": "PubMed",
+          "title": "Optimizing the Time and Dose of Melatonin as a Sleep-Promoting Drug: A Systematic Review of Randomized Controlled Trials and Dose-Response Meta-Analysis.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/38888087/"
+        },
+        {
+          "id": "pmid:37434463",
+          "source": "PubMed",
+          "title": "Efficacy of melatonin and ramelteon for the acute and long-term management of insomnia disorder in adults: A systematic review and meta-analysis.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/37434463/"
+        }
+      ],
+      "variant_key": "extended_release",
+      "variant_label": "Extended-release melatonin"
+    },
+    {
+      "ingredient_family": "zinc",
+      "section_key": "immune_function_context",
+      "evidence_grade": "B",
+      "overall_confidence": 0.75,
+      "display_text": "Lozenge-style zinc products belong to a narrower short-term immune-context comparison lane than everyday zinc tablets or capsules, so product form changes how the immune section should be read.",
+      "segments": {
+        "summary_support": {
+          "en": [
+            {
+              "text": "Lozenge-style zinc products belong to a narrower short-term immune-context comparison lane than everyday zinc tablets or capsules, so product form changes how the immune section should be read.",
+              "sentence_id": "zinc_lozenge_summary_001",
+              "evidence_snippet_id": "zinc_lozenge_excerpt_001",
+              "evidence_reference_id": "pmid:23775705",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "evidence_read_support": {
+          "en": [
+            {
+              "text": "Cochrane review evidence supports treating zinc lozenges as a more specific use-context lane, which makes dosage form part of the comparison instead of just background packaging.",
+              "sentence_id": "zinc_lozenge_evidence_001",
+              "evidence_snippet_id": "zinc_lozenge_excerpt_001",
+              "evidence_reference_id": "pmid:21328251",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "shopper_meaning_support": {
+          "en": [
+            {
+              "text": "If a zinc product is clearly a lozenge, compare it with other lozenge-style zinc products before grouping it with everyday mineral capsules or tablets.",
+              "sentence_id": "zinc_lozenge_shopper_001",
+              "evidence_snippet_id": "zinc_lozenge_excerpt_001",
+              "evidence_reference_id": "pmid:23775705",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "caveats": {
+          "en": [
+            {
+              "text": "Do not let a lozenge-specific immune context spill over into every zinc supplement or every broad immune-support product.",
+              "sentence_id": "zinc_lozenge_caveat_001",
+              "evidence_snippet_id": "zinc_lozenge_excerpt_001",
+              "evidence_reference_id": "pmid:23775705",
+              "evidence_grade": "C",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        }
+      },
+      "supporting_references": [
+        {
+          "id": "pmid:23775705",
+          "source": "PubMed",
+          "title": "Zinc for the common cold.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/23775705/"
+        },
+        {
+          "id": "pmid:21328251",
+          "source": "PubMed",
+          "title": "Zinc for the common cold.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/21328251/"
+        }
+      ],
+      "variant_key": "lozenge_short_term_context",
+      "variant_label": "Zinc lozenge short-term context"
     }
   ],
   "candidate_pubmed_searches": [
