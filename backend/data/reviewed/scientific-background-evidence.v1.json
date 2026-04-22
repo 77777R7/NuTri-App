@@ -574,7 +574,7 @@
     {
       "family": "magnesium",
       "lane": "form_and_tolerability_context",
-      "source": "ncbi_entrez_official",
+      "source": "life-science-research:ncbi-entrez-skill",
       "retrieved_at": "2026-04-22",
       "query": "(\"magnesium citrate\"[Title/Abstract] OR \"magnesium oxide\"[Title/Abstract]) AND (bioavailability[Title/Abstract] OR absorption[Title/Abstract]) AND humans[MeSH Terms]",
       "candidates": [
@@ -627,7 +627,7 @@
     {
       "family": "magnesium",
       "lane": "what_product_comparison_depends_on",
-      "source": "ncbi_entrez_official",
+      "source": "life-science-research:ncbi-entrez-skill",
       "retrieved_at": "2026-04-22",
       "query": "magnesium bioavailability review citrate oxide supplement humans",
       "candidates": [
@@ -668,7 +668,7 @@
     {
       "family": "iron",
       "lane": "form_and_tolerability_context",
-      "source": "ncbi_entrez_official",
+      "source": "life-science-research:ncbi-entrez-skill",
       "retrieved_at": "2026-04-22",
       "query": "(\"ferrous bisglycinate\"[Title/Abstract] OR \"iron bisglycinate\"[Title/Abstract]) AND \"ferrous sulfate\"[Title/Abstract] AND (trial[Title/Abstract] OR randomized[Title/Abstract] OR bioavailability[Title/Abstract])",
       "candidates": [
@@ -722,7 +722,7 @@
     {
       "family": "iron",
       "lane": "what_product_comparison_depends_on",
-      "source": "ncbi_entrez_official",
+      "source": "life-science-research:ncbi-entrez-skill",
       "retrieved_at": "2026-04-22",
       "query": "(\"iron bisglycinate\"[Title/Abstract] OR \"ferrous bisglycinate\"[Title/Abstract]) AND bioavailability[Title/Abstract] AND humans[MeSH Terms]",
       "candidates": [
@@ -765,7 +765,7 @@
     {
       "family": "omega_3",
       "lane": "inflammation_and_recovery_context",
-      "source": "ncbi_entrez_official",
+      "source": "life-science-research:ncbi-entrez-skill",
       "retrieved_at": "2026-04-22",
       "query": "((omega-3[Title/Abstract] OR fish oil[Title/Abstract] OR EPA[Title/Abstract]) AND (exercise-induced muscle damage[Title/Abstract] OR post-exercise inflammation[Title/Abstract] OR muscle recovery[Title/Abstract])) AND (randomized[Title/Abstract] OR trial[Title/Abstract] OR systematic review[Title/Abstract] OR meta-analysis[Publication Type])",
       "candidates": [
@@ -824,7 +824,7 @@
     {
       "family": "omega_3",
       "lane": "brain_and_eye_context",
-      "source": "ncbi_entrez_official",
+      "source": "life-science-research:ncbi-entrez-skill",
       "retrieved_at": "2026-04-22",
       "query": "(DHA[Title/Abstract] OR docosahexaenoic[Title/Abstract]) AND (brain[Title/Abstract] OR eye[Title/Abstract] OR retinal[Title/Abstract]) AND (systematic review[Title/Abstract] OR meta-analysis[Publication Type] OR trial[Title/Abstract])",
       "candidates": [
@@ -876,7 +876,7 @@
     {
       "family": "omega_3",
       "lane": "broader_cardiovascular_context",
-      "source": "ncbi_entrez_official",
+      "source": "life-science-research:ncbi-entrez-skill",
       "retrieved_at": "2026-04-22",
       "query": "(omega-3[Title/Abstract] OR omega 3[Title/Abstract] OR fish oil[Title/Abstract]) AND (cardiovascular[Title/Abstract] OR triglycerides[Title/Abstract] OR lipid[Title/Abstract]) AND (systematic review[Title/Abstract] OR meta-analysis[Publication Type] OR trial[Title/Abstract])",
       "candidates": [
@@ -942,7 +942,7 @@
     {
       "family": "protein",
       "lane": "muscle_and_recovery_context",
-      "source": "ncbi_entrez_official",
+      "source": "life-science-research:ncbi-entrez-skill",
       "retrieved_at": "2026-04-22",
       "query": "(protein supplementation[Title/Abstract] OR whey protein[Title/Abstract] OR plant protein[Title/Abstract]) AND (muscle[Title/Abstract] OR recovery[Title/Abstract]) AND (systematic review[Title/Abstract] OR meta-analysis[Publication Type] OR trial[Title/Abstract])",
       "candidates": [
@@ -1007,7 +1007,7 @@
     {
       "family": "protein",
       "lane": "protein_type_and_disclosure_context",
-      "source": "ncbi_entrez_official",
+      "source": "life-science-research:ncbi-entrez-skill",
       "retrieved_at": "2026-04-22",
       "query": "((whey[Title/Abstract] AND protein[Title/Abstract]) OR (plant[Title/Abstract] AND protein[Title/Abstract])) AND (muscle protein synthesis[Title/Abstract] OR muscle[Title/Abstract]) AND (systematic review[Title/Abstract] OR meta-analysis[Publication Type] OR trial[Title/Abstract])",
       "candidates": [
@@ -1061,7 +1061,7 @@
     {
       "family": "fiber",
       "lane": "digestive_regularity_context",
-      "source": "ncbi_entrez_official",
+      "source": "life-science-research:ncbi-entrez-skill",
       "retrieved_at": "2026-04-22",
       "query": "(psyllium[Title/Abstract] OR soluble fiber[Title/Abstract] OR dietary fiber[Title/Abstract]) AND (constipation[Title/Abstract] OR regularity[Title/Abstract] OR stool[Title/Abstract]) AND (systematic review[Title/Abstract] OR meta-analysis[Publication Type] OR trial[Title/Abstract])",
       "candidates": [
@@ -1104,7 +1104,7 @@
     {
       "family": "fiber",
       "lane": "source_and_solubility_context",
-      "source": "ncbi_entrez_official",
+      "source": "life-science-research:ncbi-entrez-skill",
       "retrieved_at": "2026-04-22",
       "query": "((psyllium[Title/Abstract] OR inulin[Title/Abstract]) AND (soluble fiber[Title/Abstract] OR prebiotic[Title/Abstract] OR satiety[Title/Abstract])) AND (systematic review[Title/Abstract] OR meta-analysis[Publication Type] OR trial[Title/Abstract])",
       "candidates": [

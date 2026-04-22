@@ -2175,10 +2175,13 @@ test('new family fallbacks stay specific and do not collapse back to generic pro
   const ginsengResult = await compileScientificBackgroundAsync(ginsengContext, 'Panax Ginseng Extract');
   const greenTeaResult = await compileScientificBackgroundAsync(greenTeaContext, 'Green Tea Extract (EGCG)');
 
-  assert.match(magnesiumResult.scientificBackground.sections[1]?.summary ?? '', /tolerability|form disclosure|magnesium labels/i);
+  assert.match(magnesiumResult.scientificBackground.sections[1]?.summary ?? '', /citrate|oxide|form-level comparison/i);
+  assert.match(magnesiumResult.scientificBackground.sections[2]?.shopperMeaning ?? '', /form|magnesium amount|comparison set/i);
   assert.match(vitaminDResult.scientificBackground.sections[0]?.summary ?? '', /bone and calcium-regulation|vitamin d positioning/i);
   assert.match(calciumResult.scientificBackground.sections[1]?.summary ?? '', /carbonate and citrate|form is one of the key reasons/i);
   assert.match(ironResult.scientificBackground.sections[0]?.summary ?? '', /supplementation and status-related lens|iron products/i);
+  assert.match(ironResult.scientificBackground.sections[1]?.summary ?? '', /bisglycinate|sulfate|form-aware/i);
+  assert.match(ironResult.scientificBackground.sections[2]?.shopperMeaning ?? '', /elemental iron amount|single-form iron|broader blend/i);
   assert.equal(melatoninResult.scientificBackground.sections.length, 2);
   assert.match(melatoninResult.scientificBackground.sections[0]?.summary ?? '', /sleep timing and onset|circadian timing/i);
   assert.match(b12Result.scientificBackground.sections[0]?.summary ?? '', /supplementation and status-related|b12 products/i);

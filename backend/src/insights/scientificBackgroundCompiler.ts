@@ -4,6 +4,10 @@ import type {
   IngredientScienceIngredientFamily,
 } from "../ingredientScienceContext.js";
 import { normalizeIngredientScienceKey } from "../ingredientScienceContext.js";
+import {
+  getScientificBackgroundEvidence,
+  type ScientificBackgroundEvidenceRow,
+} from "./scientificBackgroundEvidencePackage.js";
 import { extractJsonObjectLoose } from "./summaryCompiler.js";
 
 type ScientificBackgroundMode = "research_mode" | "label_context_mode";
@@ -3744,6 +3748,102 @@ const buildSectionFallback = (
   }
 };
 
+const firstEvidenceSentence = (
+  bucket:
+    | ScientificBackgroundEvidenceRow["segments"]["summarySupport"]
+    | ScientificBackgroundEvidenceRow["segments"]["evidenceReadSupport"]
+    | ScientificBackgroundEvidenceRow["segments"]["shopperMeaningSupport"]
+    | ScientificBackgroundEvidenceRow["segments"]["caveats"]
+    | undefined,
+): string | null => {
+  const text = normalizeText(bucket?.[0]?.text);
+  return text ? asSentence(text) : null;
+};
+
+const appendUniqueSentence = (base: string, addition: string | null): string => {
+  const normalizedBase = normalizeText(base);
+  const normalizedAddition = normalizeText(addition);
+  if (!normalizedAddition) return normalizedBase;
+  if (!normalizedBase) return asSentence(normalizedAddition);
+  if (normalizedBase.toLowerCase().includes(normalizedAddition.toLowerCase())) return normalizedBase;
+  return `${asSentence(normalizedBase)} ${asSentence(normalizedAddition)}`.trim();
+};
+
+const resolveEvidenceVariantKey = (params: {
+  plan: ScientificBackgroundPlan;
+  section: ScientificBackgroundSectionPlan;
+  selectedDescriptor: IngredientScienceDescriptor | null;
+}): string | undefined => {
+  const evidenceEligibleSection =
+    params.section.headingId === "form_and_tolerability_context" ||
+    params.section.headingId === "what_product_comparison_depends_on";
+  if (!evidenceEligibleSection) return undefined;
+
+  const descriptorText = normalizeText(
+    [
+      params.selectedDescriptor?.name,
+      params.selectedDescriptor?.formContext,
+      params.selectedDescriptor?.sourceContext,
+      params.plan.selectedLabel,
+    ]
+      .filter(Boolean)
+      .join(" "),
+  );
+
+  if (params.plan.family === "magnesium") {
+    if (/\bcitrate\b|\boxide\b/i.test(descriptorText)) return "citrate_vs_oxide";
+    return "generic_form_comparison";
+  }
+
+  if (params.plan.family === "iron") {
+    if (/\bbisglycinate\b/i.test(descriptorText)) return "ferrous_bisglycinate_anchor";
+    return "generic_form_comparison";
+  }
+
+  return undefined;
+};
+
+const enrichSectionWithReviewedEvidence = (params: {
+  plan: ScientificBackgroundPlan;
+  planned: ScientificBackgroundSectionPlan;
+  context?: IngredientScienceContext;
+  section: ScientificBackgroundSection;
+}): ScientificBackgroundSection => {
+  if (!params.context) return params.section;
+  if (params.plan.family !== "magnesium" && params.plan.family !== "iron") return params.section;
+
+  const selectedDescriptor = getSelectedDescriptor(params.context, params.plan.selectedLabel);
+  const variantKey = resolveEvidenceVariantKey({
+    plan: params.plan,
+    section: params.planned,
+    selectedDescriptor,
+  });
+  const evidence = getScientificBackgroundEvidence(
+    params.plan.family,
+    params.planned.headingId,
+    "en",
+    variantKey,
+  );
+  if (!evidence) return params.section;
+
+  const summaryText = firstEvidenceSentence(evidence.segments.summarySupport) ?? evidence.displayText ?? null;
+  const evidenceReadText = firstEvidenceSentence(evidence.segments.evidenceReadSupport);
+  const shopperMeaningText = firstEvidenceSentence(evidence.segments.shopperMeaningSupport);
+  const caveatText = firstEvidenceSentence(evidence.segments.caveats);
+
+  return {
+    ...params.section,
+    ...(summaryText ? { summary: summaryText } : {}),
+    evidenceRead: appendUniqueSentence(
+      evidenceReadText ?? params.section.evidenceRead,
+      caveatText,
+    ),
+    shopperMeaning:
+      shopperMeaningText ??
+      (caveatText ? appendUniqueSentence(params.section.shopperMeaning ?? "", caveatText) : params.section.shopperMeaning),
+  };
+};
+
 export const buildScientificBackgroundDeterministicFallback = (params: {
   context: IngredientScienceContext;
   selectedIngredientName: string;
@@ -3761,7 +3861,14 @@ export const buildScientificBackgroundDeterministicFallback = (params: {
     selectedLabel: plan.selectedLabel,
     selectedDose: plan.selectedDose,
     introLine: plan.selectedDose ? `${buildReferenceLabel(plan)} • ${plan.selectedDose}` : buildReferenceLabel(plan),
-    sections: plan.sections.map((section) => buildSectionFallback(plan, section, params.context)),
+    sections: plan.sections.map((section) =>
+      enrichSectionWithReviewedEvidence({
+        plan,
+        planned: section,
+        context: params.context,
+        section: buildSectionFallback(plan, section, params.context),
+      }),
+    ),
     closingNote:
       plan.mode === "research_mode"
         ? "Read the research context as outcome-specific guidance within this formula, not as a blanket promise for every claim on the label."
