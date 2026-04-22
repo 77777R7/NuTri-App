@@ -94,7 +94,7 @@ export type ScientificBackgroundExecutionProfile = {
   cacheTtlMs: number;
 };
 
-export const SCIENTIFIC_BACKGROUND_PROMPT_VERSION = "scientific_background_v20";
+export const SCIENTIFIC_BACKGROUND_PROMPT_VERSION = "scientific_background_v21";
 
 const RESEARCH_MODE_TIMEOUT_MS = 2_500;
 const CURCUMIN_RESEARCH_MODE_TIMEOUT_MS = 2_900;
@@ -3786,10 +3786,12 @@ const resolveEvidenceVariantKey = (params: {
   selectedDescriptor: IngredientScienceDescriptor | null;
 }): string | undefined => {
   const evidenceEligibleSection =
+    params.section.headingId === "antioxidant_and_immune_research" ||
     params.section.headingId === "form_and_tolerability_context" ||
     params.section.headingId === "what_product_comparison_depends_on" ||
     params.section.headingId === "iron_absorption_context" ||
     params.section.headingId === "immune_function_context" ||
+    params.section.headingId === "why_dose_context_matters" ||
     params.section.headingId === "what_dose_and_use_context_can_change";
   if (!evidenceEligibleSection) return undefined;
 
@@ -3821,17 +3823,51 @@ const resolveEvidenceVariantKey = (params: {
   }
 
   if (params.plan.family === "iron") {
-    if (/\bbisglycinate\b/i.test(descriptorText)) return "ferrous_bisglycinate_anchor";
+    if (params.section.headingId === "form_and_tolerability_context") {
+      if (/\bbisglycinate\b/i.test(descriptorText)) return "ferrous_bisglycinate_anchor";
+      return "generic_form_comparison";
+    }
+    if (
+      params.section.headingId === "what_product_comparison_depends_on" &&
+      /\bvitamin c\b|\bascorbic acid\b|\bfolate\b|\bfolic acid\b|\b5-mthf\b|\bmethylfolate\b|\bb12\b|\bcobalamin\b/i.test(
+        contextText,
+      )
+    ) {
+      return "with_cofactor_blend";
+    }
     return "generic_form_comparison";
   }
 
-  if (params.plan.family === "vitamin_c" && params.section.headingId === "iron_absorption_context") {
-    if (/\biron\b|\bferrous\b/i.test(contextText)) return "with_iron";
+  if (params.plan.family === "vitamin_c") {
+    if (params.section.headingId === "iron_absorption_context") {
+      if (/\biron\b|\bferrous\b/i.test(contextText)) return "with_iron";
+      return undefined;
+    }
+    if (
+      params.section.headingId === "antioxidant_and_immune_research" &&
+      /\bliposomal\b|\bbuffered\b|\bsustained release\b|\bsustained-release\b|\bslow release\b|\bslow-release\b|\btime release\b|\btime-release\b|\bextended release\b|\bextended-release\b|\bdelayed release\b|\bdelayed-release\b/i.test(
+        descriptorText,
+      )
+    ) {
+      return "alt_delivery";
+    }
     return undefined;
   }
 
   if (params.plan.family === "zinc" && params.section.headingId === "immune_function_context") {
+    if (/\bvitamin c\b|\bascorbic acid\b/i.test(contextText)) return "with_vitamin_c";
     if (/\blozenge\b/i.test(contextText)) return "lozenge_short_term_context";
+    return undefined;
+  }
+
+  if (params.plan.family === "b6" && params.section.headingId === "why_dose_context_matters") {
+    if (
+      /\bb-complex\b|\bvitamin b12\b|\bb12\b|\bcobalamin\b|\bfolate\b|\bfolic acid\b|\bmethylfolate\b|\briboflavin\b|\bthiamin\b|\bthiamine\b|\bniacin\b|\bvitamin b1\b|\bvitamin b2\b|\bvitamin b3\b/i.test(
+        contextText,
+      )
+    ) {
+      return "b_complex_pairing";
+    }
     return undefined;
   }
 

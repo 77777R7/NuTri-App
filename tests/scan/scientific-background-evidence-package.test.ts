@@ -197,7 +197,7 @@ test("scientific background evidence package loads b12 and calcium completion ro
   assert.equal(melatoninDose.supportingReferences[0]?.id, "pmid:38888087");
 });
 
-test("scientific background evidence package loads vitamin d completion rows plus vitamin c and second-wave zinc and melatonin variants", () => {
+test("scientific background evidence package loads vitamin d completion rows plus thicker vitamin c, b6, zinc, iron, and melatonin variants", () => {
   const vitaminDInterpretation = getScientificBackgroundEvidence(
     "vitamin_d",
     "what_interpretation_depends_on",
@@ -224,6 +224,35 @@ test("scientific background evidence package loads vitamin d completion rows plu
     "en",
     "with_iron",
   );
+  const vitaminCAltDelivery = getScientificBackgroundEvidence(
+    "vitamin_c",
+    "antioxidant_and_immune_research",
+    "en",
+    "alt_delivery",
+  );
+  const b6Cofactor = getScientificBackgroundEvidence(
+    "b6",
+    "cofactor_and_metabolism_context",
+    "en",
+  );
+  const b6BComplex = getScientificBackgroundEvidence(
+    "b6",
+    "why_dose_context_matters",
+    "en",
+    "b_complex_pairing",
+  );
+  const zincWithVitaminC = getScientificBackgroundEvidence(
+    "zinc",
+    "immune_function_context",
+    "en",
+    "with_vitamin_c",
+  );
+  const ironWithCofactors = getScientificBackgroundEvidence(
+    "iron",
+    "what_product_comparison_depends_on",
+    "en",
+    "with_cofactor_blend",
+  );
   const zincLozenge = getScientificBackgroundEvidence(
     "zinc",
     "immune_function_context",
@@ -245,6 +274,11 @@ test("scientific background evidence package loads vitamin d completion rows plu
   assert.match(vitaminCImmune.displayText ?? "", /immune|antioxidant|vitamin C/i);
   assert.equal(vitaminCImmune.supportingReferences[0]?.id, "pmid:29099763");
 
+  assert.ok(vitaminCAltDelivery);
+  assert.equal(vitaminCAltDelivery.variantKey, "alt_delivery");
+  assert.match(vitaminCAltDelivery.displayText ?? "", /liposomal|buffered|delivery-style|vitamin C/i);
+  assert.equal(vitaminCAltDelivery.supportingReferences[0]?.id, "pmid:39861409");
+
   assert.ok(vitaminCCollagen);
   assert.match(vitaminCCollagen.displayText ?? "", /collagen|tissue-support|vitamin C/i);
   assert.equal(vitaminCCollagen.supportingReferences[0]?.id, "pmid:36009324");
@@ -257,6 +291,25 @@ test("scientific background evidence package loads vitamin d completion rows plu
   assert.equal(vitaminCIronPair.variantKey, "with_iron");
   assert.match(vitaminCIronPair.displayText ?? "", /paired with iron|co-formulation|vitamin C/i);
   assert.equal(vitaminCIronPair.supportingReferences[0]?.id, "pmid:32650997");
+
+  assert.ok(b6Cofactor);
+  assert.match(b6Cofactor.displayText ?? "", /cofactor|metabolism|vitamin B6/i);
+  assert.equal(b6Cofactor.supportingReferences[0]?.id, "pmid:27593095");
+
+  assert.ok(b6BComplex);
+  assert.equal(b6BComplex.variantKey, "b_complex_pairing");
+  assert.match(b6BComplex.displayText ?? "", /B-complex|multi-B|vitamin B6/i);
+  assert.equal(b6BComplex.supportingReferences[0]?.id, "pmid:31915511");
+
+  assert.ok(zincWithVitaminC);
+  assert.equal(zincWithVitaminC.variantKey, "with_vitamin_c");
+  assert.match(zincWithVitaminC.displayText ?? "", /paired with vitamin C|co-formulation|zinc/i);
+  assert.equal(zincWithVitaminC.supportingReferences[0]?.id, "pmid:16373990");
+
+  assert.ok(ironWithCofactors);
+  assert.equal(ironWithCofactors.variantKey, "with_cofactor_blend");
+  assert.match(ironWithCofactors.displayText ?? "", /vitamin C|folate|B12|iron/i);
+  assert.equal(ironWithCofactors.supportingReferences[0]?.id, "pmid:10948381");
 
   assert.ok(zincLozenge);
   assert.equal(zincLozenge.variantKey, "lozenge_short_term_context");

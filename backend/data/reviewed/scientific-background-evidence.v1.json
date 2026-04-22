@@ -2996,6 +2996,446 @@
       ],
       "variant_key": "lozenge_short_term_context",
       "variant_label": "Zinc lozenge short-term context"
+    },
+    {
+      "ingredient_family": "vitamin_c",
+      "section_key": "antioxidant_and_immune_research",
+      "evidence_grade": "B",
+      "overall_confidence": 0.79,
+      "display_text": "Liposomal, buffered, or slow-release vitamin C products belong in a narrower delivery-style comparison lane than plain vitamin C products, because delivery language changes how shoppers should read the label.",
+      "segments": {
+        "summary_support": {
+          "en": [
+            {
+              "text": "Liposomal, buffered, or slow-release vitamin C products belong in a narrower delivery-style comparison lane than plain vitamin C products, because delivery language changes how shoppers should read the label.",
+              "sentence_id": "vitc_alt_delivery_summary_001",
+              "evidence_snippet_id": "vitc_alt_delivery_excerpt_001",
+              "evidence_reference_id": "pmid:39861409",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "evidence_read_support": {
+          "en": [
+            {
+              "text": "A systematic literature review of alternative vitamin C supplement forms supports using enhanced-delivery wording as a comparison signal rather than assuming every vitamin C label sits in the same bucket.",
+              "sentence_id": "vitc_alt_delivery_evidence_001",
+              "evidence_snippet_id": "vitc_alt_delivery_excerpt_001",
+              "evidence_reference_id": "pmid:39861409",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "shopper_meaning_support": {
+          "en": [
+            {
+              "text": "If a label says liposomal, buffered, or sustained-release vitamin C, compare it against similar delivery-style products before grouping it with standard vitamin C tablets or capsules.",
+              "sentence_id": "vitc_alt_delivery_shopper_001",
+              "evidence_snippet_id": "vitc_alt_delivery_excerpt_001",
+              "evidence_reference_id": "pmid:39861409",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "caveats": {
+          "en": [
+            {
+              "text": "Do not treat alternative-delivery wording like proof of universal superiority; it mainly narrows the comparison lane and sets a more specific label-reading context.",
+              "sentence_id": "vitc_alt_delivery_caveat_001",
+              "evidence_snippet_id": "vitc_alt_delivery_excerpt_001",
+              "evidence_reference_id": "pmid:39861409",
+              "evidence_grade": "C",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        }
+      },
+      "supporting_references": [
+        {
+          "id": "pmid:39861409",
+          "source": "PubMed",
+          "title": "Enhanced Vitamin C Delivery: A Systematic Literature Review Assessing the Efficacy and Safety of Alternative Supplement Forms in Healthy Adults.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/39861409/"
+        },
+        {
+          "id": "pmid:29099763",
+          "source": "PubMed",
+          "title": "Vitamin C and Immune Function.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/29099763/"
+        }
+      ],
+      "variant_key": "alt_delivery",
+      "variant_label": "Alternative vitamin C delivery"
+    },
+    {
+      "ingredient_family": "zinc",
+      "section_key": "immune_function_context",
+      "evidence_grade": "B",
+      "overall_confidence": 0.76,
+      "display_text": "When zinc is paired with vitamin C on the same label, the immune-function lane becomes a more explicit co-formulation story than it is on a standalone zinc product.",
+      "segments": {
+        "summary_support": {
+          "en": [
+            {
+              "text": "When zinc is paired with vitamin C on the same label, the immune-function lane becomes a more explicit co-formulation story than it is on a standalone zinc product.",
+              "sentence_id": "zinc_vitc_summary_001",
+              "evidence_snippet_id": "zinc_vitc_excerpt_001",
+              "evidence_reference_id": "pmid:16373990",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "evidence_read_support": {
+          "en": [
+            {
+              "text": "Review-level zinc-plus-vitamin-C literature supports giving more comparison weight to the paired immune-context when both nutrients are clearly disclosed together.",
+              "sentence_id": "zinc_vitc_evidence_001",
+              "evidence_snippet_id": "zinc_vitc_excerpt_001",
+              "evidence_reference_id": "pmid:33472840",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "shopper_meaning_support": {
+          "en": [
+            {
+              "text": "If a zinc label also discloses vitamin C, compare the paired amounts and the overall immune-support formula instead of treating it like a plain single-mineral zinc product.",
+              "sentence_id": "zinc_vitc_shopper_001",
+              "evidence_snippet_id": "zinc_vitc_excerpt_001",
+              "evidence_reference_id": "pmid:16373990",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "caveats": {
+          "en": [
+            {
+              "text": "Do not let zinc-plus-vitamin-C pairing spill over into every zinc supplement; the narrower comparison meaning depends on that co-formulation actually being present on the label.",
+              "sentence_id": "zinc_vitc_caveat_001",
+              "evidence_snippet_id": "zinc_vitc_excerpt_001",
+              "evidence_reference_id": "pmid:33472840",
+              "evidence_grade": "C",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        }
+      },
+      "supporting_references": [
+        {
+          "id": "pmid:16373990",
+          "source": "PubMed",
+          "title": "Immune-enhancing role of vitamin C and zinc and effect on clinical conditions.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/16373990/"
+        },
+        {
+          "id": "pmid:33472840",
+          "source": "PubMed",
+          "title": "Effect of micronutrient supplements on influenza and other respiratory tract infections among adults: a systematic review and meta-analysis.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/33472840/"
+        }
+      ],
+      "variant_key": "with_vitamin_c",
+      "variant_label": "Zinc paired with vitamin C"
+    },
+    {
+      "ingredient_family": "iron",
+      "section_key": "what_product_comparison_depends_on",
+      "evidence_grade": "B",
+      "overall_confidence": 0.78,
+      "display_text": "Iron products paired with vitamin C, folate, or B12 belong in a broader cofactor-aware comparison lane than single-iron products, because co-formulation changes what shoppers should compare first.",
+      "segments": {
+        "summary_support": {
+          "en": [
+            {
+              "text": "Iron products paired with vitamin C, folate, or B12 belong in a broader cofactor-aware comparison lane than single-iron products, because co-formulation changes what shoppers should compare first.",
+              "sentence_id": "iron_cofactor_summary_001",
+              "evidence_snippet_id": "iron_cofactor_excerpt_001",
+              "evidence_reference_id": "pmid:10948381",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "evidence_read_support": {
+          "en": [
+            {
+              "text": "Iron-absorption and anaemia review literature supports treating co-formulated vitamin C or B-vitamin support as part of the product-comparison setting instead of as background decoration.",
+              "sentence_id": "iron_cofactor_evidence_001",
+              "evidence_snippet_id": "iron_cofactor_excerpt_001",
+              "evidence_reference_id": "pmid:35755397",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "shopper_meaning_support": {
+          "en": [
+            {
+              "text": "If an iron product also discloses vitamin C, folate, or B12, compare the whole support stack and the exact iron line before treating it like a simple one-ingredient iron product.",
+              "sentence_id": "iron_cofactor_shopper_001",
+              "evidence_snippet_id": "iron_cofactor_excerpt_001",
+              "evidence_reference_id": "pmid:32650997",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "caveats": {
+          "en": [
+            {
+              "text": "Do not assume every cofactor blend is automatically better; the main point is that multi-nutrient iron products belong in a different comparison set from simple iron labels.",
+              "sentence_id": "iron_cofactor_caveat_001",
+              "evidence_snippet_id": "iron_cofactor_excerpt_001",
+              "evidence_reference_id": "pmid:10948381",
+              "evidence_grade": "C",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        }
+      },
+      "supporting_references": [
+        {
+          "id": "pmid:10948381",
+          "source": "PubMed",
+          "title": "The role of vitamins in the prevention and control of anaemia.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/10948381/"
+        },
+        {
+          "id": "pmid:32650997",
+          "source": "PubMed",
+          "title": "Oral iron supplementation in iron-deficient women: How much and how often?",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/32650997/"
+        },
+        {
+          "id": "pmid:35755397",
+          "source": "PubMed",
+          "title": "Iron Absorption: Factors, Limitations, and Improvement Methods.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/35755397/"
+        }
+      ],
+      "variant_key": "with_cofactor_blend",
+      "variant_label": "Iron paired with support cofactors"
+    },
+    {
+      "ingredient_family": "b6",
+      "section_key": "cofactor_and_metabolism_context",
+      "evidence_grade": "B",
+      "overall_confidence": 0.72,
+      "display_text": "Vitamin B6 is easiest to read through a cofactor-and-metabolism lane, which is more specific and product-useful than broad front-label energy language.",
+      "segments": {
+        "summary_support": {
+          "en": [
+            {
+              "text": "Vitamin B6 is easiest to read through a cofactor-and-metabolism lane, which is more specific and product-useful than broad front-label energy language.",
+              "sentence_id": "b6_cofactor_summary_001",
+              "evidence_snippet_id": "b6_cofactor_excerpt_001",
+              "evidence_reference_id": "pmid:27593095",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "evidence_read_support": {
+          "en": [
+            {
+              "text": "Review-level vitamin B6 literature supports keeping interpretation anchored to narrower cofactor-related pathways instead of letting the section drift into generic vitality copy.",
+              "sentence_id": "b6_cofactor_evidence_001",
+              "evidence_snippet_id": "b6_cofactor_excerpt_001",
+              "evidence_reference_id": "pmid:27593095",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "shopper_meaning_support": {
+          "en": [
+            {
+              "text": "Compare the exact B6 amount and the rest of the formula before treating two B6 products as equivalent just because both use broad energy-style packaging.",
+              "sentence_id": "b6_cofactor_shopper_001",
+              "evidence_snippet_id": "b6_cofactor_excerpt_001",
+              "evidence_reference_id": "pmid:27593095",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "caveats": {
+          "en": [
+            {
+              "text": "Do not stretch this lane into a universal energy claim; the value of the row still depends on the exact amount and broader formula setting.",
+              "sentence_id": "b6_cofactor_caveat_001",
+              "evidence_snippet_id": "b6_cofactor_excerpt_001",
+              "evidence_reference_id": "pmid:27593095",
+              "evidence_grade": "C",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        }
+      },
+      "supporting_references": [
+        {
+          "id": "pmid:27593095",
+          "source": "PubMed",
+          "title": "Inflammation, vitamin B6 and related pathways.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/27593095/"
+        },
+        {
+          "id": "pmid:40218880",
+          "source": "PubMed",
+          "title": "Effects of B Vitamins on Homocysteine Lowering and Thrombotic Risk Reduction-A Review of Randomized Controlled Trials Published Since January 1996.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/40218880/"
+        }
+      ]
+    },
+    {
+      "ingredient_family": "b6",
+      "section_key": "why_dose_context_matters",
+      "evidence_grade": "B",
+      "overall_confidence": 0.71,
+      "display_text": "Dose and broader formula setting materially change how vitamin B6 labels should be compared, because B6 can act as a lead row in some products and as supporting context in others.",
+      "segments": {
+        "summary_support": {
+          "en": [
+            {
+              "text": "Dose and broader formula setting materially change how vitamin B6 labels should be compared, because B6 can act as a lead row in some products and as supporting context in others.",
+              "sentence_id": "b6_dose_summary_001",
+              "evidence_snippet_id": "b6_dose_excerpt_001",
+              "evidence_reference_id": "pmid:31915511",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "evidence_read_support": {
+          "en": [
+            {
+              "text": "Human B-complex bioavailability data and broader B-vitamin review literature support treating dose and co-formulation as part of the practical comparison lane for B6 labels.",
+              "sentence_id": "b6_dose_evidence_001",
+              "evidence_snippet_id": "b6_dose_excerpt_001",
+              "evidence_reference_id": "pmid:40218880",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "shopper_meaning_support": {
+          "en": [
+            {
+              "text": "Check whether B6 is the main point of the product or just one member of a larger B-vitamin stack before assuming two labels belong in the same comparison set.",
+              "sentence_id": "b6_dose_shopper_001",
+              "evidence_snippet_id": "b6_dose_excerpt_001",
+              "evidence_reference_id": "pmid:31915511",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "caveats": {
+          "en": [
+            {
+              "text": "Do not let high-potency or B-complex branding automatically imply stronger comparison value; dose and formula role mainly tell you which labels are fair to compare.",
+              "sentence_id": "b6_dose_caveat_001",
+              "evidence_snippet_id": "b6_dose_excerpt_001",
+              "evidence_reference_id": "pmid:40218880",
+              "evidence_grade": "C",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        }
+      },
+      "supporting_references": [
+        {
+          "id": "pmid:31915511",
+          "source": "PubMed",
+          "title": "A Randomized Pilot Trial to Evaluate the Bioavailability of Natural versus Synthetic Vitamin B Complexes in Healthy Humans and Their Effects on Homocysteine, Oxidative Stress, and Antioxidant Levels.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/31915511/"
+        },
+        {
+          "id": "pmid:40218880",
+          "source": "PubMed",
+          "title": "Effects of B Vitamins on Homocysteine Lowering and Thrombotic Risk Reduction-A Review of Randomized Controlled Trials Published Since January 1996.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/40218880/"
+        }
+      ]
+    },
+    {
+      "ingredient_family": "b6",
+      "section_key": "why_dose_context_matters",
+      "evidence_grade": "B",
+      "overall_confidence": 0.73,
+      "display_text": "When vitamin B6 appears inside a B-complex or homocysteine-style formula, it belongs in a broader multi-B comparison lane than a standalone B6 product.",
+      "segments": {
+        "summary_support": {
+          "en": [
+            {
+              "text": "When vitamin B6 appears inside a B-complex or homocysteine-style formula, it belongs in a broader multi-B comparison lane than a standalone B6 product.",
+              "sentence_id": "b6_bcomplex_summary_001",
+              "evidence_snippet_id": "b6_bcomplex_excerpt_001",
+              "evidence_reference_id": "pmid:31915511",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "evidence_read_support": {
+          "en": [
+            {
+              "text": "B-complex bioavailability work and homocysteine-lowering review data support treating B6-plus-folate-or-B12 formulas as a different comparison set from simple single-B6 labels.",
+              "sentence_id": "b6_bcomplex_evidence_001",
+              "evidence_snippet_id": "b6_bcomplex_excerpt_001",
+              "evidence_reference_id": "pmid:40218880",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "shopper_meaning_support": {
+          "en": [
+            {
+              "text": "If the label pairs B6 with folate, B12, or several other B vitamins, compare the whole B-complex profile instead of isolating the B6 row by itself.",
+              "sentence_id": "b6_bcomplex_shopper_001",
+              "evidence_snippet_id": "b6_bcomplex_excerpt_001",
+              "evidence_reference_id": "pmid:31915511",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "caveats": {
+          "en": [
+            {
+              "text": "Do not infer that every B-complex makes B6 the lead story; co-formulation changes interpretation more than it proves superiority.",
+              "sentence_id": "b6_bcomplex_caveat_001",
+              "evidence_snippet_id": "b6_bcomplex_excerpt_001",
+              "evidence_reference_id": "pmid:40218880",
+              "evidence_grade": "C",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        }
+      },
+      "supporting_references": [
+        {
+          "id": "pmid:31915511",
+          "source": "PubMed",
+          "title": "A Randomized Pilot Trial to Evaluate the Bioavailability of Natural versus Synthetic Vitamin B Complexes in Healthy Humans and Their Effects on Homocysteine, Oxidative Stress, and Antioxidant Levels.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/31915511/"
+        },
+        {
+          "id": "pmid:40218880",
+          "source": "PubMed",
+          "title": "Effects of B Vitamins on Homocysteine Lowering and Thrombotic Risk Reduction-A Review of Randomized Controlled Trials Published Since January 1996.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/40218880/"
+        }
+      ],
+      "variant_key": "b_complex_pairing",
+      "variant_label": "Vitamin B6 in B-complex pairing"
     }
   ],
   "candidate_pubmed_searches": [

@@ -2318,8 +2318,14 @@ test('new family fallbacks stay specific and do not collapse back to generic pro
     /pregnancy|neural-tube-defect|generic B-vitamin/i,
   );
   assert.match(folateResult.scientificBackground.sections[2]?.shopperMeaning ?? '', /folic acid|5-MTHF|folate disclosure|comparison/i);
-  assert.match(b6Result.scientificBackground.sections[0]?.summary ?? '', /cofactor and metabolism|broader energy-style/i);
-  assert.match(b6Result.scientificBackground.sections[2]?.shopperMeaning ?? '', /dose|formula role|comparison bucket/i);
+  assert.match(
+    b6Result.scientificBackground.sections[0]?.summary ?? '',
+    /cofactor(?:-and-|\s+and\s+)metabolism|broader energy-style/i,
+  );
+  assert.match(
+    b6Result.scientificBackground.sections[2]?.shopperMeaning ?? '',
+    /dose|formula role|comparison bucket|larger b-vitamin stack|comparison set/i,
+  );
   assert.match(curcuminResult.scientificBackground.sections[1]?.summary ?? '', /extract|curcuminoid|standardized/i);
   assert.match(curcuminResult.scientificBackground.sections[2]?.shopperMeaning ?? '', /extract detail|broadest promise|package/i);
   assert.match(turmericResult.scientificBackground.sections[0]?.summary ?? '', /turmeric|whole-root|broader/i);
@@ -2349,7 +2355,7 @@ test('new family fallbacks stay specific and do not collapse back to generic pro
   assert.match(greenTeaResult.scientificBackground.sections[2]?.shopperMeaning ?? '', /concentration detail|comparison set|green tea extract/i);
 });
 
-test('reviewed evidence variants sharpen vitamin C with iron and extended-release melatonin while zinc lozenges stay label-context', async () => {
+test('reviewed evidence variants sharpen vitamin C, B6, zinc, iron, and melatonin while zinc lozenges stay label-context', async () => {
   const vitaminCIronContext = buildIngredientScienceContext({
     digest: buildDigest({
       labelId: 'fixture-vitamin-c-iron-variant',
@@ -2358,6 +2364,53 @@ test('reviewed evidence variants sharpen vitamin C with iron and extended-releas
       actives: [
         { name: 'Vitamin C (as Ascorbic Acid)', amount: 250, unit: 'mg' },
         { name: 'Iron (as Ferrous Bisglycinate Chelate)', amount: 18, unit: 'mg' },
+      ],
+    }),
+    overlayClaims: null,
+  });
+  const vitaminCAltDeliveryContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-vitamin-c-alt-delivery-variant',
+      productName: 'Liposomal Buffered Vitamin C 1000',
+      dosageForm: 'Capsule',
+      actives: [{ name: 'Vitamin C (as Ascorbic Acid)', amount: 1000, unit: 'mg' }],
+    }),
+    overlayClaims: null,
+  });
+  const b6ComplexContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-b6-b-complex-variant',
+      productName: 'Activated B-Complex with P-5-P',
+      dosageForm: 'Capsule',
+      actives: [
+        { name: 'Vitamin B6 (as Pyridoxal-5-Phosphate)', amount: 25, unit: 'mg' },
+        { name: 'Folate (as 5-MTHF)', amount: 400, unit: 'mcg DFE' },
+        { name: 'Vitamin B12 (as Methylcobalamin)', amount: 500, unit: 'mcg' },
+      ],
+    }),
+    overlayClaims: null,
+  });
+  const zincWithVitaminCContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-zinc-vitamin-c-variant',
+      productName: 'Zinc Plus Vitamin C Immune Support',
+      dosageForm: 'Capsule',
+      actives: [
+        { name: 'Zinc (as Zinc Picolinate)', amount: 15, unit: 'mg' },
+        { name: 'Vitamin C (as Ascorbic Acid)', amount: 250, unit: 'mg' },
+      ],
+    }),
+    overlayClaims: null,
+  });
+  const ironCofactorContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-iron-cofactor-variant',
+      productName: 'Gentle Iron with Folate and B12',
+      dosageForm: 'Capsule',
+      actives: [
+        { name: 'Iron (as Ferrous Bisglycinate Chelate)', amount: 18, unit: 'mg' },
+        { name: 'Folate (as 5-MTHF)', amount: 400, unit: 'mcg DFE' },
+        { name: 'Vitamin B12 (as Methylcobalamin)', amount: 250, unit: 'mcg' },
       ],
     }),
     overlayClaims: null,
@@ -2385,6 +2438,22 @@ test('reviewed evidence variants sharpen vitamin C with iron and extended-releas
     vitaminCIronContext,
     'Vitamin C (as Ascorbic Acid)',
   );
+  const vitaminCAltDeliveryResult = await compileScientificBackgroundAsync(
+    vitaminCAltDeliveryContext,
+    'Vitamin C (as Ascorbic Acid)',
+  );
+  const b6ComplexResult = await compileScientificBackgroundAsync(
+    b6ComplexContext,
+    'Vitamin B6 (as Pyridoxal-5-Phosphate)',
+  );
+  const zincWithVitaminCResult = await compileScientificBackgroundAsync(
+    zincWithVitaminCContext,
+    'Zinc (as Zinc Picolinate)',
+  );
+  const ironCofactorResult = await compileScientificBackgroundAsync(
+    ironCofactorContext,
+    'Iron (as Ferrous Bisglycinate Chelate)',
+  );
   const zincLozengePlan = planScientificBackgroundSections({
     context: zincLozengeContext,
     selectedIngredientName: 'Zinc (as Zinc Acetate)',
@@ -2405,6 +2474,42 @@ test('reviewed evidence variants sharpen vitamin C with iron and extended-releas
   assert.match(
     vitaminCIronResult.scientificBackground.sections[2]?.shopperMeaning ?? '',
     /paired amounts|exact iron line|generic vitamin C formula/i,
+  );
+
+  assert.match(
+    vitaminCAltDeliveryResult.scientificBackground.sections[0]?.summary ?? '',
+    /liposomal|buffered|delivery-style|plain vitamin C/i,
+  );
+  assert.match(
+    vitaminCAltDeliveryResult.scientificBackground.sections[0]?.shopperMeaning ?? '',
+    /delivery-style|similar delivery|standard vitamin C/i,
+  );
+
+  assert.match(
+    b6ComplexResult.scientificBackground.sections[2]?.summary ?? '',
+    /B-complex|homocysteine|multi-B|standalone B6/i,
+  );
+  assert.match(
+    b6ComplexResult.scientificBackground.sections[2]?.shopperMeaning ?? '',
+    /whole B-complex profile|isolating the B6 row/i,
+  );
+
+  assert.match(
+    zincWithVitaminCResult.scientificBackground.sections[0]?.summary ?? '',
+    /paired with vitamin C|co-formulation|standalone zinc/i,
+  );
+  assert.match(
+    zincWithVitaminCResult.scientificBackground.sections[0]?.shopperMeaning ?? '',
+    /paired amounts|overall immune-support formula|single-mineral zinc/i,
+  );
+
+  assert.match(
+    ironCofactorResult.scientificBackground.sections[2]?.summary ?? '',
+    /vitamin C|folate|B12|cofactor-aware|single-iron/i,
+  );
+  assert.match(
+    ironCofactorResult.scientificBackground.sections[2]?.shopperMeaning ?? '',
+    /whole support stack|simple one-ingredient iron/i,
   );
 
   assert.equal(zincLozengePlan.mode, 'label_context_mode');
