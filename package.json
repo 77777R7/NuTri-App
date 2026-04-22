@@ -12,7 +12,7 @@
     "web": "expo start --web",
     "lint": "expo lint",
     "postinstall": "patch-package",
-    "serve:backend": "cd backend && npx tsx src/server.ts",
+    "serve:backend": "cd backend && npx tsx --tsconfig tsconfig.runtime.json src/server.ts",
     "personalization:build-goal-bundle": "node --import tsx backend/scripts/build-goal-navigator-candidate-bundle.ts",
     "verify:db-contract": "node scripts/maintainer/verify-db-contract.mjs",
     "gates:stable": "node scripts/maintainer/run-backend-gates-stable.mjs --manage-backend",

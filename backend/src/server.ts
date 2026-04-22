@@ -116,6 +116,7 @@ import {
 } from "./insights/sectionSummaryCompiler.js";
 import {
   compileIngredientOverviewAsync,
+  type IngredientOverviewCompileDiagnostics,
   INGREDIENT_OVERVIEW_PROMPT_VERSION,
   resolveIngredientOverviewExecutionProfile,
 } from "./insights/ingredientOverviewCompiler.js";
@@ -126,8 +127,13 @@ import {
   planScientificBackgroundSections,
 } from "./insights/scientificBackgroundCompiler.js";
 import type {
+  ScientificBackgroundCompileDiagnostics,
   ScientificBackgroundExecutionProfile,
 } from "./insights/scientificBackgroundCompiler.js";
+import {
+  type SearchDetailDeepDiveSettled,
+  SearchDetailDeepDiveSectionRuntime,
+} from "./searchDetailDeepDiveAsync.js";
 import {
   buildProductOverviewWhatIsItFallback,
 } from "./insights/productOverviewWhatIsItFallback.js";
@@ -559,6 +565,30 @@ const RESILIENCE_LNHPD_SECOND_CHANCE_TIMEOUT_MS = Number(
 const RESILIENCE_GOOGLE_TIMEOUT_MS = Number(process.env.RESILIENCE_GOOGLE_TIMEOUT_MS ?? 2500);
 const RESILIENCE_DEEPSEEK_TIMEOUT_MS = Number(process.env.RESILIENCE_DEEPSEEK_TIMEOUT_MS ?? 10_000);
 const MY_SUPP_OVERVIEW_TIMEOUT_MS = Number(process.env.MY_SUPP_OVERVIEW_TIMEOUT_MS ?? 4_000);
+const SEARCH_DETAIL_DEEP_DIVE_RETRY_AFTER_MS = Number(
+  process.env.SEARCH_DETAIL_DEEP_DIVE_RETRY_AFTER_MS ?? 1_500,
+);
+const SEARCH_DETAIL_INGREDIENT_BACKGROUND_TIMEOUT_MS = Number(
+  process.env.SEARCH_DETAIL_INGREDIENT_BACKGROUND_TIMEOUT_MS ?? 8_000,
+);
+const SEARCH_DETAIL_SCIENTIFIC_BACKGROUND_TIMEOUT_MS = Number(
+  process.env.SEARCH_DETAIL_SCIENTIFIC_BACKGROUND_TIMEOUT_MS ?? 10_000,
+);
+const SEARCH_DETAIL_BACKGROUND_MAX_RETRIES = Number(
+  process.env.SEARCH_DETAIL_BACKGROUND_MAX_RETRIES ?? 1,
+);
+const SEARCH_DETAIL_INGREDIENT_CACHE_LIMIT = Number(
+  process.env.SEARCH_DETAIL_INGREDIENT_CACHE_LIMIT ?? 120,
+);
+const SEARCH_DETAIL_INGREDIENT_FALLBACK_CACHE_TTL_MS = Number(
+  process.env.SEARCH_DETAIL_INGREDIENT_FALLBACK_CACHE_TTL_MS ?? 20_000,
+);
+const SEARCH_DETAIL_SCIENTIFIC_BACKGROUND_CACHE_LIMIT = Number(
+  process.env.SEARCH_DETAIL_SCIENTIFIC_BACKGROUND_CACHE_LIMIT ?? 120,
+);
+const SEARCH_DETAIL_SCIENTIFIC_BACKGROUND_FALLBACK_CACHE_TTL_MS = Number(
+  process.env.SEARCH_DETAIL_SCIENTIFIC_BACKGROUND_FALLBACK_CACHE_TTL_MS ?? 20_000,
+);
 const RESILIENCE_DEEPSEEK_BACKGROUND_BUDGET_MS = Number(
   process.env.RESILIENCE_DEEPSEEK_BACKGROUND_BUDGET_MS ?? 12_000,
 );
@@ -1031,6 +1061,24 @@ const deepseekSemaphore = new Semaphore(RESILIENCE_DEEPSEEK_CONCURRENCY);
 const deepseekDsldMinimalSemaphore = new Semaphore(RESILIENCE_DEEPSEEK_DSLD_MIN_CONCURRENCY);
 const contextFetchSemaphore = new Semaphore(RESILIENCE_CONTEXT_FETCH_CONCURRENCY);
 const supabaseReadSemaphore = new Semaphore(RESILIENCE_SUPABASE_READ_CONCURRENCY);
+
+const searchDetailIngredientRuntime = new SearchDetailDeepDiveSectionRuntime<
+  Awaited<ReturnType<typeof compileIngredientOverviewAsync>>["ingredientOverview"],
+  IngredientOverviewCompileDiagnostics
+>({
+  cacheLimit: SEARCH_DETAIL_INGREDIENT_CACHE_LIMIT,
+  fallbackTtlMs: SEARCH_DETAIL_INGREDIENT_FALLBACK_CACHE_TTL_MS,
+  recommendedRetryAfterMs: SEARCH_DETAIL_DEEP_DIVE_RETRY_AFTER_MS,
+});
+
+const searchDetailScientificRuntime = new SearchDetailDeepDiveSectionRuntime<
+  Awaited<ReturnType<typeof compileScientificBackgroundAsync>>["scientificBackground"],
+  ScientificBackgroundCompileDiagnostics
+>({
+  cacheLimit: SEARCH_DETAIL_SCIENTIFIC_BACKGROUND_CACHE_LIMIT,
+  fallbackTtlMs: SEARCH_DETAIL_SCIENTIFIC_BACKGROUND_FALLBACK_CACHE_TTL_MS,
+  recommendedRetryAfterMs: SEARCH_DETAIL_DEEP_DIVE_RETRY_AFTER_MS,
+});
 
 const googleBreaker = new CircuitBreaker({
   windowMs: RESILIENCE_BREAKER_WINDOW_MS,
@@ -9668,6 +9716,52 @@ app.get("/api/search/bootstrap", async (_req: Request, res: Response) => {
   }
 });
 
+type SearchDetailLlmDiagnostics = {
+  liveWriterConfigured: boolean;
+  liveWriterAttempted: boolean;
+  liveWriterHit: boolean;
+  attemptCount: number;
+  timeoutMs: number;
+  maxRetries: number;
+  fallbackReason: string | null;
+  lastError: string | null;
+  parseFailureCount: number;
+  gateRejectCount: number;
+  timeoutCount: number;
+  errorCount: number;
+};
+
+const parseSearchDetailRevalidateFallback = (value: unknown): boolean => {
+  const values = Array.isArray(value) ? value : [value];
+  return values.some((entry) => {
+    if (typeof entry !== "string") return false;
+    const normalized = entry.trim().toLowerCase();
+    return normalized === "1" || normalized === "true" || normalized === "yes";
+  });
+};
+
+const normalizeSearchDetailDiagnostics = (
+  diagnostics: Partial<SearchDetailLlmDiagnostics> | null | undefined,
+  defaults: {
+    timeoutMs: number;
+    maxRetries: number;
+    liveWriterConfigured: boolean;
+  },
+): SearchDetailLlmDiagnostics => ({
+  liveWriterConfigured: diagnostics?.liveWriterConfigured ?? defaults.liveWriterConfigured,
+  liveWriterAttempted: diagnostics?.liveWriterAttempted ?? false,
+  liveWriterHit: diagnostics?.liveWriterHit ?? false,
+  attemptCount: diagnostics?.attemptCount ?? 0,
+  timeoutMs: diagnostics?.timeoutMs ?? defaults.timeoutMs,
+  maxRetries: diagnostics?.maxRetries ?? defaults.maxRetries,
+  fallbackReason: diagnostics?.fallbackReason ?? null,
+  lastError: diagnostics?.lastError ?? null,
+  parseFailureCount: diagnostics?.parseFailureCount ?? 0,
+  gateRejectCount: diagnostics?.gateRejectCount ?? 0,
+  timeoutCount: diagnostics?.timeoutCount ?? 0,
+  errorCount: diagnostics?.errorCount ?? 0,
+});
+
 app.get("/api/search/product-detail", async (req: Request, res: Response) => {
   const productId = typeof req.query.productId === "string" ? req.query.productId.trim() : "";
   if (!productId) {
@@ -9675,6 +9769,7 @@ app.get("/api/search/product-detail", async (req: Request, res: Response) => {
       .status(400)
       .json({ error: "invalid_request", detail: "productId is required" } satisfies ErrorResponse);
   }
+  const revalidateFallback = parseSearchDetailRevalidateFallback(req.query.revalidateFallback);
 
   try {
     const { data, error } = await supabase
@@ -9765,21 +9860,183 @@ app.get("/api/search/product-detail", async (req: Request, res: Response) => {
           (descriptor) => descriptor.name === ingredientScienceContext.anchorIngredient?.name,
         ) ?? null
         : null);
-
-    const [ingredientOverview, scientificBackground] = await Promise.all([
-      compileIngredientOverviewAsync(ingredientScienceContext, {
-        timeoutMs: 1_200,
-        maxRetries: 0,
-      }),
-      selectedDescriptor
-        ? compileScientificBackgroundAsync(ingredientScienceContext, selectedDescriptor.name, {
-          timeoutMs: 1_500,
-          maxRetries: 0,
-        })
-        : Promise.resolve(null),
-    ]);
-
     const defaultRow = decisionSupport.scienceBlock?.ingredientRows?.[0] ?? null;
+    const selectedScientificName =
+      normalizeSearchDetailText(
+        selectedDescriptor?.name
+        ?? defaultRow?.name
+        ?? ingredientScienceContext.anchorIngredient?.name
+        ?? overlayClaims.title
+        ?? "Supplement label context",
+      ) || "Supplement label context";
+
+    const ingredientOverviewExecutionProfile = resolveIngredientOverviewExecutionProfile(
+      ingredientScienceContext,
+    );
+    const scientificBackgroundPlan = planScientificBackgroundSections({
+      context: ingredientScienceContext,
+      selectedIngredientName: selectedScientificName,
+    });
+    const scientificBackgroundExecutionProfile = resolveScientificBackgroundExecutionProfile(
+      scientificBackgroundPlan,
+    );
+    const deepseekKey = process.env.DEEPSEEK_API_KEY?.trim() || null;
+    const deepseekModel = process.env.DEEPSEEK_MODEL?.trim() || "deepseek-chat";
+    const searchDetailBackgroundMaxRetries = Math.max(0, SEARCH_DETAIL_BACKGROUND_MAX_RETRIES);
+    const ingredientBackgroundLlmFn = deepseekKey
+      ? buildDeepseekJsonLlmFn({
+        deepseekKey,
+        deepseekModel,
+        timeoutMs: SEARCH_DETAIL_INGREDIENT_BACKGROUND_TIMEOUT_MS,
+        maxTokens: ingredientOverviewExecutionProfile.maxTokens,
+      })
+      : null;
+
+    const ingredientCacheKey = [
+      overlayClaims.productId ?? productId,
+      decisionSupport.digest,
+      decisionSupport.decisionInputsHash,
+      INGREDIENT_OVERVIEW_PROMPT_VERSION,
+    ].join("|");
+    const ingredientOverviewResult = await searchDetailIngredientRuntime.resolve({
+      cacheKey: ingredientCacheKey,
+      revalidateFallback,
+      backgroundRefreshEnabled: Boolean(ingredientBackgroundLlmFn),
+      computeFallback: async (): Promise<
+        SearchDetailDeepDiveSettled<
+          Awaited<ReturnType<typeof compileIngredientOverviewAsync>>["ingredientOverview"],
+          IngredientOverviewCompileDiagnostics
+        >
+      > => {
+        const compiled = await compileIngredientOverviewAsync(ingredientScienceContext, {
+          timeoutMs: ingredientOverviewExecutionProfile.timeoutMs,
+          maxRetries: 0,
+        });
+        const diagnostics = normalizeSearchDetailDiagnostics(compiled.diagnostics, {
+          timeoutMs: ingredientOverviewExecutionProfile.timeoutMs,
+          maxRetries: 0,
+          liveWriterConfigured: false,
+        });
+        return {
+          payload: compiled.ingredientOverview,
+          source: compiled.source,
+          diagnostics,
+          fallbackUsed: compiled.fallbackUsed,
+          fallbackReason: diagnostics.fallbackReason,
+          promptVersion: compiled.promptVersion,
+        };
+      },
+      scheduleBackgroundRefresh: async (): Promise<
+        SearchDetailDeepDiveSettled<
+          Awaited<ReturnType<typeof compileIngredientOverviewAsync>>["ingredientOverview"],
+          IngredientOverviewCompileDiagnostics
+        > | null
+      > => {
+        if (!ingredientBackgroundLlmFn) return null;
+        const compiled = await compileIngredientOverviewAsync(ingredientScienceContext, {
+          llmFn: ingredientBackgroundLlmFn,
+          timeoutMs: SEARCH_DETAIL_INGREDIENT_BACKGROUND_TIMEOUT_MS,
+          maxRetries: searchDetailBackgroundMaxRetries,
+        });
+        const diagnostics = normalizeSearchDetailDiagnostics(compiled.diagnostics, {
+          timeoutMs: SEARCH_DETAIL_INGREDIENT_BACKGROUND_TIMEOUT_MS,
+          maxRetries: searchDetailBackgroundMaxRetries,
+          liveWriterConfigured: true,
+        });
+        return {
+          payload: compiled.ingredientOverview,
+          source: compiled.source,
+          diagnostics,
+          fallbackUsed: compiled.fallbackUsed,
+          fallbackReason: diagnostics.fallbackReason,
+          promptVersion: compiled.promptVersion,
+        };
+      },
+      resolveTtlMs: (settled) =>
+        settled.source === "api"
+          ? ingredientOverviewExecutionProfile.cacheTtlMs
+          : SEARCH_DETAIL_INGREDIENT_FALLBACK_CACHE_TTL_MS,
+    });
+
+    const selectedScientificKey =
+      normalizeIngredientScienceKey(selectedScientificName) || normalizeSearchDetailText(selectedScientificName).toLowerCase();
+    const scientificCacheKey = [
+      overlayClaims.productId ?? productId,
+      decisionSupport.digest,
+      decisionSupport.decisionInputsHash,
+      selectedScientificKey || "scientific",
+      scientificBackgroundPlan.mode,
+      SCIENTIFIC_BACKGROUND_PROMPT_VERSION,
+    ].join("|");
+    const scientificBackgroundLlmFn =
+      deepseekKey && scientificBackgroundExecutionProfile.preferLiveWriter
+        ? buildDeepseekJsonLlmFn({
+          deepseekKey,
+          deepseekModel,
+          timeoutMs: SEARCH_DETAIL_SCIENTIFIC_BACKGROUND_TIMEOUT_MS,
+          maxTokens: scientificBackgroundExecutionProfile.maxTokens,
+        })
+        : null;
+    const scientificBackgroundResult = await searchDetailScientificRuntime.resolve({
+      cacheKey: scientificCacheKey,
+      revalidateFallback,
+      backgroundRefreshEnabled: Boolean(scientificBackgroundLlmFn),
+      computeFallback: async (): Promise<
+        SearchDetailDeepDiveSettled<
+          Awaited<ReturnType<typeof compileScientificBackgroundAsync>>["scientificBackground"],
+          ScientificBackgroundCompileDiagnostics
+        >
+      > => {
+        const compiled = await compileScientificBackgroundAsync(ingredientScienceContext, selectedScientificName, {
+          timeoutMs: scientificBackgroundExecutionProfile.timeoutMs,
+          maxRetries: 0,
+        });
+        const diagnostics = normalizeSearchDetailDiagnostics(compiled.diagnostics, {
+          timeoutMs: scientificBackgroundExecutionProfile.timeoutMs,
+          maxRetries: 0,
+          liveWriterConfigured: false,
+        });
+        return {
+          payload: compiled.scientificBackground,
+          source: compiled.source,
+          diagnostics,
+          fallbackUsed: compiled.fallbackUsed,
+          fallbackReason: diagnostics.fallbackReason,
+          promptVersion: compiled.promptVersion,
+        };
+      },
+      scheduleBackgroundRefresh: async (): Promise<
+        SearchDetailDeepDiveSettled<
+          Awaited<ReturnType<typeof compileScientificBackgroundAsync>>["scientificBackground"],
+          ScientificBackgroundCompileDiagnostics
+        > | null
+      > => {
+        if (!scientificBackgroundLlmFn) return null;
+        const compiled = await compileScientificBackgroundAsync(ingredientScienceContext, selectedScientificName, {
+          llmFn: scientificBackgroundLlmFn,
+          timeoutMs: SEARCH_DETAIL_SCIENTIFIC_BACKGROUND_TIMEOUT_MS,
+          maxRetries: searchDetailBackgroundMaxRetries,
+        });
+        const diagnostics = normalizeSearchDetailDiagnostics(compiled.diagnostics, {
+          timeoutMs: SEARCH_DETAIL_SCIENTIFIC_BACKGROUND_TIMEOUT_MS,
+          maxRetries: searchDetailBackgroundMaxRetries,
+          liveWriterConfigured: true,
+        });
+        return {
+          payload: compiled.scientificBackground,
+          source: compiled.source,
+          diagnostics,
+          fallbackUsed: compiled.fallbackUsed,
+          fallbackReason: diagnostics.fallbackReason,
+          promptVersion: compiled.promptVersion,
+        };
+      },
+      resolveTtlMs: (settled) =>
+        settled.source === "api"
+          ? scientificBackgroundExecutionProfile.cacheTtlMs
+          : SEARCH_DETAIL_SCIENTIFIC_BACKGROUND_FALLBACK_CACHE_TTL_MS,
+    });
+
     const category = Array.isArray(overlayClaims.categories) ? overlayClaims.categories[0] ?? null : null;
     const factsStatus = ingredientText ? (overlayFactLines.length > 0 ? "full" : "partial") : "none";
 
@@ -9801,14 +10058,35 @@ app.get("/api/search/product-detail", async (req: Request, res: Response) => {
           coverageStatus: factsStatus === "full" ? "coverage_ready" : "not_enough_structured_data",
         },
         defaultAnchor: {
-          name: defaultRow?.name ?? ingredientScienceContext.anchorIngredient?.name ?? null,
+          name:
+            defaultRow?.name
+            ?? ingredientScienceContext.anchorIngredient?.name
+            ?? selectedScientificName
+            ?? null,
           dose: defaultRow?.dose ?? ingredientScienceContext.anchorIngredient?.dose ?? null,
           sourceTier: decisionSupport.scienceBlock?.ingredientSourceTier ?? null,
         },
-        ingredientOverview: ingredientOverview.ingredientOverview,
-        ingredientOverviewSource: ingredientOverview.source,
-        scientificBackground: scientificBackground?.scientificBackground ?? null,
-        scientificBackgroundSource: scientificBackground?.source ?? null,
+        nutriScoreCardV2: decisionSupport.nutriScoreCardV2,
+        personalizedResultLane: decisionSupport.personalizedResultLane,
+        topBlockers: decisionSupport.topBlockers,
+        overviewBlock: decisionSupport.overviewBlock,
+        scienceBlock: decisionSupport.scienceBlock,
+        ingredientOverview: ingredientOverviewResult.payload,
+        ingredientOverviewSource: ingredientOverviewResult.source,
+        ingredientOverviewDiagnostics: ingredientOverviewResult.diagnostics,
+        scientificBackground: scientificBackgroundResult.payload,
+        scientificBackgroundSource: scientificBackgroundResult.source,
+        scientificBackgroundDiagnostics: scientificBackgroundResult.diagnostics,
+        deepDiveAsync: {
+          ingredientOverview: {
+            backgroundRefreshPending: ingredientOverviewResult.backgroundRefreshPending,
+            recommendedRetryAfterMs: ingredientOverviewResult.recommendedRetryAfterMs,
+          },
+          scientificBackground: {
+            backgroundRefreshPending: scientificBackgroundResult.backgroundRefreshPending,
+            recommendedRetryAfterMs: scientificBackgroundResult.recommendedRetryAfterMs,
+          },
+        },
         usageBlock: decisionSupport.usageBlock,
         safetyBlock: decisionSupport.safetyBlock,
         suggestedUse: overlayClaims.suggestedUse ?? null,

@@ -142,6 +142,20 @@ export type SearchProductDetailResponse = {
     compareHint: string | null;
   } | null;
   ingredientOverviewSource: 'api' | 'fallback' | null;
+  ingredientOverviewDiagnostics?: {
+    liveWriterConfigured: boolean;
+    liveWriterAttempted: boolean;
+    liveWriterHit: boolean;
+    attemptCount: number;
+    timeoutMs: number;
+    maxRetries: number;
+    fallbackReason: string | null;
+    lastError: string | null;
+    parseFailureCount: number;
+    gateRejectCount: number;
+    timeoutCount: number;
+    errorCount: number;
+  } | null;
   scientificBackground: {
     mode: 'research_mode' | 'label_context_mode';
     selectedLabel: string;
@@ -157,6 +171,30 @@ export type SearchProductDetailResponse = {
     closingNote: string | null;
   } | null;
   scientificBackgroundSource: 'api' | 'fallback' | null;
+  scientificBackgroundDiagnostics?: {
+    liveWriterConfigured: boolean;
+    liveWriterAttempted: boolean;
+    liveWriterHit: boolean;
+    attemptCount: number;
+    timeoutMs: number;
+    maxRetries: number;
+    fallbackReason: string | null;
+    lastError: string | null;
+    parseFailureCount: number;
+    gateRejectCount: number;
+    timeoutCount: number;
+    errorCount: number;
+  } | null;
+  deepDiveAsync?: {
+    ingredientOverview?: {
+      backgroundRefreshPending: boolean;
+      recommendedRetryAfterMs: number | null;
+    } | null;
+    scientificBackground?: {
+      backgroundRefreshPending: boolean;
+      recommendedRetryAfterMs: number | null;
+    } | null;
+  } | null;
   usageBlock?: {
     directions?: {
       text?: string | null;
@@ -489,15 +527,24 @@ export const apiClient = {
       ...options,
     }),
 
-  searchProductDetail: (productId: string, options?: AuthenticatedRequestOptions) =>
-    requestTo<SearchProductDetailAPIResponse>(
+  searchProductDetail: (
+    productId: string,
+    options?: (AuthenticatedRequestOptions & { revalidateFallback?: boolean }),
+  ) => {
+    const { revalidateFallback, ...requestOptions } = options ?? {};
+    const params = new URLSearchParams({ productId });
+    if (revalidateFallback === true) {
+      params.set('revalidateFallback', '1');
+    }
+    return requestTo<SearchProductDetailAPIResponse>(
       ENV.searchApiBaseUrl,
-      `/api/search/product-detail?${new URLSearchParams({ productId }).toString()}`,
+      `/api/search/product-detail?${params.toString()}`,
       {
         method: 'GET',
-        ...options,
+        ...requestOptions,
       },
-    ),
+    );
+  },
 
   analyze: (payload: AnalyzeRequest, options?: AuthenticatedRequestOptions) =>
     request<AnalyzeResponse>('/api/analyze', {

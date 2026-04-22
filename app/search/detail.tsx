@@ -100,6 +100,28 @@ const collectWarningLines = (payload: SearchProductDetailResponse | null): strin
   return lines;
 };
 
+const SEARCH_DETAIL_RETRY_MAX_ATTEMPTS = 8;
+const SEARCH_DETAIL_RETRY_MAX_WINDOW_MS = 20_000;
+const SEARCH_DETAIL_RETRY_DEFAULT_MS = 1_500;
+
+const clampRetryDelay = (value: number | null | undefined) => {
+  if (!Number.isFinite(Number(value))) return SEARCH_DETAIL_RETRY_DEFAULT_MS;
+  return clamp(Number(value), 400, 4_000);
+};
+
+const resolveDeepDiveAsyncState = (payload: SearchProductDetailResponse | null) => {
+  const ingredientPending = payload?.deepDiveAsync?.ingredientOverview?.backgroundRefreshPending === true;
+  const scientificPending = payload?.deepDiveAsync?.scientificBackground?.backgroundRefreshPending === true;
+  const retryAfterMs = Math.min(
+    clampRetryDelay(payload?.deepDiveAsync?.ingredientOverview?.recommendedRetryAfterMs),
+    clampRetryDelay(payload?.deepDiveAsync?.scientificBackground?.recommendedRetryAfterMs),
+  );
+  return {
+    hasPending: ingredientPending || scientificPending,
+    retryAfterMs,
+  };
+};
+
 const SearchDetailPage = () => {
   const params = useLocalSearchParams<{
     productId?: string;
@@ -120,11 +142,27 @@ const SearchDetailPage = () => {
   const [payload, setPayload] = React.useState<SearchProductDetailResponse | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
+  const [pollRetryTick, setPollRetryTick] = React.useState(0);
+  const pollAttemptRef = React.useRef(0);
+  const pollStartedAtRef = React.useRef<number | null>(null);
+  const pollInFlightRef = React.useRef(false);
+  const pollTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   const tokens = useScreenTokens(NAV_HEIGHT);
   const { bleedStyle, contentStyle } = useFullBleed(tokens.pageX);
 
+  const resetPollState = React.useCallback(() => {
+    pollAttemptRef.current = 0;
+    pollStartedAtRef.current = null;
+    pollInFlightRef.current = false;
+    if (pollTimerRef.current) {
+      clearTimeout(pollTimerRef.current);
+      pollTimerRef.current = null;
+    }
+  }, []);
+
   React.useEffect(() => {
     if (!productId) {
+      resetPollState();
       setLoading(false);
       setErrorMessage('Missing product id');
       return;
@@ -134,6 +172,7 @@ const SearchDetailPage = () => {
 
     const run = async () => {
       try {
+        resetPollState();
         setLoading(true);
         setErrorMessage(null);
         const response = await apiClient.searchProductDetail(productId);
@@ -152,8 +191,62 @@ const SearchDetailPage = () => {
     void run();
     return () => {
       cancelled = true;
+      resetPollState();
     };
-  }, [productId]);
+  }, [productId, resetPollState]);
+
+  const deepDiveAsyncState = React.useMemo(
+    () => resolveDeepDiveAsyncState(payload),
+    [payload],
+  );
+
+  React.useEffect(() => {
+    let cancelled = false;
+    if (!productId || !payload) return;
+    if (!deepDiveAsyncState.hasPending) {
+      resetPollState();
+      return;
+    }
+    if (pollInFlightRef.current) return;
+
+    const startedAt = pollStartedAtRef.current ?? Date.now();
+    pollStartedAtRef.current = startedAt;
+    const elapsedMs = Date.now() - startedAt;
+    if (pollAttemptRef.current >= SEARCH_DETAIL_RETRY_MAX_ATTEMPTS) return;
+    if (elapsedMs >= SEARCH_DETAIL_RETRY_MAX_WINDOW_MS) return;
+
+    const delayMs = deepDiveAsyncState.retryAfterMs;
+    if (pollTimerRef.current) {
+      clearTimeout(pollTimerRef.current);
+      pollTimerRef.current = null;
+    }
+    pollTimerRef.current = setTimeout(() => {
+      if (pollInFlightRef.current) return;
+      pollInFlightRef.current = true;
+      pollAttemptRef.current += 1;
+      void (async () => {
+        try {
+          const response = await apiClient.searchProductDetail(productId, { revalidateFallback: true });
+          if (cancelled) return;
+          setPayload(resolveResponsePayload(response));
+        } catch {
+          // Keep the current payload and wait for the next retry window.
+        } finally {
+          pollInFlightRef.current = false;
+          if (cancelled) return;
+          setPollRetryTick((value) => value + 1);
+        }
+      })();
+    }, delayMs);
+
+    return () => {
+      cancelled = true;
+      if (pollTimerRef.current) {
+        clearTimeout(pollTimerRef.current);
+        pollTimerRef.current = null;
+      }
+    };
+  }, [productId, payload, deepDiveAsyncState.hasPending, deepDiveAsyncState.retryAfterMs, pollRetryTick, resetPollState]);
 
   const product = payload?.product;
   const title = product?.name ?? seedName;

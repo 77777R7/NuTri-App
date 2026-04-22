@@ -78,7 +78,6 @@ const SEVERITY_SET = new Set(GOLDEN_JOURNEY_SEVERITIES);
 const UNSAFE_LANGUAGE_PATTERNS = [
   /\bsafe\s+for\s+you\b/i,
   /\bsafe\s+in\s+pregnancy\b/i,
-  /\bguarantees?\b/i,
   /\bproven\s+to\b/i,
   /\bprevents?\b/i,
   /\bcures?\b/i,
@@ -87,6 +86,9 @@ const UNSAFE_LANGUAGE_PATTERNS = [
   /\btreating\s+(?:insomnia|diseases?|conditions?|symptoms?|constipation|colds?|flu|infections?|inflammation|pain|anxiety|depression|diabetes|hypertension|arthritis|digestive\s+disease|heart\s+disease)\b/i,
   /\boverdose\b/i,
 ];
+const UNSAFE_GUARANTEE_PATTERN = /\bguarantees?\b/i;
+const NEGATED_GUARANTEE_PATTERN =
+  /\b(?:not|doesn'?t|does not|isn'?t|is not|no)\b[^.!?]{0,48}\bguarantees?\b/i;
 
 const normalizeText = (value) =>
   String(value ?? "")
@@ -372,6 +374,12 @@ const buildGateResult = ({
 
 export const containsUnsafeLanguage = (values) => {
   const text = Array.isArray(values) ? values.join(" ") : String(values ?? "");
+  if (
+    UNSAFE_GUARANTEE_PATTERN.test(text)
+    && !NEGATED_GUARANTEE_PATTERN.test(text)
+  ) {
+    return true;
+  }
   return UNSAFE_LANGUAGE_PATTERNS.some((pattern) => pattern.test(text));
 };
 
