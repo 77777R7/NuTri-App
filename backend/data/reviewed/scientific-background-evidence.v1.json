@@ -1,0 +1,483 @@
+{
+  "metadata": {
+    "source_version": "v1.0",
+    "generated_at": "2026-04-22T00:00:00Z",
+    "package_version": "scientific-background-evidence-v1"
+  },
+  "scientific_background_evidence": [
+    {
+      "ingredient_family": "magnesium",
+      "section_key": "form_and_tolerability_context",
+      "variant_key": "generic_form_comparison",
+      "variant_label": "Generic magnesium form comparison context",
+      "evidence_grade": "B",
+      "overall_confidence": 0.82,
+      "display_text": "Comparative magnesium studies support cautious form-level comparison, especially for citrate versus oxide, without justifying a universal best-form claim.",
+      "segments": {
+        "summary_support": {
+          "en": [
+            {
+              "text": "Comparative magnesium studies support cautious form-level comparison, especially for citrate versus oxide, without justifying a universal best-form claim.",
+              "sentence_id": "mg_form_summary_001",
+              "evidence_snippet_id": "mg_form_excerpt_001",
+              "evidence_reference_id": "pmid:2407766",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "evidence_read_support": {
+          "en": [
+            {
+              "text": "The clearest direct comparison is citrate versus oxide, and later reviews continue to treat oxide as less bioavailable while keeping comparison language cautious.",
+              "sentence_id": "mg_form_evidence_001",
+              "evidence_snippet_id": "mg_form_excerpt_002",
+              "evidence_reference_id": "pmid:40931546",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "shopper_meaning_support": {
+          "en": [
+            {
+              "text": "When a label discloses citrate or oxide, that form detail is more useful for comparison than a broad magnesium headline alone.",
+              "sentence_id": "mg_form_shopper_001",
+              "evidence_snippet_id": "mg_form_excerpt_003",
+              "evidence_reference_id": "pmid:14596323",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "caveats": {
+          "en": [
+            {
+              "text": "Do not generalize citrate-versus-oxide findings to every magnesium form or every formula setting.",
+              "sentence_id": "mg_form_caveat_001",
+              "evidence_snippet_id": "mg_form_excerpt_004",
+              "evidence_reference_id": "pmid:2407766",
+              "evidence_grade": "C",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        }
+      },
+      "supporting_references": [
+        {
+          "id": "pmid:2407766",
+          "source": "pubmed",
+          "title": "Magnesium bioavailability from magnesium citrate and magnesium oxide.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/2407766/"
+        },
+        {
+          "id": "pmid:14596323",
+          "source": "pubmed",
+          "title": "Mg citrate found more bioavailable than other Mg preparations in a randomised, double-blind study.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/14596323/"
+        },
+        {
+          "id": "pmid:40931546",
+          "source": "pubmed",
+          "title": "Bioavailability of Magnesium and Potassium Salts Used as Potential Substitutes for Sodium Chloride in Human Nutrition - A Review.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/40931546/"
+        }
+      ]
+    },
+    {
+      "ingredient_family": "magnesium",
+      "section_key": "form_and_tolerability_context",
+      "variant_key": "citrate_vs_oxide",
+      "variant_label": "Magnesium citrate versus oxide comparison context",
+      "evidence_grade": "B",
+      "overall_confidence": 0.84,
+      "display_text": "Human comparison studies consistently support magnesium citrate as more bioavailable than oxide, but this should stay a form-comparison signal rather than a blanket ranking rule.",
+      "segments": {
+        "summary_support": {
+          "en": [
+            {
+              "text": "Human comparison studies consistently support magnesium citrate as more bioavailable than oxide, but this should stay a form-comparison signal rather than a blanket ranking rule.",
+              "sentence_id": "mg_citrate_summary_001",
+              "evidence_snippet_id": "mg_citrate_excerpt_001",
+              "evidence_reference_id": "pmid:2407766",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "evidence_read_support": {
+          "en": [
+            {
+              "text": "Randomized human work found greater urinary and serum magnesium response with citrate than oxide, and later review-level summaries align with that direction.",
+              "sentence_id": "mg_citrate_evidence_001",
+              "evidence_snippet_id": "mg_citrate_excerpt_002",
+              "evidence_reference_id": "pmid:14596323",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "shopper_meaning_support": {
+          "en": [
+            {
+              "text": "If two labels disclose citrate versus oxide, the form difference is meaningful enough to treat them as different comparison lanes.",
+              "sentence_id": "mg_citrate_shopper_001",
+              "evidence_snippet_id": "mg_citrate_excerpt_003",
+              "evidence_reference_id": "pmid:2407766",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "caveats": {
+          "en": [
+            {
+              "text": "This comparison does not prove that every citrate product is better than every oxide product in every dose or blended formula.",
+              "sentence_id": "mg_citrate_caveat_001",
+              "evidence_snippet_id": "mg_citrate_excerpt_004",
+              "evidence_reference_id": "pmid:40931546",
+              "evidence_grade": "C",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        }
+      },
+      "supporting_references": [
+        {
+          "id": "pmid:2407766",
+          "source": "pubmed",
+          "title": "Magnesium bioavailability from magnesium citrate and magnesium oxide.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/2407766/"
+        },
+        {
+          "id": "pmid:14596323",
+          "source": "pubmed",
+          "title": "Mg citrate found more bioavailable than other Mg preparations in a randomised, double-blind study.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/14596323/"
+        },
+        {
+          "id": "pmid:40931546",
+          "source": "pubmed",
+          "title": "Bioavailability of Magnesium and Potassium Salts Used as Potential Substitutes for Sodium Chloride in Human Nutrition - A Review.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/40931546/"
+        }
+      ]
+    },
+    {
+      "ingredient_family": "magnesium",
+      "section_key": "what_product_comparison_depends_on",
+      "variant_key": "generic_form_comparison",
+      "variant_label": "Magnesium product comparison context",
+      "evidence_grade": "B",
+      "overall_confidence": 0.79,
+      "display_text": "For magnesium products, exact form disclosure carries more comparison value than a generic magnesium headline, and citrate-versus-oxide literature is most useful as a label-reading aid.",
+      "segments": {
+        "summary_support": {
+          "en": [
+            {
+              "text": "For magnesium products, exact form disclosure carries more comparison value than a generic magnesium headline, and citrate-versus-oxide literature is most useful as a label-reading aid.",
+              "sentence_id": "mg_compare_summary_001",
+              "evidence_snippet_id": "mg_compare_excerpt_001",
+              "evidence_reference_id": "pmid:2407766",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "evidence_read_support": {
+          "en": [
+            {
+              "text": "Direct absorption evidence helps compare disclosed forms, but it does not remove the need to check elemental amount and formula context.",
+              "sentence_id": "mg_compare_evidence_001",
+              "evidence_snippet_id": "mg_compare_excerpt_002",
+              "evidence_reference_id": "pmid:40931546",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "shopper_meaning_support": {
+          "en": [
+            {
+              "text": "Check the disclosed form and the labeled magnesium amount before assuming two products belong in the same comparison set.",
+              "sentence_id": "mg_compare_shopper_001",
+              "evidence_snippet_id": "mg_compare_excerpt_003",
+              "evidence_reference_id": "pmid:14596323",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "caveats": {
+          "en": [
+            {
+              "text": "A better-absorbed form on paper does not make every disclosed product interchangeable or universally preferable.",
+              "sentence_id": "mg_compare_caveat_001",
+              "evidence_snippet_id": "mg_compare_excerpt_004",
+              "evidence_reference_id": "pmid:2407766",
+              "evidence_grade": "C",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        }
+      },
+      "supporting_references": [
+        {
+          "id": "pmid:2407766",
+          "source": "pubmed",
+          "title": "Magnesium bioavailability from magnesium citrate and magnesium oxide.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/2407766/"
+        },
+        {
+          "id": "pmid:14596323",
+          "source": "pubmed",
+          "title": "Mg citrate found more bioavailable than other Mg preparations in a randomised, double-blind study.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/14596323/"
+        },
+        {
+          "id": "pmid:40931546",
+          "source": "pubmed",
+          "title": "Bioavailability of Magnesium and Potassium Salts Used as Potential Substitutes for Sodium Chloride in Human Nutrition - A Review.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/40931546/"
+        }
+      ]
+    },
+    {
+      "ingredient_family": "iron",
+      "section_key": "form_and_tolerability_context",
+      "variant_key": "generic_form_comparison",
+      "variant_label": "Generic iron form comparison context",
+      "evidence_grade": "B",
+      "overall_confidence": 0.81,
+      "display_text": "Human studies support cautious comparison between ferrous bisglycinate and ferrous sulfate, especially when labels disclose the exact form and elemental dose, without turning that into a universal best-form claim.",
+      "segments": {
+        "summary_support": {
+          "en": [
+            {
+              "text": "Human studies support cautious comparison between ferrous bisglycinate and ferrous sulfate, especially when labels disclose the exact form and elemental dose, without turning that into a universal best-form claim.",
+              "sentence_id": "iron_form_summary_001",
+              "evidence_snippet_id": "iron_form_excerpt_001",
+              "evidence_reference_id": "pmid:24152889",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "evidence_read_support": {
+          "en": [
+            {
+              "text": "Randomized and human absorption studies make ferrous bisglycinate versus ferrous sulfate a real comparison lane, but the evidence is more useful for careful label interpretation than for one-line superiority claims.",
+              "sentence_id": "iron_form_evidence_001",
+              "evidence_snippet_id": "iron_form_excerpt_002",
+              "evidence_reference_id": "pmid:37271416",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "shopper_meaning_support": {
+          "en": [
+            {
+              "text": "If the label specifies ferrous bisglycinate or ferrous sulfate, that form disclosure is worth checking before comparing dose or tolerability expectations.",
+              "sentence_id": "iron_form_shopper_001",
+              "evidence_snippet_id": "iron_form_excerpt_003",
+              "evidence_reference_id": "pmid:10958812",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "caveats": {
+          "en": [
+            {
+              "text": "Lower-dose bisglycinate results should not be converted into a blanket better-for-everyone claim across all doses and populations.",
+              "sentence_id": "iron_form_caveat_001",
+              "evidence_snippet_id": "iron_form_excerpt_004",
+              "evidence_reference_id": "pmid:37271416",
+              "evidence_grade": "C",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        }
+      },
+      "supporting_references": [
+        {
+          "id": "pmid:24152889",
+          "source": "pubmed",
+          "title": "Ferrous bisglycinate 25 mg iron is as effective as ferrous sulfate 50 mg iron in the prophylaxis of iron deficiency and anemia during pregnancy in a randomized trial.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/24152889/"
+        },
+        {
+          "id": "pmid:37271416",
+          "source": "pubmed",
+          "title": "Is a Lower Dose of More Bioavailable Iron (18-mg Ferrous Bisglycinate) Noninferior to 60-mg Ferrous Sulfate in Increasing Ferritin Concentrations While Reducing Gut Inflammation and Enteropathogen Detection in Cambodian Women? A Randomized Controlled Noninferiority Trial.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/37271416/"
+        },
+        {
+          "id": "pmid:10958812",
+          "source": "pubmed",
+          "title": "Iron bioavailability in humans from breakfasts enriched with iron bis-glycine chelate, phytates and polyphenols.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/10958812/"
+        }
+      ]
+    },
+    {
+      "ingredient_family": "iron",
+      "section_key": "form_and_tolerability_context",
+      "variant_key": "ferrous_bisglycinate_anchor",
+      "variant_label": "Ferrous bisglycinate comparison context",
+      "evidence_grade": "B",
+      "overall_confidence": 0.83,
+      "display_text": "Ferrous bisglycinate has enough human comparison evidence to support a specific form-aware narrative against ferrous sulfate, especially around lower-dose comparison, but not a universal superiority ranking.",
+      "segments": {
+        "summary_support": {
+          "en": [
+            {
+              "text": "Ferrous bisglycinate has enough human comparison evidence to support a specific form-aware narrative against ferrous sulfate, especially around lower-dose comparison, but not a universal superiority ranking.",
+              "sentence_id": "iron_bisgly_summary_001",
+              "evidence_snippet_id": "iron_bisgly_excerpt_001",
+              "evidence_reference_id": "pmid:37271416",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "evidence_read_support": {
+          "en": [
+            {
+              "text": "Human trials comparing 18 to 25 mg ferrous bisglycinate against higher-dose ferrous sulfate make this a meaningful form-comparison lane, but context still matters.",
+              "sentence_id": "iron_bisgly_evidence_001",
+              "evidence_snippet_id": "iron_bisgly_excerpt_002",
+              "evidence_reference_id": "pmid:24152889",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "shopper_meaning_support": {
+          "en": [
+            {
+              "text": "When the label clearly says ferrous bisglycinate, compare it against dose, co-ingredients, and sulfate-based products instead of treating all oral iron forms as interchangeable.",
+              "sentence_id": "iron_bisgly_shopper_001",
+              "evidence_snippet_id": "iron_bisgly_excerpt_003",
+              "evidence_reference_id": "pmid:10958812",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "caveats": {
+          "en": [
+            {
+              "text": "This evidence supports a cautious comparison lane, not a rule that every bisglycinate formula will outperform every sulfate formula.",
+              "sentence_id": "iron_bisgly_caveat_001",
+              "evidence_snippet_id": "iron_bisgly_excerpt_004",
+              "evidence_reference_id": "pmid:37271416",
+              "evidence_grade": "C",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        }
+      },
+      "supporting_references": [
+        {
+          "id": "pmid:24152889",
+          "source": "pubmed",
+          "title": "Ferrous bisglycinate 25 mg iron is as effective as ferrous sulfate 50 mg iron in the prophylaxis of iron deficiency and anemia during pregnancy in a randomized trial.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/24152889/"
+        },
+        {
+          "id": "pmid:37271416",
+          "source": "pubmed",
+          "title": "Is a Lower Dose of More Bioavailable Iron (18-mg Ferrous Bisglycinate) Noninferior to 60-mg Ferrous Sulfate in Increasing Ferritin Concentrations While Reducing Gut Inflammation and Enteropathogen Detection in Cambodian Women? A Randomized Controlled Noninferiority Trial.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/37271416/"
+        },
+        {
+          "id": "pmid:10958812",
+          "source": "pubmed",
+          "title": "Iron bioavailability in humans from breakfasts enriched with iron bis-glycine chelate, phytates and polyphenols.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/10958812/"
+        }
+      ]
+    },
+    {
+      "ingredient_family": "iron",
+      "section_key": "what_product_comparison_depends_on",
+      "variant_key": "generic_form_comparison",
+      "variant_label": "Iron product comparison context",
+      "evidence_grade": "B",
+      "overall_confidence": 0.8,
+      "display_text": "For iron supplements, exact form disclosure and elemental dose carry more comparison value than a generic iron headline, and bisglycinate-versus-sulfate studies are most useful as a label-reading boundary.",
+      "segments": {
+        "summary_support": {
+          "en": [
+            {
+              "text": "For iron supplements, exact form disclosure and elemental dose carry more comparison value than a generic iron headline, and bisglycinate-versus-sulfate studies are most useful as a label-reading boundary.",
+              "sentence_id": "iron_compare_summary_001",
+              "evidence_snippet_id": "iron_compare_excerpt_001",
+              "evidence_reference_id": "pmid:24152889",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "evidence_read_support": {
+          "en": [
+            {
+              "text": "Dose and exact oral form still shape interpretation, even when comparative studies make one form-comparison lane more evidence-rich than another.",
+              "sentence_id": "iron_compare_evidence_001",
+              "evidence_snippet_id": "iron_compare_excerpt_002",
+              "evidence_reference_id": "pmid:37271416",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "shopper_meaning_support": {
+          "en": [
+            {
+              "text": "Check the labeled form, elemental iron amount, and whether the product is a simple single-form iron or a broader blend before comparing products.",
+              "sentence_id": "iron_compare_shopper_001",
+              "evidence_snippet_id": "iron_compare_excerpt_003",
+              "evidence_reference_id": "pmid:10958812",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "caveats": {
+          "en": [
+            {
+              "text": "One studied form difference does not remove the need to read dose, population setting, and formula complexity carefully.",
+              "sentence_id": "iron_compare_caveat_001",
+              "evidence_snippet_id": "iron_compare_excerpt_004",
+              "evidence_reference_id": "pmid:37271416",
+              "evidence_grade": "C",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        }
+      },
+      "supporting_references": [
+        {
+          "id": "pmid:24152889",
+          "source": "pubmed",
+          "title": "Ferrous bisglycinate 25 mg iron is as effective as ferrous sulfate 50 mg iron in the prophylaxis of iron deficiency and anemia during pregnancy in a randomized trial.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/24152889/"
+        },
+        {
+          "id": "pmid:37271416",
+          "source": "pubmed",
+          "title": "Is a Lower Dose of More Bioavailable Iron (18-mg Ferrous Bisglycinate) Noninferior to 60-mg Ferrous Sulfate in Increasing Ferritin Concentrations While Reducing Gut Inflammation and Enteropathogen Detection in Cambodian Women? A Randomized Controlled Noninferiority Trial.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/37271416/"
+        },
+        {
+          "id": "pmid:10958812",
+          "source": "pubmed",
+          "title": "Iron bioavailability in humans from breakfasts enriched with iron bis-glycine chelate, phytates and polyphenols.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/10958812/"
+        }
+      ]
+    }
+  ]
+}
