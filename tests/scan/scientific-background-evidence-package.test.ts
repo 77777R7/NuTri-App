@@ -277,6 +277,12 @@ test("scientific background evidence package loads vitamin d completion rows plu
     "en",
     "with_vitamin_c",
   );
+  const ironFormComparison = getScientificBackgroundEvidence(
+    "iron",
+    "form_and_tolerability_context",
+    "en",
+    "generic_form_comparison",
+  );
   const ironWithCofactors = getScientificBackgroundEvidence(
     "iron",
     "what_product_comparison_depends_on",
@@ -336,11 +342,17 @@ test("scientific background evidence package loads vitamin d completion rows plu
   assert.match(b6BComplex.displayText ?? "", /B-complex|multi-B|vitamin B6/i);
   assert.equal(b6BComplex.supportingReferences[0]?.id, "pmid:31915511");
   assert.equal(b6BComplex.supportingReferences[2]?.id, "pmid:41615824");
+  assert.equal(b6BComplex.supportingReferences[3]?.id, "pmid:41830012");
+  assert.equal(b6BComplex.segments.evidenceReadSupport?.length, 2);
+  assert.equal(b6BComplex.segments.shopperMeaningSupport?.length, 2);
 
   assert.ok(folateBComplex);
   assert.equal(folateBComplex.variantKey, "b_complex_pairing");
   assert.match(folateBComplex.displayText ?? "", /B-complex|multi-B|folate/i);
   assert.equal(folateBComplex.supportingReferences[0]?.id, "pmid:41615824");
+  assert.equal(folateBComplex.supportingReferences[3]?.id, "pmid:41830012");
+  assert.equal(folateBComplex.segments.evidenceReadSupport?.length, 2);
+  assert.equal(folateBComplex.segments.shopperMeaningSupport?.length, 2);
 
   assert.ok(folatePairedFormula);
   assert.equal(folatePairedFormula.variantKey, "paired_b_formula");
@@ -351,6 +363,9 @@ test("scientific background evidence package loads vitamin d completion rows plu
   assert.equal(b12BComplex.variantKey, "b_complex_pairing");
   assert.match(b12BComplex.displayText ?? "", /B-complex|multi-B|B12/i);
   assert.equal(b12BComplex.supportingReferences[0]?.id, "pmid:31915511");
+  assert.equal(b12BComplex.supportingReferences[3]?.id, "pmid:41830012");
+  assert.equal(b12BComplex.segments.evidenceReadSupport?.length, 2);
+  assert.equal(b12BComplex.segments.shopperMeaningSupport?.length, 2);
 
   assert.ok(b12PairedFormula);
   assert.equal(b12PairedFormula.variantKey, "paired_b_formula");
@@ -363,6 +378,12 @@ test("scientific background evidence package loads vitamin d completion rows plu
   assert.equal(zincWithVitaminC.supportingReferences[0]?.id, "pmid:16373990");
   assert.equal(zincWithVitaminC.supportingReferences[2]?.id, "pmid:32340216");
 
+  assert.ok(ironFormComparison);
+  assert.equal(ironFormComparison.variantKey, "generic_form_comparison");
+  assert.match(ironFormComparison.displayText ?? "", /ferrous bisglycinate|ferrous sulfate|elemental dose/i);
+  assert.equal(ironFormComparison.segments.evidenceReadSupport?.length, 2);
+  assert.equal(ironFormComparison.segments.shopperMeaningSupport?.length, 2);
+
   assert.ok(ironWithCofactors);
   assert.equal(ironWithCofactors.variantKey, "with_cofactor_blend");
   assert.match(ironWithCofactors.displayText ?? "", /vitamin C|folate|B12|iron/i);
@@ -371,7 +392,10 @@ test("scientific background evidence package loads vitamin d completion rows plu
   assert.ok(zincLozenge);
   assert.equal(zincLozenge.variantKey, "lozenge_short_term_context");
   assert.match(zincLozenge.displayText ?? "", /lozenge-style|short-term immune-context|zinc/i);
-  assert.equal(zincLozenge.supportingReferences[0]?.id, "pmid:23775705");
+  assert.equal(zincLozenge.supportingReferences[0]?.id, "pmid:38719213");
+  assert.equal(zincLozenge.supportingReferences[1]?.id, "pmid:28515951");
+  assert.equal(zincLozenge.segments.evidenceReadSupport?.length, 2);
+  assert.equal(zincLozenge.segments.shopperMeaningSupport?.length, 2);
 
   assert.ok(melatoninExtended);
   assert.equal(melatoninExtended.variantKey, "extended_release");
@@ -494,7 +518,7 @@ test("scientific background evidence json keeps variant candidate registry entri
   assert.equal(zincLozenge?.source, "life-science-research:ncbi-entrez-skill");
   assert.equal(zincLozenge?.priority, "P0");
   assert.ok((zincLozenge?.selection_notes?.length ?? 0) >= 1);
-  assert.ok((zincLozenge?.candidates?.length ?? 0) >= 1);
+  assert.ok((zincLozenge?.candidates?.length ?? 0) >= 4);
 });
 
 test("scientific background evidence json seeds b-complex-aware candidate templates for b6, folate, and b12", () => {
@@ -541,20 +565,23 @@ test("scientific background evidence json seeds b-complex-aware candidate templa
   assert.equal(b6?.source, "life-science-research:ncbi-entrez-skill");
   assert.equal(b6?.priority, "P0");
   assert.ok((b6?.selection_notes?.length ?? 0) >= 1);
-  assert.ok((b6?.candidates?.length ?? 0) >= 3);
+  assert.ok((b6?.candidates?.length ?? 0) >= 4);
   assert.equal(b6?.candidates?.[0]?.pmid, "31915511");
+  assert.ok(b6?.candidates?.some((entry) => entry.pmid === "41830012"));
 
   assert.equal(folate?.source, "life-science-research:ncbi-entrez-skill");
   assert.equal(folate?.priority, "P0");
   assert.ok((folate?.selection_notes?.length ?? 0) >= 1);
-  assert.ok((folate?.candidates?.length ?? 0) >= 3);
+  assert.ok((folate?.candidates?.length ?? 0) >= 4);
   assert.equal(folate?.candidates?.[0]?.pmid, "41615824");
+  assert.ok(folate?.candidates?.some((entry) => entry.pmid === "41830012"));
 
   assert.equal(b12?.source, "life-science-research:ncbi-entrez-skill");
   assert.equal(b12?.priority, "P0");
   assert.ok((b12?.selection_notes?.length ?? 0) >= 1);
-  assert.ok((b12?.candidates?.length ?? 0) >= 3);
+  assert.ok((b12?.candidates?.length ?? 0) >= 4);
   assert.equal(b12?.candidates?.[0]?.pmid, "31915511");
+  assert.ok(b12?.candidates?.some((entry) => entry.pmid === "41830012"));
 
   assert.equal(folatePairedFormula?.source, "life-science-research:ncbi-entrez-skill");
   assert.equal(folatePairedFormula?.priority, "P1");

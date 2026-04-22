@@ -284,7 +284,7 @@
       "variant_key": "generic_form_comparison",
       "variant_label": "Generic iron form comparison context",
       "evidence_grade": "B",
-      "overall_confidence": 0.81,
+      "overall_confidence": 0.82,
       "display_text": "Human studies support cautious comparison between ferrous bisglycinate and ferrous sulfate, especially when labels disclose the exact form and elemental dose, without turning that into a universal best-form claim.",
       "segments": {
         "summary_support": {
@@ -308,6 +308,14 @@
               "evidence_reference_id": "pmid:37271416",
               "evidence_grade": "B",
               "source": "reviewed_curated_v1"
+            },
+            {
+              "text": "Systematic review evidence and named-form comparison trials support keeping iron form comparison practical: exact bisglycinate-versus-sulfate disclosure and elemental dose matter more than broad gentle-iron marketing.",
+              "sentence_id": "iron_form_evidence_002",
+              "evidence_snippet_id": "iron_form_excerpt_005",
+              "evidence_reference_id": "pmid:36728680",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
             }
           ]
         },
@@ -318,6 +326,14 @@
               "sentence_id": "iron_form_shopper_001",
               "evidence_snippet_id": "iron_form_excerpt_003",
               "evidence_reference_id": "pmid:10958812",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            },
+            {
+              "text": "If the label never names the iron form, do not infer bisglycinate-style tolerability or comparison value from a generic gentle-iron headline alone.",
+              "sentence_id": "iron_form_shopper_002",
+              "evidence_snippet_id": "iron_form_excerpt_006",
+              "evidence_reference_id": "pmid:36728680",
               "evidence_grade": "B",
               "source": "reviewed_curated_v1"
             }
@@ -2942,7 +2958,7 @@
       "ingredient_family": "zinc",
       "section_key": "immune_function_context",
       "evidence_grade": "B",
-      "overall_confidence": 0.76,
+      "overall_confidence": 0.79,
       "display_text": "Lozenge-style zinc products belong to a narrower short-term immune-context comparison lane than everyday zinc tablets or capsules, so product form changes how the immune section should be read.",
       "segments": {
         "summary_support": {
@@ -2951,7 +2967,7 @@
               "text": "Lozenge-style zinc products belong to a narrower short-term immune-context comparison lane than everyday zinc tablets or capsules, so product form changes how the immune section should be read.",
               "sentence_id": "zinc_lozenge_summary_001",
               "evidence_snippet_id": "zinc_lozenge_excerpt_001",
-              "evidence_reference_id": "pmid:23775705",
+              "evidence_reference_id": "pmid:38719213",
               "evidence_grade": "B",
               "source": "reviewed_curated_v1"
             }
@@ -2960,18 +2976,18 @@
         "evidence_read_support": {
           "en": [
             {
-              "text": "Cochrane review evidence supports treating zinc lozenges as a more specific use-context lane, which makes dosage form part of the comparison instead of just background packaging.",
+              "text": "Updated Cochrane review evidence supports treating zinc lozenges as a more specific short-term use-context lane, which makes dosage form part of the comparison instead of just background packaging.",
               "sentence_id": "zinc_lozenge_evidence_001",
               "evidence_snippet_id": "zinc_lozenge_excerpt_001",
-              "evidence_reference_id": "pmid:21328251",
+              "evidence_reference_id": "pmid:38719213",
               "evidence_grade": "B",
               "source": "reviewed_curated_v1"
             },
             {
-              "text": "The lozenge literature is most useful when it keeps zinc in a short-term dosage-form lane instead of expanding that meaning to every daily zinc supplement.",
-              "sentence_id": "zinc_lozenge_evidence_002",
-              "evidence_snippet_id": "zinc_lozenge_excerpt_002",
-              "evidence_reference_id": "pmid:23775705",
+              "text": "Meta-analytic lozenge data suggest zinc salt form and total lozenge dose are worth comparing inside the lozenge bucket, without expanding that logic to everyday zinc capsules or tablets.",
+              "sentence_id": "zinc_lozenge_evidence_003",
+              "evidence_snippet_id": "zinc_lozenge_excerpt_003",
+              "evidence_reference_id": "pmid:28515951",
               "evidence_grade": "B",
               "source": "reviewed_curated_v1"
             }
@@ -2983,7 +2999,15 @@
               "text": "If a zinc product is clearly a lozenge, compare it with other lozenge-style zinc products before grouping it with everyday mineral capsules or tablets.",
               "sentence_id": "zinc_lozenge_shopper_001",
               "evidence_snippet_id": "zinc_lozenge_excerpt_001",
-              "evidence_reference_id": "pmid:23775705",
+              "evidence_reference_id": "pmid:38719213",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            },
+            {
+              "text": "When the product is a zinc lozenge, acetate-versus-gluconate wording and total lozenge dose matter more than they would for a routine mineral capsule.",
+              "sentence_id": "zinc_lozenge_shopper_002",
+              "evidence_snippet_id": "zinc_lozenge_excerpt_003",
+              "evidence_reference_id": "pmid:28515951",
               "evidence_grade": "B",
               "source": "reviewed_curated_v1"
             }
@@ -2995,7 +3019,7 @@
               "text": "Do not let a lozenge-specific immune context spill over into every zinc supplement or every broad immune-support product.",
               "sentence_id": "zinc_lozenge_caveat_001",
               "evidence_snippet_id": "zinc_lozenge_excerpt_001",
-              "evidence_reference_id": "pmid:23775705",
+              "evidence_reference_id": "pmid:38719213",
               "evidence_grade": "C",
               "source": "reviewed_curated_v1"
             }
@@ -3003,6 +3027,18 @@
         }
       },
       "supporting_references": [
+        {
+          "id": "pmid:38719213",
+          "source": "PubMed",
+          "title": "Zinc for prevention and treatment of the common cold.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/38719213/"
+        },
+        {
+          "id": "pmid:28515951",
+          "source": "PubMed",
+          "title": "Zinc lozenges and the common cold: a meta-analysis comparing zinc acetate and zinc gluconate, and the role of zinc dosage.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/28515951/"
+        },
         {
           "id": "pmid:23775705",
           "source": "PubMed",
@@ -3420,7 +3456,7 @@
       "ingredient_family": "b6",
       "section_key": "why_dose_context_matters",
       "evidence_grade": "B",
-      "overall_confidence": 0.75,
+      "overall_confidence": 0.77,
       "display_text": "When vitamin B6 appears inside a B-complex or homocysteine-style formula, it belongs in a broader multi-B comparison lane than a standalone B6 product.",
       "segments": {
         "summary_support": {
@@ -3444,6 +3480,14 @@
               "evidence_reference_id": "pmid:41615824",
               "evidence_grade": "B",
               "source": "reviewed_curated_v1"
+            },
+            {
+              "text": "Recent systematic review and meta-analytic work on B-vitamin combinations reinforces that the comparison unit is the whole paired-B formula, not a standalone B6 dose viewed in isolation.",
+              "sentence_id": "b6_bcomplex_evidence_002",
+              "evidence_snippet_id": "b6_bcomplex_excerpt_002",
+              "evidence_reference_id": "pmid:41830012",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
             }
           ]
         },
@@ -3454,6 +3498,14 @@
               "sentence_id": "b6_bcomplex_shopper_001",
               "evidence_snippet_id": "b6_bcomplex_excerpt_001",
               "evidence_reference_id": "pmid:40218880",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            },
+            {
+              "text": "If B6 sits inside a homocysteine-aware or broader B-complex formula, compare the whole paired-B stack before reading high-dose B6 as the only signal.",
+              "sentence_id": "b6_bcomplex_shopper_002",
+              "evidence_snippet_id": "b6_bcomplex_excerpt_002",
+              "evidence_reference_id": "pmid:41830012",
               "evidence_grade": "B",
               "source": "reviewed_curated_v1"
             }
@@ -3490,6 +3542,12 @@
           "source": "PubMed",
           "title": "Combined B-vitamin supplementation on homocysteine and vascular outcomes in coronary heart disease: a meta-analysis.",
           "url": "https://pubmed.ncbi.nlm.nih.gov/41615824/"
+        },
+        {
+          "id": "pmid:41830012",
+          "source": "PubMed",
+          "title": "Complex Effects of B-Vitamin Combinations on Cardiovascular Diseases: A Systematic Review and Meta-Analysis of Randomized Controlled Trials over Three Decades.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/41830012/"
         }
       ],
       "variant_key": "b_complex_pairing",
@@ -3570,7 +3628,7 @@
       "ingredient_family": "folate",
       "section_key": "folate_status_and_supplementation_context",
       "evidence_grade": "B",
-      "overall_confidence": 0.72,
+      "overall_confidence": 0.75,
       "display_text": "When folate appears inside a B-complex or homocysteine-aware formula, it belongs in a broader multi-B comparison lane than a standalone folate product.",
       "segments": {
         "summary_support": {
@@ -3594,6 +3652,14 @@
               "evidence_reference_id": "pmid:41890215",
               "evidence_grade": "B",
               "source": "reviewed_curated_v1"
+            },
+            {
+              "text": "That multi-B and one-carbon literature is most useful when it keeps folate in a paired-B formula lane instead of flattening the label into a standalone folate supplement story.",
+              "sentence_id": "folate_bcomplex_evidence_002",
+              "evidence_snippet_id": "folate_bcomplex_excerpt_002",
+              "evidence_reference_id": "pmid:41890215",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
             }
           ]
         },
@@ -3604,6 +3670,14 @@
               "sentence_id": "folate_bcomplex_shopper_001",
               "evidence_snippet_id": "folate_bcomplex_excerpt_001",
               "evidence_reference_id": "pmid:40218880",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            },
+            {
+              "text": "If folate appears with B6 and B12, compare the whole paired-B formula before treating the product like a single-nutrient folate supplement.",
+              "sentence_id": "folate_bcomplex_shopper_002",
+              "evidence_snippet_id": "folate_bcomplex_excerpt_003",
+              "evidence_reference_id": "pmid:41830012",
               "evidence_grade": "B",
               "source": "reviewed_curated_v1"
             }
@@ -3640,6 +3714,12 @@
           "source": "PubMed",
           "title": "Effects of B Vitamins on Homocysteine Lowering and Thrombotic Risk Reduction-A Review of Randomized Controlled Trials Published Since January 1996.",
           "url": "https://pubmed.ncbi.nlm.nih.gov/40218880/"
+        },
+        {
+          "id": "pmid:41830012",
+          "source": "PubMed",
+          "title": "Complex Effects of B-Vitamin Combinations on Cardiovascular Diseases: A Systematic Review and Meta-Analysis of Randomized Controlled Trials over Three Decades.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/41830012/"
         }
       ],
       "variant_key": "b_complex_pairing",
@@ -3649,7 +3729,7 @@
       "ingredient_family": "b12",
       "section_key": "deficiency_and_supplementation_context",
       "evidence_grade": "B",
-      "overall_confidence": 0.71,
+      "overall_confidence": 0.74,
       "display_text": "When vitamin B12 appears inside a B-complex or homocysteine-style formula, it belongs in a broader multi-B comparison lane than a standalone B12 product.",
       "segments": {
         "summary_support": {
@@ -3673,6 +3753,14 @@
               "evidence_reference_id": "pmid:41615824",
               "evidence_grade": "B",
               "source": "reviewed_curated_v1"
+            },
+            {
+              "text": "Systematic review evidence on combined B-vitamin formulas reinforces that B12-plus-folate-or-B6 products should be compared as a paired-B stack rather than as a simple standalone B12 lane.",
+              "sentence_id": "b12_bcomplex_evidence_002",
+              "evidence_snippet_id": "b12_bcomplex_excerpt_002",
+              "evidence_reference_id": "pmid:41830012",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
             }
           ]
         },
@@ -3683,6 +3771,14 @@
               "sentence_id": "b12_bcomplex_shopper_001",
               "evidence_snippet_id": "b12_bcomplex_excerpt_001",
               "evidence_reference_id": "pmid:40218880",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            },
+            {
+              "text": "When B12 appears inside a B-complex or homocysteine-aware stack, compare the whole paired-B formula before reading it like a standalone deficiency-support product.",
+              "sentence_id": "b12_bcomplex_shopper_002",
+              "evidence_snippet_id": "b12_bcomplex_excerpt_002",
+              "evidence_reference_id": "pmid:41830012",
               "evidence_grade": "B",
               "source": "reviewed_curated_v1"
             }
@@ -3719,6 +3815,12 @@
           "source": "PubMed",
           "title": "Combined B-vitamin supplementation on homocysteine and vascular outcomes in coronary heart disease: a meta-analysis.",
           "url": "https://pubmed.ncbi.nlm.nih.gov/41615824/"
+        },
+        {
+          "id": "pmid:41830012",
+          "source": "PubMed",
+          "title": "Complex Effects of B-Vitamin Combinations on Cardiovascular Diseases: A Systematic Review and Meta-Analysis of Randomized Controlled Trials over Three Decades.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/41830012/"
         }
       ],
       "variant_key": "b_complex_pairing",
@@ -4735,6 +4837,26 @@
             "Systematic Review"
           ],
           "url": "https://pubmed.ncbi.nlm.nih.gov/21328251/"
+        },
+        {
+          "pmid": "38719213",
+          "title": "Zinc for prevention and treatment of the common cold.",
+          "pubdate": "2024 May 9",
+          "pubtype": [
+            "Journal Article",
+            "Systematic Review"
+          ],
+          "url": "https://pubmed.ncbi.nlm.nih.gov/38719213/"
+        },
+        {
+          "pmid": "28515951",
+          "title": "Zinc lozenges and the common cold: a meta-analysis comparing zinc acetate and zinc gluconate, and the role of zinc dosage.",
+          "pubdate": "2017 May",
+          "pubtype": [
+            "Journal Article",
+            "Meta-Analysis"
+          ],
+          "url": "https://pubmed.ncbi.nlm.nih.gov/28515951/"
         }
       ],
       "priority": "P0",
@@ -4784,6 +4906,17 @@
             "Meta-Analysis"
           ],
           "url": "https://pubmed.ncbi.nlm.nih.gov/41615824/"
+        },
+        {
+          "pmid": "41830012",
+          "title": "Complex Effects of B-Vitamin Combinations on Cardiovascular Diseases: A Systematic Review and Meta-Analysis of Randomized Controlled Trials over Three Decades.",
+          "pubdate": "2026 Mar 5",
+          "pubtype": [
+            "Journal Article",
+            "Systematic Review",
+            "Meta-Analysis"
+          ],
+          "url": "https://pubmed.ncbi.nlm.nih.gov/41830012/"
         }
       ]
     },
@@ -4829,6 +4962,17 @@
             "Review"
           ],
           "url": "https://pubmed.ncbi.nlm.nih.gov/40218880/"
+        },
+        {
+          "pmid": "41830012",
+          "title": "Complex Effects of B-Vitamin Combinations on Cardiovascular Diseases: A Systematic Review and Meta-Analysis of Randomized Controlled Trials over Three Decades.",
+          "pubdate": "2026 Mar 5",
+          "pubtype": [
+            "Journal Article",
+            "Systematic Review",
+            "Meta-Analysis"
+          ],
+          "url": "https://pubmed.ncbi.nlm.nih.gov/41830012/"
         }
       ]
     },
@@ -4873,6 +5017,17 @@
             "Meta-Analysis"
           ],
           "url": "https://pubmed.ncbi.nlm.nih.gov/41615824/"
+        },
+        {
+          "pmid": "41830012",
+          "title": "Complex Effects of B-Vitamin Combinations on Cardiovascular Diseases: A Systematic Review and Meta-Analysis of Randomized Controlled Trials over Three Decades.",
+          "pubdate": "2026 Mar 5",
+          "pubtype": [
+            "Journal Article",
+            "Systematic Review",
+            "Meta-Analysis"
+          ],
+          "url": "https://pubmed.ncbi.nlm.nih.gov/41830012/"
         }
       ]
     },
