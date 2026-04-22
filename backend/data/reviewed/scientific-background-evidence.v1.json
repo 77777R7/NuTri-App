@@ -1643,7 +1643,7 @@
     },
     {
       "ingredient_family": "folate",
-      "section_key": "what_form_disclosure_changes",
+      "section_key": "what_form_labeling_changes",
       "evidence_grade": "B",
       "overall_confidence": 0.77,
       "display_text": "Folic acid versus 5-MTHF labeling changes comparison value, and oral-form reviews support using the exact named folate line as a practical label-reading signal.",
@@ -1851,6 +1851,628 @@
           "source": "pubmed",
           "title": "Meta-analysis of calcium bioavailability: a comparison of calcium citrate with calcium carbonate.",
           "url": "https://pubmed.ncbi.nlm.nih.gov/11329115/"
+        }
+      ]
+    },
+    {
+      "ingredient_family": "b12",
+      "section_key": "nerve_and_blood_cell_context",
+      "evidence_grade": "B",
+      "overall_confidence": 0.74,
+      "display_text": "Nerve and red-blood-cell context is one reason B12 products can read more specifically than broad energy language, but it is still a narrower lane than generic vitality marketing.",
+      "segments": {
+        "summary_support": {
+          "en": [
+            {
+              "text": "Nerve and red-blood-cell context is one reason B12 products can read more specifically than broad energy language, but it is still a narrower lane than generic vitality marketing.",
+              "sentence_id": "b12_nerve_summary_001",
+              "evidence_snippet_id": "b12_nerve_excerpt_001",
+              "evidence_reference_id": "pmid:28660890",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "evidence_read_support": {
+          "en": [
+            {
+              "text": "Review-level B12 deficiency literature keeps neurologic and hematologic discussion specific, which makes this a real but more context-bound lane than generic focus or energy copy.",
+              "sentence_id": "b12_nerve_evidence_001",
+              "evidence_snippet_id": "b12_nerve_excerpt_001",
+              "evidence_reference_id": "pmid:25824066",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "shopper_meaning_support": {
+          "en": [
+            {
+              "text": "If a B12 label leans on nerve or blood-cell wording, treat that as a context cue and still compare the exact cobalamin line and stated amount before grouping products together.",
+              "sentence_id": "b12_nerve_shopper_001",
+              "evidence_snippet_id": "b12_nerve_excerpt_001",
+              "evidence_reference_id": "pmid:38344487",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "caveats": {
+          "en": [
+            {
+              "text": "Do not turn neurologic or blood-cell context into a claim that every B12 supplement belongs in the same comparison bucket or serves the same shopper need.",
+              "sentence_id": "b12_nerve_caveat_001",
+              "evidence_snippet_id": "b12_nerve_excerpt_001",
+              "evidence_reference_id": "pmid:28660890",
+              "evidence_grade": "C",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        }
+      },
+      "supporting_references": [
+        {
+          "id": "pmid:28660890",
+          "source": "PubMed",
+          "title": "Vitamin B(12) deficiency.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/28660890/"
+        },
+        {
+          "id": "pmid:25824066",
+          "source": "PubMed",
+          "title": "Vitamin B12 deficiency - A 21st century perspective.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/25824066/"
+        },
+        {
+          "id": "pmid:38344487",
+          "source": "PubMed",
+          "title": "Etiology, Clinical Manifestations, Diagnosis, and Treatment of Cobalamin (Vitamin B12) Deficiency.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/38344487/"
+        }
+      ]
+    },
+    {
+      "ingredient_family": "calcium",
+      "section_key": "how_coformulation_changes_comparison",
+      "evidence_grade": "B",
+      "overall_confidence": 0.71,
+      "display_text": "Calcium often appears beside vitamin D or broader bone-support actives, so co-formulation changes how central the calcium row really is when products are compared.",
+      "segments": {
+        "summary_support": {
+          "en": [
+            {
+              "text": "Calcium often appears beside vitamin D or broader bone-support actives, so co-formulation changes how central the calcium row really is when products are compared.",
+              "sentence_id": "calcium_combo_summary_001",
+              "evidence_snippet_id": "calcium_combo_excerpt_001",
+              "evidence_reference_id": "pmid:29279934",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "evidence_read_support": {
+          "en": [
+            {
+              "text": "Systematic reviews of calcium with vitamin D keep this section focused on formula setting, because mixed bone-support products are not always selling calcium as the sole story on the label.",
+              "sentence_id": "calcium_combo_evidence_001",
+              "evidence_snippet_id": "calcium_combo_excerpt_001",
+              "evidence_reference_id": "pmid:37544189",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "shopper_meaning_support": {
+          "en": [
+            {
+              "text": "When calcium is paired with vitamin D or other bone-oriented actives, compare whether calcium is the lead story or just one part of a broader formula before treating products as direct substitutes.",
+              "sentence_id": "calcium_combo_shopper_001",
+              "evidence_snippet_id": "calcium_combo_excerpt_001",
+              "evidence_reference_id": "pmid:33237064",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "caveats": {
+          "en": [
+            {
+              "text": "Do not read combination-formula evidence like proof that every calcium-containing product should be compared on calcium alone.",
+              "sentence_id": "calcium_combo_caveat_001",
+              "evidence_snippet_id": "calcium_combo_excerpt_001",
+              "evidence_reference_id": "pmid:29279934",
+              "evidence_grade": "C",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        }
+      },
+      "supporting_references": [
+        {
+          "id": "pmid:29279934",
+          "source": "PubMed",
+          "title": "Association Between Calcium or Vitamin D Supplementation and Fracture Incidence in Community-Dwelling Older Adults: A Systematic Review and Meta-analysis.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/29279934/"
+        },
+        {
+          "id": "pmid:37544189",
+          "source": "PubMed",
+          "title": "Supplementation of vitamin D isolated or calcium-associated with bone remodeling and fracture risk in postmenopausal women without osteoporosis: A systematic review of randomized clinical trials.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/37544189/"
+        },
+        {
+          "id": "pmid:33237064",
+          "source": "PubMed",
+          "title": "Effects of combined calcium and vitamin D supplementation on osteoporosis in postmenopausal women: a systematic review and meta-analysis of randomized controlled trials.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/33237064/"
+        },
+        {
+          "id": "pmid:36705288",
+          "source": "PubMed",
+          "title": "Calcium and vitamin D for increasing bone mineral density in premenopausal women.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/36705288/"
+        }
+      ]
+    },
+    {
+      "ingredient_family": "zinc",
+      "section_key": "immune_function_context",
+      "evidence_grade": "B",
+      "overall_confidence": 0.78,
+      "display_text": "Immune-function context is the clearest shopper-safe zinc lane, but it should stay narrower than generic immune-everything marketing.",
+      "segments": {
+        "summary_support": {
+          "en": [
+            {
+              "text": "Immune-function context is the clearest shopper-safe zinc lane, but it should stay narrower than generic immune-everything marketing.",
+              "sentence_id": "zinc_immune_summary_001",
+              "evidence_snippet_id": "zinc_immune_excerpt_001",
+              "evidence_reference_id": "pmid:29186856",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "evidence_read_support": {
+          "en": [
+            {
+              "text": "Review and meta-analytic zinc literature supports a real immune and respiratory-infection context while still depending on dose, population, and the exact outcome being discussed.",
+              "sentence_id": "zinc_immune_evidence_001",
+              "evidence_snippet_id": "zinc_immune_excerpt_001",
+              "evidence_reference_id": "pmid:34626488",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "shopper_meaning_support": {
+          "en": [
+            {
+              "text": "Use immune wording as a legitimate zinc comparison cue, then go back to the exact zinc amount and formula setting before treating two products as equivalent.",
+              "sentence_id": "zinc_immune_shopper_001",
+              "evidence_snippet_id": "zinc_immune_excerpt_001",
+              "evidence_reference_id": "pmid:33472840",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "caveats": {
+          "en": [
+            {
+              "text": "Do not turn immune framing into a blanket claim that every zinc product carries the same level or type of immune signal.",
+              "sentence_id": "zinc_immune_caveat_001",
+              "evidence_snippet_id": "zinc_immune_excerpt_001",
+              "evidence_reference_id": "pmid:29186856",
+              "evidence_grade": "C",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        }
+      },
+      "supporting_references": [
+        {
+          "id": "pmid:29186856",
+          "source": "PubMed",
+          "title": "Zinc as a Gatekeeper of Immune Function.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/29186856/"
+        },
+        {
+          "id": "pmid:34626488",
+          "source": "PubMed",
+          "title": "Nutrient supplementation for prevention of viral respiratory tract infections in healthy subjects: A systematic review and meta-analysis.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/34626488/"
+        },
+        {
+          "id": "pmid:33472840",
+          "source": "PubMed",
+          "title": "Effect of micronutrient supplements on influenza and other respiratory tract infections among adults: a systematic review and meta-analysis.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/33472840/"
+        }
+      ]
+    },
+    {
+      "ingredient_family": "zinc",
+      "section_key": "skin_and_barrier_research",
+      "evidence_grade": "C",
+      "overall_confidence": 0.69,
+      "display_text": "Skin and barrier research gives zinc a second lane beyond immune positioning, but it is more context-specific than a catch-all beauty or dermatology claim.",
+      "segments": {
+        "summary_support": {
+          "en": [
+            {
+              "text": "Skin and barrier research gives zinc a second lane beyond immune positioning, but it is more context-specific than a catch-all beauty or dermatology claim.",
+              "sentence_id": "zinc_skin_summary_001",
+              "evidence_snippet_id": "zinc_skin_excerpt_001",
+              "evidence_reference_id": "pmid:30801794",
+              "evidence_grade": "C",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "evidence_read_support": {
+          "en": [
+            {
+              "text": "Dermatitis and acne reviews support a real skin-oriented zinc context, while the exact outcome and formula setting still matter more than front-label skin language alone.",
+              "sentence_id": "zinc_skin_evidence_001",
+              "evidence_snippet_id": "zinc_skin_excerpt_001",
+              "evidence_reference_id": "pmid:32860489",
+              "evidence_grade": "C",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "shopper_meaning_support": {
+          "en": [
+            {
+              "text": "If a zinc label leans on skin or barrier wording, treat that as a narrower comparison lane and still check the disclosed zinc amount and the rest of the formula.",
+              "sentence_id": "zinc_skin_shopper_001",
+              "evidence_snippet_id": "zinc_skin_excerpt_001",
+              "evidence_reference_id": "pmid:30912673",
+              "evidence_grade": "C",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "caveats": {
+          "en": [
+            {
+              "text": "Do not generalize a skin-specific zinc section to every zinc supplement or every mixed beauty formula.",
+              "sentence_id": "zinc_skin_caveat_001",
+              "evidence_snippet_id": "zinc_skin_excerpt_001",
+              "evidence_reference_id": "pmid:30801794",
+              "evidence_grade": "C",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        }
+      },
+      "supporting_references": [
+        {
+          "id": "pmid:30801794",
+          "source": "PubMed",
+          "title": "Zinc and atopic dermatitis: a systematic review and meta-analysis.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/30801794/"
+        },
+        {
+          "id": "pmid:32860489",
+          "source": "PubMed",
+          "title": "Serum zinc levels and efficacy of zinc treatment in acne vulgaris: A systematic review and meta-analysis.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/32860489/"
+        },
+        {
+          "id": "pmid:30912673",
+          "source": "PubMed",
+          "title": "Micronutrients in Atopic Dermatitis: A Systematic Review.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/30912673/"
+        }
+      ]
+    },
+    {
+      "ingredient_family": "vitamin_d",
+      "section_key": "bone_and_calcium_regulation_context",
+      "evidence_grade": "B",
+      "overall_confidence": 0.84,
+      "display_text": "Bone and calcium-regulation context remains the clearest vitamin D lane, making exact vitamin D disclosure more useful than broad wellness phrasing for comparison.",
+      "segments": {
+        "summary_support": {
+          "en": [
+            {
+              "text": "Bone and calcium-regulation context remains the clearest vitamin D lane, making exact vitamin D disclosure more useful than broad wellness phrasing for comparison.",
+              "sentence_id": "vitd_bone_summary_001",
+              "evidence_snippet_id": "vitd_bone_excerpt_001",
+              "evidence_reference_id": "pmid:30313003",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "evidence_read_support": {
+          "en": [
+            {
+              "text": "Systematic reviews and guideline reviews keep vitamin D grounded in bone and calcium-related outcomes, even when labels reach for broader health language.",
+              "sentence_id": "vitd_bone_evidence_001",
+              "evidence_snippet_id": "vitd_bone_excerpt_001",
+              "evidence_reference_id": "pmid:34371932",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "shopper_meaning_support": {
+          "en": [
+            {
+              "text": "Use bone-oriented vitamin D wording as the main comparison anchor, then check the exact vitamin D line and amount before treating two formulas as equivalent.",
+              "sentence_id": "vitd_bone_shopper_001",
+              "evidence_snippet_id": "vitd_bone_excerpt_001",
+              "evidence_reference_id": "pmid:34687199",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "caveats": {
+          "en": [
+            {
+              "text": "Do not stretch the strongest bone-focused vitamin D lane into proof that every broad health claim is equally established.",
+              "sentence_id": "vitd_bone_caveat_001",
+              "evidence_snippet_id": "vitd_bone_excerpt_001",
+              "evidence_reference_id": "pmid:30313003",
+              "evidence_grade": "C",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        }
+      },
+      "supporting_references": [
+        {
+          "id": "pmid:30313003",
+          "source": "PubMed",
+          "title": "Vitamin D and Calcium: A Systematic Review of Health Outcomes (Update).",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/30313003/"
+        },
+        {
+          "id": "pmid:34371932",
+          "source": "PubMed",
+          "title": "Assessment of the Methods Used to Develop Vitamin D and Calcium Recommendations-A Systematic Review of Bone Health Guidelines.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/34371932/"
+        },
+        {
+          "id": "pmid:34687199",
+          "source": "PubMed",
+          "title": "Vitamin D biomarkers for Dietary Reference Intake development in children: a systematic review and meta-analysis.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/34687199/"
+        }
+      ]
+    },
+    {
+      "ingredient_family": "vitamin_d",
+      "section_key": "immune_and_broader_health_research",
+      "evidence_grade": "B",
+      "overall_confidence": 0.74,
+      "display_text": "Immune and broader health discussion around vitamin D is real, but it is wider and less tidy than the clearest bone-and-calcium lane.",
+      "segments": {
+        "summary_support": {
+          "en": [
+            {
+              "text": "Immune and broader health discussion around vitamin D is real, but it is wider and less tidy than the clearest bone-and-calcium lane.",
+              "sentence_id": "vitd_immune_summary_001",
+              "evidence_snippet_id": "vitd_immune_excerpt_001",
+              "evidence_reference_id": "pmid:28202713",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "evidence_read_support": {
+          "en": [
+            {
+              "text": "Respiratory-infection meta-analyses and immune-focused reviews support a real secondary vitamin D lane, while still leaving endpoint and population differences important.",
+              "sentence_id": "vitd_immune_evidence_001",
+              "evidence_snippet_id": "vitd_immune_excerpt_001",
+              "evidence_reference_id": "pmid:37686873",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "shopper_meaning_support": {
+          "en": [
+            {
+              "text": "Treat broad immune wording as a secondary vitamin D comparison signal and still go back to the exact dose and label setting before grouping products together.",
+              "sentence_id": "vitd_immune_shopper_001",
+              "evidence_snippet_id": "vitd_immune_excerpt_001",
+              "evidence_reference_id": "pmid:39993397",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "caveats": {
+          "en": [
+            {
+              "text": "Do not read a broader immune section like proof that every vitamin D label carries the same level of support across all outcomes.",
+              "sentence_id": "vitd_immune_caveat_001",
+              "evidence_snippet_id": "vitd_immune_excerpt_001",
+              "evidence_reference_id": "pmid:28202713",
+              "evidence_grade": "C",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        }
+      },
+      "supporting_references": [
+        {
+          "id": "pmid:28202713",
+          "source": "PubMed",
+          "title": "Vitamin D supplementation to prevent acute respiratory tract infections: systematic review and meta-analysis of individual participant data.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/28202713/"
+        },
+        {
+          "id": "pmid:37686873",
+          "source": "PubMed",
+          "title": "Infections and Autoimmunity-The Immune System and Vitamin D: A Systematic Review.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/37686873/"
+        },
+        {
+          "id": "pmid:39993397",
+          "source": "PubMed",
+          "title": "Vitamin D supplementation to prevent acute respiratory infections: systematic review and meta-analysis of stratified aggregate data.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/39993397/"
+        }
+      ]
+    },
+    {
+      "ingredient_family": "melatonin",
+      "section_key": "sleep_timing_and_onset_context",
+      "evidence_grade": "B",
+      "overall_confidence": 0.82,
+      "display_text": "Sleep timing and onset is the clearest melatonin lane, and review-level evidence keeps it more specific than generic bedtime marketing.",
+      "segments": {
+        "summary_support": {
+          "en": [
+            {
+              "text": "Sleep timing and onset is the clearest melatonin lane, and review-level evidence keeps it more specific than generic bedtime marketing.",
+              "sentence_id": "melatonin_timing_summary_001",
+              "evidence_snippet_id": "melatonin_timing_excerpt_001",
+              "evidence_reference_id": "pmid:36179487",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "evidence_read_support": {
+          "en": [
+            {
+              "text": "Systematic reviews support melatonin as a timing- and sleep-onset-oriented ingredient, while exact use case and population still matter more than broad sleep language alone.",
+              "sentence_id": "melatonin_timing_evidence_001",
+              "evidence_snippet_id": "melatonin_timing_excerpt_001",
+              "evidence_reference_id": "pmid:38888087",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "shopper_meaning_support": {
+          "en": [
+            {
+              "text": "Compare melatonin products through timing context and the disclosed amount before treating all sleep-support labels as interchangeable.",
+              "sentence_id": "melatonin_timing_shopper_001",
+              "evidence_snippet_id": "melatonin_timing_excerpt_001",
+              "evidence_reference_id": "pmid:33962317",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "caveats": {
+          "en": [
+            {
+              "text": "Do not turn a clear timing lane into a one-size-fits-all claim for every sleep problem or every routine formula.",
+              "sentence_id": "melatonin_timing_caveat_001",
+              "evidence_snippet_id": "melatonin_timing_excerpt_001",
+              "evidence_reference_id": "pmid:36179487",
+              "evidence_grade": "C",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        }
+      },
+      "supporting_references": [
+        {
+          "id": "pmid:36179487",
+          "source": "PubMed",
+          "title": "Efficacy of melatonin for chronic insomnia: Systematic reviews and meta-analyses.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/36179487/"
+        },
+        {
+          "id": "pmid:38888087",
+          "source": "PubMed",
+          "title": "Optimizing the Time and Dose of Melatonin as a Sleep-Promoting Drug: A Systematic Review of Randomized Controlled Trials and Dose-Response Meta-Analysis.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/38888087/"
+        },
+        {
+          "id": "pmid:33962317",
+          "source": "PubMed",
+          "title": "The efficacy of combined bright light and melatonin therapies on sleep and circadian outcomes: A systematic review.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/33962317/"
+        }
+      ]
+    },
+    {
+      "ingredient_family": "melatonin",
+      "section_key": "what_dose_and_use_context_can_change",
+      "evidence_grade": "B",
+      "overall_confidence": 0.79,
+      "display_text": "Dose, timing, and use context materially change how melatonin labels should be read, which is why similar-looking products can still be serving different shopper needs.",
+      "segments": {
+        "summary_support": {
+          "en": [
+            {
+              "text": "Dose, timing, and use context materially change how melatonin labels should be read, which is why similar-looking products can still be serving different shopper needs.",
+              "sentence_id": "melatonin_dose_summary_001",
+              "evidence_snippet_id": "melatonin_dose_excerpt_001",
+              "evidence_reference_id": "pmid:38888087",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "evidence_read_support": {
+          "en": [
+            {
+              "text": "Dose-response meta-analysis and insomnia reviews support treating melatonin as a timing-sensitive ingredient rather than as a single generic sleep category.",
+              "sentence_id": "melatonin_dose_evidence_001",
+              "evidence_snippet_id": "melatonin_dose_excerpt_001",
+              "evidence_reference_id": "pmid:36179487",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "shopper_meaning_support": {
+          "en": [
+            {
+              "text": "Check the stated milligrams and whether the label frames sleep-onset, circadian, or broader routine support before assuming two melatonin products are equivalent.",
+              "sentence_id": "melatonin_dose_shopper_001",
+              "evidence_snippet_id": "melatonin_dose_excerpt_001",
+              "evidence_reference_id": "pmid:38888087",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "caveats": {
+          "en": [
+            {
+              "text": "Do not treat a higher dose or broader sleep headline as automatic proof that one melatonin product is universally better.",
+              "sentence_id": "melatonin_dose_caveat_001",
+              "evidence_snippet_id": "melatonin_dose_excerpt_001",
+              "evidence_reference_id": "pmid:38888087",
+              "evidence_grade": "C",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        }
+      },
+      "supporting_references": [
+        {
+          "id": "pmid:38888087",
+          "source": "PubMed",
+          "title": "Optimizing the Time and Dose of Melatonin as a Sleep-Promoting Drug: A Systematic Review of Randomized Controlled Trials and Dose-Response Meta-Analysis.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/38888087/"
+        },
+        {
+          "id": "pmid:36179487",
+          "source": "PubMed",
+          "title": "Efficacy of melatonin for chronic insomnia: Systematic reviews and meta-analyses.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/36179487/"
+        },
+        {
+          "id": "pmid:33962317",
+          "source": "PubMed",
+          "title": "The efficacy of combined bright light and melatonin therapies on sleep and circadian outcomes: A systematic review.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/33962317/"
         }
       ]
     }

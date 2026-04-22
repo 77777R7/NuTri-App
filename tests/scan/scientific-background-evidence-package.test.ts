@@ -88,7 +88,7 @@ test("scientific background evidence package loads next-wave rows for omega-3, p
   );
   const folate = getScientificBackgroundEvidence(
     "folate",
-    "what_form_disclosure_changes",
+    "what_form_labeling_changes",
     "en",
   );
   const calcium = getScientificBackgroundEvidence(
@@ -120,6 +120,81 @@ test("scientific background evidence package loads next-wave rows for omega-3, p
   assert.ok(calcium);
   assert.match(calcium.displayText ?? "", /citrate|carbonate|calcium form/i);
   assert.equal(calcium.supportingReferences[0]?.id, "pmid:11329115");
+});
+
+test("scientific background evidence package loads b12 and calcium completion rows plus first-batch zinc, vitamin d, and melatonin rows", () => {
+  const b12 = getScientificBackgroundEvidence(
+    "b12",
+    "nerve_and_blood_cell_context",
+    "en",
+  );
+  const calcium = getScientificBackgroundEvidence(
+    "calcium",
+    "how_coformulation_changes_comparison",
+    "en",
+  );
+  const zincImmune = getScientificBackgroundEvidence(
+    "zinc",
+    "immune_function_context",
+    "en",
+  );
+  const zincSkin = getScientificBackgroundEvidence(
+    "zinc",
+    "skin_and_barrier_research",
+    "en",
+  );
+  const vitaminDBone = getScientificBackgroundEvidence(
+    "vitamin_d",
+    "bone_and_calcium_regulation_context",
+    "en",
+  );
+  const vitaminDImmune = getScientificBackgroundEvidence(
+    "vitamin_d",
+    "immune_and_broader_health_research",
+    "en",
+  );
+  const melatoninTiming = getScientificBackgroundEvidence(
+    "melatonin",
+    "sleep_timing_and_onset_context",
+    "en",
+  );
+  const melatoninDose = getScientificBackgroundEvidence(
+    "melatonin",
+    "what_dose_and_use_context_can_change",
+    "en",
+  );
+
+  assert.ok(b12);
+  assert.match(b12.displayText ?? "", /nerve|blood-cell|B12/i);
+  assert.equal(b12.supportingReferences[0]?.id, "pmid:28660890");
+
+  assert.ok(calcium);
+  assert.match(calcium.displayText ?? "", /co-formulation|vitamin D|broader bone-support/i);
+  assert.equal(calcium.supportingReferences[0]?.id, "pmid:29279934");
+
+  assert.ok(zincImmune);
+  assert.match(zincImmune.displayText ?? "", /immune-function|zinc lane/i);
+  assert.equal(zincImmune.supportingReferences[0]?.id, "pmid:29186856");
+
+  assert.ok(zincSkin);
+  assert.match(zincSkin.displayText ?? "", /skin|barrier|dermatology/i);
+  assert.equal(zincSkin.supportingReferences[0]?.id, "pmid:30801794");
+
+  assert.ok(vitaminDBone);
+  assert.match(vitaminDBone.displayText ?? "", /bone|calcium-regulation|vitamin D/i);
+  assert.equal(vitaminDBone.supportingReferences[0]?.id, "pmid:30313003");
+
+  assert.ok(vitaminDImmune);
+  assert.match(vitaminDImmune.displayText ?? "", /immune|broader health|vitamin D/i);
+  assert.equal(vitaminDImmune.supportingReferences[0]?.id, "pmid:28202713");
+
+  assert.ok(melatoninTiming);
+  assert.match(melatoninTiming.displayText ?? "", /sleep timing|onset|melatonin/i);
+  assert.equal(melatoninTiming.supportingReferences[0]?.id, "pmid:36179487");
+
+  assert.ok(melatoninDose);
+  assert.match(melatoninDose.displayText ?? "", /dose|timing|use context|melatonin/i);
+  assert.equal(melatoninDose.supportingReferences[0]?.id, "pmid:38888087");
 });
 
 test("scientific background evidence package falls back from missing variant rows to generic section rows", () => {

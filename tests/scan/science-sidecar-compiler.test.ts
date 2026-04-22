@@ -2093,6 +2093,15 @@ test('new family fallbacks stay specific and do not collapse back to generic pro
     }),
     overlayClaims: null,
   });
+  const zincContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-zinc-fallback',
+      productName: 'Zinc Picolinate 15 mg',
+      dosageForm: 'Capsule',
+      actives: [{ name: 'Zinc (as Zinc Picolinate)', amount: 15, unit: 'mg' }],
+    }),
+    overlayClaims: null,
+  });
   const ironContext = buildIngredientScienceContext({
     digest: buildDigest({
       labelId: 'fixture-iron-fallback',
@@ -2254,6 +2263,7 @@ test('new family fallbacks stay specific and do not collapse back to generic pro
   const magnesiumResult = await compileScientificBackgroundAsync(magnesiumContext, 'Magnesium (as Magnesium Glycinate)');
   const vitaminDResult = await compileScientificBackgroundAsync(vitaminDContext, 'Vitamin D3 (as Cholecalciferol)');
   const calciumResult = await compileScientificBackgroundAsync(calciumContext, 'Calcium (as Calcium Citrate)');
+  const zincResult = await compileScientificBackgroundAsync(zincContext, 'Zinc (as Zinc Picolinate)');
   const ironResult = await compileScientificBackgroundAsync(ironContext, 'Iron (as Ferrous Bisglycinate Chelate)');
   const melatoninResult = await compileScientificBackgroundAsync(melatoninContext, 'Melatonin');
   const b12Result = await compileScientificBackgroundAsync(b12Context, 'Vitamin B12 (as Methylcobalamin)');
@@ -2275,13 +2285,19 @@ test('new family fallbacks stay specific and do not collapse back to generic pro
   assert.match(magnesiumResult.scientificBackground.sections[1]?.summary ?? '', /citrate|oxide|form-level comparison/i);
   assert.match(magnesiumResult.scientificBackground.sections[2]?.shopperMeaning ?? '', /form|magnesium amount|comparison set/i);
   assert.match(vitaminDResult.scientificBackground.sections[0]?.summary ?? '', /bone and calcium-regulation|vitamin d positioning/i);
+  assert.match(vitaminDResult.scientificBackground.sections[1]?.summary ?? '', /immune|broader health|bone-and-calcium lane/i);
   assert.match(calciumResult.scientificBackground.sections[1]?.summary ?? '', /citrate-versus-carbonate|bioavailability literature|calcium form comparison/i);
+  assert.match(calciumResult.scientificBackground.sections[2]?.shopperMeaning ?? '', /vitamin D|broader formula|direct substitutes|lead story/i);
+  assert.match(zincResult.scientificBackground.sections[0]?.summary ?? '', /immune-function context|zinc lane|immune-everything/i);
+  assert.match(zincResult.scientificBackground.sections[1]?.summary ?? '', /skin and barrier|second lane|dermatology|beauty/i);
   assert.match(ironResult.scientificBackground.sections[0]?.summary ?? '', /supplementation and status-related lens|iron products/i);
   assert.match(ironResult.scientificBackground.sections[1]?.summary ?? '', /bisglycinate|sulfate|form-aware/i);
   assert.match(ironResult.scientificBackground.sections[2]?.shopperMeaning ?? '', /elemental iron amount|single-form iron|broader blend/i);
   assert.equal(melatoninResult.scientificBackground.sections.length, 2);
   assert.match(melatoninResult.scientificBackground.sections[0]?.summary ?? '', /sleep timing and onset|circadian timing/i);
+  assert.match(melatoninResult.scientificBackground.sections[1]?.summary ?? '', /dose, timing, and use context|shopper needs|similar-looking products/i);
   assert.match(b12Result.scientificBackground.sections[0]?.summary ?? '', /supplementation and status-related|b12 products/i);
+  assert.match(b12Result.scientificBackground.sections[1]?.summary ?? '', /nerve|red-blood-cell|broader energy language/i);
   assert.match(b12Result.scientificBackground.sections[2]?.shopperMeaning ?? '', /form|comparison bucket|stated amount/i);
   assert.match(
     folateResult.scientificBackground.sections[1]?.summary ?? '',
