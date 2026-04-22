@@ -81,6 +81,18 @@
           "source": "pubmed",
           "title": "Bioavailability of Magnesium and Potassium Salts Used as Potential Substitutes for Sodium Chloride in Human Nutrition - A Review.",
           "url": "https://pubmed.ncbi.nlm.nih.gov/40931546/"
+        },
+        {
+          "id": "pmid:7815675",
+          "source": "pubmed",
+          "title": "Bioavailability of magnesium diglycinate vs magnesium oxide in patients with ileal resection.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/7815675/"
+        },
+        {
+          "id": "pmid:11550076",
+          "source": "pubmed",
+          "title": "Bioavailability and pharmacokinetics of magnesium after administration of magnesium salts to humans.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/11550076/"
         }
       ]
     },
@@ -160,6 +172,18 @@
           "source": "pubmed",
           "title": "Bioavailability of Magnesium and Potassium Salts Used as Potential Substitutes for Sodium Chloride in Human Nutrition - A Review.",
           "url": "https://pubmed.ncbi.nlm.nih.gov/40931546/"
+        },
+        {
+          "id": "pmid:7815675",
+          "source": "pubmed",
+          "title": "Bioavailability of magnesium diglycinate vs magnesium oxide in patients with ileal resection.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/7815675/"
+        },
+        {
+          "id": "pmid:11550076",
+          "source": "pubmed",
+          "title": "Bioavailability and pharmacokinetics of magnesium after administration of magnesium salts to humans.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/11550076/"
         }
       ]
     },
@@ -239,6 +263,18 @@
           "source": "pubmed",
           "title": "Bioavailability of Magnesium and Potassium Salts Used as Potential Substitutes for Sodium Chloride in Human Nutrition - A Review.",
           "url": "https://pubmed.ncbi.nlm.nih.gov/40931546/"
+        },
+        {
+          "id": "pmid:7815675",
+          "source": "pubmed",
+          "title": "Bioavailability of magnesium diglycinate vs magnesium oxide in patients with ileal resection.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/7815675/"
+        },
+        {
+          "id": "pmid:11550076",
+          "source": "pubmed",
+          "title": "Bioavailability and pharmacokinetics of magnesium after administration of magnesium salts to humans.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/11550076/"
         }
       ]
     },
@@ -318,6 +354,24 @@
           "source": "pubmed",
           "title": "Iron bioavailability in humans from breakfasts enriched with iron bis-glycine chelate, phytates and polyphenols.",
           "url": "https://pubmed.ncbi.nlm.nih.gov/10958812/"
+        },
+        {
+          "id": "pmid:22795809",
+          "source": "pubmed",
+          "title": "Treatment of mild non-chemotherapy-induced iron deficiency anemia in cancer patients: comparison between oral ferrous bisglycinate chelate and ferrous sulfate.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/22795809/"
+        },
+        {
+          "id": "pmid:36728680",
+          "source": "pubmed",
+          "title": "The effects of oral ferrous bisglycinate supplementation on hemoglobin and ferritin concentrations in adults and children: a systematic review and meta-analysis of randomized controlled trials.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/36728680/"
+        },
+        {
+          "id": "pmid:15743016",
+          "source": "pubmed",
+          "title": "Enhancing the absorption of fortification iron. A SUSTAIN Task Force report.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/15743016/"
         }
       ]
     },
@@ -397,6 +451,24 @@
           "source": "pubmed",
           "title": "Iron bioavailability in humans from breakfasts enriched with iron bis-glycine chelate, phytates and polyphenols.",
           "url": "https://pubmed.ncbi.nlm.nih.gov/10958812/"
+        },
+        {
+          "id": "pmid:22795809",
+          "source": "pubmed",
+          "title": "Treatment of mild non-chemotherapy-induced iron deficiency anemia in cancer patients: comparison between oral ferrous bisglycinate chelate and ferrous sulfate.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/22795809/"
+        },
+        {
+          "id": "pmid:36728680",
+          "source": "pubmed",
+          "title": "The effects of oral ferrous bisglycinate supplementation on hemoglobin and ferritin concentrations in adults and children: a systematic review and meta-analysis of randomized controlled trials.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/36728680/"
+        },
+        {
+          "id": "pmid:15743016",
+          "source": "pubmed",
+          "title": "Enhancing the absorption of fortification iron. A SUSTAIN Task Force report.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/15743016/"
         }
       ]
     },
@@ -476,6 +548,608 @@
           "source": "pubmed",
           "title": "Iron bioavailability in humans from breakfasts enriched with iron bis-glycine chelate, phytates and polyphenols.",
           "url": "https://pubmed.ncbi.nlm.nih.gov/10958812/"
+        },
+        {
+          "id": "pmid:22795809",
+          "source": "pubmed",
+          "title": "Treatment of mild non-chemotherapy-induced iron deficiency anemia in cancer patients: comparison between oral ferrous bisglycinate chelate and ferrous sulfate.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/22795809/"
+        },
+        {
+          "id": "pmid:36728680",
+          "source": "pubmed",
+          "title": "The effects of oral ferrous bisglycinate supplementation on hemoglobin and ferritin concentrations in adults and children: a systematic review and meta-analysis of randomized controlled trials.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/36728680/"
+        },
+        {
+          "id": "pmid:15743016",
+          "source": "pubmed",
+          "title": "Enhancing the absorption of fortification iron. A SUSTAIN Task Force report.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/15743016/"
+        }
+      ]
+    }
+  ],
+  "candidate_pubmed_searches": [
+    {
+      "family": "magnesium",
+      "lane": "form_and_tolerability_context",
+      "source": "ncbi_entrez_official",
+      "retrieved_at": "2026-04-22",
+      "query": "(\"magnesium citrate\"[Title/Abstract] OR \"magnesium oxide\"[Title/Abstract]) AND (bioavailability[Title/Abstract] OR absorption[Title/Abstract]) AND humans[MeSH Terms]",
+      "candidates": [
+        {
+          "pmid": "11550076",
+          "title": "Bioavailability and pharmacokinetics of magnesium after administration of magnesium salts to humans.",
+          "pubdate": "2001 Sep-Oct",
+          "pubtype": [
+            "Journal Article",
+            "Review"
+          ],
+          "url": "https://pubmed.ncbi.nlm.nih.gov/11550076/"
+        },
+        {
+          "pmid": "2407766",
+          "title": "Magnesium bioavailability from magnesium citrate and magnesium oxide.",
+          "pubdate": "1990 Feb",
+          "pubtype": [
+            "Clinical Trial",
+            "Controlled Clinical Trial",
+            "Journal Article",
+            "Research Support, U.S. Gov't, P.H.S."
+          ],
+          "url": "https://pubmed.ncbi.nlm.nih.gov/2407766/"
+        },
+        {
+          "pmid": "7815675",
+          "title": "Bioavailability of magnesium diglycinate vs magnesium oxide in patients with ileal resection.",
+          "pubdate": "1994 Sep-Oct",
+          "pubtype": [
+            "Clinical Trial",
+            "Journal Article",
+            "Randomized Controlled Trial",
+            "Research Support, U.S. Gov't, P.H.S."
+          ],
+          "url": "https://pubmed.ncbi.nlm.nih.gov/7815675/"
+        },
+        {
+          "pmid": "40931546",
+          "title": "Bioavailability of Magnesium and Potassium Salts Used as Potential Substitutes for Sodium Chloride in Human Nutrition - A Review.",
+          "pubdate": "2025 Nov",
+          "pubtype": [
+            "Journal Article",
+            "Review"
+          ],
+          "url": "https://pubmed.ncbi.nlm.nih.gov/40931546/"
+        }
+      ]
+    },
+    {
+      "family": "magnesium",
+      "lane": "what_product_comparison_depends_on",
+      "source": "ncbi_entrez_official",
+      "retrieved_at": "2026-04-22",
+      "query": "magnesium bioavailability review citrate oxide supplement humans",
+      "candidates": [
+        {
+          "pmid": "40931546",
+          "title": "Bioavailability of Magnesium and Potassium Salts Used as Potential Substitutes for Sodium Chloride in Human Nutrition - A Review.",
+          "pubdate": "2025 Nov",
+          "pubtype": [
+            "Journal Article",
+            "Review"
+          ],
+          "url": "https://pubmed.ncbi.nlm.nih.gov/40931546/"
+        },
+        {
+          "pmid": "11550076",
+          "title": "Bioavailability and pharmacokinetics of magnesium after administration of magnesium salts to humans.",
+          "pubdate": "2001 Sep-Oct",
+          "pubtype": [
+            "Journal Article",
+            "Review"
+          ],
+          "url": "https://pubmed.ncbi.nlm.nih.gov/11550076/"
+        },
+        {
+          "pmid": "2407766",
+          "title": "Magnesium bioavailability from magnesium citrate and magnesium oxide.",
+          "pubdate": "1990 Feb",
+          "pubtype": [
+            "Clinical Trial",
+            "Controlled Clinical Trial",
+            "Journal Article",
+            "Research Support, U.S. Gov't, P.H.S."
+          ],
+          "url": "https://pubmed.ncbi.nlm.nih.gov/2407766/"
+        }
+      ]
+    },
+    {
+      "family": "iron",
+      "lane": "form_and_tolerability_context",
+      "source": "ncbi_entrez_official",
+      "retrieved_at": "2026-04-22",
+      "query": "(\"ferrous bisglycinate\"[Title/Abstract] OR \"iron bisglycinate\"[Title/Abstract]) AND \"ferrous sulfate\"[Title/Abstract] AND (trial[Title/Abstract] OR randomized[Title/Abstract] OR bioavailability[Title/Abstract])",
+      "candidates": [
+        {
+          "pmid": "37271416",
+          "title": "Is a Lower Dose of More Bioavailable Iron (18-mg Ferrous Bisglycinate) Noninferior to 60-mg Ferrous Sulfate in Increasing Ferritin Concentrations While Reducing Gut Inflammation and Enteropathogen Detection in Cambodian Women? A Randomized Controlled Noninferiority Trial.",
+          "pubdate": "2023 Aug",
+          "pubtype": [
+            "Randomized Controlled Trial",
+            "Journal Article",
+            "Research Support, Non-U.S. Gov't",
+            "Equivalence Trial"
+          ],
+          "url": "https://pubmed.ncbi.nlm.nih.gov/37271416/"
+        },
+        {
+          "pmid": "24152889",
+          "title": "Ferrous bisglycinate 25 mg iron is as effective as ferrous sulfate 50 mg iron in the prophylaxis of iron deficiency and anemia during pregnancy in a randomized trial.",
+          "pubdate": "2014 Mar",
+          "pubtype": [
+            "Comparative Study",
+            "Journal Article",
+            "Randomized Controlled Trial",
+            "Research Support, Non-U.S. Gov't"
+          ],
+          "url": "https://pubmed.ncbi.nlm.nih.gov/24152889/"
+        },
+        {
+          "pmid": "22795809",
+          "title": "Treatment of mild non-chemotherapy-induced iron deficiency anemia in cancer patients: comparison between oral ferrous bisglycinate chelate and ferrous sulfate.",
+          "pubdate": "2012 Sep",
+          "pubtype": [
+            "Comparative Study",
+            "Journal Article",
+            "Randomized Controlled Trial"
+          ],
+          "url": "https://pubmed.ncbi.nlm.nih.gov/22795809/"
+        },
+        {
+          "pmid": "15743016",
+          "title": "Enhancing the absorption of fortification iron. A SUSTAIN Task Force report.",
+          "pubdate": "2004 Nov",
+          "pubtype": [
+            "Journal Article",
+            "Review"
+          ],
+          "url": "https://pubmed.ncbi.nlm.nih.gov/15743016/"
+        }
+      ]
+    },
+    {
+      "family": "iron",
+      "lane": "what_product_comparison_depends_on",
+      "source": "ncbi_entrez_official",
+      "retrieved_at": "2026-04-22",
+      "query": "(\"iron bisglycinate\"[Title/Abstract] OR \"ferrous bisglycinate\"[Title/Abstract]) AND bioavailability[Title/Abstract] AND humans[MeSH Terms]",
+      "candidates": [
+        {
+          "pmid": "36728680",
+          "title": "The effects of oral ferrous bisglycinate supplementation on hemoglobin and ferritin concentrations in adults and children: a systematic review and meta-analysis of randomized controlled trials.",
+          "pubdate": "2023 Jul 10",
+          "pubtype": [
+            "Journal Article",
+            "Meta-Analysis",
+            "Research Support, Non-U.S. Gov't",
+            "Systematic Review"
+          ],
+          "url": "https://pubmed.ncbi.nlm.nih.gov/36728680/"
+        },
+        {
+          "pmid": "37271416",
+          "title": "Is a Lower Dose of More Bioavailable Iron (18-mg Ferrous Bisglycinate) Noninferior to 60-mg Ferrous Sulfate in Increasing Ferritin Concentrations While Reducing Gut Inflammation and Enteropathogen Detection in Cambodian Women? A Randomized Controlled Noninferiority Trial.",
+          "pubdate": "2023 Aug",
+          "pubtype": [
+            "Randomized Controlled Trial",
+            "Journal Article",
+            "Research Support, Non-U.S. Gov't",
+            "Equivalence Trial"
+          ],
+          "url": "https://pubmed.ncbi.nlm.nih.gov/37271416/"
+        },
+        {
+          "pmid": "15743016",
+          "title": "Enhancing the absorption of fortification iron. A SUSTAIN Task Force report.",
+          "pubdate": "2004 Nov",
+          "pubtype": [
+            "Journal Article",
+            "Review"
+          ],
+          "url": "https://pubmed.ncbi.nlm.nih.gov/15743016/"
+        }
+      ]
+    },
+    {
+      "family": "omega_3",
+      "lane": "inflammation_and_recovery_context",
+      "source": "ncbi_entrez_official",
+      "retrieved_at": "2026-04-22",
+      "query": "((omega-3[Title/Abstract] OR fish oil[Title/Abstract] OR EPA[Title/Abstract]) AND (exercise-induced muscle damage[Title/Abstract] OR post-exercise inflammation[Title/Abstract] OR muscle recovery[Title/Abstract])) AND (randomized[Title/Abstract] OR trial[Title/Abstract] OR systematic review[Title/Abstract] OR meta-analysis[Publication Type])",
+      "candidates": [
+        {
+          "pmid": "38999792",
+          "title": "Omega-3 Fatty Acid Supplementation on Post-Exercise Inflammation, Muscle Damage, Oxidative Response, and Sports Performance in Physically Healthy Adults-A Systematic Review of Randomized Controlled Trials.",
+          "pubdate": "2024 Jun 27",
+          "pubtype": [
+            "Journal Article",
+            "Systematic Review"
+          ],
+          "url": "https://pubmed.ncbi.nlm.nih.gov/38999792/"
+        },
+        {
+          "pmid": "34760272",
+          "title": "Effect of omega-3 fatty acids supplementation on indirect blood markers of exercise-induced muscle damage: Systematic review and meta-analysis of randomized controlled trials.",
+          "pubdate": "2021 Nov",
+          "pubtype": [
+            "Journal Article",
+            "Review"
+          ],
+          "url": "https://pubmed.ncbi.nlm.nih.gov/34760272/"
+        },
+        {
+          "pmid": "38051142",
+          "title": "Long-Chain Omega-3 Fatty Acid Supplementation and Exercise-Induced Muscle Damage: EPA or DHA?",
+          "pubdate": "2024 Mar 1",
+          "pubtype": [
+            "Randomized Controlled Trial",
+            "Journal Article"
+          ],
+          "url": "https://pubmed.ncbi.nlm.nih.gov/38051142/"
+        },
+        {
+          "pmid": "34130550",
+          "title": "Effects of omega-3 supplementation on muscle damage after resistance exercise in young women: a randomized placebo-controlled trial.",
+          "pubdate": "2022 Sep",
+          "pubtype": [
+            "Journal Article",
+            "Randomized Controlled Trial"
+          ],
+          "url": "https://pubmed.ncbi.nlm.nih.gov/34130550/"
+        },
+        {
+          "pmid": "32383739",
+          "title": "Are There Benefits from the Use of Fish Oil Supplements in Athletes? A Systematic Review.",
+          "pubdate": "2020 Sep 1",
+          "pubtype": [
+            "Journal Article",
+            "Systematic Review"
+          ],
+          "url": "https://pubmed.ncbi.nlm.nih.gov/32383739/"
+        }
+      ]
+    },
+    {
+      "family": "omega_3",
+      "lane": "brain_and_eye_context",
+      "source": "ncbi_entrez_official",
+      "retrieved_at": "2026-04-22",
+      "query": "(DHA[Title/Abstract] OR docosahexaenoic[Title/Abstract]) AND (brain[Title/Abstract] OR eye[Title/Abstract] OR retinal[Title/Abstract]) AND (systematic review[Title/Abstract] OR meta-analysis[Publication Type] OR trial[Title/Abstract])",
+      "candidates": [
+        {
+          "pmid": "23644932",
+          "title": "Lutein + zeaxanthin and omega-3 fatty acids for age-related macular degeneration: the Age-Related Eye Disease Study 2 (AREDS2) randomized clinical trial.",
+          "pubdate": "2013 May 15",
+          "pubtype": [
+            "Journal Article",
+            "Multicenter Study",
+            "Randomized Controlled Trial",
+            "Research Support, N.I.H., Extramural",
+            "Research Support, N.I.H., Intramural"
+          ],
+          "url": "https://pubmed.ncbi.nlm.nih.gov/23644932/"
+        },
+        {
+          "pmid": "32690472",
+          "title": "Brain delivery of supplemental docosahexaenoic acid (DHA): A randomized placebo-controlled clinical trial.",
+          "pubdate": "2020 Sep",
+          "pubtype": [
+            "Journal Article",
+            "Randomized Controlled Trial"
+          ],
+          "url": "https://pubmed.ncbi.nlm.nih.gov/32690472/"
+        },
+        {
+          "pmid": "33806218",
+          "title": "Importance of EPA and DHA Blood Levels in Brain Structure and Function.",
+          "pubdate": "2021 Mar 25",
+          "pubtype": [
+            "Journal Article",
+            "Review"
+          ],
+          "url": "https://pubmed.ncbi.nlm.nih.gov/33806218/"
+        },
+        {
+          "pmid": "36381743",
+          "title": "Effects of Omega-3 Polyunsaturated Fatty Acids on Brain Functions: A Systematic Review.",
+          "pubdate": "2022 Oct",
+          "pubtype": [
+            "Journal Article",
+            "Review"
+          ],
+          "url": "https://pubmed.ncbi.nlm.nih.gov/36381743/"
+        }
+      ]
+    },
+    {
+      "family": "omega_3",
+      "lane": "broader_cardiovascular_context",
+      "source": "ncbi_entrez_official",
+      "retrieved_at": "2026-04-22",
+      "query": "(omega-3[Title/Abstract] OR omega 3[Title/Abstract] OR fish oil[Title/Abstract]) AND (cardiovascular[Title/Abstract] OR triglycerides[Title/Abstract] OR lipid[Title/Abstract]) AND (systematic review[Title/Abstract] OR meta-analysis[Publication Type] OR trial[Title/Abstract])",
+      "candidates": [
+        {
+          "pmid": "32114706",
+          "title": "Omega-3 fatty acids for the primary and secondary prevention of cardiovascular disease.",
+          "pubdate": "2020 Feb 29",
+          "pubtype": [
+            "Journal Article",
+            "Meta-Analysis",
+            "Research Support, Non-U.S. Gov't",
+            "Systematic Review"
+          ],
+          "url": "https://pubmed.ncbi.nlm.nih.gov/32114706/"
+        },
+        {
+          "pmid": "33445534",
+          "title": "An Update on Omega-3 Polyunsaturated Fatty Acids and Cardiovascular Health.",
+          "pubdate": "2021 Jan 12",
+          "pubtype": [
+            "Journal Article",
+            "Review"
+          ],
+          "url": "https://pubmed.ncbi.nlm.nih.gov/33445534/"
+        },
+        {
+          "pmid": "37264945",
+          "title": "Association Between Omega-3 Fatty Acid Intake and Dyslipidemia: A Continuous Dose-Response Meta-Analysis of Randomized Controlled Trials.",
+          "pubdate": "2023 Jun 6",
+          "pubtype": [
+            "Meta-Analysis",
+            "Journal Article",
+            "Research Support, Non-U.S. Gov't"
+          ],
+          "url": "https://pubmed.ncbi.nlm.nih.gov/37264945/"
+        },
+        {
+          "pmid": "33190147",
+          "title": "Effect of High-Dose Omega-3 Fatty Acids vs Corn Oil on Major Adverse Cardiovascular Events in Patients at High Cardiovascular Risk: The STRENGTH Randomized Clinical Trial.",
+          "pubdate": "2020 Dec 8",
+          "pubtype": [
+            "Comparative Study",
+            "Journal Article",
+            "Multicenter Study",
+            "Randomized Controlled Trial",
+            "Research Support, Non-U.S. Gov't"
+          ],
+          "url": "https://pubmed.ncbi.nlm.nih.gov/33190147/"
+        },
+        {
+          "pmid": "36501174",
+          "title": "Update on Omega-3 Polyunsaturated Fatty Acids on Cardiovascular Health.",
+          "pubdate": "2022 Dec 3",
+          "pubtype": [
+            "Meta-Analysis",
+            "Journal Article",
+            "Review"
+          ],
+          "url": "https://pubmed.ncbi.nlm.nih.gov/36501174/"
+        }
+      ]
+    },
+    {
+      "family": "protein",
+      "lane": "muscle_and_recovery_context",
+      "source": "ncbi_entrez_official",
+      "retrieved_at": "2026-04-22",
+      "query": "(protein supplementation[Title/Abstract] OR whey protein[Title/Abstract] OR plant protein[Title/Abstract]) AND (muscle[Title/Abstract] OR recovery[Title/Abstract]) AND (systematic review[Title/Abstract] OR meta-analysis[Publication Type] OR trial[Title/Abstract])",
+      "candidates": [
+        {
+          "pmid": "28698222",
+          "title": "A systematic review, meta-analysis and meta-regression of the effect of protein supplementation on resistance training-induced gains in muscle mass and strength in healthy adults.",
+          "pubdate": "2018 Mar",
+          "pubtype": [
+            "Journal Article",
+            "Meta-Analysis",
+            "Systematic Review"
+          ],
+          "url": "https://pubmed.ncbi.nlm.nih.gov/28698222/"
+        },
+        {
+          "pmid": "29462923",
+          "title": "The Effect of Whey Protein Supplementation on the Temporal Recovery of Muscle Function Following Resistance Training: A Systematic Review and Meta-Analysis.",
+          "pubdate": "2018 Feb 16",
+          "pubtype": [
+            "Journal Article",
+            "Meta-Analysis",
+            "Systematic Review"
+          ],
+          "url": "https://pubmed.ncbi.nlm.nih.gov/29462923/"
+        },
+        {
+          "pmid": "37196876",
+          "title": "Whey Protein Supplementation with or without Vitamin D on Sarcopenia-Related Measures: A Systematic Review and Meta-Analysis.",
+          "pubdate": "2023 Jul",
+          "pubtype": [
+            "Meta-Analysis",
+            "Systematic Review",
+            "Journal Article",
+            "Research Support, Non-U.S. Gov't"
+          ],
+          "url": "https://pubmed.ncbi.nlm.nih.gov/37196876/"
+        },
+        {
+          "pmid": "37571361",
+          "title": "Effectiveness of Whey Protein Supplementation during Resistance Exercise Training on Skeletal Muscle Mass and Strength in Older People with Sarcopenia: A Systematic Review and Meta-Analysis.",
+          "pubdate": "2023 Aug 2",
+          "pubtype": [
+            "Meta-Analysis",
+            "Systematic Review",
+            "Journal Article"
+          ],
+          "url": "https://pubmed.ncbi.nlm.nih.gov/37571361/"
+        },
+        {
+          "pmid": "33670701",
+          "title": "Animal Protein versus Plant Protein in Supporting Lean Mass and Muscle Strength: A Systematic Review and Meta-Analysis of Randomized Controlled Trials.",
+          "pubdate": "2021 Feb 18",
+          "pubtype": [
+            "Journal Article",
+            "Meta-Analysis",
+            "Systematic Review"
+          ],
+          "url": "https://pubmed.ncbi.nlm.nih.gov/33670701/"
+        }
+      ]
+    },
+    {
+      "family": "protein",
+      "lane": "protein_type_and_disclosure_context",
+      "source": "ncbi_entrez_official",
+      "retrieved_at": "2026-04-22",
+      "query": "((whey[Title/Abstract] AND protein[Title/Abstract]) OR (plant[Title/Abstract] AND protein[Title/Abstract])) AND (muscle protein synthesis[Title/Abstract] OR muscle[Title/Abstract]) AND (systematic review[Title/Abstract] OR meta-analysis[Publication Type] OR trial[Title/Abstract])",
+      "candidates": [
+        {
+          "pmid": "33670701",
+          "title": "Animal Protein versus Plant Protein in Supporting Lean Mass and Muscle Strength: A Systematic Review and Meta-Analysis of Randomized Controlled Trials.",
+          "pubdate": "2021 Feb 18",
+          "pubtype": [
+            "Journal Article",
+            "Meta-Analysis",
+            "Systematic Review"
+          ],
+          "url": "https://pubmed.ncbi.nlm.nih.gov/33670701/"
+        },
+        {
+          "pmid": "39813010",
+          "title": "Effect of Plant Versus Animal Protein on Muscle Mass, Strength, Physical Performance, and Sarcopenia: A Systematic Review and Meta-analysis of Randomized Controlled Trials.",
+          "pubdate": "2025 Jul 1",
+          "pubtype": [
+            "Journal Article",
+            "Systematic Review",
+            "Meta-Analysis"
+          ],
+          "url": "https://pubmed.ncbi.nlm.nih.gov/39813010/"
+        },
+        {
+          "pmid": "28698222",
+          "title": "A systematic review, meta-analysis and meta-regression of the effect of protein supplementation on resistance training-induced gains in muscle mass and strength in healthy adults.",
+          "pubdate": "2018 Mar",
+          "pubtype": [
+            "Journal Article",
+            "Meta-Analysis",
+            "Systematic Review"
+          ],
+          "url": "https://pubmed.ncbi.nlm.nih.gov/28698222/"
+        },
+        {
+          "pmid": "37196876",
+          "title": "Whey Protein Supplementation with or without Vitamin D on Sarcopenia-Related Measures: A Systematic Review and Meta-Analysis.",
+          "pubdate": "2023 Jul",
+          "pubtype": [
+            "Meta-Analysis",
+            "Systematic Review",
+            "Journal Article",
+            "Research Support, Non-U.S. Gov't"
+          ],
+          "url": "https://pubmed.ncbi.nlm.nih.gov/37196876/"
+        }
+      ]
+    },
+    {
+      "family": "fiber",
+      "lane": "digestive_regularity_context",
+      "source": "ncbi_entrez_official",
+      "retrieved_at": "2026-04-22",
+      "query": "(psyllium[Title/Abstract] OR soluble fiber[Title/Abstract] OR dietary fiber[Title/Abstract]) AND (constipation[Title/Abstract] OR regularity[Title/Abstract] OR stool[Title/Abstract]) AND (systematic review[Title/Abstract] OR meta-analysis[Publication Type] OR trial[Title/Abstract])",
+      "candidates": [
+        {
+          "pmid": "35816465",
+          "title": "The Effect of Fiber Supplementation on Chronic Constipation in Adults: An Updated Systematic Review and Meta-Analysis of Randomized Controlled Trials.",
+          "pubdate": "2022 Oct 6",
+          "pubtype": [
+            "Journal Article",
+            "Meta-Analysis",
+            "Systematic Review",
+            "Research Support, Non-U.S. Gov't"
+          ],
+          "url": "https://pubmed.ncbi.nlm.nih.gov/35816465/"
+        },
+        {
+          "pmid": "37078654",
+          "title": "Effects of dietary fibers or probiotics on functional constipation symptoms and roles of gut microbiota: a double-blinded randomized placebo trial.",
+          "pubdate": "2023 Jan-Dec",
+          "pubtype": [
+            "Randomized Controlled Trial",
+            "Journal Article",
+            "Research Support, Non-U.S. Gov't"
+          ],
+          "url": "https://pubmed.ncbi.nlm.nih.gov/37078654/"
+        },
+        {
+          "pmid": "33767108",
+          "title": "Efficacy and Safety of Over-the-Counter Therapies for Chronic Constipation: An Updated Systematic Review.",
+          "pubdate": "2021 Jun 1",
+          "pubtype": [
+            "Journal Article",
+            "Research Support, Non-U.S. Gov't",
+            "Systematic Review"
+          ],
+          "url": "https://pubmed.ncbi.nlm.nih.gov/33767108/"
+        }
+      ]
+    },
+    {
+      "family": "fiber",
+      "lane": "source_and_solubility_context",
+      "source": "ncbi_entrez_official",
+      "retrieved_at": "2026-04-22",
+      "query": "((psyllium[Title/Abstract] OR inulin[Title/Abstract]) AND (soluble fiber[Title/Abstract] OR prebiotic[Title/Abstract] OR satiety[Title/Abstract])) AND (systematic review[Title/Abstract] OR meta-analysis[Publication Type] OR trial[Title/Abstract])",
+      "candidates": [
+        {
+          "pmid": "34555168",
+          "title": "The Prebiotic Potential of Inulin-Type Fructans: A Systematic Review.",
+          "pubdate": "2022 Mar",
+          "pubtype": [
+            "Systematic Review",
+            "Journal Article",
+            "Research Support, Non-U.S. Gov't"
+          ],
+          "url": "https://pubmed.ncbi.nlm.nih.gov/34555168/"
+        },
+        {
+          "pmid": "31707507",
+          "title": "The effects of inulin on gut microbial composition: a systematic review of evidence from human studies.",
+          "pubdate": "2020 Mar",
+          "pubtype": [
+            "Journal Article",
+            "Systematic Review"
+          ],
+          "url": "https://pubmed.ncbi.nlm.nih.gov/31707507/"
+        },
+        {
+          "pmid": "28213610",
+          "title": "Prebiotic inulin-type fructans induce specific changes in the human gut microbiota.",
+          "pubdate": "2017 Nov",
+          "pubtype": [
+            "Journal Article",
+            "Randomized Controlled Trial",
+            "Research Support, Non-U.S. Gov't"
+          ],
+          "url": "https://pubmed.ncbi.nlm.nih.gov/28213610/"
+        },
+        {
+          "pmid": "37078654",
+          "title": "Effects of dietary fibers or probiotics on functional constipation symptoms and roles of gut microbiota: a double-blinded randomized placebo trial.",
+          "pubdate": "2023 Jan-Dec",
+          "pubtype": [
+            "Randomized Controlled Trial",
+            "Journal Article",
+            "Research Support, Non-U.S. Gov't"
+          ],
+          "url": "https://pubmed.ncbi.nlm.nih.gov/37078654/"
         }
       ]
     }
