@@ -1113,6 +1113,746 @@
           "url": "https://pubmed.ncbi.nlm.nih.gov/37078654/"
         }
       ]
+    },
+    {
+      "ingredient_family": "omega_3",
+      "section_key": "lipid_and_triglyceride_research",
+      "evidence_grade": "B",
+      "overall_confidence": 0.81,
+      "display_text": "EPA-focused and broader omega-3 review literature keep triglyceride and lipid endpoints as the clearest comparison lane, even when labels expand into broader heart language.",
+      "segments": {
+        "summary_support": {
+          "en": [
+            {
+              "text": "EPA-focused and broader omega-3 review literature keep triglyceride and lipid endpoints as the clearest comparison lane, even when labels expand into broader heart language.",
+              "sentence_id": "omega3_lipid_summary_001",
+              "evidence_snippet_id": "omega3_lipid_excerpt_001",
+              "evidence_reference_id": "pmid:37264945",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "evidence_read_support": {
+          "en": [
+            {
+              "text": "Dose-response and review-level sources support a real triglyceride-oriented lane, which is still cleaner for comparison than broader cardiovascular packaging language.",
+              "sentence_id": "omega3_lipid_evidence_001",
+              "evidence_snippet_id": "omega3_lipid_excerpt_001",
+              "evidence_reference_id": "pmid:32114706",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "shopper_meaning_support": {
+          "en": [
+            {
+              "text": "Use lipid and triglyceride wording as the strongest omega-3 comparison anchor before letting broad heart language carry the decision.",
+              "sentence_id": "omega3_lipid_shopper_001",
+              "evidence_snippet_id": "omega3_lipid_excerpt_001",
+              "evidence_reference_id": "pmid:33445534",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "caveats": {
+          "en": [
+            {
+              "text": "Do not turn a strong lipid lane into a universal claim that every omega-3 product supports every cardiovascular outcome equally.",
+              "sentence_id": "omega3_lipid_caveat_001",
+              "evidence_snippet_id": "omega3_lipid_excerpt_001",
+              "evidence_reference_id": "pmid:32114706",
+              "evidence_grade": "C",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        }
+      },
+      "supporting_references": [
+        {
+          "id": "pmid:37264945",
+          "source": "pubmed",
+          "title": "Association Between Omega-3 Fatty Acid Intake and Dyslipidemia: A Continuous Dose-Response Meta-Analysis of Randomized Controlled Trials.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/37264945/"
+        },
+        {
+          "id": "pmid:32114706",
+          "source": "pubmed",
+          "title": "Omega-3 fatty acids for the primary and secondary prevention of cardiovascular disease.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/32114706/"
+        },
+        {
+          "id": "pmid:33445534",
+          "source": "pubmed",
+          "title": "An Update on Omega-3 Polyunsaturated Fatty Acids and Cardiovascular Health.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/33445534/"
+        }
+      ]
+    },
+    {
+      "ingredient_family": "protein",
+      "section_key": "satiety_and_meal_support_context",
+      "evidence_grade": "B",
+      "overall_confidence": 0.74,
+      "display_text": "Protein can support satiety and meal-support positioning, but this lane is broader and more context-dependent than the clearest muscle-and-recovery comparison anchor.",
+      "segments": {
+        "summary_support": {
+          "en": [
+            {
+              "text": "Protein can support satiety and meal-support positioning, but this lane is broader and more context-dependent than the clearest muscle-and-recovery comparison anchor.",
+              "sentence_id": "protein_satiety_summary_001",
+              "evidence_snippet_id": "protein_satiety_excerpt_001",
+              "evidence_reference_id": "pmid:33037427",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "evidence_read_support": {
+          "en": [
+            {
+              "text": "Systematic reviews link protein intake with appetite and energy-intake effects, but the outcome still depends on population, meal setting, and total formula design.",
+              "sentence_id": "protein_satiety_evidence_001",
+              "evidence_snippet_id": "protein_satiety_excerpt_001",
+              "evidence_reference_id": "pmid:34445000",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "shopper_meaning_support": {
+          "en": [
+            {
+              "text": "Use meal-support protein language as a secondary comparison signal and still go back to the exact protein grams and source before treating two products as interchangeable.",
+              "sentence_id": "protein_satiety_shopper_001",
+              "evidence_snippet_id": "protein_satiety_excerpt_001",
+              "evidence_reference_id": "pmid:15466943",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "caveats": {
+          "en": [
+            {
+              "text": "Do not treat satiety-oriented protein findings like proof that every high-protein product is automatically a meal-replacement product.",
+              "sentence_id": "protein_satiety_caveat_001",
+              "evidence_snippet_id": "protein_satiety_excerpt_001",
+              "evidence_reference_id": "pmid:34579069",
+              "evidence_grade": "C",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        }
+      },
+      "supporting_references": [
+        {
+          "id": "pmid:33037427",
+          "source": "pubmed",
+          "title": "The Impact of Protein Supplementation on Appetite and Energy Intake in Healthy Older Adults: A Systematic Review with Meta-Analysis.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/33037427/"
+        },
+        {
+          "id": "pmid:34445000",
+          "source": "pubmed",
+          "title": "Effect of Protein-Rich Breakfast on Subsequent Energy Intake and Subjective Appetite in Children and Adolescents: Systematic Review and Meta-Analysis of Randomized Controlled Trials.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/34445000/"
+        },
+        {
+          "id": "pmid:15466943",
+          "source": "pubmed",
+          "title": "The effects of high protein diets on thermogenesis, satiety and weight loss: a critical review.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/15466943/"
+        },
+        {
+          "id": "pmid:34579069",
+          "source": "pubmed",
+          "title": "Are Dietary Proteins the Key to Successful Body Weight Management? A Systematic Review and Meta-Analysis of Studies Assessing Body Weight Outcomes after Interventions with Increased Dietary Protein.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/34579069/"
+        }
+      ]
+    },
+    {
+      "ingredient_family": "fiber",
+      "section_key": "satiety_and_gut_context",
+      "evidence_grade": "C",
+      "overall_confidence": 0.72,
+      "display_text": "Fiber satiety and gut-environment discussion is real, but its comparison value depends heavily on the exact fiber type and whether the label leans more on appetite, prebiotic, or regularity framing.",
+      "segments": {
+        "summary_support": {
+          "en": [
+            {
+              "text": "Fiber satiety and gut-environment discussion is real, but its comparison value depends heavily on the exact fiber type and whether the label leans more on appetite, prebiotic, or regularity framing.",
+              "sentence_id": "fiber_satiety_summary_001",
+              "evidence_snippet_id": "fiber_satiety_excerpt_001",
+              "evidence_reference_id": "pmid:36216214",
+              "evidence_grade": "C",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "evidence_read_support": {
+          "en": [
+            {
+              "text": "Review-level sources support appetite and gut-environment interpretation, but the signal changes meaningfully with source, solubility, and the exact outcome being discussed.",
+              "sentence_id": "fiber_satiety_evidence_001",
+              "evidence_snippet_id": "fiber_satiety_excerpt_001",
+              "evidence_reference_id": "pmid:40644449",
+              "evidence_grade": "C",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "shopper_meaning_support": {
+          "en": [
+            {
+              "text": "Treat satiety and broader gut language as a secondary fiber-comparison cue, then check the exact fiber source before assuming two products do the same job.",
+              "sentence_id": "fiber_satiety_shopper_001",
+              "evidence_snippet_id": "fiber_satiety_excerpt_001",
+              "evidence_reference_id": "pmid:34555168",
+              "evidence_grade": "C",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "caveats": {
+          "en": [
+            {
+              "text": "Do not generalize one prebiotic or cereal-fiber finding to every mixed-fiber product or every digestive-support label.",
+              "sentence_id": "fiber_satiety_caveat_001",
+              "evidence_snippet_id": "fiber_satiety_excerpt_001",
+              "evidence_reference_id": "pmid:31707507",
+              "evidence_grade": "C",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        }
+      },
+      "supporting_references": [
+        {
+          "id": "pmid:36216214",
+          "source": "pubmed",
+          "title": "The effect of extracted and isolated fibers on appetite and energy intake: A comprehensive review of human intervention studies.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/36216214/"
+        },
+        {
+          "id": "pmid:40644449",
+          "source": "pubmed",
+          "title": "Cereal Fibers and Satiety: A Systematic Review.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/40644449/"
+        },
+        {
+          "id": "pmid:34555168",
+          "source": "pubmed",
+          "title": "The Prebiotic Potential of Inulin-Type Fructans: A Systematic Review.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/34555168/"
+        },
+        {
+          "id": "pmid:31707507",
+          "source": "pubmed",
+          "title": "The effects of inulin on gut microbial composition: a systematic review of evidence from human studies.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/31707507/"
+        }
+      ]
+    },
+    {
+      "ingredient_family": "b12",
+      "section_key": "deficiency_and_supplementation_context",
+      "evidence_grade": "B",
+      "overall_confidence": 0.79,
+      "display_text": "Vitamin B12 is most defensible as a supplementation and status-related lane, which is more decision-useful than broad energy marketing.",
+      "segments": {
+        "summary_support": {
+          "en": [
+            {
+              "text": "Vitamin B12 is most defensible as a supplementation and status-related lane, which is more decision-useful than broad energy marketing.",
+              "sentence_id": "b12_status_summary_001",
+              "evidence_snippet_id": "b12_status_excerpt_001",
+              "evidence_reference_id": "pmid:17959839",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "evidence_read_support": {
+          "en": [
+            {
+              "text": "Review-level B12 sources and absorption literature keeps comparison focused on supplementation context, intake, and the exact named cobalamin line rather than on generic vitality language.",
+              "sentence_id": "b12_status_evidence_001",
+              "evidence_snippet_id": "b12_status_excerpt_001",
+              "evidence_reference_id": "pmid:26586110",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "shopper_meaning_support": {
+          "en": [
+            {
+              "text": "Compare B12 products through the exact cobalamin line and stated amount before letting broad energy wording drive the decision.",
+              "sentence_id": "b12_status_shopper_001",
+              "evidence_snippet_id": "b12_status_excerpt_001",
+              "evidence_reference_id": "pmid:17959839",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "caveats": {
+          "en": [
+            {
+              "text": "Do not turn a supplementation-context section into self-diagnosis or assume every broad energy claim is equally specific.",
+              "sentence_id": "b12_status_caveat_001",
+              "evidence_snippet_id": "b12_status_excerpt_001",
+              "evidence_reference_id": "pmid:26586110",
+              "evidence_grade": "C",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        }
+      },
+      "supporting_references": [
+        {
+          "id": "pmid:17959839",
+          "source": "pubmed",
+          "title": "Vitamin B12 sources and bioavailability.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/17959839/"
+        },
+        {
+          "id": "pmid:26586110",
+          "source": "pubmed",
+          "title": "Absorption and blood/cellular transport of folate and cobalamin: Pharmacokinetic and physiological considerations.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/26586110/"
+        }
+      ]
+    },
+    {
+      "ingredient_family": "b12",
+      "section_key": "what_form_disclosure_changes",
+      "evidence_grade": "B",
+      "overall_confidence": 0.73,
+      "display_text": "Methylcobalamin and cyanocobalamin disclosure can change comparison value, but current review literature supports a cautious form-aware reading rather than a universal best-form ranking.",
+      "segments": {
+        "summary_support": {
+          "en": [
+            {
+              "text": "Methylcobalamin and cyanocobalamin disclosure can change comparison value, but current review literature supports a cautious form-aware reading rather than a universal best-form ranking.",
+              "sentence_id": "b12_form_summary_001",
+              "evidence_snippet_id": "b12_form_excerpt_001",
+              "evidence_reference_id": "pmid:28223907",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "evidence_read_support": {
+          "en": [
+            {
+              "text": "Review-level comparisons suggest form can matter for interpretation and bioavailability discussion, while still falling short of a blanket superiority rule across every B12 label.",
+              "sentence_id": "b12_form_evidence_001",
+              "evidence_snippet_id": "b12_form_excerpt_001",
+              "evidence_reference_id": "pmid:28223907",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "shopper_meaning_support": {
+          "en": [
+            {
+              "text": "When a label clearly names methylcobalamin or cyanocobalamin, that form detail is more useful for comparison than a generic B12 headline alone.",
+              "sentence_id": "b12_form_shopper_001",
+              "evidence_snippet_id": "b12_form_excerpt_001",
+              "evidence_reference_id": "pmid:17959839",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "caveats": {
+          "en": [
+            {
+              "text": "Do not treat form disclosure as proof that one named B12 line is universally better in every dose or formula setting.",
+              "sentence_id": "b12_form_caveat_001",
+              "evidence_snippet_id": "b12_form_excerpt_001",
+              "evidence_reference_id": "pmid:28223907",
+              "evidence_grade": "C",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        }
+      },
+      "supporting_references": [
+        {
+          "id": "pmid:28223907",
+          "source": "pubmed",
+          "title": "Comparative Bioavailability and Utilization of Particular Forms of B(12) Supplements With Potential to Mitigate B(12)-related Genetic Polymorphisms.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/28223907/"
+        },
+        {
+          "id": "pmid:17959839",
+          "source": "pubmed",
+          "title": "Vitamin B12 sources and bioavailability.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/17959839/"
+        },
+        {
+          "id": "pmid:26586110",
+          "source": "pubmed",
+          "title": "Absorption and blood/cellular transport of folate and cobalamin: Pharmacokinetic and physiological considerations.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/26586110/"
+        }
+      ]
+    },
+    {
+      "ingredient_family": "folate",
+      "section_key": "folate_status_and_supplementation_context",
+      "evidence_grade": "B",
+      "overall_confidence": 0.75,
+      "display_text": "Folate is easiest to compare through supplementation context and the exact named folate row, not through generic B-vitamin language.",
+      "segments": {
+        "summary_support": {
+          "en": [
+            {
+              "text": "Folate is easiest to compare through supplementation context and the exact named folate row, not through generic B-vitamin language.",
+              "sentence_id": "folate_status_summary_001",
+              "evidence_snippet_id": "folate_status_excerpt_001",
+              "evidence_reference_id": "pmid:30010385",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "evidence_read_support": {
+          "en": [
+            {
+              "text": "Oral-form review literature keeps folate comparison focused on the exact supplemented form and the practical label line rather than broad category framing.",
+              "sentence_id": "folate_status_evidence_001",
+              "evidence_snippet_id": "folate_status_excerpt_001",
+              "evidence_reference_id": "pmid:30010385",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "shopper_meaning_support": {
+          "en": [
+            {
+              "text": "Compare folate products through the exact folate line and stated amount before assuming two labels belong in the same comparison bucket.",
+              "sentence_id": "folate_status_shopper_001",
+              "evidence_snippet_id": "folate_status_excerpt_001",
+              "evidence_reference_id": "pmid:39339754",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "caveats": {
+          "en": [
+            {
+              "text": "Do not let generic B-complex branding replace the actual folate row when deciding whether two products are close substitutes.",
+              "sentence_id": "folate_status_caveat_001",
+              "evidence_snippet_id": "folate_status_excerpt_001",
+              "evidence_reference_id": "pmid:30010385",
+              "evidence_grade": "C",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        }
+      },
+      "supporting_references": [
+        {
+          "id": "pmid:30010385",
+          "source": "pubmed",
+          "title": "The Bioavailability of Various Oral Forms of Folate Supplementation in Healthy Populations and Animal Models: A Systematic Review.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/30010385/"
+        },
+        {
+          "id": "pmid:39339754",
+          "source": "pubmed",
+          "title": "Supplementation with Folic Acid or 5-Methyltetrahydrofolate and Prevention of Neural Tube Defects: An Evidence-Based Narrative Review.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/39339754/"
+        }
+      ]
+    },
+    {
+      "ingredient_family": "folate",
+      "section_key": "pregnancy_and_developmental_context",
+      "evidence_grade": "B",
+      "overall_confidence": 0.81,
+      "display_text": "Pregnancy and neural-tube-defect prevention context is one reason folate labels are often framed more specifically than generic B-vitamin products.",
+      "segments": {
+        "summary_support": {
+          "en": [
+            {
+              "text": "Pregnancy and neural-tube-defect prevention context is one reason folate labels are often framed more specifically than generic B-vitamin products.",
+              "sentence_id": "folate_pregnancy_summary_001",
+              "evidence_snippet_id": "folate_pregnancy_excerpt_001",
+              "evidence_reference_id": "pmid:39339754",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "evidence_read_support": {
+          "en": [
+            {
+              "text": "Narrative review evidence supports keeping prenatal and developmental folate positioning more specific than broad wellness or beauty-style vitamin language.",
+              "sentence_id": "folate_pregnancy_evidence_001",
+              "evidence_snippet_id": "folate_pregnancy_excerpt_001",
+              "evidence_reference_id": "pmid:39339754",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "shopper_meaning_support": {
+          "en": [
+            {
+              "text": "Use developmental or prenatal folate wording as a context cue, then go back to the exact named folate form and amount before comparing products.",
+              "sentence_id": "folate_pregnancy_shopper_001",
+              "evidence_snippet_id": "folate_pregnancy_excerpt_001",
+              "evidence_reference_id": "pmid:39339754",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "caveats": {
+          "en": [
+            {
+              "text": "Do not generalize a prenatal-context folate section to every folate product or every B-complex formula.",
+              "sentence_id": "folate_pregnancy_caveat_001",
+              "evidence_snippet_id": "folate_pregnancy_excerpt_001",
+              "evidence_reference_id": "pmid:39339754",
+              "evidence_grade": "C",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        }
+      },
+      "supporting_references": [
+        {
+          "id": "pmid:39339754",
+          "source": "pubmed",
+          "title": "Supplementation with Folic Acid or 5-Methyltetrahydrofolate and Prevention of Neural Tube Defects: An Evidence-Based Narrative Review.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/39339754/"
+        }
+      ]
+    },
+    {
+      "ingredient_family": "folate",
+      "section_key": "what_form_disclosure_changes",
+      "evidence_grade": "B",
+      "overall_confidence": 0.77,
+      "display_text": "Folic acid versus 5-MTHF labeling changes comparison value, and oral-form reviews support using the exact named folate line as a practical label-reading signal.",
+      "segments": {
+        "summary_support": {
+          "en": [
+            {
+              "text": "Folic acid versus 5-MTHF labeling changes comparison value, and oral-form reviews support using the exact named folate line as a practical label-reading signal.",
+              "sentence_id": "folate_form_summary_001",
+              "evidence_snippet_id": "folate_form_excerpt_001",
+              "evidence_reference_id": "pmid:30010385",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "evidence_read_support": {
+          "en": [
+            {
+              "text": "Review-level folate literature supports form-aware comparison, while still stopping short of a universal claim that one named folate form is always best.",
+              "sentence_id": "folate_form_evidence_001",
+              "evidence_snippet_id": "folate_form_excerpt_001",
+              "evidence_reference_id": "pmid:39339754",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "shopper_meaning_support": {
+          "en": [
+            {
+              "text": "When a label clearly names folic acid or 5-MTHF, that exact folate disclosure is more useful for comparison than generic folate wording alone.",
+              "sentence_id": "folate_form_shopper_001",
+              "evidence_snippet_id": "folate_form_excerpt_001",
+              "evidence_reference_id": "pmid:30010385",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "caveats": {
+          "en": [
+            {
+              "text": "Do not read form disclosure like proof that one folate line outranks every other formula regardless of dose or setting.",
+              "sentence_id": "folate_form_caveat_001",
+              "evidence_snippet_id": "folate_form_excerpt_001",
+              "evidence_reference_id": "pmid:39339754",
+              "evidence_grade": "C",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        }
+      },
+      "supporting_references": [
+        {
+          "id": "pmid:30010385",
+          "source": "pubmed",
+          "title": "The Bioavailability of Various Oral Forms of Folate Supplementation in Healthy Populations and Animal Models: A Systematic Review.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/30010385/"
+        },
+        {
+          "id": "pmid:39339754",
+          "source": "pubmed",
+          "title": "Supplementation with Folic Acid or 5-Methyltetrahydrofolate and Prevention of Neural Tube Defects: An Evidence-Based Narrative Review.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/39339754/"
+        }
+      ]
+    },
+    {
+      "ingredient_family": "calcium",
+      "section_key": "bone_and_intake_context",
+      "evidence_grade": "B",
+      "overall_confidence": 0.72,
+      "display_text": "Calcium is still easiest to interpret through bone and intake context, with fracture and bone-mineral-density discussion giving it a narrower supplement role than generic wellness language.",
+      "segments": {
+        "summary_support": {
+          "en": [
+            {
+              "text": "Calcium is still easiest to interpret through bone and intake context, with fracture and bone-mineral-density discussion giving it a narrower supplement role than generic wellness language.",
+              "sentence_id": "calcium_bone_summary_001",
+              "evidence_snippet_id": "calcium_bone_excerpt_001",
+              "evidence_reference_id": "pmid:41221311",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "evidence_read_support": {
+          "en": [
+            {
+              "text": "Systematic review evidence keeps calcium comparison anchored to bone-related and intake-oriented discussion rather than broad category marketing.",
+              "sentence_id": "calcium_bone_evidence_001",
+              "evidence_snippet_id": "calcium_bone_excerpt_001",
+              "evidence_reference_id": "pmid:41470812",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "shopper_meaning_support": {
+          "en": [
+            {
+              "text": "Use bone and intake context as the first calcium comparison anchor, then check form and formula role before treating two labels as interchangeable.",
+              "sentence_id": "calcium_bone_shopper_001",
+              "evidence_snippet_id": "calcium_bone_excerpt_001",
+              "evidence_reference_id": "pmid:41788019",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "caveats": {
+          "en": [
+            {
+              "text": "Do not stretch a bone-focused calcium section into a universal promise for every mixed formula or every broad wellness claim.",
+              "sentence_id": "calcium_bone_caveat_001",
+              "evidence_snippet_id": "calcium_bone_excerpt_001",
+              "evidence_reference_id": "pmid:41221311",
+              "evidence_grade": "C",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        }
+      },
+      "supporting_references": [
+        {
+          "id": "pmid:41221311",
+          "source": "pubmed",
+          "title": "EFFECTS OF CALCIUM SUPPLEMENTATION ON THE RISK OF FRACTURE IN OLDER ADULTS.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/41221311/"
+        },
+        {
+          "id": "pmid:41470812",
+          "source": "pubmed",
+          "title": "Effects of Combined Exercise and Calcium/Vitamin D Supplementation on Bone Mineral Density in Postmenopausal Women: A Systematic Review and Meta-Analysis.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/41470812/"
+        },
+        {
+          "id": "pmid:41788019",
+          "source": "pubmed",
+          "title": "Nutrients and food supplements for the prevention of musculoskeletal diseases: an umbrella review.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/41788019/"
+        }
+      ]
+    },
+    {
+      "ingredient_family": "calcium",
+      "section_key": "form_and_absorption_context",
+      "evidence_grade": "B",
+      "overall_confidence": 0.79,
+      "display_text": "Citrate-versus-carbonate bioavailability literature supports cautious calcium form comparison without justifying a universal best-form claim.",
+      "segments": {
+        "summary_support": {
+          "en": [
+            {
+              "text": "Citrate-versus-carbonate bioavailability literature supports cautious calcium form comparison without justifying a universal best-form claim.",
+              "sentence_id": "calcium_form_summary_001",
+              "evidence_snippet_id": "calcium_form_excerpt_001",
+              "evidence_reference_id": "pmid:11329115",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "evidence_read_support": {
+          "en": [
+            {
+              "text": "Meta-analytic calcium absorption evidence makes form discussion useful for comparison, while still leaving dose and formula context important.",
+              "sentence_id": "calcium_form_evidence_001",
+              "evidence_snippet_id": "calcium_form_excerpt_001",
+              "evidence_reference_id": "pmid:11329115",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "shopper_meaning_support": {
+          "en": [
+            {
+              "text": "If two labels disclose calcium citrate versus calcium carbonate, that form difference is meaningful enough to treat them as different comparison lanes.",
+              "sentence_id": "calcium_form_shopper_001",
+              "evidence_snippet_id": "calcium_form_excerpt_001",
+              "evidence_reference_id": "pmid:11329115",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "caveats": {
+          "en": [
+            {
+              "text": "Do not turn citrate-versus-carbonate findings into a rule that one calcium form always wins regardless of dose or blended formula setting.",
+              "sentence_id": "calcium_form_caveat_001",
+              "evidence_snippet_id": "calcium_form_excerpt_001",
+              "evidence_reference_id": "pmid:11329115",
+              "evidence_grade": "C",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        }
+      },
+      "supporting_references": [
+        {
+          "id": "pmid:11329115",
+          "source": "pubmed",
+          "title": "Meta-analysis of calcium bioavailability: a comparison of calcium citrate with calcium carbonate.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/11329115/"
+        }
+      ]
     }
   ],
   "candidate_pubmed_searches": [

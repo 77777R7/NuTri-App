@@ -1557,6 +1557,25 @@ test('dha fallback is clearly differentiated from epa framing', async () => {
   assert.doesNotMatch(result.scientificBackground.sections[0]?.summary ?? '', /triglyceride and lipid-marker research, which makes this the clearest evidence lane/i);
 });
 
+test('epa fallback now uses lipid and triglyceride evidence grounding as the primary omega-3 lane', async () => {
+  const digest = buildDigest({
+    labelId: 'fixture-epa',
+    productName: 'Omega-3 1040 mg Fish Oil 1250 mg',
+    dosageForm: 'Softgel',
+    actives: [
+      { name: 'EPA (Eicosapentaenoic Acid)', amount: 690, unit: 'mg' },
+      { name: 'DHA (Docosahexaenoic Acid)', amount: 260, unit: 'mg' },
+    ],
+  });
+
+  const context = buildIngredientScienceContext({ digest, overlayClaims: null });
+  const result = await compileScientificBackgroundAsync(context, 'EPA (Eicosapentaenoic Acid)');
+
+  assert.match(result.scientificBackground.sections[0]?.summary ?? '', /triglyceride|lipid endpoints|comparison lane/i);
+  assert.match(result.scientificBackground.sections[0]?.evidenceRead ?? '', /triglyceride|lipid|broader cardiovascular packaging/i);
+  assert.match(result.scientificBackground.sections[0]?.shopperMeaning ?? '', /omega-3 comparison anchor|broad heart language/i);
+});
+
 test('vitamin c fallback keeps iron context as a specific lane instead of a generic claim', async () => {
   const digest = buildDigest({
     labelId: 'fixture-vitamin-c-quality',
@@ -2256,7 +2275,7 @@ test('new family fallbacks stay specific and do not collapse back to generic pro
   assert.match(magnesiumResult.scientificBackground.sections[1]?.summary ?? '', /citrate|oxide|form-level comparison/i);
   assert.match(magnesiumResult.scientificBackground.sections[2]?.shopperMeaning ?? '', /form|magnesium amount|comparison set/i);
   assert.match(vitaminDResult.scientificBackground.sections[0]?.summary ?? '', /bone and calcium-regulation|vitamin d positioning/i);
-  assert.match(calciumResult.scientificBackground.sections[1]?.summary ?? '', /carbonate and citrate|form is one of the key reasons/i);
+  assert.match(calciumResult.scientificBackground.sections[1]?.summary ?? '', /citrate-versus-carbonate|bioavailability literature|calcium form comparison/i);
   assert.match(ironResult.scientificBackground.sections[0]?.summary ?? '', /supplementation and status-related lens|iron products/i);
   assert.match(ironResult.scientificBackground.sections[1]?.summary ?? '', /bisglycinate|sulfate|form-aware/i);
   assert.match(ironResult.scientificBackground.sections[2]?.shopperMeaning ?? '', /elemental iron amount|single-form iron|broader blend/i);
@@ -2264,8 +2283,11 @@ test('new family fallbacks stay specific and do not collapse back to generic pro
   assert.match(melatoninResult.scientificBackground.sections[0]?.summary ?? '', /sleep timing and onset|circadian timing/i);
   assert.match(b12Result.scientificBackground.sections[0]?.summary ?? '', /supplementation and status-related|b12 products/i);
   assert.match(b12Result.scientificBackground.sections[2]?.shopperMeaning ?? '', /form|comparison bucket|stated amount/i);
-  assert.match(folateResult.scientificBackground.sections[1]?.summary ?? '', /pregnancy and developmental|use context/i);
-  assert.match(folateResult.scientificBackground.sections[2]?.shopperMeaning ?? '', /exact folate line|close substitutes|comparison bucket|named folate/i);
+  assert.match(
+    folateResult.scientificBackground.sections[1]?.summary ?? '',
+    /pregnancy|neural-tube-defect|generic B-vitamin/i,
+  );
+  assert.match(folateResult.scientificBackground.sections[2]?.shopperMeaning ?? '', /folic acid|5-MTHF|folate disclosure|comparison/i);
   assert.match(b6Result.scientificBackground.sections[0]?.summary ?? '', /cofactor and metabolism|broader energy-style/i);
   assert.match(b6Result.scientificBackground.sections[2]?.shopperMeaning ?? '', /dose|formula role|comparison bucket/i);
   assert.match(curcuminResult.scientificBackground.sections[1]?.summary ?? '', /extract|curcuminoid|standardized/i);
@@ -2282,8 +2304,10 @@ test('new family fallbacks stay specific and do not collapse back to generic pro
   assert.match(collagenResult.scientificBackground.sections[0]?.summary ?? '', /collagen|connective|skin/i);
   assert.match(collagenResult.scientificBackground.sections[2]?.shopperMeaning ?? '', /source|type|collagen|comparison/i);
   assert.match(proteinResult.scientificBackground.sections[0]?.summary ?? '', /protein|muscle|recovery/i);
+  assert.match(proteinResult.scientificBackground.sections[1]?.summary ?? '', /satiety|meal-support|broader/i);
   assert.match(proteinResult.scientificBackground.sections[2]?.shopperMeaning ?? '', /source|blend|grams|protein|comparison/i);
   assert.match(fiberResult.scientificBackground.sections[0]?.summary ?? '', /fiber|digestive|regularity/i);
+  assert.match(fiberResult.scientificBackground.sections[1]?.summary ?? '', /satiety|gut-environment|fiber type/i);
   assert.match(fiberResult.scientificBackground.sections[2]?.shopperMeaning ?? '', /fiber|source|solubility|comparison/i);
   assert.match(electrolyteResult.scientificBackground.sections[0]?.summary ?? '', /hydration|electrolyte/i);
   assert.match(electrolyteResult.scientificBackground.sections[2]?.shopperMeaning ?? '', /electrolyte|balance|carbohydrate|comparison/i);

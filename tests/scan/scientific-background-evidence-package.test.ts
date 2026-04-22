@@ -65,6 +65,63 @@ test("scientific background evidence package loads reviewed rows for magnesium, 
   assert.equal(fiber.supportingReferences[0]?.id, "pmid:35816465");
 });
 
+test("scientific background evidence package loads next-wave rows for omega-3, protein, fiber, b12, folate, and calcium", () => {
+  const omega3 = getScientificBackgroundEvidence(
+    "omega_3",
+    "lipid_and_triglyceride_research",
+    "en",
+  );
+  const protein = getScientificBackgroundEvidence(
+    "protein",
+    "satiety_and_meal_support_context",
+    "en",
+  );
+  const fiber = getScientificBackgroundEvidence(
+    "fiber",
+    "satiety_and_gut_context",
+    "en",
+  );
+  const b12 = getScientificBackgroundEvidence(
+    "b12",
+    "deficiency_and_supplementation_context",
+    "en",
+  );
+  const folate = getScientificBackgroundEvidence(
+    "folate",
+    "what_form_disclosure_changes",
+    "en",
+  );
+  const calcium = getScientificBackgroundEvidence(
+    "calcium",
+    "form_and_absorption_context",
+    "en",
+  );
+
+  assert.ok(omega3);
+  assert.match(omega3.displayText ?? "", /triglyceride|lipid/i);
+  assert.equal(omega3.supportingReferences[0]?.id, "pmid:37264945");
+
+  assert.ok(protein);
+  assert.match(protein.displayText ?? "", /satiety|meal-support|protein/i);
+  assert.equal(protein.supportingReferences[0]?.id, "pmid:33037427");
+
+  assert.ok(fiber);
+  assert.match(fiber.displayText ?? "", /satiety|gut-environment|fiber/i);
+  assert.equal(fiber.supportingReferences[0]?.id, "pmid:36216214");
+
+  assert.ok(b12);
+  assert.match(b12.displayText ?? "", /supplementation|status-related|B12/i);
+  assert.equal(b12.supportingReferences[0]?.id, "pmid:17959839");
+
+  assert.ok(folate);
+  assert.match(folate.displayText ?? "", /folic acid|5-MTHF|folate/i);
+  assert.equal(folate.supportingReferences[0]?.id, "pmid:30010385");
+
+  assert.ok(calcium);
+  assert.match(calcium.displayText ?? "", /citrate|carbonate|calcium form/i);
+  assert.equal(calcium.supportingReferences[0]?.id, "pmid:11329115");
+});
+
 test("scientific background evidence package falls back from missing variant rows to generic section rows", () => {
   const magnesium = getScientificBackgroundEvidence(
     "magnesium",

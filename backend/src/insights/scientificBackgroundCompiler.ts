@@ -94,7 +94,7 @@ export type ScientificBackgroundExecutionProfile = {
   cacheTtlMs: number;
 };
 
-export const SCIENTIFIC_BACKGROUND_PROMPT_VERSION = "scientific_background_v17";
+export const SCIENTIFIC_BACKGROUND_PROMPT_VERSION = "scientific_background_v18";
 
 const RESEARCH_MODE_TIMEOUT_MS = 2_500;
 const CURCUMIN_RESEARCH_MODE_TIMEOUT_MS = 2_900;
