@@ -32,3 +32,21 @@ test("scientific background reviewed candidate helper filters P0 b-complex seeds
   assert.equal(folate?.sectionKey, "folate_status_and_supplementation_context");
   assert.equal(folate?.seedReferences[0]?.pmid, "41615824");
 });
+
+test("scientific background reviewed candidate helper expands the b_complex family alias", async () => {
+  const registry = await loadScientificBackgroundCandidateRegistry();
+  const rows = selectScientificBackgroundReviewSeeds({
+    registry,
+    priorities: ["P0"],
+    families: ["vitamin_c", "iron", "zinc", "b_complex"],
+    maxPerEntry: 1,
+  });
+
+  assert.deepEqual(
+    rows.map((row) => row.ingredientFamily),
+    ["b12", "b6", "folate", "iron", "iron", "vitamin_c", "vitamin_c", "zinc", "zinc"],
+  );
+  assert.ok(rows.every((row) => row.seedReferences.length === 1));
+  assert.equal(rows[3]?.sectionKey, "form_and_tolerability_context");
+  assert.equal(rows[4]?.variantKey, "with_cofactor_blend");
+});

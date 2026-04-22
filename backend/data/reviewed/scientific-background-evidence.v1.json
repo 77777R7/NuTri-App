@@ -4649,6 +4649,98 @@
           "url": "https://pubmed.ncbi.nlm.nih.gov/41615824/"
         }
       ]
+    },
+    {
+      "family": "folate",
+      "lane": "what_form_labeling_changes",
+      "variant_key": "paired_b_formula",
+      "source": "life-science-research:ncbi-entrez-skill",
+      "retrieved_at": "2026-04-22",
+      "query": "((folic acid OR methylfolate OR 5-MTHF) AND (vitamin b12 OR cobalamin OR vitamin b6 OR pyridoxine OR b-complex) AND (supplementation OR homocysteine OR formulation) AND (Review[pt] OR systematic[sb] OR meta-analysis[pt]))",
+      "priority": "P1",
+      "selection_notes": [
+        "Prefer named-form or disclosure-aware multi-B papers where folate is discussed alongside B12 or B6, because this template is meant for form-labeling nuance inside paired-B formulas.",
+        "Keep this lane comparison-oriented; avoid letting prenatal-only or general deficiency reviews dominate unless they clearly help explain why the exact folate line changes product comparison inside a multi-B formula."
+      ],
+      "candidates": [
+        {
+          "pmid": "41859658",
+          "title": "The roles of folate, MTHFR genetics, vitamin B12 in pregnancy outcomes.",
+          "pubdate": "2026",
+          "pubtype": [
+            "Journal Article",
+            "Review"
+          ],
+          "url": "https://pubmed.ncbi.nlm.nih.gov/41859658/"
+        },
+        {
+          "pmid": "41830012",
+          "title": "Complex Effects of B-Vitamin Combinations on Cardiovascular Diseases: A Systematic Review and Meta-Analysis of Randomized Controlled Trials over Three Decades.",
+          "pubdate": "2026 Mar 5",
+          "pubtype": [
+            "Journal Article",
+            "Systematic Review",
+            "Meta-Analysis"
+          ],
+          "url": "https://pubmed.ncbi.nlm.nih.gov/41830012/"
+        },
+        {
+          "pmid": "41615824",
+          "title": "Combined B-vitamin supplementation on homocysteine and vascular outcomes in coronary heart disease: a meta-analysis.",
+          "pubdate": "2026 Dec",
+          "pubtype": [
+            "Journal Article",
+            "Meta-Analysis"
+          ],
+          "url": "https://pubmed.ncbi.nlm.nih.gov/41615824/"
+        }
+      ]
+    },
+    {
+      "family": "b12",
+      "lane": "what_form_disclosure_changes",
+      "variant_key": "paired_b_formula",
+      "source": "life-science-research:ncbi-entrez-skill",
+      "retrieved_at": "2026-04-22",
+      "query": "((methylcobalamin OR cyanocobalamin OR vitamin b12 OR cobalamin) AND (folate OR folic acid OR methylfolate OR vitamin b6 OR pyridoxine OR b-complex) AND (supplementation OR homocysteine OR formulation) AND (Review[pt] OR systematic[sb] OR meta-analysis[pt]))",
+      "priority": "P1",
+      "selection_notes": [
+        "Prefer named-B12-form or disclosure-aware multi-B papers where cobalamin is discussed alongside folate or B6, because this template is reserved for paired-B formula interpretation rather than standalone B12 deficiency.",
+        "Avoid broad vitamin or specialty-disease reviews unless they help explain how exact B12 disclosure changes comparison once the formula is clearly multi-B."
+      ],
+      "candidates": [
+        {
+          "pmid": "41754076",
+          "title": "Micronutrients in Autoimmune Diseases: Shining a Light on Vitamin D, Cobalamin, Folate, and Iron Metabolism.",
+          "pubdate": "2026 Feb 8",
+          "pubtype": [
+            "Journal Article",
+            "Review"
+          ],
+          "url": "https://pubmed.ncbi.nlm.nih.gov/41754076/"
+        },
+        {
+          "pmid": "41830012",
+          "title": "Complex Effects of B-Vitamin Combinations on Cardiovascular Diseases: A Systematic Review and Meta-Analysis of Randomized Controlled Trials over Three Decades.",
+          "pubdate": "2026 Mar 5",
+          "pubtype": [
+            "Journal Article",
+            "Systematic Review",
+            "Meta-Analysis"
+          ],
+          "url": "https://pubmed.ncbi.nlm.nih.gov/41830012/"
+        },
+        {
+          "pmid": "41615824",
+          "title": "Combined B-vitamin supplementation on homocysteine and vascular outcomes in coronary heart disease: a meta-analysis.",
+          "pubdate": "2026 Dec",
+          "pubtype": [
+            "Journal Article",
+            "Meta-Analysis"
+          ],
+          "url": "https://pubmed.ncbi.nlm.nih.gov/41615824/"
+        }
+      ]
     }
   ]
 }

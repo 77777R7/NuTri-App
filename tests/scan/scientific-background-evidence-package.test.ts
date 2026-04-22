@@ -501,6 +501,18 @@ test("scientific background evidence json seeds b-complex-aware candidate templa
   const b6 = findTemplate("b6", "why_dose_context_matters");
   const folate = findTemplate("folate", "folate_status_and_supplementation_context");
   const b12 = findTemplate("b12", "deficiency_and_supplementation_context");
+  const folatePairedFormula = parsed.candidate_pubmed_searches.find(
+    (entry) =>
+      entry.family === "folate" &&
+      entry.lane === "what_form_labeling_changes" &&
+      (entry.variant_key ?? "") === "paired_b_formula",
+  );
+  const b12PairedFormula = parsed.candidate_pubmed_searches.find(
+    (entry) =>
+      entry.family === "b12" &&
+      entry.lane === "what_form_disclosure_changes" &&
+      (entry.variant_key ?? "") === "paired_b_formula",
+  );
 
   assert.equal(b6?.source, "life-science-research:ncbi-entrez-skill");
   assert.equal(b6?.priority, "P0");
@@ -519,4 +531,16 @@ test("scientific background evidence json seeds b-complex-aware candidate templa
   assert.ok((b12?.selection_notes?.length ?? 0) >= 1);
   assert.ok((b12?.candidates?.length ?? 0) >= 3);
   assert.equal(b12?.candidates?.[0]?.pmid, "31915511");
+
+  assert.equal(folatePairedFormula?.source, "life-science-research:ncbi-entrez-skill");
+  assert.equal(folatePairedFormula?.priority, "P1");
+  assert.ok((folatePairedFormula?.selection_notes?.length ?? 0) >= 1);
+  assert.ok((folatePairedFormula?.candidates?.length ?? 0) >= 3);
+  assert.equal(folatePairedFormula?.candidates?.[0]?.pmid, "41859658");
+
+  assert.equal(b12PairedFormula?.source, "life-science-research:ncbi-entrez-skill");
+  assert.equal(b12PairedFormula?.priority, "P1");
+  assert.ok((b12PairedFormula?.selection_notes?.length ?? 0) >= 1);
+  assert.ok((b12PairedFormula?.candidates?.length ?? 0) >= 3);
+  assert.equal(b12PairedFormula?.candidates?.[0]?.pmid, "41754076");
 });

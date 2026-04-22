@@ -18,6 +18,10 @@ const PRIORITY_ORDER = {
   P3: 3,
 };
 
+const FAMILY_GROUP_ALIASES = {
+  b_complex: ["b6", "folate", "b12"],
+};
+
 const normalizeList = (value) => {
   if (!value) return null;
   if (Array.isArray(value)) return value.map((item) => String(item).trim()).filter(Boolean);
@@ -26,6 +30,14 @@ const normalizeList = (value) => {
     .map((item) => item.trim())
     .filter(Boolean);
 };
+
+const expandFamilyAliases = (families) =>
+  (Array.isArray(families) ? families : [])
+    .flatMap((family) => {
+      const normalized = String(family).trim();
+      return FAMILY_GROUP_ALIASES[normalized] ?? [normalized];
+    })
+    .filter(Boolean);
 
 export async function loadScientificBackgroundCandidateRegistry({
   evidencePath = DEFAULT_EVIDENCE_PATH,
@@ -42,7 +54,7 @@ export function selectScientificBackgroundReviewSeeds({
   maxPerEntry = 3,
 } = {}) {
   const prioritySet = new Set(normalizeList(priorities) ?? ["P0"]);
-  const familySet = families ? new Set(normalizeList(families) ?? []) : null;
+  const familySet = families ? new Set(expandFamilyAliases(normalizeList(families) ?? [])) : null;
 
   return [...(Array.isArray(registry) ? registry : [])]
     .filter((entry) => {
@@ -87,5 +99,6 @@ export function getScientificBackgroundCandidateHelperDefaults() {
   return {
     evidencePath: DEFAULT_EVIDENCE_PATH,
     priorityOrder: Object.keys(PRIORITY_ORDER),
+    familyGroupAliases: FAMILY_GROUP_ALIASES,
   };
 }
