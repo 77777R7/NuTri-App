@@ -3436,6 +3436,77 @@
       ],
       "variant_key": "b_complex_pairing",
       "variant_label": "Vitamin B6 in B-complex pairing"
+    },
+    {
+      "ingredient_family": "b6",
+      "section_key": "nerve_related_interpretation",
+      "evidence_grade": "B",
+      "overall_confidence": 0.69,
+      "display_text": "Vitamin B6 can show up in narrower nerve-related interpretation, but that lane is more context-sensitive than broad energy-style positioning and should stay tied to the exact formula setting.",
+      "segments": {
+        "summary_support": {
+          "en": [
+            {
+              "text": "Vitamin B6 can show up in narrower nerve-related interpretation, but that lane is more context-sensitive than broad energy-style positioning and should stay tied to the exact formula setting.",
+              "sentence_id": "b6_nerve_summary_001",
+              "evidence_snippet_id": "b6_nerve_excerpt_001",
+              "evidence_reference_id": "pmid:41609902",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "evidence_read_support": {
+          "en": [
+            {
+              "text": "Review-level literature on B-vitamin deficiencies and associated neuropathies supports keeping nerve-related vitamin B6 language narrower and more specific than generic vitality copy.",
+              "sentence_id": "b6_nerve_evidence_001",
+              "evidence_snippet_id": "b6_nerve_excerpt_001",
+              "evidence_reference_id": "pmid:41609902",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "shopper_meaning_support": {
+          "en": [
+            {
+              "text": "If a B6 product leans on nerve-related language, compare the exact B6 amount and the broader formula context before treating it like a universal energy-style supplement.",
+              "sentence_id": "b6_nerve_shopper_001",
+              "evidence_snippet_id": "b6_nerve_excerpt_001",
+              "evidence_reference_id": "pmid:40395441",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "caveats": {
+          "en": [
+            {
+              "text": "Do not stretch nerve-related interpretation into every B6 label; the practical meaning still depends on formula setting, dose, and keeping the lane narrower than broad category marketing.",
+              "sentence_id": "b6_nerve_caveat_001",
+              "evidence_snippet_id": "b6_nerve_excerpt_001",
+              "evidence_reference_id": "pmid:40395441",
+              "evidence_grade": "C",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        }
+      },
+      "supporting_references": [
+        {
+          "id": "pmid:41609902",
+          "source": "PubMed",
+          "title": "B Vitamin Deficiencies and Associated Neuropathies.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/41609902/"
+        },
+        {
+          "id": "pmid:40395441",
+          "source": "PubMed",
+          "title": "Expert Consensus on Vitamin B6 Therapeutic Use for Patients: Guidance on Safe Dosage, Duration and Clinical Management.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/40395441/"
+        }
+      ]
     }
   ],
   "candidate_pubmed_searches": [
@@ -4018,6 +4089,187 @@
             "Research Support, Non-U.S. Gov't"
           ],
           "url": "https://pubmed.ncbi.nlm.nih.gov/37078654/"
+        }
+      ]
+    },
+    {
+      "family": "vitamin_c",
+      "lane": "iron_absorption_context",
+      "variant_key": "with_iron",
+      "source": "life-science-research:ncbi-entrez-skill",
+      "retrieved_at": "2026-04-22",
+      "query": "(((vitamin C[Title/Abstract] OR ascorbic acid[Title/Abstract]) AND iron[Title/Abstract]) AND (absorption[Title/Abstract] OR supplementation[Title/Abstract] OR bioavailability[Title/Abstract])) AND (Review[pt] OR systematic review[Title/Abstract] OR meta-analysis[pt])",
+      "candidates": [
+        {
+          "pmid": "32650997",
+          "title": "Oral iron supplementation in iron-deficient women: How much and how often?",
+          "pubdate": "2020 Oct",
+          "pubtype": [
+            "Journal Article",
+            "Review"
+          ],
+          "url": "https://pubmed.ncbi.nlm.nih.gov/32650997/"
+        },
+        {
+          "pmid": "35755397",
+          "title": "Iron Absorption: Factors, Limitations, and Improvement Methods.",
+          "pubdate": "2022 Jun 21",
+          "pubtype": [
+            "Journal Article",
+            "Review"
+          ],
+          "url": "https://pubmed.ncbi.nlm.nih.gov/35755397/"
+        },
+        {
+          "pmid": "10948381",
+          "title": "The role of vitamins in the prevention and control of anaemia.",
+          "pubdate": "2000 Jun",
+          "pubtype": [
+            "Journal Article",
+            "Review"
+          ],
+          "url": "https://pubmed.ncbi.nlm.nih.gov/10948381/"
+        }
+      ]
+    },
+    {
+      "family": "vitamin_c",
+      "lane": "antioxidant_and_immune_research",
+      "variant_key": "alt_delivery",
+      "source": "life-science-research:ncbi-entrez-skill",
+      "retrieved_at": "2026-04-22",
+      "query": "((vitamin C[Title/Abstract] OR ascorbic acid[Title/Abstract]) AND (liposomal[Title/Abstract] OR buffered[Title/Abstract] OR sustained-release[Title/Abstract] OR slow-release[Title/Abstract] OR alternative supplement forms[Title/Abstract])) AND (Review[pt] OR systematic review[Title/Abstract])",
+      "candidates": [
+        {
+          "pmid": "39861409",
+          "title": "Enhanced Vitamin C Delivery: A Systematic Literature Review Assessing the Efficacy and Safety of Alternative Supplement Forms in Healthy Adults.",
+          "pubdate": "2025 Jan 14",
+          "pubtype": [
+            "Journal Article",
+            "Systematic Review"
+          ],
+          "url": "https://pubmed.ncbi.nlm.nih.gov/39861409/"
+        },
+        {
+          "pmid": "29099763",
+          "title": "Vitamin C and Immune Function.",
+          "pubdate": "2017 Nov",
+          "pubtype": [
+            "Journal Article",
+            "Review"
+          ],
+          "url": "https://pubmed.ncbi.nlm.nih.gov/29099763/"
+        }
+      ]
+    },
+    {
+      "family": "iron",
+      "lane": "what_product_comparison_depends_on",
+      "variant_key": "with_cofactor_blend",
+      "source": "life-science-research:ncbi-entrez-skill",
+      "retrieved_at": "2026-04-22",
+      "query": "(((iron[Title/Abstract] OR ferrous[Title/Abstract]) AND (vitamin C[Title/Abstract] OR folate[Title/Abstract] OR vitamin B12[Title/Abstract])) AND (anaemia[Title/Abstract] OR anemia[Title/Abstract] OR absorption[Title/Abstract] OR supplementation[Title/Abstract])) AND (Review[pt] OR systematic review[Title/Abstract] OR meta-analysis[pt])",
+      "candidates": [
+        {
+          "pmid": "10948381",
+          "title": "The role of vitamins in the prevention and control of anaemia.",
+          "pubdate": "2000 Jun",
+          "pubtype": [
+            "Journal Article",
+            "Review"
+          ],
+          "url": "https://pubmed.ncbi.nlm.nih.gov/10948381/"
+        },
+        {
+          "pmid": "32650997",
+          "title": "Oral iron supplementation in iron-deficient women: How much and how often?",
+          "pubdate": "2020 Oct",
+          "pubtype": [
+            "Journal Article",
+            "Review"
+          ],
+          "url": "https://pubmed.ncbi.nlm.nih.gov/32650997/"
+        },
+        {
+          "pmid": "35755397",
+          "title": "Iron Absorption: Factors, Limitations, and Improvement Methods.",
+          "pubdate": "2022 Jun 21",
+          "pubtype": [
+            "Journal Article",
+            "Review"
+          ],
+          "url": "https://pubmed.ncbi.nlm.nih.gov/35755397/"
+        }
+      ]
+    },
+    {
+      "family": "zinc",
+      "lane": "immune_function_context",
+      "variant_key": "with_vitamin_c",
+      "source": "life-science-research:ncbi-entrez-skill",
+      "retrieved_at": "2026-04-22",
+      "query": "(((zinc[Title/Abstract]) AND (vitamin C[Title/Abstract] OR ascorbic acid[Title/Abstract])) AND (immune[Title/Abstract] OR cold[Title/Abstract] OR respiratory[Title/Abstract])) AND (Review[pt] OR systematic review[Title/Abstract] OR meta-analysis[pt])",
+      "candidates": [
+        {
+          "pmid": "16373990",
+          "title": "Immune-enhancing role of vitamin C and zinc and effect on clinical conditions.",
+          "pubdate": "2006",
+          "pubtype": [
+            "Journal Article",
+            "Review"
+          ],
+          "url": "https://pubmed.ncbi.nlm.nih.gov/16373990/"
+        },
+        {
+          "pmid": "33472840",
+          "title": "Effect of micronutrient supplements on influenza and other respiratory tract infections among adults: a systematic review and meta-analysis.",
+          "pubdate": "2021 Jan",
+          "pubtype": [
+            "Journal Article",
+            "Systematic Review",
+            "Meta-Analysis"
+          ],
+          "url": "https://pubmed.ncbi.nlm.nih.gov/33472840/"
+        },
+        {
+          "pmid": "32340216",
+          "title": "Optimal Nutritional Status for a Well-Functioning Immune System Is an Important Factor to Protect against Viral Infections.",
+          "pubdate": "2020 Apr 23",
+          "pubtype": [
+            "Journal Article",
+            "Review"
+          ],
+          "url": "https://pubmed.ncbi.nlm.nih.gov/32340216/"
+        }
+      ]
+    },
+    {
+      "family": "zinc",
+      "lane": "immune_function_context",
+      "variant_key": "lozenge_short_term_context",
+      "source": "life-science-research:ncbi-entrez-skill",
+      "retrieved_at": "2026-04-22",
+      "query": "((zinc[Title/Abstract] AND lozenge[Title/Abstract]) AND (cold[Title/Abstract] OR short-term[Title/Abstract] OR immune[Title/Abstract])) AND (Review[pt] OR systematic review[Title/Abstract] OR meta-analysis[pt])",
+      "candidates": [
+        {
+          "pmid": "23775705",
+          "title": "Zinc for the common cold.",
+          "pubdate": "2013 Jun 18",
+          "pubtype": [
+            "Journal Article",
+            "Systematic Review"
+          ],
+          "url": "https://pubmed.ncbi.nlm.nih.gov/23775705/"
+        },
+        {
+          "pmid": "21328251",
+          "title": "Zinc for the common cold.",
+          "pubdate": "2011 Feb 16",
+          "pubtype": [
+            "Journal Article",
+            "Systematic Review"
+          ],
+          "url": "https://pubmed.ncbi.nlm.nih.gov/21328251/"
         }
       ]
     }

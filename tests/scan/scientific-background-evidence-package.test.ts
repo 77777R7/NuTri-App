@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import fs from "node:fs";
 import test from "node:test";
 
 import {
@@ -235,6 +236,11 @@ test("scientific background evidence package loads vitamin d completion rows plu
     "cofactor_and_metabolism_context",
     "en",
   );
+  const b6Nerve = getScientificBackgroundEvidence(
+    "b6",
+    "nerve_related_interpretation",
+    "en",
+  );
   const b6BComplex = getScientificBackgroundEvidence(
     "b6",
     "why_dose_context_matters",
@@ -295,6 +301,10 @@ test("scientific background evidence package loads vitamin d completion rows plu
   assert.ok(b6Cofactor);
   assert.match(b6Cofactor.displayText ?? "", /cofactor|metabolism|vitamin B6/i);
   assert.equal(b6Cofactor.supportingReferences[0]?.id, "pmid:27593095");
+
+  assert.ok(b6Nerve);
+  assert.match(b6Nerve.displayText ?? "", /nerve-related|vitamin B6|formula setting/i);
+  assert.equal(b6Nerve.supportingReferences[0]?.id, "pmid:41609902");
 
   assert.ok(b6BComplex);
   assert.equal(b6BComplex.variantKey, "b_complex_pairing");
@@ -371,4 +381,59 @@ test("scientific background evidence package batch lookup returns ok and not_fou
   assert.equal(results[1]?.item?.ingredientFamily, "omega_3");
   assert.equal(results[2]?.status, "not_found");
   assert.equal(results[2]?.reason, "no_entry_for_section_key");
+});
+
+test("scientific background evidence json keeps variant candidate registry entries for vitamin c, iron, and zinc", () => {
+  const raw = fs.readFileSync(
+    new URL("../../backend/data/reviewed/scientific-background-evidence.v1.json", import.meta.url),
+    "utf8",
+  );
+  const parsed = JSON.parse(raw) as {
+    candidate_pubmed_searches: Array<{
+      family: string;
+      lane: string;
+      variant_key?: string;
+      source?: string;
+      candidates?: Array<unknown>;
+    }>;
+  };
+
+  const findCandidate = (family: string, lane: string, variantKey: string) =>
+    parsed.candidate_pubmed_searches.find(
+      (entry) =>
+        entry.family === family && entry.lane === lane && (entry.variant_key ?? "") === variantKey,
+    );
+
+  const vitaminCAltDelivery = findCandidate(
+    "vitamin_c",
+    "antioxidant_and_immune_research",
+    "alt_delivery",
+  );
+  const vitaminCWithIron = findCandidate("vitamin_c", "iron_absorption_context", "with_iron");
+  const ironWithCofactors = findCandidate(
+    "iron",
+    "what_product_comparison_depends_on",
+    "with_cofactor_blend",
+  );
+  const zincWithVitaminC = findCandidate("zinc", "immune_function_context", "with_vitamin_c");
+  const zincLozenge = findCandidate(
+    "zinc",
+    "immune_function_context",
+    "lozenge_short_term_context",
+  );
+
+  assert.equal(vitaminCAltDelivery?.source, "life-science-research:ncbi-entrez-skill");
+  assert.ok((vitaminCAltDelivery?.candidates?.length ?? 0) >= 1);
+
+  assert.equal(vitaminCWithIron?.source, "life-science-research:ncbi-entrez-skill");
+  assert.ok((vitaminCWithIron?.candidates?.length ?? 0) >= 2);
+
+  assert.equal(ironWithCofactors?.source, "life-science-research:ncbi-entrez-skill");
+  assert.ok((ironWithCofactors?.candidates?.length ?? 0) >= 2);
+
+  assert.equal(zincWithVitaminC?.source, "life-science-research:ncbi-entrez-skill");
+  assert.ok((zincWithVitaminC?.candidates?.length ?? 0) >= 2);
+
+  assert.equal(zincLozenge?.source, "life-science-research:ncbi-entrez-skill");
+  assert.ok((zincLozenge?.candidates?.length ?? 0) >= 1);
 });

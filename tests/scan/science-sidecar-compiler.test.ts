@@ -2323,6 +2323,10 @@ test('new family fallbacks stay specific and do not collapse back to generic pro
     /cofactor(?:-and-|\s+and\s+)metabolism|broader energy-style/i,
   );
   assert.match(
+    b6Result.scientificBackground.sections[1]?.summary ?? '',
+    /nerve-related|formula setting|broad energy language|energy marketing/i,
+  );
+  assert.match(
     b6Result.scientificBackground.sections[2]?.shopperMeaning ?? '',
     /dose|formula role|comparison bucket|larger b-vitamin stack|comparison set/i,
   );
