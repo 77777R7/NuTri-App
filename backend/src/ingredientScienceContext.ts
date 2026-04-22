@@ -29,6 +29,7 @@ export type IngredientScienceIngredientFamily =
   | "collagen"
   | "protein"
   | "fiber"
+  | "electrolyte_hydration"
   | "ashwagandha"
   | "ginseng"
   | "green_tea_extract"
@@ -146,6 +147,8 @@ const COLLAGEN_PATTERN =
 const PROTEIN_PATTERN =
   /\b(?:advanced\s+)?whey(?:\s+(?:isolate|protein))?\b|\bpure\s+whey\b|\bclean\s+whey\b|\b(?:pea|rice|soy|hemp|collagen)\s+protein\b|\bprotein\s+(?:isolate|concentrate|blend|powder)\b/i;
 const FIBER_PATTERN = /\b(?:apple|psyllium|acacia|inulin|prebiotic)\s+fiber\b|\bsoluble\s+fiber\b/i;
+const ELECTROLYTE_HYDRATION_PATTERN =
+  /\bhydrationup\b|\belectrolytes?\+?\b|\belectrolyte\s+(?:drink\s+mix|formula|mix|blend|stack)\b|\bhydrate\s+coconut\s+water\b/i;
 const ASHWAGANDHA_PATTERN = /\bashwagandha\b|\bwithania\s+somnifera\b|\bksm-?66\b|\bsensoril\b/i;
 const GINSENG_PATTERN = /\bginseng\b|\bpanax\b|\bamerican\s+ginseng\b|\bred\s+ginseng\b/i;
 const GREEN_TEA_EXTRACT_PATTERN = /\bgreen\s+tea(?:\s+extract)?\b|\begcg\b|\bcatechins?\b|\bcamellia\s+sinensis\b/i;
@@ -192,7 +195,7 @@ const ENERGY_CHEWS_TITLE_PATTERN = /\benergy\s+chews?\b/i;
 const SEA_MOSS_GEL_TITLE_PATTERN = /\bsea\s+moss\s+gel\b|\bliposomal\s+sea\s+moss\b/i;
 const GEL_FUEL_TITLE_PATTERN = /\bgo\s+gel\b|\bendurance\s+gel\b|\benergy\s+gel\b/i;
 const ELECTROLYTE_DRINK_MIX_TITLE_PATTERN =
-  /\bhydrationup\b|\belectrolytes?\+?\b|\belectrolyte\s+drink\s+mix\b|\belectrolyte\s+(?:formula|mix)\b/i;
+  /\bhydrationup\b|\belectrolytes?\+?\b|\belectrolyte\s+drink\s+mix\b|\belectrolyte\s+(?:formula|mix|blend|stack|mineral\s+stack)\b|\bhydrate\s+coconut\s+water\b/i;
 const REDS_SUPERFOOD_TITLE_PATTERN =
   /\breds?\s+pak\b|\bred\s+(?:fruits?|vegetables?)\b/i;
 const SPIRULINA_TITLE_PATTERN = /\bspirulina\b/i;
@@ -387,6 +390,7 @@ const inferFamilyFromText = (combined: string): IngredientScienceIngredientFamil
   if (COLLAGEN_PATTERN.test(combined)) return "collagen";
   if (PROTEIN_PATTERN.test(combined)) return "protein";
   if (FIBER_PATTERN.test(combined)) return "fiber";
+  if (ELECTROLYTE_HYDRATION_PATTERN.test(combined)) return "electrolyte_hydration";
   if (ASHWAGANDHA_PATTERN.test(combined)) return "ashwagandha";
   if (GINSENG_PATTERN.test(combined)) return "ginseng";
   if (GREEN_TEA_EXTRACT_PATTERN.test(combined)) return "green_tea_extract";
@@ -475,6 +479,7 @@ const categoryHintForFamily = (
   if (family === "collagen") return "structural protein";
   if (family === "protein") return "protein";
   if (family === "fiber") return "fiber ingredient";
+  if (family === "electrolyte_hydration") return "hydration formula";
   if (family === "ashwagandha") return "botanical extract";
   if (family === "ginseng") return "botanical extract";
   if (family === "green_tea_extract") return "botanical extract";
@@ -550,6 +555,9 @@ const inferFormContext = (
   if (family === "fiber" && /\bpsyllium\b|\binulin\b|\bacacia\b|\bprebiotic\b|\bsoluble\b/i.test(normalized)) {
     return "fiber-type line";
   }
+  if (family === "electrolyte_hydration" && /\bdrink\s+mix\b|\bpowder\b|\bgel\b|\bchews?\b|\belectrolytes?\+?\b/i.test(normalized)) {
+    return "hydration-form line";
+  }
   if (/\bchelate\b|\bcitrate\b|\bglycinate\b|\bmalate\b|\boxide\b|\btaurate\b|\bthreonate\b/i.test(normalized)) {
     return "named form line";
   }
@@ -602,6 +610,7 @@ const STRONG_LEAD_ACTIVE_FAMILIES = new Set<IngredientScienceIngredientFamily>([
   "collagen",
   "protein",
   "fiber",
+  "electrolyte_hydration",
   "ashwagandha",
   "ginseng",
   "green_tea_extract",
@@ -626,6 +635,7 @@ const PRIMARY_ACTIVE_FAMILIES = new Set<IngredientScienceIngredientFamily>([
   "collagen",
   "protein",
   "fiber",
+  "electrolyte_hydration",
   "ashwagandha",
   "ginseng",
   "green_tea_extract",
@@ -660,6 +670,7 @@ const FAMILY_TITLE_HINTS: Array<{ family: IngredientScienceIngredientFamily; pat
   { family: "collagen", pattern: COLLAGEN_SUPPLEMENT_TITLE_PATTERN },
   { family: "protein", pattern: PROTEIN_PRODUCT_TITLE_PATTERN },
   { family: "fiber", pattern: FIBER_PRODUCT_TITLE_PATTERN },
+  { family: "electrolyte_hydration", pattern: ELECTROLYTE_DRINK_MIX_TITLE_PATTERN },
   { family: "ashwagandha", pattern: /\bashwagandha\b/i },
   { family: "ginseng", pattern: /\bginseng\b/i },
   { family: "melatonin", pattern: /\bmelatonin\b/i },
@@ -944,7 +955,7 @@ const isTitleRescueAnchorRow = (
     ) ||
     (
       ELECTROLYTE_DRINK_MIX_TITLE_PATTERN.test(productName) &&
-      /\bhydrationup\b|\belectrolyte\s+drink\s+mix\b|\belectrolyte\b/i.test(normalizedRow)
+      /\bhydrationup\b|\belectrolyte\s+drink\s+mix\b|\belectrolyte\s+(?:formula|mix|blend|stack|mineral\s+stack)\b|\belectrolytes?\+?\b|\bhydrate\s+coconut\s+water\b|\belectrolyte\b/i.test(normalizedRow)
     ) ||
     (
       REDS_SUPERFOOD_TITLE_PATTERN.test(productName) &&
@@ -1446,7 +1457,7 @@ const deriveScienceTitleRescueRows = (params: {
     );
   } else if (ELECTROLYTE_DRINK_MIX_TITLE_PATTERN.test(titleWithoutBrand)) {
     pushRow(
-      extractTitleMatch(titleWithoutBrand, /\belectrolyte\s+drink\s+mix\b|\bhydrationup\b|\belectrolytes?\+?\b/i) ??
+      extractTitleMatch(titleWithoutBrand, /\belectrolyte\s+drink\s+mix\b|\belectrolyte\s+(?:formula|mix|blend|stack|mineral\s+stack)\b|\bhydrationup\b|\belectrolytes?\+?\b|\bhydrate\s+coconut\s+water\b/i) ??
         "Electrolyte Drink Mix",
     );
   } else if (isLeadAloeVeraTitle(titleWithoutBrand)) {

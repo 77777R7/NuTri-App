@@ -1807,8 +1807,10 @@ test('science context keeps title-led beverage foods ahead of brand and mineral 
   assert.equal(lairdContext.productArchetype, 'functional_food_like');
   assert.match(lairdContext.ingredientRows[0]?.name ?? '', /electrolyte\s+drink\s+mix|hydrate\s+coconut\s+water|electrolyte/i);
   assert.doesNotMatch(lairdContext.ingredientRows[0]?.name ?? '', /greens|magnesium|calcium|iron|potassium/i);
+  assert.equal(lairdContext.anchorIngredient?.ingredientFamily, 'electrolyte_hydration');
   assert.match(genuineElectrolytesContext.ingredientRows[0]?.name ?? '', /electrolytes?\+?/i);
   assert.doesNotMatch(genuineElectrolytesContext.ingredientRows[0]?.name ?? '', /beet|magnesium|potassium|calcium|vitamin d/i);
+  assert.equal(genuineElectrolytesContext.anchorIngredient?.ingredientFamily, 'electrolyte_hydration');
   assert.equal(soyMilkContext.productArchetype, 'functional_food_like');
   assert.match(soyMilkContext.ingredientRows[0]?.name ?? '', /soy\s+milk\s+powder/i);
   assert.doesNotMatch(soyMilkContext.ingredientRows[0]?.name ?? '', /potassium|calcium|iron|fiber/i);
@@ -2831,6 +2833,7 @@ test('science context rescues sparse title-led food-like anchors from residue ro
   assert.equal(goGelContext.productArchetype, 'functional_food_like');
 
   assert.match(hydrationContext.ingredientRows[0]?.name ?? '', /\belectrolyte drink mix\b|\bhydrationup\b|\belectrolyte\b/i);
+  assert.equal(hydrationContext.anchorIngredient?.ingredientFamily, 'electrolyte_hydration');
 
   assert.match(proteinBarContext.ingredientRows[0]?.name ?? '', /\bprotein bars?\b|\bsnack bars?\b/i);
   assert.doesNotMatch(proteinBarContext.ingredientRows[0]?.name ?? '', /\bglycerin\b|\bpotas\b/i);
@@ -2900,6 +2903,58 @@ test('science context rescues sparse title-led food-like anchors from residue ro
 
   assert.match(himalayanSaltContext.ingredientRows[0]?.name ?? '', /\bhimalayan crystal salt\b|\bcrystal salt\b|\bsalt\b/i);
   assert.equal(himalayanSaltContext.productArchetype, 'functional_food_like');
+});
+
+test('science context gives electrolyte supplements a research plan but keeps drink mixes on family-specific label context', () => {
+  const supplementContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-electrolyte-mineral-stack-capsules',
+      productName: 'Electrolyte Mineral Stack Capsules',
+      dosageForm: 'Capsule',
+      actives: [
+        { name: 'Potassium', amount: 180, unit: 'mg' },
+        { name: 'Magnesium', amount: 80, unit: 'mg' },
+        { name: 'Sodium', amount: 120, unit: 'mg' },
+      ],
+    }),
+    overlayClaims: null,
+  });
+  const drinkMixContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-electrolyte-drink-mix-label-context',
+      productName: 'HydrationUP Electrolyte Drink Mix',
+      dosageForm: 'Powder',
+      actives: [
+        { name: 'Vitamin C', amount: 200, unit: 'mg' },
+        { name: 'Magnesium', amount: 40, unit: 'mg' },
+        { name: 'Potassium', amount: 180, unit: 'mg' },
+      ],
+    }),
+    overlayClaims: null,
+  });
+
+  const supplementPlan = planScientificBackgroundSections({
+    context: supplementContext,
+    selectedIngredientName: supplementContext.anchorIngredient?.name ?? 'Electrolyte Mineral Stack',
+  });
+  const drinkMixPlan = planScientificBackgroundSections({
+    context: drinkMixContext,
+    selectedIngredientName: drinkMixContext.anchorIngredient?.name ?? 'HydrationUP',
+  });
+
+  assert.equal(supplementContext.anchorIngredient?.ingredientFamily, 'electrolyte_hydration');
+  assert.equal(supplementPlan.mode, 'research_mode');
+  assert.deepEqual(
+    supplementPlan.sections.map((section) => section.heading),
+    ['Hydration context', 'Exercise and sweat-loss context', 'Balance and disclosure context'],
+  );
+
+  assert.equal(drinkMixContext.anchorIngredient?.ingredientFamily, 'electrolyte_hydration');
+  assert.equal(drinkMixPlan.mode, 'label_context_mode');
+  assert.deepEqual(
+    drinkMixPlan.sections.map((section) => section.heading),
+    ['What this hydration line means on the label', 'Why balance and disclosure still matter'],
+  );
 });
 
 test('flower essence titles are not treated as food-like green products', () => {

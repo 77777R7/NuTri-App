@@ -668,6 +668,35 @@ const buildResearchPlan = (
     ];
   }
 
+  if (descriptor.ingredientFamily === "electrolyte_hydration") {
+    return [
+      buildSectionPlan(
+        "hydration_context",
+        "Hydration context",
+        "Explain the main hydration lane that usually anchors electrolyte-product interpretation.",
+        ["Hydration is the clearest lane", "This is more useful than vague wellness or energy language", "Keep the section grounded in formula reading rather than sports-drink hype"],
+        "Show that electrolyte products are easiest to interpret through a straightforward hydration lens.",
+        "Help the shopper anchor comparison on the clearest hydration-focused story.",
+      ),
+      buildSectionPlan(
+        "exercise_and_sweat_loss_context",
+        "Exercise and sweat-loss context",
+        "Explain the narrower exercise and sweat-loss lane for electrolyte products without making every hydration product sound like a sports-performance formula.",
+        ["Exercise-related context appears often", "Sweat-loss framing can matter", "Not every hydration formula is built around the same use case"],
+        "Keep this section narrower and more use-context dependent than the primary hydration lane.",
+        "Help the shopper understand why some electrolyte products are positioned more for training than for everyday hydration.",
+      ),
+      buildSectionPlan(
+        "balance_and_disclosure_context",
+        "Balance and disclosure context",
+        "Explain why sodium, potassium, magnesium, sugar, and flavor-system disclosure change electrolyte-product comparison.",
+        ["Electrolyte balance matters", "Disclosed sodium often changes product comparison more than broad branding", "Sweeteners and add-ons can make similar-looking products less comparable"],
+        "Make this a practical comparison section.",
+        "Tell the shopper what to read on the label before assuming two hydration products are interchangeable.",
+      ),
+    ];
+  }
+
   if (descriptor.ingredientFamily === "ashwagandha") {
     return [
       buildSectionPlan(
@@ -1392,6 +1421,27 @@ const buildLabelContextPlan = (
     ];
   }
 
+  if (descriptor.ingredientFamily === "electrolyte_hydration") {
+    return [
+      buildSectionPlan(
+        "what_this_hydration_line_means",
+        "What this hydration line means on the label",
+        "Explain that this line usually identifies a hydration or electrolyte formula concept rather than a single stand-alone research ingredient.",
+        ["This is a formula-identity line", "It usually works as context for the mineral and active rows underneath it", "It does not replace the disclosed electrolyte breakdown"],
+        "Keep this as a label-reading section rather than a stand-alone efficacy claim.",
+        "Help the shopper understand what this hydration line is doing before comparing products.",
+      ),
+      buildSectionPlan(
+        "why_balance_and_disclosure_still_matter",
+        "Why balance and disclosure still matter",
+        "Explain why the more decision-useful comparison details are usually the disclosed electrolytes, carbohydrate system, and use-context cues underneath the broad hydration line.",
+        ["Mineral balance still matters", "The broad hydration line is not the whole comparison answer", "More itemized disclosure makes these products easier to compare"],
+        "Keep this practical and label-focused.",
+        "Help the shopper know which details to read next instead of overweighting the hydration headline.",
+      ),
+    ];
+  }
+
   return [
     buildSectionPlan(
       "what_this_line_means",
@@ -1857,6 +1907,13 @@ const buildPrompt = (params: {
         "Keep collagen grounded in skin and connective-tissue context first, with joint or structural context as a secondary lane.",
         "Do not flatten every collagen label into the same beauty or mobility promise.",
         "Make shopper meaning practical by tying comparison to source, peptide or type disclosure, and whether the formula is beauty-led, joint-led, or more general.",
+      ];
+    }
+    if (params.plan.family === "electrolyte_hydration") {
+      return [
+        "Keep electrolyte products grounded in hydration context first, with exercise or sweat-loss framing as a narrower secondary lane.",
+        "Do not flatten every hydration label into sports-performance hype or treat the broad hydration headline as the whole product story.",
+        "Make shopper meaning practical by tying comparison to disclosed sodium, potassium, magnesium, sugar or carbohydrate context, and the rest of the label detail.",
       ];
     }
     if (params.plan.family === "protein") {
@@ -2848,6 +2905,42 @@ const buildSectionFallback = (
         evidenceRead: "This is mainly a comparison and disclosure section rather than a hard ranking section.",
         shopperMeaning: "Check source, type, and peptide detail before assuming two collagen products belong in the same comparison set.",
       };
+    case "hydration_context":
+      return {
+        heading: section.heading,
+        summary: `${label} is easiest to interpret through hydration context, which is a cleaner and more specific electrolyte-product lane than vague wellness or energy language by itself.`,
+        bullets: [
+          "Hydration is the clearest lane for reading an electrolyte-focused product.",
+          "This is more specific than broad wellness or active-lifestyle packaging language.",
+          "The exact electrolyte disclosure still matters before two hydration products can be treated as close substitutes.",
+        ],
+        evidenceRead: "This is the clearest electrolyte-product lane, but it should stay grounded in the actual label rather than broad sports-drink hype.",
+        shopperMeaning: "Compare hydration products through their disclosed electrolyte setup before leaning on broad hydration branding alone.",
+      };
+    case "exercise_and_sweat_loss_context":
+      return {
+        heading: section.heading,
+        summary: `${label} also appears in exercise and sweat-loss positioning, but that lane is narrower and more use-context dependent than the clearest hydration reading.`,
+        bullets: [
+          "Exercise-related framing appears often, especially in training-oriented products.",
+          "Sweat-loss context can matter without making every hydration product tell the same story.",
+          "The rest of the formula still changes whether the product reads like everyday hydration or workout support.",
+        ],
+        evidenceRead: "This is a useful secondary electrolyte-product lane, but it should stay narrower than the main hydration context.",
+        shopperMeaning: "Use it to understand whether a product is framed more around training or everyday hydration before comparing formulas.",
+      };
+    case "balance_and_disclosure_context":
+      return {
+        heading: section.heading,
+        summary: `Balance and disclosure change the comparison value of ${label} because sodium, potassium, magnesium, carbohydrate context, and flavor-system add-ons are not all disclosed with the same clarity across hydration products.`,
+        bullets: [
+          "Disclosed electrolyte balance usually matters more than a broad hydration headline.",
+          "Sweeteners, carbohydrate systems, and add-on actives can change what the product is really built to do.",
+          "More itemized disclosure usually makes hydration products easier to compare side by side.",
+        ],
+        evidenceRead: "This is mainly a comparison and label-reading section rather than a broad efficacy claim.",
+        shopperMeaning: "Check electrolyte balance, carbohydrate context, and overall disclosure detail before assuming two hydration products belong in the same comparison set.",
+      };
     case "muscle_and_recovery_context":
       return {
         heading: section.heading,
@@ -3508,6 +3601,30 @@ const buildSectionFallback = (
         ],
         evidenceRead: "This section is purely about better label interpretation and product comparison.",
         shopperMeaning: "It helps the shopper avoid confusing source identity with the ingredient amounts that usually matter most.",
+      };
+    case "what_this_hydration_line_means":
+      return {
+        heading: section.heading,
+        summary: `${narrativeLabel} is better interpreted as a hydration-formula identity line than as a single stand-alone research ingredient with its own full evidence card.`,
+        bullets: [
+          "This line usually signals the type of hydration or electrolyte product you are looking at.",
+          "It gives context for the disclosed minerals and supporting actives underneath it rather than replacing them.",
+          "That makes it useful for orientation, but weaker than a fully itemized electrolyte breakdown for direct comparison.",
+        ],
+        evidenceRead: "This is mainly a label-reading section, not a stand-alone evidence summary for one isolated ingredient.",
+        shopperMeaning: "Use this line for product context first, then compare the more specific electrolyte and formula rows underneath it.",
+      };
+    case "why_balance_and_disclosure_still_matter":
+      return {
+        heading: section.heading,
+        summary: `The practical comparison value of ${narrativeLabel} still depends on how clearly the label discloses the electrolyte balance, carbohydrate context, and other supporting details around it.`,
+        bullets: [
+          "The broad hydration line is not the whole comparison answer by itself.",
+          "Sodium, potassium, magnesium, and related details still do most of the practical comparison work.",
+          "Cleaner disclosure usually makes hydration products easier to compare than broad branding alone.",
+        ],
+        evidenceRead: "This is a disclosure and comparison section rather than a broad efficacy claim.",
+        shopperMeaning: "Treat the hydration line as a starting point, then compare the disclosed balance and supporting formula details before judging the product.",
       };
     case "what_this_line_means":
       return {

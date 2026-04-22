@@ -1845,6 +1845,19 @@ test('planner assigns dedicated section packs to magnesium, vitamin D, calcium, 
     }),
     overlayClaims: null,
   });
+  const electrolyteContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-electrolyte-pack',
+      productName: 'Electrolyte Mineral Stack Capsules',
+      dosageForm: 'Capsule',
+      actives: [
+        { name: 'Potassium', amount: 180, unit: 'mg' },
+        { name: 'Magnesium', amount: 80, unit: 'mg' },
+        { name: 'Sodium', amount: 120, unit: 'mg' },
+      ],
+    }),
+    overlayClaims: null,
+  });
   const ashwagandhaContext = buildIngredientScienceContext({
     digest: buildDigest({
       labelId: 'fixture-ashwagandha-pack',
@@ -1936,6 +1949,10 @@ test('planner assigns dedicated section packs to magnesium, vitamin D, calcium, 
   assert.deepEqual(
     planScientificBackgroundSections({ context: fiberContext, selectedIngredientName: 'Apple Fiber' }).sections.map((section) => section.heading),
     ['Digestive regularity context', 'Satiety and gut context', 'Source and solubility context'],
+  );
+  assert.deepEqual(
+    planScientificBackgroundSections({ context: electrolyteContext, selectedIngredientName: 'Electrolyte Mineral Stack' }).sections.map((section) => section.heading),
+    ['Hydration context', 'Exercise and sweat-loss context', 'Balance and disclosure context'],
   );
   assert.deepEqual(
     planScientificBackgroundSections({ context: ashwagandhaContext, selectedIngredientName: 'Ashwagandha (KSM-66)' }).sections.map((section) => section.heading),
@@ -2096,6 +2113,19 @@ test('new family fallbacks stay specific and do not collapse back to generic pro
     }),
     overlayClaims: null,
   });
+  const electrolyteContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-electrolyte-fallback',
+      productName: 'Electrolyte Mineral Stack Capsules',
+      dosageForm: 'Capsule',
+      actives: [
+        { name: 'Potassium', amount: 180, unit: 'mg' },
+        { name: 'Magnesium', amount: 80, unit: 'mg' },
+        { name: 'Sodium', amount: 120, unit: 'mg' },
+      ],
+    }),
+    overlayClaims: null,
+  });
   const ashwagandhaContext = buildIngredientScienceContext({
     digest: buildDigest({
       labelId: 'fixture-ashwagandha-fallback',
@@ -2140,6 +2170,7 @@ test('new family fallbacks stay specific and do not collapse back to generic pro
   const collagenResult = await compileScientificBackgroundAsync(collagenContext, 'Marine Collagen Peptides');
   const proteinResult = await compileScientificBackgroundAsync(proteinContext, 'Whey Protein Isolate');
   const fiberResult = await compileScientificBackgroundAsync(fiberContext, 'Apple Fiber');
+  const electrolyteResult = await compileScientificBackgroundAsync(electrolyteContext, 'Electrolyte Mineral Stack');
   const ashwagandhaResult = await compileScientificBackgroundAsync(ashwagandhaContext, 'Ashwagandha (KSM-66)');
   const ginsengResult = await compileScientificBackgroundAsync(ginsengContext, 'Panax Ginseng Extract');
   const greenTeaResult = await compileScientificBackgroundAsync(greenTeaContext, 'Green Tea Extract (EGCG)');
@@ -2173,12 +2204,44 @@ test('new family fallbacks stay specific and do not collapse back to generic pro
   assert.match(proteinResult.scientificBackground.sections[2]?.shopperMeaning ?? '', /source|blend|grams|protein|comparison/i);
   assert.match(fiberResult.scientificBackground.sections[0]?.summary ?? '', /fiber|digestive|regularity/i);
   assert.match(fiberResult.scientificBackground.sections[2]?.shopperMeaning ?? '', /fiber|source|solubility|comparison/i);
+  assert.match(electrolyteResult.scientificBackground.sections[0]?.summary ?? '', /hydration|electrolyte/i);
+  assert.match(electrolyteResult.scientificBackground.sections[2]?.shopperMeaning ?? '', /electrolyte|balance|carbohydrate|comparison/i);
   assert.match(ashwagandhaResult.scientificBackground.sections[0]?.summary ?? '', /stress|mood|resilience/i);
   assert.match(ashwagandhaResult.scientificBackground.sections[2]?.shopperMeaning ?? '', /extract identity|comparison set|ashwagandha/i);
   assert.match(ginsengResult.scientificBackground.sections[0]?.summary ?? '', /energy|fatigue|ginseng/i);
   assert.match(ginsengResult.scientificBackground.sections[2]?.shopperMeaning ?? '', /species|extract|ginseng alone|head to head/i);
   assert.match(greenTeaResult.scientificBackground.sections[0]?.summary ?? '', /catechin|EGCG|green tea extract/i);
   assert.match(greenTeaResult.scientificBackground.sections[2]?.shopperMeaning ?? '', /concentration detail|comparison set|green tea extract/i);
+});
+
+test('electrolyte drink mixes use family-specific label-context sections instead of the generic label-context fallback', async () => {
+  const context = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-electrolyte-drink-mix-sidecar',
+      productName: 'HydrationUP Electrolyte Drink Mix',
+      dosageForm: 'Powder',
+      actives: [
+        { name: 'Vitamin C', amount: 200, unit: 'mg' },
+        { name: 'Magnesium', amount: 40, unit: 'mg' },
+        { name: 'Potassium', amount: 180, unit: 'mg' },
+      ],
+    }),
+    overlayClaims: null,
+  });
+
+  const plan = planScientificBackgroundSections({
+    context,
+    selectedIngredientName: 'HydrationUP',
+  });
+  const result = await compileScientificBackgroundAsync(context, 'HydrationUP');
+
+  assert.equal(plan.mode, 'label_context_mode');
+  assert.deepEqual(
+    plan.sections.map((section) => section.heading),
+    ['What this hydration line means on the label', 'Why balance and disclosure still matter'],
+  );
+  assert.match(result.scientificBackground.sections[0]?.summary ?? '', /hydration|formula identity|electrolyte/i);
+  assert.match(result.scientificBackground.sections[1]?.shopperMeaning ?? '', /hydration line|balance|electrolyte|compare/i);
 });
 
 test('magnesium complex uses label-context mode instead of pretending to be a single clean research row', () => {
