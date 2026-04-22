@@ -253,11 +253,23 @@ test("scientific background evidence package loads vitamin d completion rows plu
     "en",
     "b_complex_pairing",
   );
+  const folatePairedFormula = getScientificBackgroundEvidence(
+    "folate",
+    "what_form_labeling_changes",
+    "en",
+    "paired_b_formula",
+  );
   const b12BComplex = getScientificBackgroundEvidence(
     "b12",
     "deficiency_and_supplementation_context",
     "en",
     "b_complex_pairing",
+  );
+  const b12PairedFormula = getScientificBackgroundEvidence(
+    "b12",
+    "what_form_disclosure_changes",
+    "en",
+    "paired_b_formula",
   );
   const zincWithVitaminC = getScientificBackgroundEvidence(
     "zinc",
@@ -308,6 +320,7 @@ test("scientific background evidence package loads vitamin d completion rows plu
   assert.ok(vitaminCIronPair);
   assert.equal(vitaminCIronPair.variantKey, "with_iron");
   assert.match(vitaminCIronPair.displayText ?? "", /paired with iron|co-formulation|vitamin C/i);
+  assert.equal(vitaminCIronPair.supportingReferences[2]?.id, "pmid:10948381");
   assert.equal(vitaminCIronPair.supportingReferences[0]?.id, "pmid:32650997");
 
   assert.ok(b6Cofactor);
@@ -329,15 +342,26 @@ test("scientific background evidence package loads vitamin d completion rows plu
   assert.match(folateBComplex.displayText ?? "", /B-complex|multi-B|folate/i);
   assert.equal(folateBComplex.supportingReferences[0]?.id, "pmid:41615824");
 
+  assert.ok(folatePairedFormula);
+  assert.equal(folatePairedFormula.variantKey, "paired_b_formula");
+  assert.match(folatePairedFormula.displayText ?? "", /folate line|paired-B|B-complex/i);
+  assert.equal(folatePairedFormula.supportingReferences[0]?.id, "pmid:41830012");
+
   assert.ok(b12BComplex);
   assert.equal(b12BComplex.variantKey, "b_complex_pairing");
   assert.match(b12BComplex.displayText ?? "", /B-complex|multi-B|B12/i);
   assert.equal(b12BComplex.supportingReferences[0]?.id, "pmid:31915511");
 
+  assert.ok(b12PairedFormula);
+  assert.equal(b12PairedFormula.variantKey, "paired_b_formula");
+  assert.match(b12PairedFormula.displayText ?? "", /cobalamin|paired-B|B-complex/i);
+  assert.equal(b12PairedFormula.supportingReferences[0]?.id, "pmid:41830012");
+
   assert.ok(zincWithVitaminC);
   assert.equal(zincWithVitaminC.variantKey, "with_vitamin_c");
   assert.match(zincWithVitaminC.displayText ?? "", /paired with vitamin C|co-formulation|zinc/i);
   assert.equal(zincWithVitaminC.supportingReferences[0]?.id, "pmid:16373990");
+  assert.equal(zincWithVitaminC.supportingReferences[2]?.id, "pmid:32340216");
 
   assert.ok(ironWithCofactors);
   assert.equal(ironWithCofactors.variantKey, "with_cofactor_blend");

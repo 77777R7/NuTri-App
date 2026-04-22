@@ -2540,12 +2540,28 @@ test('reviewed evidence variants sharpen vitamin C, B6, zinc, iron, and melatoni
     /whole multi-B profile|standalone folate supplement/i,
   );
   assert.match(
+    folateComplexResult.scientificBackground.sections[2]?.summary ?? '',
+    /folate line|paired-B|B-complex wording|comparison value/i,
+  );
+  assert.match(
+    folateComplexResult.scientificBackground.sections[2]?.shopperMeaning ?? '',
+    /exact folate line|multi-B products|same bucket/i,
+  );
+  assert.match(
     b12ComplexResult.scientificBackground.sections[0]?.summary ?? '',
     /B-complex|homocysteine|multi-B|standalone B12/i,
   );
   assert.match(
     b12ComplexResult.scientificBackground.sections[0]?.shopperMeaning ?? '',
     /whole B-complex profile|standalone B12 supplement/i,
+  );
+  assert.match(
+    b12ComplexResult.scientificBackground.sections[2]?.summary ?? '',
+    /cobalamin line|paired-B|B-complex wording|comparison value/i,
+  );
+  assert.match(
+    b12ComplexResult.scientificBackground.sections[2]?.shopperMeaning ?? '',
+    /exact B12 line|multi-B products|comparison bucket/i,
   );
 
   assert.match(

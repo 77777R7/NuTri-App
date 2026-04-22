@@ -94,7 +94,7 @@ export type ScientificBackgroundExecutionProfile = {
   cacheTtlMs: number;
 };
 
-export const SCIENTIFIC_BACKGROUND_PROMPT_VERSION = "scientific_background_v23";
+export const SCIENTIFIC_BACKGROUND_PROMPT_VERSION = "scientific_background_v24";
 const B_COMPLEX_PAIRING_PATTERN =
   /\bb-complex\b|\bvitamin b12\b|\bb12\b|\bcobalamin\b|\bfolate\b|\bfolic acid\b|\bmethylfolate\b|\briboflavin\b|\bthiamin\b|\bthiamine\b|\bniacin\b|\bvitamin b1\b|\bvitamin b2\b|\bvitamin b3\b|\bvitamin b6\b|\bpyridox(?:ine|al)?\b/i;
 
@@ -3793,6 +3793,8 @@ const resolveEvidenceVariantKey = (params: {
     params.section.headingId === "folate_status_and_supplementation_context" ||
     params.section.headingId === "form_and_tolerability_context" ||
     params.section.headingId === "what_product_comparison_depends_on" ||
+    params.section.headingId === "what_form_disclosure_changes" ||
+    params.section.headingId === "what_form_labeling_changes" ||
     params.section.headingId === "iron_absorption_context" ||
     params.section.headingId === "immune_function_context" ||
     params.section.headingId === "why_dose_context_matters" ||
@@ -3878,10 +3880,26 @@ const resolveEvidenceVariantKey = (params: {
   }
 
   if (
+    params.plan.family === "folate" &&
+    params.section.headingId === "what_form_labeling_changes"
+  ) {
+    if (B_COMPLEX_PAIRING_PATTERN.test(contextText)) return "paired_b_formula";
+    return undefined;
+  }
+
+  if (
     params.plan.family === "b12" &&
     params.section.headingId === "deficiency_and_supplementation_context"
   ) {
     if (B_COMPLEX_PAIRING_PATTERN.test(contextText)) return "b_complex_pairing";
+    return undefined;
+  }
+
+  if (
+    params.plan.family === "b12" &&
+    params.section.headingId === "what_form_disclosure_changes"
+  ) {
+    if (B_COMPLEX_PAIRING_PATTERN.test(contextText)) return "paired_b_formula";
     return undefined;
   }
 

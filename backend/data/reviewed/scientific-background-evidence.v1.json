@@ -2776,7 +2776,7 @@
       "ingredient_family": "vitamin_c",
       "section_key": "iron_absorption_context",
       "evidence_grade": "B",
-      "overall_confidence": 0.77,
+      "overall_confidence": 0.79,
       "display_text": "When vitamin C is paired with iron on the same label, that co-formulation makes the iron-absorption lane more directly relevant than it would be on a standalone vitamin C product.",
       "segments": {
         "summary_support": {
@@ -2798,6 +2798,14 @@
               "sentence_id": "vitc_iron_pair_evidence_001",
               "evidence_snippet_id": "vitc_iron_pair_excerpt_001",
               "evidence_reference_id": "pmid:35755397",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            },
+            {
+              "text": "Anaemia-prevention review literature also supports reading vitamin C plus iron as a paired nutrient strategy rather than as a generic vitamin C claim with incidental iron nearby.",
+              "sentence_id": "vitc_iron_pair_evidence_002",
+              "evidence_snippet_id": "vitc_iron_pair_excerpt_002",
+              "evidence_reference_id": "pmid:10948381",
               "evidence_grade": "B",
               "source": "reviewed_curated_v1"
             }
@@ -2840,6 +2848,12 @@
           "source": "PubMed",
           "title": "Iron Absorption: Factors, Limitations, and Improvement Methods.",
           "url": "https://pubmed.ncbi.nlm.nih.gov/35755397/"
+        },
+        {
+          "id": "pmid:10948381",
+          "source": "PubMed",
+          "title": "The role of vitamins in the prevention and control of anaemia.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/10948381/"
         }
       ],
       "variant_key": "with_iron",
@@ -2928,7 +2942,7 @@
       "ingredient_family": "zinc",
       "section_key": "immune_function_context",
       "evidence_grade": "B",
-      "overall_confidence": 0.75,
+      "overall_confidence": 0.76,
       "display_text": "Lozenge-style zinc products belong to a narrower short-term immune-context comparison lane than everyday zinc tablets or capsules, so product form changes how the immune section should be read.",
       "segments": {
         "summary_support": {
@@ -2950,6 +2964,14 @@
               "sentence_id": "zinc_lozenge_evidence_001",
               "evidence_snippet_id": "zinc_lozenge_excerpt_001",
               "evidence_reference_id": "pmid:21328251",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            },
+            {
+              "text": "The lozenge literature is most useful when it keeps zinc in a short-term dosage-form lane instead of expanding that meaning to every daily zinc supplement.",
+              "sentence_id": "zinc_lozenge_evidence_002",
+              "evidence_snippet_id": "zinc_lozenge_excerpt_002",
+              "evidence_reference_id": "pmid:23775705",
               "evidence_grade": "B",
               "source": "reviewed_curated_v1"
             }
@@ -3001,7 +3023,7 @@
       "ingredient_family": "vitamin_c",
       "section_key": "antioxidant_and_immune_research",
       "evidence_grade": "B",
-      "overall_confidence": 0.79,
+      "overall_confidence": 0.8,
       "display_text": "Liposomal, buffered, or slow-release vitamin C products belong in a narrower delivery-style comparison lane than plain vitamin C products, because delivery language changes how shoppers should read the label.",
       "segments": {
         "summary_support": {
@@ -3023,6 +3045,14 @@
               "sentence_id": "vitc_alt_delivery_evidence_001",
               "evidence_snippet_id": "vitc_alt_delivery_excerpt_001",
               "evidence_reference_id": "pmid:39861409",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            },
+            {
+              "text": "Broader vitamin C review literature still supports keeping the main comparison anchored to the exact delivery wording instead of flattening liposomal or buffered products back into the standard tablet lane.",
+              "sentence_id": "vitc_alt_delivery_evidence_002",
+              "evidence_snippet_id": "vitc_alt_delivery_excerpt_002",
+              "evidence_reference_id": "pmid:29099763",
               "evidence_grade": "B",
               "source": "reviewed_curated_v1"
             }
@@ -3074,7 +3104,7 @@
       "ingredient_family": "zinc",
       "section_key": "immune_function_context",
       "evidence_grade": "B",
-      "overall_confidence": 0.76,
+      "overall_confidence": 0.78,
       "display_text": "When zinc is paired with vitamin C on the same label, the immune-function lane becomes a more explicit co-formulation story than it is on a standalone zinc product.",
       "segments": {
         "summary_support": {
@@ -3096,6 +3126,14 @@
               "sentence_id": "zinc_vitc_evidence_001",
               "evidence_snippet_id": "zinc_vitc_excerpt_001",
               "evidence_reference_id": "pmid:33472840",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            },
+            {
+              "text": "Micronutrient review and meta-analytic literature also supports treating zinc-plus-vitamin-C labels as a clearer paired immune-context lane than standalone zinc products.",
+              "sentence_id": "zinc_vitc_evidence_002",
+              "evidence_snippet_id": "zinc_vitc_excerpt_002",
+              "evidence_reference_id": "pmid:32340216",
               "evidence_grade": "B",
               "source": "reviewed_curated_v1"
             }
@@ -3138,6 +3176,12 @@
           "source": "PubMed",
           "title": "Effect of micronutrient supplements on influenza and other respiratory tract infections among adults: a systematic review and meta-analysis.",
           "url": "https://pubmed.ncbi.nlm.nih.gov/33472840/"
+        },
+        {
+          "id": "pmid:32340216",
+          "source": "PubMed",
+          "title": "Dietary supplements and nutraceuticals under investigation for COVID-19 prevention and treatment.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/32340216/"
         }
       ],
       "variant_key": "with_vitamin_c",
@@ -3147,7 +3191,7 @@
       "ingredient_family": "iron",
       "section_key": "what_product_comparison_depends_on",
       "evidence_grade": "B",
-      "overall_confidence": 0.78,
+      "overall_confidence": 0.8,
       "display_text": "Iron products paired with vitamin C, folate, or B12 belong in a broader cofactor-aware comparison lane than single-iron products, because co-formulation changes what shoppers should compare first.",
       "segments": {
         "summary_support": {
@@ -3169,6 +3213,14 @@
               "sentence_id": "iron_cofactor_evidence_001",
               "evidence_snippet_id": "iron_cofactor_excerpt_001",
               "evidence_reference_id": "pmid:35755397",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            },
+            {
+              "text": "This literature is most useful when it helps separate a broader nutrient-support stack from a plain iron-only label, because the paired nutrients change what shoppers should compare first.",
+              "sentence_id": "iron_cofactor_evidence_002",
+              "evidence_snippet_id": "iron_cofactor_excerpt_002",
+              "evidence_reference_id": "pmid:32650997",
               "evidence_grade": "B",
               "source": "reviewed_curated_v1"
             }
@@ -3671,6 +3723,180 @@
       ],
       "variant_key": "b_complex_pairing",
       "variant_label": "Vitamin B12 in B-complex pairing"
+    },
+    {
+      "ingredient_family": "folate",
+      "section_key": "what_form_labeling_changes",
+      "evidence_grade": "B",
+      "overall_confidence": 0.69,
+      "display_text": "When folate form labeling appears inside a paired-B formula, the exact folate line carries more comparison value than generic B-complex wording alone.",
+      "segments": {
+        "summary_support": {
+          "en": [
+            {
+              "text": "When folate form labeling appears inside a paired-B formula, the exact folate line carries more comparison value than generic B-complex wording alone.",
+              "sentence_id": "folate_paired_form_summary_001",
+              "evidence_snippet_id": "folate_paired_form_excerpt_001",
+              "evidence_reference_id": "pmid:41830012",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "evidence_read_support": {
+          "en": [
+            {
+              "text": "Multi-B combination and paired folate-B12 review literature support using exact folate labeling as a stronger comparison signal once the formula clearly includes other B vitamins.",
+              "sentence_id": "folate_paired_form_evidence_001",
+              "evidence_snippet_id": "folate_paired_form_excerpt_001",
+              "evidence_reference_id": "pmid:41615824",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            },
+            {
+              "text": "That makes folic acid versus methylfolate-style disclosure more useful inside a multi-B stack than generic category wording by itself.",
+              "sentence_id": "folate_paired_form_evidence_002",
+              "evidence_snippet_id": "folate_paired_form_excerpt_002",
+              "evidence_reference_id": "pmid:41859658",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "shopper_meaning_support": {
+          "en": [
+            {
+              "text": "If the formula already includes B12, B6, or a broader B-complex stack, compare the exact folate line before assuming two multi-B products belong in the same bucket.",
+              "sentence_id": "folate_paired_form_shopper_001",
+              "evidence_snippet_id": "folate_paired_form_excerpt_001",
+              "evidence_reference_id": "pmid:41615824",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "caveats": {
+          "en": [
+            {
+              "text": "Do not turn paired-B formulas into a blanket better-form story; the main value is that exact folate disclosure sharpens comparison inside a multi-B formula.",
+              "sentence_id": "folate_paired_form_caveat_001",
+              "evidence_snippet_id": "folate_paired_form_excerpt_001",
+              "evidence_reference_id": "pmid:41830012",
+              "evidence_grade": "C",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        }
+      },
+      "supporting_references": [
+        {
+          "id": "pmid:41830012",
+          "source": "PubMed",
+          "title": "Complex Effects of B-Vitamin Combinations on Cardiovascular Diseases: A Systematic Review and Meta-Analysis of Randomized Controlled Trials over Three Decades.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/41830012/"
+        },
+        {
+          "id": "pmid:41615824",
+          "source": "PubMed",
+          "title": "Combined B-vitamin supplementation on homocysteine and vascular outcomes in coronary heart disease: a meta-analysis.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/41615824/"
+        },
+        {
+          "id": "pmid:41859658",
+          "source": "PubMed",
+          "title": "The roles of folate, MTHFR genetics, vitamin B12 in pregnancy outcomes.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/41859658/"
+        }
+      ],
+      "variant_key": "paired_b_formula",
+      "variant_label": "Folate form labeling in paired-B formula"
+    },
+    {
+      "ingredient_family": "b12",
+      "section_key": "what_form_disclosure_changes",
+      "evidence_grade": "B",
+      "overall_confidence": 0.68,
+      "display_text": "When B12 form disclosure appears inside a paired-B formula, the exact cobalamin line carries more comparison value than generic B-complex wording alone.",
+      "segments": {
+        "summary_support": {
+          "en": [
+            {
+              "text": "When B12 form disclosure appears inside a paired-B formula, the exact cobalamin line carries more comparison value than generic B-complex wording alone.",
+              "sentence_id": "b12_paired_form_summary_001",
+              "evidence_snippet_id": "b12_paired_form_excerpt_001",
+              "evidence_reference_id": "pmid:41830012",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "evidence_read_support": {
+          "en": [
+            {
+              "text": "Multi-B combination literature supports treating exact B12 disclosure as a stronger comparison signal once folate, B6, or broader B-complex context is already present on the label.",
+              "sentence_id": "b12_paired_form_evidence_001",
+              "evidence_snippet_id": "b12_paired_form_excerpt_001",
+              "evidence_reference_id": "pmid:41615824",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            },
+            {
+              "text": "That keeps methylcobalamin-versus-cyanocobalamin-style detail in a practical label-reading lane instead of flattening the whole formula into generic B-complex copy.",
+              "sentence_id": "b12_paired_form_evidence_002",
+              "evidence_snippet_id": "b12_paired_form_excerpt_002",
+              "evidence_reference_id": "pmid:41754076",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "shopper_meaning_support": {
+          "en": [
+            {
+              "text": "If the formula already includes folate, B6, or a broader B-complex stack, compare the exact B12 line before assuming two multi-B products belong in the same comparison bucket.",
+              "sentence_id": "b12_paired_form_shopper_001",
+              "evidence_snippet_id": "b12_paired_form_excerpt_001",
+              "evidence_reference_id": "pmid:41615824",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "caveats": {
+          "en": [
+            {
+              "text": "Do not turn paired-B formulas into a blanket better-form claim for B12; the main value is that exact cobalamin disclosure sharpens comparison inside a multi-B stack.",
+              "sentence_id": "b12_paired_form_caveat_001",
+              "evidence_snippet_id": "b12_paired_form_excerpt_001",
+              "evidence_reference_id": "pmid:41830012",
+              "evidence_grade": "C",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        }
+      },
+      "supporting_references": [
+        {
+          "id": "pmid:41830012",
+          "source": "PubMed",
+          "title": "Complex Effects of B-Vitamin Combinations on Cardiovascular Diseases: A Systematic Review and Meta-Analysis of Randomized Controlled Trials over Three Decades.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/41830012/"
+        },
+        {
+          "id": "pmid:41615824",
+          "source": "PubMed",
+          "title": "Combined B-vitamin supplementation on homocysteine and vascular outcomes in coronary heart disease: a meta-analysis.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/41615824/"
+        },
+        {
+          "id": "pmid:41754076",
+          "source": "PubMed",
+          "title": "Micronutrients in Autoimmune Diseases: Shining a Light on Vitamin D, Cobalamin, Folate, and Iron Metabolism.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/41754076/"
+        }
+      ],
+      "variant_key": "paired_b_formula",
+      "variant_label": "Vitamin B12 form disclosure in paired-B formula"
     }
   ],
   "candidate_pubmed_searches": [
