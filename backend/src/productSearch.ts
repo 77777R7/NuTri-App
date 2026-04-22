@@ -357,6 +357,34 @@ const SEARCH_QUERY_OPTIONAL_TOKENS = new Set([
   "plus",
 ]);
 
+const SEARCH_QUERY_FORM_PATTERNS: { key: string; pattern: RegExp }[] = [
+  { key: "tablet", pattern: /\btablets?\b/i },
+  { key: "softgel", pattern: /\bsoftgels?\b/i },
+  { key: "gummy", pattern: /\bgummies?\b/i },
+  { key: "chewable", pattern: /\bchewables?\b/i },
+  { key: "drop", pattern: /\bdrops?\b/i },
+  { key: "liquid", pattern: /\bliquid\b/i },
+  { key: "fast_dissolving", pattern: /\bfast[-\s]?dissolv(?:e|ing)\b/i },
+];
+
+const SEARCH_QUERY_STRENGTH_PATTERN =
+  /\b(\d[\d,]*(?:\.\d+)?)\s*(mg|mcg|g|iu|ui|ml|oz|cfu)\b/gi;
+
+const COLD_FALLBACK_IGNORE_TOKENS = new Set([
+  "each",
+  "pack",
+  "packs",
+  "snack",
+  "snacks",
+  "assorted",
+  "from",
+  "grass",
+  "fed",
+  "milk",
+  "chocolate",
+  "lb",
+]);
+
 const SEARCH_QUERY_OPTIONAL_GOAL_TOKENS = new Set([
   "stress",
   "sleep",
@@ -491,6 +519,127 @@ export const buildSearchQueryPlan = (query: string | null | undefined): SearchQu
   };
 };
 
+export const extractColdFallbackBrandLead = (query: string | null | undefined): string | null => {
+  const raw = safeTrim(query);
+  if (!raw) return null;
+
+  const firstSegment = raw
+    .split(",")
+    .map((part) => part.trim())
+    .find(Boolean);
+
+  if (!firstSegment) return null;
+  const normalized = normalizeLookupText(firstSegment);
+  if (!normalized) return null;
+  if (normalized.split(" ").length > 4) return null;
+  if (COLD_FALLBACK_IGNORE_TOKENS.has(normalized)) return null;
+  return normalized;
+};
+
+export const extractColdFallbackCoreTerms = (query: string | null | undefined): string[] => {
+  const queryPlan = buildSearchQueryPlan(query);
+  const brandLead = extractColdFallbackBrandLead(query);
+
+  return queryPlan.requiredGroups
+    .map((group) => group[0] ?? "")
+    .map((term) => normalizeLookupText(term))
+    .filter(Boolean)
+    .filter((term) => term !== brandLead)
+    .filter((term) => !COLD_FALLBACK_IGNORE_TOKENS.has(term))
+    .slice(0, 4);
+};
+
+const canonicalizeSearchStrengthNumber = (value: string): string | null => {
+  const digits = value.replace(/,/g, "").trim();
+  if (!digits) return null;
+  const numeric = Number(digits);
+  if (!Number.isFinite(numeric)) return null;
+  return Number.isInteger(numeric) ? String(numeric) : String(numeric);
+};
+
+export const extractSearchStrengthSignals = (value: string | null | undefined): string[] => {
+  const raw = safeTrim(value);
+  if (!raw) return [];
+
+  const matches = new Set<string>();
+  for (const match of raw.matchAll(SEARCH_QUERY_STRENGTH_PATTERN)) {
+    const amount = canonicalizeSearchStrengthNumber(match[1] ?? "");
+    const unit = normalizeLookupText(match[2] ?? "");
+    if (!amount || !unit) continue;
+    matches.add(`${amount} ${unit === "ui" ? "iu" : unit}`);
+  }
+
+  return Array.from(matches);
+};
+
+export const extractSearchFormSignals = (value: string | null | undefined): string[] => {
+  const raw = safeTrim(value);
+  if (!raw) return [];
+
+  return SEARCH_QUERY_FORM_PATTERNS
+    .filter(({ pattern }) => pattern.test(raw))
+    .map(({ key }) => key);
+};
+
+const normalizeSearchIdentityTitle = (
+  value: string | null | undefined,
+  brandName: string | null | undefined,
+): string => {
+  const normalized = normalizeLookupText(value);
+  const normalizedBrand = normalizeLookupText(brandName);
+  if (!normalized || !normalizedBrand) return normalized;
+  if (normalized === normalizedBrand) return "";
+  if (normalized.startsWith(`${normalizedBrand} `)) {
+    return normalized.slice(normalizedBrand.length + 1).trim();
+  }
+  return normalized;
+};
+
+export const computeSearchQueryIdentityBonus = (
+  row: Pick<ProductSearchIndexRow, "title" | "brandName">,
+  query: string | null | undefined,
+): number => {
+  const normalizedQuery = normalizeSearchIdentityTitle(query, row.brandName);
+  const normalizedTitle = normalizeSearchIdentityTitle(row.title, row.brandName);
+  if (!normalizedQuery || !normalizedTitle) return 0;
+
+  let bonus = 0;
+
+  if (normalizedTitle === normalizedQuery) {
+    bonus += 84;
+  }
+
+  const queryStrengths = extractSearchStrengthSignals(query);
+  const rowStrengths = extractSearchStrengthSignals(row.title);
+  const rowStrengthUnits = new Set(rowStrengths.map((signal) => signal.split(" ")[1] ?? ""));
+  queryStrengths.forEach((signal) => {
+    if (rowStrengths.includes(signal)) {
+      bonus += 26;
+      return;
+    }
+
+    const unit = signal.split(" ")[1] ?? "";
+    if (unit && rowStrengthUnits.has(unit)) {
+      bonus -= 18;
+    }
+  });
+
+  const queryForms = extractSearchFormSignals(query);
+  const rowForms = new Set(extractSearchFormSignals(row.title));
+  queryForms.forEach((form) => {
+    if (rowForms.has(form)) {
+      bonus += 16;
+      return;
+    }
+
+    if (rowForms.size > 0) {
+      bonus -= 10;
+    }
+  });
+
+  return bonus;
+};
+
 const buildBrowseCacheKey = (params: SearchParams): string => {
   const category = safeTrim(params.category) ?? "All";
   const page =
@@ -519,9 +668,10 @@ export const buildColdFallbackOrClauses = (query: string | null | undefined): st
   if (!normalizedQuery) return [];
 
   const queryPlan = buildSearchQueryPlan(query);
+  const coreTerms = extractColdFallbackCoreTerms(query);
   const candidateTerms = [
     normalizedQuery,
-    ...queryPlan.requiredGroups.flatMap((group) => group),
+    ...coreTerms,
   ];
 
   if (queryPlan.requiredGroups.length === 0) {
@@ -1306,6 +1456,7 @@ const enrichSearchRow = (
   row: ProductSearchIndexRow,
   baseSearchScore: number,
   queryPlan: SearchQueryPlan | null = null,
+  rawQuery: string | null | undefined = null,
 ): EnrichedCandidate => {
   const factsStatus = deriveFactsStatus(row.ingredients);
   const typeKeys = deriveTypeKeysFromContent({
@@ -1348,10 +1499,13 @@ const enrichSearchRow = (
     bestTier: goalChoice.tier,
   });
   const queryIntentBonus = queryPlan ? computeSearchQueryIntentBonus(row, primaryTypeKey, queryPlan) : 0;
+  const queryIdentityBonus =
+    rawQuery && baseSearchScore > 0 ? computeSearchQueryIdentityBonus(row, rawQuery) : 0;
   const finalSearchScore =
     baseSearchScore +
     (goalChoice.tier !== "no_match" && baseSearchScore > 0 ? 3 : 0) +
-    queryIntentBonus;
+    queryIntentBonus +
+    queryIdentityBonus;
 
   return {
     row,
@@ -1599,12 +1753,58 @@ const fetchColdFallbackRows = async (params: SearchParams): Promise<ProductSearc
   const brandLike = toPostgrestIlikeValue(params.brand);
   const hasQuery = fallbackOrClauses.length > 0;
   const shouldUsePopularBrandBrowse = !hasQuery && !brandLike;
+  const derivedBrandLead = !brandLike ? extractColdFallbackBrandLead(params.query) : null;
+  const coreTerms = extractColdFallbackCoreTerms(params.query);
 
-  let query = supabase
-    .from("iherb_overlay_products")
-    .select(OVERLAY_SEARCH_SELECT)
-    .order("updated_at", { ascending: false })
-    .limit(hasQuery ? COLD_FALLBACK_QUERY_LIMIT : COLD_FALLBACK_BROWSE_LIMIT);
+  const buildBaseQuery = (limit: number) =>
+    supabase
+      .from("iherb_overlay_products")
+      .select(OVERLAY_SEARCH_SELECT)
+      .order("updated_at", { ascending: false })
+      .limit(limit);
+
+  const mergedRows = new Map<string, OverlaySearchTableRow>();
+  const mergeBatch = (batch: OverlaySearchTableRow[] | null | undefined) => {
+    for (const row of batch ?? []) {
+      const key = safeTrim(row.product_id) ?? safeTrim(row.barcode_gtin14) ?? safeTrim(row.upc_code) ?? null;
+      if (!key || mergedRows.has(key)) continue;
+      mergedRows.set(key, row);
+    }
+  };
+
+  const executeQuery = async (
+    builder: ReturnType<typeof buildBaseQuery>,
+  ): Promise<OverlaySearchTableRow[]> => {
+    const { data, error } = await withRetry(() => builder, {
+      retries: 2,
+      baseDelayMs: 120,
+      maxDelayMs: 800,
+    });
+
+    if (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      throw new Error(`[product-search] cold fallback read failed: ${message}`);
+    }
+
+    return Array.isArray(data) ? (data as OverlaySearchTableRow[]) : [];
+  };
+
+  if (hasQuery && (brandLike || derivedBrandLead || coreTerms.length > 0)) {
+    let focusedQuery = buildBaseQuery(Math.min(80, COLD_FALLBACK_QUERY_LIMIT));
+    const focusedBrand = brandLike ?? derivedBrandLead;
+
+    if (focusedBrand) {
+      focusedQuery = focusedQuery.ilike("brand_name", `%${focusedBrand}%`);
+    }
+
+    for (const term of coreTerms.slice(0, 3)) {
+      focusedQuery = focusedQuery.ilike("title", `%${term}%`);
+    }
+
+    mergeBatch(await executeQuery(focusedQuery));
+  }
+
+  let query = buildBaseQuery(hasQuery ? COLD_FALLBACK_QUERY_LIMIT : COLD_FALLBACK_BROWSE_LIMIT);
 
   if (brandLike) {
     query = query.ilike("brand_name", `%${brandLike}%`);
@@ -1616,18 +1816,9 @@ const fetchColdFallbackRows = async (params: SearchParams): Promise<ProductSearc
     query = query.in("brand_name", [...POPULAR_FALLBACK_BRANDS]);
   }
 
-  const { data, error } = await withRetry(() => query, {
-    retries: 2,
-    baseDelayMs: 120,
-    maxDelayMs: 800,
-  });
+  mergeBatch(await executeQuery(query));
 
-  if (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    throw new Error(`[product-search] cold fallback read failed: ${message}`);
-  }
-
-  return buildFallbackRows(Array.isArray(data) ? (data as OverlaySearchTableRow[]) : []);
+  return buildFallbackRows(Array.from(mergedRows.values()));
 };
 
 const buildSearchResponseFromRows = (
@@ -1668,7 +1859,9 @@ const buildSearchResponseFromRows = (
 
   const shortlistCap = hasQuery ? MAX_PRELIMINARY_CANDIDATES : 1200;
   const shortlisted = preliminary.slice(0, shortlistCap);
-  let enriched = shortlisted.map((entry) => enrichSearchRow(entry.row, entry.baseSearchScore, queryPlan));
+  let enriched = shortlisted.map((entry) =>
+    enrichSearchRow(entry.row, entry.baseSearchScore, queryPlan, params.query),
+  );
 
   if (categoryTypeKey) {
     enriched = enriched.filter((entry) => entry.typeKey === categoryTypeKey);
