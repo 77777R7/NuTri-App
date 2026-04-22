@@ -112,13 +112,20 @@ const clampRetryDelay = (value: number | null | undefined) => {
 const resolveDeepDiveAsyncState = (payload: SearchProductDetailResponse | null) => {
   const ingredientPending = payload?.deepDiveAsync?.ingredientOverview?.backgroundRefreshPending === true;
   const scientificPending = payload?.deepDiveAsync?.scientificBackground?.backgroundRefreshPending === true;
+  const ingredientSource = normalizeText(payload?.ingredientOverviewSource).toLowerCase();
+  const scientificSource = normalizeText(payload?.scientificBackgroundSource).toLowerCase();
+  const scientificMode = normalizeText(payload?.scientificBackground?.mode).toLowerCase();
   const retryAfterMs = Math.min(
     clampRetryDelay(payload?.deepDiveAsync?.ingredientOverview?.recommendedRetryAfterMs),
     clampRetryDelay(payload?.deepDiveAsync?.scientificBackground?.recommendedRetryAfterMs),
   );
+  const shouldForceRevalidate =
+    (!ingredientPending && ingredientSource === 'fallback')
+    || (!scientificPending && scientificSource === 'fallback' && scientificMode === 'research_mode');
   return {
     hasPending: ingredientPending || scientificPending,
     retryAfterMs,
+    shouldForceRevalidate,
   };
 };
 
@@ -147,6 +154,7 @@ const SearchDetailPage = () => {
   const pollStartedAtRef = React.useRef<number | null>(null);
   const pollInFlightRef = React.useRef(false);
   const pollTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pollForcedRevalidateRef = React.useRef(false);
   const tokens = useScreenTokens(NAV_HEIGHT);
   const { bleedStyle, contentStyle } = useFullBleed(tokens.pageX);
 
@@ -154,6 +162,7 @@ const SearchDetailPage = () => {
     pollAttemptRef.current = 0;
     pollStartedAtRef.current = null;
     pollInFlightRef.current = false;
+    pollForcedRevalidateRef.current = false;
     if (pollTimerRef.current) {
       clearTimeout(pollTimerRef.current);
       pollTimerRef.current = null;
@@ -203,7 +212,8 @@ const SearchDetailPage = () => {
   React.useEffect(() => {
     let cancelled = false;
     if (!productId || !payload) return;
-    if (!deepDiveAsyncState.hasPending) {
+    const shouldForceRevalidate = deepDiveAsyncState.shouldForceRevalidate && !pollForcedRevalidateRef.current;
+    if (!deepDiveAsyncState.hasPending && !shouldForceRevalidate) {
       resetPollState();
       return;
     }
@@ -224,9 +234,15 @@ const SearchDetailPage = () => {
       if (pollInFlightRef.current) return;
       pollInFlightRef.current = true;
       pollAttemptRef.current += 1;
+      const revalidateFallback = !deepDiveAsyncState.hasPending && shouldForceRevalidate;
+      if (revalidateFallback) {
+        pollForcedRevalidateRef.current = true;
+      }
       void (async () => {
         try {
-          const response = await apiClient.searchProductDetail(productId, { revalidateFallback: true });
+          const response = revalidateFallback
+            ? await apiClient.searchProductDetail(productId, { revalidateFallback: true })
+            : await apiClient.searchProductDetail(productId);
           if (cancelled) return;
           setPayload(resolveResponsePayload(response));
         } catch {
@@ -246,7 +262,15 @@ const SearchDetailPage = () => {
         pollTimerRef.current = null;
       }
     };
-  }, [productId, payload, deepDiveAsyncState.hasPending, deepDiveAsyncState.retryAfterMs, pollRetryTick, resetPollState]);
+  }, [
+    productId,
+    payload,
+    deepDiveAsyncState.hasPending,
+    deepDiveAsyncState.retryAfterMs,
+    deepDiveAsyncState.shouldForceRevalidate,
+    pollRetryTick,
+    resetPollState,
+  ]);
 
   const product = payload?.product;
   const title = product?.name ?? seedName;

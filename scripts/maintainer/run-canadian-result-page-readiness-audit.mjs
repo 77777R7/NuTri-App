@@ -20,6 +20,14 @@ const getArg = (name, fallback = null) => {
   if (index === -1 || index + 1 >= args.length) return fallback;
   return args[index + 1];
 };
+const parseBooleanArg = (name, fallback) => {
+  const raw = getArg(name, null);
+  if (raw == null) return fallback;
+  const normalized = String(raw).trim().toLowerCase();
+  if (["1", "true", "yes", "y", "on"].includes(normalized)) return true;
+  if (["0", "false", "no", "n", "off"].includes(normalized)) return false;
+  return fallback;
+};
 
 const API_BASE_URL = getArg(
   "api-base-url",
@@ -28,11 +36,28 @@ const API_BASE_URL = getArg(
 const OUT_DIR = getArg("out-dir", "output/canadian_result_page_readiness");
 const CONCURRENCY = Math.max(1, Number(getArg("concurrency", "10")) || 10);
 const LIMIT = Math.max(1, Number(getArg("limit", "5000")) || 5000);
+const WARM_MAX_POLLS = Math.max(1, Number(getArg("warm-max-polls", "8")) || 8);
+const WARM_MAX_WAIT_MS = Math.max(1_000, Number(getArg("warm-max-wait-ms", "20000")) || 20_000);
+const WARM_RETRY_FLOOR_MS = Math.max(250, Number(getArg("warm-retry-floor-ms", "1500")) || 1_500);
+const WARM_REVALIDATE_ONCE = parseBooleanArg("warm-revalidate-once", true);
 
 const normalizeText = (value) =>
   String(value ?? "")
     .replace(/\s+/g, " ")
     .trim();
+
+const extractResponseData = (payload) =>
+  payload && typeof payload === "object" && payload.data && typeof payload.data === "object"
+    ? payload.data
+    : payload;
+
+const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const clampRetryDelay = (value) => {
+  const num = Number(value);
+  if (!Number.isFinite(num) || num <= 0) return WARM_RETRY_FLOOR_MS;
+  return Math.max(WARM_RETRY_FLOOR_MS, Math.min(8_000, Math.round(num)));
+};
 
 const readBackendEnv = async () => {
   const envPath = path.resolve(ROOT_DIR, "backend", ".env");
@@ -78,6 +103,12 @@ const fetchJson = async (url) => {
 };
 
 const evaluateDetailPayload = (data) => {
+  const ingredientPending = data?.deepDiveAsync?.ingredientOverview?.backgroundRefreshPending === true;
+  const scientificPending = data?.deepDiveAsync?.scientificBackground?.backgroundRefreshPending === true;
+  const retryAfterMs = Math.max(
+    clampRetryDelay(data?.deepDiveAsync?.ingredientOverview?.recommendedRetryAfterMs),
+    clampRetryDelay(data?.deepDiveAsync?.scientificBackground?.recommendedRetryAfterMs),
+  );
   const hasNutriScore = Number.isFinite(Number(data?.nutriScoreCardV2?.overallScore))
     && normalizeText(data?.nutriScoreCardV2?.overallBand).length > 0;
   const hasPersonalizedInsight = normalizeText(data?.personalizedResultLane?.personalInsight?.summary).length > 0;
@@ -108,6 +139,18 @@ const evaluateDetailPayload = (data) => {
     sources: {
       ingredientOverview: data?.ingredientOverviewSource ?? null,
       scientificBackground: data?.scientificBackgroundSource ?? null,
+    },
+    deepDiveAsync: {
+      ingredientPending,
+      scientificPending,
+      hasPending: ingredientPending || scientificPending,
+      retryAfterMs,
+      shouldForceRevalidate:
+        !(ingredientPending || scientificPending)
+        && (
+          normalizeText(data?.ingredientOverviewSource) !== "api"
+          || normalizeText(data?.scientificBackgroundSource) !== "api"
+        ),
     },
   };
 };
@@ -162,8 +205,15 @@ const buildRows = async () => {
 };
 
 const evaluateDetailRow = async (row) => {
-  const url = `${API_BASE_URL.replace(/\/+$/, "")}/api/search/product-detail?productId=${encodeURIComponent(row.productId)}`;
-  const coldResponse = await fetchJson(url);
+  const baseUrl = `${API_BASE_URL.replace(/\/+$/, "")}/api/search/product-detail?productId=${encodeURIComponent(row.productId)}`;
+  const fetchDetail = ({ revalidateFallback = false } = {}) =>
+    fetchJson(
+      revalidateFallback
+        ? `${baseUrl}&revalidateFallback=1`
+        : baseUrl,
+    );
+
+  const coldResponse = await fetchDetail();
   if (!coldResponse.ok) {
     return {
       ...row,
@@ -177,18 +227,55 @@ const evaluateDetailRow = async (row) => {
       warm: null,
     };
   }
-  const coldPayload = coldResponse.json;
-  const coldData = coldPayload && typeof coldPayload === "object" && coldPayload.data && typeof coldPayload.data === "object"
-    ? coldPayload.data
-    : coldPayload;
+  const coldData = extractResponseData(coldResponse.json);
   const cold = evaluateDetailPayload(coldData);
 
-  const warmResponse = await fetchJson(url);
-  const warmPayload = warmResponse.json;
-  const warmData = warmPayload && typeof warmPayload === "object" && warmPayload.data && typeof warmPayload.data === "object"
-    ? warmPayload.data
-    : warmPayload;
-  const warm = warmResponse.ok ? evaluateDetailPayload(warmData) : null;
+  let warmResponse = null;
+  let warm = null;
+  let warmAttempts = 0;
+  let warmForcedRevalidate = false;
+  let warmPendingExhausted = false;
+  const warmStartedAt = Date.now();
+  let warmState = cold.deepDiveAsync;
+
+  while (true) {
+    const shouldForceRevalidate =
+      WARM_REVALIDATE_ONCE
+      && !warmForcedRevalidate
+      && !warmState.hasPending
+      && warmState.shouldForceRevalidate;
+    const shouldPoll = warmState.hasPending || shouldForceRevalidate || warmAttempts === 0;
+    if (!shouldPoll) break;
+    if (warmAttempts >= WARM_MAX_POLLS) {
+      warmPendingExhausted = warmState.hasPending;
+      break;
+    }
+    const elapsedMs = Date.now() - warmStartedAt;
+    if (elapsedMs >= WARM_MAX_WAIT_MS) {
+      warmPendingExhausted = warmState.hasPending;
+      break;
+    }
+
+    const delayMs = warmAttempts === 0 ? 0 : warmState.retryAfterMs;
+    if (delayMs > 0) {
+      const remainingMs = WARM_MAX_WAIT_MS - (Date.now() - warmStartedAt);
+      if (remainingMs <= 0) {
+        warmPendingExhausted = warmState.hasPending;
+        break;
+      }
+      await wait(Math.min(delayMs, remainingMs));
+    }
+
+    warmResponse = await fetchDetail({ revalidateFallback: shouldForceRevalidate });
+    warmAttempts += 1;
+    if (shouldForceRevalidate) warmForcedRevalidate = true;
+    if (!warmResponse.ok) break;
+    const warmData = extractResponseData(warmResponse.json);
+    warm = evaluateDetailPayload(warmData);
+    warmState = warm.deepDiveAsync;
+  }
+
+  const warmFinal = warm ?? cold;
 
   const failureReasons = [];
   if (!cold.hasNutriScore) failureReasons.push("nutri_score_missing");
@@ -198,13 +285,17 @@ const evaluateDetailRow = async (row) => {
   if (!cold.hasScientificBackground) failureReasons.push("scientific_background_missing");
   if (cold.ingredientOverviewGeneric) failureReasons.push("ingredient_overview_generic");
   if (cold.scientificBackgroundGeneric) failureReasons.push("scientific_background_generic");
-  if (!warmResponse.ok) failureReasons.push(`warm_detail_http_${warmResponse.status}`);
+  if (warmPendingExhausted) failureReasons.push("warm_pending_exhausted");
+  if (warmResponse && !warmResponse.ok) failureReasons.push(`warm_detail_http_${warmResponse.status}`);
 
   return {
     ...row,
     status: failureReasons.length === 0 ? "pass" : "fail",
     reason: failureReasons[0] ?? "ready",
     failureReasons,
+    warmAttempts,
+    warmForcedRevalidate,
+    warmPendingExhausted,
     httpStatus: coldResponse.status,
     hasNutriScore: cold.hasNutriScore,
     hasPersonalizedInsight: cold.hasPersonalizedInsight,
@@ -223,13 +314,17 @@ const evaluateDetailRow = async (row) => {
       sources: cold.sources,
       ingredientOverviewFallbackReason: cold.ingredientOverviewFallbackReason,
       scientificBackgroundFallbackReason: cold.scientificBackgroundFallbackReason,
+      deepDiveAsync: cold.deepDiveAsync,
     },
     warm: {
-      httpStatus: warmResponse.status,
-      latencyMs: warmResponse.latencyMs ?? null,
-      sources: warm?.sources ?? null,
-      ingredientOverviewFallbackReason: warm?.ingredientOverviewFallbackReason ?? null,
-      scientificBackgroundFallbackReason: warm?.scientificBackgroundFallbackReason ?? null,
+      httpStatus: warmResponse?.status ?? coldResponse.status,
+      latencyMs: warmResponse?.latencyMs ?? null,
+      sources: warmFinal.sources,
+      ingredientOverviewFallbackReason: warmFinal.ingredientOverviewFallbackReason,
+      scientificBackgroundFallbackReason: warmFinal.scientificBackgroundFallbackReason,
+      deepDiveAsync: warmFinal.deepDiveAsync,
+      forcedRevalidate: warmForcedRevalidate,
+      attempts: warmAttempts,
     },
   };
 };
@@ -252,6 +347,23 @@ const buildSummary = (rows) => {
   const count = (key) => rows.filter((row) => row[key] === true).length;
   const coldLatencies = rows.map((row) => row?.cold?.latencyMs).filter((value) => Number.isFinite(Number(value)));
   const warmLatencies = rows.map((row) => row?.warm?.latencyMs).filter((value) => Number.isFinite(Number(value)));
+  const warmAttempts = rows.map((row) => row?.warmAttempts).filter((value) => Number.isFinite(Number(value)));
+  const warmPendingExhaustedCount = rows.filter((row) => row?.warmPendingExhausted === true).length;
+  const warmForcedRevalidateCount = rows.filter((row) => row?.warmForcedRevalidate === true).length;
+  const ingredientOverviewColdApiHits = rows.filter(
+    (row) => normalizeText(row?.cold?.sources?.ingredientOverview) === "api",
+  ).length;
+  const ingredientOverviewWarmApiHits = rows.filter(
+    (row) => normalizeText(row?.warm?.sources?.ingredientOverview) === "api",
+  ).length;
+  const scientificBackgroundColdApiHits = rows.filter(
+    (row) => normalizeText(row?.cold?.sources?.scientificBackground) === "api",
+  ).length;
+  const scientificBackgroundWarmApiHits = rows.filter(
+    (row) => normalizeText(row?.warm?.sources?.scientificBackground) === "api",
+  ).length;
+  const ingredientOverviewWarmApiHitRate = pct(ingredientOverviewWarmApiHits);
+  const scientificBackgroundWarmApiHitRate = pct(scientificBackgroundWarmApiHits);
   const sourceDistributionForSurface = (surface, metric) =>
     Object.entries(
       rows.reduce((acc, row) => {
@@ -302,15 +414,34 @@ const buildSummary = (rows) => {
       coldP95Ms: percentile(coldLatencies, 95),
       warmP95Ms: percentile(warmLatencies, 95),
     },
+    warmPolling: {
+      maxPolls: WARM_MAX_POLLS,
+      maxWaitMs: WARM_MAX_WAIT_MS,
+      retryFloorMs: WARM_RETRY_FLOOR_MS,
+      revalidateOnce: WARM_REVALIDATE_ONCE,
+      attemptsP50: percentile(warmAttempts, 50),
+      attemptsP95: percentile(warmAttempts, 95),
+      attemptsMax: warmAttempts.length > 0 ? Math.max(...warmAttempts.map((value) => Number(value))) : null,
+      pendingExhaustedRows: warmPendingExhaustedCount,
+      pendingExhaustedRate: pct(warmPendingExhaustedCount),
+      forcedRevalidateRows: warmForcedRevalidateCount,
+      forcedRevalidateRate: pct(warmForcedRevalidateCount),
+    },
     apiHitRate: {
       ingredientOverview: {
-        cold: pct(rows.filter((row) => normalizeText(row?.cold?.sources?.ingredientOverview) === "api").length),
-        warm: pct(rows.filter((row) => normalizeText(row?.warm?.sources?.ingredientOverview) === "api").length),
+        cold: pct(ingredientOverviewColdApiHits),
+        warm: ingredientOverviewWarmApiHitRate,
       },
       scientificBackground: {
-        cold: pct(rows.filter((row) => normalizeText(row?.cold?.sources?.scientificBackground) === "api").length),
-        warm: pct(rows.filter((row) => normalizeText(row?.warm?.sources?.scientificBackground) === "api").length),
+        cold: pct(scientificBackgroundColdApiHits),
+        warm: scientificBackgroundWarmApiHitRate,
       },
+    },
+    targetGate: {
+      ingredientOverviewWarmMin: 70,
+      scientificBackgroundWarmMin: 60,
+      ingredientOverviewWarmMet: ingredientOverviewWarmApiHitRate >= 70,
+      scientificBackgroundWarmMet: scientificBackgroundWarmApiHitRate >= 60,
     },
     failureBuckets: Object.entries(
       rows
@@ -356,6 +487,12 @@ const main = async () => {
     generatedAt,
     apiBaseUrl: API_BASE_URL,
     concurrency: CONCURRENCY,
+    warmPolling: {
+      maxPolls: WARM_MAX_POLLS,
+      maxWaitMs: WARM_MAX_WAIT_MS,
+      retryFloorMs: WARM_RETRY_FLOOR_MS,
+      revalidateOnce: WARM_REVALIDATE_ONCE,
+    },
     summary,
     rows: evaluatedRows,
   };
@@ -392,6 +529,18 @@ const main = async () => {
     `- warm p95 latency: ${summary.latency.warmP95Ms ?? "n/a"} ms`,
     `- ingredientOverview api hit (cold/warm): ${summary.apiHitRate.ingredientOverview.cold}% / ${summary.apiHitRate.ingredientOverview.warm}%`,
     `- scientificBackground api hit (cold/warm): ${summary.apiHitRate.scientificBackground.cold}% / ${summary.apiHitRate.scientificBackground.warm}%`,
+    `- ingredientOverview warm target (>=${summary.targetGate.ingredientOverviewWarmMin}%): ${summary.targetGate.ingredientOverviewWarmMet ? "met" : "not_met"}`,
+    `- scientificBackground warm target (>=${summary.targetGate.scientificBackgroundWarmMin}%): ${summary.targetGate.scientificBackgroundWarmMet ? "met" : "not_met"}`,
+    "",
+    "## Warm Polling",
+    "",
+    `- maxPolls: ${summary.warmPolling.maxPolls}`,
+    `- maxWaitMs: ${summary.warmPolling.maxWaitMs}`,
+    `- retryFloorMs: ${summary.warmPolling.retryFloorMs}`,
+    `- revalidateOnce: ${summary.warmPolling.revalidateOnce}`,
+    `- attempts p50/p95/max: ${summary.warmPolling.attemptsP50 ?? "n/a"} / ${summary.warmPolling.attemptsP95 ?? "n/a"} / ${summary.warmPolling.attemptsMax ?? "n/a"}`,
+    `- pending exhausted rows: ${summary.warmPolling.pendingExhaustedRows} (${summary.warmPolling.pendingExhaustedRate}%)`,
+    `- forced revalidate rows: ${summary.warmPolling.forcedRevalidateRows} (${summary.warmPolling.forcedRevalidateRate}%)`,
     "",
     "## Generic Copy",
     "",

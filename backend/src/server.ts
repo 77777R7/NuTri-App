@@ -569,10 +569,10 @@ const SEARCH_DETAIL_DEEP_DIVE_RETRY_AFTER_MS = Number(
   process.env.SEARCH_DETAIL_DEEP_DIVE_RETRY_AFTER_MS ?? 1_500,
 );
 const SEARCH_DETAIL_INGREDIENT_BACKGROUND_TIMEOUT_MS = Number(
-  process.env.SEARCH_DETAIL_INGREDIENT_BACKGROUND_TIMEOUT_MS ?? 8_000,
+  process.env.SEARCH_DETAIL_INGREDIENT_BACKGROUND_TIMEOUT_MS ?? 24_000,
 );
 const SEARCH_DETAIL_SCIENTIFIC_BACKGROUND_TIMEOUT_MS = Number(
-  process.env.SEARCH_DETAIL_SCIENTIFIC_BACKGROUND_TIMEOUT_MS ?? 10_000,
+  process.env.SEARCH_DETAIL_SCIENTIFIC_BACKGROUND_TIMEOUT_MS ?? 60_000,
 );
 const SEARCH_DETAIL_BACKGROUND_MAX_RETRIES = Number(
   process.env.SEARCH_DETAIL_BACKGROUND_MAX_RETRIES ?? 1,
@@ -9968,15 +9968,14 @@ app.get("/api/search/product-detail", async (req: Request, res: Response) => {
       scientificBackgroundPlan.mode,
       SCIENTIFIC_BACKGROUND_PROMPT_VERSION,
     ].join("|");
-    const scientificBackgroundLlmFn =
-      deepseekKey && scientificBackgroundExecutionProfile.preferLiveWriter
-        ? buildDeepseekJsonLlmFn({
-          deepseekKey,
-          deepseekModel,
-          timeoutMs: SEARCH_DETAIL_SCIENTIFIC_BACKGROUND_TIMEOUT_MS,
-          maxTokens: scientificBackgroundExecutionProfile.maxTokens,
-        })
-        : null;
+    const scientificBackgroundLlmFn = deepseekKey
+      ? buildDeepseekJsonLlmFn({
+        deepseekKey,
+        deepseekModel,
+        timeoutMs: SEARCH_DETAIL_SCIENTIFIC_BACKGROUND_TIMEOUT_MS,
+        maxTokens: scientificBackgroundExecutionProfile.maxTokens,
+      })
+      : null;
     const scientificBackgroundResult = await searchDetailScientificRuntime.resolve({
       cacheKey: scientificCacheKey,
       revalidateFallback,
