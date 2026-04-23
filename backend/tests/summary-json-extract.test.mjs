@@ -12,7 +12,8 @@ test("extractJsonObjectLoose parses direct JSON", () => {
 });
 
 test("extractJsonObjectLoose parses JSON with leading text via brace extraction", () => {
-  const raw = 'Here is your payload:\n{"tldr":"ok","highlights":[],"caveats":[]}';
+  const raw =
+    'Here is your payload:\n{"tldr":"ok","highlights":[],"caveats":[]}';
   const result = extractJsonObjectLoose(raw);
   assert.equal(result.ok, true);
   if (!result.ok) return;
@@ -35,3 +36,10 @@ test("extractJsonObjectLoose repairs trailing commas with safe_repair", () => {
   assert.equal(result.parsePath, "safe_repair");
 });
 
+test("extractJsonObjectLoose rescues loose json with single quotes and unquoted keys", () => {
+  const raw = "Here is your payload:\n{tldr:'ok',highlights:['x'],caveats:[]}";
+  const result = extractJsonObjectLoose(raw);
+  assert.equal(result.ok, true);
+  if (!result.ok) return;
+  assert.equal(result.parsePath, "safe_repair");
+});

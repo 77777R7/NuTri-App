@@ -1,13 +1,15 @@
-import { z } from 'zod';
+import { z } from "zod";
 
-import type { LlmVerifierReasonCode } from './reasonCodes.js';
+import type { LlmVerifierReasonCode } from "./reasonCodes.js";
 
 const nonEmptyString = z.string().trim().min(1);
-const viewModeSchema = z.literal('details').optional();
+const viewModeSchema = z.literal("details").optional();
 
-const sourceTagSchema = z.enum(['Facts', 'Dataset', 'KB', 'ODS', 'ReviewedKB']);
-const safeScienceSignalSourceSchema = z.enum(['subset', 'fallback', 'none']);
-const safeScienceFallbackTypeSchema = z.enum(['best_for', 'comparison']).nullable();
+const sourceTagSchema = z.enum(["Facts", "Dataset", "KB", "ODS", "ReviewedKB"]);
+const safeScienceSignalSourceSchema = z.enum(["subset", "fallback", "none"]);
+const safeScienceFallbackTypeSchema = z
+  .enum(["best_for", "comparison"])
+  .nullable();
 
 const legacyPacketSchema = z
   .object({
@@ -70,11 +72,13 @@ const v11PacketSchema = z
       .optional(),
     insight: z
       .object({
-        rbfBand: z.enum(['high', 'normal', 'low', 'unknown']).optional(),
+        rbfBand: z.enum(["high", "normal", "low", "unknown"]).optional(),
         rbfFactor: z.number().finite().nullable().optional(),
-        confidenceTier: z.enum(['high', 'medium', 'low', 'none']).optional(),
+        confidenceTier: z.enum(["high", "medium", "low", "none"]).optional(),
         whyBullets: z.array(nonEmptyString).max(8).optional(),
-        doseStatus: z.enum(['below_typical', 'within_typical', 'above_typical', 'unknown']).optional(),
+        doseStatus: z
+          .enum(["below_typical", "within_typical", "above_typical", "unknown"])
+          .optional(),
         dailyAmount: z.number().finite().nullable().optional(),
         dailyUnit: z.string().trim().min(1).nullable().optional(),
       })
@@ -108,8 +112,8 @@ const dashboardCompatPacketSchema = z
       .object({
         formLabel: z.string().trim().min(1).nullable().optional(),
         effectiveFactor: z.number().finite().nullable().optional(),
-        rbfBand: z.enum(['high', 'normal', 'low', 'unknown']).optional(),
-        confidenceTier: z.enum(['high', 'medium', 'low', 'none']).optional(),
+        rbfBand: z.enum(["high", "normal", "low", "unknown"]).optional(),
+        confidenceTier: z.enum(["high", "medium", "low", "none"]).optional(),
         why: z.string().trim().min(1).nullable().optional(),
         doseSignal: z
           .object({
@@ -124,7 +128,10 @@ const dashboardCompatPacketSchema = z
       .strict()
       .nullable()
       .optional(),
-    runtimeNotes: z.record(z.string(), z.array(nonEmptyString)).nullable().optional(),
+    runtimeNotes: z
+      .record(z.string(), z.array(nonEmptyString))
+      .nullable()
+      .optional(),
     safeScienceBullets: z.array(nonEmptyString).max(8).optional(),
     safeScienceBeforeYouBuy: z.string().trim().min(1).nullable().optional(),
     safeScienceFormImpact: z.string().trim().min(1).nullable().optional(),
@@ -136,7 +143,11 @@ const dashboardCompatPacketSchema = z
   })
   .strict();
 
-const packetSchema = z.union([legacyPacketSchema, v11PacketSchema, dashboardCompatPacketSchema]);
+const packetSchema = z.union([
+  legacyPacketSchema,
+  v11PacketSchema,
+  dashboardCompatPacketSchema,
+]);
 type Packet = z.infer<typeof packetSchema>;
 type LegacyPacket = z.infer<typeof legacyPacketSchema>;
 type V11Packet = z.infer<typeof v11PacketSchema>;
@@ -154,7 +165,7 @@ export type IngredientSummaryResponse = {
     reviewedKB: boolean;
     ods: boolean;
   };
-  sourcesUsed: Array<'Facts' | 'Dataset' | 'KB' | 'ODS' | 'ReviewedKB'>;
+  sourcesUsed: Array<"Facts" | "Dataset" | "KB" | "ODS" | "ReviewedKB">;
   fallbackUsed: boolean;
   guardApplied: boolean;
   summaryVersion: string;
@@ -163,7 +174,7 @@ export type IngredientSummaryResponse = {
 
 const asSentence = (value: string): string => {
   const trimmed = value.trim();
-  if (!trimmed) return '';
+  if (!trimmed) return "";
   return /[.!?]$/.test(trimmed) ? trimmed : `${trimmed}.`;
 };
 
@@ -187,9 +198,11 @@ const disallowedMedicalClaimPatterns: RegExp[] = [
   /\bclinical proof\b/i,
   /\bproven to\b/i,
 ];
-const technicalLeakPattern = /\brbf\b|match score|dataset signal|confidence tier|reason code|within_typical|below_typical|above_typical|reviewed[_\s]?kb|verified dataset|kb:|needs_capture|needs_edit|review_status/i;
-const fluffPattern = /\bnormal function\b|\bday-to-day wellness\b|\bwellness outcomes?\b/i;
-const SUMMARY_VERSION_DETAILS = 'v1.6.16-details-1';
+const technicalLeakPattern =
+  /\brbf\b|match score|dataset signal|confidence tier|reason code|within_typical|below_typical|above_typical|reviewed[_\s]?kb|verified dataset|kb:|needs_capture|needs_edit|review_status/i;
+const fluffPattern =
+  /\bnormal function\b|\bday-to-day wellness\b|\bwellness outcomes?\b/i;
+const SUMMARY_VERSION_DETAILS = "v1.6.16-details-1";
 
 const containsDisallowed = (text: string): boolean => {
   return disallowedMedicalClaimPatterns.some((pattern) => pattern.test(text));
@@ -204,28 +217,34 @@ const splitSentences = (value: string): string[] =>
 const normalizeThreeSentenceSummary = (value: string): string | null => {
   const sentences = splitSentences(value);
   if (sentences.length < 3) return null;
-  return sentences.slice(0, 3).map((line) => asSentence(line)).join(' ');
+  return sentences
+    .slice(0, 3)
+    .map((line) => asSentence(line))
+    .join(" ");
 };
 
 const isLegacyPacket = (input: Packet): input is LegacyPacket =>
-  'ingredient' in input;
+  "ingredient" in input;
 
 const isV11Packet = (input: Packet): input is V11Packet =>
-  'facts' in input || 'insight' in input || 'reviewedKbBullets' in input || 'odsBullets' in input;
+  "facts" in input ||
+  "insight" in input ||
+  "reviewedKbBullets" in input ||
+  "odsBullets" in input;
 
 const normalizeCompatPacket = (input: Packet) => {
   if (isLegacyPacket(input)) {
     return {
-      viewMode: input.viewMode ?? 'details',
+      viewMode: input.viewMode ?? "details",
       ingredientName: input.ingredient.name,
       amount: input.ingredient.amount ?? null,
       unit: input.ingredient.unit ?? null,
       formText: input.ingredient.form ?? null,
-      rbfBand: 'unknown' as const,
+      rbfBand: "unknown" as const,
       rbfFactor: null as number | null,
-      confidenceTier: 'none' as const,
+      confidenceTier: "none" as const,
       whyBullets: input.productSpecificInsights.map((row) => row.text),
-      doseStatus: 'unknown' as const,
+      doseStatus: "unknown" as const,
       dailyAmount: null as number | null,
       dailyUnit: null as string | null,
       reviewedKbBullets: input.generalBackground.map((row) => row.text),
@@ -233,8 +252,8 @@ const normalizeCompatPacket = (input: Packet) => {
       safeScienceBullets: [],
       safeScienceBeforeYouBuy: null as string | null,
       safeScienceFormImpact: null as string | null,
-      safeScienceSignalSource: 'none' as const,
-      safeScienceFallbackType: null as 'best_for' | 'comparison' | null,
+      safeScienceSignalSource: "none" as const,
+      safeScienceFallbackType: null as "best_for" | "comparison" | null,
       directionsText: null as string | null,
       supportBullets: [] as string[],
       missingHighImpact: [] as string[],
@@ -242,23 +261,23 @@ const normalizeCompatPacket = (input: Packet) => {
         facts: true,
         dataset: input.productSpecificInsights.length > 0,
         reviewedKB: input.generalBackground.length > 0,
-        ods: input.generalBackground.some((row) => row.source === 'ODS'),
+        ods: input.generalBackground.some((row) => row.source === "ODS"),
       },
     };
   }
 
   if (isV11Packet(input)) {
     return {
-      viewMode: input.viewMode ?? 'details',
+      viewMode: input.viewMode ?? "details",
       ingredientName: input.ingredientName,
       amount: input.facts?.amount ?? null,
       unit: input.facts?.unit ?? null,
       formText: input.facts?.formText ?? null,
-      rbfBand: input.insight?.rbfBand ?? 'unknown',
+      rbfBand: input.insight?.rbfBand ?? "unknown",
       rbfFactor: input.insight?.rbfFactor ?? null,
-      confidenceTier: input.insight?.confidenceTier ?? 'none',
+      confidenceTier: input.insight?.confidenceTier ?? "none",
       whyBullets: input.insight?.whyBullets ?? [],
-      doseStatus: input.insight?.doseStatus ?? 'unknown',
+      doseStatus: input.insight?.doseStatus ?? "unknown",
       dailyAmount: input.insight?.dailyAmount ?? null,
       dailyUnit: input.insight?.dailyUnit ?? null,
       reviewedKbBullets: input.reviewedKbBullets ?? [],
@@ -266,7 +285,7 @@ const normalizeCompatPacket = (input: Packet) => {
       safeScienceBullets: input.safeScienceBullets ?? [],
       safeScienceBeforeYouBuy: input.safeScienceBeforeYouBuy ?? null,
       safeScienceFormImpact: input.safeScienceFormImpact ?? null,
-      safeScienceSignalSource: input.safeScienceSignalSource ?? 'none',
+      safeScienceSignalSource: input.safeScienceSignalSource ?? "none",
       safeScienceFallbackType: input.safeScienceFallbackType ?? null,
       directionsText: input.directionsText ?? null,
       supportBullets: input.supportBullets ?? [],
@@ -283,16 +302,19 @@ const normalizeCompatPacket = (input: Packet) => {
   const compatInput = input as DashboardCompatPacket;
   const runtimeBullets = Object.values(compatInput.runtimeNotes ?? {}).flat();
   return {
-    viewMode: compatInput.viewMode ?? 'details',
+    viewMode: compatInput.viewMode ?? "details",
     ingredientName: compatInput.ingredientName,
     amount: null,
     unit: null,
     formText: compatInput.productSignals?.formLabel ?? null,
-    rbfBand: compatInput.productSignals?.rbfBand ?? 'unknown',
+    rbfBand: compatInput.productSignals?.rbfBand ?? "unknown",
     rbfFactor: compatInput.productSignals?.effectiveFactor ?? null,
-    confidenceTier: compatInput.productSignals?.confidenceTier ?? 'none',
-    whyBullets: [compatInput.productSignals?.why].filter((v): v is string => Boolean(v && v.trim())),
-    doseStatus: (compatInput.productSignals?.doseSignal?.status as any) ?? 'unknown',
+    confidenceTier: compatInput.productSignals?.confidenceTier ?? "none",
+    whyBullets: [compatInput.productSignals?.why].filter((v): v is string =>
+      Boolean(v && v.trim()),
+    ),
+    doseStatus:
+      (compatInput.productSignals?.doseSignal?.status as any) ?? "unknown",
     dailyAmount: compatInput.productSignals?.doseSignal?.dailyAmount ?? null,
     dailyUnit: compatInput.productSignals?.doseSignal?.unit ?? null,
     reviewedKbBullets: runtimeBullets,
@@ -300,7 +322,7 @@ const normalizeCompatPacket = (input: Packet) => {
     safeScienceBullets: compatInput.safeScienceBullets ?? [],
     safeScienceBeforeYouBuy: compatInput.safeScienceBeforeYouBuy ?? null,
     safeScienceFormImpact: compatInput.safeScienceFormImpact ?? null,
-    safeScienceSignalSource: compatInput.safeScienceSignalSource ?? 'none',
+    safeScienceSignalSource: compatInput.safeScienceSignalSource ?? "none",
     safeScienceFallbackType: compatInput.safeScienceFallbackType ?? null,
     directionsText: compatInput.directionsText ?? null,
     supportBullets: compatInput.supportBullets ?? [],
@@ -314,73 +336,80 @@ const normalizeCompatPacket = (input: Packet) => {
   };
 };
 
-const buildDeterministicSummary = (input: ReturnType<typeof normalizeCompatPacket>): IngredientSummaryResponse => {
-  const supportLineCandidate = input.safeScienceBullets[0]
-    ?? input.supportBullets[0]
-    ?? input.odsBullets[0]
-    ?? `${input.ingredientName} is commonly selected for ingredient-level support goals.`;
+const buildDeterministicSummary = (
+  input: ReturnType<typeof normalizeCompatPacket>,
+): IngredientSummaryResponse => {
+  const supportLineCandidate =
+    input.safeScienceBullets[0] ??
+    input.supportBullets[0] ??
+    input.odsBullets[0] ??
+    `${input.ingredientName} is commonly selected for ingredient-level support goals.`;
   const supportLineRaw = fluffPattern.test(supportLineCandidate)
     ? `${input.ingredientName} is commonly selected for ingredient-level support goals.`
     : supportLineCandidate;
   const doseText =
-    typeof input.amount === 'number' && input.unit
+    typeof input.amount === "number" && input.unit
       ? `${input.amount} ${input.unit}`
       : input.unit
         ? `an amount in ${input.unit}`
-        : 'an amount that is not clearly listed in this record';
+        : "an amount that is not clearly listed in this record";
   const directionsText = input.directionsText
     ? input.directionsText
-    : 'directions are not included in the official record';
+    : "directions are not included in the official record";
   const productLineRaw = `This product provides ${doseText}, and ${directionsText}.`;
-  const missingWarning = input.missingHighImpact.some((reason) => /warning/i.test(reason));
-  const missingDirections = input.missingHighImpact.some((reason) => /direction/i.test(reason));
+  const missingWarning = input.missingHighImpact.some((reason) =>
+    /warning/i.test(reason),
+  );
+  const missingDirections = input.missingHighImpact.some((reason) =>
+    /direction/i.test(reason),
+  );
   const limitationLineRaw = input.safeScienceBeforeYouBuy
     ? input.safeScienceBeforeYouBuy
     : missingWarning
-    ? 'Product-specific warnings were not available in the official record, so check the package for label-specific cautions.'
-    : missingDirections
-      ? 'Directions were not provided in this record, so check the package label before use.'
-      : 'Use the product label first and consult a clinician for personal risk factors.';
+      ? "Product-specific warnings were not available in the official record, so check the package for label-specific cautions."
+      : missingDirections
+        ? "Directions were not provided in this record, so check the package label before use."
+        : "Use the product label first and consult a clinician for personal risk factors.";
   const tldr = [
     asSentence(supportLineRaw),
     asSentence(productLineRaw),
     asSentence(limitationLineRaw),
-  ].join(' ');
+  ].join(" ");
 
-  const highlights = dedupe(
-    [
-      asSentence(supportLineRaw),
-      input.safeScienceFormImpact ? asSentence(input.safeScienceFormImpact) : '',
-      typeof input.amount === 'number' && input.unit
-        ? asSentence(`This product provides ${input.amount} ${input.unit}.`)
-        : asSentence('Use the product label for exact ingredient amounts.'),
-      input.directionsText
-        ? asSentence(`Directions from record: ${input.directionsText}`)
-        : asSentence('Directions are not provided in this record.'),
-    ],
-  ).slice(0, 3);
+  const highlights = dedupe([
+    asSentence(supportLineRaw),
+    input.safeScienceFormImpact ? asSentence(input.safeScienceFormImpact) : "",
+    typeof input.amount === "number" && input.unit
+      ? asSentence(`This product provides ${input.amount} ${input.unit}.`)
+      : asSentence("Use the product label for exact ingredient amounts."),
+    input.directionsText
+      ? asSentence(`Directions from record: ${input.directionsText}`)
+      : asSentence("Directions are not provided in this record."),
+  ]).slice(0, 3);
 
-  const caveats = dedupe(
-    [
-      asSentence('This summary is informational and not medical advice.'),
-      missingWarning
-        ? asSentence('Label-specific warnings were not available in this record.')
-        : missingDirections
-          ? asSentence('Direction details were incomplete in this record.')
-          : asSentence('Always review the package label for complete instructions.'),
-    ],
-  ).slice(0, 2);
+  const caveats = dedupe([
+    asSentence("This summary is informational and not medical advice."),
+    missingWarning
+      ? asSentence("Label-specific warnings were not available in this record.")
+      : missingDirections
+        ? asSentence("Direction details were incomplete in this record.")
+        : asSentence(
+            "Always review the package label for complete instructions.",
+          ),
+  ]).slice(0, 2);
 
-  const confidence_note = asSentence('Built from verified record fields and general science references.');
+  const confidence_note = asSentence(
+    "Built from verified record fields and general science references.",
+  );
 
   const sourcesUsed = dedupe(
     [
-      input.used.facts ? 'Facts' : '',
-      input.used.dataset ? 'Dataset' : '',
-      input.used.reviewedKB ? 'ReviewedKB' : '',
-      input.used.ods ? 'ODS' : '',
+      input.used.facts ? "Facts" : "",
+      input.used.dataset ? "Dataset" : "",
+      input.used.reviewedKB ? "ReviewedKB" : "",
+      input.used.ods ? "ODS" : "",
     ].filter(Boolean),
-  ) as Array<'Facts' | 'Dataset' | 'KB' | 'ODS' | 'ReviewedKB'>;
+  ) as Array<"Facts" | "Dataset" | "KB" | "ODS" | "ReviewedKB">;
 
   return {
     tldr,
@@ -398,12 +427,16 @@ const buildDeterministicSummary = (input: ReturnType<typeof normalizeCompatPacke
     fallbackUsed: true,
     guardApplied: true,
     summaryVersion: SUMMARY_VERSION_DETAILS,
-    reasonCode: 'LLM_FALLBACK_USED',
+    reasonCode: "LLM_FALLBACK_USED",
   };
 };
 
 export type JsonExtractResult =
-  | { ok: true; parsed: unknown; parsePath: "direct" | "fence_strip" | "brace_extract" | "safe_repair" }
+  | {
+      ok: true;
+      parsed: unknown;
+      parsePath: "direct" | "fence_strip" | "brace_extract" | "safe_repair";
+    }
   | { ok: false; reason: "non_json" | "parse_error" };
 
 /**
@@ -413,38 +446,76 @@ export type JsonExtractResult =
 export const extractJsonObjectLoose = (raw: string): JsonExtractResult => {
   const trimmed = raw.trim();
 
+  const tryParse = (
+    candidate: string,
+    parsePath: JsonExtractResult["parsePath"],
+  ): JsonExtractResult | null => {
+    try {
+      return { ok: true, parsed: JSON.parse(candidate), parsePath };
+    } catch {
+      return null;
+    }
+  };
+
+  const normalizeLooseJsonCandidate = (candidate: string): string =>
+    candidate
+      .replace(/[\u2018\u2019]/g, "'")
+      .replace(/[\u201c\u201d]/g, '"')
+      .replace(/\/\*[\s\S]*?\*\//g, "")
+      .replace(/^\s*\/\/.*$/gm, "")
+      .replace(/([{,]\s*)([A-Za-z_][A-Za-z0-9_]*)(\s*:)/g, '$1"$2"$3')
+      .replace(
+        /([{,]\s*)'([^'\\]*(?:\\.[^'\\]*)*)'(\s*:)/g,
+        (_match, prefix, key, suffix) =>
+          `${prefix}"${String(key).replace(/"/g, '\\"')}"${suffix}`,
+      )
+      .replace(
+        /:\s*'([^'\\]*(?:\\.[^'\\]*)*)'/g,
+        (_match, value) => `: "${String(value).replace(/"/g, '\\"')}"`,
+      )
+      .replace(
+        /'([^'\\]*(?:\\.[^'\\]*)*)'(?=\s*[,}\]])/g,
+        (_match, value) => `"${String(value).replace(/"/g, '\\"')}"`,
+      )
+      .replace(/,(\s*[}\]])/g, "$1")
+      .replace(/[\x00-\x08\x0b\x0c\x0e-\x1f]/g, "");
+
   // 1. Direct parse
-  try {
-    return { ok: true, parsed: JSON.parse(trimmed), parsePath: "direct" };
-  } catch { /* continue */ }
+  const direct = tryParse(trimmed, "direct");
+  if (direct) return direct;
 
   // 2. Fence strip (```json ... ```)
   const fenceMatch = trimmed.match(/```(?:json)?\s*\n?([\s\S]*?)\n?```/);
   if (fenceMatch) {
-    try {
-      return { ok: true, parsed: JSON.parse(fenceMatch[1].trim()), parsePath: "fence_strip" };
-    } catch { /* continue */ }
+    const fenced = tryParse(fenceMatch[1].trim(), "fence_strip");
+    if (fenced) return fenced;
   }
 
   // 3. Brace extract (first { ... } block)
-  const braceStart = trimmed.indexOf('{');
-  const braceEnd = trimmed.lastIndexOf('}');
+  const braceStart = trimmed.indexOf("{");
+  const braceEnd = trimmed.lastIndexOf("}");
   if (braceStart >= 0 && braceEnd > braceStart) {
     const extracted = trimmed.slice(braceStart, braceEnd + 1);
-    try {
-      return { ok: true, parsed: JSON.parse(extracted), parsePath: "brace_extract" };
-    } catch { /* continue */ }
+    const braceExtract = tryParse(extracted, "brace_extract");
+    if (braceExtract) return braceExtract;
   }
 
   // 4. Safe repair (trailing commas, control chars)
   if (braceStart >= 0 && braceEnd > braceStart) {
     const extracted = trimmed.slice(braceStart, braceEnd + 1);
     const repaired = extracted
-      .replace(/,(\s*[}\]])/g, '$1')        // trailing commas
-      .replace(/[\x00-\x08\x0b\x0c\x0e-\x1f]/g, ''); // control chars
-    try {
-      return { ok: true, parsed: JSON.parse(repaired), parsePath: "safe_repair" };
-    } catch { /* continue */ }
+      .replace(/,(\s*[}\]])/g, "$1") // trailing commas
+      .replace(/[\x00-\x08\x0b\x0c\x0e-\x1f]/g, ""); // control chars
+    const safeRepair = tryParse(repaired, "safe_repair");
+    if (safeRepair) return safeRepair;
+  }
+
+  // 5. Loose repair for near-JSON responses (single quotes, unquoted keys, smart quotes)
+  if (braceStart >= 0 && braceEnd > braceStart) {
+    const extracted = trimmed.slice(braceStart, braceEnd + 1);
+    const repaired = normalizeLooseJsonCandidate(extracted);
+    const looseRepair = tryParse(repaired, "safe_repair");
+    if (looseRepair) return looseRepair;
   }
 
   if (braceStart < 0 || braceEnd <= braceStart) {
@@ -470,7 +541,9 @@ const LLM_SUMMARY_MAX_RETRIES = 1;
 /**
  * P0-1: Build the LLM prompt for ingredient summary generation.
  */
-const buildSummaryPrompt = (normalized: ReturnType<typeof normalizeCompatPacket>): string => {
+const buildSummaryPrompt = (
+  normalized: ReturnType<typeof normalizeCompatPacket>,
+): string => {
   const supportBullets = (
     normalized.safeScienceBullets.length > 0
       ? normalized.safeScienceBullets
@@ -490,10 +563,10 @@ const buildSummaryPrompt = (normalized: ReturnType<typeof normalizeCompatPacket>
     parts.push(`Verified directions: ${normalized.directionsText}.`);
   }
   if (supportBullets.length > 0) {
-    parts.push(`General support bullets: ${supportBullets.join(' | ')}`);
+    parts.push(`General support bullets: ${supportBullets.join(" | ")}`);
   }
   if (missingHighImpact.length > 0) {
-    parts.push(`High-impact missing fields: ${missingHighImpact.join(', ')}`);
+    parts.push(`High-impact missing fields: ${missingHighImpact.join(", ")}`);
   }
   parts.push(
     `Respond with ONLY a JSON object: {"tldr":"...","highlights":["..."],"caveats":["..."]}`,
@@ -507,7 +580,7 @@ const buildSummaryPrompt = (normalized: ReturnType<typeof normalizeCompatPacket>
     `- No medical claims (cure/treat/heal/guarantee).`,
     `- Keep highlights and caveats optional and concise.`,
   );
-  return parts.join('\n');
+  return parts.join("\n");
 };
 
 /**
@@ -516,19 +589,25 @@ const buildSummaryPrompt = (normalized: ReturnType<typeof normalizeCompatPacket>
 const validateSummaryShape = (
   parsed: unknown,
 ): { tldr: string; highlights: string[]; caveats: string[] } | null => {
-  if (!parsed || typeof parsed !== 'object') return null;
+  if (!parsed || typeof parsed !== "object") return null;
   const obj = parsed as Record<string, unknown>;
-  if (typeof obj.tldr !== 'string' || !obj.tldr.trim()) return null;
+  if (typeof obj.tldr !== "string" || !obj.tldr.trim()) return null;
   if (!Array.isArray(obj.highlights)) return null;
   if (!Array.isArray(obj.caveats)) return null;
   return {
     tldr: String(obj.tldr).trim(),
-    highlights: obj.highlights.filter((h): h is string => typeof h === 'string' && h.trim().length > 0).slice(0, 3),
-    caveats: obj.caveats.filter((c): c is string => typeof c === 'string' && c.trim().length > 0).slice(0, 3),
+    highlights: obj.highlights
+      .filter((h): h is string => typeof h === "string" && h.trim().length > 0)
+      .slice(0, 3),
+    caveats: obj.caveats
+      .filter((c): c is string => typeof c === "string" && c.trim().length > 0)
+      .slice(0, 3),
   };
 };
 
-export const compileIngredientSummary = (input: unknown): IngredientSummaryResponse => {
+export const compileIngredientSummary = (
+  input: unknown,
+): IngredientSummaryResponse => {
   const parsed = packetSchema.parse(input);
   const normalized = normalizeCompatPacket(parsed);
   const fallback = buildDeterministicSummary(normalized);
@@ -537,7 +616,7 @@ export const compileIngredientSummary = (input: unknown): IngredientSummaryRespo
   // Use compileIngredientSummaryAsync for the LLM-enhanced path.
   return {
     ...fallback,
-    reasonCode: 'FALLBACK_DETERMINISTIC',
+    reasonCode: "FALLBACK_DETERMINISTIC",
   };
 };
 
@@ -548,7 +627,11 @@ export const compileIngredientSummary = (input: unknown): IngredientSummaryRespo
 export const compileIngredientSummaryAsync = async (
   input: unknown,
   opts?: CompileOpts,
-): Promise<IngredientSummaryResponse & { debug?: { llmRawPreview?: string; parsePath?: string } }> => {
+): Promise<
+  IngredientSummaryResponse & {
+    debug?: { llmRawPreview?: string; parsePath?: string };
+  }
+> => {
   const parsed = packetSchema.parse(input);
   const normalized = normalizeCompatPacket(parsed);
   const fallback = buildDeterministicSummary(normalized);
@@ -557,7 +640,7 @@ export const compileIngredientSummaryAsync = async (
   if (!llmFn) {
     return {
       ...fallback,
-      reasonCode: 'FALLBACK_DETERMINISTIC',
+      reasonCode: "FALLBACK_DETERMINISTIC",
     };
   }
 
@@ -586,55 +669,65 @@ export const compileIngredientSummaryAsync = async (
       const jsonResult = extractJsonObjectLoose(raw);
 
       if (!jsonResult.ok) {
-        lastError = 'LLM_PARSE_FAILED_NON_JSON';
+        lastError = "LLM_PARSE_FAILED_NON_JSON";
         continue;
       }
       parsePath = jsonResult.parsePath;
 
       const validated = validateSummaryShape(jsonResult.parsed);
       if (!validated) {
-        lastError = 'LLM_SCHEMA_INVALID';
+        lastError = "LLM_SCHEMA_INVALID";
         continue;
       }
 
       // Verify no disallowed medical claims or technical leakage.
-      const joined = [validated.tldr, ...validated.highlights, ...validated.caveats].join(' ');
+      const joined = [
+        validated.tldr,
+        ...validated.highlights,
+        ...validated.caveats,
+      ].join(" ");
       if (containsDisallowed(joined)) {
-        lastError = 'LLM_VERIFIER_REJECTED';
+        lastError = "LLM_VERIFIER_REJECTED";
         continue;
       }
       if (technicalLeakPattern.test(joined)) {
-        lastError = 'LLM_VERIFIER_REJECTED';
+        lastError = "LLM_VERIFIER_REJECTED";
         continue;
       }
       if (fluffPattern.test(joined)) {
-        lastError = 'LLM_VERIFIER_REJECTED';
+        lastError = "LLM_VERIFIER_REJECTED";
         continue;
       }
       const normalizedTldr = normalizeThreeSentenceSummary(validated.tldr);
       if (!normalizedTldr) {
-        lastError = 'LLM_VERIFIER_REJECTED';
+        lastError = "LLM_VERIFIER_REJECTED";
         continue;
       }
 
       // Build sources
       const sourcesUsed = dedupe(
         [
-          normalized.used.facts ? 'Facts' : '',
-          normalized.used.dataset ? 'Dataset' : '',
-          normalized.used.reviewedKB ? 'ReviewedKB' : '',
-          normalized.used.ods ? 'ODS' : '',
+          normalized.used.facts ? "Facts" : "",
+          normalized.used.dataset ? "Dataset" : "",
+          normalized.used.reviewedKB ? "ReviewedKB" : "",
+          normalized.used.ods ? "ODS" : "",
         ].filter(Boolean),
-      ) as Array<'Facts' | 'Dataset' | 'KB' | 'ODS' | 'ReviewedKB'>;
+      ) as Array<"Facts" | "Dataset" | "KB" | "ODS" | "ReviewedKB">;
 
       const confidenceNote = asSentence(
-        'Grounded to verified record fields and general science references.',
+        "Grounded to verified record fields and general science references.",
       );
 
-      const result: IngredientSummaryResponse & { debug?: { llmRawPreview?: string; parsePath?: string } } = {
+      const result: IngredientSummaryResponse & {
+        debug?: { llmRawPreview?: string; parsePath?: string };
+      } = {
         tldr: normalizedTldr,
-        highlights: validated.highlights.length ? validated.highlights : fallback.highlights,
-        caveats: validated.caveats.length ? validated.caveats : fallback.caveats,
+        highlights: validated.highlights.length
+          ? validated.highlights
+          : fallback.highlights,
+        caveats: validated.caveats.length
+          ? validated.caveats
+          : fallback.caveats,
         confidence_note: confidenceNote,
         confidenceNote,
         sources_used: normalized.used,
@@ -642,7 +735,7 @@ export const compileIngredientSummaryAsync = async (
         fallbackUsed: false,
         guardApplied: true,
         summaryVersion: SUMMARY_VERSION_DETAILS,
-        reasonCode: 'LLM_OK',
+        reasonCode: "LLM_OK",
       };
 
       if (isRegression) {
@@ -654,16 +747,18 @@ export const compileIngredientSummaryAsync = async (
 
       return result;
     } catch (err) {
-      lastError = 'LLM_CALL_FAILED';
+      lastError = "LLM_CALL_FAILED";
     }
   }
 
   // All attempts failed, return deterministic fallback
-  const result: IngredientSummaryResponse & { debug?: { llmRawPreview?: string; parsePath?: string } } = {
+  const result: IngredientSummaryResponse & {
+    debug?: { llmRawPreview?: string; parsePath?: string };
+  } = {
     ...fallback,
     guardApplied: true,
     summaryVersion: SUMMARY_VERSION_DETAILS,
-    reasonCode: (lastError ?? 'LLM_CALL_FAILED') as LlmVerifierReasonCode,
+    reasonCode: (lastError ?? "LLM_CALL_FAILED") as LlmVerifierReasonCode,
   };
 
   if (isRegression) {
