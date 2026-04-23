@@ -21,6 +21,11 @@ export type EnrichStreamAdmissionPolicy = {
   overloadInflightThreshold: number;
 };
 
+export const shouldRejectEnrichStreamForServerOverload = (params: {
+  inFlightCount: number;
+  overloadInflightThreshold: number;
+}): boolean => params.inFlightCount > params.overloadInflightThreshold;
+
 type EnvLike = Record<string, string | number | undefined>;
 
 const toFiniteNumberOrNull = (value: unknown): number | null => {

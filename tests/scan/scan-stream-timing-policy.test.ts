@@ -10,6 +10,7 @@ import {
   DEFAULT_FULL_STREAM_MAX_ACTIVE,
   DEFAULT_FULL_STREAM_QUEUE_WAIT_MS,
   resolveEnrichStreamAdmissionPolicy,
+  shouldRejectEnrichStreamForServerOverload,
 } from "../../backend/src/scanStreamAdmissionPolicy.js";
 
 test("full stream rev1 done policy caps the post-rev1 tail below the release gate", () => {
@@ -92,4 +93,21 @@ test("stream admission policy preserves explicit operator overrides", () => {
   assert.equal(policy.bundleOnly.maxQueue, 11);
   assert.equal(policy.bundleOnly.queueWaitMs, 1200);
   assert.equal(policy.overloadInflightThreshold, 8);
+});
+
+test("server overload rejection only uses in-flight capacity, not transient lag", () => {
+  assert.equal(
+    shouldRejectEnrichStreamForServerOverload({
+      inFlightCount: 6,
+      overloadInflightThreshold: 6,
+    }),
+    false,
+  );
+  assert.equal(
+    shouldRejectEnrichStreamForServerOverload({
+      inFlightCount: 7,
+      overloadInflightThreshold: 6,
+    }),
+    true,
+  );
 });

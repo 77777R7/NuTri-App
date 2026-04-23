@@ -55,7 +55,10 @@ import {
   fetchProductOverviewWhatIsIt,
   prepareContextSources
 } from "./deepseek.js";
-import { resolveEnrichStreamAdmissionPolicy } from "./scanStreamAdmissionPolicy.js";
+import {
+  resolveEnrichStreamAdmissionPolicy,
+  shouldRejectEnrichStreamForServerOverload,
+} from "./scanStreamAdmissionPolicy.js";
 import {
   DEFAULT_BUNDLE_ONLY_DONE_DELAY_MS,
   DEFAULT_FULL_REV1_DONE_DELAY_MS,
@@ -15364,7 +15367,12 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
 
   try {
     const inFlightCount = barcodeEnrichInFlight.size;
-    if (inFlightCount > ENRICH_STREAM_OVERLOAD_INFLIGHT_THRESHOLD || isEventLoopLagOverThreshold()) {
+    if (
+      shouldRejectEnrichStreamForServerOverload({
+        inFlightCount,
+        overloadInflightThreshold: ENRICH_STREAM_OVERLOAD_INFLIGHT_THRESHOLD,
+      })
+    ) {
       emitStreamBusyAndFinalize("SERVER_OVERLOAD");
       return;
     }
