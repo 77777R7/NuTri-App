@@ -3,7 +3,10 @@ import test from "node:test";
 
 import type { FactsDigest } from "../../backend/src/factsDigest";
 import { buildIngredientScienceContext } from "../../backend/src/ingredientScienceContext";
-import { compileIngredientOverviewAsync } from "../../backend/src/insights/ingredientOverviewCompiler";
+import {
+  compileIngredientOverviewAsync,
+  normalizeMineralStackMarketingTail,
+} from "../../backend/src/insights/ingredientOverviewCompiler";
 import {
   compileScientificBackgroundAsync,
   planScientificBackgroundSections,
@@ -56,6 +59,30 @@ const buildDigest = (params: {
     missingFields: [],
     completenessScore: 90,
   },
+});
+
+test("new full-family capsule actives remain research-mode leads instead of food-like label context", () => {
+  const context = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: "fixture-chlorella-capsule",
+      productName: "Chlorella 500 mg Capsules",
+      dosageForm: "Capsule",
+      actives: [{ name: "Chlorella", amount: 500, unit: "mg" }],
+    }),
+    overlayClaims: null,
+  });
+  const plan = planScientificBackgroundSections({
+    context,
+    selectedIngredientName: "Chlorella",
+  });
+
+  assert.equal(context.productArchetype, "standard_supplement");
+  assert.equal(context.anchorIngredient?.ingredientFamily, "chlorella");
+  assert.equal(plan.mode, "research_mode");
+  assert.deepEqual(
+    plan.sections.map((section) => section.heading),
+    ["Primary context", "Form and disclosure context", "Formula context"],
+  );
 });
 
 test("ingredient overview strips shopper-purpose drift and returns repaired api copy", async () => {
@@ -117,6 +144,308 @@ test("ingredient overview reports llm_unconfigured when no live writer is availa
   assert.equal(result.diagnostics.liveWriterConfigured, false);
   assert.equal(result.diagnostics.liveWriterAttempted, false);
   assert.equal(result.diagnostics.fallbackReason, "llm_unconfigured");
+});
+
+test("ingredient overview compresses overlong live-writer copy back into the allowed sentence budget", async () => {
+  const digest = buildDigest({
+    labelId: "fixture-ingredient-overview-sentence-budget",
+    productName: "Magnesium Bisglycinate 200 mg",
+    dosageForm: "Capsule",
+    actives: [
+      {
+        name: "Magnesium (as Magnesium Bisglycinate)",
+        amount: 200,
+        unit: "mg",
+      },
+    ],
+  });
+
+  const context = buildIngredientScienceContext({
+    digest,
+    overlayClaims: null,
+  });
+  const result = await compileIngredientOverviewAsync(context, {
+    llmFn: async () =>
+      JSON.stringify({
+        mode: "single_anchor",
+        titleLine: "Magnesium bisglycinate",
+        paragraph1:
+          "Magnesium bisglycinate is the main disclosed active in this product. The label names the form directly. That makes the structure easier to read.",
+        paragraph2:
+          "The bisglycinate form gives the shopper a cleaner comparison handle. It keeps the label from reading like a broad mineral blend.",
+        compareHint:
+          "Compare the disclosed form first. Then check the per-serving amount. Keep the formula simple when comparing products side by side.",
+      }),
+  });
+
+  assert.equal(result.source, "api");
+  assert.equal(result.fallbackUsed, false);
+  assert.equal(result.diagnostics.fallbackReason, null);
+  const totalSentences =
+    (result.ingredientOverview.paragraph1.match(/[.!?]/g)?.length ?? 0) +
+    (result.ingredientOverview.paragraph2?.match(/[.!?]/g)?.length ?? 0) +
+    (result.ingredientOverview.compareHint?.match(/[.!?]/g)?.length ?? 0);
+  assert.ok(totalSentences <= 5);
+  assert.match(result.ingredientOverview.compareHint ?? "", /form|amount/i);
+});
+
+test("ingredient overview repairs raw factual-echo prose instead of rejecting it immediately", async () => {
+  const digest = buildDigest({
+    labelId: "fixture-ingredient-overview-factual-echo",
+    productName: "High Potency Fish Oil With EPA & DHA",
+    dosageForm: "Softgel",
+    actives: [
+      { name: "Cold Water Fish Oil Blend", amount: 920, unit: "mg" },
+      { name: "EPA (Eicosapentaenoic Acid)", amount: 250, unit: "mg" },
+      { name: "DHA (Docosahexaenoic Acid)", amount: 125, unit: "mg" },
+    ],
+  });
+
+  const context = buildIngredientScienceContext({
+    digest,
+    overlayClaims: null,
+  });
+  const result = await compileIngredientOverviewAsync(context, {
+    llmFn: async () =>
+      JSON.stringify({
+        mode: "blend_anchor",
+        titleLine: "EPA & DHA Fish Oil Blend",
+        paragraph1:
+          "This formula is built around a 920 mg Cold Water Fish Oil Blend, with EPA and DHA listed as individual breakdown lines within that blend. EPA (250 mg) is the lead active and DHA (125 mg) is the companion breakdown line.",
+        paragraph2:
+          "That means the label is giving both a source-oil total and separate fatty-acid amounts, which matters more for comparison than a broad fish oil claim alone.",
+        compareHint:
+          "When comparing products, check whether the label breaks out EPA and DHA separately instead of only listing total fish oil.",
+      }),
+  });
+
+  assert.equal(result.source, "api");
+  assert.equal(result.fallbackUsed, false);
+  assert.equal(result.diagnostics.fallbackReason, null);
+  assert.equal(
+    /\b920 mg\b|\b250 mg\b|\b125 mg\b/i.test(
+      `${result.ingredientOverview.paragraph1} ${result.ingredientOverview.paragraph2 ?? ""}`,
+    ),
+    false,
+  );
+  assert.match(
+    result.ingredientOverview.compareHint ?? "",
+    /epa|dha|breaks out|separately/i,
+  );
+});
+
+test("ingredient overview rewrites multi-anchor mineral support copy into label-structure language", async () => {
+  const digest = buildDigest({
+    labelId: "fixture-mineral-support-rewrite",
+    productName: "Calcium Magnesium Zinc For Bone & Muscle Support",
+    dosageForm: "Tablet",
+    actives: [
+      { name: "Calcium (as Calcium Carbonate)", amount: 333, unit: "mg" },
+      { name: "Magnesium (as Magnesium Oxide)", amount: 167, unit: "mg" },
+      { name: "Zinc (as Zinc Oxide)", amount: 15, unit: "mg" },
+    ],
+  });
+
+  const context = buildIngredientScienceContext({
+    digest,
+    overlayClaims: null,
+  });
+  const result = await compileIngredientOverviewAsync(context, {
+    llmFn: async () =>
+      JSON.stringify({
+        mode: "multi_anchor",
+        titleLine: "Calcium, Magnesium & Zinc Tri-Mineral Complex",
+        paragraph1:
+          "This formula centers on three key minerals—Calcium, Magnesium, and Zinc—each serving as a lead active for bone and muscle support.",
+        paragraph2:
+          "That structure still matters because the label is naming multiple mineral lines directly instead of hiding them inside a blend.",
+        compareHint:
+          "When comparing products, check whether each mineral line and form is disclosed clearly on the label.",
+      }),
+  });
+
+  assert.equal(result.source, "api");
+  assert.equal(result.fallbackUsed, false);
+  assert.equal(result.diagnostics.fallbackReason, null);
+  assert.equal(
+    /\bsupports?\b|\bbone\s*(?:&|and)\s*muscle\s+(?:support|health)\b/i.test(
+      `${result.ingredientOverview.paragraph1} ${result.ingredientOverview.paragraph2 ?? ""} ${result.ingredientOverview.compareHint ?? ""}`,
+    ),
+    false,
+  );
+  assert.match(
+    `${result.ingredientOverview.paragraph1} ${result.ingredientOverview.paragraph2 ?? ""}`,
+    /disclosed mineral lines|mineral lineup|balance between/i,
+  );
+});
+
+test("ingredient overview preserves ratio-focused mineral comparison after stripping support wording", async () => {
+  const digest = buildDigest({
+    labelId: "fixture-mineral-ratio-support-rewrite",
+    productName: "Calcium Magnesium 2:1 Ratio for Bone & Muscle Support",
+    dosageForm: "Tablet",
+    actives: [
+      { name: "Calcium (as Calcium Carbonate)", amount: 666, unit: "mg" },
+      { name: "Magnesium (as Magnesium Oxide)", amount: 333, unit: "mg" },
+    ],
+  });
+
+  const context = buildIngredientScienceContext({
+    digest,
+    overlayClaims: null,
+  });
+  const result = await compileIngredientOverviewAsync(context, {
+    llmFn: async () =>
+      JSON.stringify({
+        mode: "multi_anchor",
+        titleLine: "Calcium Magnesium 2:1 Ratio",
+        paragraph1:
+          "This formula is built around a fixed 2:1 ratio of calcium to magnesium, with the product name itself serving as the lead anchor. Calcium and magnesium are presented for bone and muscle support.",
+        paragraph2:
+          "That ratio is the main thing the shopper should compare before reading this like a broad wellness promise.",
+        compareHint:
+          "When comparing products, check the stated ratio first and then see whether each mineral form is disclosed clearly on the label.",
+      }),
+  });
+
+  assert.equal(result.source, "api");
+  assert.equal(result.fallbackUsed, false);
+  assert.equal(result.diagnostics.fallbackReason, null);
+  assert.equal(
+    /\bsupports?\b|\bbone\s*(?:&|and)\s*muscle\s+(?:support|health)\b/i.test(
+      `${result.ingredientOverview.paragraph1} ${result.ingredientOverview.paragraph2 ?? ""} ${result.ingredientOverview.compareHint ?? ""}`,
+    ),
+    false,
+  );
+  assert.match(
+    `${result.ingredientOverview.paragraph1} ${result.ingredientOverview.compareHint ?? ""}`,
+    /fixed 2:1 ratio|stated ratio|form is disclosed|label/i,
+  );
+});
+
+test("ingredient overview force-rewrites mineral stacks when banned support copy survives across fields", async () => {
+  const digest = buildDigest({
+    labelId: "fixture-mineral-force-rewrite",
+    productName: "Calcium Magnesium Zinc For Bone & Muscle Support",
+    dosageForm: "Tablet",
+    actives: [
+      { name: "Calcium (as Calcium Carbonate)", amount: 500, unit: "mg" },
+      { name: "Magnesium (as Magnesium Oxide)", amount: 250, unit: "mg" },
+      { name: "Zinc (as Zinc Oxide)", amount: 10, unit: "mg" },
+    ],
+  });
+
+  const context = buildIngredientScienceContext({
+    digest,
+    overlayClaims: null,
+  });
+  const result = await compileIngredientOverviewAsync(context, {
+    llmFn: async () =>
+      JSON.stringify({
+        mode: "multi_anchor",
+        titleLine: "Calcium, Magnesium & Zinc Triple Mineral Complex",
+        paragraph1:
+          "This formula centers on three key minerals—Calcium, Magnesium, and Zinc—each serving as a lead active for bone and muscle support.",
+        paragraph2:
+          "The surrounding structure supports a broad bone-and-muscle positioning more than a single isolated ingredient story.",
+        compareHint:
+          "When comparing products, look for the best form and overall support positioning on the label.",
+      }),
+  });
+
+  assert.equal(result.source, "api");
+  assert.equal(result.fallbackUsed, false);
+  assert.equal(result.diagnostics.fallbackReason, null);
+  assert.equal(
+    /\bsupports?\b|\bbest form\b|\bbone(?:\s*(?:&|and)\s*muscle)?\s+(?:support|health)\b/i.test(
+      `${result.ingredientOverview.paragraph1} ${result.ingredientOverview.paragraph2 ?? ""} ${result.ingredientOverview.compareHint ?? ""}`,
+    ),
+    false,
+  );
+  assert.match(
+    `${result.ingredientOverview.paragraph1} ${result.ingredientOverview.paragraph2 ?? ""}`,
+    /disclosed mineral lines|mineral lineup|balance between/i,
+  );
+});
+
+test("ingredient overview rewrites the Jamieson bone-and-muscle mineral cluster into structure-first copy", async () => {
+  const digest = buildDigest({
+    labelId: "fixture-jamieson-bone-muscle-mineral-cluster",
+    productName: "Jamieson Calcium Magnesium & Zinc For Bone & Muscle Support",
+    dosageForm: "Tablet",
+    actives: [
+      {
+        name: "Jamieson Calcium Magnesium & Zinc For Bone & Muscle Support",
+        amount: null,
+        unit: null,
+      },
+      { name: "Zinc", amount: null, unit: null },
+      { name: "Magnesium", amount: null, unit: null },
+      { name: "Calcium", amount: null, unit: null },
+    ],
+  });
+
+  const context = buildIngredientScienceContext({
+    digest,
+    overlayClaims: null,
+  });
+  const result = await compileIngredientOverviewAsync(context, {
+    llmFn: async () =>
+      JSON.stringify({
+        mode: "multi_anchor",
+        titleLine: "Calcium, Magnesium & Zinc Mineral Trio",
+        paragraph1:
+          "This formula centers on three key minerals—Calcium, Magnesium, and Zinc—each serving as a lead active for bone and muscle support. Calcium provides the structural foundation, Magnesium aids in muscle relaxation and bone matrix formation, while Zinc contributes to tissue repair and immune function. Together, they form a complementary mineral network.",
+        paragraph2:
+          "The product is built around this trio, with no single ingredient dominating. Each mineral is listed individually, allowing you to see the specific amounts per serving. This transparency helps you compare the ratios to your daily needs or other supplements.",
+        compareHint:
+          "When comparing, check the elemental amounts of each mineral—some products use different forms (e.g., oxide vs. citrate) that affect absorption.",
+      }),
+  });
+
+  assert.equal(result.source, "api");
+  assert.equal(result.fallbackUsed, false);
+  assert.equal(result.diagnostics.fallbackReason, null);
+  assert.equal(
+    /bone\s*(?:&|and)\s*muscle\s+support|immune\s+function|affect\s+absorption|muscle\s+relaxation/i.test(
+      `${result.ingredientOverview.paragraph1} ${result.ingredientOverview.paragraph2 ?? ""} ${result.ingredientOverview.compareHint ?? ""}`,
+    ),
+    false,
+  );
+  assert.match(
+    result.ingredientOverview.paragraph1,
+    /separate disclosed mineral lines|transparent mineral stack/i,
+  );
+});
+
+test("mineral stack title normalization strips the bone-and-muscle marketing suffix", () => {
+  const context = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: "fixture-mineral-title-normalization",
+      productName: "Calcium Magnesium 2:1 Ratio for Bone & Muscle Support",
+      dosageForm: "Tablet",
+      actives: [
+        { name: "Calcium (as Calcium Carbonate)", amount: 666, unit: "mg" },
+        { name: "Magnesium (as Magnesium Oxide)", amount: 333, unit: "mg" },
+      ],
+    }),
+    overlayClaims: null,
+  });
+
+  assert.equal(
+    normalizeMineralStackMarketingTail(
+      context,
+      "Calcium Magnesium 2:1 Ratio for Bone & Muscle Support",
+    ),
+    "Calcium Magnesium 2:1 Ratio",
+  );
+  assert.equal(
+    normalizeMineralStackMarketingTail(
+      context,
+      "Calcium Magnesium & Zinc For Bone & Muscle Support",
+    ),
+    "Calcium Magnesium & Zinc",
+  );
 });
 
 test("scientific background falls back when the model writes ingredient identity instead of research context", async () => {
@@ -184,6 +513,15 @@ test("scientific background falls back when the model writes ingredient identity
   assert.equal(result.diagnostics.liveWriterAttempted, true);
   assert.equal(result.diagnostics.liveWriterHit, false);
   assert.equal(result.diagnostics.fallbackReason, "quality_gate_rejected");
+  assert.ok(
+    (result.diagnostics.gateRejectReasons ?? []).includes(
+      "medical_banned_pattern",
+    ),
+  );
+  assert.match(
+    result.diagnostics.lastError ?? "",
+    /gate:.*(?:medical_banned_pattern|generic_identity_pattern)/i,
+  );
   assert.equal(result.scientificBackground.selectedLabel, "Astaxanthin");
   assert.deepEqual(
     result.scientificBackground.sections.map((section) => section.heading),
@@ -238,6 +576,925 @@ test("scientific background planner changes headings for clear ingredients versu
       "Why deeper disclosure changes comparison",
     ],
   );
+});
+
+test("scientific background planner exposes family-specific section plans for promoted P0 runtime families", () => {
+  const quercetinContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: "fixture-quercetin-plan",
+      productName: "Quercetin Recovery 500 mg",
+      dosageForm: "Tablet",
+      actives: [{ name: "Quercetin Phytosome", amount: 500, unit: "mg" }],
+    }),
+    overlayClaims: null,
+  });
+  const vitaminEContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: "fixture-vitamin-e-plan",
+      productName: "Vitamin E 400 IU",
+      dosageForm: "Softgel",
+      actives: [
+        {
+          name: "Vitamin E (as d-Alpha Tocopheryl Acetate)",
+          amount: 400,
+          unit: "IU",
+        },
+      ],
+    }),
+    overlayClaims: null,
+  });
+  const vitaminK2Context = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: "fixture-vitamin-k2-plan",
+      productName: "Vitamin K2 MK-7 100 mcg",
+      dosageForm: "Capsule",
+      actives: [
+        { name: "Vitamin K2 (as Menaquinone-7)", amount: 100, unit: "mcg" },
+      ],
+    }),
+    overlayClaims: null,
+  });
+  const chromiumContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: "fixture-chromium-plan",
+      productName: "Chromium Picolinate 200 mcg",
+      dosageForm: "Capsule",
+      actives: [
+        { name: "Chromium (as Chromium Picolinate)", amount: 200, unit: "mcg" },
+      ],
+    }),
+    overlayClaims: null,
+  });
+  const seleniumContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: "fixture-selenium-plan",
+      productName: "Selenium 200 mcg",
+      dosageForm: "Capsule",
+      actives: [
+        { name: "Selenium (as L-Selenomethionine)", amount: 200, unit: "mcg" },
+      ],
+    }),
+    overlayClaims: null,
+  });
+
+  const quercetinPlan = planScientificBackgroundSections({
+    context: quercetinContext,
+    selectedIngredientName: "Quercetin Phytosome",
+  });
+  const vitaminEPlan = planScientificBackgroundSections({
+    context: vitaminEContext,
+    selectedIngredientName: "Vitamin E (as d-Alpha Tocopheryl Acetate)",
+  });
+  const vitaminK2Plan = planScientificBackgroundSections({
+    context: vitaminK2Context,
+    selectedIngredientName: "Vitamin K2 (as Menaquinone-7)",
+  });
+  const chromiumPlan = planScientificBackgroundSections({
+    context: chromiumContext,
+    selectedIngredientName: "Chromium (as Chromium Picolinate)",
+  });
+  const seleniumPlan = planScientificBackgroundSections({
+    context: seleniumContext,
+    selectedIngredientName: "Selenium (as L-Selenomethionine)",
+  });
+
+  assert.deepEqual(
+    quercetinPlan.sections.map((section) => section.heading),
+    [
+      "Primary use context",
+      "Extract and standardization context",
+      "Formula and label context",
+    ],
+  );
+  assert.deepEqual(
+    vitaminEPlan.sections.map((section) => section.heading),
+    [
+      "Status and supplementation context",
+      "Form and labeling context",
+      "Dose and pairing context",
+    ],
+  );
+  assert.deepEqual(
+    vitaminK2Plan.sections.map((section) => section.heading),
+    [
+      "Status and supplementation context",
+      "Form and labeling context",
+      "Dose and pairing context",
+    ],
+  );
+  assert.deepEqual(
+    chromiumPlan.sections.map((section) => section.heading),
+    [
+      "Intake and status context",
+      "Form and absorption context",
+      "Comparison and cofactor context",
+    ],
+  );
+  assert.deepEqual(
+    seleniumPlan.sections.map((section) => section.heading),
+    [
+      "Intake and status context",
+      "Form and absorption context",
+      "Comparison and cofactor context",
+    ],
+  );
+});
+
+test("scientific background planner exposes section plans for next P0 runtime families", () => {
+  const vitaminAContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: "fixture-vitamin-a-plan",
+      productName: "Vitamin A 10,000 IU",
+      dosageForm: "Softgel",
+      actives: [
+        { name: "Vitamin A (as Retinyl Palmitate)", amount: 3000, unit: "mcg" },
+      ],
+    }),
+    overlayClaims: null,
+  });
+  const dglContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: "fixture-dgl-plan",
+      productName: "DGL Licorice Chewables",
+      dosageForm: "Chewable",
+      actives: [
+        {
+          name: "Deglycyrrhizinated Licorice Root Extract",
+          amount: 400,
+          unit: "mg",
+        },
+      ],
+    }),
+    overlayClaims: null,
+  });
+  const kavaContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: "fixture-kava-plan",
+      productName: "Kava Root Extract",
+      dosageForm: "Capsule",
+      actives: [
+        { name: "Kava Extract (Piper methysticum)", amount: 250, unit: "mg" },
+      ],
+    }),
+    overlayClaims: null,
+  });
+  const slipperyElmContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: "fixture-slippery-elm-plan",
+      productName: "Slippery Elm Inner Bark",
+      dosageForm: "Lozenge",
+      actives: [{ name: "Slippery Elm Bark", amount: 400, unit: "mg" }],
+    }),
+    overlayClaims: null,
+  });
+  const glutathioneContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: "fixture-glutathione-plan",
+      productName: "Liposomal Glutathione",
+      dosageForm: "Liquid",
+      actives: [{ name: "Reduced Glutathione", amount: 500, unit: "mg" }],
+    }),
+    overlayClaims: null,
+  });
+
+  const vitaminAPlan = planScientificBackgroundSections({
+    context: vitaminAContext,
+    selectedIngredientName: "Vitamin A (as Retinyl Palmitate)",
+  });
+  const dglPlan = planScientificBackgroundSections({
+    context: dglContext,
+    selectedIngredientName: "Deglycyrrhizinated Licorice Root Extract",
+  });
+  const kavaPlan = planScientificBackgroundSections({
+    context: kavaContext,
+    selectedIngredientName: "Kava Extract (Piper methysticum)",
+  });
+  const slipperyElmPlan = planScientificBackgroundSections({
+    context: slipperyElmContext,
+    selectedIngredientName: "Slippery Elm Bark",
+  });
+  const glutathionePlan = planScientificBackgroundSections({
+    context: glutathioneContext,
+    selectedIngredientName: "Reduced Glutathione",
+  });
+
+  assert.deepEqual(
+    vitaminAPlan.sections.map((section) => section.heading),
+    [
+      "Status and supplementation context",
+      "Form and labeling context",
+      "Dose and pairing context",
+    ],
+  );
+  for (const plan of [dglPlan, kavaPlan, slipperyElmPlan]) {
+    assert.deepEqual(
+      plan.sections.map((section) => section.heading),
+      [
+        "Primary use context",
+        "Extract and standardization context",
+        "Formula and label context",
+      ],
+    );
+  }
+  assert.deepEqual(
+    glutathionePlan.sections.map((section) => section.heading),
+    ["Primary context", "Form and disclosure context", "Formula context"],
+  );
+});
+
+test("scientific background planner exposes section plans for latest P0 runtime families", () => {
+  const alphaLipoicAcidContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: "fixture-alpha-lipoic-acid-plan",
+      productName: "Alpha-Lipoic Acid 600 mg",
+      dosageForm: "Capsule",
+      actives: [{ name: "Alpha-Lipoic Acid", amount: 600, unit: "mg" }],
+    }),
+    overlayClaims: null,
+  });
+  const biotinContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: "fixture-biotin-plan",
+      productName: "Biotin 10,000 mcg",
+      dosageForm: "Tablet",
+      actives: [{ name: "Biotin", amount: 10000, unit: "mcg" }],
+    }),
+    overlayClaims: null,
+  });
+  const copperContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: "fixture-copper-plan",
+      productName: "Copper Bisglycinate 2 mg",
+      dosageForm: "Capsule",
+      actives: [
+        { name: "Copper (as Copper Bisglycinate)", amount: 2, unit: "mg" },
+      ],
+    }),
+    overlayClaims: null,
+  });
+  const riboflavinContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: "fixture-riboflavin-plan",
+      productName: "Riboflavin Vitamin B2 100 mg",
+      dosageForm: "Capsule",
+      actives: [{ name: "Riboflavin (Vitamin B2)", amount: 100, unit: "mg" }],
+    }),
+    overlayClaims: null,
+  });
+  const aloeVeraContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: "fixture-aloe-vera-plan",
+      productName: "Aloe Vera Inner Leaf Extract",
+      dosageForm: "Softgel",
+      actives: [{ name: "Aloe Vera Inner Leaf", amount: 5000, unit: "mg" }],
+    }),
+    overlayClaims: null,
+  });
+
+  const alphaLipoicAcidPlan = planScientificBackgroundSections({
+    context: alphaLipoicAcidContext,
+    selectedIngredientName: "Alpha-Lipoic Acid",
+  });
+  const biotinPlan = planScientificBackgroundSections({
+    context: biotinContext,
+    selectedIngredientName: "Biotin",
+  });
+  const copperPlan = planScientificBackgroundSections({
+    context: copperContext,
+    selectedIngredientName: "Copper (as Copper Bisglycinate)",
+  });
+  const riboflavinPlan = planScientificBackgroundSections({
+    context: riboflavinContext,
+    selectedIngredientName: "Riboflavin (Vitamin B2)",
+  });
+  const aloeVeraPlan = planScientificBackgroundSections({
+    context: aloeVeraContext,
+    selectedIngredientName: "Aloe Vera Inner Leaf",
+  });
+
+  assert.deepEqual(
+    alphaLipoicAcidPlan.sections.map((section) => section.heading),
+    ["Primary context", "Form and disclosure context", "Formula context"],
+  );
+  for (const plan of [biotinPlan, riboflavinPlan]) {
+    assert.deepEqual(
+      plan.sections.map((section) => section.heading),
+      [
+        "Status and supplementation context",
+        "Form and labeling context",
+        "Dose and pairing context",
+      ],
+    );
+  }
+  assert.deepEqual(
+    copperPlan.sections.map((section) => section.heading),
+    [
+      "Intake and status context",
+      "Form and absorption context",
+      "Comparison and cofactor context",
+    ],
+  );
+  assert.deepEqual(
+    aloeVeraPlan.sections.map((section) => section.heading),
+    [
+      "Primary use context",
+      "Extract and standardization context",
+      "Formula and label context",
+    ],
+  );
+});
+
+test("scientific background planner exposes section plans for next promoted P0 runtime wave", () => {
+  const fixtures = [
+    {
+      labelId: "fixture-l-arginine-plan",
+      productName: "L-Arginine AAKG 1000 mg",
+      selected: "L-Arginine Alpha-Ketoglutarate",
+      active: {
+        name: "L-Arginine Alpha-Ketoglutarate",
+        amount: 1000,
+        unit: "mg",
+      },
+      headings: [
+        "Primary context",
+        "Form and disclosure context",
+        "Formula context",
+      ],
+    },
+    {
+      labelId: "fixture-l-ornithine-plan",
+      productName: "L-Ornithine HCl 500 mg",
+      selected: "L-Ornithine HCl",
+      active: { name: "L-Ornithine HCl", amount: 500, unit: "mg" },
+      headings: [
+        "Primary context",
+        "Form and disclosure context",
+        "Formula context",
+      ],
+    },
+    {
+      labelId: "fixture-molybdenum-plan",
+      productName: "Molybdenum Glycinate 100 mcg",
+      selected: "Molybdenum (as Molybdenum Glycinate)",
+      active: {
+        name: "Molybdenum (as Molybdenum Glycinate)",
+        amount: 100,
+        unit: "mcg",
+      },
+      headings: [
+        "Intake and status context",
+        "Form and absorption context",
+        "Comparison and cofactor context",
+      ],
+    },
+    {
+      labelId: "fixture-iodine-plan",
+      productName: "Iodine from Kelp 150 mcg",
+      selected: "Iodine (from Kelp)",
+      active: { name: "Iodine (from Kelp)", amount: 150, unit: "mcg" },
+      headings: [
+        "Intake and status context",
+        "Form and absorption context",
+        "Comparison and cofactor context",
+      ],
+    },
+    {
+      labelId: "fixture-papain-plan",
+      productName: "Papain Papaya Enzyme",
+      selected: "Papain",
+      active: { name: "Papain", amount: 45, unit: "mg" },
+      headings: [
+        "Functional context",
+        "Activity and delivery context",
+        "Formula context",
+      ],
+    },
+    {
+      labelId: "fixture-passionflower-plan",
+      productName: "Passionflower Extract",
+      selected: "Passionflower Extract",
+      active: { name: "Passionflower Extract", amount: 350, unit: "mg" },
+      headings: [
+        "Primary use context",
+        "Extract and standardization context",
+        "Formula and label context",
+      ],
+    },
+    {
+      labelId: "fixture-st-johns-wort-plan",
+      productName: "St. John's Wort Extract",
+      selected: "St. John's Wort Extract",
+      active: { name: "St. John's Wort Extract", amount: 300, unit: "mg" },
+      headings: [
+        "Primary use context",
+        "Extract and standardization context",
+        "Formula and label context",
+      ],
+    },
+    {
+      labelId: "fixture-lavender-plan",
+      productName: "Lavender Oil Silexan",
+      selected: "Lavender Oil Preparation",
+      active: { name: "Lavender Oil Preparation", amount: 80, unit: "mg" },
+      headings: [
+        "Primary use context",
+        "Extract and standardization context",
+        "Formula and label context",
+      ],
+    },
+    {
+      labelId: "fixture-lemon-balm-plan",
+      productName: "Lemon Balm Extract",
+      selected: "Lemon Balm Extract",
+      active: { name: "Lemon Balm Extract", amount: 500, unit: "mg" },
+      headings: [
+        "Primary use context",
+        "Extract and standardization context",
+        "Formula and label context",
+      ],
+    },
+    {
+      labelId: "fixture-pantothenic-acid-plan",
+      productName: "Pantothenic Acid Vitamin B5",
+      selected: "Pantothenic Acid (Vitamin B5)",
+      active: {
+        name: "Pantothenic Acid (Vitamin B5)",
+        amount: 500,
+        unit: "mg",
+      },
+      headings: [
+        "Status and supplementation context",
+        "Form and labeling context",
+        "Dose and pairing context",
+      ],
+    },
+    {
+      labelId: "fixture-potassium-plan",
+      productName: "Potassium Gluconate 90 mg",
+      selected: "Potassium Gluconate",
+      active: { name: "Potassium", amount: 90, unit: "mg" },
+      headings: [
+        "Intake and status context",
+        "Form and absorption context",
+        "Comparison and cofactor context",
+      ],
+    },
+    {
+      labelId: "fixture-aakg-plan",
+      productName: "Arginine Alpha-Ketoglutarate AAKG",
+      selected: "Arginine Alpha-Ketoglutarate",
+      active: {
+        name: "Arginine Alpha-Ketoglutarate",
+        amount: 1000,
+        unit: "mg",
+      },
+      headings: [
+        "Primary context",
+        "Form and disclosure context",
+        "Formula context",
+      ],
+    },
+    {
+      labelId: "fixture-bromelain-plan",
+      productName: "Bromelain 2400 GDU",
+      selected: "Bromelain",
+      active: { name: "Bromelain 2400 GDU", amount: 500, unit: "mg" },
+      headings: [
+        "Functional context",
+        "Activity and delivery context",
+        "Formula context",
+      ],
+    },
+    {
+      labelId: "fixture-choline-plan",
+      productName: "Choline Bitartrate",
+      selected: "Choline Bitartrate",
+      active: { name: "Choline Bitartrate", amount: 500, unit: "mg" },
+      headings: [
+        "Primary context",
+        "Form and disclosure context",
+        "Formula context",
+      ],
+    },
+    {
+      labelId: "fixture-citrulline-malate-plan",
+      productName: "Citrulline Malate 2:1",
+      selected: "Citrulline Malate",
+      active: { name: "Citrulline Malate", amount: 6000, unit: "mg" },
+      headings: [
+        "Primary context",
+        "Form and disclosure context",
+        "Formula context",
+      ],
+    },
+    {
+      labelId: "fixture-d-ribose-plan",
+      productName: "D-Ribose Powder",
+      selected: "D-Ribose",
+      active: { name: "D-Ribose", amount: 5, unit: "g" },
+      headings: [
+        "Primary context",
+        "Form and disclosure context",
+        "Formula context",
+      ],
+    },
+    {
+      labelId: "fixture-l-methionine-plan",
+      productName: "L-Methionine",
+      selected: "L-Methionine",
+      active: { name: "L-Methionine", amount: 500, unit: "mg" },
+      headings: [
+        "Primary context",
+        "Form and disclosure context",
+        "Formula context",
+      ],
+    },
+    {
+      labelId: "fixture-nmn-plan",
+      productName: "Nicotinamide Mononucleotide NMN",
+      selected: "Nicotinamide Mononucleotide",
+      active: {
+        name: "Nicotinamide Mononucleotide",
+        amount: 250,
+        unit: "mg",
+      },
+      headings: [
+        "Primary context",
+        "Form and disclosure context",
+        "Formula context",
+      ],
+    },
+    {
+      labelId: "fixture-thiamin-plan",
+      productName: "Thiamin Vitamin B1",
+      selected: "Thiamin",
+      active: { name: "Thiamin (Vitamin B1)", amount: 100, unit: "mg" },
+      headings: [
+        "Status and supplementation context",
+        "Form and labeling context",
+        "Dose and pairing context",
+      ],
+    },
+    {
+      labelId: "fixture-valerian-plan",
+      productName: "Valerian Root Extract",
+      selected: "Valerian Root Extract",
+      active: { name: "Valerian Root Extract", amount: 500, unit: "mg" },
+      headings: [
+        "Primary use context",
+        "Extract and standardization context",
+        "Formula and label context",
+      ],
+    },
+    {
+      labelId: "fixture-l-valine-plan",
+      productName: "L-Valine Free Form",
+      selected: "L-Valine",
+      active: { name: "L-Valine", amount: 500, unit: "mg" },
+      headings: [
+        "Primary context",
+        "Form and disclosure context",
+        "Formula context",
+      ],
+    },
+    {
+      labelId: "fixture-beta-alanine-plan",
+      productName: "Beta-Alanine CarnoSyn",
+      selected: "Beta-Alanine",
+      active: { name: "Beta-Alanine", amount: 3200, unit: "mg" },
+      headings: [
+        "Primary context",
+        "Form and disclosure context",
+        "Formula context",
+      ],
+    },
+    {
+      labelId: "fixture-carnosine-plan",
+      productName: "L-Carnosine",
+      selected: "L-Carnosine",
+      active: { name: "L-Carnosine", amount: 500, unit: "mg" },
+      headings: [
+        "Primary context",
+        "Form and disclosure context",
+        "Formula context",
+      ],
+    },
+    {
+      labelId: "fixture-citicoline-plan",
+      productName: "Citicoline CDP-Choline",
+      selected: "Citicoline",
+      active: { name: "Citicoline (CDP-Choline)", amount: 250, unit: "mg" },
+      headings: [
+        "Primary context",
+        "Form and disclosure context",
+        "Formula context",
+      ],
+    },
+    {
+      labelId: "fixture-nr-plan",
+      productName: "Nicotinamide Riboside",
+      selected: "Nicotinamide Riboside",
+      active: { name: "Nicotinamide Riboside", amount: 300, unit: "mg" },
+      headings: [
+        "Primary context",
+        "Form and disclosure context",
+        "Formula context",
+      ],
+    },
+    {
+      labelId: "fixture-colostrum-plan",
+      productName: "Bovine Colostrum",
+      selected: "Bovine Colostrum",
+      active: { name: "Bovine Colostrum", amount: 1000, unit: "mg" },
+      headings: [
+        "Primary context",
+        "Form and disclosure context",
+        "Formula context",
+      ],
+    },
+    {
+      labelId: "fixture-spirulina-plan",
+      productName: "Spirulina Tablets",
+      selected: "Spirulina",
+      active: { name: "Spirulina", amount: 1000, unit: "mg" },
+      headings: [
+        "What this line means on the label",
+        "Why it matters for comparison",
+      ],
+    },
+    {
+      labelId: "fixture-vitamin-k1-plan",
+      productName: "Vitamin K1 Phylloquinone",
+      selected: "Vitamin K1",
+      active: { name: "Vitamin K1 (Phylloquinone)", amount: 100, unit: "mcg" },
+      headings: [
+        "Status and supplementation context",
+        "Form and labeling context",
+        "Dose and pairing context",
+      ],
+    },
+    {
+      labelId: "fixture-manganese-plan",
+      productName: "Manganese Bisglycinate",
+      selected: "Manganese",
+      active: {
+        name: "Manganese (as Manganese Bisglycinate)",
+        amount: 2,
+        unit: "mg",
+      },
+      headings: [
+        "Intake and status context",
+        "Form and absorption context",
+        "Comparison and cofactor context",
+      ],
+    },
+    {
+      labelId: "fixture-chamomile-plan",
+      productName: "Chamomile Extract",
+      selected: "Chamomile Extract",
+      active: { name: "Chamomile Extract", amount: 500, unit: "mg" },
+      headings: [
+        "Primary use context",
+        "Extract and standardization context",
+        "Formula and label context",
+      ],
+    },
+    {
+      labelId: "fixture-astragalus-plan",
+      productName: "Astragalus Extract",
+      selected: "Astragalus Extract",
+      active: { name: "Astragalus Extract", amount: 500, unit: "mg" },
+      headings: [
+        "Primary use context",
+        "Extract and standardization context",
+        "Formula and label context",
+      ],
+    },
+    {
+      labelId: "fixture-cinnamon-plan",
+      productName: "Cinnamon Bark Extract",
+      selected: "Cinnamon Extract",
+      active: { name: "Cinnamon Bark Extract", amount: 500, unit: "mg" },
+      headings: [
+        "Primary use context",
+        "Extract and standardization context",
+        "Formula and label context",
+      ],
+    },
+    {
+      labelId: "fixture-grape-seed-plan",
+      productName: "Grape Seed Extract",
+      selected: "Grape Seed Extract",
+      active: { name: "Grape Seed Extract", amount: 100, unit: "mg" },
+      headings: [
+        "Primary use context",
+        "Extract and standardization context",
+        "Formula and label context",
+      ],
+    },
+    {
+      labelId: "fixture-serrapeptase-plan",
+      productName: "Serrapeptase Enteric",
+      selected: "Serrapeptase",
+      active: { name: "Serrapeptase 120,000 SPU", amount: 120000, unit: "SPU" },
+      headings: [
+        "Functional context",
+        "Activity and delivery context",
+        "Formula context",
+      ],
+    },
+    {
+      labelId: "fixture-garlic-plan",
+      productName: "Garlic Extract",
+      selected: "Garlic Extract",
+      active: { name: "Garlic Extract", amount: 500, unit: "mg" },
+      headings: [
+        "Primary use context",
+        "Extract and standardization context",
+        "Formula and label context",
+      ],
+    },
+    {
+      labelId: "fixture-ginger-plan",
+      productName: "Ginger Root Extract",
+      selected: "Ginger Root Extract",
+      active: { name: "Ginger Root Extract", amount: 550, unit: "mg" },
+      headings: [
+        "Primary use context",
+        "Extract and standardization context",
+        "Formula and label context",
+      ],
+    },
+    {
+      labelId: "fixture-olive-leaf-plan",
+      productName: "Olive Leaf Extract",
+      selected: "Olive Leaf Extract",
+      active: { name: "Olive Leaf Extract", amount: 500, unit: "mg" },
+      headings: [
+        "Primary use context",
+        "Extract and standardization context",
+        "Formula and label context",
+      ],
+    },
+    {
+      labelId: "fixture-pygeum-plan",
+      productName: "Pygeum Bark Extract",
+      selected: "Pygeum africanum Bark Extract",
+      active: {
+        name: "Pygeum africanum Bark Extract",
+        amount: 100,
+        unit: "mg",
+      },
+      headings: [
+        "Primary use context",
+        "Extract and standardization context",
+        "Formula and label context",
+      ],
+    },
+    {
+      labelId: "fixture-resveratrol-plan",
+      productName: "Trans-Resveratrol",
+      selected: "Trans-Resveratrol",
+      active: { name: "Trans-Resveratrol", amount: 250, unit: "mg" },
+      headings: [
+        "Primary context",
+        "Form and disclosure context",
+        "Formula context",
+      ],
+    },
+    {
+      labelId: "fixture-gaba-plan",
+      productName: "PharmaGABA",
+      selected: "Gamma-Aminobutyric Acid (GABA)",
+      active: {
+        name: "Gamma-Aminobutyric Acid (GABA)",
+        amount: 100,
+        unit: "mg",
+      },
+      headings: [
+        "Primary context",
+        "Form and disclosure context",
+        "Formula context",
+      ],
+    },
+    {
+      labelId: "fixture-msm-plan",
+      productName: "MSM 1000 mg",
+      selected: "Methylsulfonylmethane (MSM)",
+      active: {
+        name: "Methylsulfonylmethane (MSM)",
+        amount: 1000,
+        unit: "mg",
+      },
+      headings: [
+        "Primary context",
+        "Form and disclosure context",
+        "Formula context",
+      ],
+    },
+    {
+      labelId: "fixture-zeaxanthin-plan",
+      productName: "Zeaxanthin",
+      selected: "Zeaxanthin",
+      active: { name: "Zeaxanthin", amount: 10, unit: "mg" },
+      headings: [
+        "Primary context",
+        "Form and disclosure context",
+        "Formula context",
+      ],
+    },
+    {
+      labelId: "fixture-red-yeast-rice-plan",
+      productName: "Red Yeast Rice",
+      selected: "Red Yeast Rice",
+      active: { name: "Red Yeast Rice", amount: 1200, unit: "mg" },
+      headings: [
+        "Primary use context",
+        "Extract and standardization context",
+        "Formula and label context",
+      ],
+    },
+    {
+      labelId: "fixture-royal-jelly-plan",
+      productName: "Royal Jelly",
+      selected: "Royal Jelly",
+      active: { name: "Royal Jelly", amount: 500, unit: "mg" },
+      headings: [
+        "Primary use context",
+        "Extract and standardization context",
+        "Formula and label context",
+      ],
+    },
+    {
+      labelId: "fixture-saffron-plan",
+      productName: "Saffron Extract",
+      selected: "Saffron Extract",
+      active: { name: "Saffron Extract", amount: 30, unit: "mg" },
+      headings: [
+        "Primary use context",
+        "Extract and standardization context",
+        "Formula and label context",
+      ],
+    },
+    {
+      labelId: "fixture-tribulus-plan",
+      productName: "Tribulus Terrestris",
+      selected: "Tribulus Terrestris Extract",
+      active: { name: "Tribulus Terrestris Extract", amount: 500, unit: "mg" },
+      headings: [
+        "Primary use context",
+        "Extract and standardization context",
+        "Formula and label context",
+      ],
+    },
+    {
+      labelId: "fixture-turkey-tail-plan",
+      productName: "Turkey Tail Mushroom",
+      selected: "Turkey Tail Mushroom Extract",
+      active: {
+        name: "Turkey Tail Mushroom Extract",
+        amount: 1000,
+        unit: "mg",
+      },
+      headings: [
+        "Primary use context",
+        "Extract and standardization context",
+        "Formula and label context",
+      ],
+    },
+    {
+      labelId: "fixture-milk-thistle-plan",
+      productName: "Milk Thistle Silymarin",
+      selected: "Milk Thistle Extract",
+      active: { name: "Milk Thistle Extract", amount: 300, unit: "mg" },
+      headings: [
+        "Primary use context",
+        "Extract and standardization context",
+        "Formula and label context",
+      ],
+    },
+  ];
+
+  for (const fixture of fixtures) {
+    const context = buildIngredientScienceContext({
+      digest: buildDigest({
+        labelId: fixture.labelId,
+        productName: fixture.productName,
+        dosageForm: "Capsule",
+        actives: [fixture.active],
+      }),
+      overlayClaims: null,
+    });
+    const plan = planScientificBackgroundSections({
+      context,
+      selectedIngredientName: fixture.selected,
+    });
+    assert.deepEqual(
+      plan.sections.map((section) => section.heading),
+      fixture.headings,
+      fixture.labelId,
+    );
+  }
 });
 
 test("scientific background still returns label-context fallback when descriptor rows are missing", async () => {
@@ -437,6 +1694,228 @@ test("scientific background reports llm_timeout when the live writer misses the 
   assert.equal(result.diagnostics.timeoutCount, 1);
 });
 
+test("scientific background records parse shape when json is missing sections", async () => {
+  const digest = buildDigest({
+    labelId: "fixture-parse-shape-missing-sections",
+    productName: "Vitamin B12 1000 mcg",
+    dosageForm: "Tablet",
+    actives: [{ name: "Vitamin B12", amount: 1000, unit: "mcg" }],
+  });
+
+  const context = buildIngredientScienceContext({
+    digest,
+    overlayClaims: null,
+  });
+  const result = await compileScientificBackgroundAsync(
+    context,
+    "Vitamin B12",
+    {
+      llmFn: async () =>
+        JSON.stringify({
+          introLine: "Vitamin B12 research context",
+          closingNote: "Read this carefully.",
+        }),
+    },
+  );
+
+  assert.equal(result.source, "fallback");
+  assert.equal(result.diagnostics.fallbackReason, "parse_failed");
+  assert.equal(result.diagnostics.lastError, "parse:sections_missing");
+});
+
+test("scientific background rescues structured non-json writer output when plan headings are intact", async () => {
+  const digest = buildDigest({
+    labelId: "fixture-b12-structured-non-json",
+    productName: "Vitamin B12 Methylcobalamin 1000 mcg",
+    dosageForm: "Tablet",
+    actives: [{ name: "Vitamin B12", amount: 1000, unit: "mcg" }],
+  });
+
+  const context = buildIngredientScienceContext({
+    digest,
+    overlayClaims: null,
+  });
+  const plan = planScientificBackgroundSections({
+    context,
+    selectedIngredientName: "Vitamin B12",
+  });
+  const [primarySection, secondarySection] = plan.sections;
+
+  const result = await compileScientificBackgroundAsync(
+    context,
+    "Vitamin B12",
+    {
+      llmFn: async () =>
+        [
+          "IntroLine: Vitamin B12 labels are easiest to compare by disclosed form, release style, and how clearly the line is named.",
+          `### ${primarySection.heading}`,
+          "Summary: The clearest B12 reading usually depends on whether the label points to methylcobalamin, cyanocobalamin, or a broader blended context.",
+          "- Form naming changes how narrow the comparison set really is.",
+          "- Timed-release and sublingual wording add label context rather than proving the same product story.",
+          "Evidence Read: Stronger for form-aware label interpretation than for treating every B12 label as interchangeable.",
+          "Shopper Meaning: Use the exact form and release wording to decide which B12 products belong in the same comparison set.",
+          `### ${secondarySection.heading}`,
+          "Summary: Paired nutrients and broader formula framing can change how confidently the B12 line should be compared on its own.",
+          "- A B-complex frame can make the B12 amount less interpretable in isolation.",
+          "- Companion nutrients can shift the product from a single-ingredient comparison toward a formula comparison.",
+          "Evidence Read: This lane is narrower and more formula-dependent than the clearest form-reading lane.",
+          "Shopper Meaning: Weigh the full formula before assuming the B12 line should be compared like a stand-alone B12 product.",
+          "ClosingNote: Read the B12 form and release wording before broad energy language drives the comparison.",
+        ].join("\n"),
+    },
+  );
+
+  assert.equal(result.source, "api");
+  assert.equal(result.fallbackUsed, false);
+  assert.equal(result.diagnostics.liveWriterHit, true);
+  assert.equal(result.diagnostics.fallbackReason, null);
+  assert.equal(
+    result.scientificBackground.sections[0]?.heading,
+    primarySection.heading,
+  );
+  assert.match(
+    result.scientificBackground.sections[0]?.shopperMeaning ?? "",
+    /decide|comparison set/i,
+  );
+});
+
+test("scientific background rescues truncated json writer output when a partial section payload is still recoverable", async () => {
+  const digest = buildDigest({
+    labelId: "fixture-b12-truncated-json",
+    productName: "Vitamin B12 Methylcobalamin 1000 mcg",
+    dosageForm: "Tablet",
+    actives: [{ name: "Vitamin B12", amount: 1000, unit: "mcg" }],
+  });
+
+  const context = buildIngredientScienceContext({
+    digest,
+    overlayClaims: null,
+  });
+  const payload = JSON.stringify({
+    introLine:
+      "Vitamin B12 labels are easiest to compare by disclosed form, release style, and whether the line stands alone or inside a broader formula.",
+    sections: [
+      {
+        headingId: "deficiency_and_supplementation_context",
+        heading: "Deficiency and supplementation context",
+        summary:
+          "The clearest B12 reading usually stays anchored to deficiency support and supplementation context rather than generic energy marketing.",
+        bullets: [
+          "Higher-dose B12 products are often framed around supplementation or repletion context.",
+          "That lane is easier to compare when the form and dose are both clearly disclosed.",
+        ],
+        evidenceRead:
+          "This is the strongest shopper-facing lane when the label is explicit about dose and form.",
+        shopperMeaning:
+          "Use the form and amount together to decide which B12 products belong in the same comparison set.",
+      },
+      {
+        headingId: "form_and_delivery_interpretation",
+        heading: "Form and delivery interpretation",
+        summary:
+          "Methylcobalamin, cyanocobalamin, timed-release, and sublingual wording can all change how confidently the label should be compared.",
+        bullets: [
+          "Delivery wording adds label-reading context rather than proving the same product story.",
+          "Two B12 labels can look similar while still differ materially in form and release framing.",
+        ],
+        evidenceRead:
+          "This lane is narrower and more label-dependent than the main supplementation lane.",
+        shopperMeaning:
+          "Weigh the exact form and delivery wording before treating two B12 products as interchangeable.",
+      },
+    ],
+    closingNote:
+      "Read the B12 form and release wording before broad energy language drives the comparison.",
+  });
+  const secondSectionStart = payload.indexOf(
+    '},{"headingId":"form_and_delivery_interpretation"',
+  );
+
+  const result = await compileScientificBackgroundAsync(
+    context,
+    "Vitamin B12",
+    {
+      llmFn: async () => payload.slice(0, secondSectionStart),
+    },
+  );
+
+  assert.equal(result.source, "api");
+  assert.equal(result.fallbackUsed, false);
+  assert.equal(result.diagnostics.liveWriterHit, true);
+  assert.equal(result.diagnostics.fallbackReason, null);
+  assert.match(
+    result.scientificBackground.sections[0]?.summary ?? "",
+    /deficiency support|supplementation(?: and status-related)? context/i,
+  );
+});
+
+test("scientific background rescues malformed later json when an earlier section prefix is still recoverable", async () => {
+  const digest = buildDigest({
+    labelId: "fixture-vitamin-d-malformed-later-json",
+    productName: "Vitamin D3 1000 IU",
+    dosageForm: "Softgel",
+    actives: [{ name: "Vitamin D3", amount: 1000, unit: "IU" }],
+  });
+
+  const context = buildIngredientScienceContext({
+    digest,
+    overlayClaims: null,
+  });
+  const payload = JSON.stringify({
+    introLine:
+      "Vitamin D is easiest to read through bone and calcium regulation, which is the clearest and most established lane for this nutrient.",
+    sections: [
+      {
+        headingId: "bone_and_calcium_regulation_context",
+        heading: "Bone and calcium regulation context",
+        summary:
+          "Bone and calcium regulation is the strongest vitamin D comparison lane, and it is more reliable than broad immune marketing.",
+        bullets: [
+          "That lane is easier to compare when the label keeps vitamin D as the lead active.",
+          "Dose and delivery wording still matter when shoppers compare otherwise similar products.",
+        ],
+        evidenceRead:
+          "This is the strongest and most established vitamin D lane for product comparison.",
+        shopperMeaning:
+          "Compare vitamin D products through dose, delivery, and whether the formula stays anchored to bone-focused interpretation.",
+      },
+      {
+        headingId: "immune_context_and_boundaries",
+        heading: "Immune context and boundaries",
+        summary:
+          "Immune framing appears often, but it is broader and more context-dependent than the core bone lane.",
+        bullets: [
+          "That lane should stay secondary.",
+          "It should not replace dose and label-reading context.",
+        ],
+        evidenceRead:
+          "This lane is useful but less direct than the primary bone lane.",
+        shopperMeaning:
+          "Keep immune wording in proportion when comparing products.",
+      },
+    ],
+    closingNote:
+      "Read the dose and delivery line before general wellness wording drives the comparison.",
+  });
+  const malformed = payload.replace(
+    '"Immune context and boundaries"',
+    '"Immune "context" and boundaries"',
+  );
+
+  const result = await compileScientificBackgroundAsync(context, "Vitamin D3", {
+    llmFn: async () => malformed,
+  });
+
+  assert.equal(result.source, "api");
+  assert.equal(result.fallbackUsed, false);
+  assert.equal(result.diagnostics.liveWriterHit, true);
+  assert.equal(result.diagnostics.fallbackReason, null);
+  assert.match(
+    result.scientificBackground.sections[0]?.summary ?? "",
+    /bone and calcium regulation/i,
+  );
+});
+
 test("scientific background repairs near-miss writer output into an api result", async () => {
   const digest = buildDigest({
     labelId: "fixture-epa-repair",
@@ -516,6 +1995,97 @@ test("scientific background repairs near-miss writer output into an api result",
   assert.match(
     result.scientificBackground.sections[1]?.evidenceRead ?? "",
     /mixed|carry less weight/i,
+  );
+});
+
+test("scientific background can salvage safe heading mismatches by planned section order", async () => {
+  const digest = buildDigest({
+    labelId: "fixture-epa-heading-mismatch-safe",
+    productName: "Omega-3 1040 mg Fish Oil 1250 mg",
+    dosageForm: "Softgel",
+    actives: [
+      { name: "EPA (Eicosapentaenoic Acid)", amount: 690, unit: "mg" },
+      { name: "DHA (Docosahexaenoic Acid)", amount: 260, unit: "mg" },
+    ],
+  });
+
+  const context = buildIngredientScienceContext({
+    digest,
+    overlayClaims: null,
+  });
+  const result = await compileScientificBackgroundAsync(
+    context,
+    "EPA (Eicosapentaenoic Acid)",
+    {
+      llmFn: async () =>
+        JSON.stringify({
+          introLine:
+            "EPA-specific research is clearest around triglyceride and lipid endpoints.",
+          sections: [
+            {
+              heading: "Main research context",
+              summary:
+                "EPA-specific research is clearest around triglyceride and lipid endpoints, which makes this lane narrower than broad heart wording.",
+              bullets: [
+                "The clearest comparisons come from outcome-specific lipid endpoints rather than umbrella cardiovascular language.",
+                "Products that disclose EPA separately are easier to compare than labels that lean only on total fish oil.",
+              ],
+              evidenceRead:
+                "This is a stronger and more comparison-friendly lane than broader heart-language summaries, even though it still should not be read as a blanket promise.",
+              shopperMeaning:
+                "Prioritize separate EPA and DHA amounts before treating broad heart wording as the main reason to choose.",
+            },
+            {
+              heading: "Secondary context",
+              summary:
+                "Inflammation and recovery discussions are narrower and more context-dependent than the main lipid lane.",
+              bullets: [
+                "This lane becomes easier to overread when labels collapse different exercise or inflammation contexts together.",
+                "It usually makes more sense as a secondary decision layer after the exact EPA amount is clear.",
+              ],
+              evidenceRead:
+                "The signals here are more mixed and should usually carry less comparison weight than the main triglyceride-oriented section.",
+              shopperMeaning:
+                "Weigh this after the EPA amount instead of using it as the main reason to choose between products.",
+            },
+            {
+              heading: "Boundary note",
+              summary:
+                "Broad heart wording is wider than the clearest EPA-specific research lane, so labels can sound stronger than the cleanest evidence reading.",
+              bullets: [
+                "A bigger fish-oil number does not automatically tell you how much EPA is doing the work in the product.",
+                "The detailed fatty-acid breakdown is usually more decision-useful than umbrella heart language on the package.",
+              ],
+              evidenceRead:
+                "This boundary is useful because it keeps the strongest outcome-specific lane separate from broader claims that bundle several interpretations together.",
+              shopperMeaning:
+                "Use the detailed EPA and DHA breakdown to rank products before buying into general heart packaging.",
+            },
+          ],
+          closingNote:
+            "Read the strongest EPA lane first, then decide how much weight the broader heart wording deserves.",
+        }),
+    },
+  );
+
+  assert.equal(result.source, "api");
+  assert.equal(result.fallbackUsed, false);
+  assert.equal(result.diagnostics.fallbackReason, null);
+  assert.deepEqual(
+    result.scientificBackground.sections.map((section) => section.heading),
+    [
+      "Lipid and triglyceride research",
+      "Inflammation and recovery context",
+      "How this differs from broader heart claims",
+    ],
+  );
+  assert.match(
+    result.scientificBackground.sections[0]?.shopperMeaning ?? "",
+    /prioritize separate EPA and DHA amounts/i,
+  );
+  assert.match(
+    result.scientificBackground.sections[1]?.shopperMeaning ?? "",
+    /weigh this after the EPA amount/i,
   );
 });
 
@@ -1438,6 +3008,110 @@ test("scientific background accepts b12 live-style output when supplementation c
   );
 });
 
+test("scientific background repairs medical-claim b12 copy back to safe family fallback sections", async () => {
+  const digest = buildDigest({
+    labelId: "fixture-b12-medical-claim-repair",
+    productName: "Vitamin B12 2500 mcg Fast-Dissolving Tablets",
+    dosageForm: "Tablet",
+    actives: [
+      { name: "Vitamin B12 (as Methylcobalamin)", amount: 2500, unit: "mcg" },
+    ],
+  });
+
+  const context = buildIngredientScienceContext({
+    digest,
+    overlayClaims: null,
+  });
+  const result = await compileScientificBackgroundAsync(
+    context,
+    "Vitamin B12 (as Methylcobalamin)",
+    {
+      llmFn: async () =>
+        JSON.stringify({
+          introLine:
+            "Vitamin B12 supports nerve function and red blood cell formation, and this higher-dose format is used to maintain adequate B12 status.",
+          sections: [
+            {
+              headingId: "deficiency_and_supplementation_context",
+              heading: "Deficiency and supplementation context",
+              summary:
+                "This is the clearest B12 lane because these products are often used to prevent deficiency and restore low status.",
+              bullets: [
+                "Higher-dose B12 products are often framed around deficiency prevention and repletion.",
+                "Fast-dissolving formats are promoted to support daily supplementation and quick status correction.",
+                "This makes the product easier to read than generic energy positioning.",
+              ],
+              evidenceRead:
+                "This is the strongest B12 proof lane and the best place to start comparison.",
+              shopperMeaning:
+                "Use this as the best-form B12 lane when deciding which high-dose B12 product to buy.",
+            },
+            {
+              headingId: "nerve_and_blood_cell_context",
+              heading: "Nerve and blood-cell context",
+              summary:
+                "Vitamin B12 supports nerve function and red blood cell formation, so this lane helps explain the label.",
+              bullets: [
+                "This context is commonly used to support nervous system messaging.",
+                "It also appears in blood-cell and wellness positioning.",
+                "That makes it a practical secondary lane for the label.",
+              ],
+              evidenceRead:
+                "This is a useful and trusted B12 support lane for most shoppers.",
+              shopperMeaning:
+                "Read this as support for why the product can help with nerve and blood-cell needs.",
+            },
+            {
+              headingId: "what_form_disclosure_changes",
+              heading: "What form disclosure changes",
+              summary:
+                "Methylcobalamin is often presented as the best B12 form, which can change how shoppers read the label.",
+              bullets: [
+                "Form wording can be used to support a stronger quality impression.",
+                "Fast-dissolving delivery can reinforce the idea that this B12 works better.",
+                "That makes form language an easy way to rank similar products.",
+              ],
+              evidenceRead:
+                "This is strong evidence that form disclosure matters for B12 comparison.",
+              shopperMeaning:
+                "Treat methylcobalamin plus fast-dissolve wording as a sign that this product may be better than standard B12 tablets.",
+            },
+          ],
+          closingNote:
+            "Read this B12 product through deficiency prevention, nerve support, and the best-form interpretation.",
+        }),
+    },
+  );
+
+  assert.equal(result.source, "api");
+  assert.equal(result.fallbackUsed, false);
+  assert.equal(result.diagnostics.fallbackReason, null);
+  const combinedText = [
+    result.scientificBackground.introLine,
+    result.scientificBackground.closingNote ?? "",
+    ...result.scientificBackground.sections.flatMap((section) => [
+      section.summary,
+      ...section.bullets,
+      section.evidenceRead,
+      section.shopperMeaning ?? "",
+    ]),
+  ].join(" ");
+  assert.equal(
+    /\bsupports?\s+nerve function\b|\bused to maintain\b|\bmaintain adequate\b|\bprevent deficiency\b|\bhelps?\s+protect\b/i.test(
+      combinedText,
+    ),
+    false,
+  );
+  assert.match(
+    result.scientificBackground.sections[0]?.summary ?? "",
+    /supplementation|status-related|comparison frame/i,
+  );
+  assert.match(
+    result.scientificBackground.sections[2]?.shopperMeaning ?? "",
+    /comparison bucket|form|per-serving/i,
+  );
+});
+
 test("scientific background accepts folate live-style output when developmental context stays specific and form labeling remains practical", async () => {
   const digest = buildDigest({
     labelId: "fixture-folate-live-style",
@@ -2015,6 +3689,42 @@ test("epa fallback now uses lipid and triglyceride evidence grounding as the pri
   assert.match(
     result.scientificBackground.sections[0]?.shopperMeaning ?? "",
     /omega-3 comparison anchor|broad heart language/i,
+  );
+});
+
+test("combined omega-3 fallback avoids template-style summary phrasing in secondary lanes", async () => {
+  const digest = buildDigest({
+    labelId: "fixture-combined-omega3-fallback",
+    productName: "Omega-3 1000 mg",
+    dosageForm: "Softgel",
+    actives: [{ name: "Omega-3 Fatty Acids", amount: 1000, unit: "mg" }],
+  });
+
+  const context = buildIngredientScienceContext({
+    digest,
+    overlayClaims: null,
+  });
+  const result = await compileScientificBackgroundAsync(
+    context,
+    "Omega-3 Fatty Acids",
+  );
+
+  assert.equal(result.source, "fallback");
+  assert.deepEqual(
+    result.scientificBackground.sections.map((section) => section.heading),
+    [
+      "Most studied: lipid-related endpoints",
+      "Broader cardiovascular context",
+      "Secondary contexts in brain, eye, and joint discussions",
+    ],
+  );
+  assert.doesNotMatch(
+    result.scientificBackground.sections[1]?.summary ?? "",
+    /\bis\s+(?:frequently|commonly|often|also)?\s*(?:studied|discussed|explored)\b/i,
+  );
+  assert.doesNotMatch(
+    result.scientificBackground.sections[2]?.summary ?? "",
+    /\bis\s+(?:frequently|commonly|often|also)?\s*(?:studied|discussed|explored)\b/i,
   );
 });
 

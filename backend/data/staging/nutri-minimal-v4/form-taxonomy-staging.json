@@ -1,0 +1,5195 @@
+{
+  "version": "v4.0",
+  "generated_at": "2026-02-05T06:33:15Z",
+  "meta": {
+    "version": "v4.0",
+    "source_workbook": "/Users/howard07/Library/Mobile Documents/com~apple~CloudDocs/nutri_minimal_data_package_v4_0_en_only_review_excerpts.xlsx",
+    "generated_at": "2026-02-05T06:33:15Z",
+    "purpose": "form-taxonomy-staging"
+  },
+  "sheets": {
+    "ingredients": [
+      {
+        "ingredient_id": "5_htp",
+        "ingredient": "5-HTP",
+        "category": "amino_acid",
+        "base_unit": "mg",
+        "synonyms": [
+          "5-HTP",
+          "5 Hydroxytryptophan",
+          "5-hydroxytryptophan"
+        ],
+        "goals": [
+          "sleep_stress",
+          "energy_performance",
+          "brain_focus"
+        ]
+      },
+      {
+        "ingredient_id": "acetyl_l_carnitine",
+        "ingredient": "Acetyl-L-Carnitine",
+        "category": "amino_acid",
+        "base_unit": "mg",
+        "synonyms": [
+          "Acetyl-L-Carnitine"
+        ],
+        "goals": [
+          "energy_performance",
+          "weight",
+          "brain_focus"
+        ]
+      },
+      {
+        "ingredient_id": "arginine_alpha_ketoglutarate",
+        "ingredient": "Arginine Alpha-Ketoglutarate",
+        "category": "amino_acid",
+        "base_unit": "g",
+        "synonyms": [
+          "AAKG",
+          "Arginine Alpha-Ketoglutarate (AAKG)"
+        ],
+        "goals": [
+          "energy_performance",
+          "brain_focus",
+          "sleep_stress"
+        ]
+      },
+      {
+        "ingredient_id": "beta_alanine",
+        "ingredient": "Beta-alanine",
+        "category": "amino_acid",
+        "base_unit": "g",
+        "synonyms": [
+          "Beta-alanine"
+        ],
+        "goals": [
+          "energy_performance",
+          "brain_focus",
+          "sleep_stress"
+        ]
+      },
+      {
+        "ingredient_id": "carnosine",
+        "ingredient": "Carnosine",
+        "category": "amino_acid",
+        "base_unit": "mg",
+        "synonyms": [
+          "Carnosine"
+        ],
+        "goals": [
+          "energy_performance",
+          "brain_focus",
+          "sleep_stress"
+        ]
+      },
+      {
+        "ingredient_id": "citrulline_malate",
+        "ingredient": "Citrulline Malate",
+        "category": "amino_acid",
+        "base_unit": "g",
+        "synonyms": [
+          "Citrulline Malate"
+        ],
+        "goals": [
+          "energy_performance",
+          "brain_focus",
+          "sleep_stress"
+        ]
+      },
+      {
+        "ingredient_id": "creatine",
+        "ingredient": "Creatine",
+        "category": "amino_acid",
+        "base_unit": "g",
+        "synonyms": [
+          "Creatine"
+        ],
+        "goals": [
+          "energy_performance",
+          "brain_focus",
+          "sleep_stress"
+        ]
+      },
+      {
+        "ingredient_id": "d_ribose",
+        "ingredient": "D-Ribose",
+        "category": "amino_acid",
+        "base_unit": "g",
+        "synonyms": [
+          "D-Ribose"
+        ],
+        "goals": [
+          "energy_performance",
+          "brain_focus",
+          "sleep_stress"
+        ]
+      },
+      {
+        "ingredient_id": "glycine",
+        "ingredient": "Glycine",
+        "category": "amino_acid",
+        "base_unit": "g",
+        "synonyms": [
+          "Glycine"
+        ],
+        "goals": [
+          "sleep_stress",
+          "energy_performance",
+          "brain_focus"
+        ]
+      },
+      {
+        "ingredient_id": "hmb",
+        "ingredient": "HMB",
+        "category": "amino_acid",
+        "base_unit": "g",
+        "synonyms": [
+          "beta-hydroxy beta-methylbutyrate",
+          "HMB",
+          "HMB (beta-hydroxy beta-methylbutyrate)"
+        ],
+        "goals": [
+          "energy_performance",
+          "brain_focus",
+          "sleep_stress"
+        ]
+      },
+      {
+        "ingredient_id": "l_alanine",
+        "ingredient": "L-Alanine",
+        "category": "amino_acid",
+        "base_unit": "g",
+        "synonyms": [
+          "L-Alanine"
+        ],
+        "goals": [
+          "energy_performance",
+          "brain_focus",
+          "sleep_stress"
+        ]
+      },
+      {
+        "ingredient_id": "l_arginine",
+        "ingredient": "L-Arginine",
+        "category": "amino_acid",
+        "base_unit": "g",
+        "synonyms": [
+          "L-Arginine"
+        ],
+        "goals": [
+          "energy_performance",
+          "brain_focus",
+          "sleep_stress"
+        ]
+      },
+      {
+        "ingredient_id": "l_aspartic_acid",
+        "ingredient": "L-Aspartic Acid",
+        "category": "amino_acid",
+        "base_unit": "g",
+        "synonyms": [
+          "L-Aspartic Acid"
+        ],
+        "goals": [
+          "energy_performance",
+          "brain_focus",
+          "sleep_stress"
+        ]
+      },
+      {
+        "ingredient_id": "l_citrulline",
+        "ingredient": "L-Citrulline",
+        "category": "amino_acid",
+        "base_unit": "g",
+        "synonyms": [
+          "L-Citrulline"
+        ],
+        "goals": [
+          "energy_performance",
+          "brain_focus",
+          "sleep_stress"
+        ]
+      },
+      {
+        "ingredient_id": "l_glutamic_acid",
+        "ingredient": "L-Glutamic Acid",
+        "category": "amino_acid",
+        "base_unit": "g",
+        "synonyms": [
+          "L-Glutamic Acid"
+        ],
+        "goals": [
+          "energy_performance",
+          "brain_focus",
+          "sleep_stress"
+        ]
+      },
+      {
+        "ingredient_id": "l_glutamine",
+        "ingredient": "L-Glutamine",
+        "category": "amino_acid",
+        "base_unit": "g",
+        "synonyms": [
+          "L-Glutamine"
+        ],
+        "goals": [
+          "gut_probiotic",
+          "energy_performance",
+          "brain_focus"
+        ]
+      },
+      {
+        "ingredient_id": "l_histidine",
+        "ingredient": "L-Histidine",
+        "category": "amino_acid",
+        "base_unit": "g",
+        "synonyms": [
+          "L-Histidine"
+        ],
+        "goals": [
+          "energy_performance",
+          "brain_focus",
+          "sleep_stress"
+        ]
+      },
+      {
+        "ingredient_id": "l_isoleucine",
+        "ingredient": "L-Isoleucine",
+        "category": "amino_acid",
+        "base_unit": "g",
+        "synonyms": [
+          "L-Isoleucine"
+        ],
+        "goals": [
+          "energy_performance",
+          "brain_focus",
+          "sleep_stress"
+        ]
+      },
+      {
+        "ingredient_id": "l_leucine",
+        "ingredient": "L-Leucine",
+        "category": "amino_acid",
+        "base_unit": "g",
+        "synonyms": [
+          "L-Leucine"
+        ],
+        "goals": [
+          "energy_performance",
+          "brain_focus",
+          "sleep_stress"
+        ]
+      },
+      {
+        "ingredient_id": "l_lysine",
+        "ingredient": "L-Lysine",
+        "category": "amino_acid",
+        "base_unit": "mg",
+        "synonyms": [
+          "L-Lysine"
+        ],
+        "goals": [
+          "immune",
+          "energy_performance",
+          "brain_focus"
+        ]
+      },
+      {
+        "ingredient_id": "l_methionine",
+        "ingredient": "L-Methionine",
+        "category": "amino_acid",
+        "base_unit": "g",
+        "synonyms": [
+          "L-Methionine"
+        ],
+        "goals": [
+          "energy_performance",
+          "brain_focus",
+          "sleep_stress"
+        ]
+      },
+      {
+        "ingredient_id": "l_ornithine",
+        "ingredient": "L-Ornithine",
+        "category": "amino_acid",
+        "base_unit": "g",
+        "synonyms": [
+          "L-Ornithine"
+        ],
+        "goals": [
+          "energy_performance",
+          "brain_focus",
+          "sleep_stress"
+        ]
+      },
+      {
+        "ingredient_id": "l_phenylalanine",
+        "ingredient": "L-Phenylalanine",
+        "category": "amino_acid",
+        "base_unit": "g",
+        "synonyms": [
+          "L-Phenylalanine"
+        ],
+        "goals": [
+          "energy_performance",
+          "brain_focus",
+          "sleep_stress"
+        ]
+      },
+      {
+        "ingredient_id": "l_serine",
+        "ingredient": "L-Serine",
+        "category": "amino_acid",
+        "base_unit": "g",
+        "synonyms": [
+          "L-Serine"
+        ],
+        "goals": [
+          "energy_performance",
+          "brain_focus",
+          "sleep_stress"
+        ]
+      },
+      {
+        "ingredient_id": "l_theanine",
+        "ingredient": "L-Theanine",
+        "category": "amino_acid",
+        "base_unit": "mg",
+        "synonyms": [
+          "L-Theanine"
+        ],
+        "goals": [
+          "sleep_stress",
+          "brain_focus",
+          "energy_performance"
+        ]
+      },
+      {
+        "ingredient_id": "l_threonine",
+        "ingredient": "L-Threonine",
+        "category": "amino_acid",
+        "base_unit": "g",
+        "synonyms": [
+          "L-Threonine"
+        ],
+        "goals": [
+          "energy_performance",
+          "brain_focus",
+          "sleep_stress"
+        ]
+      },
+      {
+        "ingredient_id": "l_tryptophan",
+        "ingredient": "L-Tryptophan",
+        "category": "amino_acid",
+        "base_unit": "mg",
+        "synonyms": [
+          "L-Tryptophan",
+          "Tryptophan"
+        ],
+        "goals": [
+          "sleep_stress",
+          "energy_performance",
+          "brain_focus"
+        ]
+      },
+      {
+        "ingredient_id": "l_tyrosine",
+        "ingredient": "L-Tyrosine",
+        "category": "amino_acid",
+        "base_unit": "mg",
+        "synonyms": [
+          "L-Tyrosine"
+        ],
+        "goals": [
+          "brain_focus",
+          "energy_performance",
+          "sleep_stress"
+        ]
+      },
+      {
+        "ingredient_id": "l_valine",
+        "ingredient": "L-Valine",
+        "category": "amino_acid",
+        "base_unit": "g",
+        "synonyms": [
+          "L-Valine"
+        ],
+        "goals": [
+          "energy_performance",
+          "brain_focus",
+          "sleep_stress"
+        ]
+      },
+      {
+        "ingredient_id": "n_acetylcysteine",
+        "ingredient": "N-Acetylcysteine (NAC)",
+        "category": "amino_acid",
+        "base_unit": "mg",
+        "synonyms": [
+          "N-Acetylcysteine",
+          "N-acetyl-L-cysteine",
+          "Acetylcysteine",
+          "NAC"
+        ],
+        "goals": [
+          "immune",
+          "beauty",
+          "energy_performance"
+        ]
+      },
+      {
+        "ingredient_id": "taurine",
+        "ingredient": "Taurine",
+        "category": "amino_acid",
+        "base_unit": "mg",
+        "synonyms": [
+          "Taurine"
+        ],
+        "goals": [
+          "heart_lipids",
+          "energy_performance",
+          "brain_focus"
+        ]
+      },
+      {
+        "ingredient_id": "aloe_vera",
+        "ingredient": "Aloe Vera",
+        "category": "botanical",
+        "base_unit": "mg",
+        "synonyms": [
+          "Aloe Vera",
+          "Aloe",
+          "Aloe vera"
+        ],
+        "goals": [
+          "gut_probiotic",
+          "immune",
+          "sleep_stress"
+        ]
+      },
+      {
+        "ingredient_id": "american_ginseng",
+        "ingredient": "American Ginseng",
+        "category": "botanical",
+        "base_unit": "mg",
+        "synonyms": [
+          "American Ginseng"
+        ],
+        "goals": [
+          "immune",
+          "sleep_stress",
+          "blood_sugar"
+        ]
+      },
+      {
+        "ingredient_id": "artichoke_extract",
+        "ingredient": "Artichoke extract",
+        "category": "botanical",
+        "base_unit": "mg",
+        "synonyms": [
+          "Artichoke extract"
+        ],
+        "goals": [
+          "gut_probiotic",
+          "immune",
+          "sleep_stress"
+        ]
+      },
+      {
+        "ingredient_id": "astragalus",
+        "ingredient": "Astragalus",
+        "category": "botanical",
+        "base_unit": "mg",
+        "synonyms": [
+          "Astragalus"
+        ],
+        "goals": [
+          "immune",
+          "sleep_stress",
+          "blood_sugar"
+        ]
+      },
+      {
+        "ingredient_id": "bacopa_monnieri",
+        "ingredient": "Bacopa monnieri",
+        "category": "botanical",
+        "base_unit": "mg",
+        "synonyms": [
+          "Bacopa monnieri"
+        ],
+        "goals": [
+          "brain_focus",
+          "immune",
+          "sleep_stress"
+        ]
+      },
+      {
+        "ingredient_id": "bee_propolis",
+        "ingredient": "Bee Propolis",
+        "category": "botanical",
+        "base_unit": "mg",
+        "synonyms": [
+          "Bee Propolis"
+        ],
+        "goals": [
+          "immune",
+          "sleep_stress",
+          "blood_sugar"
+        ]
+      },
+      {
+        "ingredient_id": "berberine",
+        "ingredient": "Berberine",
+        "category": "botanical",
+        "base_unit": "mg",
+        "synonyms": [
+          "Berberine"
+        ],
+        "goals": [
+          "weight",
+          "blood_sugar",
+          "immune"
+        ]
+      },
+      {
+        "ingredient_id": "bilberry",
+        "ingredient": "Bilberry",
+        "category": "botanical",
+        "base_unit": "mg",
+        "synonyms": [
+          "Bilberry",
+          "Bilberry extract",
+          "Vaccinium myrtillus"
+        ],
+        "goals": [
+          "brain_focus",
+          "immune",
+          "sleep_stress"
+        ]
+      },
+      {
+        "ingredient_id": "bitter_melon",
+        "ingredient": "Bitter Melon",
+        "category": "botanical",
+        "base_unit": "mg",
+        "synonyms": [
+          "Bitter Melon",
+          "Bitter melon extract",
+          "Momordica charantia"
+        ],
+        "goals": [
+          "blood_sugar",
+          "immune",
+          "sleep_stress"
+        ]
+      },
+      {
+        "ingredient_id": "black_cohosh",
+        "ingredient": "Black Cohosh",
+        "category": "botanical",
+        "base_unit": "mg",
+        "synonyms": [
+          "Black Cohosh"
+        ],
+        "goals": [
+          "womens_health",
+          "immune",
+          "sleep_stress"
+        ]
+      },
+      {
+        "ingredient_id": "boswellia",
+        "ingredient": "Boswellia",
+        "category": "botanical",
+        "base_unit": "mg",
+        "synonyms": [
+          "Boswellia",
+          "Boswellia serrata"
+        ],
+        "goals": [
+          "joint",
+          "immune",
+          "sleep_stress"
+        ]
+      },
+      {
+        "ingredient_id": "chaga_mushroom",
+        "ingredient": "Chaga Mushroom",
+        "category": "botanical",
+        "base_unit": "mg",
+        "synonyms": [
+          "Chaga Mushroom"
+        ],
+        "goals": [
+          "immune",
+          "sleep_stress",
+          "blood_sugar"
+        ]
+      },
+      {
+        "ingredient_id": "chamomile",
+        "ingredient": "Chamomile",
+        "category": "botanical",
+        "base_unit": "mg",
+        "synonyms": [
+          "Chamomile"
+        ],
+        "goals": [
+          "sleep_stress",
+          "immune",
+          "blood_sugar"
+        ]
+      },
+      {
+        "ingredient_id": "chlorophyll",
+        "ingredient": "Chlorophyll",
+        "category": "botanical",
+        "base_unit": "mg",
+        "synonyms": [
+          "Chlorophyll"
+        ],
+        "goals": [
+          "beauty",
+          "immune",
+          "sleep_stress"
+        ]
+      },
+      {
+        "ingredient_id": "cinnamon",
+        "ingredient": "Cinnamon",
+        "category": "botanical",
+        "base_unit": "mg",
+        "synonyms": [
+          "Cinnamon"
+        ],
+        "goals": [
+          "blood_sugar",
+          "immune",
+          "sleep_stress"
+        ]
+      },
+      {
+        "ingredient_id": "cinnamon_extract",
+        "ingredient": "Cinnamon Extract",
+        "category": "botanical",
+        "base_unit": "mg",
+        "synonyms": [
+          "Cinnamon Extract"
+        ],
+        "goals": [
+          "blood_sugar",
+          "immune",
+          "sleep_stress"
+        ]
+      },
+      {
+        "ingredient_id": "colostrum",
+        "ingredient": "Colostrum",
+        "category": "botanical",
+        "base_unit": "mg",
+        "synonyms": [
+          "Colostrum"
+        ],
+        "goals": [
+          "immune",
+          "sleep_stress",
+          "blood_sugar"
+        ]
+      },
+      {
+        "ingredient_id": "cordyceps_mushroom",
+        "ingredient": "Cordyceps Mushroom",
+        "category": "botanical",
+        "base_unit": "mg",
+        "synonyms": [
+          "Cordyceps Mushroom"
+        ],
+        "goals": [
+          "energy_performance",
+          "immune",
+          "sleep_stress"
+        ]
+      },
+      {
+        "ingredient_id": "cranberry_extract",
+        "ingredient": "Cranberry extract",
+        "category": "botanical",
+        "base_unit": "mg",
+        "synonyms": [
+          "Cranberry extract"
+        ],
+        "goals": [
+          "womens_health",
+          "immune",
+          "sleep_stress"
+        ]
+      },
+      {
+        "ingredient_id": "curcumin",
+        "ingredient": "Curcumin",
+        "category": "botanical",
+        "base_unit": "mg",
+        "synonyms": [
+          "Curcumin (from turmeric)",
+          "from turmeric",
+          "Curcuminoids",
+          "Turmeric extract",
+          "Curcuma longa extract",
+          "Curcumin C3 Complex",
+          "Meriva",
+          "BCM-95",
+          "Curcugreen",
+          "Longvida",
+          "Theracurmin",
+          "Cavacurmin",
+          "CurQfen",
+          "NovaSol"
+        ],
+        "goals": [
+          "joint",
+          "immune",
+          "sleep_stress"
+        ]
+      },
+      {
+        "ingredient_id": "dgl_licorice",
+        "ingredient": "DGL Licorice",
+        "category": "botanical",
+        "base_unit": "mg",
+        "synonyms": [
+          "DGL Licorice"
+        ],
+        "goals": [
+          "gut_probiotic",
+          "immune",
+          "sleep_stress"
+        ]
+      },
+      {
+        "ingredient_id": "dandelion_root",
+        "ingredient": "Dandelion Root",
+        "category": "botanical",
+        "base_unit": "mg",
+        "synonyms": [
+          "Dandelion Root"
+        ],
+        "goals": [
+          "gut_probiotic",
+          "immune",
+          "sleep_stress"
+        ]
+      },
+      {
+        "ingredient_id": "devil_s_claw",
+        "ingredient": "Devil's Claw",
+        "category": "botanical",
+        "base_unit": "mg",
+        "synonyms": [
+          "Devil's Claw"
+        ],
+        "goals": [
+          "joint",
+          "weight",
+          "immune"
+        ]
+      },
+      {
+        "ingredient_id": "dong_quai",
+        "ingredient": "Dong Quai",
+        "category": "botanical",
+        "base_unit": "mg",
+        "synonyms": [
+          "Dong Quai"
+        ],
+        "goals": [
+          "womens_health",
+          "immune",
+          "sleep_stress"
+        ]
+      },
+      {
+        "ingredient_id": "echinacea",
+        "ingredient": "Echinacea",
+        "category": "botanical",
+        "base_unit": "mg",
+        "synonyms": [
+          "Echinacea"
+        ],
+        "goals": [
+          "immune",
+          "sleep_stress",
+          "blood_sugar"
+        ]
+      },
+      {
+        "ingredient_id": "elderberry",
+        "ingredient": "Elderberry",
+        "category": "botanical",
+        "base_unit": "mg",
+        "synonyms": [
+          "Elderberry"
+        ],
+        "goals": [
+          "immune",
+          "sleep_stress",
+          "blood_sugar"
+        ]
+      },
+      {
+        "ingredient_id": "eleuthero",
+        "ingredient": "Eleuthero",
+        "category": "botanical",
+        "base_unit": "mg",
+        "synonyms": [
+          "Eleuthero (Siberian Ginseng)",
+          "Siberian Ginseng"
+        ],
+        "goals": [
+          "energy_performance",
+          "immune",
+          "sleep_stress"
+        ]
+      },
+      {
+        "ingredient_id": "fenugreek",
+        "ingredient": "Fenugreek",
+        "category": "botanical",
+        "base_unit": "mg",
+        "synonyms": [
+          "Fenugreek"
+        ],
+        "goals": [
+          "immune",
+          "sleep_stress",
+          "blood_sugar"
+        ]
+      },
+      {
+        "ingredient_id": "forskolin",
+        "ingredient": "Forskolin",
+        "category": "botanical",
+        "base_unit": "mg",
+        "synonyms": [
+          "Coleus forskohlii",
+          "Forskolin (Coleus forskohlii)"
+        ],
+        "goals": [
+          "weight",
+          "immune",
+          "sleep_stress"
+        ]
+      },
+      {
+        "ingredient_id": "fucoidan",
+        "ingredient": "Fucoidan",
+        "category": "botanical",
+        "base_unit": "mg",
+        "synonyms": [
+          "Fucoidan"
+        ],
+        "goals": [
+          "immune",
+          "sleep_stress",
+          "blood_sugar"
+        ]
+      },
+      {
+        "ingredient_id": "garcinia_cambogia",
+        "ingredient": "Garcinia cambogia",
+        "category": "botanical",
+        "base_unit": "mg",
+        "synonyms": [
+          "Garcinia cambogia"
+        ],
+        "goals": [
+          "weight",
+          "immune",
+          "sleep_stress"
+        ]
+      },
+      {
+        "ingredient_id": "garlic_extract",
+        "ingredient": "Garlic Extract",
+        "category": "botanical",
+        "base_unit": "mg",
+        "synonyms": [
+          "Garlic Extract"
+        ],
+        "goals": [
+          "heart_lipids",
+          "immune",
+          "sleep_stress"
+        ]
+      },
+      {
+        "ingredient_id": "ginger_root",
+        "ingredient": "Ginger Root",
+        "category": "botanical",
+        "base_unit": "mg",
+        "synonyms": [
+          "Ginger Root"
+        ],
+        "goals": [
+          "gut_probiotic",
+          "immune",
+          "sleep_stress"
+        ]
+      },
+      {
+        "ingredient_id": "ginkgo_biloba",
+        "ingredient": "Ginkgo biloba",
+        "category": "botanical",
+        "base_unit": "mg",
+        "synonyms": [
+          "Ginkgo biloba"
+        ],
+        "goals": [
+          "brain_focus",
+          "immune",
+          "sleep_stress"
+        ]
+      },
+      {
+        "ingredient_id": "grapefruit_seed_extract",
+        "ingredient": "Grapefruit Seed Extract",
+        "category": "botanical",
+        "base_unit": "mg",
+        "synonyms": [
+          "Grapefruit Seed Extract",
+          "Citrus paradisi seed extract"
+        ],
+        "goals": [
+          "immune",
+          "sleep_stress",
+          "blood_sugar"
+        ]
+      },
+      {
+        "ingredient_id": "green_coffee_bean_extract",
+        "ingredient": "Green Coffee Bean Extract",
+        "category": "botanical",
+        "base_unit": "mg",
+        "synonyms": [
+          "Green Coffee Bean Extract"
+        ],
+        "goals": [
+          "weight",
+          "immune",
+          "sleep_stress"
+        ]
+      },
+      {
+        "ingredient_id": "green_tea_extract",
+        "ingredient": "Green Tea Extract",
+        "category": "botanical",
+        "base_unit": "mg",
+        "synonyms": [
+          "EGCG",
+          "EGCG (Green Tea Catechins)",
+          "Green Tea Catechins",
+          "Green Tea Extract",
+          "Green tea extract (EGCG)"
+        ],
+        "goals": [
+          "energy_performance",
+          "weight",
+          "immune"
+        ]
+      },
+      {
+        "ingredient_id": "gymnema",
+        "ingredient": "Gymnema",
+        "category": "botanical",
+        "base_unit": "mg",
+        "synonyms": [
+          "Gymnema",
+          "Gymnema sylvestre"
+        ],
+        "goals": [
+          "blood_sugar",
+          "immune",
+          "sleep_stress"
+        ]
+      },
+      {
+        "ingredient_id": "hawthorn",
+        "ingredient": "Hawthorn",
+        "category": "botanical",
+        "base_unit": "mg",
+        "synonyms": [
+          "Hawthorn",
+          "Crataegus",
+          "Hawthorn extract"
+        ],
+        "goals": [
+          "heart_lipids",
+          "immune",
+          "sleep_stress"
+        ]
+      },
+      {
+        "ingredient_id": "holy_basil",
+        "ingredient": "Holy Basil",
+        "category": "botanical",
+        "base_unit": "mg",
+        "synonyms": [
+          "Holy Basil (Tulsi)",
+          "Tulsi"
+        ],
+        "goals": [
+          "immune",
+          "sleep_stress",
+          "blood_sugar"
+        ]
+      },
+      {
+        "ingredient_id": "kava",
+        "ingredient": "Kava",
+        "category": "botanical",
+        "base_unit": "mg",
+        "synonyms": [
+          "Kava",
+          "Kava-kava",
+          "Piper methysticum"
+        ],
+        "goals": [
+          "immune",
+          "sleep_stress",
+          "blood_sugar"
+        ]
+      },
+      {
+        "ingredient_id": "lavender",
+        "ingredient": "Lavender",
+        "category": "botanical",
+        "base_unit": "mg",
+        "synonyms": [
+          "Lavender"
+        ],
+        "goals": [
+          "immune",
+          "sleep_stress",
+          "blood_sugar"
+        ]
+      },
+      {
+        "ingredient_id": "lemon_balm",
+        "ingredient": "Lemon balm",
+        "category": "botanical",
+        "base_unit": "mg",
+        "synonyms": [
+          "Lemon balm"
+        ],
+        "goals": [
+          "immune",
+          "sleep_stress",
+          "blood_sugar"
+        ]
+      },
+      {
+        "ingredient_id": "lion_s_mane_mushroom",
+        "ingredient": "Lion's Mane Mushroom",
+        "category": "botanical",
+        "base_unit": "mg",
+        "synonyms": [
+          "Lion's Mane Mushroom"
+        ],
+        "goals": [
+          "brain_focus",
+          "immune",
+          "sleep_stress"
+        ]
+      },
+      {
+        "ingredient_id": "maca",
+        "ingredient": "Maca",
+        "category": "botanical",
+        "base_unit": "mg",
+        "synonyms": [
+          "Maca"
+        ],
+        "goals": [
+          "mens_health",
+          "womens_health",
+          "immune"
+        ]
+      },
+      {
+        "ingredient_id": "maitake_mushroom",
+        "ingredient": "Maitake Mushroom",
+        "category": "botanical",
+        "base_unit": "mg",
+        "synonyms": [
+          "Maitake Mushroom"
+        ],
+        "goals": [
+          "immune",
+          "sleep_stress",
+          "blood_sugar"
+        ]
+      },
+      {
+        "ingredient_id": "milk_thistle",
+        "ingredient": "Milk thistle",
+        "category": "botanical",
+        "base_unit": "mg",
+        "synonyms": [
+          "Milk thistle (Silymarin)",
+          "Silymarin"
+        ],
+        "goals": [
+          "immune",
+          "sleep_stress",
+          "blood_sugar"
+        ]
+      },
+      {
+        "ingredient_id": "olive_leaf_extract",
+        "ingredient": "Olive Leaf Extract",
+        "category": "botanical",
+        "base_unit": "mg",
+        "synonyms": [
+          "Olive Leaf Extract"
+        ],
+        "goals": [
+          "immune",
+          "sleep_stress",
+          "blood_sugar"
+        ]
+      },
+      {
+        "ingredient_id": "panax_ginseng",
+        "ingredient": "Panax ginseng",
+        "category": "botanical",
+        "base_unit": "mg",
+        "synonyms": [
+          "Panax ginseng"
+        ],
+        "goals": [
+          "energy_performance",
+          "immune",
+          "sleep_stress"
+        ]
+      },
+      {
+        "ingredient_id": "passionflower",
+        "ingredient": "Passionflower",
+        "category": "botanical",
+        "base_unit": "mg",
+        "synonyms": [
+          "Passionflower"
+        ],
+        "goals": [
+          "sleep_stress",
+          "immune",
+          "blood_sugar"
+        ]
+      },
+      {
+        "ingredient_id": "pine_bark_extract",
+        "ingredient": "Pine Bark Extract",
+        "category": "botanical",
+        "base_unit": "mg",
+        "synonyms": [
+          "Pine Bark Extract",
+          "French maritime pine bark extract",
+          "Pycnogenol"
+        ],
+        "goals": [
+          "heart_lipids",
+          "immune",
+          "sleep_stress"
+        ]
+      },
+      {
+        "ingredient_id": "pygeum",
+        "ingredient": "Pygeum",
+        "category": "botanical",
+        "base_unit": "mg",
+        "synonyms": [
+          "Pygeum"
+        ],
+        "goals": [
+          "mens_health",
+          "immune",
+          "sleep_stress"
+        ]
+      },
+      {
+        "ingredient_id": "quercetin",
+        "ingredient": "Quercetin",
+        "category": "botanical",
+        "base_unit": "mg",
+        "synonyms": [
+          "Quercetin",
+          "Quercetin dihydrate",
+          "Quercetin phytosome",
+          "Quercefit",
+          "Isoquercetin",
+          "Isoquercitrin",
+          "EMIQ",
+          "Enzymatically modified isoquercitrin",
+          "Sophora japonica extract"
+        ],
+        "goals": [
+          "immune",
+          "energy_performance",
+          "brain_focus"
+        ]
+      },
+      {
+        "ingredient_id": "red_yeast_rice",
+        "ingredient": "Red Yeast Rice",
+        "category": "botanical",
+        "base_unit": "mg",
+        "synonyms": [
+          "Red Yeast Rice"
+        ],
+        "goals": [
+          "heart_lipids",
+          "immune",
+          "sleep_stress"
+        ]
+      },
+      {
+        "ingredient_id": "reishi_mushroom",
+        "ingredient": "Reishi Mushroom",
+        "category": "botanical",
+        "base_unit": "mg",
+        "synonyms": [
+          "Reishi Mushroom"
+        ],
+        "goals": [
+          "immune",
+          "sleep_stress",
+          "blood_sugar"
+        ]
+      },
+      {
+        "ingredient_id": "rhodiola_rosea",
+        "ingredient": "Rhodiola rosea",
+        "category": "botanical",
+        "base_unit": "mg",
+        "synonyms": [
+          "Rhodiola rosea"
+        ],
+        "goals": [
+          "immune",
+          "sleep_stress",
+          "blood_sugar"
+        ]
+      },
+      {
+        "ingredient_id": "royal_jelly",
+        "ingredient": "Royal Jelly",
+        "category": "botanical",
+        "base_unit": "mg",
+        "synonyms": [
+          "Royal Jelly"
+        ],
+        "goals": [
+          "beauty",
+          "immune",
+          "sleep_stress"
+        ]
+      },
+      {
+        "ingredient_id": "saffron_extract",
+        "ingredient": "Saffron Extract",
+        "category": "botanical",
+        "base_unit": "mg",
+        "synonyms": [
+          "Saffron Extract"
+        ],
+        "goals": [
+          "immune",
+          "sleep_stress",
+          "blood_sugar"
+        ]
+      },
+      {
+        "ingredient_id": "saw_palmetto",
+        "ingredient": "Saw palmetto",
+        "category": "botanical",
+        "base_unit": "mg",
+        "synonyms": [
+          "Saw palmetto"
+        ],
+        "goals": [
+          "mens_health",
+          "immune",
+          "sleep_stress"
+        ]
+      },
+      {
+        "ingredient_id": "schisandra_chinensis",
+        "ingredient": "Schisandra Chinensis",
+        "category": "botanical",
+        "base_unit": "mg",
+        "synonyms": [
+          "Schisandra Chinensis"
+        ],
+        "goals": [
+          "immune",
+          "sleep_stress",
+          "blood_sugar"
+        ]
+      },
+      {
+        "ingredient_id": "shilajit",
+        "ingredient": "Shilajit",
+        "category": "botanical",
+        "base_unit": "mg",
+        "synonyms": [
+          "Shilajit"
+        ],
+        "goals": [
+          "mens_health",
+          "immune",
+          "sleep_stress"
+        ]
+      },
+      {
+        "ingredient_id": "slippery_elm",
+        "ingredient": "Slippery elm",
+        "category": "botanical",
+        "base_unit": "mg",
+        "synonyms": [
+          "Slippery elm"
+        ],
+        "goals": [
+          "gut_probiotic",
+          "immune",
+          "sleep_stress"
+        ]
+      },
+      {
+        "ingredient_id": "st_john_s_wort",
+        "ingredient": "St. John's Wort",
+        "category": "botanical",
+        "base_unit": "mg",
+        "synonyms": [
+          "St. John's Wort",
+          "Hypericum perforatum",
+          "St Johns Wort"
+        ],
+        "goals": [
+          "immune",
+          "sleep_stress",
+          "blood_sugar"
+        ]
+      },
+      {
+        "ingredient_id": "stinging_nettle_root",
+        "ingredient": "Stinging Nettle Root",
+        "category": "botanical",
+        "base_unit": "mg",
+        "synonyms": [
+          "Stinging Nettle Root"
+        ],
+        "goals": [
+          "mens_health",
+          "immune",
+          "sleep_stress"
+        ]
+      },
+      {
+        "ingredient_id": "tongkat_ali",
+        "ingredient": "Tongkat Ali",
+        "category": "botanical",
+        "base_unit": "mg",
+        "synonyms": [
+          "Tongkat Ali"
+        ],
+        "goals": [
+          "mens_health",
+          "immune",
+          "sleep_stress"
+        ]
+      },
+      {
+        "ingredient_id": "tribulus_terrestris",
+        "ingredient": "Tribulus Terrestris",
+        "category": "botanical",
+        "base_unit": "mg",
+        "synonyms": [
+          "Tribulus Terrestris"
+        ],
+        "goals": [
+          "mens_health",
+          "immune",
+          "sleep_stress"
+        ]
+      },
+      {
+        "ingredient_id": "turkey_tail_mushroom",
+        "ingredient": "Turkey Tail Mushroom",
+        "category": "botanical",
+        "base_unit": "mg",
+        "synonyms": [
+          "Turkey Tail Mushroom"
+        ],
+        "goals": [
+          "immune",
+          "sleep_stress",
+          "blood_sugar"
+        ]
+      },
+      {
+        "ingredient_id": "valerian",
+        "ingredient": "Valerian",
+        "category": "botanical",
+        "base_unit": "mg",
+        "synonyms": [
+          "Valerian"
+        ],
+        "goals": [
+          "sleep_stress",
+          "immune",
+          "blood_sugar"
+        ]
+      },
+      {
+        "ingredient_id": "vitex",
+        "ingredient": "Vitex",
+        "category": "botanical",
+        "base_unit": "mg",
+        "synonyms": [
+          "Chasteberry",
+          "Vitex (Chasteberry)"
+        ],
+        "goals": [
+          "womens_health",
+          "immune",
+          "sleep_stress"
+        ]
+      },
+      {
+        "ingredient_id": "white_willow_bark",
+        "ingredient": "White Willow Bark",
+        "category": "botanical",
+        "base_unit": "mg",
+        "synonyms": [
+          "White Willow Bark"
+        ],
+        "goals": [
+          "joint",
+          "immune",
+          "sleep_stress"
+        ]
+      },
+      {
+        "ingredient_id": "amylase",
+        "ingredient": "Amylase",
+        "category": "enzyme",
+        "base_unit": "mg",
+        "synonyms": [
+          "Amylase"
+        ],
+        "goals": [
+          "gut_probiotic",
+          "immune",
+          "energy_performance"
+        ]
+      },
+      {
+        "ingredient_id": "bromelain",
+        "ingredient": "Bromelain",
+        "category": "enzyme",
+        "base_unit": "mg",
+        "synonyms": [
+          "Bromelain"
+        ],
+        "goals": [
+          "joint",
+          "gut_probiotic",
+          "immune"
+        ]
+      },
+      {
+        "ingredient_id": "lactase",
+        "ingredient": "Lactase",
+        "category": "enzyme",
+        "base_unit": "mg",
+        "synonyms": [
+          "Lactase"
+        ],
+        "goals": [
+          "gut_probiotic",
+          "immune",
+          "energy_performance"
+        ]
+      },
+      {
+        "ingredient_id": "lipase",
+        "ingredient": "Lipase",
+        "category": "enzyme",
+        "base_unit": "mg",
+        "synonyms": [
+          "Lipase"
+        ],
+        "goals": [
+          "gut_probiotic",
+          "immune",
+          "energy_performance"
+        ]
+      },
+      {
+        "ingredient_id": "nattokinase",
+        "ingredient": "Nattokinase",
+        "category": "enzyme",
+        "base_unit": "mg",
+        "synonyms": [
+          "Nattokinase"
+        ],
+        "goals": [
+          "heart_lipids",
+          "gut_probiotic",
+          "immune"
+        ]
+      },
+      {
+        "ingredient_id": "papain",
+        "ingredient": "Papain",
+        "category": "enzyme",
+        "base_unit": "mg",
+        "synonyms": [
+          "Papain"
+        ],
+        "goals": [
+          "gut_probiotic",
+          "immune",
+          "energy_performance"
+        ]
+      },
+      {
+        "ingredient_id": "protease",
+        "ingredient": "Protease",
+        "category": "enzyme",
+        "base_unit": "mg",
+        "synonyms": [
+          "Protease"
+        ],
+        "goals": [
+          "gut_probiotic",
+          "immune",
+          "energy_performance"
+        ]
+      },
+      {
+        "ingredient_id": "serrapeptase",
+        "ingredient": "Serrapeptase",
+        "category": "enzyme",
+        "base_unit": "mg",
+        "synonyms": [
+          "Serrapeptase"
+        ],
+        "goals": [
+          "joint",
+          "gut_probiotic",
+          "immune"
+        ]
+      },
+      {
+        "ingredient_id": "ashwagandha",
+        "ingredient": "Ashwagandha",
+        "category": "lipid",
+        "base_unit": "mg",
+        "synonyms": [
+          "Ashwagandha"
+        ],
+        "goals": [
+          "sleep_stress",
+          "brain_focus",
+          "heart_lipids"
+        ]
+      },
+      {
+        "ingredient_id": "beta_carotene",
+        "ingredient": "Beta-Carotene",
+        "category": "lipid",
+        "base_unit": "mg",
+        "synonyms": [
+          "Beta-Carotene"
+        ],
+        "goals": [
+          "beauty",
+          "heart_lipids",
+          "brain_focus"
+        ]
+      },
+      {
+        "ingredient_id": "black_seed_oil",
+        "ingredient": "Black seed oil",
+        "category": "lipid",
+        "base_unit": "g",
+        "synonyms": [
+          "Black seed oil (Nigella sativa)",
+          "Nigella sativa"
+        ],
+        "goals": [
+          "immune",
+          "blood_sugar",
+          "heart_lipids"
+        ]
+      },
+      {
+        "ingredient_id": "borage_oil",
+        "ingredient": "Borage Oil",
+        "category": "lipid",
+        "base_unit": "mg",
+        "synonyms": [
+          "Borage Oil"
+        ],
+        "goals": [
+          "womens_health",
+          "heart_lipids",
+          "brain_focus"
+        ]
+      },
+      {
+        "ingredient_id": "conjugated_linoleic_acid",
+        "ingredient": "Conjugated Linoleic Acid",
+        "category": "lipid",
+        "base_unit": "mg",
+        "synonyms": [
+          "CLA",
+          "CLA (conjugated linoleic acid)",
+          "conjugated linoleic acid",
+          "Conjugated Linoleic Acid (CLA)"
+        ],
+        "goals": [
+          "weight",
+          "heart_lipids",
+          "brain_focus"
+        ]
+      },
+      {
+        "ingredient_id": "evening_primrose_oil",
+        "ingredient": "Evening primrose oil",
+        "category": "lipid",
+        "base_unit": "mg",
+        "synonyms": [
+          "Evening primrose oil"
+        ],
+        "goals": [
+          "womens_health",
+          "heart_lipids",
+          "brain_focus"
+        ]
+      },
+      {
+        "ingredient_id": "gamma_linolenic_acid",
+        "ingredient": "Gamma-Linolenic Acid",
+        "category": "lipid",
+        "base_unit": "mg",
+        "synonyms": [
+          "Gamma-Linolenic Acid (GLA)",
+          "GLA"
+        ],
+        "goals": [
+          "womens_health",
+          "heart_lipids",
+          "brain_focus"
+        ]
+      },
+      {
+        "ingredient_id": "krill_oil",
+        "ingredient": "Krill Oil",
+        "category": "lipid",
+        "base_unit": "mg",
+        "synonyms": [
+          "Krill Oil"
+        ],
+        "goals": [
+          "heart_lipids",
+          "brain_focus",
+          "weight"
+        ]
+      },
+      {
+        "ingredient_id": "mct_oil",
+        "ingredient": "MCT Oil",
+        "category": "lipid",
+        "base_unit": "g",
+        "synonyms": [
+          "MCT Oil"
+        ],
+        "goals": [
+          "heart_lipids",
+          "brain_focus",
+          "weight"
+        ]
+      },
+      {
+        "ingredient_id": "omega_3",
+        "ingredient": "Omega-3",
+        "category": "lipid",
+        "base_unit": "mg",
+        "synonyms": [
+          "EPA+DHA",
+          "Omega-3 (EPA+DHA)"
+        ],
+        "goals": [
+          "heart_lipids",
+          "brain_focus",
+          "weight"
+        ]
+      },
+      {
+        "ingredient_id": "phosphatidylserine",
+        "ingredient": "Phosphatidylserine",
+        "category": "lipid",
+        "base_unit": "mg",
+        "synonyms": [
+          "Phosphatidylserine"
+        ],
+        "goals": [
+          "brain_focus",
+          "heart_lipids",
+          "weight"
+        ]
+      },
+      {
+        "ingredient_id": "pumpkin_seed_oil",
+        "ingredient": "Pumpkin Seed Oil",
+        "category": "lipid",
+        "base_unit": "mg",
+        "synonyms": [
+          "Pumpkin Seed Oil"
+        ],
+        "goals": [
+          "mens_health",
+          "heart_lipids",
+          "brain_focus"
+        ]
+      },
+      {
+        "ingredient_id": "tocotrienols",
+        "ingredient": "Tocotrienols",
+        "category": "lipid",
+        "base_unit": "mg",
+        "synonyms": [
+          "Tocotrienols"
+        ],
+        "goals": [
+          "heart_lipids",
+          "brain_focus",
+          "weight"
+        ]
+      },
+      {
+        "ingredient_id": "boron",
+        "ingredient": "Boron",
+        "category": "mineral",
+        "base_unit": "mg",
+        "synonyms": [
+          "Boron"
+        ],
+        "goals": [
+          "womens_health",
+          "joint",
+          "immune"
+        ]
+      },
+      {
+        "ingredient_id": "calcium",
+        "ingredient": "Calcium",
+        "category": "mineral",
+        "base_unit": "mg",
+        "synonyms": [
+          "Calcium"
+        ],
+        "goals": [
+          "bone",
+          "womens_health",
+          "immune"
+        ]
+      },
+      {
+        "ingredient_id": "chromium",
+        "ingredient": "Chromium",
+        "category": "mineral",
+        "base_unit": "mcg",
+        "synonyms": [
+          "Chromium"
+        ],
+        "goals": [
+          "blood_sugar",
+          "immune",
+          "energy_performance"
+        ]
+      },
+      {
+        "ingredient_id": "copper",
+        "ingredient": "Copper",
+        "category": "mineral",
+        "base_unit": "mg",
+        "synonyms": [
+          "Copper"
+        ],
+        "goals": [
+          "immune",
+          "energy_performance",
+          "heart_lipids"
+        ]
+      },
+      {
+        "ingredient_id": "iodine",
+        "ingredient": "Iodine",
+        "category": "mineral",
+        "base_unit": "mcg",
+        "synonyms": [
+          "Iodine"
+        ],
+        "goals": [
+          "womens_health",
+          "immune",
+          "energy_performance"
+        ]
+      },
+      {
+        "ingredient_id": "iron",
+        "ingredient": "Iron",
+        "category": "mineral",
+        "base_unit": "mg",
+        "synonyms": [
+          "Iron"
+        ],
+        "goals": [
+          "womens_health",
+          "immune",
+          "energy_performance"
+        ]
+      },
+      {
+        "ingredient_id": "magnesium",
+        "ingredient": "Magnesium",
+        "category": "mineral",
+        "base_unit": "mg",
+        "synonyms": [
+          "Magnesium"
+        ],
+        "goals": [
+          "heart_lipids",
+          "sleep_stress",
+          "immune"
+        ]
+      },
+      {
+        "ingredient_id": "manganese",
+        "ingredient": "Manganese",
+        "category": "mineral",
+        "base_unit": "mg",
+        "synonyms": [
+          "Manganese"
+        ],
+        "goals": [
+          "joint",
+          "immune",
+          "energy_performance"
+        ]
+      },
+      {
+        "ingredient_id": "molybdenum",
+        "ingredient": "Molybdenum",
+        "category": "mineral",
+        "base_unit": "mcg",
+        "synonyms": [
+          "Molybdenum"
+        ],
+        "goals": [
+          "immune",
+          "energy_performance",
+          "heart_lipids"
+        ]
+      },
+      {
+        "ingredient_id": "potassium",
+        "ingredient": "Potassium",
+        "category": "mineral",
+        "base_unit": "mg",
+        "synonyms": [
+          "Potassium"
+        ],
+        "goals": [
+          "immune",
+          "energy_performance",
+          "heart_lipids"
+        ]
+      },
+      {
+        "ingredient_id": "selenium",
+        "ingredient": "Selenium",
+        "category": "mineral",
+        "base_unit": "mcg",
+        "synonyms": [
+          "Selenium"
+        ],
+        "goals": [
+          "immune",
+          "energy_performance",
+          "heart_lipids"
+        ]
+      },
+      {
+        "ingredient_id": "zinc",
+        "ingredient": "Zinc",
+        "category": "mineral",
+        "base_unit": "mg",
+        "synonyms": [
+          "Zinc"
+        ],
+        "goals": [
+          "immune",
+          "mens_health",
+          "energy_performance"
+        ]
+      },
+      {
+        "ingredient_id": "choline",
+        "ingredient": "Choline",
+        "category": "nutrient",
+        "base_unit": "mg",
+        "synonyms": [
+          "Choline"
+        ],
+        "goals": [
+          "brain_focus",
+          "gut_probiotic",
+          "immune"
+        ]
+      },
+      {
+        "ingredient_id": "collagen_peptides",
+        "ingredient": "Collagen peptides",
+        "category": "nutrient",
+        "base_unit": "g",
+        "synonyms": [
+          "Collagen peptides"
+        ],
+        "goals": [
+          "beauty",
+          "joint",
+          "gut_probiotic"
+        ]
+      },
+      {
+        "ingredient_id": "fructooligosaccharides",
+        "ingredient": "Fructooligosaccharides",
+        "category": "nutrient",
+        "base_unit": "g",
+        "synonyms": [
+          "FOS",
+          "Fructooligosaccharides (FOS)"
+        ],
+        "goals": [
+          "gut_probiotic",
+          "immune",
+          "energy_performance"
+        ]
+      },
+      {
+        "ingredient_id": "galactooligosaccharides",
+        "ingredient": "Galactooligosaccharides",
+        "category": "nutrient",
+        "base_unit": "g",
+        "synonyms": [
+          "Galactooligosaccharides (GOS)",
+          "GOS"
+        ],
+        "goals": [
+          "gut_probiotic",
+          "immune",
+          "energy_performance"
+        ]
+      },
+      {
+        "ingredient_id": "inulin",
+        "ingredient": "Inulin",
+        "category": "nutrient",
+        "base_unit": "g",
+        "synonyms": [
+          "Inulin"
+        ],
+        "goals": [
+          "gut_probiotic",
+          "immune",
+          "energy_performance"
+        ]
+      },
+      {
+        "ingredient_id": "lactobacillus",
+        "ingredient": "Lactobacillus",
+        "category": "nutrient",
+        "base_unit": "cfu",
+        "synonyms": [
+          "Lactobacillus (probiotic)",
+          "probiotic"
+        ],
+        "goals": [
+          "gut_probiotic",
+          "immune",
+          "energy_performance"
+        ]
+      },
+      {
+        "ingredient_id": "oat_beta_glucan",
+        "ingredient": "Oat Beta-Glucan",
+        "category": "nutrient",
+        "base_unit": "g",
+        "synonyms": [
+          "Oat Beta-Glucan"
+        ],
+        "goals": [
+          "heart_lipids",
+          "immune",
+          "gut_probiotic"
+        ]
+      },
+      {
+        "ingredient_id": "partially_hydrolyzed_guar_gum",
+        "ingredient": "Partially Hydrolyzed Guar Gum",
+        "category": "nutrient",
+        "base_unit": "g",
+        "synonyms": [
+          "Partially Hydrolyzed Guar Gum (PHGG)",
+          "PHGG"
+        ],
+        "goals": [
+          "gut_probiotic",
+          "immune",
+          "energy_performance"
+        ]
+      },
+      {
+        "ingredient_id": "psyllium_husk",
+        "ingredient": "Psyllium husk",
+        "category": "nutrient",
+        "base_unit": "g",
+        "synonyms": [
+          "Psyllium husk"
+        ],
+        "goals": [
+          "heart_lipids",
+          "gut_probiotic",
+          "immune"
+        ]
+      },
+      {
+        "ingredient_id": "resistant_dextrin",
+        "ingredient": "Resistant Dextrin",
+        "category": "nutrient",
+        "base_unit": "g",
+        "synonyms": [
+          "Resistant Dextrin"
+        ],
+        "goals": [
+          "gut_probiotic",
+          "immune",
+          "energy_performance"
+        ]
+      },
+      {
+        "ingredient_id": "resistant_starch",
+        "ingredient": "Resistant Starch",
+        "category": "nutrient",
+        "base_unit": "g",
+        "synonyms": [
+          "Resistant Starch"
+        ],
+        "goals": [
+          "gut_probiotic",
+          "immune",
+          "energy_performance"
+        ]
+      },
+      {
+        "ingredient_id": "yeast_beta_glucan",
+        "ingredient": "Yeast Beta-Glucan",
+        "category": "nutrient",
+        "base_unit": "mg",
+        "synonyms": [
+          "Yeast Beta-Glucan"
+        ],
+        "goals": [
+          "immune",
+          "gut_probiotic",
+          "energy_performance"
+        ]
+      },
+      {
+        "ingredient_id": "alpha_lipoic_acid",
+        "ingredient": "Alpha lipoic acid",
+        "category": "other",
+        "base_unit": "mg",
+        "synonyms": [
+          "ALA",
+          "Alpha lipoic acid",
+          "Alpha-Lipoic Acid (ALA)"
+        ],
+        "goals": [
+          "blood_sugar",
+          "immune",
+          "energy_performance"
+        ]
+      },
+      {
+        "ingredient_id": "alpha_gpc",
+        "ingredient": "Alpha-GPC",
+        "category": "other",
+        "base_unit": "mg",
+        "synonyms": [
+          "Alpha-GPC"
+        ],
+        "goals": [
+          "immune",
+          "energy_performance",
+          "brain_focus"
+        ]
+      },
+      {
+        "ingredient_id": "astaxanthin",
+        "ingredient": "Astaxanthin",
+        "category": "other",
+        "base_unit": "mg",
+        "synonyms": [
+          "Astaxanthin"
+        ],
+        "goals": [
+          "beauty",
+          "immune",
+          "energy_performance"
+        ]
+      },
+      {
+        "ingredient_id": "bacillus_coagulans",
+        "ingredient": "Bacillus coagulans",
+        "category": "other",
+        "base_unit": "cfu",
+        "synonyms": [
+          "Bacillus coagulans"
+        ],
+        "goals": [
+          "gut_probiotic",
+          "immune",
+          "energy_performance"
+        ]
+      },
+      {
+        "ingredient_id": "bacillus_subtilis",
+        "ingredient": "Bacillus subtilis",
+        "category": "other",
+        "base_unit": "cfu",
+        "synonyms": [
+          "Bacillus subtilis"
+        ],
+        "goals": [
+          "gut_probiotic",
+          "immune",
+          "energy_performance"
+        ]
+      },
+      {
+        "ingredient_id": "betaine",
+        "ingredient": "Betaine",
+        "category": "other",
+        "base_unit": "mg",
+        "synonyms": [
+          "Betaine (TMG)",
+          "TMG"
+        ],
+        "goals": [
+          "immune",
+          "energy_performance",
+          "brain_focus"
+        ]
+      },
+      {
+        "ingredient_id": "bifidobacterium_lactis",
+        "ingredient": "Bifidobacterium lactis",
+        "category": "other",
+        "base_unit": "cfu",
+        "synonyms": [
+          "Bifidobacterium lactis"
+        ],
+        "goals": [
+          "gut_probiotic",
+          "immune",
+          "energy_performance"
+        ]
+      },
+      {
+        "ingredient_id": "broccoli_sprout_extract",
+        "ingredient": "Broccoli Sprout Extract",
+        "category": "other",
+        "base_unit": "mg",
+        "synonyms": [
+          "Broccoli Sprout Extract (Sulforaphane)",
+          "Sulforaphane"
+        ],
+        "goals": [
+          "immune",
+          "energy_performance",
+          "brain_focus"
+        ]
+      },
+      {
+        "ingredient_id": "caffeine",
+        "ingredient": "Caffeine",
+        "category": "other",
+        "base_unit": "mg",
+        "synonyms": [
+          "Caffeine"
+        ],
+        "goals": [
+          "brain_focus",
+          "energy_performance",
+          "weight"
+        ]
+      },
+      {
+        "ingredient_id": "calcium_d_glucarate",
+        "ingredient": "Calcium D-Glucarate",
+        "category": "other",
+        "base_unit": "mg",
+        "synonyms": [
+          "Calcium D-Glucarate"
+        ],
+        "goals": [
+          "womens_health",
+          "immune",
+          "energy_performance"
+        ]
+      },
+      {
+        "ingredient_id": "chlorella",
+        "ingredient": "Chlorella",
+        "category": "other",
+        "base_unit": "g",
+        "synonyms": [
+          "Chlorella"
+        ],
+        "goals": [
+          "immune",
+          "energy_performance",
+          "brain_focus"
+        ]
+      },
+      {
+        "ingredient_id": "chondroitin",
+        "ingredient": "Chondroitin",
+        "category": "other",
+        "base_unit": "mg",
+        "synonyms": [
+          "Chondroitin"
+        ],
+        "goals": [
+          "joint",
+          "immune",
+          "energy_performance"
+        ]
+      },
+      {
+        "ingredient_id": "citicoline",
+        "ingredient": "Citicoline",
+        "category": "other",
+        "base_unit": "mg",
+        "synonyms": [
+          "CDP-Choline",
+          "Citicoline (CDP-Choline)"
+        ],
+        "goals": [
+          "brain_focus",
+          "immune",
+          "energy_performance"
+        ]
+      },
+      {
+        "ingredient_id": "coq10",
+        "ingredient": "CoQ10",
+        "category": "other",
+        "base_unit": "mg",
+        "synonyms": [
+          "CoQ10"
+        ],
+        "goals": [
+          "energy_performance",
+          "heart_lipids",
+          "immune"
+        ]
+      },
+      {
+        "ingredient_id": "d_mannose",
+        "ingredient": "D-Mannose",
+        "category": "other",
+        "base_unit": "g",
+        "synonyms": [
+          "D-Mannose"
+        ],
+        "goals": [
+          "womens_health",
+          "immune",
+          "energy_performance"
+        ]
+      },
+      {
+        "ingredient_id": "dim",
+        "ingredient": "DIM",
+        "category": "other",
+        "base_unit": "mg",
+        "synonyms": [
+          "Diindolylmethane",
+          "DIM (Diindolylmethane)"
+        ],
+        "goals": [
+          "womens_health",
+          "immune",
+          "energy_performance"
+        ]
+      },
+      {
+        "ingredient_id": "gaba",
+        "ingredient": "GABA",
+        "category": "other",
+        "base_unit": "mg",
+        "synonyms": [
+          "GABA"
+        ],
+        "goals": [
+          "sleep_stress",
+          "immune",
+          "energy_performance"
+        ]
+      },
+      {
+        "ingredient_id": "glucomannan",
+        "ingredient": "Glucomannan",
+        "category": "other",
+        "base_unit": "g",
+        "synonyms": [
+          "Glucomannan"
+        ],
+        "goals": [
+          "weight",
+          "immune",
+          "energy_performance"
+        ]
+      },
+      {
+        "ingredient_id": "glucosamine",
+        "ingredient": "Glucosamine",
+        "category": "other",
+        "base_unit": "mg",
+        "synonyms": [
+          "Glucosamine"
+        ],
+        "goals": [
+          "joint",
+          "immune",
+          "energy_performance"
+        ]
+      },
+      {
+        "ingredient_id": "glutathione",
+        "ingredient": "Glutathione",
+        "category": "other",
+        "base_unit": "mg",
+        "synonyms": [
+          "Glutathione"
+        ],
+        "goals": [
+          "beauty",
+          "immune",
+          "energy_performance"
+        ]
+      },
+      {
+        "ingredient_id": "grape_seed_extract",
+        "ingredient": "Grape Seed Extract",
+        "category": "other",
+        "base_unit": "mg",
+        "synonyms": [
+          "Grape Seed Extract"
+        ],
+        "goals": [
+          "heart_lipids",
+          "immune",
+          "energy_performance"
+        ]
+      },
+      {
+        "ingredient_id": "hesperidin",
+        "ingredient": "Hesperidin",
+        "category": "other",
+        "base_unit": "mg",
+        "synonyms": [
+          "Hesperidin"
+        ],
+        "goals": [
+          "heart_lipids",
+          "immune",
+          "energy_performance"
+        ]
+      },
+      {
+        "ingredient_id": "huperzine_a",
+        "ingredient": "Huperzine A",
+        "category": "other",
+        "base_unit": "mcg",
+        "synonyms": [
+          "Huperzine A"
+        ],
+        "goals": [
+          "immune",
+          "energy_performance",
+          "brain_focus"
+        ]
+      },
+      {
+        "ingredient_id": "hyaluronic_acid",
+        "ingredient": "Hyaluronic acid",
+        "category": "other",
+        "base_unit": "mg",
+        "synonyms": [
+          "Hyaluronic acid"
+        ],
+        "goals": [
+          "beauty",
+          "joint",
+          "immune"
+        ]
+      },
+      {
+        "ingredient_id": "indole_3_carbinol",
+        "ingredient": "Indole-3-Carbinol",
+        "category": "other",
+        "base_unit": "mg",
+        "synonyms": [
+          "Indole-3-Carbinol"
+        ],
+        "goals": [
+          "womens_health",
+          "immune",
+          "energy_performance"
+        ]
+      },
+      {
+        "ingredient_id": "lutein",
+        "ingredient": "Lutein",
+        "category": "other",
+        "base_unit": "mg",
+        "synonyms": [
+          "Lutein"
+        ],
+        "goals": [
+          "immune",
+          "energy_performance",
+          "brain_focus"
+        ]
+      },
+      {
+        "ingredient_id": "lycopene",
+        "ingredient": "Lycopene",
+        "category": "other",
+        "base_unit": "mg",
+        "synonyms": [
+          "Lycopene"
+        ],
+        "goals": [
+          "mens_health",
+          "immune",
+          "energy_performance"
+        ]
+      },
+      {
+        "ingredient_id": "msm",
+        "ingredient": "MSM",
+        "category": "other",
+        "base_unit": "mg",
+        "synonyms": [
+          "methylsulfonylmethane",
+          "MSM (methylsulfonylmethane)"
+        ],
+        "goals": [
+          "joint",
+          "immune",
+          "energy_performance"
+        ]
+      },
+      {
+        "ingredient_id": "melatonin",
+        "ingredient": "Melatonin",
+        "category": "other",
+        "base_unit": "mg",
+        "synonyms": [
+          "Melatonin"
+        ],
+        "goals": [
+          "sleep_stress",
+          "immune",
+          "energy_performance"
+        ]
+      },
+      {
+        "ingredient_id": "nadh",
+        "ingredient": "NADH",
+        "category": "other",
+        "base_unit": "mg",
+        "synonyms": [
+          "NADH"
+        ],
+        "goals": [
+          "immune",
+          "energy_performance",
+          "brain_focus"
+        ]
+      },
+      {
+        "ingredient_id": "naringin",
+        "ingredient": "Naringin",
+        "category": "other",
+        "base_unit": "mg",
+        "synonyms": [
+          "Naringin"
+        ],
+        "goals": [
+          "heart_lipids",
+          "immune",
+          "energy_performance"
+        ]
+      },
+      {
+        "ingredient_id": "nicotinamide_mononucleotide",
+        "ingredient": "Nicotinamide Mononucleotide",
+        "category": "other",
+        "base_unit": "mg",
+        "synonyms": [
+          "Nicotinamide Mononucleotide (NMN)",
+          "NMN"
+        ],
+        "goals": [
+          "immune",
+          "energy_performance",
+          "brain_focus"
+        ]
+      },
+      {
+        "ingredient_id": "nicotinamide_riboside",
+        "ingredient": "Nicotinamide Riboside",
+        "category": "other",
+        "base_unit": "mg",
+        "synonyms": [
+          "Nicotinamide Riboside (NR)",
+          "NR"
+        ],
+        "goals": [
+          "immune",
+          "energy_performance",
+          "brain_focus"
+        ]
+      },
+      {
+        "ingredient_id": "pqq",
+        "ingredient": "PQQ",
+        "category": "other",
+        "base_unit": "mg",
+        "synonyms": [
+          "PQQ"
+        ],
+        "goals": [
+          "immune",
+          "energy_performance",
+          "brain_focus"
+        ]
+      },
+      {
+        "ingredient_id": "resveratrol",
+        "ingredient": "Resveratrol",
+        "category": "other",
+        "base_unit": "mg",
+        "synonyms": [
+          "Resveratrol"
+        ],
+        "goals": [
+          "heart_lipids",
+          "immune",
+          "energy_performance"
+        ]
+      },
+      {
+        "ingredient_id": "same",
+        "ingredient": "SAMe",
+        "category": "other",
+        "base_unit": "mg",
+        "synonyms": [
+          "S-adenosyl-L-methionine",
+          "SAMe (S-adenosyl-L-methionine)"
+        ],
+        "goals": [
+          "sleep_stress",
+          "joint",
+          "immune"
+        ]
+      },
+      {
+        "ingredient_id": "saccharomyces_boulardii",
+        "ingredient": "Saccharomyces boulardii",
+        "category": "other",
+        "base_unit": "cfu",
+        "synonyms": [
+          "Saccharomyces boulardii"
+        ],
+        "goals": [
+          "gut_probiotic",
+          "immune",
+          "energy_performance"
+        ]
+      },
+      {
+        "ingredient_id": "spermidine",
+        "ingredient": "Spermidine",
+        "category": "other",
+        "base_unit": "mg",
+        "synonyms": [
+          "Spermidine"
+        ],
+        "goals": [
+          "immune",
+          "energy_performance",
+          "brain_focus"
+        ]
+      },
+      {
+        "ingredient_id": "spirulina",
+        "ingredient": "Spirulina",
+        "category": "other",
+        "base_unit": "g",
+        "synonyms": [
+          "Spirulina"
+        ],
+        "goals": [
+          "immune",
+          "energy_performance",
+          "brain_focus"
+        ]
+      },
+      {
+        "ingredient_id": "urolithin_a",
+        "ingredient": "Urolithin A",
+        "category": "other",
+        "base_unit": "mg",
+        "synonyms": [
+          "Urolithin A"
+        ],
+        "goals": [
+          "immune",
+          "energy_performance",
+          "brain_focus"
+        ]
+      },
+      {
+        "ingredient_id": "zeaxanthin",
+        "ingredient": "Zeaxanthin",
+        "category": "other",
+        "base_unit": "mg",
+        "synonyms": [
+          "Zeaxanthin"
+        ],
+        "goals": [
+          "immune",
+          "energy_performance",
+          "brain_focus"
+        ]
+      },
+      {
+        "ingredient_id": "biotin",
+        "ingredient": "Biotin",
+        "category": "vitamin",
+        "base_unit": "mcg",
+        "synonyms": [
+          "Biotin",
+          "Biotin (Vitamin B7)",
+          "Vitamin B7"
+        ],
+        "goals": [
+          "beauty",
+          "immune",
+          "energy_performance"
+        ]
+      },
+      {
+        "ingredient_id": "folate",
+        "ingredient": "Folate",
+        "category": "vitamin",
+        "base_unit": "mcg",
+        "synonyms": [
+          "Folate",
+          "Folate (Vitamin B9)",
+          "Vitamin B9"
+        ],
+        "goals": [
+          "womens_health",
+          "immune",
+          "energy_performance"
+        ]
+      },
+      {
+        "ingredient_id": "niacin",
+        "ingredient": "Niacin",
+        "category": "vitamin",
+        "base_unit": "mg",
+        "synonyms": [
+          "Niacin (Vitamin B3)",
+          "Vitamin B3"
+        ],
+        "goals": [
+          "energy_performance",
+          "heart_lipids",
+          "immune"
+        ]
+      },
+      {
+        "ingredient_id": "pantothenic_acid",
+        "ingredient": "Pantothenic Acid",
+        "category": "vitamin",
+        "base_unit": "mg",
+        "synonyms": [
+          "Pantothenic Acid (Vitamin B5)",
+          "Vitamin B5"
+        ],
+        "goals": [
+          "immune",
+          "energy_performance",
+          "beauty"
+        ]
+      },
+      {
+        "ingredient_id": "riboflavin",
+        "ingredient": "Riboflavin",
+        "category": "vitamin",
+        "base_unit": "mg",
+        "synonyms": [
+          "Riboflavin (Vitamin B2)",
+          "Vitamin B2"
+        ],
+        "goals": [
+          "energy_performance",
+          "immune",
+          "beauty"
+        ]
+      },
+      {
+        "ingredient_id": "thiamin",
+        "ingredient": "Thiamin",
+        "category": "vitamin",
+        "base_unit": "mg",
+        "synonyms": [
+          "Thiamin (Vitamin B1)",
+          "Vitamin B1"
+        ],
+        "goals": [
+          "immune",
+          "energy_performance",
+          "beauty"
+        ]
+      },
+      {
+        "ingredient_id": "vitamin_a",
+        "ingredient": "Vitamin A",
+        "category": "vitamin",
+        "base_unit": "mcg",
+        "synonyms": [
+          "Vitamin A"
+        ],
+        "goals": [
+          "immune",
+          "energy_performance",
+          "beauty"
+        ]
+      },
+      {
+        "ingredient_id": "vitamin_b12",
+        "ingredient": "Vitamin B12",
+        "category": "vitamin",
+        "base_unit": "mcg",
+        "synonyms": [
+          "Vitamin B12"
+        ],
+        "goals": [
+          "energy_performance",
+          "immune",
+          "beauty"
+        ]
+      },
+      {
+        "ingredient_id": "vitamin_b6",
+        "ingredient": "Vitamin B6",
+        "category": "vitamin",
+        "base_unit": "mg",
+        "synonyms": [
+          "Pyridoxine",
+          "Vitamin B6 (Pyridoxine)"
+        ],
+        "goals": [
+          "sleep_stress",
+          "immune",
+          "energy_performance"
+        ]
+      },
+      {
+        "ingredient_id": "vitamin_c",
+        "ingredient": "Vitamin C",
+        "category": "vitamin",
+        "base_unit": "mg",
+        "synonyms": [
+          "Vitamin C"
+        ],
+        "goals": [
+          "beauty",
+          "immune",
+          "energy_performance"
+        ]
+      },
+      {
+        "ingredient_id": "vitamin_d",
+        "ingredient": "Vitamin D",
+        "category": "vitamin",
+        "base_unit": "iu",
+        "synonyms": [
+          "Vitamin D"
+        ],
+        "goals": [
+          "immune",
+          "energy_performance",
+          "beauty"
+        ]
+      },
+      {
+        "ingredient_id": "vitamin_e",
+        "ingredient": "Vitamin E",
+        "category": "vitamin",
+        "base_unit": "mg",
+        "synonyms": [
+          "Vitamin E"
+        ],
+        "goals": [
+          "beauty",
+          "immune",
+          "energy_performance"
+        ]
+      },
+      {
+        "ingredient_id": "vitamin_k1",
+        "ingredient": "Vitamin K1",
+        "category": "vitamin",
+        "base_unit": "mcg",
+        "synonyms": [
+          "Phylloquinone",
+          "Vitamin K1 (Phylloquinone)"
+        ],
+        "goals": [
+          "heart_lipids",
+          "immune",
+          "energy_performance"
+        ]
+      },
+      {
+        "ingredient_id": "vitamin_k2",
+        "ingredient": "Vitamin K2",
+        "category": "vitamin",
+        "base_unit": "mcg",
+        "synonyms": [
+          "MK-7",
+          "Vitamin K2 (MK-7)"
+        ],
+        "goals": [
+          "heart_lipids",
+          "bone",
+          "immune"
+        ]
+      }
+    ],
+    "form_aliases": [
+      {
+        "applies_to_ingredient_id": null,
+        "maps_to_form_key": "bisglycinate",
+        "token_raw": "bis-glycinate",
+        "token_normalized": "bisglycinate",
+        "alias_confidence": 0.8,
+        "notes": "Hyphen variant"
+      },
+      {
+        "applies_to_ingredient_id": null,
+        "maps_to_form_key": "bisglycinate",
+        "token_raw": "di-glycinate",
+        "token_normalized": "bisglycinate",
+        "alias_confidence": 0.8,
+        "notes": "Variant"
+      },
+      {
+        "applies_to_ingredient_id": "vitamin_c",
+        "maps_to_form_key": "ascorbic_acid",
+        "token_raw": "ascorbic acid",
+        "token_normalized": "ascorbic_acid",
+        "alias_confidence": 0.9,
+        "notes": null
+      },
+      {
+        "applies_to_ingredient_id": "vitamin_c",
+        "maps_to_form_key": "sodium_ascorbate",
+        "token_raw": "sodium ascorbate",
+        "token_normalized": "sodium_ascorbate",
+        "alias_confidence": 0.9,
+        "notes": null
+      },
+      {
+        "applies_to_ingredient_id": "vitamin_c",
+        "maps_to_form_key": "calcium_ascorbate",
+        "token_raw": "calcium ascorbate",
+        "token_normalized": "calcium_ascorbate",
+        "alias_confidence": 0.9,
+        "notes": null
+      },
+      {
+        "applies_to_ingredient_id": "vitamin_c",
+        "maps_to_form_key": "ester_c",
+        "token_raw": "ester-c",
+        "token_normalized": "ester_c",
+        "alias_confidence": 0.85,
+        "notes": null
+      },
+      {
+        "applies_to_ingredient_id": "vitamin_b12",
+        "maps_to_form_key": "methylcobalamin",
+        "token_raw": "methylcobalamin",
+        "token_normalized": "methylcobalamin",
+        "alias_confidence": 0.9,
+        "notes": null
+      },
+      {
+        "applies_to_ingredient_id": "vitamin_b12",
+        "maps_to_form_key": "methylcobalamin",
+        "token_raw": "methyl-b12",
+        "token_normalized": "methylcobalamin",
+        "alias_confidence": 0.85,
+        "notes": null
+      },
+      {
+        "applies_to_ingredient_id": "vitamin_b12",
+        "maps_to_form_key": "cyanocobalamin",
+        "token_raw": "cyanocobalamin",
+        "token_normalized": "cyanocobalamin",
+        "alias_confidence": 0.9,
+        "notes": null
+      },
+      {
+        "applies_to_ingredient_id": "vitamin_b12",
+        "maps_to_form_key": "hydroxocobalamin",
+        "token_raw": "hydroxocobalamin",
+        "token_normalized": "hydroxocobalamin",
+        "alias_confidence": 0.9,
+        "notes": null
+      },
+      {
+        "applies_to_ingredient_id": "vitamin_b12",
+        "maps_to_form_key": "adenosylcobalamin",
+        "token_raw": "adenosylcobalamin",
+        "token_normalized": "adenosylcobalamin",
+        "alias_confidence": 0.85,
+        "notes": null
+      },
+      {
+        "applies_to_ingredient_id": "magnesium",
+        "maps_to_form_key": "magnesium_sulfate",
+        "token_raw": "magnesium sulfate",
+        "token_normalized": "magnesium_sulfate",
+        "alias_confidence": 0.9,
+        "notes": null
+      },
+      {
+        "applies_to_ingredient_id": "magnesium",
+        "maps_to_form_key": "magnesium_chloride",
+        "token_raw": "magnesium chloride",
+        "token_normalized": "magnesium_chloride",
+        "alias_confidence": 0.85,
+        "notes": null
+      },
+      {
+        "applies_to_ingredient_id": "zinc",
+        "maps_to_form_key": "bisglycinate",
+        "token_raw": "zinc bisglycinate",
+        "token_normalized": "bisglycinate",
+        "alias_confidence": 0.9,
+        "notes": null
+      },
+      {
+        "applies_to_ingredient_id": "zinc",
+        "maps_to_form_key": "bisglycinate",
+        "token_raw": "zinc glycinate",
+        "token_normalized": "bisglycinate",
+        "alias_confidence": 0.75,
+        "notes": "Ambiguous; treat as bisglycinate often"
+      },
+      {
+        "applies_to_ingredient_id": "zinc",
+        "maps_to_form_key": "zinc_acetate",
+        "token_raw": "zinc acetate",
+        "token_normalized": "zinc_acetate",
+        "alias_confidence": 0.85,
+        "notes": null
+      },
+      {
+        "applies_to_ingredient_id": "vitamin_d",
+        "maps_to_form_key": "cholecalciferol",
+        "token_raw": "d3",
+        "token_normalized": "cholecalciferol",
+        "alias_confidence": 0.85,
+        "notes": "Vitamin form alias"
+      },
+      {
+        "applies_to_ingredient_id": "vitamin_d",
+        "maps_to_form_key": "cholecalciferol",
+        "token_raw": "cholecalciferol",
+        "token_normalized": "cholecalciferol",
+        "alias_confidence": 0.85,
+        "notes": "Vitamin form alias"
+      },
+      {
+        "applies_to_ingredient_id": "vitamin_d",
+        "maps_to_form_key": "ergocalciferol",
+        "token_raw": "ergocalciferol",
+        "token_normalized": "ergocalciferol",
+        "alias_confidence": 0.85,
+        "notes": "Vitamin form alias"
+      },
+      {
+        "applies_to_ingredient_id": "vitamin_d",
+        "maps_to_form_key": "ergocalciferol",
+        "token_raw": "d2",
+        "token_normalized": "ergocalciferol",
+        "alias_confidence": 0.85,
+        "notes": "Vitamin form alias"
+      },
+      {
+        "applies_to_ingredient_id": "vitamin_e",
+        "maps_to_form_key": "alpha_tocopherol",
+        "token_raw": "dl-alpha-tocopherol",
+        "token_normalized": "alpha_tocopherol",
+        "alias_confidence": 0.85,
+        "notes": "Vitamin form alias"
+      },
+      {
+        "applies_to_ingredient_id": "vitamin_e",
+        "maps_to_form_key": "alpha_tocopherol",
+        "token_raw": "d-alpha tocopherol",
+        "token_normalized": "alpha_tocopherol",
+        "alias_confidence": 0.85,
+        "notes": "Vitamin form alias"
+      },
+      {
+        "applies_to_ingredient_id": "vitamin_e",
+        "maps_to_form_key": "tocotrienols",
+        "token_raw": "tocotrienol",
+        "token_normalized": "tocotrienols",
+        "alias_confidence": 0.85,
+        "notes": "Vitamin form alias"
+      },
+      {
+        "applies_to_ingredient_id": "folate",
+        "maps_to_form_key": "folic_acid",
+        "token_raw": "folic acid",
+        "token_normalized": "folic_acid",
+        "alias_confidence": 0.85,
+        "notes": "Vitamin form alias"
+      },
+      {
+        "applies_to_ingredient_id": "folate",
+        "maps_to_form_key": "methylfolate",
+        "token_raw": "methylfolate",
+        "token_normalized": "methylfolate",
+        "alias_confidence": 0.85,
+        "notes": "Vitamin form alias"
+      },
+      {
+        "applies_to_ingredient_id": "folate",
+        "maps_to_form_key": "methylfolate",
+        "token_raw": "5-mthf",
+        "token_normalized": "methylfolate",
+        "alias_confidence": 0.85,
+        "notes": "Vitamin form alias"
+      },
+      {
+        "applies_to_ingredient_id": "vitamin_b6",
+        "maps_to_form_key": "pyridoxal_5_phosphate",
+        "token_raw": "p-5-p",
+        "token_normalized": "pyridoxal_5_phosphate",
+        "alias_confidence": 0.85,
+        "notes": "Vitamin form alias"
+      },
+      {
+        "applies_to_ingredient_id": "vitamin_b6",
+        "maps_to_form_key": "pyridoxal_5_phosphate",
+        "token_raw": "pyridoxal-5-phosphate",
+        "token_normalized": "pyridoxal_5_phosphate",
+        "alias_confidence": 0.85,
+        "notes": "Vitamin form alias"
+      },
+      {
+        "applies_to_ingredient_id": "vitamin_b6",
+        "maps_to_form_key": "pyridoxine_hcl",
+        "token_raw": "pyridoxine hcl",
+        "token_normalized": "pyridoxine_hcl",
+        "alias_confidence": 0.85,
+        "notes": "Vitamin form alias"
+      },
+      {
+        "applies_to_ingredient_id": "riboflavin",
+        "maps_to_form_key": "riboflavin_5_phosphate",
+        "token_raw": "riboflavin-5-phosphate",
+        "token_normalized": "riboflavin_5_phosphate",
+        "alias_confidence": 0.85,
+        "notes": "Vitamin form alias"
+      },
+      {
+        "applies_to_ingredient_id": "riboflavin",
+        "maps_to_form_key": "riboflavin_5_phosphate",
+        "token_raw": "r-5-p",
+        "token_normalized": "riboflavin_5_phosphate",
+        "alias_confidence": 0.85,
+        "notes": "Vitamin form alias"
+      },
+      {
+        "applies_to_ingredient_id": "niacin",
+        "maps_to_form_key": "niacinamide",
+        "token_raw": "niacinamide",
+        "token_normalized": "niacinamide",
+        "alias_confidence": 0.85,
+        "notes": "Vitamin form alias"
+      },
+      {
+        "applies_to_ingredient_id": "niacin",
+        "maps_to_form_key": "niacinamide",
+        "token_raw": "nicotinamide",
+        "token_normalized": "niacinamide",
+        "alias_confidence": 0.85,
+        "notes": "Vitamin form alias"
+      },
+      {
+        "applies_to_ingredient_id": "niacin",
+        "maps_to_form_key": "nicotinic_acid",
+        "token_raw": "nicotinic acid",
+        "token_normalized": "nicotinic_acid",
+        "alias_confidence": 0.85,
+        "notes": "Vitamin form alias"
+      },
+      {
+        "applies_to_ingredient_id": "glutathione",
+        "maps_to_form_key": "liposomal",
+        "token_raw": "liposomal",
+        "token_normalized": "liposomal",
+        "alias_confidence": 0.9,
+        "notes": "Common label token for liposomal delivery"
+      },
+      {
+        "applies_to_ingredient_id": "glutathione",
+        "maps_to_form_key": "reduced",
+        "token_raw": "reduced",
+        "token_normalized": "reduced",
+        "alias_confidence": 0.85,
+        "notes": "Often indicates reduced glutathione (GSH)"
+      },
+      {
+        "applies_to_ingredient_id": "glutathione",
+        "maps_to_form_key": "reduced",
+        "token_raw": "l-glutathione",
+        "token_normalized": "l_glutathione",
+        "alias_confidence": 0.8,
+        "notes": "Common synonym for glutathione"
+      },
+      {
+        "applies_to_ingredient_id": "glutathione",
+        "maps_to_form_key": "reduced",
+        "token_raw": "gsh",
+        "token_normalized": "gsh",
+        "alias_confidence": 0.6,
+        "notes": "Abbreviation; ambiguous but common in supplement labels"
+      },
+      {
+        "applies_to_ingredient_id": "glutathione",
+        "maps_to_form_key": "s_acetyl",
+        "token_raw": "s-acetyl",
+        "token_normalized": "s_acetyl",
+        "alias_confidence": 0.85,
+        "notes": "S-acetyl glutathione"
+      },
+      {
+        "applies_to_ingredient_id": "glutathione",
+        "maps_to_form_key": "s_acetyl",
+        "token_raw": "s acetyl",
+        "token_normalized": "s_acetyl",
+        "alias_confidence": 0.85,
+        "notes": "S-acetyl glutathione"
+      },
+      {
+        "applies_to_ingredient_id": "glutathione",
+        "maps_to_form_key": "s_acetyl",
+        "token_raw": "sag",
+        "token_normalized": "sag",
+        "alias_confidence": 0.6,
+        "notes": "Abbreviation for S-acetyl glutathione; confirm context"
+      },
+      {
+        "applies_to_ingredient_id": "coq10",
+        "maps_to_form_key": "ubiquinol",
+        "token_raw": "ubiquinol",
+        "token_normalized": "ubiquinol",
+        "alias_confidence": 0.9,
+        "notes": "Reduced CoQ10 form"
+      },
+      {
+        "applies_to_ingredient_id": "coq10",
+        "maps_to_form_key": "ubiquinone",
+        "token_raw": "ubiquinone",
+        "token_normalized": "ubiquinone",
+        "alias_confidence": 0.9,
+        "notes": "Oxidized CoQ10 form"
+      },
+      {
+        "applies_to_ingredient_id": "coq10",
+        "maps_to_form_key": "ubiquinol",
+        "token_raw": "qh",
+        "token_normalized": "qh",
+        "alias_confidence": 0.55,
+        "notes": "Often appears in 'Kaneka QH' ubiquinol branding; context-sensitive"
+      },
+      {
+        "applies_to_ingredient_id": "coq10",
+        "maps_to_form_key": "phytosome",
+        "token_raw": "phytosome",
+        "token_normalized": "phytosome",
+        "alias_confidence": 0.75,
+        "notes": "Phytosome / phospholipid complex"
+      },
+      {
+        "applies_to_ingredient_id": "coq10",
+        "maps_to_form_key": "coq10_cyclodextrin_complex",
+        "token_raw": "cyclodextrin",
+        "token_normalized": "cyclodextrin",
+        "alias_confidence": 0.75,
+        "notes": "Cyclodextrin complex"
+      },
+      {
+        "applies_to_ingredient_id": "coq10",
+        "maps_to_form_key": "solubilized",
+        "token_raw": "water-soluble",
+        "token_normalized": "water_soluble",
+        "alias_confidence": 0.6,
+        "notes": "Generic token for solubilized forms"
+      },
+      {
+        "applies_to_ingredient_id": "n_acetylcysteine",
+        "maps_to_form_key": "nac",
+        "token_raw": "nac",
+        "token_normalized": "nac",
+        "alias_confidence": 0.9,
+        "notes": "Common abbreviation"
+      },
+      {
+        "applies_to_ingredient_id": "n_acetylcysteine",
+        "maps_to_form_key": "nac",
+        "token_raw": "n-acetylcysteine",
+        "token_normalized": "n_acetylcysteine",
+        "alias_confidence": 0.9,
+        "notes": "Standard name"
+      },
+      {
+        "applies_to_ingredient_id": "n_acetylcysteine",
+        "maps_to_form_key": "nac",
+        "token_raw": "n acetyl cysteine",
+        "token_normalized": "n_acetyl_cysteine",
+        "alias_confidence": 0.9,
+        "notes": "Spaced variant"
+      },
+      {
+        "applies_to_ingredient_id": "n_acetylcysteine",
+        "maps_to_form_key": "nac",
+        "token_raw": "acetylcysteine",
+        "token_normalized": "acetylcysteine",
+        "alias_confidence": 0.85,
+        "notes": "Alternate spelling"
+      },
+      {
+        "applies_to_ingredient_id": "n_acetylcysteine",
+        "maps_to_form_key": "nac_amide",
+        "token_raw": "naca",
+        "token_normalized": "naca",
+        "alias_confidence": 0.75,
+        "notes": "N-acetylcysteine amide; limited supplement use"
+      },
+      {
+        "applies_to_ingredient_id": "n_acetylcysteine",
+        "maps_to_form_key": "nac_enteric",
+        "token_raw": "enteric",
+        "token_normalized": "enteric",
+        "alias_confidence": 0.75,
+        "notes": "Enteric-coated / delayed release"
+      },
+      {
+        "applies_to_ingredient_id": "n_acetylcysteine",
+        "maps_to_form_key": "nac_enteric",
+        "token_raw": "delayed release",
+        "token_normalized": "delayed_release",
+        "alias_confidence": 0.7,
+        "notes": "Delayed release"
+      },
+      {
+        "applies_to_ingredient_id": "nicotinamide_riboside",
+        "maps_to_form_key": "capsule",
+        "token_raw": "nr",
+        "token_normalized": "nr",
+        "alias_confidence": 0.55,
+        "notes": "Abbreviation; does not guarantee capsule, but most consumer products are capsules"
+      },
+      {
+        "applies_to_ingredient_id": "nicotinamide_riboside",
+        "maps_to_form_key": "high_purity",
+        "token_raw": "nicotinamide riboside",
+        "token_normalized": "nicotinamide_riboside",
+        "alias_confidence": 0.6,
+        "notes": "Often powder or capsule; map to high_purity as neutral default"
+      },
+      {
+        "applies_to_ingredient_id": "nicotinamide_riboside",
+        "maps_to_form_key": "liposomal",
+        "token_raw": "liposomal",
+        "token_normalized": "liposomal",
+        "alias_confidence": 0.85,
+        "notes": "Liposomal delivery token"
+      },
+      {
+        "applies_to_ingredient_id": "nicotinamide_riboside",
+        "maps_to_form_key": "high_purity",
+        "token_raw": "niagen",
+        "token_normalized": "niagen",
+        "alias_confidence": 0.5,
+        "notes": "Brand-associated; context-sensitive"
+      },
+      {
+        "applies_to_ingredient_id": "nicotinamide_mononucleotide",
+        "maps_to_form_key": "capsule",
+        "token_raw": "nmn",
+        "token_normalized": "nmn",
+        "alias_confidence": 0.55,
+        "notes": "Abbreviation; often capsules"
+      },
+      {
+        "applies_to_ingredient_id": "nicotinamide_mononucleotide",
+        "maps_to_form_key": "high_purity",
+        "token_raw": "nicotinamide mononucleotide",
+        "token_normalized": "nicotinamide_mononucleotide",
+        "alias_confidence": 0.6,
+        "notes": "Neutral default"
+      },
+      {
+        "applies_to_ingredient_id": "nicotinamide_mononucleotide",
+        "maps_to_form_key": "high_purity",
+        "token_raw": "beta-nicotinamide mononucleotide",
+        "token_normalized": "beta_nicotinamide_mononucleotide",
+        "alias_confidence": 0.6,
+        "notes": "Spelled-out variant"
+      },
+      {
+        "applies_to_ingredient_id": "nicotinamide_mononucleotide",
+        "maps_to_form_key": "liposomal",
+        "token_raw": "liposomal",
+        "token_normalized": "liposomal",
+        "alias_confidence": 0.85,
+        "notes": "Liposomal delivery token"
+      },
+      {
+        "applies_to_ingredient_id": null,
+        "maps_to_form_key": "chelated",
+        "token_raw": "chelated",
+        "token_normalized": "chelate",
+        "alias_confidence": 0.7,
+        "notes": "Generic chelated marker; maps to generic chelated form_key if present."
+      },
+      {
+        "applies_to_ingredient_id": null,
+        "maps_to_form_key": "chelated",
+        "token_raw": "amino acid chelate",
+        "token_normalized": "chelate",
+        "alias_confidence": 0.65,
+        "notes": "Generic amino acid chelate marker."
+      },
+      {
+        "applies_to_ingredient_id": "zinc",
+        "maps_to_form_key": "bisglycinate",
+        "token_raw": "glycinate",
+        "token_normalized": "glycinate",
+        "alias_confidence": 0.7,
+        "notes": "Zinc often labeled glycinate; map to bisglycinate."
+      },
+      {
+        "applies_to_ingredient_id": "iron",
+        "maps_to_form_key": "bisglycinate",
+        "token_raw": "glycinate",
+        "token_normalized": "glycinate",
+        "alias_confidence": 0.7,
+        "notes": "Iron often labeled glycinate; map to bisglycinate."
+      },
+      {
+        "applies_to_ingredient_id": "coq10",
+        "maps_to_form_key": "ubiquinol",
+        "token_raw": "qh2",
+        "token_normalized": "qh2",
+        "alias_confidence": 0.55,
+        "notes": "Context-sensitive branding shorthand for ubiquinol."
+      },
+      {
+        "applies_to_ingredient_id": "coq10",
+        "maps_to_form_key": "ubiquinol",
+        "token_raw": "reduced coq10",
+        "token_normalized": "reduced_coq10",
+        "alias_confidence": 0.65,
+        "notes": "Ubiquinol = reduced form of CoQ10."
+      },
+      {
+        "applies_to_ingredient_id": "vitamin_c",
+        "maps_to_form_key": "ascorbic_acid",
+        "token_raw": "ascorbic",
+        "token_normalized": "ascorbic",
+        "alias_confidence": 0.82,
+        "notes": "Resolve 'ascorbic' -> ascorbic_acid after dropping 'acid'."
+      },
+      {
+        "applies_to_ingredient_id": "folate",
+        "maps_to_form_key": "folic_acid",
+        "token_raw": "folic",
+        "token_normalized": "folic",
+        "alias_confidence": 0.82,
+        "notes": "Resolve 'folic' -> folic_acid after dropping 'acid'."
+      },
+      {
+        "applies_to_ingredient_id": "niacin",
+        "maps_to_form_key": "nicotinic_acid",
+        "token_raw": "nicotinic",
+        "token_normalized": "nicotinic",
+        "alias_confidence": 0.82,
+        "notes": "Resolve 'nicotinic' -> nicotinic_acid after dropping 'acid'."
+      },
+      {
+        "applies_to_ingredient_id": "pantothenic_acid",
+        "maps_to_form_key": "pantothenic_acid",
+        "token_raw": "pantothenic",
+        "token_normalized": "pantothenic",
+        "alias_confidence": 0.8,
+        "notes": "Resolve 'pantothenic' -> pantothenic_acid after dropping 'acid'."
+      },
+      {
+        "applies_to_ingredient_id": "potassium",
+        "maps_to_form_key": "potassium_phosphate",
+        "token_raw": "potassium phosphate",
+        "token_normalized": "potassium_phosphate",
+        "alias_confidence": 0.8,
+        "notes": "New form alias"
+      },
+      {
+        "applies_to_ingredient_id": "potassium",
+        "maps_to_form_key": "potassium_phosphate",
+        "token_raw": "monopotassium phosphate",
+        "token_normalized": "potassium_phosphate",
+        "alias_confidence": 0.78,
+        "notes": "New form alias"
+      },
+      {
+        "applies_to_ingredient_id": "potassium",
+        "maps_to_form_key": "potassium_phosphate",
+        "token_raw": "dipotassium phosphate",
+        "token_normalized": "potassium_phosphate",
+        "alias_confidence": 0.78,
+        "notes": "New form alias"
+      },
+      {
+        "applies_to_ingredient_id": "magnesium",
+        "maps_to_form_key": "magnesium_phosphate",
+        "token_raw": "magnesium phosphate",
+        "token_normalized": "magnesium_phosphate",
+        "alias_confidence": 0.78,
+        "notes": "New form alias"
+      }
+    ],
+    "normalization_rules": [
+      {
+        "rule_id": "NR2",
+        "pattern": "\\bHCl\\b|\\bhcl\\b",
+        "replacement": "hydrochloride",
+        "description": "Normalize HCl abbreviation"
+      },
+      {
+        "rule_id": "NR3",
+        "pattern": "\\bbis[- ]?glycinate\\b",
+        "replacement": "bisglycinate",
+        "description": "Normalize bisglycinate variants"
+      },
+      {
+        "rule_id": "NR4",
+        "pattern": "\\bL[- ]threonate\\b",
+        "replacement": "l_threonate",
+        "description": "Normalize L-threonate variants"
+      },
+      {
+        "rule_id": "NR5",
+        "pattern": "\\b5[- ]?MTHF\\b|\\b5-methyltetrahydrofolate\\b",
+        "replacement": "methylfolate",
+        "description": "Normalize methylfolate variants"
+      },
+      {
+        "rule_id": "NR6",
+        "pattern": "\\bP-?5-?P\\b",
+        "replacement": "pyridoxal_5_phosphate",
+        "description": "Normalize vitamin B6 active form"
+      },
+      {
+        "rule_id": "NR7",
+        "pattern": "β",
+        "replacement": "beta",
+        "description": "Normalize Greek beta character to 'beta'"
+      },
+      {
+        "rule_id": "NR8",
+        "pattern": "\\bQH\\b|\\bqh\\b",
+        "replacement": "ubiquinol",
+        "description": "Normalize QH branding shorthand to ubiquinol token (CoQ10 context-dependent)"
+      },
+      {
+        "rule_id": "NR9",
+        "pattern": "\\bsulphate\\b",
+        "replacement": "sulfate",
+        "description": "Normalize UK spelling sulphate -> sulfate."
+      },
+      {
+        "rule_id": "NR10",
+        "pattern": "\\bchlorure\\b",
+        "replacement": "chloride",
+        "description": "Normalize FR spelling chlorure -> chloride."
+      },
+      {
+        "rule_id": "NR16",
+        "pattern": "\\bchelated\\b",
+        "replacement": "chelate",
+        "description": "Normalize 'chelated' -> 'chelate'."
+      }
+    ],
+    "token_aliases": [
+      {
+        "token_raw": "citrate",
+        "token_normalized": "citrate",
+        "alias_confidence": 0.8,
+        "notes": "Generic form token",
+        "applies_to_ingredient_id": null
+      },
+      {
+        "token_raw": "chloride",
+        "token_normalized": "chloride",
+        "alias_confidence": 0.8,
+        "notes": "Generic form token",
+        "applies_to_ingredient_id": null
+      },
+      {
+        "token_raw": "oxide",
+        "token_normalized": "oxide",
+        "alias_confidence": 0.8,
+        "notes": "Generic form token",
+        "applies_to_ingredient_id": null
+      },
+      {
+        "token_raw": "sulfate",
+        "token_normalized": "sulfate",
+        "alias_confidence": 0.8,
+        "notes": "Generic form token",
+        "applies_to_ingredient_id": null
+      },
+      {
+        "token_raw": "gluconate",
+        "token_normalized": "gluconate",
+        "alias_confidence": 0.8,
+        "notes": "Generic form token",
+        "applies_to_ingredient_id": null
+      },
+      {
+        "token_raw": "picolinate",
+        "token_normalized": "picolinate",
+        "alias_confidence": 0.8,
+        "notes": "Generic form token",
+        "applies_to_ingredient_id": null
+      },
+      {
+        "token_raw": "bisglycinate",
+        "token_normalized": "bisglycinate",
+        "alias_confidence": 0.8,
+        "notes": "Generic form token",
+        "applies_to_ingredient_id": null
+      },
+      {
+        "token_raw": "glycinate",
+        "token_normalized": "glycinate",
+        "alias_confidence": 0.8,
+        "notes": "Generic form token",
+        "applies_to_ingredient_id": null
+      },
+      {
+        "token_raw": "chelate",
+        "token_normalized": "chelate",
+        "alias_confidence": 0.8,
+        "notes": "Generic form token",
+        "applies_to_ingredient_id": null
+      },
+      {
+        "token_raw": "acetate",
+        "token_normalized": "acetate",
+        "alias_confidence": 0.8,
+        "notes": "Generic form token",
+        "applies_to_ingredient_id": null
+      },
+      {
+        "token_raw": "malate",
+        "token_normalized": "malate",
+        "alias_confidence": 0.8,
+        "notes": "Generic form token",
+        "applies_to_ingredient_id": null
+      },
+      {
+        "token_raw": "lactate",
+        "token_normalized": "lactate",
+        "alias_confidence": 0.8,
+        "notes": "Generic form token",
+        "applies_to_ingredient_id": null
+      },
+      {
+        "token_raw": "aspartate",
+        "token_normalized": "aspartate",
+        "alias_confidence": 0.8,
+        "notes": "Generic form token",
+        "applies_to_ingredient_id": null
+      },
+      {
+        "token_raw": "taurate",
+        "token_normalized": "taurate",
+        "alias_confidence": 0.8,
+        "notes": "Generic form token",
+        "applies_to_ingredient_id": null
+      },
+      {
+        "token_raw": "threonate",
+        "token_normalized": "threonate",
+        "alias_confidence": 0.8,
+        "notes": "Generic form token",
+        "applies_to_ingredient_id": null
+      },
+      {
+        "token_raw": "carbonate",
+        "token_normalized": "carbonate",
+        "alias_confidence": 0.8,
+        "notes": "Generic form token",
+        "applies_to_ingredient_id": null
+      },
+      {
+        "token_raw": "hydrochloride",
+        "token_normalized": "hydrochloride",
+        "alias_confidence": 0.8,
+        "notes": "Generic form token",
+        "applies_to_ingredient_id": null
+      },
+      {
+        "token_raw": "hcl",
+        "token_normalized": "hcl",
+        "alias_confidence": 0.8,
+        "notes": "Generic form token",
+        "applies_to_ingredient_id": null
+      },
+      {
+        "token_raw": "monohydrate",
+        "token_normalized": "monohydrate",
+        "alias_confidence": 0.8,
+        "notes": "Generic form token",
+        "applies_to_ingredient_id": null
+      },
+      {
+        "token_raw": "phosphate",
+        "token_normalized": "phosphate",
+        "alias_confidence": 0.8,
+        "notes": "Generic form token",
+        "applies_to_ingredient_id": null
+      },
+      {
+        "token_raw": "palmitate",
+        "token_normalized": "palmitate",
+        "alias_confidence": 0.8,
+        "notes": "Generic form token",
+        "applies_to_ingredient_id": null
+      },
+      {
+        "token_raw": "succinate",
+        "token_normalized": "succinate",
+        "alias_confidence": 0.8,
+        "notes": "Generic form token",
+        "applies_to_ingredient_id": null
+      },
+      {
+        "token_raw": "bis-glycinate",
+        "token_normalized": "bisglycinate",
+        "alias_confidence": 0.8,
+        "notes": "Hyphen variant",
+        "applies_to_ingredient_id": null
+      },
+      {
+        "token_raw": "di-glycinate",
+        "token_normalized": "bisglycinate",
+        "alias_confidence": 0.8,
+        "notes": "Variant",
+        "applies_to_ingredient_id": null
+      },
+      {
+        "token_raw": "glycinate",
+        "token_normalized": "glycinate",
+        "alias_confidence": 0.8,
+        "notes": "May map to glycinate/bisglycinate depending context",
+        "applies_to_ingredient_id": null
+      },
+      {
+        "token_raw": "hcl",
+        "token_normalized": "hydrochloride",
+        "alias_confidence": 0.8,
+        "notes": "Abbreviation",
+        "applies_to_ingredient_id": null
+      },
+      {
+        "token_raw": "hydrochloride",
+        "token_normalized": "hydrochloride",
+        "alias_confidence": 0.8,
+        "notes": null,
+        "applies_to_ingredient_id": null
+      },
+      {
+        "token_raw": "L-threonate",
+        "token_normalized": "l_threonate",
+        "alias_confidence": 0.8,
+        "notes": "Normalized token",
+        "applies_to_ingredient_id": null
+      },
+      {
+        "token_raw": "threonate",
+        "token_normalized": "l_threonate",
+        "alias_confidence": 0.8,
+        "notes": "Token",
+        "applies_to_ingredient_id": null
+      },
+      {
+        "token_raw": "ascorbic acid",
+        "token_normalized": "ascorbic_acid",
+        "alias_confidence": 0.9,
+        "notes": null,
+        "applies_to_ingredient_id": "vitamin_c"
+      },
+      {
+        "token_raw": "sodium ascorbate",
+        "token_normalized": "sodium_ascorbate",
+        "alias_confidence": 0.9,
+        "notes": null,
+        "applies_to_ingredient_id": "vitamin_c"
+      },
+      {
+        "token_raw": "calcium ascorbate",
+        "token_normalized": "calcium_ascorbate",
+        "alias_confidence": 0.9,
+        "notes": null,
+        "applies_to_ingredient_id": "vitamin_c"
+      },
+      {
+        "token_raw": "ester-c",
+        "token_normalized": "ester_c",
+        "alias_confidence": 0.85,
+        "notes": null,
+        "applies_to_ingredient_id": "vitamin_c"
+      },
+      {
+        "token_raw": "liposomal",
+        "token_normalized": "liposomal",
+        "alias_confidence": 0.8,
+        "notes": "Delivery format token",
+        "applies_to_ingredient_id": null
+      },
+      {
+        "token_raw": "lipo",
+        "token_normalized": "liposomal",
+        "alias_confidence": 0.8,
+        "notes": "Abbrev token",
+        "applies_to_ingredient_id": null
+      },
+      {
+        "token_raw": "phytosome",
+        "token_normalized": "phytosome",
+        "alias_confidence": 0.8,
+        "notes": "Delivery format token",
+        "applies_to_ingredient_id": null
+      },
+      {
+        "token_raw": "meriva",
+        "token_normalized": "phytosome",
+        "alias_confidence": 0.85,
+        "notes": "Brand->form mapping candidate",
+        "applies_to_ingredient_id": "curcumin"
+      },
+      {
+        "token_raw": "c3 complex",
+        "token_normalized": "standard_curcuminoids",
+        "alias_confidence": 0.8,
+        "notes": "Standardized extract name",
+        "applies_to_ingredient_id": "curcumin"
+      },
+      {
+        "token_raw": "bioPerine",
+        "token_normalized": "with_piperine",
+        "alias_confidence": 0.8,
+        "notes": "Piperine enhancer token",
+        "applies_to_ingredient_id": "curcumin"
+      },
+      {
+        "token_raw": "methylcobalamin",
+        "token_normalized": "methylcobalamin",
+        "alias_confidence": 0.9,
+        "notes": null,
+        "applies_to_ingredient_id": "vitamin_b12"
+      },
+      {
+        "token_raw": "methyl-b12",
+        "token_normalized": "methylcobalamin",
+        "alias_confidence": 0.85,
+        "notes": null,
+        "applies_to_ingredient_id": "vitamin_b12"
+      },
+      {
+        "token_raw": "cyanocobalamin",
+        "token_normalized": "cyanocobalamin",
+        "alias_confidence": 0.9,
+        "notes": null,
+        "applies_to_ingredient_id": "vitamin_b12"
+      },
+      {
+        "token_raw": "hydroxocobalamin",
+        "token_normalized": "hydroxocobalamin",
+        "alias_confidence": 0.9,
+        "notes": null,
+        "applies_to_ingredient_id": "vitamin_b12"
+      },
+      {
+        "token_raw": "adenosylcobalamin",
+        "token_normalized": "adenosylcobalamin",
+        "alias_confidence": 0.85,
+        "notes": null,
+        "applies_to_ingredient_id": "vitamin_b12"
+      },
+      {
+        "token_raw": "magnesium citrate",
+        "token_normalized": "citrate",
+        "alias_confidence": 0.85,
+        "notes": null,
+        "applies_to_ingredient_id": "magnesium"
+      },
+      {
+        "token_raw": "magnesium glycinate",
+        "token_normalized": "glycinate",
+        "alias_confidence": 0.85,
+        "notes": null,
+        "applies_to_ingredient_id": "magnesium"
+      },
+      {
+        "token_raw": "magnesium bisglycinate",
+        "token_normalized": "glycinate",
+        "alias_confidence": 0.85,
+        "notes": null,
+        "applies_to_ingredient_id": "magnesium"
+      },
+      {
+        "token_raw": "magnesium oxide",
+        "token_normalized": "oxide",
+        "alias_confidence": 0.9,
+        "notes": null,
+        "applies_to_ingredient_id": "magnesium"
+      },
+      {
+        "token_raw": "magnesium sulfate",
+        "token_normalized": "magnesium_sulfate",
+        "alias_confidence": 0.9,
+        "notes": null,
+        "applies_to_ingredient_id": "magnesium"
+      },
+      {
+        "token_raw": "magnesium chloride",
+        "token_normalized": "magnesium_chloride",
+        "alias_confidence": 0.85,
+        "notes": null,
+        "applies_to_ingredient_id": "magnesium"
+      },
+      {
+        "token_raw": "magnesium lactate",
+        "token_normalized": "lactate",
+        "alias_confidence": 0.85,
+        "notes": null,
+        "applies_to_ingredient_id": "magnesium"
+      },
+      {
+        "token_raw": "magnesium aspartate",
+        "token_normalized": "aspartate",
+        "alias_confidence": 0.85,
+        "notes": null,
+        "applies_to_ingredient_id": "magnesium"
+      },
+      {
+        "token_raw": "zinc bisglycinate",
+        "token_normalized": "bisglycinate",
+        "alias_confidence": 0.9,
+        "notes": null,
+        "applies_to_ingredient_id": "zinc"
+      },
+      {
+        "token_raw": "zinc glycinate",
+        "token_normalized": "bisglycinate",
+        "alias_confidence": 0.75,
+        "notes": "Ambiguous; treat as bisglycinate often",
+        "applies_to_ingredient_id": "zinc"
+      },
+      {
+        "token_raw": "zinc picolinate",
+        "token_normalized": "picolinate",
+        "alias_confidence": 0.9,
+        "notes": null,
+        "applies_to_ingredient_id": "zinc"
+      },
+      {
+        "token_raw": "zinc oxide",
+        "token_normalized": "oxide",
+        "alias_confidence": 0.9,
+        "notes": null,
+        "applies_to_ingredient_id": "zinc"
+      },
+      {
+        "token_raw": "zinc gluconate",
+        "token_normalized": "gluconate",
+        "alias_confidence": 0.9,
+        "notes": null,
+        "applies_to_ingredient_id": "zinc"
+      },
+      {
+        "token_raw": "zinc sulfate",
+        "token_normalized": "sulfate",
+        "alias_confidence": 0.9,
+        "notes": null,
+        "applies_to_ingredient_id": "zinc"
+      },
+      {
+        "token_raw": "zinc acetate",
+        "token_normalized": "zinc_acetate",
+        "alias_confidence": 0.85,
+        "notes": null,
+        "applies_to_ingredient_id": "zinc"
+      },
+      {
+        "token_raw": "d3",
+        "token_normalized": "cholecalciferol",
+        "alias_confidence": 0.85,
+        "notes": "Vitamin form alias",
+        "applies_to_ingredient_id": "vitamin_d"
+      },
+      {
+        "token_raw": "cholecalciferol",
+        "token_normalized": "cholecalciferol",
+        "alias_confidence": 0.85,
+        "notes": "Vitamin form alias",
+        "applies_to_ingredient_id": "vitamin_d"
+      },
+      {
+        "token_raw": "ergocalciferol",
+        "token_normalized": "ergocalciferol",
+        "alias_confidence": 0.85,
+        "notes": "Vitamin form alias",
+        "applies_to_ingredient_id": "vitamin_d"
+      },
+      {
+        "token_raw": "d2",
+        "token_normalized": "ergocalciferol",
+        "alias_confidence": 0.85,
+        "notes": "Vitamin form alias",
+        "applies_to_ingredient_id": "vitamin_d"
+      },
+      {
+        "token_raw": "dl-alpha-tocopherol",
+        "token_normalized": "alpha_tocopherol",
+        "alias_confidence": 0.85,
+        "notes": "Vitamin form alias",
+        "applies_to_ingredient_id": "vitamin_e"
+      },
+      {
+        "token_raw": "d-alpha tocopherol",
+        "token_normalized": "alpha_tocopherol",
+        "alias_confidence": 0.85,
+        "notes": "Vitamin form alias",
+        "applies_to_ingredient_id": "vitamin_e"
+      },
+      {
+        "token_raw": "tocotrienol",
+        "token_normalized": "tocotrienols",
+        "alias_confidence": 0.85,
+        "notes": "Vitamin form alias",
+        "applies_to_ingredient_id": "vitamin_e"
+      },
+      {
+        "token_raw": "folic acid",
+        "token_normalized": "folic_acid",
+        "alias_confidence": 0.85,
+        "notes": "Vitamin form alias",
+        "applies_to_ingredient_id": "folate"
+      },
+      {
+        "token_raw": "methylfolate",
+        "token_normalized": "methylfolate",
+        "alias_confidence": 0.85,
+        "notes": "Vitamin form alias",
+        "applies_to_ingredient_id": "folate"
+      },
+      {
+        "token_raw": "5-mthf",
+        "token_normalized": "methylfolate",
+        "alias_confidence": 0.85,
+        "notes": "Vitamin form alias",
+        "applies_to_ingredient_id": "folate"
+      },
+      {
+        "token_raw": "p-5-p",
+        "token_normalized": "pyridoxal_5_phosphate",
+        "alias_confidence": 0.85,
+        "notes": "Vitamin form alias",
+        "applies_to_ingredient_id": "vitamin_b6"
+      },
+      {
+        "token_raw": "pyridoxal-5-phosphate",
+        "token_normalized": "pyridoxal_5_phosphate",
+        "alias_confidence": 0.85,
+        "notes": "Vitamin form alias",
+        "applies_to_ingredient_id": "vitamin_b6"
+      },
+      {
+        "token_raw": "pyridoxine hcl",
+        "token_normalized": "pyridoxine_hcl",
+        "alias_confidence": 0.85,
+        "notes": "Vitamin form alias",
+        "applies_to_ingredient_id": "vitamin_b6"
+      },
+      {
+        "token_raw": "riboflavin-5-phosphate",
+        "token_normalized": "riboflavin_5_phosphate",
+        "alias_confidence": 0.85,
+        "notes": "Vitamin form alias",
+        "applies_to_ingredient_id": "riboflavin"
+      },
+      {
+        "token_raw": "r-5-p",
+        "token_normalized": "riboflavin_5_phosphate",
+        "alias_confidence": 0.85,
+        "notes": "Vitamin form alias",
+        "applies_to_ingredient_id": "riboflavin"
+      },
+      {
+        "token_raw": "niacinamide",
+        "token_normalized": "niacinamide",
+        "alias_confidence": 0.85,
+        "notes": "Vitamin form alias",
+        "applies_to_ingredient_id": "niacin"
+      },
+      {
+        "token_raw": "nicotinamide",
+        "token_normalized": "niacinamide",
+        "alias_confidence": 0.85,
+        "notes": "Vitamin form alias",
+        "applies_to_ingredient_id": "niacin"
+      },
+      {
+        "token_raw": "nicotinic acid",
+        "token_normalized": "nicotinic_acid",
+        "alias_confidence": 0.85,
+        "notes": "Vitamin form alias",
+        "applies_to_ingredient_id": "niacin"
+      },
+      {
+        "token_raw": "mononitrate",
+        "token_normalized": "mononitrate",
+        "alias_confidence": 0.6,
+        "notes": "Descriptor token (parsing aid)",
+        "applies_to_ingredient_id": null
+      },
+      {
+        "token_raw": "dicalcium phosphate",
+        "token_normalized": "dicalcium_phosphate",
+        "alias_confidence": 0.6,
+        "notes": "Descriptor token (parsing aid)",
+        "applies_to_ingredient_id": null
+      },
+      {
+        "token_raw": "phosphate",
+        "token_normalized": "phosphate",
+        "alias_confidence": 0.6,
+        "notes": "Descriptor token (parsing aid)",
+        "applies_to_ingredient_id": null
+      },
+      {
+        "token_raw": "monohydrate",
+        "token_normalized": "monohydrate",
+        "alias_confidence": 0.6,
+        "notes": "Descriptor token (parsing aid)",
+        "applies_to_ingredient_id": null
+      },
+      {
+        "token_raw": "dihydrate",
+        "token_normalized": "dihydrate",
+        "alias_confidence": 0.6,
+        "notes": "Descriptor token (parsing aid)",
+        "applies_to_ingredient_id": null
+      },
+      {
+        "token_raw": "trihydrate",
+        "token_normalized": "trihydrate",
+        "alias_confidence": 0.6,
+        "notes": "Descriptor token (parsing aid)",
+        "applies_to_ingredient_id": null
+      },
+      {
+        "token_raw": "anhydrous",
+        "token_normalized": "anhydrous",
+        "alias_confidence": 0.6,
+        "notes": "Descriptor token (parsing aid)",
+        "applies_to_ingredient_id": null
+      },
+      {
+        "token_raw": "standardised",
+        "token_normalized": "standardised",
+        "alias_confidence": 0.6,
+        "notes": "Descriptor token (parsing aid)",
+        "applies_to_ingredient_id": null
+      },
+      {
+        "token_raw": "extract",
+        "token_normalized": "extract",
+        "alias_confidence": 0.6,
+        "notes": "Descriptor token (parsing aid)",
+        "applies_to_ingredient_id": null
+      },
+      {
+        "token_raw": "full spectrum",
+        "token_normalized": "full_spectrum",
+        "alias_confidence": 0.6,
+        "notes": "Descriptor token (parsing aid)",
+        "applies_to_ingredient_id": null
+      },
+      {
+        "token_raw": "whole herb",
+        "token_normalized": "whole_herb",
+        "alias_confidence": 0.6,
+        "notes": "Descriptor token (parsing aid)",
+        "applies_to_ingredient_id": null
+      },
+      {
+        "token_raw": "root",
+        "token_normalized": "root",
+        "alias_confidence": 0.6,
+        "notes": "Descriptor token (parsing aid)",
+        "applies_to_ingredient_id": null
+      },
+      {
+        "token_raw": "leaf",
+        "token_normalized": "leaf",
+        "alias_confidence": 0.6,
+        "notes": "Descriptor token (parsing aid)",
+        "applies_to_ingredient_id": null
+      },
+      {
+        "token_raw": "flower",
+        "token_normalized": "flower",
+        "alias_confidence": 0.6,
+        "notes": "Descriptor token (parsing aid)",
+        "applies_to_ingredient_id": null
+      },
+      {
+        "token_raw": "seed",
+        "token_normalized": "seed",
+        "alias_confidence": 0.6,
+        "notes": "Descriptor token (parsing aid)",
+        "applies_to_ingredient_id": null
+      },
+      {
+        "token_raw": "powder",
+        "token_normalized": "powder",
+        "alias_confidence": 0.6,
+        "notes": "Descriptor token (parsing aid)",
+        "applies_to_ingredient_id": null
+      },
+      {
+        "token_raw": "gummy",
+        "token_normalized": "gummy",
+        "alias_confidence": 0.6,
+        "notes": "Descriptor token (parsing aid)",
+        "applies_to_ingredient_id": null
+      },
+      {
+        "token_raw": "liquid",
+        "token_normalized": "liquid",
+        "alias_confidence": 0.6,
+        "notes": "Descriptor token (parsing aid)",
+        "applies_to_ingredient_id": null
+      },
+      {
+        "token_raw": "tincture",
+        "token_normalized": "tincture",
+        "alias_confidence": 0.6,
+        "notes": "Descriptor token (parsing aid)",
+        "applies_to_ingredient_id": null
+      },
+      {
+        "token_raw": "tea",
+        "token_normalized": "tea",
+        "alias_confidence": 0.6,
+        "notes": "Descriptor token (parsing aid)",
+        "applies_to_ingredient_id": null
+      },
+      {
+        "token_raw": "infusion",
+        "token_normalized": "infusion",
+        "alias_confidence": 0.6,
+        "notes": "Descriptor token (parsing aid)",
+        "applies_to_ingredient_id": null
+      },
+      {
+        "token_raw": "decoction",
+        "token_normalized": "decoction",
+        "alias_confidence": 0.6,
+        "notes": "Descriptor token (parsing aid)",
+        "applies_to_ingredient_id": null
+      },
+      {
+        "token_raw": "micronized",
+        "token_normalized": "micronized",
+        "alias_confidence": 0.6,
+        "notes": "Descriptor token (parsing aid)",
+        "applies_to_ingredient_id": null
+      },
+      {
+        "token_raw": "micronised",
+        "token_normalized": "micronised",
+        "alias_confidence": 0.6,
+        "notes": "Descriptor token (parsing aid)",
+        "applies_to_ingredient_id": null
+      },
+      {
+        "token_raw": "nano",
+        "token_normalized": "nano",
+        "alias_confidence": 0.6,
+        "notes": "Descriptor token (parsing aid)",
+        "applies_to_ingredient_id": null
+      },
+      {
+        "token_raw": "nanoparticle",
+        "token_normalized": "nanoparticle",
+        "alias_confidence": 0.6,
+        "notes": "Descriptor token (parsing aid)",
+        "applies_to_ingredient_id": null
+      },
+      {
+        "token_raw": "micellar",
+        "token_normalized": "micellar",
+        "alias_confidence": 0.6,
+        "notes": "Descriptor token (parsing aid)",
+        "applies_to_ingredient_id": null
+      },
+      {
+        "token_raw": "emulsified",
+        "token_normalized": "emulsified",
+        "alias_confidence": 0.6,
+        "notes": "Descriptor token (parsing aid)",
+        "applies_to_ingredient_id": null
+      },
+      {
+        "token_raw": "phytosome",
+        "token_normalized": "phytosome",
+        "alias_confidence": 0.6,
+        "notes": "Descriptor token (parsing aid)",
+        "applies_to_ingredient_id": null
+      },
+      {
+        "token_raw": "liposomal",
+        "token_normalized": "liposomal",
+        "alias_confidence": 0.6,
+        "notes": "Descriptor token (parsing aid)",
+        "applies_to_ingredient_id": null
+      },
+      {
+        "token_raw": "time release",
+        "token_normalized": "time_release",
+        "alias_confidence": 0.6,
+        "notes": "Descriptor token (parsing aid)",
+        "applies_to_ingredient_id": null
+      },
+      {
+        "token_raw": "sustained release",
+        "token_normalized": "sustained_release",
+        "alias_confidence": 0.6,
+        "notes": "Descriptor token (parsing aid)",
+        "applies_to_ingredient_id": null
+      },
+      {
+        "token_raw": "extended release",
+        "token_normalized": "extended_release",
+        "alias_confidence": 0.6,
+        "notes": "Descriptor token (parsing aid)",
+        "applies_to_ingredient_id": null
+      },
+      {
+        "token_raw": "delayed release",
+        "token_normalized": "delayed_release",
+        "alias_confidence": 0.6,
+        "notes": "Descriptor token (parsing aid)",
+        "applies_to_ingredient_id": null
+      },
+      {
+        "token_raw": "usp",
+        "token_normalized": "usp",
+        "alias_confidence": 0.6,
+        "notes": "Descriptor token (parsing aid)",
+        "applies_to_ingredient_id": null
+      },
+      {
+        "token_raw": "bp",
+        "token_normalized": "bp",
+        "alias_confidence": 0.6,
+        "notes": "Descriptor token (parsing aid)",
+        "applies_to_ingredient_id": null
+      },
+      {
+        "token_raw": "ep",
+        "token_normalized": "ep",
+        "alias_confidence": 0.6,
+        "notes": "Descriptor token (parsing aid)",
+        "applies_to_ingredient_id": null
+      },
+      {
+        "token_raw": "nf",
+        "token_normalized": "nf",
+        "alias_confidence": 0.6,
+        "notes": "Descriptor token (parsing aid)",
+        "applies_to_ingredient_id": null
+      },
+      {
+        "token_raw": "gmp",
+        "token_normalized": "gmp",
+        "alias_confidence": 0.6,
+        "notes": "Descriptor token (parsing aid)",
+        "applies_to_ingredient_id": null
+      },
+      {
+        "token_raw": "liposomal",
+        "token_normalized": "liposomal",
+        "alias_confidence": 0.9,
+        "notes": "Common label token for liposomal delivery",
+        "applies_to_ingredient_id": "glutathione"
+      },
+      {
+        "token_raw": "reduced",
+        "token_normalized": "reduced",
+        "alias_confidence": 0.85,
+        "notes": "Often indicates reduced glutathione (GSH)",
+        "applies_to_ingredient_id": "glutathione"
+      },
+      {
+        "token_raw": "l-glutathione",
+        "token_normalized": "l_glutathione",
+        "alias_confidence": 0.8,
+        "notes": "Common synonym for glutathione",
+        "applies_to_ingredient_id": "glutathione"
+      },
+      {
+        "token_raw": "gsh",
+        "token_normalized": "gsh",
+        "alias_confidence": 0.6,
+        "notes": "Abbreviation; ambiguous but common in supplement labels",
+        "applies_to_ingredient_id": "glutathione"
+      },
+      {
+        "token_raw": "s-acetyl",
+        "token_normalized": "s_acetyl",
+        "alias_confidence": 0.85,
+        "notes": "S-acetyl glutathione",
+        "applies_to_ingredient_id": "glutathione"
+      },
+      {
+        "token_raw": "s acetyl",
+        "token_normalized": "s_acetyl",
+        "alias_confidence": 0.85,
+        "notes": "S-acetyl glutathione",
+        "applies_to_ingredient_id": "glutathione"
+      },
+      {
+        "token_raw": "sag",
+        "token_normalized": "sag",
+        "alias_confidence": 0.6,
+        "notes": "Abbreviation for S-acetyl glutathione; confirm context",
+        "applies_to_ingredient_id": "glutathione"
+      },
+      {
+        "token_raw": "ubiquinol",
+        "token_normalized": "ubiquinol",
+        "alias_confidence": 0.9,
+        "notes": "Reduced CoQ10 form",
+        "applies_to_ingredient_id": "coq10"
+      },
+      {
+        "token_raw": "ubiquinone",
+        "token_normalized": "ubiquinone",
+        "alias_confidence": 0.9,
+        "notes": "Oxidized CoQ10 form",
+        "applies_to_ingredient_id": "coq10"
+      },
+      {
+        "token_raw": "qh",
+        "token_normalized": "qh",
+        "alias_confidence": 0.55,
+        "notes": "Often appears in 'Kaneka QH' ubiquinol branding; context-sensitive",
+        "applies_to_ingredient_id": "coq10"
+      },
+      {
+        "token_raw": "phytosome",
+        "token_normalized": "phytosome",
+        "alias_confidence": 0.75,
+        "notes": "Phytosome / phospholipid complex",
+        "applies_to_ingredient_id": "coq10"
+      },
+      {
+        "token_raw": "cyclodextrin",
+        "token_normalized": "cyclodextrin",
+        "alias_confidence": 0.75,
+        "notes": "Cyclodextrin complex",
+        "applies_to_ingredient_id": "coq10"
+      },
+      {
+        "token_raw": "water-soluble",
+        "token_normalized": "water_soluble",
+        "alias_confidence": 0.6,
+        "notes": "Generic token for solubilized forms",
+        "applies_to_ingredient_id": "coq10"
+      },
+      {
+        "token_raw": "nac",
+        "token_normalized": "nac",
+        "alias_confidence": 0.9,
+        "notes": "Common abbreviation",
+        "applies_to_ingredient_id": "n_acetylcysteine"
+      },
+      {
+        "token_raw": "n-acetylcysteine",
+        "token_normalized": "n_acetylcysteine",
+        "alias_confidence": 0.9,
+        "notes": "Standard name",
+        "applies_to_ingredient_id": "n_acetylcysteine"
+      },
+      {
+        "token_raw": "n acetyl cysteine",
+        "token_normalized": "n_acetyl_cysteine",
+        "alias_confidence": 0.9,
+        "notes": "Spaced variant",
+        "applies_to_ingredient_id": "n_acetylcysteine"
+      },
+      {
+        "token_raw": "acetylcysteine",
+        "token_normalized": "acetylcysteine",
+        "alias_confidence": 0.85,
+        "notes": "Alternate spelling",
+        "applies_to_ingredient_id": "n_acetylcysteine"
+      },
+      {
+        "token_raw": "naca",
+        "token_normalized": "naca",
+        "alias_confidence": 0.75,
+        "notes": "N-acetylcysteine amide; limited supplement use",
+        "applies_to_ingredient_id": "n_acetylcysteine"
+      },
+      {
+        "token_raw": "enteric",
+        "token_normalized": "enteric",
+        "alias_confidence": 0.75,
+        "notes": "Enteric-coated / delayed release",
+        "applies_to_ingredient_id": "n_acetylcysteine"
+      },
+      {
+        "token_raw": "delayed release",
+        "token_normalized": "delayed_release",
+        "alias_confidence": 0.7,
+        "notes": "Delayed release",
+        "applies_to_ingredient_id": "n_acetylcysteine"
+      },
+      {
+        "token_raw": "nr",
+        "token_normalized": "nr",
+        "alias_confidence": 0.55,
+        "notes": "Abbreviation; does not guarantee capsule, but most consumer products are capsules",
+        "applies_to_ingredient_id": "nicotinamide_riboside"
+      },
+      {
+        "token_raw": "nicotinamide riboside",
+        "token_normalized": "nicotinamide_riboside",
+        "alias_confidence": 0.6,
+        "notes": "Often powder or capsule; map to high_purity as neutral default",
+        "applies_to_ingredient_id": "nicotinamide_riboside"
+      },
+      {
+        "token_raw": "liposomal",
+        "token_normalized": "liposomal",
+        "alias_confidence": 0.85,
+        "notes": "Liposomal delivery token",
+        "applies_to_ingredient_id": "nicotinamide_riboside"
+      },
+      {
+        "token_raw": "niagen",
+        "token_normalized": "niagen",
+        "alias_confidence": 0.5,
+        "notes": "Brand-associated; context-sensitive",
+        "applies_to_ingredient_id": "nicotinamide_riboside"
+      },
+      {
+        "token_raw": "nmn",
+        "token_normalized": "nmn",
+        "alias_confidence": 0.55,
+        "notes": "Abbreviation; often capsules",
+        "applies_to_ingredient_id": "nicotinamide_mononucleotide"
+      },
+      {
+        "token_raw": "nicotinamide mononucleotide",
+        "token_normalized": "nicotinamide_mononucleotide",
+        "alias_confidence": 0.6,
+        "notes": "Neutral default",
+        "applies_to_ingredient_id": "nicotinamide_mononucleotide"
+      },
+      {
+        "token_raw": "beta-nicotinamide mononucleotide",
+        "token_normalized": "beta_nicotinamide_mononucleotide",
+        "alias_confidence": 0.6,
+        "notes": "Spelled-out variant",
+        "applies_to_ingredient_id": "nicotinamide_mononucleotide"
+      },
+      {
+        "token_raw": "liposomal",
+        "token_normalized": "liposomal",
+        "alias_confidence": 0.85,
+        "notes": "Liposomal delivery token",
+        "applies_to_ingredient_id": "nicotinamide_mononucleotide"
+      },
+      {
+        "token_raw": "sulphate",
+        "token_normalized": "sulfate",
+        "alias_confidence": 0.9,
+        "notes": "UK spelling; normalization rule also present.",
+        "applies_to_ingredient_id": null
+      },
+      {
+        "token_raw": "chlorure",
+        "token_normalized": "chloride",
+        "alias_confidence": 0.7,
+        "notes": "FR spelling.",
+        "applies_to_ingredient_id": null
+      },
+      {
+        "token_raw": "citrato",
+        "token_normalized": "citrate",
+        "alias_confidence": 0.7,
+        "notes": "ES/IT spelling.",
+        "applies_to_ingredient_id": null
+      },
+      {
+        "token_raw": "citrat",
+        "token_normalized": "citrate",
+        "alias_confidence": 0.6,
+        "notes": "Truncated token seen in some labels.",
+        "applies_to_ingredient_id": null
+      },
+      {
+        "token_raw": "chelated",
+        "token_normalized": "chelate",
+        "alias_confidence": 0.7,
+        "notes": "Generic chelated marker; maps to generic chelated form_key if present.",
+        "applies_to_ingredient_id": null
+      },
+      {
+        "token_raw": "amino acid chelate",
+        "token_normalized": "chelate",
+        "alias_confidence": 0.65,
+        "notes": "Generic amino acid chelate marker.",
+        "applies_to_ingredient_id": null
+      },
+      {
+        "token_raw": "glycinate",
+        "token_normalized": "glycinate",
+        "alias_confidence": 0.7,
+        "notes": "Zinc often labeled glycinate; map to bisglycinate.",
+        "applies_to_ingredient_id": "zinc"
+      },
+      {
+        "token_raw": "glycinate",
+        "token_normalized": "glycinate",
+        "alias_confidence": 0.7,
+        "notes": "Iron often labeled glycinate; map to bisglycinate.",
+        "applies_to_ingredient_id": "iron"
+      },
+      {
+        "token_raw": "qh2",
+        "token_normalized": "qh2",
+        "alias_confidence": 0.55,
+        "notes": "Context-sensitive branding shorthand for ubiquinol.",
+        "applies_to_ingredient_id": "coq10"
+      },
+      {
+        "token_raw": "reduced coq10",
+        "token_normalized": "reduced_coq10",
+        "alias_confidence": 0.65,
+        "notes": "Ubiquinol = reduced form of CoQ10.",
+        "applies_to_ingredient_id": "coq10"
+      },
+      {
+        "token_raw": "ascorbic",
+        "token_normalized": "ascorbic",
+        "alias_confidence": 0.7,
+        "notes": "Recognize 'ascorbic' token (paired with NR12 dropping 'acid').",
+        "applies_to_ingredient_id": null
+      },
+      {
+        "token_raw": "folic",
+        "token_normalized": "folic",
+        "alias_confidence": 0.65,
+        "notes": "Recognize 'folic' token (paired with NR12 dropping 'acid').",
+        "applies_to_ingredient_id": null
+      },
+      {
+        "token_raw": "nicotinic",
+        "token_normalized": "nicotinic",
+        "alias_confidence": 0.65,
+        "notes": "Recognize 'nicotinic' token (paired with NR12 dropping 'acid').",
+        "applies_to_ingredient_id": null
+      },
+      {
+        "token_raw": "pantothenic",
+        "token_normalized": "pantothenic",
+        "alias_confidence": 0.6,
+        "notes": "Recognize 'pantothenic' token (paired with NR12 dropping 'acid').",
+        "applies_to_ingredient_id": null
+      },
+      {
+        "token_raw": "ascorbic",
+        "token_normalized": "ascorbic",
+        "alias_confidence": 0.82,
+        "notes": "Resolve 'ascorbic' -> ascorbic_acid after dropping 'acid'.",
+        "applies_to_ingredient_id": "vitamin_c"
+      },
+      {
+        "token_raw": "folic",
+        "token_normalized": "folic",
+        "alias_confidence": 0.82,
+        "notes": "Resolve 'folic' -> folic_acid after dropping 'acid'.",
+        "applies_to_ingredient_id": "folate"
+      },
+      {
+        "token_raw": "nicotinic",
+        "token_normalized": "nicotinic",
+        "alias_confidence": 0.82,
+        "notes": "Resolve 'nicotinic' -> nicotinic_acid after dropping 'acid'.",
+        "applies_to_ingredient_id": "niacin"
+      },
+      {
+        "token_raw": "pantothenic",
+        "token_normalized": "pantothenic",
+        "alias_confidence": 0.8,
+        "notes": "Resolve 'pantothenic' -> pantothenic_acid after dropping 'acid'.",
+        "applies_to_ingredient_id": "pantothenic_acid"
+      },
+      {
+        "token_raw": "potassium phosphate",
+        "token_normalized": "potassium_phosphate",
+        "alias_confidence": 0.8,
+        "notes": "New form alias",
+        "applies_to_ingredient_id": "potassium"
+      },
+      {
+        "token_raw": "monopotassium phosphate",
+        "token_normalized": "potassium_phosphate",
+        "alias_confidence": 0.78,
+        "notes": "New form alias",
+        "applies_to_ingredient_id": "potassium"
+      },
+      {
+        "token_raw": "dipotassium phosphate",
+        "token_normalized": "potassium_phosphate",
+        "alias_confidence": 0.78,
+        "notes": "New form alias",
+        "applies_to_ingredient_id": "potassium"
+      },
+      {
+        "token_raw": "magnesium phosphate",
+        "token_normalized": "magnesium_phosphate",
+        "alias_confidence": 0.78,
+        "notes": "New form alias",
+        "applies_to_ingredient_id": "magnesium"
+      }
+    ],
+    "generic_form_tokens": [
+      {
+        "token_raw": "acetate",
+        "token_normalized": "acetate",
+        "alias_confidence": 0.8,
+        "notes": "Generic form token"
+      },
+      {
+        "token_raw": "anhydrous",
+        "token_normalized": "anhydrous",
+        "alias_confidence": 0.6,
+        "notes": "Descriptor token (parsing aid)"
+      },
+      {
+        "token_raw": "ascorbic",
+        "token_normalized": "ascorbic",
+        "alias_confidence": 0.7,
+        "notes": "Recognize 'ascorbic' token (paired with NR12 dropping 'acid')."
+      },
+      {
+        "token_raw": "aspartate",
+        "token_normalized": "aspartate",
+        "alias_confidence": 0.8,
+        "notes": "Generic form token"
+      },
+      {
+        "token_raw": "beta",
+        "token_normalized": "beta",
+        "alias_confidence": 0.5,
+        "notes": "Derived from normalization rule NR7"
+      },
+      {
+        "token_raw": "bisglycinate",
+        "token_normalized": "bisglycinate",
+        "alias_confidence": 0.8,
+        "notes": "Generic form token"
+      },
+      {
+        "token_raw": "bp",
+        "token_normalized": "bp",
+        "alias_confidence": 0.6,
+        "notes": "Descriptor token (parsing aid)"
+      },
+      {
+        "token_raw": "carbonate",
+        "token_normalized": "carbonate",
+        "alias_confidence": 0.8,
+        "notes": "Generic form token"
+      },
+      {
+        "token_raw": "chelate",
+        "token_normalized": "chelate",
+        "alias_confidence": 0.8,
+        "notes": "Generic form token"
+      },
+      {
+        "token_raw": "chloride",
+        "token_normalized": "chloride",
+        "alias_confidence": 0.8,
+        "notes": "Generic form token"
+      },
+      {
+        "token_raw": "citrate",
+        "token_normalized": "citrate",
+        "alias_confidence": 0.8,
+        "notes": "Generic form token"
+      },
+      {
+        "token_raw": "decoction",
+        "token_normalized": "decoction",
+        "alias_confidence": 0.6,
+        "notes": "Descriptor token (parsing aid)"
+      },
+      {
+        "token_raw": "delayed release",
+        "token_normalized": "delayed_release",
+        "alias_confidence": 0.6,
+        "notes": "Descriptor token (parsing aid)"
+      },
+      {
+        "token_raw": "dicalcium phosphate",
+        "token_normalized": "dicalcium_phosphate",
+        "alias_confidence": 0.6,
+        "notes": "Descriptor token (parsing aid)"
+      },
+      {
+        "token_raw": "dihydrate",
+        "token_normalized": "dihydrate",
+        "alias_confidence": 0.6,
+        "notes": "Descriptor token (parsing aid)"
+      },
+      {
+        "token_raw": "emulsified",
+        "token_normalized": "emulsified",
+        "alias_confidence": 0.6,
+        "notes": "Descriptor token (parsing aid)"
+      },
+      {
+        "token_raw": "ep",
+        "token_normalized": "ep",
+        "alias_confidence": 0.6,
+        "notes": "Descriptor token (parsing aid)"
+      },
+      {
+        "token_raw": "extended release",
+        "token_normalized": "extended_release",
+        "alias_confidence": 0.6,
+        "notes": "Descriptor token (parsing aid)"
+      },
+      {
+        "token_raw": "extract",
+        "token_normalized": "extract",
+        "alias_confidence": 0.6,
+        "notes": "Descriptor token (parsing aid)"
+      },
+      {
+        "token_raw": "flower",
+        "token_normalized": "flower",
+        "alias_confidence": 0.6,
+        "notes": "Descriptor token (parsing aid)"
+      },
+      {
+        "token_raw": "folic",
+        "token_normalized": "folic",
+        "alias_confidence": 0.65,
+        "notes": "Recognize 'folic' token (paired with NR12 dropping 'acid')."
+      },
+      {
+        "token_raw": "full spectrum",
+        "token_normalized": "full_spectrum",
+        "alias_confidence": 0.6,
+        "notes": "Descriptor token (parsing aid)"
+      },
+      {
+        "token_raw": "gluconate",
+        "token_normalized": "gluconate",
+        "alias_confidence": 0.8,
+        "notes": "Generic form token"
+      },
+      {
+        "token_raw": "glycinate",
+        "token_normalized": "glycinate",
+        "alias_confidence": 0.8,
+        "notes": "Generic form token"
+      },
+      {
+        "token_raw": "gmp",
+        "token_normalized": "gmp",
+        "alias_confidence": 0.6,
+        "notes": "Descriptor token (parsing aid)"
+      },
+      {
+        "token_raw": "gummy",
+        "token_normalized": "gummy",
+        "alias_confidence": 0.6,
+        "notes": "Descriptor token (parsing aid)"
+      },
+      {
+        "token_raw": "hcl",
+        "token_normalized": "hcl",
+        "alias_confidence": 0.8,
+        "notes": "Generic form token"
+      },
+      {
+        "token_raw": "hydrochloride",
+        "token_normalized": "hydrochloride",
+        "alias_confidence": 0.8,
+        "notes": "Generic form token"
+      },
+      {
+        "token_raw": "infusion",
+        "token_normalized": "infusion",
+        "alias_confidence": 0.6,
+        "notes": "Descriptor token (parsing aid)"
+      },
+      {
+        "token_raw": "L-threonate",
+        "token_normalized": "l_threonate",
+        "alias_confidence": 0.8,
+        "notes": "Normalized token"
+      },
+      {
+        "token_raw": "lactate",
+        "token_normalized": "lactate",
+        "alias_confidence": 0.8,
+        "notes": "Generic form token"
+      },
+      {
+        "token_raw": "leaf",
+        "token_normalized": "leaf",
+        "alias_confidence": 0.6,
+        "notes": "Descriptor token (parsing aid)"
+      },
+      {
+        "token_raw": "liposomal",
+        "token_normalized": "liposomal",
+        "alias_confidence": 0.8,
+        "notes": "Delivery format token"
+      },
+      {
+        "token_raw": "liquid",
+        "token_normalized": "liquid",
+        "alias_confidence": 0.6,
+        "notes": "Descriptor token (parsing aid)"
+      },
+      {
+        "token_raw": "malate",
+        "token_normalized": "malate",
+        "alias_confidence": 0.8,
+        "notes": "Generic form token"
+      },
+      {
+        "token_raw": "methylfolate",
+        "token_normalized": "methylfolate",
+        "alias_confidence": 0.5,
+        "notes": "Derived from normalization rule NR5"
+      },
+      {
+        "token_raw": "micellar",
+        "token_normalized": "micellar",
+        "alias_confidence": 0.6,
+        "notes": "Descriptor token (parsing aid)"
+      },
+      {
+        "token_raw": "micronised",
+        "token_normalized": "micronised",
+        "alias_confidence": 0.6,
+        "notes": "Descriptor token (parsing aid)"
+      },
+      {
+        "token_raw": "micronized",
+        "token_normalized": "micronized",
+        "alias_confidence": 0.6,
+        "notes": "Descriptor token (parsing aid)"
+      },
+      {
+        "token_raw": "monohydrate",
+        "token_normalized": "monohydrate",
+        "alias_confidence": 0.8,
+        "notes": "Generic form token"
+      },
+      {
+        "token_raw": "mononitrate",
+        "token_normalized": "mononitrate",
+        "alias_confidence": 0.6,
+        "notes": "Descriptor token (parsing aid)"
+      },
+      {
+        "token_raw": "nano",
+        "token_normalized": "nano",
+        "alias_confidence": 0.6,
+        "notes": "Descriptor token (parsing aid)"
+      },
+      {
+        "token_raw": "nanoparticle",
+        "token_normalized": "nanoparticle",
+        "alias_confidence": 0.6,
+        "notes": "Descriptor token (parsing aid)"
+      },
+      {
+        "token_raw": "nf",
+        "token_normalized": "nf",
+        "alias_confidence": 0.6,
+        "notes": "Descriptor token (parsing aid)"
+      },
+      {
+        "token_raw": "nicotinic",
+        "token_normalized": "nicotinic",
+        "alias_confidence": 0.65,
+        "notes": "Recognize 'nicotinic' token (paired with NR12 dropping 'acid')."
+      },
+      {
+        "token_raw": "oxide",
+        "token_normalized": "oxide",
+        "alias_confidence": 0.8,
+        "notes": "Generic form token"
+      },
+      {
+        "token_raw": "palmitate",
+        "token_normalized": "palmitate",
+        "alias_confidence": 0.8,
+        "notes": "Generic form token"
+      },
+      {
+        "token_raw": "pantothenic",
+        "token_normalized": "pantothenic",
+        "alias_confidence": 0.6,
+        "notes": "Recognize 'pantothenic' token (paired with NR12 dropping 'acid')."
+      },
+      {
+        "token_raw": "phosphate",
+        "token_normalized": "phosphate",
+        "alias_confidence": 0.8,
+        "notes": "Generic form token"
+      },
+      {
+        "token_raw": "phytosome",
+        "token_normalized": "phytosome",
+        "alias_confidence": 0.8,
+        "notes": "Delivery format token"
+      },
+      {
+        "token_raw": "picolinate",
+        "token_normalized": "picolinate",
+        "alias_confidence": 0.8,
+        "notes": "Generic form token"
+      },
+      {
+        "token_raw": "powder",
+        "token_normalized": "powder",
+        "alias_confidence": 0.6,
+        "notes": "Descriptor token (parsing aid)"
+      },
+      {
+        "token_raw": "pyridoxal_5_phosphate",
+        "token_normalized": "pyridoxal_5_phosphate",
+        "alias_confidence": 0.5,
+        "notes": "Derived from normalization rule NR6"
+      },
+      {
+        "token_raw": "root",
+        "token_normalized": "root",
+        "alias_confidence": 0.6,
+        "notes": "Descriptor token (parsing aid)"
+      },
+      {
+        "token_raw": "seed",
+        "token_normalized": "seed",
+        "alias_confidence": 0.6,
+        "notes": "Descriptor token (parsing aid)"
+      },
+      {
+        "token_raw": "standardised",
+        "token_normalized": "standardised",
+        "alias_confidence": 0.6,
+        "notes": "Descriptor token (parsing aid)"
+      },
+      {
+        "token_raw": "succinate",
+        "token_normalized": "succinate",
+        "alias_confidence": 0.8,
+        "notes": "Generic form token"
+      },
+      {
+        "token_raw": "sulphate",
+        "token_normalized": "sulfate",
+        "alias_confidence": 0.9,
+        "notes": "UK spelling; normalization rule also present."
+      },
+      {
+        "token_raw": "sustained release",
+        "token_normalized": "sustained_release",
+        "alias_confidence": 0.6,
+        "notes": "Descriptor token (parsing aid)"
+      },
+      {
+        "token_raw": "taurate",
+        "token_normalized": "taurate",
+        "alias_confidence": 0.8,
+        "notes": "Generic form token"
+      },
+      {
+        "token_raw": "tea",
+        "token_normalized": "tea",
+        "alias_confidence": 0.6,
+        "notes": "Descriptor token (parsing aid)"
+      },
+      {
+        "token_raw": "threonate",
+        "token_normalized": "threonate",
+        "alias_confidence": 0.8,
+        "notes": "Generic form token"
+      },
+      {
+        "token_raw": "time release",
+        "token_normalized": "time_release",
+        "alias_confidence": 0.6,
+        "notes": "Descriptor token (parsing aid)"
+      },
+      {
+        "token_raw": "tincture",
+        "token_normalized": "tincture",
+        "alias_confidence": 0.6,
+        "notes": "Descriptor token (parsing aid)"
+      },
+      {
+        "token_raw": "trihydrate",
+        "token_normalized": "trihydrate",
+        "alias_confidence": 0.6,
+        "notes": "Descriptor token (parsing aid)"
+      },
+      {
+        "token_raw": "ubiquinol",
+        "token_normalized": "ubiquinol",
+        "alias_confidence": 0.5,
+        "notes": "Derived from normalization rule NR8"
+      },
+      {
+        "token_raw": "usp",
+        "token_normalized": "usp",
+        "alias_confidence": 0.6,
+        "notes": "Descriptor token (parsing aid)"
+      },
+      {
+        "token_raw": "whole herb",
+        "token_normalized": "whole_herb",
+        "alias_confidence": 0.6,
+        "notes": "Descriptor token (parsing aid)"
+      }
+    ]
+  },
+  "summary": {
+    "ingredient_count": 201,
+    "form_alias_count": 76,
+    "normalization_rule_count": 16,
+    "token_alias_count": 166,
+    "generic_form_token_count": 68,
+    "rejected_alias_count": 4
+  },
+  "rejected_aliases": [
+    {
+      "token_raw": "standardized",
+      "reason": "inadmissible_token",
+      "applies_to_ingredient_id": null,
+      "maps_to_form_key": null
+    },
+    {
+      "token_raw": "capsule",
+      "reason": "inadmissible_token",
+      "applies_to_ingredient_id": null,
+      "maps_to_form_key": null
+    },
+    {
+      "token_raw": "tablet",
+      "reason": "inadmissible_token",
+      "applies_to_ingredient_id": null,
+      "maps_to_form_key": null
+    },
+    {
+      "token_raw": "softgel",
+      "reason": "inadmissible_token",
+      "applies_to_ingredient_id": null,
+      "maps_to_form_key": null
+    }
+  ]
+}

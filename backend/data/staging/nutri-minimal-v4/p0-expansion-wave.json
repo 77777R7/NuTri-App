@@ -1,0 +1,18 @@
+{
+  "version": "v4.0",
+  "generated_at": "2026-02-05T06:33:15Z",
+  "meta": {
+    "version": "v4.0",
+    "source_workbook": "/Users/howard07/Library/Mobile Documents/com~apple~CloudDocs/nutri_minimal_data_package_v4_0_en_only_review_excerpts.xlsx",
+    "generated_at": "2026-02-05T06:33:15Z",
+    "wave_name": "nutri_minimal_v4_p0_expansion",
+    "selection_rules": [
+      "Only include rows with mapping_status=new_family_candidate.",
+      "Exclude rows with no_verified_refs_in_workbook from the first wave.",
+      "Rank by forms_count, evidence_count, refs_count, and gap penalties.",
+      "Cap any single category at 4 families to keep the wave balanced."
+    ],
+    "target_count": 15
+  },
+  "p0_expansion_wave": []
+}

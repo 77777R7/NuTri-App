@@ -1,0 +1,557 @@
+{
+  "version": "v4.0",
+  "generated_at": "2026-04-23T00:00:00-07:00",
+  "meta": {
+    "wave_name": "nutri_minimal_v4_p1_expansion_candidate_wave",
+    "source_artifacts": [
+      "family-expansion-backlog.json",
+      "normalized-package.json"
+    ],
+    "selection_rules": [
+      "Only mapping_status=new_family_candidate rows after P0 wave was cleared.",
+      "Favor recognizable shopper categories with form/source/dose comparison value.",
+      "Flag medication/disease-adjacent families as higher safety boundary tier instead of excluding them from planning.",
+      "This artifact is backlog/productization planning only; it does not promote runtime truth or prompt grounding."
+    ],
+    "target_count": 15,
+    "p0_expansion_rows_remaining": 0
+  },
+  "p1_expansion_wave": [
+    {
+      "wave_rank": 1,
+      "implementation_priority": "P1",
+      "source_ingredient_id": "boswellia",
+      "display_name": "Boswellia",
+      "category": "botanical",
+      "forms_count": 6,
+      "evidence_count": 3,
+      "refs_count": 9,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "premium_form_low_factor_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "safety_boundary_tier": "medium",
+      "proposed_runtime_lanes": [
+        "primary_use_context",
+        "extract_standardization_context",
+        "formula_and_label_context"
+      ],
+      "pattern_keywords": [
+        "Boswellia",
+        "boswellia",
+        "AKBA-standardized extract",
+        "Extract (boswellic acids standardized)",
+        "Enhanced absorption (phytosome/liposomal)",
+        "Standardized extract",
+        "Resin powder",
+        "Whole powder"
+      ],
+      "why_p1": "High shopper familiarity in joint-positioned formulas; form/AKBA standardization often changes comparison.",
+      "review_gate": "LSR ncbi-entrez required before reviewed evidence promotion; workbook review_status is seed-only.",
+      "productization_notes": [
+        "Do not add reviewed evidence rows until lane-specific PMID relevance passes family-title filtering.",
+        "Keep disease/treatment, superiority, and guaranteed-outcome language hard rejected.",
+        "Start with runtime inference + section plan, then promote only approved P0-equivalent primary lane rows."
+      ]
+    },
+    {
+      "wave_rank": 2,
+      "implementation_priority": "P1",
+      "source_ingredient_id": "bacopa_monnieri",
+      "display_name": "Bacopa monnieri",
+      "category": "botanical",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 4,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "safety_boundary_tier": "medium",
+      "proposed_runtime_lanes": [
+        "primary_use_context",
+        "extract_standardization_context",
+        "formula_and_label_context"
+      ],
+      "pattern_keywords": [
+        "Bacopa monnieri",
+        "bacopa monnieri",
+        "Bacognize® extract",
+        "Bacopa extract standardized to bacosides",
+        "Whole plant powder"
+      ],
+      "why_p1": "Common cognition botanical with frequent extract-standardization claims that need evidence boundaries.",
+      "review_gate": "LSR ncbi-entrez required before reviewed evidence promotion; workbook review_status is seed-only.",
+      "productization_notes": [
+        "Do not add reviewed evidence rows until lane-specific PMID relevance passes family-title filtering.",
+        "Keep disease/treatment, superiority, and guaranteed-outcome language hard rejected.",
+        "Start with runtime inference + section plan, then promote only approved P0-equivalent primary lane rows."
+      ]
+    },
+    {
+      "wave_rank": 3,
+      "implementation_priority": "P1",
+      "source_ingredient_id": "bilberry",
+      "display_name": "Bilberry",
+      "category": "botanical",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 7,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "safety_boundary_tier": "standard",
+      "proposed_runtime_lanes": [
+        "primary_use_context",
+        "extract_standardization_context",
+        "formula_and_label_context"
+      ],
+      "pattern_keywords": [
+        "Bilberry",
+        "bilberry",
+        "Bilberry extract standardized to 25% anthocyanidins (≈36% anthocyanins)",
+        "Bilberry Extract (standardized anthocyanins)",
+        "Bilberry whole fruit powder"
+      ],
+      "why_p1": "Eye-health botanical often paired with lutein/zeaxanthin, useful for formula comparison.",
+      "review_gate": "LSR ncbi-entrez required before reviewed evidence promotion; workbook review_status is seed-only.",
+      "productization_notes": [
+        "Do not add reviewed evidence rows until lane-specific PMID relevance passes family-title filtering.",
+        "Keep disease/treatment, superiority, and guaranteed-outcome language hard rejected.",
+        "Start with runtime inference + section plan, then promote only approved P0-equivalent primary lane rows."
+      ]
+    },
+    {
+      "wave_rank": 4,
+      "implementation_priority": "P1",
+      "source_ingredient_id": "elderberry",
+      "display_name": "Elderberry",
+      "category": "botanical",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 4,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "safety_boundary_tier": "standard",
+      "proposed_runtime_lanes": [
+        "primary_use_context",
+        "extract_standardization_context",
+        "formula_and_label_context"
+      ],
+      "pattern_keywords": [
+        "Elderberry",
+        "elderberry",
+        "Standardized elderberry extract",
+        "Elderberry powder",
+        "Elderberry syrup"
+      ],
+      "why_p1": "High-frequency immune botanical where syrup/gummy/lozenge labels need claim-safe interpretation.",
+      "review_gate": "LSR ncbi-entrez required before reviewed evidence promotion; workbook review_status is seed-only.",
+      "productization_notes": [
+        "Do not add reviewed evidence rows until lane-specific PMID relevance passes family-title filtering.",
+        "Keep disease/treatment, superiority, and guaranteed-outcome language hard rejected.",
+        "Start with runtime inference + section plan, then promote only approved P0-equivalent primary lane rows."
+      ]
+    },
+    {
+      "wave_rank": 5,
+      "implementation_priority": "P1",
+      "source_ingredient_id": "echinacea",
+      "display_name": "Echinacea",
+      "category": "botanical",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 4,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "safety_boundary_tier": "medium",
+      "proposed_runtime_lanes": [
+        "primary_use_context",
+        "extract_standardization_context",
+        "formula_and_label_context"
+      ],
+      "pattern_keywords": [
+        "Echinacea",
+        "echinacea",
+        "Echinacea angustifolia extract",
+        "Combination echinacea product",
+        "Echinacea purpurea extract"
+      ],
+      "why_p1": "Common immune botanical with species/extract variation and high generic-claim risk.",
+      "review_gate": "LSR ncbi-entrez required before reviewed evidence promotion; workbook review_status is seed-only.",
+      "productization_notes": [
+        "Do not add reviewed evidence rows until lane-specific PMID relevance passes family-title filtering.",
+        "Keep disease/treatment, superiority, and guaranteed-outcome language hard rejected.",
+        "Start with runtime inference + section plan, then promote only approved P0-equivalent primary lane rows."
+      ]
+    },
+    {
+      "wave_rank": 6,
+      "implementation_priority": "P1",
+      "source_ingredient_id": "cranberry_extract",
+      "display_name": "Cranberry extract",
+      "category": "botanical",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 4,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "premium_form_low_factor_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "safety_boundary_tier": "medium",
+      "proposed_runtime_lanes": [
+        "primary_use_context",
+        "extract_standardization_context",
+        "formula_and_label_context"
+      ],
+      "pattern_keywords": [
+        "Cranberry extract",
+        "cranberry extract",
+        "Juice concentrate (sugar/acid variability)",
+        "Standardized PACs extract",
+        "Whole cranberry powder"
+      ],
+      "why_p1": "Common urinary-health positioned botanical; needs strict disease-claim boundary and PAC disclosure comparison.",
+      "review_gate": "LSR ncbi-entrez required before reviewed evidence promotion; workbook review_status is seed-only.",
+      "productization_notes": [
+        "Do not add reviewed evidence rows until lane-specific PMID relevance passes family-title filtering.",
+        "Keep disease/treatment, superiority, and guaranteed-outcome language hard rejected.",
+        "Start with runtime inference + section plan, then promote only approved P0-equivalent primary lane rows."
+      ]
+    },
+    {
+      "wave_rank": 7,
+      "implementation_priority": "P1",
+      "source_ingredient_id": "caffeine",
+      "display_name": "Caffeine",
+      "category": "other",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "safety_boundary_tier": "medium",
+      "proposed_runtime_lanes": [
+        "primary_context",
+        "dose_and_timing_context",
+        "formula_context"
+      ],
+      "pattern_keywords": [
+        "Caffeine",
+        "caffeine",
+        "Caffeine anhydrous",
+        "Natural caffeine (coffee/guarana extract)",
+        "Slow-release caffeine"
+      ],
+      "why_p1": "Very common active where dose/timing and formula role directly affect user decisions.",
+      "review_gate": "LSR ncbi-entrez required before reviewed evidence promotion; workbook review_status is seed-only.",
+      "productization_notes": [
+        "Do not add reviewed evidence rows until lane-specific PMID relevance passes family-title filtering.",
+        "Keep disease/treatment, superiority, and guaranteed-outcome language hard rejected.",
+        "Start with runtime inference + section plan, then promote only approved P0-equivalent primary lane rows."
+      ]
+    },
+    {
+      "wave_rank": 8,
+      "implementation_priority": "P1",
+      "source_ingredient_id": "chondroitin",
+      "display_name": "Chondroitin",
+      "category": "other",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 4,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "safety_boundary_tier": "medium",
+      "proposed_runtime_lanes": [
+        "primary_context",
+        "form_and_disclosure_context",
+        "formula_context"
+      ],
+      "pattern_keywords": [
+        "Chondroitin",
+        "chondroitin",
+        "Low molecular weight chondroitin",
+        "Shark cartilage-derived chondroitin",
+        "Chondroitin sulfate"
+      ],
+      "why_p1": "Joint-family anchor that often appears with glucosamine/MSM and needs formula-role clarity.",
+      "review_gate": "LSR ncbi-entrez required before reviewed evidence promotion; workbook review_status is seed-only.",
+      "productization_notes": [
+        "Do not add reviewed evidence rows until lane-specific PMID relevance passes family-title filtering.",
+        "Keep disease/treatment, superiority, and guaranteed-outcome language hard rejected.",
+        "Start with runtime inference + section plan, then promote only approved P0-equivalent primary lane rows."
+      ]
+    },
+    {
+      "wave_rank": 9,
+      "implementation_priority": "P1",
+      "source_ingredient_id": "boron",
+      "display_name": "Boron",
+      "category": "mineral",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "premium_form_low_factor_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "safety_boundary_tier": "standard",
+      "proposed_runtime_lanes": [
+        "intake_and_status_context",
+        "form_and_absorption_context",
+        "comparison_and_cofactor_context"
+      ],
+      "pattern_keywords": [
+        "Boron",
+        "boron",
+        "Boric acid",
+        "Boron citrate",
+        "Calcium fructoborate"
+      ],
+      "why_p1": "Mineral/cofactor family with dose and pairing nuance; useful for bone/mineral-stack comparison.",
+      "review_gate": "LSR ncbi-entrez required before reviewed evidence promotion; workbook review_status is seed-only.",
+      "productization_notes": [
+        "Do not add reviewed evidence rows until lane-specific PMID relevance passes family-title filtering.",
+        "Keep disease/treatment, superiority, and guaranteed-outcome language hard rejected.",
+        "Start with runtime inference + section plan, then promote only approved P0-equivalent primary lane rows."
+      ]
+    },
+    {
+      "wave_rank": 10,
+      "implementation_priority": "P1",
+      "source_ingredient_id": "beta_carotene",
+      "display_name": "Beta-Carotene",
+      "category": "lipid",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "premium_form_low_factor_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "safety_boundary_tier": "standard",
+      "proposed_runtime_lanes": [
+        "status_and_supplementation_context",
+        "form_and_labeling_context",
+        "dose_and_pairing_context"
+      ],
+      "pattern_keywords": [
+        "Beta-Carotene",
+        "beta carotene",
+        "Beadlet / dry powder",
+        "Micellized / self-emulsifying",
+        "Oil-based softgel"
+      ],
+      "why_p1": "Vitamin A/provitamin label confusion and smoker/high-dose caveats make it high UX value.",
+      "review_gate": "LSR ncbi-entrez required before reviewed evidence promotion; workbook review_status is seed-only.",
+      "productization_notes": [
+        "Do not add reviewed evidence rows until lane-specific PMID relevance passes family-title filtering.",
+        "Keep disease/treatment, superiority, and guaranteed-outcome language hard rejected.",
+        "Start with runtime inference + section plan, then promote only approved P0-equivalent primary lane rows."
+      ]
+    },
+    {
+      "wave_rank": 11,
+      "implementation_priority": "P1",
+      "source_ingredient_id": "borage_oil",
+      "display_name": "Borage Oil",
+      "category": "lipid",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "safety_boundary_tier": "medium",
+      "proposed_runtime_lanes": [
+        "status_and_supplementation_context",
+        "form_and_labeling_context",
+        "dose_and_pairing_context"
+      ],
+      "pattern_keywords": [
+        "Borage Oil",
+        "borage oil",
+        "Cold-pressed oil",
+        "Emulsified / self-emulsifying",
+        "Softgel"
+      ],
+      "why_p1": "GLA/oil-source family often confused with other omega oils; needs source and dose comparison.",
+      "review_gate": "LSR ncbi-entrez required before reviewed evidence promotion; workbook review_status is seed-only.",
+      "productization_notes": [
+        "Do not add reviewed evidence rows until lane-specific PMID relevance passes family-title filtering.",
+        "Keep disease/treatment, superiority, and guaranteed-outcome language hard rejected.",
+        "Start with runtime inference + section plan, then promote only approved P0-equivalent primary lane rows."
+      ]
+    },
+    {
+      "wave_rank": 12,
+      "implementation_priority": "P1",
+      "source_ingredient_id": "bee_propolis",
+      "display_name": "Bee Propolis",
+      "category": "botanical",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "premium_form_low_factor_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "safety_boundary_tier": "medium",
+      "proposed_runtime_lanes": [
+        "primary_use_context",
+        "extract_standardization_context",
+        "formula_and_label_context"
+      ],
+      "pattern_keywords": [
+        "Bee Propolis",
+        "bee propolis",
+        "Enhanced absorption (phytosome/liposomal)",
+        "Standardized extract",
+        "Whole powder"
+      ],
+      "why_p1": "Bee-product family with immune/oral-care marketing and allergy caveats.",
+      "review_gate": "LSR ncbi-entrez required before reviewed evidence promotion; workbook review_status is seed-only.",
+      "productization_notes": [
+        "Do not add reviewed evidence rows until lane-specific PMID relevance passes family-title filtering.",
+        "Keep disease/treatment, superiority, and guaranteed-outcome language hard rejected.",
+        "Start with runtime inference + section plan, then promote only approved P0-equivalent primary lane rows."
+      ]
+    },
+    {
+      "wave_rank": 13,
+      "implementation_priority": "P1",
+      "source_ingredient_id": "artichoke_extract",
+      "display_name": "Artichoke extract",
+      "category": "botanical",
+      "forms_count": 4,
+      "evidence_count": 3,
+      "refs_count": 4,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "premium_form_low_factor_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "safety_boundary_tier": "standard",
+      "proposed_runtime_lanes": [
+        "primary_use_context",
+        "extract_standardization_context",
+        "formula_and_label_context"
+      ],
+      "pattern_keywords": [
+        "Artichoke extract",
+        "artichoke extract",
+        "Standardized cynarin extract",
+        "Leaf extract (standardized)",
+        "Leaf powder",
+        "Liquid extract"
+      ],
+      "why_p1": "Digestive/lipid-positioned botanical with extract-standardization claims and safety boundaries.",
+      "review_gate": "LSR ncbi-entrez required before reviewed evidence promotion; workbook review_status is seed-only.",
+      "productization_notes": [
+        "Do not add reviewed evidence rows until lane-specific PMID relevance passes family-title filtering.",
+        "Keep disease/treatment, superiority, and guaranteed-outcome language hard rejected.",
+        "Start with runtime inference + section plan, then promote only approved P0-equivalent primary lane rows."
+      ]
+    },
+    {
+      "wave_rank": 14,
+      "implementation_priority": "P1",
+      "source_ingredient_id": "bitter_melon",
+      "display_name": "Bitter Melon",
+      "category": "botanical",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 7,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "safety_boundary_tier": "high",
+      "proposed_runtime_lanes": [
+        "primary_use_context",
+        "extract_standardization_context",
+        "formula_and_label_context"
+      ],
+      "pattern_keywords": [
+        "Bitter Melon",
+        "bitter melon",
+        "Bitter Melon Extract",
+        "Bitter melon extract standardized (e.g., charantin/bitter principles)",
+        "Bitter melon whole fruit powder"
+      ],
+      "why_p1": "Metabolic/glucose-positioned botanical with high medication-adjacent claim risk.",
+      "review_gate": "LSR ncbi-entrez required before reviewed evidence promotion; workbook review_status is seed-only.",
+      "productization_notes": [
+        "Do not add reviewed evidence rows until lane-specific PMID relevance passes family-title filtering.",
+        "Keep disease/treatment, superiority, and guaranteed-outcome language hard rejected.",
+        "Start with runtime inference + section plan, then promote only approved P0-equivalent primary lane rows."
+      ]
+    },
+    {
+      "wave_rank": 15,
+      "implementation_priority": "P1",
+      "source_ingredient_id": "cordyceps_mushroom",
+      "display_name": "Cordyceps Mushroom",
+      "category": "botanical",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "premium_form_low_factor_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "safety_boundary_tier": "standard",
+      "proposed_runtime_lanes": [
+        "primary_use_context",
+        "extract_standardization_context",
+        "formula_and_label_context"
+      ],
+      "pattern_keywords": [
+        "Cordyceps Mushroom",
+        "cordyceps mushroom",
+        "Enhanced absorption (phytosome/liposomal)",
+        "Standardized extract",
+        "Whole powder"
+      ],
+      "why_p1": "Mushroom family with energy/performance marketing and extract/source comparison needs.",
+      "review_gate": "LSR ncbi-entrez required before reviewed evidence promotion; workbook review_status is seed-only.",
+      "productization_notes": [
+        "Do not add reviewed evidence rows until lane-specific PMID relevance passes family-title filtering.",
+        "Keep disease/treatment, superiority, and guaranteed-outcome language hard rejected.",
+        "Start with runtime inference + section plan, then promote only approved P0-equivalent primary lane rows."
+      ]
+    }
+  ]
+}

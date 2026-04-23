@@ -1,0 +1,354 @@
+{
+  "version": "nutri_minimal_v4_evidence_review_backlog.v1",
+  "generated_at": "2026-04-23T23:32:56.060Z",
+  "summary": {
+    "total": 18,
+    "needs_edit": 6,
+    "rejected": 12,
+    "keep_blocked": 12
+  },
+  "backlog_rows": [
+    {
+      "family": "chaga_mushroom",
+      "source_ingredient_id": "chaga_mushroom",
+      "display_name": "Chaga Mushroom",
+      "lane": "primary_use_context",
+      "review_status": "rejected",
+      "review_reasons": [
+        "only_search_url_without_resolved_source"
+      ],
+      "safety_boundary_tier": "high",
+      "productization_class": "high_risk_safety",
+      "next_action": "keep_blocked_until_resolved_human_or_review_pmid",
+      "live_grounding_blocked": true,
+      "hard_boundary": "Hard boundary: do not present Chaga Mushroom as treating, preventing, or curing disease, replacing medication, or guaranteeing outcomes; keep comparison on disclosed identity, amount, form/source, and safety cautions.",
+      "selection_notes": [
+        "Keep Chaga Mushroom anchored to human supplement context and preserve hard safety boundaries.",
+        "Hard boundary: do not present Chaga Mushroom as treating, preventing, or curing disease, replacing medication, or guaranteeing outcomes; keep comparison on disclosed identity, amount, form/source, and safety cautions."
+      ]
+    },
+    {
+      "family": "chlorophyll",
+      "source_ingredient_id": "chlorophyll",
+      "display_name": "Chlorophyll",
+      "lane": "primary_use_context",
+      "review_status": "rejected",
+      "review_reasons": [
+        "only_search_url_without_resolved_source"
+      ],
+      "safety_boundary_tier": "high",
+      "productization_class": "high_risk_safety",
+      "next_action": "keep_blocked_until_resolved_human_or_review_pmid",
+      "live_grounding_blocked": true,
+      "hard_boundary": "Hard boundary: do not present Chlorophyll as treating, preventing, or curing disease, replacing medication, or guaranteeing outcomes; keep comparison on disclosed identity, amount, form/source, and safety cautions.",
+      "selection_notes": [
+        "Keep Chlorophyll anchored to human supplement context and preserve hard safety boundaries.",
+        "Hard boundary: do not present Chlorophyll as treating, preventing, or curing disease, replacing medication, or guaranteeing outcomes; keep comparison on disclosed identity, amount, form/source, and safety cautions."
+      ]
+    },
+    {
+      "family": "dandelion_root",
+      "source_ingredient_id": "dandelion_root",
+      "display_name": "Dandelion Root",
+      "lane": "primary_use_context",
+      "review_status": "rejected",
+      "review_reasons": [
+        "only_search_url_without_resolved_source"
+      ],
+      "safety_boundary_tier": "high",
+      "productization_class": "high_risk_safety",
+      "next_action": "keep_blocked_until_resolved_human_or_review_pmid",
+      "live_grounding_blocked": true,
+      "hard_boundary": "Hard boundary: do not present Dandelion Root as treating, preventing, or curing disease, replacing medication, or guaranteeing outcomes; keep comparison on disclosed identity, amount, form/source, and safety cautions.",
+      "selection_notes": [
+        "Keep Dandelion Root anchored to human supplement context and preserve hard safety boundaries.",
+        "Hard boundary: do not present Dandelion Root as treating, preventing, or curing disease, replacing medication, or guaranteeing outcomes; keep comparison on disclosed identity, amount, form/source, and safety cautions."
+      ]
+    },
+    {
+      "family": "devil_s_claw",
+      "source_ingredient_id": "devil_s_claw",
+      "display_name": "Devil's Claw",
+      "lane": "primary_use_context",
+      "review_status": "needs_edit",
+      "review_reasons": [
+        "needs_boundary_support"
+      ],
+      "safety_boundary_tier": "high",
+      "productization_class": "high_risk_safety",
+      "next_action": "rerun_lsr_with_lane_specific_boundary_query",
+      "live_grounding_blocked": true,
+      "hard_boundary": "Hard boundary: do not present Devil S Claw as treating, preventing, or curing disease, replacing medication, or guaranteeing outcomes; keep comparison on disclosed identity, amount, form/source, and safety cautions.",
+      "selection_notes": [
+        "Keep Devil's Claw anchored to human supplement context and preserve hard safety boundaries.",
+        "Hard boundary: do not present Devil S Claw as treating, preventing, or curing disease, replacing medication, or guaranteeing outcomes; keep comparison on disclosed identity, amount, form/source, and safety cautions."
+      ]
+    },
+    {
+      "family": "evening_primrose_oil",
+      "source_ingredient_id": "evening_primrose_oil",
+      "display_name": "Evening primrose oil",
+      "lane": "primary_context",
+      "review_status": "rejected",
+      "review_reasons": [
+        "only_search_url_without_resolved_source"
+      ],
+      "safety_boundary_tier": "standard",
+      "productization_class": "low_risk_structural",
+      "next_action": "keep_blocked_until_resolved_pmid_seed_exists",
+      "live_grounding_blocked": true,
+      "hard_boundary": "Do not turn Evening Primrose Oil context into disease-treatment, guaranteed-outcome, universal best-form, or superiority language.",
+      "selection_notes": [
+        "Keep Evening primrose oil anchored to human supplementation context instead of broad wellness or performance marketing.",
+        "Do not turn Evening Primrose Oil context into disease-treatment, guaranteed-outcome, universal best-form, or superiority language."
+      ]
+    },
+    {
+      "family": "gamma_linolenic_acid",
+      "source_ingredient_id": "gamma_linolenic_acid",
+      "display_name": "Gamma-Linolenic Acid",
+      "lane": "primary_context",
+      "review_status": "rejected",
+      "review_reasons": [
+        "only_search_url_without_resolved_source"
+      ],
+      "safety_boundary_tier": "standard",
+      "productization_class": "low_risk_structural",
+      "next_action": "keep_blocked_until_resolved_pmid_seed_exists",
+      "live_grounding_blocked": true,
+      "hard_boundary": "Do not turn Gamma Linolenic Acid context into disease-treatment, guaranteed-outcome, universal best-form, or superiority language.",
+      "selection_notes": [
+        "Keep Gamma-Linolenic Acid anchored to human supplementation context instead of broad wellness or performance marketing.",
+        "Do not turn Gamma Linolenic Acid context into disease-treatment, guaranteed-outcome, universal best-form, or superiority language."
+      ]
+    },
+    {
+      "family": "grapefruit_seed_extract",
+      "source_ingredient_id": "grapefruit_seed_extract",
+      "display_name": "Grapefruit Seed Extract",
+      "lane": "primary_use_context",
+      "review_status": "rejected",
+      "review_reasons": [
+        "only_search_url_without_resolved_source"
+      ],
+      "safety_boundary_tier": "high",
+      "productization_class": "high_risk_safety",
+      "next_action": "keep_blocked_until_resolved_human_or_review_pmid",
+      "live_grounding_blocked": true,
+      "hard_boundary": "Hard boundary: do not present Grapefruit Seed Extract as treating, preventing, or curing disease, replacing medication, or guaranteeing outcomes; keep comparison on disclosed identity, amount, form/source, and safety cautions.",
+      "selection_notes": [
+        "Keep Grapefruit Seed Extract anchored to human supplement context and preserve hard safety boundaries.",
+        "Hard boundary: do not present Grapefruit Seed Extract as treating, preventing, or curing disease, replacing medication, or guaranteeing outcomes; keep comparison on disclosed identity, amount, form/source, and safety cautions."
+      ]
+    },
+    {
+      "family": "l_glutamic_acid",
+      "source_ingredient_id": "l_glutamic_acid",
+      "display_name": "L-Glutamic Acid",
+      "lane": "primary_context",
+      "review_status": "rejected",
+      "review_reasons": [
+        "only_search_url_without_resolved_source"
+      ],
+      "safety_boundary_tier": "standard",
+      "productization_class": "low_risk_structural",
+      "next_action": "keep_blocked_until_resolved_pmid_seed_exists",
+      "live_grounding_blocked": true,
+      "hard_boundary": "Do not turn L Glutamic Acid context into disease-treatment, guaranteed-outcome, universal best-form, or superiority language.",
+      "selection_notes": [
+        "Keep L-Glutamic Acid anchored to human supplementation context instead of broad wellness or performance marketing.",
+        "Do not turn L Glutamic Acid context into disease-treatment, guaranteed-outcome, universal best-form, or superiority language."
+      ]
+    },
+    {
+      "family": "l_histidine",
+      "source_ingredient_id": "l_histidine",
+      "display_name": "L-Histidine",
+      "lane": "primary_context",
+      "review_status": "rejected",
+      "review_reasons": [
+        "only_search_url_without_resolved_source"
+      ],
+      "safety_boundary_tier": "standard",
+      "productization_class": "low_risk_structural",
+      "next_action": "keep_blocked_until_resolved_pmid_seed_exists",
+      "live_grounding_blocked": true,
+      "hard_boundary": "Do not turn L Histidine context into disease-treatment, guaranteed-outcome, universal best-form, or superiority language.",
+      "selection_notes": [
+        "Keep L-Histidine anchored to human supplementation context instead of broad wellness or performance marketing.",
+        "Do not turn L Histidine context into disease-treatment, guaranteed-outcome, universal best-form, or superiority language."
+      ]
+    },
+    {
+      "family": "l_leucine",
+      "source_ingredient_id": "l_leucine",
+      "display_name": "L-Leucine",
+      "lane": "primary_context",
+      "review_status": "needs_edit",
+      "review_reasons": [
+        "needs_boundary_support"
+      ],
+      "safety_boundary_tier": "standard",
+      "productization_class": "low_risk_structural",
+      "next_action": "rerun_lsr_with_lane_specific_boundary_query",
+      "live_grounding_blocked": true,
+      "hard_boundary": "Do not turn L Leucine context into disease-treatment, guaranteed-outcome, universal best-form, or superiority language.",
+      "selection_notes": [
+        "Keep L-Leucine anchored to human supplementation context instead of broad wellness or performance marketing.",
+        "Do not turn L Leucine context into disease-treatment, guaranteed-outcome, universal best-form, or superiority language."
+      ]
+    },
+    {
+      "family": "l_phenylalanine",
+      "source_ingredient_id": "l_phenylalanine",
+      "display_name": "L-Phenylalanine",
+      "lane": "primary_context",
+      "review_status": "rejected",
+      "review_reasons": [
+        "only_search_url_without_resolved_source"
+      ],
+      "safety_boundary_tier": "standard",
+      "productization_class": "low_risk_structural",
+      "next_action": "keep_blocked_until_resolved_pmid_seed_exists",
+      "live_grounding_blocked": true,
+      "hard_boundary": "Do not turn L Phenylalanine context into disease-treatment, guaranteed-outcome, universal best-form, or superiority language.",
+      "selection_notes": [
+        "Keep L-Phenylalanine anchored to human supplementation context instead of broad wellness or performance marketing.",
+        "Do not turn L Phenylalanine context into disease-treatment, guaranteed-outcome, universal best-form, or superiority language."
+      ]
+    },
+    {
+      "family": "l_serine",
+      "source_ingredient_id": "l_serine",
+      "display_name": "L-Serine",
+      "lane": "primary_context",
+      "review_status": "rejected",
+      "review_reasons": [
+        "only_search_url_without_resolved_source"
+      ],
+      "safety_boundary_tier": "standard",
+      "productization_class": "low_risk_structural",
+      "next_action": "keep_blocked_until_resolved_pmid_seed_exists",
+      "live_grounding_blocked": true,
+      "hard_boundary": "Do not turn L Serine context into disease-treatment, guaranteed-outcome, universal best-form, or superiority language.",
+      "selection_notes": [
+        "Keep L-Serine anchored to human supplementation context instead of broad wellness or performance marketing.",
+        "Do not turn L Serine context into disease-treatment, guaranteed-outcome, universal best-form, or superiority language."
+      ]
+    },
+    {
+      "family": "l_threonine",
+      "source_ingredient_id": "l_threonine",
+      "display_name": "L-Threonine",
+      "lane": "primary_context",
+      "review_status": "needs_edit",
+      "review_reasons": [
+        "needs_boundary_support"
+      ],
+      "safety_boundary_tier": "standard",
+      "productization_class": "low_risk_structural",
+      "next_action": "rerun_lsr_with_lane_specific_boundary_query",
+      "live_grounding_blocked": true,
+      "hard_boundary": "Do not turn L Threonine context into disease-treatment, guaranteed-outcome, universal best-form, or superiority language.",
+      "selection_notes": [
+        "Keep L-Threonine anchored to human supplementation context instead of broad wellness or performance marketing.",
+        "Do not turn L Threonine context into disease-treatment, guaranteed-outcome, universal best-form, or superiority language."
+      ]
+    },
+    {
+      "family": "schisandra_chinensis",
+      "source_ingredient_id": "schisandra_chinensis",
+      "display_name": "Schisandra Chinensis",
+      "lane": "primary_use_context",
+      "review_status": "needs_edit",
+      "review_reasons": [
+        "needs_boundary_support"
+      ],
+      "safety_boundary_tier": "high",
+      "productization_class": "high_risk_safety",
+      "next_action": "rerun_lsr_with_lane_specific_boundary_query",
+      "live_grounding_blocked": true,
+      "hard_boundary": "Hard boundary: do not present Schisandra Chinensis as treating, preventing, or curing disease, replacing medication, or guaranteeing outcomes; keep comparison on disclosed identity, amount, form/source, and safety cautions.",
+      "selection_notes": [
+        "Keep Schisandra Chinensis anchored to human supplement context and preserve hard safety boundaries.",
+        "Hard boundary: do not present Schisandra Chinensis as treating, preventing, or curing disease, replacing medication, or guaranteeing outcomes; keep comparison on disclosed identity, amount, form/source, and safety cautions."
+      ]
+    },
+    {
+      "family": "l_tyrosine",
+      "source_ingredient_id": "l_tyrosine",
+      "display_name": "L-Tyrosine",
+      "lane": "primary_context",
+      "review_status": "rejected",
+      "review_reasons": [
+        "only_search_url_without_resolved_source"
+      ],
+      "safety_boundary_tier": "standard",
+      "productization_class": "low_risk_structural",
+      "next_action": "keep_blocked_until_resolved_pmid_seed_exists",
+      "live_grounding_blocked": true,
+      "hard_boundary": "Do not turn L Tyrosine context into disease-treatment, guaranteed-outcome, universal best-form, or superiority language.",
+      "selection_notes": [
+        "Keep L-Tyrosine anchored to human supplementation context instead of broad wellness or performance marketing.",
+        "Do not turn L Tyrosine context into disease-treatment, guaranteed-outcome, universal best-form, or superiority language."
+      ]
+    },
+    {
+      "family": "nadh",
+      "source_ingredient_id": "nadh",
+      "display_name": "NADH",
+      "lane": "primary_use_context",
+      "review_status": "rejected",
+      "review_reasons": [
+        "only_search_url_without_resolved_source"
+      ],
+      "safety_boundary_tier": "high",
+      "productization_class": "crosswalk_rescue",
+      "next_action": "keep_blocked_until_resolved_human_or_review_pmid",
+      "live_grounding_blocked": true,
+      "hard_boundary": "Hard boundary: do not present NADH as treating, preventing, or curing disease, replacing medication, or guaranteeing outcomes; keep comparison on disclosed identity, amount, form/source, and safety cautions.",
+      "selection_notes": [
+        "Keep NADH anchored to human supplement context and preserve hard safety boundaries.",
+        "Hard boundary: do not present NADH as treating, preventing, or curing disease, replacing medication, or guaranteeing outcomes; keep comparison on disclosed identity, amount, form/source, and safety cautions."
+      ]
+    },
+    {
+      "family": "same",
+      "source_ingredient_id": "same",
+      "display_name": "SAMe",
+      "lane": "primary_use_context",
+      "review_status": "needs_edit",
+      "review_reasons": [
+        "no_plugin_verified_pmids"
+      ],
+      "safety_boundary_tier": "high",
+      "productization_class": "crosswalk_rescue",
+      "next_action": "add_manual_seed_pmids_or_keep_unapproved",
+      "live_grounding_blocked": true,
+      "hard_boundary": "Hard boundary: do not present SAMe as treating, preventing, or curing disease, replacing medication, or guaranteeing outcomes; keep comparison on disclosed identity, amount, form/source, and safety cautions.",
+      "selection_notes": [
+        "Keep SAMe anchored to human supplement context and preserve hard safety boundaries.",
+        "Hard boundary: do not present SAMe as treating, preventing, or curing disease, replacing medication, or guaranteeing outcomes; keep comparison on disclosed identity, amount, form/source, and safety cautions."
+      ]
+    },
+    {
+      "family": "tocotrienols",
+      "source_ingredient_id": "tocotrienols",
+      "display_name": "Tocotrienols",
+      "lane": "primary_use_context",
+      "review_status": "needs_edit",
+      "review_reasons": [
+        "no_plugin_verified_pmids"
+      ],
+      "safety_boundary_tier": "high",
+      "productization_class": "crosswalk_rescue",
+      "next_action": "add_manual_seed_pmids_or_keep_unapproved",
+      "live_grounding_blocked": true,
+      "hard_boundary": "Hard boundary: do not present Tocotrienols as treating, preventing, or curing disease, replacing medication, or guaranteeing outcomes; keep comparison on disclosed identity, amount, form/source, and safety cautions.",
+      "selection_notes": [
+        "Keep Tocotrienols anchored to human supplement context and preserve hard safety boundaries.",
+        "Hard boundary: do not present Tocotrienols as treating, preventing, or curing disease, replacing medication, or guaranteeing outcomes; keep comparison on disclosed identity, amount, form/source, and safety cautions."
+      ]
+    }
+  ]
+}

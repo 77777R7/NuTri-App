@@ -8,6 +8,10 @@ import {
   getScientificBackgroundEvidence,
   type ScientificBackgroundEvidenceRow,
 } from "./scientificBackgroundEvidencePackage.js";
+import {
+  getNutriMinimalDefinitionForFamily,
+  type NutriMinimalFullFamilyDefinition,
+} from "../nutriMinimalFullFamilyProductization.js";
 import { extractJsonObjectLoose } from "./summaryCompiler.js";
 
 type ScientificBackgroundMode = "research_mode" | "label_context_mode";
@@ -37,6 +41,24 @@ type ScientificBackgroundWriterOutput = {
   sections?: ScientificBackgroundWriterSection[];
   closingNote?: string | null;
 };
+
+type ScientificBackgroundParseFailureShape =
+  | "non_json"
+  | "json_parse_error"
+  | "root_not_object"
+  | "sections_missing"
+  | "sections_not_array"
+  | "sections_empty_after_parse";
+
+type ScientificBackgroundParseWriterResult =
+  | {
+      ok: true;
+      parsed: ScientificBackgroundWriterOutput;
+    }
+  | {
+      ok: false;
+      parseFailureShape: ScientificBackgroundParseFailureShape;
+    };
 
 type ScientificBackgroundSectionPlan = {
   headingId: string;
@@ -72,11 +94,27 @@ export type ScientificBackgroundCompileDiagnostics = {
   maxRetries: number;
   fallbackReason: string | null;
   lastError: string | null;
+  parseFailureSnippet: string | null;
+  gateRejectSnippet: string | null;
+  gateRejectReasons: string[];
   parseFailureCount: number;
   gateRejectCount: number;
   timeoutCount: number;
   errorCount: number;
 };
+
+type ScientificBackgroundGateRejectReason =
+  | "medical_banned_pattern"
+  | "introLine_too_generic"
+  | "generic_identity_pattern"
+  | "empty_requested_or_content_key"
+  | "section_missing_required_field"
+  | "section_bullet_count_out_of_range"
+  | "section_summary_template"
+  | "section_bullets_too_template"
+  | "section_evidenceRead_too_weak"
+  | "section_shopperMeaning_not_decisional"
+  | "heading_mismatch_plan";
 
 export type CompileScientificBackgroundOpts = {
   llmFn?: (prompt: string) => Promise<string>;
@@ -235,12 +273,40 @@ const WEAK_SHOPPER_MEANING_PATTERNS = [
   /\buse this as supporting context\b/i,
 ];
 
+const SOFT_CLAIM_REPAIR_PATTERNS = [
+  /\bsupports?\s+(?!lane\b|context\b|positioning\b|comparison\b|label\b|disclosure\b|framing\b|row\b|ingredient\b)[a-z]/i,
+  /\bused to maintain\b/i,
+  /\bmaintain adequate\b/i,
+  /\bhelps?\s+protect\b/i,
+  /\bhelps?\s+your body\b/i,
+  /\bbest(?:-|\s+)\w*(?:\s+\w+){0,3}\s+form\b/i,
+  /\bbest known as\b/i,
+  /\bbetter than\b/i,
+  /\bdeficiency prevention\b/i,
+  /\bis an essential (?:nutrient|vitamin)\b/i,
+  /\bessential water-soluble vitamin\b/i,
+  /\bdesigned to\b/i,
+  /\bdesigned for\b/i,
+  /\beasier on the stomach\b/i,
+  /\bmaster antioxidant\b/i,
+  /\bwell-known antioxidant\b/i,
+  /\bproof\b/i,
+];
+
 const SHOPPER_DECISION_KEYWORDS = [
   /\bcompar(?:e|es|ed|ing|ison)\b/i,
   /\blabels?\b/i,
   /\bproducts?\b/i,
   /\bshopping\b/i,
   /\bshoppers?\b/i,
+  /\bchoose\b|\bchoosing\b|\bchoice\b/i,
+  /\bdecid(?:e|es|ed|ing)\b|\bdecision\b/i,
+  /\bprioriti(?:ze|zes|zed|zing)\b|\bprioritise\b|\bpriority\b/i,
+  /\bweigh(?:s|ed|ing)?\b|\bweight\b/i,
+  /\brank(?:s|ed|ing)?\b|\branking\b/i,
+  /\bpick(?:s|ed|ing)?\b/i,
+  /\bbuy(?:s|ing)?\b|\bpurchase\b/i,
+  /\bamounts?\b|\bdoses?\b|\bdosage\b/i,
   /\bread\b/i,
   /\bpackaging\b/i,
   /\bclaims?\b/i,
@@ -324,9 +390,52 @@ const omega3SourceNarrativeLabel = (name: string): string => {
   return "This fish-oil source line";
 };
 
+const toFamilyLabel = (family: string): string =>
+  family
+    .split("_")
+    .filter(Boolean)
+    .map((part) => {
+      const normalized = part.toLowerCase();
+      const known: Record<string, string> = {
+        dim: "DIM",
+        hmb: "HMB",
+        mct: "MCT",
+        nadh: "NADH",
+        pqq: "PQQ",
+        same: "SAMe",
+      };
+      if (known[normalized]) return known[normalized];
+      if (part.length === 1) return part.toUpperCase();
+      return `${part.slice(0, 1).toUpperCase()}${part.slice(1)}`;
+    })
+    .join(" ");
+
 const buildReferenceLabel = (plan: ScientificBackgroundPlan): string => {
+  const nutriMinimalDefinition = getNutriMinimalDefinitionForFamily(
+    plan.family,
+  );
+  if (nutriMinimalDefinition) return nutriMinimalDefinition.displayName;
   if (plan.family === "astaxanthin_carotenoid") return "Astaxanthin";
   if (plan.family === "curcumin") return "Curcumin";
+  if (plan.family === "quercetin") return "Quercetin";
+  if (plan.family === "dgl_licorice") return "DGL licorice";
+  if (plan.family === "kava") return "Kava";
+  if (plan.family === "slippery_elm") return "Slippery elm";
+  if (plan.family === "aloe_vera") return "Aloe vera";
+  if (plan.family === "chamomile") return "Chamomile";
+  if (plan.family === "astragalus") return "Astragalus";
+  if (plan.family === "cinnamon_extract") return "Cinnamon extract";
+  if (plan.family === "grape_seed_extract") return "Grape seed extract";
+  if (plan.family === "garlic_extract") return "Garlic extract";
+  if (plan.family === "ginger_root") return "Ginger root";
+  if (plan.family === "olive_leaf_extract") return "Olive leaf extract";
+  if (plan.family === "pygeum") return "Pygeum";
+  if (plan.family === "red_yeast_rice") return "Red yeast rice";
+  if (plan.family === "royal_jelly") return "Royal jelly";
+  if (plan.family === "saffron_extract") return "Saffron extract";
+  if (plan.family === "tribulus_terrestris") return "Tribulus terrestris";
+  if (plan.family === "turkey_tail_mushroom") return "Turkey tail mushroom";
+  if (plan.family === "milk_thistle") return "Milk thistle";
   if (plan.family === "ashwagandha") return "Ashwagandha";
   if (plan.family === "ginseng") return "Ginseng";
   if (plan.family === "green_tea_extract") return "Green tea extract";
@@ -337,6 +446,12 @@ const buildReferenceLabel = (plan: ScientificBackgroundPlan): string => {
   )
     return "Niacinamide";
   if (plan.family === "b3_niacinamide") return "Vitamin B3";
+  if (plan.family === "biotin") return "Biotin";
+  if (plan.family === "riboflavin") return "Riboflavin";
+  if (plan.family === "vitamin_a") return "Vitamin A";
+  if (plan.family === "vitamin_e") return "Vitamin E";
+  if (plan.family === "vitamin_k2") return "Vitamin K2";
+  if (plan.family === "vitamin_k1") return "Vitamin K1";
   if (plan.family === "glycine") return "Glycine";
   if (plan.family === "taurine") return "Taurine";
   if (plan.family === "inositol") return "Inositol";
@@ -344,6 +459,44 @@ const buildReferenceLabel = (plan: ScientificBackgroundPlan): string => {
   if (plan.family === "b12") return "Vitamin B12";
   if (plan.family === "folate") return "Folate";
   if (plan.family === "b6") return "Vitamin B6";
+  if (plan.family === "glutathione") return "Glutathione";
+  if (plan.family === "alpha_lipoic_acid") return "Alpha-lipoic acid";
+  if (plan.family === "l_ornithine") return "L-ornithine";
+  if (plan.family === "arginine_alpha_ketoglutarate") return "AAKG";
+  if (plan.family === "l_arginine") return "L-arginine";
+  if (plan.family === "citrulline_malate") return "Citrulline malate";
+  if (plan.family === "d_ribose") return "D-ribose";
+  if (plan.family === "l_methionine") return "L-methionine";
+  if (plan.family === "l_valine") return "L-valine";
+  if (plan.family === "beta_alanine") return "Beta-alanine";
+  if (plan.family === "carnosine") return "Carnosine";
+  if (plan.family === "choline") return "Choline";
+  if (plan.family === "citicoline") return "Citicoline";
+  if (plan.family === "nicotinamide_mononucleotide") return "NMN";
+  if (plan.family === "nicotinamide_riboside") return "Nicotinamide riboside";
+  if (plan.family === "colostrum") return "Colostrum";
+  if (plan.family === "spirulina") return "Spirulina";
+  if (plan.family === "resveratrol") return "Resveratrol";
+  if (plan.family === "gaba") return "GABA";
+  if (plan.family === "msm") return "MSM";
+  if (plan.family === "zeaxanthin") return "Zeaxanthin";
+  if (plan.family === "chromium") return "Chromium";
+  if (plan.family === "selenium") return "Selenium";
+  if (plan.family === "copper") return "Copper";
+  if (plan.family === "molybdenum") return "Molybdenum";
+  if (plan.family === "manganese") return "Manganese";
+  if (plan.family === "iodine") return "Iodine";
+  if (plan.family === "potassium") return "Potassium";
+  if (plan.family === "papain") return "Papain";
+  if (plan.family === "bromelain") return "Bromelain";
+  if (plan.family === "serrapeptase") return "Serrapeptase";
+  if (plan.family === "passionflower") return "Passionflower";
+  if (plan.family === "valerian") return "Valerian";
+  if (plan.family === "st_john_s_wort") return "St. John's wort";
+  if (plan.family === "lavender") return "Lavender";
+  if (plan.family === "lemon_balm") return "Lemon balm";
+  if (plan.family === "thiamin") return "Thiamin";
+  if (plan.family === "pantothenic_acid") return "Pantothenic acid";
   if (
     plan.family === "vitamin_c" &&
     /\bvitamin\s*c\b/i.test(plan.selectedLabel)
@@ -478,11 +631,225 @@ const buildSectionPlan = (
   shopperMeaningGoal,
 });
 
+const buildNutriMinimalFullFamilyPlan = (
+  definition: NutriMinimalFullFamilyDefinition,
+): ScientificBackgroundSectionPlan[] => {
+  const label = definition.displayName || toFamilyLabel(definition.canonicalFamily);
+  if (definition.safetyBoundaryTier === "high") {
+    return [
+      buildSectionPlan(
+        "primary_use_context",
+        "Primary use context",
+        `Define the clearest shopper-safe use lane for ${label} without repeating disease, treatment, or guaranteed-outcome marketing.`,
+        [
+          "Human supplement context should lead over broad front-label positioning",
+          "Dose, source, and formula setting can narrow interpretation quickly",
+          "Keep the strongest lane separate from disease-treatment or drug-replacement language",
+        ],
+        `Show what ${label} can and cannot support as a comparison lane.`,
+        `Help the shopper compare ${label} products through disclosed identity, amount, and source before benefit claims.`,
+      ),
+      buildSectionPlan(
+        "safety_and_boundary_context",
+        "Safety and boundary context",
+        `Make the safety boundary explicit for ${label}, especially where supplement marketing can sound medication-adjacent.`,
+        [
+          definition.hardBoundary,
+          "Medication, surgery, pregnancy, or condition-specific contexts should not be minimized",
+          "Safety context is part of product fit, not an afterthought",
+        ],
+        "Use this section to prevent overconfident medical or superiority framing.",
+        "Tell the shopper when the label deserves extra caution before comparison continues.",
+      ),
+      buildSectionPlan(
+        "form_source_and_label_context",
+        "Form, source, and label context",
+        `Explain how ${label} form, extract/source wording, or standardization changes comparison value.`,
+        [
+          "Exact identity and source wording matter more than generic category branding",
+          "Standardization or form detail helps only when clearly disclosed",
+          "Blend context can change whether this family is central or supporting",
+        ],
+        "Keep this label-aware and practical rather than ranking every form.",
+        `Help the shopper decide whether two ${label} labels really belong in the same comparison set.`,
+      ),
+    ];
+  }
+
+  if (definition.category === "enzyme") {
+    return [
+      buildSectionPlan(
+        "functional_context",
+        "Functional context",
+        `Anchor ${label} in its clearest functional use context before broad digestive or wellness language.`,
+        [
+          "Named enzyme identity should lead over generic enzyme-blend copy",
+          "Activity and formula role shape interpretation",
+          "Human-use context matters more than broad category marketing",
+        ],
+        `Show the practical comparison lane for ${label}.`,
+        `Help the shopper understand what ${label} is mainly being compared for.`,
+      ),
+      buildSectionPlan(
+        "activity_and_delivery_context",
+        "Activity and delivery context",
+        `Explain how ${label} activity units, delivery, or release details change label reading.`,
+        [
+          "Activity units can matter more than capsule count",
+          "Delivery detail matters only when the label discloses it clearly",
+          "Avoid treating all enzyme labels as interchangeable",
+        ],
+        "Keep this section focused on disclosed label details.",
+        "Point shoppers to units, delivery, and formula role before generic digestive claims.",
+      ),
+      buildSectionPlan(
+        "formula_context",
+        "Formula context",
+        `Clarify when ${label} is a single-enzyme story versus one part of a broader enzyme blend.`,
+        [
+          "Single-enzyme and blend formulas should not be compared the same way",
+          "Paired enzymes can change the role of this line",
+          "Formula context should stay practical and label-led",
+        ],
+        "Use this section to keep blend interpretation bounded.",
+        "Help the shopper compare formula structure rather than broad promises.",
+      ),
+    ];
+  }
+
+  if (definition.category === "mineral") {
+    return [
+      buildSectionPlan(
+        "intake_and_status_context",
+        "Intake and status context",
+        `Ground ${label} in intake, status, and supplementation context before broader mineral positioning.`,
+        [
+          "Intake and supplementation context is the clearest first lens",
+          "Dose and baseline context can change interpretation",
+          "Broad mineral positioning should stay secondary",
+        ],
+        "Keep this lane practical and shopper-safe.",
+        `Help the shopper decide whether the label is mainly about ${label} intake, dose, or formula role.`,
+      ),
+      buildSectionPlan(
+        "form_and_absorption_context",
+        "Form and absorption context",
+        `Explain how named ${label} forms change comparison without a blanket better-absorbed claim.`,
+        [
+          "Named form disclosure changes comparison value",
+          "Absorption or tolerability language should stay bounded",
+          "Form and amount matter more than front-label benefit copy",
+        ],
+        "Keep this section label-aware and comparison-safe.",
+        `Tell the shopper which ${label} form details are worth checking first.`,
+      ),
+      buildSectionPlan(
+        "comparison_and_cofactor_context",
+        "Comparison and cofactor context",
+        `Explain how dose, paired nutrients, and formula setting change what should be compared first for ${label}.`,
+        [
+          "Amount changes interpretation",
+          "Paired nutrients can narrow the comparison lane",
+          "Keep comparison centered on form, amount, and co-formulation",
+        ],
+        "Use this for practical label reading rather than generic caution filler.",
+        `Help the shopper compare ${label} products through exact disclosure and formula context.`,
+      ),
+    ];
+  }
+
+  if (definition.category === "botanical") {
+    return [
+      buildSectionPlan(
+        "primary_use_context",
+        "Primary use context",
+        `Define the clearest shopper-safe use lane for ${label} without repeating broad traditional or front-label language as if it were all equally supported.`,
+        [
+          "Human or monograph-backed context should lead over broad botanical marketing",
+          "Dose, extract, and formula setting can narrow interpretation quickly",
+          "Keep the language narrower than broad cure-style positioning",
+        ],
+        `Show that ${label} has a recognizable use context while keeping outcome language bounded.`,
+        `Help the shopper understand what ${label} products are most often being compared for before secondary claims enter the picture.`,
+      ),
+      buildSectionPlan(
+        "extract_standardization_context",
+        "Extract and standardization context",
+        `Explain how ${label} extract type, source, or marker wording changes comparison value without creating a universal best-extract claim.`,
+        [
+          "Extract identity and marker details improve comparison",
+          "Raw powder and more specific extract labels should not be treated as interchangeable",
+          "Standardization helps only when the label clearly discloses it",
+        ],
+        "Keep this section practical and label-aware rather than rank-ordering botanical forms.",
+        "Tell the shopper why exact extract wording often carries more comparison value than broad botanical branding.",
+      ),
+      buildSectionPlan(
+        "formula_and_label_context",
+        "Formula and label context",
+        `Show how blends, paired ingredients, or delivery format can change the way a ${label} line should be read on the label.`,
+        [
+          "Blend structure can change whether the botanical is central or supporting",
+          "Delivery detail matters only when the label actually discloses it clearly",
+          "Keep comparison centered on disclosed ingredient detail rather than vague herbal positioning",
+        ],
+        "Use this section to keep formula reading practical and shopper-safe.",
+        `Help the shopper decide whether two ${label} labels really belong in the same comparison set.`,
+      ),
+    ];
+  }
+
+  return [
+    buildSectionPlan(
+      "primary_context",
+      "Primary context",
+      `Define the clearest shopper-safe comparison lane for ${label} before broader claims.`,
+      [
+        "Human supplement context should lead over generic wellness positioning",
+        "The primary lane should stay narrower than marketing copy",
+        "Dose and formula setting can change how much weight to give this line",
+      ],
+      `Show the practical research or label-reading lane for ${label}.`,
+      `Give shoppers a first lens for comparing ${label} products without turning it into a universal promise.`,
+    ),
+    buildSectionPlan(
+      "form_and_disclosure_context",
+      "Form and disclosure context",
+      `Explain how ${label} form, source, or delivery details change label reading.`,
+      [
+        "Disclosed form or source detail can change comparison",
+        "Form detail should not become a universal superiority claim",
+        "Exact disclosure matters more than broad category wording",
+      ],
+      "Keep this section bounded and label-aware.",
+      "Show shoppers which disclosed details are actually comparison-relevant.",
+    ),
+    buildSectionPlan(
+      "formula_context",
+      "Formula context",
+      `Clarify how paired ingredients or blends change ${label} interpretation.`,
+      [
+        "Supporting roles should not be mistaken for the main active",
+        "Co-ingredients can narrow the role this family is playing",
+        "Formula structure should guide comparison before benefit-heavy copy",
+      ],
+      "Use this section to keep formula reading practical.",
+      "Help shoppers compare single-ingredient and mixed-formula products without hype.",
+    ),
+  ];
+};
+
 const buildResearchPlan = (
   context: IngredientScienceContext,
   descriptor: IngredientScienceDescriptor,
 ): ScientificBackgroundSectionPlan[] => {
   const name = descriptor.name;
+  const nutriMinimalDefinition = getNutriMinimalDefinitionForFamily(
+    descriptor.ingredientFamily,
+  );
+  if (nutriMinimalDefinition) {
+    return buildNutriMinimalFullFamilyPlan(nutriMinimalDefinition);
+  }
   if (descriptor.ingredientFamily === "astaxanthin_carotenoid") {
     return [
       buildSectionPlan(
@@ -561,6 +928,223 @@ const buildResearchPlan = (
         ],
         "Show that evidence texture varies by outcome and context.",
         "Help the shopper keep broad packaging language in proportion when comparing curcumin products.",
+      ),
+    ];
+  }
+
+  if (descriptor.ingredientFamily === "quercetin") {
+    return [
+      buildSectionPlan(
+        "primary_use_context",
+        "Primary use context",
+        "Define the clearest shopper-safe use lane for quercetin without repeating broad antioxidant or recovery marketing as if it all carried the same weight.",
+        [
+          "Human supplementation context should lead over broad front-label positioning",
+          "This lane should stay narrower than generic antioxidant or recovery copy",
+          "Dose and formula setting can narrow interpretation quickly",
+        ],
+        "Show that quercetin has a recognizable use context, but not every adjacent claim is equally sturdy.",
+        "Help the shopper understand what quercetin products are most often being compared for before secondary claims enter the picture.",
+      ),
+      buildSectionPlan(
+        "extract_standardization_context",
+        "Extract and standardization context",
+        "Explain how quercetin phytosome, isoquercetin, or other standardized extract wording changes comparison value without creating a one-line best-form claim.",
+        [
+          "Named extract detail improves comparison",
+          "Raw powder and more specialized extract forms should not be treated as interchangeable",
+          "Standardization language is helpful but not a universal superiority badge",
+        ],
+        "Keep this section practical and label-aware rather than rank-ordering extract types.",
+        "Tell the shopper why exact extract wording often carries more comparison value than broad quercetin branding.",
+      ),
+      buildSectionPlan(
+        "formula_and_label_context",
+        "Formula and label context",
+        "Show how blended formulas, paired nutrients, or delivery format can change the way a quercetin line should be read on the label.",
+        [
+          "Blend structure can change whether quercetin is the main active or a supporting line",
+          "Delivery detail matters only when the label actually discloses it clearly",
+          "Keep comparison centered on disclosed ingredient detail rather than vague botanical positioning",
+        ],
+        "Use this section to keep formula reading practical and shopper-safe.",
+        "Help the shopper decide whether two quercetin labels really belong in the same comparison set.",
+      ),
+    ];
+  }
+
+  if (
+    descriptor.ingredientFamily === "dgl_licorice" ||
+    descriptor.ingredientFamily === "kava" ||
+    descriptor.ingredientFamily === "slippery_elm" ||
+    descriptor.ingredientFamily === "aloe_vera" ||
+    descriptor.ingredientFamily === "chamomile" ||
+    descriptor.ingredientFamily === "astragalus" ||
+    descriptor.ingredientFamily === "cinnamon_extract" ||
+    descriptor.ingredientFamily === "grape_seed_extract" ||
+    descriptor.ingredientFamily === "garlic_extract" ||
+    descriptor.ingredientFamily === "ginger_root" ||
+    descriptor.ingredientFamily === "olive_leaf_extract" ||
+    descriptor.ingredientFamily === "pygeum" ||
+    descriptor.ingredientFamily === "red_yeast_rice" ||
+    descriptor.ingredientFamily === "royal_jelly" ||
+    descriptor.ingredientFamily === "saffron_extract" ||
+    descriptor.ingredientFamily === "tribulus_terrestris" ||
+    descriptor.ingredientFamily === "turkey_tail_mushroom" ||
+    descriptor.ingredientFamily === "milk_thistle" ||
+    descriptor.ingredientFamily === "passionflower" ||
+    descriptor.ingredientFamily === "valerian" ||
+    descriptor.ingredientFamily === "st_john_s_wort" ||
+    descriptor.ingredientFamily === "lavender" ||
+    descriptor.ingredientFamily === "lemon_balm"
+  ) {
+    const botanicalLabel =
+      descriptor.ingredientFamily === "dgl_licorice"
+        ? "DGL licorice"
+        : descriptor.ingredientFamily === "slippery_elm"
+          ? "slippery elm"
+          : descriptor.ingredientFamily === "aloe_vera"
+            ? "aloe vera"
+            : descriptor.ingredientFamily === "chamomile"
+              ? "chamomile"
+              : descriptor.ingredientFamily === "astragalus"
+                ? "astragalus"
+                : descriptor.ingredientFamily === "cinnamon_extract"
+                  ? "cinnamon extract"
+                  : descriptor.ingredientFamily === "grape_seed_extract"
+                    ? "grape seed extract"
+                    : descriptor.ingredientFamily === "garlic_extract"
+                      ? "garlic extract"
+                      : descriptor.ingredientFamily === "ginger_root"
+                        ? "ginger root"
+                        : descriptor.ingredientFamily === "olive_leaf_extract"
+                          ? "olive leaf extract"
+                          : descriptor.ingredientFamily === "pygeum"
+                            ? "pygeum"
+                            : descriptor.ingredientFamily === "red_yeast_rice"
+                              ? "red yeast rice"
+                              : descriptor.ingredientFamily === "royal_jelly"
+                                ? "royal jelly"
+                                : descriptor.ingredientFamily ===
+                                    "saffron_extract"
+                                  ? "saffron extract"
+                                  : descriptor.ingredientFamily ===
+                                      "tribulus_terrestris"
+                                    ? "tribulus terrestris"
+                                    : descriptor.ingredientFamily ===
+                                        "turkey_tail_mushroom"
+                                      ? "turkey tail mushroom"
+                                      : descriptor.ingredientFamily ===
+                                          "milk_thistle"
+                                        ? "milk thistle"
+                                        : descriptor.ingredientFamily ===
+                                            "passionflower"
+                                          ? "passionflower"
+                                          : descriptor.ingredientFamily ===
+                                              "valerian"
+                                            ? "valerian"
+                                            : descriptor.ingredientFamily ===
+                                                "st_john_s_wort"
+                                              ? "St. John's wort"
+                                              : descriptor.ingredientFamily ===
+                                                  "lavender"
+                                                ? "lavender"
+                                                : descriptor.ingredientFamily ===
+                                                    "lemon_balm"
+                                                  ? "lemon balm"
+                                                  : "kava";
+    const botanicalMarker =
+      descriptor.ingredientFamily === "dgl_licorice"
+        ? "DGL and glycyrrhizin-removal wording"
+        : descriptor.ingredientFamily === "slippery_elm"
+          ? "inner-bark or mucilage wording"
+          : descriptor.ingredientFamily === "aloe_vera"
+            ? "inner-leaf, whole-leaf, latex-free, or decolorized extract wording"
+            : descriptor.ingredientFamily === "chamomile"
+              ? "Matricaria, apigenin, tea, extract, or standardization wording"
+              : descriptor.ingredientFamily === "astragalus"
+                ? "Astragalus species, extract, astragaloside, or polysaccharide wording"
+                : descriptor.ingredientFamily === "cinnamon_extract"
+                  ? "Cinnamomum species, bark extract, or standardization wording"
+                  : descriptor.ingredientFamily === "grape_seed_extract"
+                    ? "grape seed, proanthocyanidin, OPC, or extract wording"
+                    : descriptor.ingredientFamily === "garlic_extract"
+                      ? "garlic, allicin, aged extract, or standardization wording"
+                      : descriptor.ingredientFamily === "ginger_root"
+                        ? "ginger root, gingerol, extract, or standardization wording"
+                        : descriptor.ingredientFamily === "olive_leaf_extract"
+                          ? "olive leaf, oleuropein, extract, or standardization wording"
+                          : descriptor.ingredientFamily === "pygeum"
+                            ? "Prunus africana, bark extract, or standardization wording"
+                            : descriptor.ingredientFamily === "red_yeast_rice"
+                              ? "Monascus, monacolin, citrinin-tested, or fermented-rice wording"
+                              : descriptor.ingredientFamily === "royal_jelly"
+                                ? "royal jelly, freeze-dried, 10-HDA, or bee-product wording"
+                                : descriptor.ingredientFamily ===
+                                    "saffron_extract"
+                                  ? "Crocus sativus, crocin, safranal, extract, or standardization wording"
+                                  : descriptor.ingredientFamily ===
+                                      "tribulus_terrestris"
+                                    ? "Tribulus terrestris, protodioscin, fruit, or extract wording"
+                                    : descriptor.ingredientFamily ===
+                                        "turkey_tail_mushroom"
+                                      ? "Trametes, Coriolus, fruiting body, beta-glucan, PSK, or PSP wording"
+                                      : descriptor.ingredientFamily ===
+                                          "milk_thistle"
+                                        ? "Silybum marianum, silymarin, milk-thistle extract, or standardization wording"
+                                        : descriptor.ingredientFamily ===
+                                            "passionflower"
+                                          ? "Passiflora species, extract, tea, or flavonoid-standardization wording"
+                                          : descriptor.ingredientFamily ===
+                                              "valerian"
+                                            ? "Valeriana officinalis, root, extract, or valerenic-acid wording"
+                                            : descriptor.ingredientFamily ===
+                                                "st_john_s_wort"
+                                              ? "Hypericum, hypericin, hyperforin, or standardized-extract wording"
+                                              : descriptor.ingredientFamily ===
+                                                  "lavender"
+                                                ? "lavender oil, Silexan-style, flower, or extract wording"
+                                                : descriptor.ingredientFamily ===
+                                                    "lemon_balm"
+                                                  ? "Melissa officinalis, leaf, tea, or extract wording"
+                                                  : "kava extract and kavalactone wording";
+
+    return [
+      buildSectionPlan(
+        "primary_use_context",
+        "Primary use context",
+        `Define the clearest shopper-safe use lane for ${botanicalLabel} without repeating broad traditional or front-label language as if it were all equally supported.`,
+        [
+          "Human or monograph-backed context should lead over broad botanical marketing",
+          "This lane should stay narrower than generic comfort or relaxation copy",
+          "Dose, extract, and formula setting can narrow interpretation quickly",
+        ],
+        `Show that ${botanicalLabel} has a recognizable use context, while keeping outcome language bounded and comparison-safe.`,
+        `Help the shopper understand what ${botanicalLabel} products are most often being compared for before secondary claims enter the picture.`,
+      ),
+      buildSectionPlan(
+        "extract_standardization_context",
+        "Extract and standardization context",
+        `Explain how ${botanicalMarker} changes comparison value without creating a universal best-extract claim.`,
+        [
+          "Extract identity and marker details improve comparison",
+          "Raw powder and more specific extract labels should not be treated as interchangeable",
+          "Standardization language is helpful only when the label clearly discloses it",
+        ],
+        "Keep this section practical and label-aware rather than rank-ordering botanical forms.",
+        "Tell the shopper why exact extract wording often carries more comparison value than broad botanical branding.",
+      ),
+      buildSectionPlan(
+        "formula_and_label_context",
+        "Formula and label context",
+        `Show how blends, paired ingredients, or delivery format can change the way a ${botanicalLabel} line should be read on the label.`,
+        [
+          "Blend structure can change whether the botanical is central or supporting",
+          "Delivery detail matters only when the label actually discloses it clearly",
+          "Keep comparison centered on disclosed ingredient detail rather than vague herbal positioning",
+        ],
+        "Use this section to keep formula reading practical and shopper-safe.",
+        `Help the shopper decide whether two ${botanicalLabel} labels really belong in the same comparison set.`,
       ),
     ];
   }
@@ -766,6 +1350,234 @@ const buildResearchPlan = (
         ],
         "Keep this section practical and label-aware.",
         "Tell the shopper what to compare before assuming two NAC products belong in the same comparison set.",
+      ),
+    ];
+  }
+
+  if (descriptor.ingredientFamily === "glutathione") {
+    return [
+      buildSectionPlan(
+        "primary_context",
+        "Primary context",
+        "Define the clearest shopper-safe comparison lane for glutathione without turning antioxidant or detox-style language into a blanket promise.",
+        [
+          "Direct glutathione should stay distinct from NAC precursor framing",
+          "Human supplementation context should lead over broad detox or antioxidant copy",
+          "Dose and delivery format can narrow interpretation quickly",
+        ],
+        "Show that glutathione has a recognizable supplementation context while keeping broad outcome language bounded.",
+        "Help the shopper understand whether the label is mainly about direct glutathione, delivery format, or a broader antioxidant formula.",
+      ),
+      buildSectionPlan(
+        "form_and_disclosure_context",
+        "Form and disclosure context",
+        "Explain how reduced, liposomal, or S-acetyl glutathione-style wording changes comparison without creating a universal best-form claim.",
+        [
+          "Named form or delivery detail changes label reading",
+          "Delivery wording is useful only when the ingredient line clearly discloses it",
+          "Do not turn form detail into a blanket superiority claim",
+        ],
+        "Keep this section label-aware and comparison-safe.",
+        "Tell the shopper which glutathione form or delivery details are worth checking first when comparing products.",
+      ),
+      buildSectionPlan(
+        "formula_context",
+        "Formula context",
+        "Clarify how paired antioxidants, precursors, or blended formulas change how central glutathione really is on the label.",
+        [
+          "Single-ingredient and blended glutathione formulas should not be compared the same way",
+          "Paired antioxidants or precursors can narrow the role of the glutathione line",
+          "Keep comparison focused on formula structure and disclosed lines",
+        ],
+        "Use this section to explain formula reading rather than generic antioxidant filler.",
+        "Help the shopper compare glutathione products through exact disclosure and formula role.",
+      ),
+    ];
+  }
+
+  if (descriptor.ingredientFamily === "alpha_lipoic_acid") {
+    return [
+      buildSectionPlan(
+        "primary_context",
+        "Primary context",
+        "Define the clearest shopper-safe comparison lane for alpha-lipoic acid without turning antioxidant or metabolism language into a broad promise.",
+        [
+          "Human supplementation context should lead over broad antioxidant positioning",
+          "This lane should stay narrower than generic metabolism or nerve-style marketing",
+          "Dose, form, and formula setting can narrow interpretation quickly",
+        ],
+        "Show that alpha-lipoic acid has a recognizable supplementation context while keeping outcome language bounded.",
+        "Help the shopper understand whether the label is mainly about alpha-lipoic acid itself, a named form, or a broader metabolic-support formula.",
+      ),
+      buildSectionPlan(
+        "form_and_disclosure_context",
+        "Form and disclosure context",
+        "Explain how R-alpha-lipoic acid, stabilized forms, or ALA abbreviation wording changes comparison without creating a universal best-form claim.",
+        [
+          "Named ALA form detail changes label reading",
+          "Abbreviation wording should be interpreted from the disclosed ingredient line",
+          "Do not turn form detail into a blanket superiority claim",
+        ],
+        "Keep this section label-aware and comparison-safe.",
+        "Tell the shopper which alpha-lipoic acid form details are worth checking first when comparing products.",
+      ),
+      buildSectionPlan(
+        "formula_context",
+        "Formula context",
+        "Clarify how paired antioxidants, glucose-metabolism ingredients, or blended formulas change how central alpha-lipoic acid really is on the label.",
+        [
+          "Single-ingredient and blended formulas should not be compared the same way",
+          "Paired nutrients or botanicals can narrow the role of the ALA line",
+          "Keep comparison focused on formula structure and disclosed lines",
+        ],
+        "Use this section to explain formula reading rather than generic antioxidant filler.",
+        "Help the shopper compare alpha-lipoic acid products through exact disclosure and formula role.",
+      ),
+    ];
+  }
+
+  if (
+    descriptor.ingredientFamily === "l_ornithine" ||
+    descriptor.ingredientFamily === "l_arginine" ||
+    descriptor.ingredientFamily === "arginine_alpha_ketoglutarate" ||
+    descriptor.ingredientFamily === "citrulline_malate" ||
+    descriptor.ingredientFamily === "d_ribose" ||
+    descriptor.ingredientFamily === "l_methionine" ||
+    descriptor.ingredientFamily === "l_valine" ||
+    descriptor.ingredientFamily === "beta_alanine" ||
+    descriptor.ingredientFamily === "carnosine" ||
+    descriptor.ingredientFamily === "choline" ||
+    descriptor.ingredientFamily === "citicoline" ||
+    descriptor.ingredientFamily === "nicotinamide_mononucleotide" ||
+    descriptor.ingredientFamily === "nicotinamide_riboside" ||
+    descriptor.ingredientFamily === "colostrum" ||
+    descriptor.ingredientFamily === "spirulina" ||
+    descriptor.ingredientFamily === "resveratrol" ||
+    descriptor.ingredientFamily === "gaba" ||
+    descriptor.ingredientFamily === "msm" ||
+    descriptor.ingredientFamily === "zeaxanthin"
+  ) {
+    const aminoLabel =
+      descriptor.ingredientFamily === "l_ornithine"
+        ? "L-ornithine"
+        : descriptor.ingredientFamily === "arginine_alpha_ketoglutarate"
+          ? "AAKG"
+          : descriptor.ingredientFamily === "citrulline_malate"
+            ? "citrulline malate"
+            : descriptor.ingredientFamily === "d_ribose"
+              ? "D-ribose"
+              : descriptor.ingredientFamily === "l_methionine"
+                ? "L-methionine"
+                : descriptor.ingredientFamily === "l_valine"
+                  ? "L-valine"
+                  : descriptor.ingredientFamily === "beta_alanine"
+                    ? "beta-alanine"
+                    : descriptor.ingredientFamily === "carnosine"
+                      ? "carnosine"
+                      : descriptor.ingredientFamily === "choline"
+                        ? "choline"
+                        : descriptor.ingredientFamily === "citicoline"
+                          ? "citicoline"
+                          : descriptor.ingredientFamily ===
+                              "nicotinamide_mononucleotide"
+                            ? "NMN"
+                            : descriptor.ingredientFamily ===
+                                "nicotinamide_riboside"
+                              ? "nicotinamide riboside"
+                              : descriptor.ingredientFamily === "colostrum"
+                                ? "colostrum"
+                                : descriptor.ingredientFamily === "spirulina"
+                                  ? "spirulina"
+                                  : descriptor.ingredientFamily ===
+                                      "resveratrol"
+                                    ? "resveratrol"
+                                    : descriptor.ingredientFamily === "gaba"
+                                      ? "GABA"
+                                      : descriptor.ingredientFamily === "msm"
+                                        ? "MSM"
+                                        : descriptor.ingredientFamily ===
+                                            "zeaxanthin"
+                                          ? "zeaxanthin"
+                                          : "L-arginine";
+    const formLabel =
+      descriptor.ingredientFamily === "l_ornithine"
+        ? "free-form, HCl, or blend-positioning wording"
+        : descriptor.ingredientFamily === "arginine_alpha_ketoglutarate"
+          ? "AAKG abbreviation or arginine alpha-ketoglutarate wording"
+          : descriptor.ingredientFamily === "citrulline_malate"
+            ? "citrulline, citrulline-malate, ratio, or dose wording"
+            : descriptor.ingredientFamily === "d_ribose"
+              ? "D-ribose naming, dose, or energy-formula positioning"
+              : descriptor.ingredientFamily === "l_methionine"
+                ? "L-methionine naming, dose, or amino-acid blend wording"
+                : descriptor.ingredientFamily === "l_valine"
+                  ? "L-valine, free-form, BCAA, or blend-positioning wording"
+                  : descriptor.ingredientFamily === "beta_alanine"
+                    ? "beta-alanine, CarnoSyn, sustained-release, or dose wording"
+                    : descriptor.ingredientFamily === "carnosine"
+                      ? "L-carnosine, sustained-release, or dose wording"
+                      : descriptor.ingredientFamily === "choline"
+                        ? "bitartrate, phosphatidylcholine, alpha-GPC, or choline-source wording"
+                        : descriptor.ingredientFamily === "citicoline"
+                          ? "citicoline, CDP-choline, Cognizin, or dose wording"
+                          : descriptor.ingredientFamily ===
+                              "nicotinamide_mononucleotide"
+                            ? "NMN, nicotinamide mononucleotide, dose, or NAD-precursor wording"
+                            : descriptor.ingredientFamily ===
+                                "nicotinamide_riboside"
+                              ? "nicotinamide riboside, chloride, dose, or NAD-precursor wording"
+                              : descriptor.ingredientFamily === "colostrum"
+                                ? "bovine source, IgG, immunoglobulin, powder, or serving wording"
+                                : descriptor.ingredientFamily === "spirulina"
+                                  ? "spirulina powder, tablet, phycocyanin, or algae-source wording"
+                                  : descriptor.ingredientFamily ===
+                                      "resveratrol"
+                                    ? "trans-resveratrol, extract, enhanced-delivery, or dose wording"
+                                    : descriptor.ingredientFamily === "gaba"
+                                      ? "PharmaGABA, fermented GABA, gamma-aminobutyric-acid, or dose wording"
+                                      : descriptor.ingredientFamily === "msm"
+                                        ? "methylsulfonylmethane, OptiMSM, or dose wording"
+                                        : descriptor.ingredientFamily ===
+                                            "zeaxanthin"
+                                          ? "free zeaxanthin, zeaxanthin ester, source, or dose wording"
+                                          : "free-form, HCl, AAKG, malate, or blend-positioning wording";
+
+    return [
+      buildSectionPlan(
+        "primary_context",
+        "Primary context",
+        `Define the clearest shopper-safe comparison lane for ${aminoLabel} without turning performance, circulation, recovery, or metabolism language into a broad promise.`,
+        [
+          "Human supplementation context should lead over broad performance or wellness positioning",
+          "This lane should stay narrower than generic amino-acid marketing",
+          "Dose, form, and formula setting can narrow interpretation quickly",
+        ],
+        `Show that ${aminoLabel} has a recognizable supplementation context while keeping outcome language bounded.`,
+        `Help the shopper understand whether the label is mainly about ${aminoLabel} itself, a named form, or a broader performance formula.`,
+      ),
+      buildSectionPlan(
+        "form_and_disclosure_context",
+        "Form and disclosure context",
+        `Explain how ${formLabel} changes comparison without creating a universal best-form claim.`,
+        [
+          "Named amino-acid form detail changes label reading",
+          "Abbreviation or salt wording should be interpreted from the disclosed ingredient line",
+          "Do not turn form detail into a blanket superiority claim",
+        ],
+        "Keep this section label-aware and comparison-safe.",
+        `Tell the shopper which ${aminoLabel} form details are worth checking first when comparing products.`,
+      ),
+      buildSectionPlan(
+        "formula_context",
+        "Formula context",
+        `Clarify how paired amino acids, pre-workout blends, or broader formulas change how central ${aminoLabel} really is on the label.`,
+        [
+          "Single-ingredient and blended formulas should not be compared the same way",
+          "Paired amino acids or performance ingredients can narrow the role of this line",
+          "Keep comparison focused on formula structure and disclosed lines",
+        ],
+        "Use this section to explain formula reading rather than generic amino-acid filler.",
+        `Help the shopper compare ${aminoLabel} products through exact disclosure and formula role.`,
       ),
     ];
   }
@@ -1202,6 +2014,203 @@ const buildResearchPlan = (
     ];
   }
 
+  if (
+    descriptor.ingredientFamily === "biotin" ||
+    descriptor.ingredientFamily === "riboflavin" ||
+    descriptor.ingredientFamily === "thiamin" ||
+    descriptor.ingredientFamily === "pantothenic_acid"
+  ) {
+    const vitaminLabel =
+      descriptor.ingredientFamily === "biotin"
+        ? "biotin"
+        : descriptor.ingredientFamily === "thiamin"
+          ? "thiamin"
+          : descriptor.ingredientFamily === "pantothenic_acid"
+            ? "pantothenic acid"
+            : "riboflavin";
+    const formLabel =
+      descriptor.ingredientFamily === "biotin"
+        ? "D-biotin or vitamin B7-style labeling"
+        : descriptor.ingredientFamily === "thiamin"
+          ? "thiamine HCl, thiamin mononitrate, benfotiamine, or vitamin B1-style labeling"
+          : descriptor.ingredientFamily === "pantothenic_acid"
+            ? "calcium pantothenate, pantethine, or vitamin B5-style labeling"
+            : "riboflavin, vitamin B2, or flavin-coenzyme style labeling";
+
+    return [
+      buildSectionPlan(
+        "status_and_supplementation_context",
+        "Status and supplementation context",
+        `Anchor ${vitaminLabel} in intake, status, and supplementation context before broader energy, hair, skin, or wellness packaging language.`,
+        [
+          "Intake and supplementation context is the clearest first lens",
+          "Broad benefit positioning can outrun the cleanest comparison lane",
+          "Dose and baseline status can change interpretation",
+        ],
+        `Keep this lane shopper-safe and narrower than generic ${vitaminLabel} marketing.`,
+        `Help the shopper decide whether a ${vitaminLabel} label is mainly about baseline intake, dose, or a narrower formula use case.`,
+      ),
+      buildSectionPlan(
+        "form_and_labeling_context",
+        "Form and labeling context",
+        `Explain how ${formLabel} changes comparison without turning the card into a universal best-form argument.`,
+        [
+          "Exact vitamin-form wording changes comparison value",
+          "Form disclosure is more useful than broad vitamin branding",
+          "Compare the disclosed form before broader wellness copy",
+        ],
+        "Keep this section practical and label-focused.",
+        `Tell the shopper which ${vitaminLabel} form details are worth checking first when comparing products.`,
+      ),
+      buildSectionPlan(
+        "dose_and_pairing_context",
+        "Dose and pairing context",
+        `Clarify when amount, paired B vitamins, or formula setting change how a ${vitaminLabel} line should be interpreted.`,
+        [
+          "Disclosed amount changes interpretation",
+          "B-complex or multivitamin formulas can narrow the lane",
+          "Comparison should stay on dose and pairings rather than generic wellness language",
+        ],
+        "Use this section for practical interpretation rather than generic caution filler.",
+        `Help the shopper compare ${vitaminLabel} products through amount, form, and co-formulation.`,
+      ),
+    ];
+  }
+
+  if (descriptor.ingredientFamily === "vitamin_a") {
+    return [
+      buildSectionPlan(
+        "status_and_supplementation_context",
+        "Status and supplementation context",
+        "Anchor vitamin A in intake, status, and supplementation context before broader vision, immune, or skin-style packaging language.",
+        [
+          "Intake and supplementation context is the clearest first lens",
+          "Broad benefit positioning can outrun the cleanest comparison lane",
+          "Preformed vitamin A versus provitamin A can change interpretation",
+        ],
+        "Keep this lane shopper-safe and narrower than generic vitamin marketing.",
+        "Help the shopper decide whether a vitamin A label is mainly about baseline intake, form, dose, or a narrower formula use case.",
+      ),
+      buildSectionPlan(
+        "form_and_labeling_context",
+        "Form and labeling context",
+        "Explain how retinol, retinyl ester, or beta-carotene-style labeling changes comparison without turning the card into a universal best-form argument.",
+        [
+          "Preformed and provitamin A labels are not identical comparison signals",
+          "Exact form disclosure is more useful than broad vitamin A branding",
+          "Compare the disclosed form before broader wellness copy",
+        ],
+        "Keep this section practical, label-focused, and safety-aware.",
+        "Tell the shopper which vitamin A form details are worth checking first when comparing products.",
+      ),
+      buildSectionPlan(
+        "dose_and_pairing_context",
+        "Dose and pairing context",
+        "Clarify when amount, paired nutrients, or formula setting change how a vitamin A line should be interpreted.",
+        [
+          "Disclosed amount changes interpretation",
+          "Multivitamin or carotenoid formulas can narrow the lane",
+          "Comparison should stay on dose, form, and pairings rather than generic protection language",
+        ],
+        "Use this section for practical interpretation rather than generic caution filler.",
+        "Help the shopper compare vitamin A products through amount, form, and co-formulation.",
+      ),
+    ];
+  }
+
+  if (descriptor.ingredientFamily === "vitamin_e") {
+    return [
+      buildSectionPlan(
+        "status_and_supplementation_context",
+        "Status and supplementation context",
+        "Anchor vitamin E in intake, status, and supplementation context before broader antioxidant or heart-style packaging language.",
+        [
+          "Intake and supplementation context is the clearest first lens",
+          "Broad antioxidant or whole-body positioning can outrun the cleanest lane",
+          "Dose and baseline status still affect interpretation",
+        ],
+        "Keep this lane shopper-safe and narrower than generic antioxidant marketing.",
+        "Help the shopper decide whether a vitamin E label is mainly about baseline status, dose, or a narrower use context.",
+      ),
+      buildSectionPlan(
+        "form_and_labeling_context",
+        "Form and labeling context",
+        "Explain how tocopherol, tocopheryl acetate, or tocotrienol-style labeling changes comparison without turning the card into a universal best-form argument.",
+        [
+          "Named vitamers or vitamin E forms change comparison value",
+          "Exact form disclosure is more useful than generic natural-versus-synthetic marketing",
+          "Compare the exact ingredient line before broader wellness copy",
+        ],
+        "Keep this section practical and label-focused.",
+        "Tell the shopper which vitamin E form details are worth checking first when comparing products.",
+      ),
+      buildSectionPlan(
+        "dose_and_pairing_context",
+        "Dose and pairing context",
+        "Clarify when amount, paired nutrients, or formula setting change how a vitamin E line should be interpreted.",
+        [
+          "Disclosed amount changes interpretation",
+          "Paired antioxidant or mixed-vitamin formulas can narrow the lane",
+          "Comparison should stay on dose and pairings rather than generic protection language",
+        ],
+        "Use this section for practical interpretation rather than generic caution filler.",
+        "Help the shopper compare vitamin E products through amount, form, and co-formulation.",
+      ),
+    ];
+  }
+
+  if (
+    descriptor.ingredientFamily === "vitamin_k2" ||
+    descriptor.ingredientFamily === "vitamin_k1"
+  ) {
+    const vitaminKLabel =
+      descriptor.ingredientFamily === "vitamin_k1"
+        ? "vitamin K1"
+        : "vitamin K2";
+    const vitaminKFormLabel =
+      descriptor.ingredientFamily === "vitamin_k1"
+        ? "phylloquinone or phytonadione-style labeling"
+        : "MK-4, MK-7, or menaquinone-style labeling";
+    return [
+      buildSectionPlan(
+        "status_and_supplementation_context",
+        "Status and supplementation context",
+        `Anchor ${vitaminKLabel} in intake and supplementation context before broad bone or heart packaging language is treated like one tidy claim.`,
+        [
+          "Supplementation context is the clearest first lens",
+          "Bone or calcium-adjacent language can be easier to justify than broader whole-body positioning",
+          "Dose and baseline context still shape interpretation",
+        ],
+        "Keep this lane status-aware and shopper-safe instead of broad and generic.",
+        `Help the shopper understand whether the label is mainly about baseline intake, a bone-adjacent use case, or formula pairing.`,
+      ),
+      buildSectionPlan(
+        "form_and_labeling_context",
+        "Form and labeling context",
+        `Explain how ${vitaminKFormLabel} changes comparison value without turning the card into a one-line superiority verdict.`,
+        [
+          "Exact vitamin K form disclosure changes comparison",
+          `Exact vitamer wording carries more value than generic ${vitaminKLabel} branding`,
+          "Do not turn form labeling into a universal best-form claim",
+        ],
+        "Keep this section practical and label-aware.",
+        `Tell the shopper why the exact ${vitaminKLabel} line is worth checking before assuming two products are interchangeable.`,
+      ),
+      buildSectionPlan(
+        "dose_and_pairing_context",
+        "Dose and pairing context",
+        `Clarify when dose, calcium or vitamin D pairing, and broader formula setting change the way a ${vitaminKLabel} label should be read.`,
+        [
+          "Amount changes interpretation",
+          `Vitamin D or calcium pairings can narrow what the ${vitaminKLabel} line is doing in the formula`,
+          "Comparison should stay on dose and co-formulation rather than generic bone marketing",
+        ],
+        "Use this section to explain practical formula reading rather than to pad the card with generic caveats.",
+        `Help the shopper compare ${vitaminKLabel} products through amount, form disclosure, and paired-nutrient context.`,
+      ),
+    ];
+  }
+
   if (descriptor.ingredientFamily === "glycine") {
     return [
       buildSectionPlan(
@@ -1490,6 +2499,249 @@ const buildResearchPlan = (
         ],
         "Use this section for practical interpretation rather than as a generic caveat.",
         "Tell the shopper what to check before assuming two B6 products belong in the same comparison set.",
+      ),
+    ];
+  }
+
+  if (descriptor.ingredientFamily === "chromium") {
+    return [
+      buildSectionPlan(
+        "intake_and_status_context",
+        "Intake and status context",
+        "Ground chromium in intake, status, and supplementation context before broader metabolism or sugar-balance marketing is read as a universal promise.",
+        [
+          "Intake and supplementation context is the clearest first lens",
+          "Broad metabolic language can be wider than the cleanest research lane",
+          "Dose and population context still matter",
+        ],
+        "Keep this lane practical and shopper-safe rather than broad and promotional.",
+        "Help the shopper decide whether the label is mainly about supplementation context, dose, or broader formula positioning.",
+      ),
+      buildSectionPlan(
+        "form_and_absorption_context",
+        "Form and absorption context",
+        "Explain how picolinate or other named chromium forms change comparison without turning the card into a blanket better-absorbed claim.",
+        [
+          "Named chromium forms change comparison value",
+          "Form wording is more useful than generic blood-sugar style packaging copy",
+          "Do not turn form detail into a universal superiority claim",
+        ],
+        "Keep this section label-aware and bounded.",
+        "Tell the shopper which chromium form details are worth checking before assuming two products belong in the same comparison set.",
+      ),
+      buildSectionPlan(
+        "comparison_and_cofactor_context",
+        "Comparison and cofactor context",
+        "Explain how dose, paired nutrients, and broader formula setting change what should be compared first on a chromium label.",
+        [
+          "Amount changes interpretation",
+          "Paired metabolic-support ingredients can narrow the lane",
+          "Keep comparison centered on form, amount, and co-formulation",
+        ],
+        "Use this section for practical label reading rather than generic caution filler.",
+        "Help the shopper compare chromium products through exact disclosure and formula context.",
+      ),
+    ];
+  }
+
+  if (descriptor.ingredientFamily === "selenium") {
+    return [
+      buildSectionPlan(
+        "intake_and_status_context",
+        "Intake and status context",
+        "Ground selenium in intake, status, and supplementation context before broader antioxidant or thyroid-marketing language is treated like one tidy research lane.",
+        [
+          "Intake and supplementation context is the clearest first lens",
+          "Broad antioxidant or thyroid packaging can outrun the cleanest lane",
+          "Dose and population context still affect interpretation",
+        ],
+        "Keep this lane practical and shopper-safe rather than encyclopedic.",
+        "Help the shopper understand whether the selenium label is mainly about baseline intake, amount, or broader formula positioning.",
+      ),
+      buildSectionPlan(
+        "form_and_absorption_context",
+        "Form and absorption context",
+        "Explain how selenomethionine, selenium yeast, or selenite-style disclosure changes comparison without turning the card into a universal best-form claim.",
+        [
+          "Named selenium forms change comparison value",
+          "Exact form disclosure carries more value than generic mineral branding",
+          "Do not convert form wording into a blanket superiority claim",
+        ],
+        "Keep this section label-aware and comparison-safe.",
+        "Tell the shopper which selenium form details are worth checking first when comparing products.",
+      ),
+      buildSectionPlan(
+        "comparison_and_cofactor_context",
+        "Comparison and cofactor context",
+        "Explain how dose, paired nutrients, and overall formula setting change how central selenium really is on the label.",
+        [
+          "Amount changes interpretation",
+          "Paired antioxidant or thyroid-adjacent ingredients can narrow selenium's role",
+          "Keep comparison centered on form, amount, and co-formulation",
+        ],
+        "Use this section to explain formula reading rather than to pad the card with generic caveats.",
+        "Help the shopper compare selenium products through exact disclosure and formula role.",
+      ),
+    ];
+  }
+
+  if (descriptor.ingredientFamily === "copper") {
+    return [
+      buildSectionPlan(
+        "intake_and_status_context",
+        "Intake and status context",
+        "Ground copper in intake, status, and supplementation context before broader mineral, energy, or antioxidant packaging language.",
+        [
+          "Intake and supplementation context is the clearest first lens",
+          "Broad mineral positioning can outrun the cleanest lane",
+          "Dose and formula context still affect interpretation",
+        ],
+        "Keep this lane practical and shopper-safe rather than broad and promotional.",
+        "Help the shopper decide whether the label is mainly about copper intake, dose, or broader formula positioning.",
+      ),
+      buildSectionPlan(
+        "form_and_absorption_context",
+        "Form and absorption context",
+        "Explain how bisglycinate, citrate, gluconate, or other named copper forms change comparison without turning the card into a blanket better-absorbed claim.",
+        [
+          "Named copper forms change comparison value",
+          "Form wording is more useful than generic mineral-support packaging copy",
+          "Do not turn form detail into a universal superiority claim",
+        ],
+        "Keep this section label-aware and bounded.",
+        "Tell the shopper which copper form details are worth checking before assuming two products belong in the same comparison set.",
+      ),
+      buildSectionPlan(
+        "comparison_and_cofactor_context",
+        "Comparison and cofactor context",
+        "Explain how dose, zinc pairing, and broader formula setting change what should be compared first on a copper label.",
+        [
+          "Amount changes interpretation",
+          "Paired mineral formulas can narrow the lane",
+          "Keep comparison centered on form, amount, and co-formulation",
+        ],
+        "Use this section for practical label reading rather than generic caution filler.",
+        "Help the shopper compare copper products through exact disclosure and formula context.",
+      ),
+    ];
+  }
+
+  if (
+    descriptor.ingredientFamily === "molybdenum" ||
+    descriptor.ingredientFamily === "manganese" ||
+    descriptor.ingredientFamily === "iodine" ||
+    descriptor.ingredientFamily === "potassium"
+  ) {
+    const mineralLabel =
+      descriptor.ingredientFamily === "molybdenum"
+        ? "molybdenum"
+        : descriptor.ingredientFamily === "manganese"
+          ? "manganese"
+          : descriptor.ingredientFamily === "potassium"
+            ? "potassium"
+            : "iodine";
+    const formLabel =
+      descriptor.ingredientFamily === "molybdenum"
+        ? "molybdate, chelate, or amino-acid-chelate wording"
+        : descriptor.ingredientFamily === "manganese"
+          ? "bisglycinate, gluconate, sulfate, citrate, or chelate wording"
+          : descriptor.ingredientFamily === "potassium"
+            ? "gluconate, citrate, chloride, bicarbonate, or other salt-form wording"
+            : "iodide, kelp, seaweed, or other source wording";
+
+    return [
+      buildSectionPlan(
+        "intake_and_status_context",
+        "Intake and status context",
+        `Ground ${mineralLabel} in intake, status, and supplementation context before broader mineral, thyroid, detox, or energy packaging language.`,
+        [
+          "Intake and supplementation context is the clearest first lens",
+          "Broad mineral positioning can outrun the cleanest lane",
+          "Dose and source context still affect interpretation",
+        ],
+        "Keep this lane practical and shopper-safe rather than broad and promotional.",
+        `Help the shopper decide whether the label is mainly about ${mineralLabel} intake, dose, source, or broader formula positioning.`,
+      ),
+      buildSectionPlan(
+        "form_and_absorption_context",
+        "Form and absorption context",
+        `Explain how ${formLabel} changes comparison without turning the card into a blanket better-absorbed claim.`,
+        [
+          "Named mineral forms or source details change comparison value",
+          "Form wording is more useful than generic mineral-support packaging copy",
+          "Do not turn form detail into a universal superiority claim",
+        ],
+        "Keep this section label-aware and bounded.",
+        `Tell the shopper which ${mineralLabel} form or source details are worth checking before assuming two products belong in the same comparison set.`,
+      ),
+      buildSectionPlan(
+        "comparison_and_cofactor_context",
+        "Comparison and cofactor context",
+        `Explain how dose, source, paired nutrients, and broader formula setting change what should be compared first on a ${mineralLabel} label.`,
+        [
+          "Amount changes interpretation",
+          "Paired mineral or thyroid-adjacent formulas can narrow the lane",
+          "Keep comparison centered on form, amount, source, and co-formulation",
+        ],
+        "Use this section for practical label reading rather than generic caution filler.",
+        `Help the shopper compare ${mineralLabel} products through exact disclosure and formula context.`,
+      ),
+    ];
+  }
+
+  if (
+    descriptor.ingredientFamily === "papain" ||
+    descriptor.ingredientFamily === "bromelain" ||
+    descriptor.ingredientFamily === "serrapeptase"
+  ) {
+    const enzymeLabel =
+      descriptor.ingredientFamily === "bromelain"
+        ? "bromelain"
+        : descriptor.ingredientFamily === "serrapeptase"
+          ? "serrapeptase"
+          : "papain";
+    const sourceLabel =
+      descriptor.ingredientFamily === "bromelain"
+        ? "pineapple"
+        : descriptor.ingredientFamily === "serrapeptase"
+          ? "serrapeptase"
+          : "papaya";
+    return [
+      buildSectionPlan(
+        "functional_context",
+        "Functional context",
+        `Anchor ${enzymeLabel} in enzyme-function and formula context before broader ${sourceLabel} or wellness language.`,
+        [
+          `Named enzyme context should lead over broad ${sourceLabel} marketing`,
+          "Human use context should stay separate from front-label digestive promises",
+          "Amount, activity, and formula setting can narrow interpretation quickly",
+        ],
+        "Keep this lane practical and comparison-safe rather than promotional.",
+        `Help the shopper understand whether the label is mainly about ${enzymeLabel} itself or a broader enzyme blend.`,
+      ),
+      buildSectionPlan(
+        "activity_and_delivery_context",
+        "Activity and delivery context",
+        `Explain how enzyme activity units, mass-based labels, ${sourceLabel}-enzyme wording, and delivery format change comparison.`,
+        [
+          "Activity disclosure changes comparison value",
+          "Mass-only enzyme labels should not be treated the same as activity-standardized labels",
+          "Delivery format matters only when the label discloses it clearly",
+        ],
+        "Keep this section label-aware and avoid implying one delivery style is always better.",
+        "Point shoppers to activity, amount, and delivery details before generic digestive language.",
+      ),
+      buildSectionPlan(
+        "formula_context",
+        "Formula context",
+        `Clarify when single-${enzymeLabel} products and mixed enzyme formulas should be compared differently.`,
+        [
+          "Single-enzyme and blended formulas should not be compared the same way",
+          `Other enzymes can narrow the role of ${enzymeLabel} on the label`,
+          "Keep comparison focused on formula structure and disclosed lines",
+        ],
+        "Use this section to explain formula reading rather than broad enzyme filler.",
+        `Help the shopper compare ${enzymeLabel} products through exact disclosure and formula role.`,
       ),
     ];
   }
@@ -2477,6 +3729,44 @@ const buildPrompt = (params: {
         "Make shopper meaning practical by tying comparison to extract detail, standardization, and what the label actually discloses.",
       ];
     }
+    if (params.plan.family === "quercetin") {
+      return [
+        "Keep quercetin grounded in the clearest supplementation lane instead of flattening it into broad antioxidant or recovery hype.",
+        "Do not turn phytosome, isoquercetin, or standardized extract wording into a universal best-form claim.",
+        "Make shopper meaning practical by tying comparison to extract detail, dose, and whether quercetin is the main active or part of a broader formula.",
+      ];
+    }
+    if (
+      params.plan.family === "dgl_licorice" ||
+      params.plan.family === "kava" ||
+      params.plan.family === "slippery_elm" ||
+      params.plan.family === "aloe_vera" ||
+      params.plan.family === "chamomile" ||
+      params.plan.family === "astragalus" ||
+      params.plan.family === "cinnamon_extract" ||
+      params.plan.family === "grape_seed_extract" ||
+      params.plan.family === "garlic_extract" ||
+      params.plan.family === "ginger_root" ||
+      params.plan.family === "olive_leaf_extract" ||
+      params.plan.family === "pygeum" ||
+      params.plan.family === "red_yeast_rice" ||
+      params.plan.family === "royal_jelly" ||
+      params.plan.family === "saffron_extract" ||
+      params.plan.family === "tribulus_terrestris" ||
+      params.plan.family === "turkey_tail_mushroom" ||
+      params.plan.family === "milk_thistle" ||
+      params.plan.family === "passionflower" ||
+      params.plan.family === "valerian" ||
+      params.plan.family === "st_john_s_wort" ||
+      params.plan.family === "lavender" ||
+      params.plan.family === "lemon_balm"
+    ) {
+      return [
+        "Keep the botanical grounded in the clearest use context instead of repeating broad traditional or front-label marketing.",
+        "Do not turn extract, marker-compound, or delivery wording into a universal superiority claim.",
+        "Make shopper meaning practical by tying comparison to exact botanical form, standardization, amount, and whether it is central or supporting in the formula.",
+      ];
+    }
     if (params.plan.family === "turmeric") {
       return [
         "Keep turmeric distinct from concentrated curcumin products and explain when it is being used as a broader root or extract story.",
@@ -2510,6 +3800,47 @@ const buildPrompt = (params: {
         "Keep NAC anchored to glutathione-precursor context first, with respiratory and mucus-related discussion as a narrower secondary lane.",
         "Do not drift into treatment language or generic detox marketing.",
         "Make shopper meaning practical by tying comparison to exact ingredient disclosure, dose, and how the intended use context changes label interpretation.",
+      ];
+    }
+    if (params.plan.family === "glutathione") {
+      return [
+        "Keep direct glutathione distinct from NAC precursor context and avoid generic detox or antioxidant hype.",
+        "Do not turn liposomal, reduced, or S-acetyl wording into a blanket best-form claim.",
+        "Make shopper meaning practical by tying comparison to exact form disclosure, amount, and whether glutathione is central or paired with other antioxidants.",
+      ];
+    }
+    if (params.plan.family === "alpha_lipoic_acid") {
+      return [
+        "Keep alpha-lipoic acid grounded in human supplementation and form-aware interpretation rather than broad antioxidant, metabolism, or nerve-style hype.",
+        "Do not turn R-alpha-lipoic acid, stabilized forms, or ALA wording into a universal best-form claim.",
+        "Make shopper meaning practical by tying comparison to exact form disclosure, amount, and whether ALA is central or paired with other actives.",
+      ];
+    }
+    if (
+      params.plan.family === "l_ornithine" ||
+      params.plan.family === "l_arginine" ||
+      params.plan.family === "arginine_alpha_ketoglutarate" ||
+      params.plan.family === "citrulline_malate" ||
+      params.plan.family === "d_ribose" ||
+      params.plan.family === "l_methionine" ||
+      params.plan.family === "l_valine" ||
+      params.plan.family === "beta_alanine" ||
+      params.plan.family === "carnosine" ||
+      params.plan.family === "choline" ||
+      params.plan.family === "citicoline" ||
+      params.plan.family === "nicotinamide_mononucleotide" ||
+      params.plan.family === "nicotinamide_riboside" ||
+      params.plan.family === "colostrum" ||
+      params.plan.family === "spirulina" ||
+      params.plan.family === "resveratrol" ||
+      params.plan.family === "gaba" ||
+      params.plan.family === "msm" ||
+      params.plan.family === "zeaxanthin"
+    ) {
+      return [
+        "Keep this family grounded in human supplementation and formula-role interpretation rather than broad performance, energy, brain, or wellness hype.",
+        "Do not turn named form, abbreviation, salt, source, or blend wording into a universal best-form claim.",
+        "Make shopper meaning practical by tying comparison to exact form disclosure, amount, and whether it is central or part of a broader formula.",
       ];
     }
     if (params.plan.family === "collagen") {
@@ -2575,6 +3906,42 @@ const buildPrompt = (params: {
         "Make comparison meaning practical by tying it to disclosed amount and whether the B3 row is central or supportive.",
       ];
     }
+    if (
+      params.plan.family === "biotin" ||
+      params.plan.family === "riboflavin" ||
+      params.plan.family === "thiamin" ||
+      params.plan.family === "pantothenic_acid"
+    ) {
+      return [
+        "Keep this B vitamin grounded in intake, status, dose, and formula-role context rather than broad beauty, energy, or wellness copy.",
+        "Do not turn form labeling into a universal superiority claim.",
+        "Make shopper meaning practical by tying comparison to exact form disclosure, amount, and whether it is central or part of a broader B-complex formula.",
+      ];
+    }
+    if (params.plan.family === "vitamin_a") {
+      return [
+        "Keep vitamin A grounded in intake, status, form, and dose-aware interpretation rather than broad vision, immune, or skin filler.",
+        "Do not treat retinol, retinyl ester, and beta-carotene labels as interchangeable or universally superior.",
+        "Make shopper meaning practical by tying comparison to exact form disclosure, amount, and whether the formula is simple or heavily paired.",
+      ];
+    }
+    if (params.plan.family === "vitamin_e") {
+      return [
+        "Keep vitamin E grounded in intake, status, and form-aware interpretation rather than generic antioxidant or heart-health filler.",
+        "Do not turn tocopherol, tocopheryl acetate, or tocotrienol wording into a universal best-form claim.",
+        "Make shopper meaning practical by tying comparison to exact form disclosure, amount, and whether the formula is simple or heavily paired.",
+      ];
+    }
+    if (
+      params.plan.family === "vitamin_k2" ||
+      params.plan.family === "vitamin_k1"
+    ) {
+      return [
+        "Keep vitamin K grounded in supplementation and form-aware interpretation rather than broad bone-marketing filler.",
+        "Do not turn phylloquinone, MK-4, or MK-7 labeling into a universal superiority claim.",
+        "Make shopper meaning practical by tying comparison to exact vitamer disclosure, amount, and whether calcium or vitamin D pairings change the formula reading.",
+      ];
+    }
     if (params.plan.family === "glycine") {
       return [
         "Keep glycine grounded in amino-acid and formula-support context rather than generic relaxation filler.",
@@ -2629,6 +3996,50 @@ const buildPrompt = (params: {
         "Keep vitamin B6 anchored to cofactor, metabolism, and narrower nerve-related context rather than generic energy filler.",
         "Do not claim one B6 form is universally superior.",
         "Make shopper meaning practical by tying comparison to dose, form disclosure, and formula role.",
+      ];
+    }
+    if (params.plan.family === "chromium") {
+      return [
+        "Keep chromium grounded in intake, status, and form-aware interpretation rather than broad metabolism or sugar-balance hype.",
+        "Do not turn picolinate or other chromium forms into a blanket better-absorbed claim.",
+        "Make shopper meaning practical by tying comparison to exact form disclosure, amount, and whether chromium is central or supporting in the formula.",
+      ];
+    }
+    if (params.plan.family === "selenium") {
+      return [
+        "Keep selenium grounded in intake, status, and form-aware interpretation rather than broad antioxidant or thyroid filler.",
+        "Do not turn selenomethionine, selenium yeast, or selenite wording into a universal best-form claim.",
+        "Make shopper meaning practical by tying comparison to exact form disclosure, amount, and whether selenium is central or supporting in the formula.",
+      ];
+    }
+    if (params.plan.family === "copper") {
+      return [
+        "Keep copper grounded in intake, status, and form-aware interpretation rather than broad mineral or antioxidant filler.",
+        "Do not turn bisglycinate, citrate, gluconate, or chelate wording into a universal best-form claim.",
+        "Make shopper meaning practical by tying comparison to exact form disclosure, amount, and whether copper is central or paired with other minerals.",
+      ];
+    }
+    if (
+      params.plan.family === "molybdenum" ||
+      params.plan.family === "manganese" ||
+      params.plan.family === "iodine" ||
+      params.plan.family === "potassium"
+    ) {
+      return [
+        "Keep this trace mineral grounded in intake, status, source, and form-aware interpretation rather than broad thyroid, detox, or mineral-support filler.",
+        "Do not turn source or salt wording into a blanket better-absorbed or more natural claim.",
+        "Make shopper meaning practical by tying comparison to exact source or form disclosure, amount, and whether it is central or paired with other nutrients.",
+      ];
+    }
+    if (
+      params.plan.family === "papain" ||
+      params.plan.family === "bromelain" ||
+      params.plan.family === "serrapeptase"
+    ) {
+      return [
+        "Keep this enzyme grounded in enzyme-function and formula-role interpretation rather than broad digestive or fruit-source wellness hype.",
+        "Do not turn activity units, delivery format, or fruit-enzyme wording into a universal superiority claim.",
+        "Make shopper meaning practical by tying comparison to activity disclosure, amount, and whether papain is central or part of a broader enzyme blend.",
       ];
     }
     if (params.plan.family === "zinc") {
@@ -2835,33 +4246,430 @@ const parseWriterSections = (
     }));
 };
 
-const parseWriterOutput = (
-  raw: string,
-): ScientificBackgroundWriterOutput | null => {
-  const result = extractJsonObjectLoose(raw);
-  if (!result.ok || !result.parsed || typeof result.parsed !== "object")
-    return null;
-  const parsed = result.parsed as Record<string, unknown>;
-  const sections = parseWriterSections(
-    parsed.sections ?? parsed.cards ?? parsed.sectionCards,
+const STRUCTURED_TEXT_SUMMARY_LABEL_PATTERN = /^summary\s*:\s*/i;
+const STRUCTURED_TEXT_EVIDENCE_LABEL_PATTERN =
+  /^(?:evidence(?:\s*read)?|evidence\s*texture|evidence\s*level|strength)\s*:\s*/i;
+const STRUCTURED_TEXT_SHOPPER_MEANING_LABEL_PATTERN =
+  /^(?:shopper\s*meaning|shopping\s*meaning|what\s*this\s*means(?:\s*when\s*comparing)?|comparison\s*meaning)\s*:\s*/i;
+const STRUCTURED_TEXT_INTRO_LABEL_PATTERN = /^intro(?:\s*line)?\s*:\s*/i;
+const STRUCTURED_TEXT_CLOSING_LABEL_PATTERN = /^closing(?:\s*note)?\s*:\s*/i;
+
+const stripStructuredTextAdornment = (value: string): string =>
+  normalizeText(
+    value
+      .replace(/^#{1,6}\s*/, "")
+      .replace(/^\d+[\.\)]\s*/, "")
+      .replace(/^\*\*(.+)\*\*$/u, "$1")
+      .replace(/^__(.+)__$/u, "$1")
+      .replace(/^`(.+)`$/u, "$1"),
   );
 
+const cleanStructuredTextField = (value: string, pattern?: RegExp): string => {
+  const cleaned = stripStructuredTextAdornment(value);
+  return normalizeText(pattern ? cleaned.replace(pattern, "") : cleaned);
+};
+
+const cleanStructuredTextBullet = (value: string): string =>
+  cleanStructuredTextField(value.replace(/^\s*[-*•]\s*/u, ""));
+
+const normalizeStructuredTextHeading = (value: string): string =>
+  cleanStructuredTextField(value)
+    .replace(/\s+/g, " ")
+    .replace(/\s*[:\-]\s*$/u, "")
+    .toLowerCase();
+
+const matchStructuredTextHeadingLine = (
+  line: string,
+  heading: string,
+): { matched: true; remainder: string } | null => {
+  const cleaned = cleanStructuredTextField(line);
+  if (!cleaned) return null;
+  const normalizedHeading = normalizeStructuredTextHeading(heading);
+  const normalizedLine = normalizeStructuredTextHeading(cleaned);
+  if (normalizedLine === normalizedHeading) {
+    return { matched: true, remainder: "" };
+  }
+
+  const headingPattern = new RegExp(
+    `^${heading
+      .replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+      .replace(/\s+/g, "\\s+")}(?:\\s*[:\\-]\\s*)(.+)$`,
+    "i",
+  );
+  const inlineMatch = cleaned.match(headingPattern);
+  if (!inlineMatch) return null;
   return {
-    introLine:
-      normalizeWriterField(
-        parsed.introLine ??
-          parsed.intro_line ??
-          parsed.leadIn ??
-          parsed.lead_in,
-      ) || null,
+    matched: true,
+    remainder: normalizeText(inlineMatch[1]),
+  };
+};
+
+const parseWriterOutputFromStructuredText = (
+  raw: string,
+  plan: ScientificBackgroundPlan,
+): ScientificBackgroundWriterOutput | null => {
+  const lines = raw
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+  if (lines.length === 0) return null;
+
+  const sectionMatches: Array<{
+    lineIndex: number;
+    headingId: string;
+    heading: string;
+    headingRemainder: string;
+  }> = [];
+  let searchStart = 0;
+
+  for (const sectionPlan of plan.sections) {
+    let found: {
+      lineIndex: number;
+      headingId: string;
+      heading: string;
+      headingRemainder: string;
+    } | null = null;
+
+    for (let index = searchStart; index < lines.length; index += 1) {
+      const headingMatch = matchStructuredTextHeadingLine(
+        lines[index],
+        sectionPlan.heading,
+      );
+      if (!headingMatch) continue;
+      found = {
+        lineIndex: index,
+        headingId: sectionPlan.headingId,
+        heading: sectionPlan.heading,
+        headingRemainder: headingMatch.remainder,
+      };
+      searchStart = index + 1;
+      break;
+    }
+
+    if (!found) continue;
+    sectionMatches.push(found);
+  }
+
+  if (sectionMatches.length === 0) return null;
+
+  const introLines = lines
+    .slice(0, sectionMatches[0].lineIndex)
+    .map((line) =>
+      cleanStructuredTextField(line, STRUCTURED_TEXT_INTRO_LABEL_PATTERN),
+    )
+    .filter(Boolean);
+  const introLine =
+    introLines.length > 0 ? normalizeText(introLines.join(" ")) : null;
+
+  let closingNote: string | null = null;
+  const sections = sectionMatches
+    .map((match, index): ScientificBackgroundWriterSection | null => {
+      const nextLineIndex =
+        sectionMatches[index + 1]?.lineIndex ?? lines.length;
+      const sectionLines = lines.slice(match.lineIndex + 1, nextLineIndex);
+      let summary = normalizeText(
+        cleanStructuredTextField(
+          match.headingRemainder,
+          STRUCTURED_TEXT_SUMMARY_LABEL_PATTERN,
+        ),
+      );
+      const bullets: string[] = [];
+      let evidenceRead = "";
+      let shopperMeaning: string | null = null;
+
+      for (const line of sectionLines) {
+        if (/^\s*[-*•]\s+/u.test(line)) {
+          const bullet = cleanStructuredTextBullet(line);
+          if (bullet) bullets.push(bullet);
+          continue;
+        }
+
+        const cleaned = cleanStructuredTextField(line);
+        if (!cleaned) continue;
+        if (STRUCTURED_TEXT_CLOSING_LABEL_PATTERN.test(cleaned)) {
+          closingNote = cleanStructuredTextField(
+            cleaned,
+            STRUCTURED_TEXT_CLOSING_LABEL_PATTERN,
+          );
+          continue;
+        }
+        if (STRUCTURED_TEXT_EVIDENCE_LABEL_PATTERN.test(cleaned)) {
+          evidenceRead = cleanStructuredTextField(
+            cleaned,
+            STRUCTURED_TEXT_EVIDENCE_LABEL_PATTERN,
+          );
+          continue;
+        }
+        if (STRUCTURED_TEXT_SHOPPER_MEANING_LABEL_PATTERN.test(cleaned)) {
+          shopperMeaning =
+            cleanStructuredTextField(
+              cleaned,
+              STRUCTURED_TEXT_SHOPPER_MEANING_LABEL_PATTERN,
+            ) || null;
+          continue;
+        }
+        if (STRUCTURED_TEXT_SUMMARY_LABEL_PATTERN.test(cleaned)) {
+          summary = cleanStructuredTextField(
+            cleaned,
+            STRUCTURED_TEXT_SUMMARY_LABEL_PATTERN,
+          );
+          continue;
+        }
+        if (!summary) {
+          summary = cleaned;
+          continue;
+        }
+      }
+
+      if (!summary) return null;
+      return {
+        headingId: match.headingId,
+        heading: match.heading,
+        summary,
+        bullets,
+        evidenceRead,
+        shopperMeaning,
+      };
+    })
+    .filter((section): section is ScientificBackgroundWriterSection =>
+      Boolean(section),
+    );
+
+  if (sections.length === 0) return null;
+
+  if (!closingNote) {
+    const trailingLines = lines
+      .slice((sectionMatches.at(-1)?.lineIndex ?? lines.length) + 1)
+      .map((line) =>
+        cleanStructuredTextField(line, STRUCTURED_TEXT_CLOSING_LABEL_PATTERN),
+      )
+      .filter(Boolean);
+    closingNote =
+      trailingLines.length > 0 ? normalizeText(trailingLines.join(" ")) : null;
+  }
+
+  return {
+    introLine,
     sections,
-    closingNote:
-      normalizeWriterField(
-        parsed.closingNote ??
-          parsed.closing_note ??
-          parsed.compareNote ??
-          parsed.comparisonNote,
-      ) || null,
+    closingNote,
+  };
+};
+
+const buildParseFailureSnippet = (raw: string): string | null => {
+  const normalized = normalizeText(raw.replace(/\s+/g, " "));
+  if (!normalized) return null;
+  return normalized.slice(0, 240);
+};
+
+const buildGateRejectSnippet = (raw: string): string | null =>
+  buildParseFailureSnippet(raw);
+
+const scanJsonLikeStructure = (
+  value: string,
+): {
+  boundaryIndexes: number[];
+  inString: boolean;
+  trailingEscape: boolean;
+  closers: string[];
+} => {
+  const boundaryIndexes: number[] = [];
+  const stack: string[] = [];
+  let inString = false;
+  let escape = false;
+
+  for (let index = 0; index < value.length; index += 1) {
+    const char = value[index];
+    if (inString) {
+      if (escape) {
+        escape = false;
+        continue;
+      }
+      if (char === "\\") {
+        escape = true;
+        continue;
+      }
+      if (char === '"') {
+        inString = false;
+      }
+      continue;
+    }
+
+    if (char === '"') {
+      inString = true;
+      continue;
+    }
+    if (char === "{") {
+      stack.push("}");
+      continue;
+    }
+    if (char === "[") {
+      stack.push("]");
+      continue;
+    }
+    if (char === "}" || char === "]") {
+      if (stack.at(-1) === char) {
+        stack.pop();
+      }
+      boundaryIndexes.push(index + 1);
+      continue;
+    }
+    if (char === ",") {
+      boundaryIndexes.push(index);
+    }
+  }
+
+  return {
+    boundaryIndexes,
+    inString,
+    trailingEscape: escape,
+    closers: [...stack].reverse(),
+  };
+};
+
+const finalizeTruncatedJsonPrefix = (value: string): string | null => {
+  let candidate = value.trim();
+  if (!candidate.startsWith("{")) return null;
+  candidate = candidate.replace(/,\s*$/u, "");
+  candidate = candidate.replace(/:\s*$/u, "");
+  if (!candidate) return null;
+
+  const scanned = scanJsonLikeStructure(candidate);
+  if (scanned.inString) {
+    if (scanned.trailingEscape) {
+      candidate = candidate.slice(0, -1);
+    }
+    candidate += '"';
+  }
+
+  candidate = candidate.replace(/,(\s*[}\]])/g, "$1");
+  return `${candidate}${scanned.closers.join("")}`;
+};
+
+const parseWriterOutputFromTruncatedJson = (
+  raw: string,
+): ScientificBackgroundWriterOutput | null => {
+  const trimmed = raw.trim();
+  if (!trimmed.startsWith("{")) return null;
+
+  const scanned = scanJsonLikeStructure(trimmed);
+  const cutIndexes = [
+    trimmed.length,
+    ...scanned.boundaryIndexes.slice().reverse(),
+  ];
+  const seenCandidates = new Set<string>();
+
+  for (const cutIndex of cutIndexes) {
+    const repairedCandidate = finalizeTruncatedJsonPrefix(
+      trimmed.slice(0, cutIndex),
+    );
+    if (!repairedCandidate || seenCandidates.has(repairedCandidate)) continue;
+    seenCandidates.add(repairedCandidate);
+
+    const repairedResult = extractJsonObjectLoose(repairedCandidate);
+    if (
+      !repairedResult.ok ||
+      !repairedResult.parsed ||
+      typeof repairedResult.parsed !== "object"
+    ) {
+      continue;
+    }
+
+    const parsed = repairedResult.parsed as Record<string, unknown>;
+    const rawSections =
+      parsed.sections ?? parsed.cards ?? parsed.sectionCards ?? null;
+    if (!Array.isArray(rawSections)) continue;
+
+    const sections = parseWriterSections(rawSections);
+    if (sections.length === 0) continue;
+
+    return {
+      introLine: normalizeWriterField(parsed.introLine) || null,
+      sections,
+      closingNote: normalizeWriterField(parsed.closingNote) || null,
+    };
+  }
+
+  return null;
+};
+
+const parseWriterOutput = (
+  raw: string,
+  plan?: ScientificBackgroundPlan,
+): ScientificBackgroundParseWriterResult => {
+  const result = extractJsonObjectLoose(raw);
+  if (!result.ok) {
+    if (result.reason === "non_json" || result.reason === "parse_error") {
+      const repairedJson = parseWriterOutputFromTruncatedJson(raw);
+      if (repairedJson) {
+        return {
+          ok: true,
+          parsed: repairedJson,
+        };
+      }
+    }
+    if (result.reason === "non_json" && plan) {
+      const rescued = parseWriterOutputFromStructuredText(raw, plan);
+      if (rescued) {
+        return {
+          ok: true,
+          parsed: rescued,
+        };
+      }
+    }
+    return {
+      ok: false,
+      parseFailureShape:
+        result.reason === "non_json" ? "non_json" : "json_parse_error",
+    };
+  }
+  if (!result.parsed || typeof result.parsed !== "object") {
+    return {
+      ok: false,
+      parseFailureShape: "root_not_object",
+    };
+  }
+  const parsed = result.parsed as Record<string, unknown>;
+  const rawSections =
+    parsed.sections ?? parsed.cards ?? parsed.sectionCards ?? null;
+  if (rawSections == null) {
+    return {
+      ok: false,
+      parseFailureShape: "sections_missing",
+    };
+  }
+  if (!Array.isArray(rawSections)) {
+    return {
+      ok: false,
+      parseFailureShape: "sections_not_array",
+    };
+  }
+  const sections = parseWriterSections(rawSections);
+  if (sections.length === 0) {
+    return {
+      ok: false,
+      parseFailureShape: "sections_empty_after_parse",
+    };
+  }
+
+  return {
+    ok: true,
+    parsed: {
+      introLine:
+        normalizeWriterField(
+          parsed.introLine ??
+            parsed.intro_line ??
+            parsed.leadIn ??
+            parsed.lead_in,
+        ) || null,
+      sections,
+      closingNote:
+        normalizeWriterField(
+          parsed.closingNote ??
+            parsed.closing_note ??
+            parsed.compareNote ??
+            parsed.comparisonNote,
+        ) || null,
+    },
   };
 };
 
@@ -2904,7 +4712,8 @@ const introLineLooksWeak = (value: string | null | undefined): boolean => {
   return (
     GENERIC_IDENTITY_PATTERNS.some((pattern) => pattern.test(normalized)) ||
     TEMPLATE_SUMMARY_PATTERNS.some((pattern) => pattern.test(normalized)) ||
-    MEDICAL_BANNED_PATTERNS.some((pattern) => pattern.test(normalized))
+    MEDICAL_BANNED_PATTERNS.some((pattern) => pattern.test(normalized)) ||
+    SOFT_CLAIM_REPAIR_PATTERNS.some((pattern) => pattern.test(normalized))
   );
 };
 
@@ -2913,6 +4722,7 @@ const closingNoteLooksWeak = (value: string | null | undefined): boolean => {
   if (!normalized) return true;
   return (
     MEDICAL_BANNED_PATTERNS.some((pattern) => pattern.test(normalized)) ||
+    SOFT_CLAIM_REPAIR_PATTERNS.some((pattern) => pattern.test(normalized)) ||
     WEAK_SHOPPER_MEANING_PATTERNS.some((pattern) => pattern.test(normalized)) ||
     /\bproof\b|\bguarantee\b|\bdefinitive\b/i.test(normalized)
   );
@@ -2923,6 +4733,16 @@ const normalizeBullets = (bullets: string[]): string[] =>
     0,
     3,
   );
+
+const hasRepairUnsafePattern = (value: string | null | undefined): boolean => {
+  const normalized = normalizeText(value);
+  if (!normalized) return false;
+  return (
+    MEDICAL_BANNED_PATTERNS.some((pattern) => pattern.test(normalized)) ||
+    GENERIC_IDENTITY_PATTERNS.some((pattern) => pattern.test(normalized)) ||
+    SOFT_CLAIM_REPAIR_PATTERNS.some((pattern) => pattern.test(normalized))
+  );
+};
 
 const repairSectionFromFallback = (params: {
   plan: ScientificBackgroundPlan;
@@ -2940,22 +4760,54 @@ const repairSectionFromFallback = (params: {
     summary:
       summary &&
       !summaryLooksTemplatey(summary) &&
-      !looksTooGeneric([summary, ...bullets])
+      !looksTooGeneric([summary, ...bullets]) &&
+      !hasRepairUnsafePattern(summary)
         ? asSentence(summary)
         : fallback.summary,
     bullets:
-      bullets.length >= 2 && !looksTooGeneric(bullets)
+      bullets.length >= 2 &&
+      !looksTooGeneric(bullets) &&
+      !bullets.some((bullet) => hasRepairUnsafePattern(bullet))
         ? bullets.map((bullet) => asSentence(bullet))
         : fallback.bullets,
     evidenceRead:
-      evidenceRead && !evidenceReadLooksWeak(evidenceRead)
+      evidenceRead &&
+      !evidenceReadLooksWeak(evidenceRead) &&
+      !hasRepairUnsafePattern(evidenceRead)
         ? asSentence(evidenceRead)
         : fallback.evidenceRead,
     shopperMeaning:
-      shopperMeaning && !shopperMeaningLooksWeak(shopperMeaning)
+      shopperMeaning &&
+      !shopperMeaningLooksWeak(shopperMeaning) &&
+      !hasRepairUnsafePattern(shopperMeaning)
         ? asSentence(shopperMeaning)
         : fallback.shopperMeaning,
   };
+};
+
+const writerSectionLooksOrderRepairable = (
+  section: ScientificBackgroundWriterSection | undefined,
+): boolean => {
+  if (!section) return false;
+  const summary = normalizeText(section.summary);
+  const bullets = normalizeBullets(section.bullets);
+  const evidenceRead = normalizeText(section.evidenceRead);
+  const shopperMeaning = normalizeText(section.shopperMeaning ?? "");
+  const joined = [summary, ...bullets, evidenceRead, shopperMeaning].join(" ");
+
+  if (
+    MEDICAL_BANNED_PATTERNS.some((pattern) => pattern.test(joined)) ||
+    GENERIC_IDENTITY_PATTERNS.some((pattern) => pattern.test(joined)) ||
+    SOFT_CLAIM_REPAIR_PATTERNS.some((pattern) => pattern.test(joined))
+  )
+    return false;
+  if (!summary || bullets.length < 2 || !evidenceRead || !shopperMeaning)
+    return false;
+  if (summaryLooksTemplatey(summary)) return false;
+  if (looksTooGeneric([summary, ...bullets])) return false;
+  if (evidenceReadLooksWeak(evidenceRead)) return false;
+  if (shopperMeaningLooksWeak(shopperMeaning)) return false;
+  return true;
 };
 
 const repairWriterOutput = (params: {
@@ -2967,11 +4819,21 @@ const repairWriterOutput = (params: {
 
   const usedIndexes = new Set<number>();
   let matchedSectionCount = 0;
-  const repairedSections = params.plan.sections.map((planned) => {
-    const matchedIndex = params.parsed.sections!.findIndex((section, index) => {
+  const allowOrderRepair =
+    params.parsed.sections.length === params.plan.sections.length;
+  const repairedSections = params.plan.sections.map((planned, plannedIndex) => {
+    let matchedIndex = params.parsed.sections!.findIndex((section, index) => {
       if (usedIndexes.has(index)) return false;
       return headingsMatchPlan(section, planned);
     });
+    if (
+      matchedIndex < 0 &&
+      allowOrderRepair &&
+      !usedIndexes.has(plannedIndex) &&
+      writerSectionLooksOrderRepairable(params.parsed.sections![plannedIndex])
+    ) {
+      matchedIndex = plannedIndex;
+    }
 
     if (matchedIndex < 0) {
       return buildSectionFallback(params.plan, planned);
@@ -3013,10 +4875,11 @@ const repairWriterOutput = (params: {
   };
 };
 
-const gateScientificBackground = (params: {
+const collectScientificBackgroundGateRejectReasons = (params: {
   requestedIngredientName: string;
   repaired: ScientificBackgroundBlock;
-}): boolean => {
+}): ScientificBackgroundGateRejectReason[] => {
+  const reasons = new Set<ScientificBackgroundGateRejectReason>();
   const allTexts = [
     params.repaired.introLine ?? "",
     params.repaired.closingNote ?? "",
@@ -3028,42 +4891,66 @@ const gateScientificBackground = (params: {
       section.shopperMeaning ?? "",
     ]),
   ];
+  const joinedText = allTexts.join(" ");
 
-  if (
-    MEDICAL_BANNED_PATTERNS.some((pattern) => pattern.test(allTexts.join(" ")))
-  )
-    return false;
-  if (
-    GENERIC_IDENTITY_PATTERNS.some((pattern) =>
-      pattern.test(allTexts.join(" ")),
-    )
-  )
-    return false;
+  if (MEDICAL_BANNED_PATTERNS.some((pattern) => pattern.test(joinedText)))
+    reasons.add("medical_banned_pattern");
+  if (introLineLooksWeak(params.repaired.introLine))
+    reasons.add("introLine_too_generic");
+  if (GENERIC_IDENTITY_PATTERNS.some((pattern) => pattern.test(joinedText)))
+    reasons.add("generic_identity_pattern");
 
   const requestedKey = normalizeIngredientScienceKey(
     params.requestedIngredientName,
   );
-  const contentKey = normalizeIngredientScienceKey(allTexts.join(" "));
-  if (!requestedKey || !contentKey) return false;
+  const contentKey = normalizeIngredientScienceKey(joinedText);
+  if (!requestedKey || !contentKey)
+    reasons.add("empty_requested_or_content_key");
 
   for (let index = 0; index < params.repaired.sections.length; index += 1) {
     const section = params.repaired.sections[index];
-    if (
-      !section ||
-      !section.heading ||
-      !section.summary ||
-      !section.evidenceRead
-    )
-      return false;
-    if (section.bullets.length < 2 || section.bullets.length > 3) return false;
-    if (!section.shopperMeaning) return false;
-    if (summaryLooksTemplatey(section.summary)) return false;
-    if (looksTooGeneric([section.summary, ...section.bullets])) return false;
-    if (evidenceReadLooksWeak(section.evidenceRead)) return false;
-    if (shopperMeaningLooksWeak(section.shopperMeaning)) return false;
+    if (!section) {
+      reasons.add("section_missing_required_field");
+      continue;
+    }
+    if (!section.heading || !section.summary || !section.evidenceRead)
+      reasons.add("section_missing_required_field");
+    if (section.bullets.length < 2 || section.bullets.length > 3)
+      reasons.add("section_bullet_count_out_of_range");
+    if (!section.shopperMeaning)
+      reasons.add("section_shopperMeaning_not_decisional");
+    if (summaryLooksTemplatey(section.summary))
+      reasons.add("section_summary_template");
+    if (looksTooGeneric([section.summary, ...section.bullets]))
+      reasons.add("section_bullets_too_template");
+    if (evidenceReadLooksWeak(section.evidenceRead))
+      reasons.add("section_evidenceRead_too_weak");
+    if (shopperMeaningLooksWeak(section.shopperMeaning))
+      reasons.add("section_shopperMeaning_not_decisional");
   }
 
-  return true;
+  return [...reasons];
+};
+
+const parsedWriterHasAnyPlannedHeading = (params: {
+  plan: ScientificBackgroundPlan;
+  parsed: ScientificBackgroundWriterOutput;
+}): boolean => {
+  return (params.parsed.sections ?? []).some((section) =>
+    params.plan.sections.some((planned) => headingsMatchPlan(section, planned)),
+  );
+};
+
+const appendGateRejectReasons = (
+  diagnostics: ScientificBackgroundCompileDiagnostics,
+  reasons: ScientificBackgroundGateRejectReason[],
+) => {
+  diagnostics.gateRejectReasons = [
+    ...new Set([...diagnostics.gateRejectReasons, ...reasons]),
+  ];
+  if (reasons.length > 0) {
+    diagnostics.lastError = `gate:${reasons.join(",")}`;
+  }
 };
 
 const buildSectionFallback = (
@@ -4383,7 +6270,7 @@ const buildSectionFallback = (
     case "broader_cardiovascular_context":
       return {
         heading: section.heading,
-        summary: `${label} also appears in broader cardiovascular discussions, but those claims are wider and more variable than the clearest lipid-focused endpoints.`,
+        summary: `Beyond the core lipid lane, ${label} can carry broader cardiovascular framing, but those claims are wider and more variable than the clearest lipid-focused endpoints.`,
         bullets: [
           "Broader cardiovascular discussions can mix stronger and weaker endpoints together.",
           "Study design and endpoint choice matter much more here than packaging usually suggests.",
@@ -4397,7 +6284,7 @@ const buildSectionFallback = (
     case "secondary_contexts":
       return {
         heading: section.heading,
-        summary: `${label} is also discussed in secondary contexts such as brain, eye, and joint-related areas, but those should stay secondary in the shopping hierarchy once the core omega-3 breakdown is clear.`,
+        summary: `Once the core omega-3 breakdown is clear, ${label} can still be framed through brain, eye, and joint-related contexts, but those should stay secondary in the shopping hierarchy.`,
         bullets: [
           "These are adjacent research contexts rather than the cleanest primary lane for comparison.",
           "Applicability varies across outcomes and study populations.",
@@ -5077,6 +6964,9 @@ export const compileScientificBackgroundAsync = async (
     maxRetries,
     fallbackReason: null,
     lastError: null,
+    parseFailureSnippet: null,
+    gateRejectSnippet: null,
+    gateRejectReasons: [],
     parseFailureCount: 0,
     gateRejectCount: 0,
     timeoutCount: 0,
@@ -5113,29 +7003,44 @@ export const compileScientificBackgroundAsync = async (
     diagnostics.attemptCount = attempt + 1;
     try {
       const raw = await withTimeout(llmFn(prompt), timeoutMs);
-      const parsed = parseWriterOutput(raw);
-      if (!parsed) {
+      const parseResult = parseWriterOutput(raw, plan);
+      if (!parseResult.ok) {
         diagnostics.parseFailureCount += 1;
         diagnostics.fallbackReason = "parse_failed";
+        diagnostics.lastError = `parse:${parseResult.parseFailureShape}`;
+        diagnostics.parseFailureSnippet = buildParseFailureSnippet(raw);
         continue;
       }
       const repaired = repairWriterOutput({
         plan,
-        parsed,
+        parsed: parseResult.parsed,
       });
       if (!repaired) {
-        diagnostics.parseFailureCount += 1;
-        diagnostics.fallbackReason = "repair_failed";
+        const hasAnyPlannedHeading = parsedWriterHasAnyPlannedHeading({
+          plan,
+          parsed,
+        });
+        if ((parsed.sections ?? []).length > 0 && !hasAnyPlannedHeading) {
+          diagnostics.gateRejectCount += 1;
+          diagnostics.fallbackReason = "quality_gate_rejected";
+          appendGateRejectReasons(diagnostics, ["heading_mismatch_plan"]);
+          diagnostics.gateRejectSnippet = buildGateRejectSnippet(raw);
+        } else {
+          diagnostics.parseFailureCount += 1;
+          diagnostics.fallbackReason = "repair_failed";
+          diagnostics.lastError = "repair_failed";
+        }
         continue;
       }
-      if (
-        !gateScientificBackground({
-          requestedIngredientName: plan.selectedLabel,
-          repaired,
-        })
-      ) {
+      const gateRejectReasons = collectScientificBackgroundGateRejectReasons({
+        requestedIngredientName: plan.selectedLabel,
+        repaired,
+      });
+      if (gateRejectReasons.length > 0) {
         diagnostics.gateRejectCount += 1;
         diagnostics.fallbackReason = "quality_gate_rejected";
+        appendGateRejectReasons(diagnostics, gateRejectReasons);
+        diagnostics.gateRejectSnippet = buildGateRejectSnippet(raw);
         continue;
       }
 
@@ -5149,6 +7054,7 @@ export const compileScientificBackgroundAsync = async (
           liveWriterHit: true,
           fallbackReason: null,
           lastError: null,
+          gateRejectSnippet: null,
         },
       };
     } catch (error) {

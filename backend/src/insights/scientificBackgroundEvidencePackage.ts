@@ -58,7 +58,9 @@ const normalizeLookupPart = (value: string | null | undefined): string =>
     .replace(/[^a-z0-9_]+/g, "_")
     .replace(/^_+|_+$/g, "");
 
-const readSentenceBucket = (bucket: unknown): ScientificBackgroundEvidenceSentence[] => {
+const readSentenceBucket = (
+  bucket: unknown,
+): ScientificBackgroundEvidenceSentence[] => {
   if (!bucket || typeof bucket !== "object") return [];
   const en = (bucket as { en?: unknown }).en;
   if (!Array.isArray(en)) return [];
@@ -82,7 +84,9 @@ const readSentenceBucket = (bucket: unknown): ScientificBackgroundEvidenceSenten
   return rows;
 };
 
-const readSupportingReferences = (bucket: unknown): ScientificBackgroundEvidenceReference[] => {
+const readSupportingReferences = (
+  bucket: unknown,
+): ScientificBackgroundEvidenceReference[] => {
   if (!Array.isArray(bucket)) return [];
 
   const refs: ScientificBackgroundEvidenceReference[] = [];
@@ -130,7 +134,11 @@ const pickRows = (
   return [];
 };
 
-const buildRowKey = (ingredientFamily: string, sectionKey: string, variantKey?: string): string =>
+const buildRowKey = (
+  ingredientFamily: string,
+  sectionKey: string,
+  variantKey?: string,
+): string =>
   `${normalizeLookupPart(ingredientFamily)}|${normalizeLookupPart(sectionKey)}|${normalizeLookupPart(variantKey)}`;
 
 const parseEvidenceRow = (
@@ -148,17 +156,25 @@ const parseEvidenceRow = (
       : {};
 
   const summarySupport = readSentenceBucket(segmentsSource.summary_support);
-  const evidenceReadSupport = readSentenceBucket(segmentsSource.evidence_read_support);
-  const shopperMeaningSupport = readSentenceBucket(segmentsSource.shopper_meaning_support);
+  const evidenceReadSupport = readSentenceBucket(
+    segmentsSource.evidence_read_support,
+  );
+  const shopperMeaningSupport = readSentenceBucket(
+    segmentsSource.shopper_meaning_support,
+  );
   const caveats = readSentenceBucket(segmentsSource.caveats);
 
   return {
     ingredientFamily,
     sectionKey,
     ...(variantKey ? { variantKey } : {}),
-    ...(readString(row.variant_label) ? { variantLabel: readString(row.variant_label) ?? undefined } : {}),
+    ...(readString(row.variant_label)
+      ? { variantLabel: readString(row.variant_label) ?? undefined }
+      : {}),
     evidenceGrade:
-      (readString(row.evidence_grade) as ScientificBackgroundEvidenceRow["evidenceGrade"]) ?? undefined,
+      (readString(
+        row.evidence_grade,
+      ) as ScientificBackgroundEvidenceRow["evidenceGrade"]) ?? undefined,
     overallConfidence: readNumber(row.overall_confidence) ?? undefined,
     displayText: readString(row.display_text) ?? undefined,
     supportingReferences: readSupportingReferences(row.supporting_references),
@@ -180,15 +196,29 @@ let packageMeta: ReviewedPackageMeta = {
   packageSha256: "",
 };
 
-const BACKEND_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
+const BACKEND_ROOT = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  "..",
+  "..",
+);
 
 const getDefaultPath = () =>
   process.env.SCIENTIFIC_BACKGROUND_EVIDENCE_PATH ??
-  path.join(BACKEND_ROOT, "data", "reviewed", "scientific-background-evidence.v1.json");
+  path.join(
+    BACKEND_ROOT,
+    "data",
+    "reviewed",
+    "scientific-background-evidence.v1.json",
+  );
 
 const getDefaultOverridesPath = () =>
   process.env.SCIENTIFIC_BACKGROUND_EVIDENCE_OVERRIDES_PATH ??
-  path.join(BACKEND_ROOT, "data", "reviewed", "scientific-background-evidence-overrides.v1.json");
+  path.join(
+    BACKEND_ROOT,
+    "data",
+    "reviewed",
+    "scientific-background-evidence-overrides.v1.json",
+  );
 
 export function loadScientificBackgroundEvidencePackageOnce(): void {
   if (loadAttempted) return;
@@ -202,11 +232,15 @@ export function loadScientificBackgroundEvidencePackageOnce(): void {
     baseBuffer = null;
   }
 
-  const baseSha256 = baseBuffer ? createHash("sha256").update(baseBuffer).digest("hex") : "";
+  const baseSha256 = baseBuffer
+    ? createHash("sha256").update(baseBuffer).digest("hex")
+    : "";
   let parsedBase: ParsedScientificBackgroundEvidencePackage | null = null;
   if (baseBuffer) {
     try {
-      parsedBase = JSON.parse(baseBuffer.toString("utf-8")) as ParsedScientificBackgroundEvidencePackage;
+      parsedBase = JSON.parse(
+        baseBuffer.toString("utf-8"),
+      ) as ParsedScientificBackgroundEvidencePackage;
     } catch {
       parsedBase = null;
     }
@@ -227,14 +261,20 @@ export function loadScientificBackgroundEvidencePackageOnce(): void {
   for (const row of baseRows) {
     const entry = parseEvidenceRow(row, packageMeta);
     if (!entry) continue;
-    nextIndex.set(buildRowKey(entry.ingredientFamily, entry.sectionKey, entry.variantKey), entry);
+    nextIndex.set(
+      buildRowKey(entry.ingredientFamily, entry.sectionKey, entry.variantKey),
+      entry,
+    );
   }
 
   const overridesPath = getDefaultOverridesPath();
   try {
     const overrideBuffer = fs.readFileSync(overridesPath);
-    const overrideSha256 = createHash("sha256").update(overrideBuffer).digest("hex");
-    let parsedOverrides: ParsedScientificBackgroundEvidencePackage | null = null;
+    const overrideSha256 = createHash("sha256")
+      .update(overrideBuffer)
+      .digest("hex");
+    let parsedOverrides: ParsedScientificBackgroundEvidencePackage | null =
+      null;
     try {
       parsedOverrides = JSON.parse(
         overrideBuffer.toString("utf-8"),
@@ -260,7 +300,14 @@ export function loadScientificBackgroundEvidencePackageOnce(): void {
       for (const row of overrideRows) {
         const entry = parseEvidenceRow(row, overrideMeta);
         if (!entry) continue;
-        nextIndex.set(buildRowKey(entry.ingredientFamily, entry.sectionKey, entry.variantKey), entry);
+        nextIndex.set(
+          buildRowKey(
+            entry.ingredientFamily,
+            entry.sectionKey,
+            entry.variantKey,
+          ),
+          entry,
+        );
       }
     }
   } catch {
@@ -279,14 +326,18 @@ export function getScientificBackgroundEvidence(
   if (locale !== "en") return null;
   loadScientificBackgroundEvidencePackageOnce();
   if (variantKey) {
-    const exact = evidenceIndex.get(buildRowKey(ingredientFamily, sectionKey, variantKey));
+    const exact = evidenceIndex.get(
+      buildRowKey(ingredientFamily, sectionKey, variantKey),
+    );
     if (exact) return exact;
   }
+  const generic = evidenceIndex.get(buildRowKey(ingredientFamily, sectionKey));
+  if (generic) return generic;
   const genericVariant = evidenceIndex.get(
     buildRowKey(ingredientFamily, sectionKey, "generic_form_comparison"),
   );
   if (genericVariant) return genericVariant;
-  return evidenceIndex.get(buildRowKey(ingredientFamily, sectionKey)) ?? null;
+  return null;
 }
 
 export function batchGetScientificBackgroundEvidence(
@@ -296,11 +347,19 @@ export function batchGetScientificBackgroundEvidence(
     locale: "en";
     variantKey?: string;
   }>,
-): Array<{ status: "ok" | "not_found"; item: ScientificBackgroundEvidenceRow | null; reason?: string }> {
+): Array<{
+  status: "ok" | "not_found";
+  item: ScientificBackgroundEvidenceRow | null;
+  reason?: string;
+}> {
   loadScientificBackgroundEvidencePackageOnce();
   return reqs.map((req) => {
     if (req.locale !== "en") {
-      return { status: "not_found", item: null, reason: "no_entry_for_section_key" };
+      return {
+        status: "not_found",
+        item: null,
+        reason: "no_entry_for_section_key",
+      };
     }
     const item = getScientificBackgroundEvidence(
       req.ingredientFamily,
@@ -309,7 +368,11 @@ export function batchGetScientificBackgroundEvidence(
       req.variantKey,
     );
     if (!item) {
-      return { status: "not_found", item: null, reason: "no_entry_for_section_key" };
+      return {
+        status: "not_found",
+        item: null,
+        reason: "no_entry_for_section_key",
+      };
     }
     return { status: "ok", item };
   });

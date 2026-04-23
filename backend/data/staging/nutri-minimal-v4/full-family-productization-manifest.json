@@ -1,0 +1,2650 @@
+{
+  "version": "v4.0",
+  "generated_at": "2026-02-05T06:33:15Z",
+  "meta": {
+    "version": "v4.0",
+    "source_workbook": "/Users/howard07/Library/Mobile Documents/com~apple~CloudDocs/nutri_minimal_data_package_v4_0_en_only_review_excerpts.xlsx",
+    "generated_at": "2026-02-05T06:33:15Z",
+    "manifest_name": "nutri_minimal_v4_full_family_productization",
+    "scope": "remaining_new_family_candidates_plus_unresolved_rescue",
+    "source": "nutri-minimal-v4"
+  },
+  "summary": {
+    "input_rows": 95,
+    "productized_runtime_families": 95,
+    "low_risk_structural": 38,
+    "high_risk_safety": 47,
+    "crosswalk_rescue": 10,
+    "rejected_from_runtime_productization": 0,
+    "evidence_review_approved": 77,
+    "evidence_review_needs_edit": 6,
+    "evidence_review_rejected": 12
+  },
+  "full_family_productization_manifest": [
+    {
+      "source_ingredient_id": "amylase",
+      "display_name": "Amylase",
+      "canonical_family": "amylase",
+      "original_mapping_status": "mapped_existing_family",
+      "closure_decision": "productize_runtime_family",
+      "productization_class": "low_risk_structural",
+      "safety_boundary_tier": "standard",
+      "category": "enzyme",
+      "pattern_keywords": [
+        "Amylase",
+        "amylase"
+      ],
+      "runtime_lane_keys": [
+        "functional_context",
+        "activity_and_delivery_context",
+        "formula_context"
+      ],
+      "evidence_review_status": "approved",
+      "hard_boundary": "Do not turn Amylase context into disease-treatment, guaranteed-outcome, universal best-form, or superiority language.",
+      "notes": [
+        "Mapped to runtime family amylase.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative.",
+        "Productized for runtime inference; evidence promotion still requires approved LSR review."
+      ]
+    },
+    {
+      "source_ingredient_id": "artichoke_extract",
+      "display_name": "Artichoke extract",
+      "canonical_family": "artichoke_extract",
+      "original_mapping_status": "mapped_existing_family",
+      "closure_decision": "productize_runtime_family",
+      "productization_class": "high_risk_safety",
+      "safety_boundary_tier": "high",
+      "category": "botanical",
+      "pattern_keywords": [
+        "Artichoke extract",
+        "artichoke extract",
+        "artichoke leaf",
+        "cynara"
+      ],
+      "runtime_lane_keys": [
+        "primary_use_context",
+        "safety_and_boundary_context",
+        "form_source_and_label_context"
+      ],
+      "evidence_review_status": "approved",
+      "hard_boundary": "Hard boundary: do not present Artichoke Extract as treating, preventing, or curing disease, replacing medication, or guaranteeing outcomes; keep comparison on disclosed identity, amount, form/source, and safety cautions.",
+      "notes": [
+        "Mapped to runtime family artichoke_extract.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative.",
+        "Productized for runtime inference; evidence promotion still requires approved LSR review."
+      ]
+    },
+    {
+      "source_ingredient_id": "bacopa_monnieri",
+      "display_name": "Bacopa monnieri",
+      "canonical_family": "bacopa_monnieri",
+      "original_mapping_status": "mapped_existing_family",
+      "closure_decision": "productize_runtime_family",
+      "productization_class": "high_risk_safety",
+      "safety_boundary_tier": "high",
+      "category": "botanical",
+      "pattern_keywords": [
+        "Bacopa monnieri",
+        "bacopa monnieri",
+        "bacopa",
+        "bacosides"
+      ],
+      "runtime_lane_keys": [
+        "primary_use_context",
+        "safety_and_boundary_context",
+        "form_source_and_label_context"
+      ],
+      "evidence_review_status": "approved",
+      "hard_boundary": "Hard boundary: do not present Bacopa Monnieri as treating, preventing, or curing disease, replacing medication, or guaranteeing outcomes; keep comparison on disclosed identity, amount, form/source, and safety cautions.",
+      "notes": [
+        "Mapped to runtime family bacopa_monnieri.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative.",
+        "Productized for runtime inference; evidence promotion still requires approved LSR review."
+      ]
+    },
+    {
+      "source_ingredient_id": "bee_propolis",
+      "display_name": "Bee Propolis",
+      "canonical_family": "bee_propolis",
+      "original_mapping_status": "mapped_existing_family",
+      "closure_decision": "productize_runtime_family",
+      "productization_class": "high_risk_safety",
+      "safety_boundary_tier": "high",
+      "category": "botanical",
+      "pattern_keywords": [
+        "Bee Propolis",
+        "bee propolis"
+      ],
+      "runtime_lane_keys": [
+        "primary_use_context",
+        "safety_and_boundary_context",
+        "form_source_and_label_context"
+      ],
+      "evidence_review_status": "approved",
+      "hard_boundary": "Hard boundary: do not present Bee Propolis as treating, preventing, or curing disease, replacing medication, or guaranteeing outcomes; keep comparison on disclosed identity, amount, form/source, and safety cautions.",
+      "notes": [
+        "Mapped to runtime family bee_propolis.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative.",
+        "Productized for runtime inference; evidence promotion still requires approved LSR review."
+      ]
+    },
+    {
+      "source_ingredient_id": "beta_carotene",
+      "display_name": "Beta-Carotene",
+      "canonical_family": "beta_carotene",
+      "original_mapping_status": "mapped_existing_family",
+      "closure_decision": "productize_runtime_family",
+      "productization_class": "low_risk_structural",
+      "safety_boundary_tier": "standard",
+      "category": "lipid",
+      "pattern_keywords": [
+        "Beta-Carotene",
+        "beta carotene"
+      ],
+      "runtime_lane_keys": [
+        "primary_context",
+        "form_and_disclosure_context",
+        "formula_context"
+      ],
+      "evidence_review_status": "approved",
+      "hard_boundary": "Do not turn Beta Carotene context into disease-treatment, guaranteed-outcome, universal best-form, or superiority language.",
+      "notes": [
+        "Mapped to runtime family beta_carotene.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative.",
+        "Productized for runtime inference; evidence promotion still requires approved LSR review."
+      ]
+    },
+    {
+      "source_ingredient_id": "betaine",
+      "display_name": "Betaine",
+      "canonical_family": "betaine",
+      "original_mapping_status": "mapped_existing_family",
+      "closure_decision": "rescue_to_canonical_runtime_family",
+      "productization_class": "crosswalk_rescue",
+      "safety_boundary_tier": "high",
+      "category": "other",
+      "pattern_keywords": [
+        "Betaine",
+        "betaine"
+      ],
+      "runtime_lane_keys": [
+        "primary_use_context",
+        "safety_and_boundary_context",
+        "form_source_and_label_context"
+      ],
+      "evidence_review_status": "approved",
+      "hard_boundary": "Hard boundary: do not present Betaine as treating, preventing, or curing disease, replacing medication, or guaranteeing outcomes; keep comparison on disclosed identity, amount, form/source, and safety cautions.",
+      "notes": [
+        "Mapped to runtime family betaine.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative.",
+        "Rescued into an explicit canonical runtime family with high-boundary evidence review."
+      ]
+    },
+    {
+      "source_ingredient_id": "bilberry",
+      "display_name": "Bilberry",
+      "canonical_family": "bilberry",
+      "original_mapping_status": "mapped_existing_family",
+      "closure_decision": "productize_runtime_family",
+      "productization_class": "low_risk_structural",
+      "safety_boundary_tier": "standard",
+      "category": "botanical",
+      "pattern_keywords": [
+        "Bilberry",
+        "bilberry"
+      ],
+      "runtime_lane_keys": [
+        "primary_use_context",
+        "extract_standardization_context",
+        "formula_and_label_context"
+      ],
+      "evidence_review_status": "approved",
+      "hard_boundary": "Do not turn Bilberry context into disease-treatment, guaranteed-outcome, universal best-form, or superiority language.",
+      "notes": [
+        "Mapped to runtime family bilberry.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative.",
+        "Productized for runtime inference; evidence promotion still requires approved LSR review."
+      ]
+    },
+    {
+      "source_ingredient_id": "bitter_melon",
+      "display_name": "Bitter Melon",
+      "canonical_family": "bitter_melon",
+      "original_mapping_status": "mapped_existing_family",
+      "closure_decision": "productize_runtime_family",
+      "productization_class": "high_risk_safety",
+      "safety_boundary_tier": "high",
+      "category": "botanical",
+      "pattern_keywords": [
+        "Bitter Melon",
+        "bitter melon"
+      ],
+      "runtime_lane_keys": [
+        "primary_use_context",
+        "safety_and_boundary_context",
+        "form_source_and_label_context"
+      ],
+      "evidence_review_status": "approved",
+      "hard_boundary": "Hard boundary: do not present Bitter Melon as treating, preventing, or curing disease, replacing medication, or guaranteeing outcomes; keep comparison on disclosed identity, amount, form/source, and safety cautions.",
+      "notes": [
+        "Mapped to runtime family bitter_melon.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative.",
+        "Productized for runtime inference; evidence promotion still requires approved LSR review."
+      ]
+    },
+    {
+      "source_ingredient_id": "black_cohosh",
+      "display_name": "Black Cohosh",
+      "canonical_family": "black_cohosh",
+      "original_mapping_status": "mapped_existing_family",
+      "closure_decision": "productize_runtime_family",
+      "productization_class": "high_risk_safety",
+      "safety_boundary_tier": "high",
+      "category": "botanical",
+      "pattern_keywords": [
+        "Black Cohosh",
+        "black cohosh",
+        "actaea racemosa",
+        "cimicifuga"
+      ],
+      "runtime_lane_keys": [
+        "primary_use_context",
+        "safety_and_boundary_context",
+        "form_source_and_label_context"
+      ],
+      "evidence_review_status": "approved",
+      "hard_boundary": "Hard boundary: do not present Black Cohosh as treating, preventing, or curing disease, replacing medication, or guaranteeing outcomes; keep comparison on disclosed identity, amount, form/source, and safety cautions.",
+      "notes": [
+        "Mapped to runtime family black_cohosh.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative.",
+        "Productized for runtime inference; evidence promotion still requires approved LSR review."
+      ]
+    },
+    {
+      "source_ingredient_id": "black_seed_oil",
+      "display_name": "Black seed oil",
+      "canonical_family": "black_seed_oil",
+      "original_mapping_status": "mapped_existing_family",
+      "closure_decision": "rescue_to_canonical_runtime_family",
+      "productization_class": "crosswalk_rescue",
+      "safety_boundary_tier": "high",
+      "category": "lipid",
+      "pattern_keywords": [
+        "Black seed oil",
+        "black seed oil",
+        "nigella sativa",
+        "black cumin"
+      ],
+      "runtime_lane_keys": [
+        "primary_use_context",
+        "safety_and_boundary_context",
+        "form_source_and_label_context"
+      ],
+      "evidence_review_status": "approved",
+      "hard_boundary": "Hard boundary: do not present Black Seed Oil as treating, preventing, or curing disease, replacing medication, or guaranteeing outcomes; keep comparison on disclosed identity, amount, form/source, and safety cautions.",
+      "notes": [
+        "Mapped to runtime family black_seed_oil.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative.",
+        "Rescued into an explicit canonical runtime family with high-boundary evidence review."
+      ]
+    },
+    {
+      "source_ingredient_id": "borage_oil",
+      "display_name": "Borage Oil",
+      "canonical_family": "borage_oil",
+      "original_mapping_status": "mapped_existing_family",
+      "closure_decision": "productize_runtime_family",
+      "productization_class": "low_risk_structural",
+      "safety_boundary_tier": "standard",
+      "category": "lipid",
+      "pattern_keywords": [
+        "Borage Oil",
+        "borage oil"
+      ],
+      "runtime_lane_keys": [
+        "primary_context",
+        "form_and_disclosure_context",
+        "formula_context"
+      ],
+      "evidence_review_status": "approved",
+      "hard_boundary": "Do not turn Borage Oil context into disease-treatment, guaranteed-outcome, universal best-form, or superiority language.",
+      "notes": [
+        "Mapped to runtime family borage_oil.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative.",
+        "Productized for runtime inference; evidence promotion still requires approved LSR review."
+      ]
+    },
+    {
+      "source_ingredient_id": "boron",
+      "display_name": "Boron",
+      "canonical_family": "boron",
+      "original_mapping_status": "mapped_existing_family",
+      "closure_decision": "productize_runtime_family",
+      "productization_class": "low_risk_structural",
+      "safety_boundary_tier": "standard",
+      "category": "mineral",
+      "pattern_keywords": [
+        "Boron",
+        "boron"
+      ],
+      "runtime_lane_keys": [
+        "intake_and_status_context",
+        "form_and_absorption_context",
+        "comparison_and_cofactor_context"
+      ],
+      "evidence_review_status": "approved",
+      "hard_boundary": "Do not turn Boron context into disease-treatment, guaranteed-outcome, universal best-form, or superiority language.",
+      "notes": [
+        "Mapped to runtime family boron.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative.",
+        "Productized for runtime inference; evidence promotion still requires approved LSR review."
+      ]
+    },
+    {
+      "source_ingredient_id": "boswellia",
+      "display_name": "Boswellia",
+      "canonical_family": "boswellia",
+      "original_mapping_status": "mapped_existing_family",
+      "closure_decision": "productize_runtime_family",
+      "productization_class": "low_risk_structural",
+      "safety_boundary_tier": "standard",
+      "category": "botanical",
+      "pattern_keywords": [
+        "Boswellia",
+        "boswellia",
+        "boswellia serrata",
+        "AKBA"
+      ],
+      "runtime_lane_keys": [
+        "primary_use_context",
+        "extract_standardization_context",
+        "formula_and_label_context"
+      ],
+      "evidence_review_status": "approved",
+      "hard_boundary": "Do not turn Boswellia context into disease-treatment, guaranteed-outcome, universal best-form, or superiority language.",
+      "notes": [
+        "Mapped to runtime family boswellia.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative.",
+        "Productized for runtime inference; evidence promotion still requires approved LSR review."
+      ]
+    },
+    {
+      "source_ingredient_id": "broccoli_sprout_extract",
+      "display_name": "Broccoli Sprout Extract",
+      "canonical_family": "broccoli_sprout_extract",
+      "original_mapping_status": "mapped_existing_family",
+      "closure_decision": "productize_runtime_family",
+      "productization_class": "high_risk_safety",
+      "safety_boundary_tier": "high",
+      "category": "other",
+      "pattern_keywords": [
+        "Broccoli Sprout Extract",
+        "broccoli sprout extract",
+        "sulforaphane",
+        "glucoraphanin"
+      ],
+      "runtime_lane_keys": [
+        "primary_use_context",
+        "safety_and_boundary_context",
+        "form_source_and_label_context"
+      ],
+      "evidence_review_status": "approved",
+      "hard_boundary": "Hard boundary: do not present Broccoli Sprout Extract as treating, preventing, or curing disease, replacing medication, or guaranteeing outcomes; keep comparison on disclosed identity, amount, form/source, and safety cautions.",
+      "notes": [
+        "Mapped to runtime family broccoli_sprout_extract.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative.",
+        "Productized for runtime inference; evidence promotion still requires approved LSR review."
+      ]
+    },
+    {
+      "source_ingredient_id": "caffeine",
+      "display_name": "Caffeine",
+      "canonical_family": "caffeine",
+      "original_mapping_status": "mapped_existing_family",
+      "closure_decision": "productize_runtime_family",
+      "productization_class": "high_risk_safety",
+      "safety_boundary_tier": "high",
+      "category": "other",
+      "pattern_keywords": [
+        "Caffeine",
+        "caffeine"
+      ],
+      "runtime_lane_keys": [
+        "primary_use_context",
+        "safety_and_boundary_context",
+        "form_source_and_label_context"
+      ],
+      "evidence_review_status": "approved",
+      "hard_boundary": "Hard boundary: do not present Caffeine as treating, preventing, or curing disease, replacing medication, or guaranteeing outcomes; keep comparison on disclosed identity, amount, form/source, and safety cautions.",
+      "notes": [
+        "Mapped to runtime family caffeine.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative.",
+        "Productized for runtime inference; evidence promotion still requires approved LSR review."
+      ]
+    },
+    {
+      "source_ingredient_id": "calcium_d_glucarate",
+      "display_name": "Calcium D-Glucarate",
+      "canonical_family": "calcium_d_glucarate",
+      "original_mapping_status": "mapped_existing_family",
+      "closure_decision": "productize_runtime_family",
+      "productization_class": "high_risk_safety",
+      "safety_boundary_tier": "high",
+      "category": "other",
+      "pattern_keywords": [
+        "Calcium D-Glucarate",
+        "calcium d glucarate"
+      ],
+      "runtime_lane_keys": [
+        "primary_use_context",
+        "safety_and_boundary_context",
+        "form_source_and_label_context"
+      ],
+      "evidence_review_status": "approved",
+      "hard_boundary": "Hard boundary: do not present Calcium D Glucarate as treating, preventing, or curing disease, replacing medication, or guaranteeing outcomes; keep comparison on disclosed identity, amount, form/source, and safety cautions.",
+      "notes": [
+        "Mapped to runtime family calcium_d_glucarate.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative.",
+        "Productized for runtime inference; evidence promotion still requires approved LSR review."
+      ]
+    },
+    {
+      "source_ingredient_id": "chaga_mushroom",
+      "display_name": "Chaga Mushroom",
+      "canonical_family": "chaga_mushroom",
+      "original_mapping_status": "mapped_existing_family",
+      "closure_decision": "productize_runtime_family",
+      "productization_class": "high_risk_safety",
+      "safety_boundary_tier": "high",
+      "category": "botanical",
+      "pattern_keywords": [
+        "Chaga Mushroom",
+        "chaga mushroom",
+        "chaga"
+      ],
+      "runtime_lane_keys": [
+        "primary_use_context",
+        "safety_and_boundary_context",
+        "form_source_and_label_context"
+      ],
+      "evidence_review_status": "rejected",
+      "hard_boundary": "Hard boundary: do not present Chaga Mushroom as treating, preventing, or curing disease, replacing medication, or guaranteeing outcomes; keep comparison on disclosed identity, amount, form/source, and safety cautions.",
+      "notes": [
+        "Mapped to runtime family chaga_mushroom.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative.",
+        "Productized for runtime inference; evidence promotion still requires approved LSR review."
+      ]
+    },
+    {
+      "source_ingredient_id": "chlorella",
+      "display_name": "Chlorella",
+      "canonical_family": "chlorella",
+      "original_mapping_status": "mapped_existing_family",
+      "closure_decision": "productize_runtime_family",
+      "productization_class": "low_risk_structural",
+      "safety_boundary_tier": "standard",
+      "category": "other",
+      "pattern_keywords": [
+        "Chlorella",
+        "chlorella"
+      ],
+      "runtime_lane_keys": [
+        "primary_context",
+        "form_and_disclosure_context",
+        "formula_context"
+      ],
+      "evidence_review_status": "approved",
+      "hard_boundary": "Do not turn Chlorella context into disease-treatment, guaranteed-outcome, universal best-form, or superiority language.",
+      "notes": [
+        "Mapped to runtime family chlorella.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative.",
+        "Productized for runtime inference; evidence promotion still requires approved LSR review."
+      ]
+    },
+    {
+      "source_ingredient_id": "chlorophyll",
+      "display_name": "Chlorophyll",
+      "canonical_family": "chlorophyll",
+      "original_mapping_status": "mapped_existing_family",
+      "closure_decision": "productize_runtime_family",
+      "productization_class": "high_risk_safety",
+      "safety_boundary_tier": "high",
+      "category": "botanical",
+      "pattern_keywords": [
+        "Chlorophyll",
+        "chlorophyll"
+      ],
+      "runtime_lane_keys": [
+        "primary_use_context",
+        "safety_and_boundary_context",
+        "form_source_and_label_context"
+      ],
+      "evidence_review_status": "rejected",
+      "hard_boundary": "Hard boundary: do not present Chlorophyll as treating, preventing, or curing disease, replacing medication, or guaranteeing outcomes; keep comparison on disclosed identity, amount, form/source, and safety cautions.",
+      "notes": [
+        "Mapped to runtime family chlorophyll.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative.",
+        "Productized for runtime inference; evidence promotion still requires approved LSR review."
+      ]
+    },
+    {
+      "source_ingredient_id": "chondroitin",
+      "display_name": "Chondroitin",
+      "canonical_family": "chondroitin",
+      "original_mapping_status": "mapped_existing_family",
+      "closure_decision": "productize_runtime_family",
+      "productization_class": "low_risk_structural",
+      "safety_boundary_tier": "standard",
+      "category": "other",
+      "pattern_keywords": [
+        "Chondroitin",
+        "chondroitin"
+      ],
+      "runtime_lane_keys": [
+        "primary_context",
+        "form_and_disclosure_context",
+        "formula_context"
+      ],
+      "evidence_review_status": "approved",
+      "hard_boundary": "Do not turn Chondroitin context into disease-treatment, guaranteed-outcome, universal best-form, or superiority language.",
+      "notes": [
+        "Mapped to runtime family chondroitin.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative.",
+        "Productized for runtime inference; evidence promotion still requires approved LSR review."
+      ]
+    },
+    {
+      "source_ingredient_id": "cinnamon",
+      "display_name": "Cinnamon",
+      "canonical_family": "cinnamon_extract",
+      "original_mapping_status": "mapped_existing_family",
+      "closure_decision": "productize_runtime_family",
+      "productization_class": "low_risk_structural",
+      "safety_boundary_tier": "standard",
+      "category": "botanical",
+      "pattern_keywords": [
+        "Cinnamon",
+        "cinnamon"
+      ],
+      "runtime_lane_keys": [
+        "primary_use_context",
+        "extract_standardization_context",
+        "formula_and_label_context"
+      ],
+      "evidence_review_status": "approved",
+      "hard_boundary": "Do not turn Cinnamon Extract context into disease-treatment, guaranteed-outcome, universal best-form, or superiority language.",
+      "notes": [
+        "Mapped to runtime family cinnamon_extract.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative.",
+        "Productized for runtime inference; evidence promotion still requires approved LSR review."
+      ]
+    },
+    {
+      "source_ingredient_id": "cordyceps_mushroom",
+      "display_name": "Cordyceps Mushroom",
+      "canonical_family": "cordyceps_mushroom",
+      "original_mapping_status": "mapped_existing_family",
+      "closure_decision": "productize_runtime_family",
+      "productization_class": "high_risk_safety",
+      "safety_boundary_tier": "high",
+      "category": "botanical",
+      "pattern_keywords": [
+        "Cordyceps Mushroom",
+        "cordyceps mushroom",
+        "cordyceps"
+      ],
+      "runtime_lane_keys": [
+        "primary_use_context",
+        "safety_and_boundary_context",
+        "form_source_and_label_context"
+      ],
+      "evidence_review_status": "approved",
+      "hard_boundary": "Hard boundary: do not present Cordyceps Mushroom as treating, preventing, or curing disease, replacing medication, or guaranteeing outcomes; keep comparison on disclosed identity, amount, form/source, and safety cautions.",
+      "notes": [
+        "Mapped to runtime family cordyceps_mushroom.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative.",
+        "Productized for runtime inference; evidence promotion still requires approved LSR review."
+      ]
+    },
+    {
+      "source_ingredient_id": "cranberry_extract",
+      "display_name": "Cranberry extract",
+      "canonical_family": "cranberry_extract",
+      "original_mapping_status": "mapped_existing_family",
+      "closure_decision": "productize_runtime_family",
+      "productization_class": "high_risk_safety",
+      "safety_boundary_tier": "high",
+      "category": "botanical",
+      "pattern_keywords": [
+        "Cranberry extract",
+        "cranberry extract",
+        "vaccinium macrocarpon"
+      ],
+      "runtime_lane_keys": [
+        "primary_use_context",
+        "safety_and_boundary_context",
+        "form_source_and_label_context"
+      ],
+      "evidence_review_status": "approved",
+      "hard_boundary": "Hard boundary: do not present Cranberry Extract as treating, preventing, or curing disease, replacing medication, or guaranteeing outcomes; keep comparison on disclosed identity, amount, form/source, and safety cautions.",
+      "notes": [
+        "Mapped to runtime family cranberry_extract.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative.",
+        "Productized for runtime inference; evidence promotion still requires approved LSR review."
+      ]
+    },
+    {
+      "source_ingredient_id": "d_mannose",
+      "display_name": "D-Mannose",
+      "canonical_family": "d_mannose",
+      "original_mapping_status": "mapped_existing_family",
+      "closure_decision": "productize_runtime_family",
+      "productization_class": "high_risk_safety",
+      "safety_boundary_tier": "high",
+      "category": "other",
+      "pattern_keywords": [
+        "D-Mannose",
+        "d mannose"
+      ],
+      "runtime_lane_keys": [
+        "primary_use_context",
+        "safety_and_boundary_context",
+        "form_source_and_label_context"
+      ],
+      "evidence_review_status": "approved",
+      "hard_boundary": "Hard boundary: do not present D-mannose as treating, preventing, or curing disease, replacing medication, or guaranteeing outcomes; keep comparison on disclosed identity, amount, form/source, and safety cautions.",
+      "notes": [
+        "Mapped to runtime family d_mannose.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative.",
+        "Productized for runtime inference; evidence promotion still requires approved LSR review."
+      ]
+    },
+    {
+      "source_ingredient_id": "dandelion_root",
+      "display_name": "Dandelion Root",
+      "canonical_family": "dandelion_root",
+      "original_mapping_status": "mapped_existing_family",
+      "closure_decision": "productize_runtime_family",
+      "productization_class": "high_risk_safety",
+      "safety_boundary_tier": "high",
+      "category": "botanical",
+      "pattern_keywords": [
+        "Dandelion Root",
+        "dandelion root"
+      ],
+      "runtime_lane_keys": [
+        "primary_use_context",
+        "safety_and_boundary_context",
+        "form_source_and_label_context"
+      ],
+      "evidence_review_status": "rejected",
+      "hard_boundary": "Hard boundary: do not present Dandelion Root as treating, preventing, or curing disease, replacing medication, or guaranteeing outcomes; keep comparison on disclosed identity, amount, form/source, and safety cautions.",
+      "notes": [
+        "Mapped to runtime family dandelion_root.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative.",
+        "Productized for runtime inference; evidence promotion still requires approved LSR review."
+      ]
+    },
+    {
+      "source_ingredient_id": "devil_s_claw",
+      "display_name": "Devil's Claw",
+      "canonical_family": "devil_s_claw",
+      "original_mapping_status": "mapped_existing_family",
+      "closure_decision": "productize_runtime_family",
+      "productization_class": "high_risk_safety",
+      "safety_boundary_tier": "high",
+      "category": "botanical",
+      "pattern_keywords": [
+        "Devil's Claw",
+        "devil s claw",
+        "devils claw",
+        "harpagophytum"
+      ],
+      "runtime_lane_keys": [
+        "primary_use_context",
+        "safety_and_boundary_context",
+        "form_source_and_label_context"
+      ],
+      "evidence_review_status": "needs_edit",
+      "hard_boundary": "Hard boundary: do not present Devil S Claw as treating, preventing, or curing disease, replacing medication, or guaranteeing outcomes; keep comparison on disclosed identity, amount, form/source, and safety cautions.",
+      "notes": [
+        "Mapped to runtime family devil_s_claw.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative.",
+        "Productized for runtime inference; evidence promotion still requires approved LSR review."
+      ]
+    },
+    {
+      "source_ingredient_id": "dim",
+      "display_name": "DIM",
+      "canonical_family": "dim",
+      "original_mapping_status": "mapped_existing_family",
+      "closure_decision": "rescue_to_canonical_runtime_family",
+      "productization_class": "crosswalk_rescue",
+      "safety_boundary_tier": "high",
+      "category": "other",
+      "pattern_keywords": [
+        "DIM",
+        "dim",
+        "diindolylmethane"
+      ],
+      "runtime_lane_keys": [
+        "primary_use_context",
+        "safety_and_boundary_context",
+        "form_source_and_label_context"
+      ],
+      "evidence_review_status": "approved",
+      "hard_boundary": "Hard boundary: do not present DIM as treating, preventing, or curing disease, replacing medication, or guaranteeing outcomes; keep comparison on disclosed identity, amount, form/source, and safety cautions.",
+      "notes": [
+        "Mapped to runtime family dim.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative.",
+        "Rescued into an explicit canonical runtime family with high-boundary evidence review."
+      ]
+    },
+    {
+      "source_ingredient_id": "dong_quai",
+      "display_name": "Dong Quai",
+      "canonical_family": "dong_quai",
+      "original_mapping_status": "mapped_existing_family",
+      "closure_decision": "productize_runtime_family",
+      "productization_class": "high_risk_safety",
+      "safety_boundary_tier": "high",
+      "category": "botanical",
+      "pattern_keywords": [
+        "Dong Quai",
+        "dong quai",
+        "angelica sinensis"
+      ],
+      "runtime_lane_keys": [
+        "primary_use_context",
+        "safety_and_boundary_context",
+        "form_source_and_label_context"
+      ],
+      "evidence_review_status": "approved",
+      "hard_boundary": "Hard boundary: do not present Dong Quai as treating, preventing, or curing disease, replacing medication, or guaranteeing outcomes; keep comparison on disclosed identity, amount, form/source, and safety cautions.",
+      "notes": [
+        "Mapped to runtime family dong_quai.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative.",
+        "Productized for runtime inference; evidence promotion still requires approved LSR review."
+      ]
+    },
+    {
+      "source_ingredient_id": "echinacea",
+      "display_name": "Echinacea",
+      "canonical_family": "echinacea",
+      "original_mapping_status": "mapped_existing_family",
+      "closure_decision": "productize_runtime_family",
+      "productization_class": "high_risk_safety",
+      "safety_boundary_tier": "high",
+      "category": "botanical",
+      "pattern_keywords": [
+        "Echinacea",
+        "echinacea",
+        "echinacea purpurea"
+      ],
+      "runtime_lane_keys": [
+        "primary_use_context",
+        "safety_and_boundary_context",
+        "form_source_and_label_context"
+      ],
+      "evidence_review_status": "approved",
+      "hard_boundary": "Hard boundary: do not present Echinacea as treating, preventing, or curing disease, replacing medication, or guaranteeing outcomes; keep comparison on disclosed identity, amount, form/source, and safety cautions.",
+      "notes": [
+        "Mapped to runtime family echinacea.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative.",
+        "Productized for runtime inference; evidence promotion still requires approved LSR review."
+      ]
+    },
+    {
+      "source_ingredient_id": "elderberry",
+      "display_name": "Elderberry",
+      "canonical_family": "elderberry",
+      "original_mapping_status": "mapped_existing_family",
+      "closure_decision": "productize_runtime_family",
+      "productization_class": "high_risk_safety",
+      "safety_boundary_tier": "high",
+      "category": "botanical",
+      "pattern_keywords": [
+        "Elderberry",
+        "elderberry",
+        "sambucus"
+      ],
+      "runtime_lane_keys": [
+        "primary_use_context",
+        "safety_and_boundary_context",
+        "form_source_and_label_context"
+      ],
+      "evidence_review_status": "approved",
+      "hard_boundary": "Hard boundary: do not present Elderberry as treating, preventing, or curing disease, replacing medication, or guaranteeing outcomes; keep comparison on disclosed identity, amount, form/source, and safety cautions.",
+      "notes": [
+        "Mapped to runtime family elderberry.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative.",
+        "Productized for runtime inference; evidence promotion still requires approved LSR review."
+      ]
+    },
+    {
+      "source_ingredient_id": "eleuthero",
+      "display_name": "Eleuthero",
+      "canonical_family": "eleuthero",
+      "original_mapping_status": "mapped_existing_family",
+      "closure_decision": "productize_runtime_family",
+      "productization_class": "high_risk_safety",
+      "safety_boundary_tier": "high",
+      "category": "botanical",
+      "pattern_keywords": [
+        "Eleuthero",
+        "eleuthero",
+        "siberian ginseng",
+        "eleutherococcus"
+      ],
+      "runtime_lane_keys": [
+        "primary_use_context",
+        "safety_and_boundary_context",
+        "form_source_and_label_context"
+      ],
+      "evidence_review_status": "approved",
+      "hard_boundary": "Hard boundary: do not present Eleuthero as treating, preventing, or curing disease, replacing medication, or guaranteeing outcomes; keep comparison on disclosed identity, amount, form/source, and safety cautions.",
+      "notes": [
+        "Mapped to runtime family eleuthero.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative.",
+        "Productized for runtime inference; evidence promotion still requires approved LSR review."
+      ]
+    },
+    {
+      "source_ingredient_id": "evening_primrose_oil",
+      "display_name": "Evening primrose oil",
+      "canonical_family": "evening_primrose_oil",
+      "original_mapping_status": "mapped_existing_family",
+      "closure_decision": "productize_runtime_family",
+      "productization_class": "low_risk_structural",
+      "safety_boundary_tier": "standard",
+      "category": "lipid",
+      "pattern_keywords": [
+        "Evening primrose oil",
+        "evening primrose oil"
+      ],
+      "runtime_lane_keys": [
+        "primary_context",
+        "form_and_disclosure_context",
+        "formula_context"
+      ],
+      "evidence_review_status": "rejected",
+      "hard_boundary": "Do not turn Evening Primrose Oil context into disease-treatment, guaranteed-outcome, universal best-form, or superiority language.",
+      "notes": [
+        "Mapped to runtime family evening_primrose_oil.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative.",
+        "Productized for runtime inference; evidence promotion still requires approved LSR review."
+      ]
+    },
+    {
+      "source_ingredient_id": "fenugreek",
+      "display_name": "Fenugreek",
+      "canonical_family": "fenugreek",
+      "original_mapping_status": "mapped_existing_family",
+      "closure_decision": "productize_runtime_family",
+      "productization_class": "high_risk_safety",
+      "safety_boundary_tier": "high",
+      "category": "botanical",
+      "pattern_keywords": [
+        "Fenugreek",
+        "fenugreek",
+        "trigonella"
+      ],
+      "runtime_lane_keys": [
+        "primary_use_context",
+        "safety_and_boundary_context",
+        "form_source_and_label_context"
+      ],
+      "evidence_review_status": "approved",
+      "hard_boundary": "Hard boundary: do not present Fenugreek as treating, preventing, or curing disease, replacing medication, or guaranteeing outcomes; keep comparison on disclosed identity, amount, form/source, and safety cautions.",
+      "notes": [
+        "Mapped to runtime family fenugreek.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative.",
+        "Productized for runtime inference; evidence promotion still requires approved LSR review."
+      ]
+    },
+    {
+      "source_ingredient_id": "forskolin",
+      "display_name": "Forskolin",
+      "canonical_family": "forskolin",
+      "original_mapping_status": "mapped_existing_family",
+      "closure_decision": "productize_runtime_family",
+      "productization_class": "high_risk_safety",
+      "safety_boundary_tier": "high",
+      "category": "botanical",
+      "pattern_keywords": [
+        "Forskolin",
+        "forskolin",
+        "coleus forskohlii"
+      ],
+      "runtime_lane_keys": [
+        "primary_use_context",
+        "safety_and_boundary_context",
+        "form_source_and_label_context"
+      ],
+      "evidence_review_status": "approved",
+      "hard_boundary": "Hard boundary: do not present Forskolin as treating, preventing, or curing disease, replacing medication, or guaranteeing outcomes; keep comparison on disclosed identity, amount, form/source, and safety cautions.",
+      "notes": [
+        "Mapped to runtime family forskolin.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative.",
+        "Productized for runtime inference; evidence promotion still requires approved LSR review."
+      ]
+    },
+    {
+      "source_ingredient_id": "fucoidan",
+      "display_name": "Fucoidan",
+      "canonical_family": "fucoidan",
+      "original_mapping_status": "mapped_existing_family",
+      "closure_decision": "productize_runtime_family",
+      "productization_class": "low_risk_structural",
+      "safety_boundary_tier": "standard",
+      "category": "botanical",
+      "pattern_keywords": [
+        "Fucoidan",
+        "fucoidan"
+      ],
+      "runtime_lane_keys": [
+        "primary_use_context",
+        "extract_standardization_context",
+        "formula_and_label_context"
+      ],
+      "evidence_review_status": "approved",
+      "hard_boundary": "Do not turn Fucoidan context into disease-treatment, guaranteed-outcome, universal best-form, or superiority language.",
+      "notes": [
+        "Mapped to runtime family fucoidan.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative.",
+        "Productized for runtime inference; evidence promotion still requires approved LSR review."
+      ]
+    },
+    {
+      "source_ingredient_id": "gamma_linolenic_acid",
+      "display_name": "Gamma-Linolenic Acid",
+      "canonical_family": "gamma_linolenic_acid",
+      "original_mapping_status": "mapped_existing_family",
+      "closure_decision": "productize_runtime_family",
+      "productization_class": "low_risk_structural",
+      "safety_boundary_tier": "standard",
+      "category": "lipid",
+      "pattern_keywords": [
+        "Gamma-Linolenic Acid",
+        "gamma linolenic acid",
+        "GLA"
+      ],
+      "runtime_lane_keys": [
+        "primary_context",
+        "form_and_disclosure_context",
+        "formula_context"
+      ],
+      "evidence_review_status": "rejected",
+      "hard_boundary": "Do not turn Gamma Linolenic Acid context into disease-treatment, guaranteed-outcome, universal best-form, or superiority language.",
+      "notes": [
+        "Mapped to runtime family gamma_linolenic_acid.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative.",
+        "Productized for runtime inference; evidence promotion still requires approved LSR review."
+      ]
+    },
+    {
+      "source_ingredient_id": "garcinia_cambogia",
+      "display_name": "Garcinia cambogia",
+      "canonical_family": "garcinia_cambogia",
+      "original_mapping_status": "mapped_existing_family",
+      "closure_decision": "productize_runtime_family",
+      "productization_class": "high_risk_safety",
+      "safety_boundary_tier": "high",
+      "category": "botanical",
+      "pattern_keywords": [
+        "Garcinia cambogia",
+        "garcinia cambogia",
+        "hydroxycitric acid",
+        "HCA"
+      ],
+      "runtime_lane_keys": [
+        "primary_use_context",
+        "safety_and_boundary_context",
+        "form_source_and_label_context"
+      ],
+      "evidence_review_status": "approved",
+      "hard_boundary": "Hard boundary: do not present Garcinia Cambogia as treating, preventing, or curing disease, replacing medication, or guaranteeing outcomes; keep comparison on disclosed identity, amount, form/source, and safety cautions.",
+      "notes": [
+        "Mapped to runtime family garcinia_cambogia.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative.",
+        "Productized for runtime inference; evidence promotion still requires approved LSR review."
+      ]
+    },
+    {
+      "source_ingredient_id": "ginkgo_biloba",
+      "display_name": "Ginkgo biloba",
+      "canonical_family": "ginkgo_biloba",
+      "original_mapping_status": "mapped_existing_family",
+      "closure_decision": "productize_runtime_family",
+      "productization_class": "high_risk_safety",
+      "safety_boundary_tier": "high",
+      "category": "botanical",
+      "pattern_keywords": [
+        "Ginkgo biloba",
+        "ginkgo biloba",
+        "ginkgo"
+      ],
+      "runtime_lane_keys": [
+        "primary_use_context",
+        "safety_and_boundary_context",
+        "form_source_and_label_context"
+      ],
+      "evidence_review_status": "approved",
+      "hard_boundary": "Hard boundary: do not present Ginkgo Biloba as treating, preventing, or curing disease, replacing medication, or guaranteeing outcomes; keep comparison on disclosed identity, amount, form/source, and safety cautions.",
+      "notes": [
+        "Mapped to runtime family ginkgo_biloba.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative.",
+        "Productized for runtime inference; evidence promotion still requires approved LSR review."
+      ]
+    },
+    {
+      "source_ingredient_id": "glucomannan",
+      "display_name": "Glucomannan",
+      "canonical_family": "glucomannan",
+      "original_mapping_status": "mapped_existing_family",
+      "closure_decision": "productize_runtime_family",
+      "productization_class": "high_risk_safety",
+      "safety_boundary_tier": "high",
+      "category": "other",
+      "pattern_keywords": [
+        "Glucomannan",
+        "glucomannan"
+      ],
+      "runtime_lane_keys": [
+        "primary_use_context",
+        "safety_and_boundary_context",
+        "form_source_and_label_context"
+      ],
+      "evidence_review_status": "approved",
+      "hard_boundary": "Hard boundary: do not present Glucomannan as treating, preventing, or curing disease, replacing medication, or guaranteeing outcomes; keep comparison on disclosed identity, amount, form/source, and safety cautions.",
+      "notes": [
+        "Mapped to runtime family glucomannan.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative.",
+        "Productized for runtime inference; evidence promotion still requires approved LSR review."
+      ]
+    },
+    {
+      "source_ingredient_id": "glucosamine",
+      "display_name": "Glucosamine",
+      "canonical_family": "glucosamine",
+      "original_mapping_status": "mapped_existing_family",
+      "closure_decision": "productize_runtime_family",
+      "productization_class": "low_risk_structural",
+      "safety_boundary_tier": "standard",
+      "category": "other",
+      "pattern_keywords": [
+        "Glucosamine",
+        "glucosamine"
+      ],
+      "runtime_lane_keys": [
+        "primary_context",
+        "form_and_disclosure_context",
+        "formula_context"
+      ],
+      "evidence_review_status": "approved",
+      "hard_boundary": "Do not turn Glucosamine context into disease-treatment, guaranteed-outcome, universal best-form, or superiority language.",
+      "notes": [
+        "Mapped to runtime family glucosamine.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative.",
+        "Productized for runtime inference; evidence promotion still requires approved LSR review."
+      ]
+    },
+    {
+      "source_ingredient_id": "grapefruit_seed_extract",
+      "display_name": "Grapefruit Seed Extract",
+      "canonical_family": "grapefruit_seed_extract",
+      "original_mapping_status": "mapped_existing_family",
+      "closure_decision": "productize_runtime_family",
+      "productization_class": "high_risk_safety",
+      "safety_boundary_tier": "high",
+      "category": "botanical",
+      "pattern_keywords": [
+        "Grapefruit Seed Extract",
+        "grapefruit seed extract"
+      ],
+      "runtime_lane_keys": [
+        "primary_use_context",
+        "safety_and_boundary_context",
+        "form_source_and_label_context"
+      ],
+      "evidence_review_status": "rejected",
+      "hard_boundary": "Hard boundary: do not present Grapefruit Seed Extract as treating, preventing, or curing disease, replacing medication, or guaranteeing outcomes; keep comparison on disclosed identity, amount, form/source, and safety cautions.",
+      "notes": [
+        "Mapped to runtime family grapefruit_seed_extract.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative.",
+        "Productized for runtime inference; evidence promotion still requires approved LSR review."
+      ]
+    },
+    {
+      "source_ingredient_id": "green_coffee_bean_extract",
+      "display_name": "Green Coffee Bean Extract",
+      "canonical_family": "green_coffee_bean_extract",
+      "original_mapping_status": "mapped_existing_family",
+      "closure_decision": "productize_runtime_family",
+      "productization_class": "high_risk_safety",
+      "safety_boundary_tier": "high",
+      "category": "botanical",
+      "pattern_keywords": [
+        "Green Coffee Bean Extract",
+        "green coffee bean extract",
+        "chlorogenic acid"
+      ],
+      "runtime_lane_keys": [
+        "primary_use_context",
+        "safety_and_boundary_context",
+        "form_source_and_label_context"
+      ],
+      "evidence_review_status": "approved",
+      "hard_boundary": "Hard boundary: do not present Green Coffee Bean Extract as treating, preventing, or curing disease, replacing medication, or guaranteeing outcomes; keep comparison on disclosed identity, amount, form/source, and safety cautions.",
+      "notes": [
+        "Mapped to runtime family green_coffee_bean_extract.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative.",
+        "Productized for runtime inference; evidence promotion still requires approved LSR review."
+      ]
+    },
+    {
+      "source_ingredient_id": "gymnema",
+      "display_name": "Gymnema",
+      "canonical_family": "gymnema",
+      "original_mapping_status": "mapped_existing_family",
+      "closure_decision": "productize_runtime_family",
+      "productization_class": "high_risk_safety",
+      "safety_boundary_tier": "high",
+      "category": "botanical",
+      "pattern_keywords": [
+        "Gymnema",
+        "gymnema",
+        "gymnema sylvestre"
+      ],
+      "runtime_lane_keys": [
+        "primary_use_context",
+        "safety_and_boundary_context",
+        "form_source_and_label_context"
+      ],
+      "evidence_review_status": "approved",
+      "hard_boundary": "Hard boundary: do not present Gymnema as treating, preventing, or curing disease, replacing medication, or guaranteeing outcomes; keep comparison on disclosed identity, amount, form/source, and safety cautions.",
+      "notes": [
+        "Mapped to runtime family gymnema.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative.",
+        "Productized for runtime inference; evidence promotion still requires approved LSR review."
+      ]
+    },
+    {
+      "source_ingredient_id": "hawthorn",
+      "display_name": "Hawthorn",
+      "canonical_family": "hawthorn",
+      "original_mapping_status": "mapped_existing_family",
+      "closure_decision": "productize_runtime_family",
+      "productization_class": "high_risk_safety",
+      "safety_boundary_tier": "high",
+      "category": "botanical",
+      "pattern_keywords": [
+        "Hawthorn",
+        "hawthorn"
+      ],
+      "runtime_lane_keys": [
+        "primary_use_context",
+        "safety_and_boundary_context",
+        "form_source_and_label_context"
+      ],
+      "evidence_review_status": "approved",
+      "hard_boundary": "Hard boundary: do not present Hawthorn as treating, preventing, or curing disease, replacing medication, or guaranteeing outcomes; keep comparison on disclosed identity, amount, form/source, and safety cautions.",
+      "notes": [
+        "Mapped to runtime family hawthorn.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative.",
+        "Productized for runtime inference; evidence promotion still requires approved LSR review."
+      ]
+    },
+    {
+      "source_ingredient_id": "hesperidin",
+      "display_name": "Hesperidin",
+      "canonical_family": "hesperidin",
+      "original_mapping_status": "mapped_existing_family",
+      "closure_decision": "productize_runtime_family",
+      "productization_class": "low_risk_structural",
+      "safety_boundary_tier": "standard",
+      "category": "other",
+      "pattern_keywords": [
+        "Hesperidin",
+        "hesperidin"
+      ],
+      "runtime_lane_keys": [
+        "primary_context",
+        "form_and_disclosure_context",
+        "formula_context"
+      ],
+      "evidence_review_status": "approved",
+      "hard_boundary": "Do not turn Hesperidin context into disease-treatment, guaranteed-outcome, universal best-form, or superiority language.",
+      "notes": [
+        "Mapped to runtime family hesperidin.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative.",
+        "Productized for runtime inference; evidence promotion still requires approved LSR review."
+      ]
+    },
+    {
+      "source_ingredient_id": "hmb",
+      "display_name": "HMB",
+      "canonical_family": "hmb",
+      "original_mapping_status": "mapped_existing_family",
+      "closure_decision": "rescue_to_canonical_runtime_family",
+      "productization_class": "crosswalk_rescue",
+      "safety_boundary_tier": "high",
+      "category": "amino_acid",
+      "pattern_keywords": [
+        "HMB",
+        "hmb",
+        "hydroxymethylbutyrate",
+        "beta-hydroxy beta-methylbutyrate"
+      ],
+      "runtime_lane_keys": [
+        "primary_use_context",
+        "safety_and_boundary_context",
+        "form_source_and_label_context"
+      ],
+      "evidence_review_status": "approved",
+      "hard_boundary": "Hard boundary: do not present HMB as treating, preventing, or curing disease, replacing medication, or guaranteeing outcomes; keep comparison on disclosed identity, amount, form/source, and safety cautions.",
+      "notes": [
+        "Mapped to runtime family hmb.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative.",
+        "Rescued into an explicit canonical runtime family with high-boundary evidence review."
+      ]
+    },
+    {
+      "source_ingredient_id": "holy_basil",
+      "display_name": "Holy Basil",
+      "canonical_family": "holy_basil",
+      "original_mapping_status": "mapped_existing_family",
+      "closure_decision": "productize_runtime_family",
+      "productization_class": "high_risk_safety",
+      "safety_boundary_tier": "high",
+      "category": "botanical",
+      "pattern_keywords": [
+        "Holy Basil",
+        "holy basil",
+        "tulsi",
+        "ocimum"
+      ],
+      "runtime_lane_keys": [
+        "primary_use_context",
+        "safety_and_boundary_context",
+        "form_source_and_label_context"
+      ],
+      "evidence_review_status": "approved",
+      "hard_boundary": "Hard boundary: do not present Holy Basil as treating, preventing, or curing disease, replacing medication, or guaranteeing outcomes; keep comparison on disclosed identity, amount, form/source, and safety cautions.",
+      "notes": [
+        "Mapped to runtime family holy_basil.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative.",
+        "Productized for runtime inference; evidence promotion still requires approved LSR review."
+      ]
+    },
+    {
+      "source_ingredient_id": "huperzine_a",
+      "display_name": "Huperzine A",
+      "canonical_family": "huperzine_a",
+      "original_mapping_status": "mapped_existing_family",
+      "closure_decision": "productize_runtime_family",
+      "productization_class": "high_risk_safety",
+      "safety_boundary_tier": "high",
+      "category": "other",
+      "pattern_keywords": [
+        "Huperzine A",
+        "huperzine a",
+        "huperzia"
+      ],
+      "runtime_lane_keys": [
+        "primary_use_context",
+        "safety_and_boundary_context",
+        "form_source_and_label_context"
+      ],
+      "evidence_review_status": "approved",
+      "hard_boundary": "Hard boundary: do not present Huperzine A as treating, preventing, or curing disease, replacing medication, or guaranteeing outcomes; keep comparison on disclosed identity, amount, form/source, and safety cautions.",
+      "notes": [
+        "Mapped to runtime family huperzine_a.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative.",
+        "Productized for runtime inference; evidence promotion still requires approved LSR review."
+      ]
+    },
+    {
+      "source_ingredient_id": "hyaluronic_acid",
+      "display_name": "Hyaluronic acid",
+      "canonical_family": "hyaluronic_acid",
+      "original_mapping_status": "mapped_existing_family",
+      "closure_decision": "productize_runtime_family",
+      "productization_class": "low_risk_structural",
+      "safety_boundary_tier": "standard",
+      "category": "other",
+      "pattern_keywords": [
+        "Hyaluronic acid",
+        "hyaluronic acid"
+      ],
+      "runtime_lane_keys": [
+        "primary_context",
+        "form_and_disclosure_context",
+        "formula_context"
+      ],
+      "evidence_review_status": "approved",
+      "hard_boundary": "Do not turn Hyaluronic Acid context into disease-treatment, guaranteed-outcome, universal best-form, or superiority language.",
+      "notes": [
+        "Mapped to runtime family hyaluronic_acid.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative.",
+        "Productized for runtime inference; evidence promotion still requires approved LSR review."
+      ]
+    },
+    {
+      "source_ingredient_id": "indole_3_carbinol",
+      "display_name": "Indole-3-Carbinol",
+      "canonical_family": "indole_3_carbinol",
+      "original_mapping_status": "mapped_existing_family",
+      "closure_decision": "productize_runtime_family",
+      "productization_class": "high_risk_safety",
+      "safety_boundary_tier": "high",
+      "category": "other",
+      "pattern_keywords": [
+        "Indole-3-Carbinol",
+        "indole 3 carbinol",
+        "I3C"
+      ],
+      "runtime_lane_keys": [
+        "primary_use_context",
+        "safety_and_boundary_context",
+        "form_source_and_label_context"
+      ],
+      "evidence_review_status": "approved",
+      "hard_boundary": "Hard boundary: do not present Indole 3 Carbinol as treating, preventing, or curing disease, replacing medication, or guaranteeing outcomes; keep comparison on disclosed identity, amount, form/source, and safety cautions.",
+      "notes": [
+        "Mapped to runtime family indole_3_carbinol.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative.",
+        "Productized for runtime inference; evidence promotion still requires approved LSR review."
+      ]
+    },
+    {
+      "source_ingredient_id": "krill_oil",
+      "display_name": "Krill Oil",
+      "canonical_family": "krill_oil",
+      "original_mapping_status": "mapped_existing_family",
+      "closure_decision": "productize_runtime_family",
+      "productization_class": "low_risk_structural",
+      "safety_boundary_tier": "standard",
+      "category": "lipid",
+      "pattern_keywords": [
+        "Krill Oil",
+        "krill oil",
+        "euphausia"
+      ],
+      "runtime_lane_keys": [
+        "primary_context",
+        "form_and_disclosure_context",
+        "formula_context"
+      ],
+      "evidence_review_status": "approved",
+      "hard_boundary": "Do not turn Krill Oil context into disease-treatment, guaranteed-outcome, universal best-form, or superiority language.",
+      "notes": [
+        "Mapped to runtime family krill_oil.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative.",
+        "Productized for runtime inference; evidence promotion still requires approved LSR review."
+      ]
+    },
+    {
+      "source_ingredient_id": "l_alanine",
+      "display_name": "L-Alanine",
+      "canonical_family": "l_alanine",
+      "original_mapping_status": "mapped_existing_family",
+      "closure_decision": "productize_runtime_family",
+      "productization_class": "low_risk_structural",
+      "safety_boundary_tier": "standard",
+      "category": "amino_acid",
+      "pattern_keywords": [
+        "L-Alanine",
+        "l alanine"
+      ],
+      "runtime_lane_keys": [
+        "primary_context",
+        "form_and_disclosure_context",
+        "formula_context"
+      ],
+      "evidence_review_status": "approved",
+      "hard_boundary": "Do not turn L Alanine context into disease-treatment, guaranteed-outcome, universal best-form, or superiority language.",
+      "notes": [
+        "Mapped to runtime family l_alanine.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative.",
+        "Productized for runtime inference; evidence promotion still requires approved LSR review."
+      ]
+    },
+    {
+      "source_ingredient_id": "l_aspartic_acid",
+      "display_name": "L-Aspartic Acid",
+      "canonical_family": "l_aspartic_acid",
+      "original_mapping_status": "mapped_existing_family",
+      "closure_decision": "productize_runtime_family",
+      "productization_class": "low_risk_structural",
+      "safety_boundary_tier": "standard",
+      "category": "amino_acid",
+      "pattern_keywords": [
+        "L-Aspartic Acid",
+        "l aspartic acid"
+      ],
+      "runtime_lane_keys": [
+        "primary_context",
+        "form_and_disclosure_context",
+        "formula_context"
+      ],
+      "evidence_review_status": "approved",
+      "hard_boundary": "Do not turn L Aspartic Acid context into disease-treatment, guaranteed-outcome, universal best-form, or superiority language.",
+      "notes": [
+        "Mapped to runtime family l_aspartic_acid.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative.",
+        "Productized for runtime inference; evidence promotion still requires approved LSR review."
+      ]
+    },
+    {
+      "source_ingredient_id": "l_citrulline",
+      "display_name": "L-Citrulline",
+      "canonical_family": "l_citrulline",
+      "original_mapping_status": "mapped_existing_family",
+      "closure_decision": "productize_runtime_family",
+      "productization_class": "low_risk_structural",
+      "safety_boundary_tier": "standard",
+      "category": "amino_acid",
+      "pattern_keywords": [
+        "L-Citrulline",
+        "l citrulline"
+      ],
+      "runtime_lane_keys": [
+        "primary_context",
+        "form_and_disclosure_context",
+        "formula_context"
+      ],
+      "evidence_review_status": "approved",
+      "hard_boundary": "Do not turn L Citrulline context into disease-treatment, guaranteed-outcome, universal best-form, or superiority language.",
+      "notes": [
+        "Mapped to runtime family l_citrulline.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative.",
+        "Productized for runtime inference; evidence promotion still requires approved LSR review."
+      ]
+    },
+    {
+      "source_ingredient_id": "l_glutamic_acid",
+      "display_name": "L-Glutamic Acid",
+      "canonical_family": "l_glutamic_acid",
+      "original_mapping_status": "mapped_existing_family",
+      "closure_decision": "productize_runtime_family",
+      "productization_class": "low_risk_structural",
+      "safety_boundary_tier": "standard",
+      "category": "amino_acid",
+      "pattern_keywords": [
+        "L-Glutamic Acid",
+        "l glutamic acid"
+      ],
+      "runtime_lane_keys": [
+        "primary_context",
+        "form_and_disclosure_context",
+        "formula_context"
+      ],
+      "evidence_review_status": "rejected",
+      "hard_boundary": "Do not turn L Glutamic Acid context into disease-treatment, guaranteed-outcome, universal best-form, or superiority language.",
+      "notes": [
+        "Mapped to runtime family l_glutamic_acid.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative.",
+        "Productized for runtime inference; evidence promotion still requires approved LSR review."
+      ]
+    },
+    {
+      "source_ingredient_id": "l_glutamine",
+      "display_name": "L-Glutamine",
+      "canonical_family": "l_glutamine",
+      "original_mapping_status": "mapped_existing_family",
+      "closure_decision": "productize_runtime_family",
+      "productization_class": "low_risk_structural",
+      "safety_boundary_tier": "standard",
+      "category": "amino_acid",
+      "pattern_keywords": [
+        "L-Glutamine",
+        "l glutamine"
+      ],
+      "runtime_lane_keys": [
+        "primary_context",
+        "form_and_disclosure_context",
+        "formula_context"
+      ],
+      "evidence_review_status": "approved",
+      "hard_boundary": "Do not turn L Glutamine context into disease-treatment, guaranteed-outcome, universal best-form, or superiority language.",
+      "notes": [
+        "Mapped to runtime family l_glutamine.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative.",
+        "Productized for runtime inference; evidence promotion still requires approved LSR review."
+      ]
+    },
+    {
+      "source_ingredient_id": "l_histidine",
+      "display_name": "L-Histidine",
+      "canonical_family": "l_histidine",
+      "original_mapping_status": "mapped_existing_family",
+      "closure_decision": "productize_runtime_family",
+      "productization_class": "low_risk_structural",
+      "safety_boundary_tier": "standard",
+      "category": "amino_acid",
+      "pattern_keywords": [
+        "L-Histidine",
+        "l histidine"
+      ],
+      "runtime_lane_keys": [
+        "primary_context",
+        "form_and_disclosure_context",
+        "formula_context"
+      ],
+      "evidence_review_status": "rejected",
+      "hard_boundary": "Do not turn L Histidine context into disease-treatment, guaranteed-outcome, universal best-form, or superiority language.",
+      "notes": [
+        "Mapped to runtime family l_histidine.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative.",
+        "Productized for runtime inference; evidence promotion still requires approved LSR review."
+      ]
+    },
+    {
+      "source_ingredient_id": "l_isoleucine",
+      "display_name": "L-Isoleucine",
+      "canonical_family": "l_isoleucine",
+      "original_mapping_status": "mapped_existing_family",
+      "closure_decision": "productize_runtime_family",
+      "productization_class": "low_risk_structural",
+      "safety_boundary_tier": "standard",
+      "category": "amino_acid",
+      "pattern_keywords": [
+        "L-Isoleucine",
+        "l isoleucine"
+      ],
+      "runtime_lane_keys": [
+        "primary_context",
+        "form_and_disclosure_context",
+        "formula_context"
+      ],
+      "evidence_review_status": "approved",
+      "hard_boundary": "Do not turn L Isoleucine context into disease-treatment, guaranteed-outcome, universal best-form, or superiority language.",
+      "notes": [
+        "Mapped to runtime family l_isoleucine.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative.",
+        "Productized for runtime inference; evidence promotion still requires approved LSR review."
+      ]
+    },
+    {
+      "source_ingredient_id": "l_leucine",
+      "display_name": "L-Leucine",
+      "canonical_family": "l_leucine",
+      "original_mapping_status": "mapped_existing_family",
+      "closure_decision": "productize_runtime_family",
+      "productization_class": "low_risk_structural",
+      "safety_boundary_tier": "standard",
+      "category": "amino_acid",
+      "pattern_keywords": [
+        "L-Leucine",
+        "l leucine"
+      ],
+      "runtime_lane_keys": [
+        "primary_context",
+        "form_and_disclosure_context",
+        "formula_context"
+      ],
+      "evidence_review_status": "needs_edit",
+      "hard_boundary": "Do not turn L Leucine context into disease-treatment, guaranteed-outcome, universal best-form, or superiority language.",
+      "notes": [
+        "Mapped to runtime family l_leucine.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative.",
+        "Productized for runtime inference; evidence promotion still requires approved LSR review."
+      ]
+    },
+    {
+      "source_ingredient_id": "l_lysine",
+      "display_name": "L-Lysine",
+      "canonical_family": "l_lysine",
+      "original_mapping_status": "mapped_existing_family",
+      "closure_decision": "productize_runtime_family",
+      "productization_class": "low_risk_structural",
+      "safety_boundary_tier": "standard",
+      "category": "amino_acid",
+      "pattern_keywords": [
+        "L-Lysine",
+        "l lysine"
+      ],
+      "runtime_lane_keys": [
+        "primary_context",
+        "form_and_disclosure_context",
+        "formula_context"
+      ],
+      "evidence_review_status": "approved",
+      "hard_boundary": "Do not turn L Lysine context into disease-treatment, guaranteed-outcome, universal best-form, or superiority language.",
+      "notes": [
+        "Mapped to runtime family l_lysine.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative.",
+        "Productized for runtime inference; evidence promotion still requires approved LSR review."
+      ]
+    },
+    {
+      "source_ingredient_id": "l_phenylalanine",
+      "display_name": "L-Phenylalanine",
+      "canonical_family": "l_phenylalanine",
+      "original_mapping_status": "mapped_existing_family",
+      "closure_decision": "productize_runtime_family",
+      "productization_class": "low_risk_structural",
+      "safety_boundary_tier": "standard",
+      "category": "amino_acid",
+      "pattern_keywords": [
+        "L-Phenylalanine",
+        "l phenylalanine"
+      ],
+      "runtime_lane_keys": [
+        "primary_context",
+        "form_and_disclosure_context",
+        "formula_context"
+      ],
+      "evidence_review_status": "rejected",
+      "hard_boundary": "Do not turn L Phenylalanine context into disease-treatment, guaranteed-outcome, universal best-form, or superiority language.",
+      "notes": [
+        "Mapped to runtime family l_phenylalanine.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative.",
+        "Productized for runtime inference; evidence promotion still requires approved LSR review."
+      ]
+    },
+    {
+      "source_ingredient_id": "l_serine",
+      "display_name": "L-Serine",
+      "canonical_family": "l_serine",
+      "original_mapping_status": "mapped_existing_family",
+      "closure_decision": "productize_runtime_family",
+      "productization_class": "low_risk_structural",
+      "safety_boundary_tier": "standard",
+      "category": "amino_acid",
+      "pattern_keywords": [
+        "L-Serine",
+        "l serine"
+      ],
+      "runtime_lane_keys": [
+        "primary_context",
+        "form_and_disclosure_context",
+        "formula_context"
+      ],
+      "evidence_review_status": "rejected",
+      "hard_boundary": "Do not turn L Serine context into disease-treatment, guaranteed-outcome, universal best-form, or superiority language.",
+      "notes": [
+        "Mapped to runtime family l_serine.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative.",
+        "Productized for runtime inference; evidence promotion still requires approved LSR review."
+      ]
+    },
+    {
+      "source_ingredient_id": "l_theanine",
+      "display_name": "L-Theanine",
+      "canonical_family": "l_theanine",
+      "original_mapping_status": "mapped_existing_family",
+      "closure_decision": "productize_runtime_family",
+      "productization_class": "high_risk_safety",
+      "safety_boundary_tier": "high",
+      "category": "amino_acid",
+      "pattern_keywords": [
+        "L-Theanine",
+        "l theanine",
+        "suntheanine"
+      ],
+      "runtime_lane_keys": [
+        "primary_use_context",
+        "safety_and_boundary_context",
+        "form_source_and_label_context"
+      ],
+      "evidence_review_status": "approved",
+      "hard_boundary": "Hard boundary: do not present L Theanine as treating, preventing, or curing disease, replacing medication, or guaranteeing outcomes; keep comparison on disclosed identity, amount, form/source, and safety cautions.",
+      "notes": [
+        "Mapped to runtime family l_theanine.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative.",
+        "Productized for runtime inference; evidence promotion still requires approved LSR review."
+      ]
+    },
+    {
+      "source_ingredient_id": "l_threonine",
+      "display_name": "L-Threonine",
+      "canonical_family": "l_threonine",
+      "original_mapping_status": "mapped_existing_family",
+      "closure_decision": "productize_runtime_family",
+      "productization_class": "low_risk_structural",
+      "safety_boundary_tier": "standard",
+      "category": "amino_acid",
+      "pattern_keywords": [
+        "L-Threonine",
+        "l threonine"
+      ],
+      "runtime_lane_keys": [
+        "primary_context",
+        "form_and_disclosure_context",
+        "formula_context"
+      ],
+      "evidence_review_status": "needs_edit",
+      "hard_boundary": "Do not turn L Threonine context into disease-treatment, guaranteed-outcome, universal best-form, or superiority language.",
+      "notes": [
+        "Mapped to runtime family l_threonine.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative.",
+        "Productized for runtime inference; evidence promotion still requires approved LSR review."
+      ]
+    },
+    {
+      "source_ingredient_id": "l_tryptophan",
+      "display_name": "L-Tryptophan",
+      "canonical_family": "l_tryptophan",
+      "original_mapping_status": "mapped_existing_family",
+      "closure_decision": "productize_runtime_family",
+      "productization_class": "high_risk_safety",
+      "safety_boundary_tier": "high",
+      "category": "amino_acid",
+      "pattern_keywords": [
+        "L-Tryptophan",
+        "l tryptophan"
+      ],
+      "runtime_lane_keys": [
+        "primary_use_context",
+        "safety_and_boundary_context",
+        "form_source_and_label_context"
+      ],
+      "evidence_review_status": "approved",
+      "hard_boundary": "Hard boundary: do not present L Tryptophan as treating, preventing, or curing disease, replacing medication, or guaranteeing outcomes; keep comparison on disclosed identity, amount, form/source, and safety cautions.",
+      "notes": [
+        "Mapped to runtime family l_tryptophan.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative.",
+        "Productized for runtime inference; evidence promotion still requires approved LSR review."
+      ]
+    },
+    {
+      "source_ingredient_id": "l_tyrosine",
+      "display_name": "L-Tyrosine",
+      "canonical_family": "l_tyrosine",
+      "original_mapping_status": "mapped_existing_family",
+      "closure_decision": "productize_runtime_family",
+      "productization_class": "low_risk_structural",
+      "safety_boundary_tier": "standard",
+      "category": "amino_acid",
+      "pattern_keywords": [
+        "L-Tyrosine",
+        "l tyrosine"
+      ],
+      "runtime_lane_keys": [
+        "primary_context",
+        "form_and_disclosure_context",
+        "formula_context"
+      ],
+      "evidence_review_status": "rejected",
+      "hard_boundary": "Do not turn L Tyrosine context into disease-treatment, guaranteed-outcome, universal best-form, or superiority language.",
+      "notes": [
+        "Mapped to runtime family l_tyrosine.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative.",
+        "Productized for runtime inference; evidence promotion still requires approved LSR review."
+      ]
+    },
+    {
+      "source_ingredient_id": "lactase",
+      "display_name": "Lactase",
+      "canonical_family": "lactase",
+      "original_mapping_status": "mapped_existing_family",
+      "closure_decision": "productize_runtime_family",
+      "productization_class": "low_risk_structural",
+      "safety_boundary_tier": "standard",
+      "category": "enzyme",
+      "pattern_keywords": [
+        "Lactase",
+        "lactase"
+      ],
+      "runtime_lane_keys": [
+        "functional_context",
+        "activity_and_delivery_context",
+        "formula_context"
+      ],
+      "evidence_review_status": "approved",
+      "hard_boundary": "Do not turn Lactase context into disease-treatment, guaranteed-outcome, universal best-form, or superiority language.",
+      "notes": [
+        "Mapped to runtime family lactase.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative.",
+        "Productized for runtime inference; evidence promotion still requires approved LSR review."
+      ]
+    },
+    {
+      "source_ingredient_id": "lion_s_mane_mushroom",
+      "display_name": "Lion's Mane Mushroom",
+      "canonical_family": "lion_s_mane_mushroom",
+      "original_mapping_status": "mapped_existing_family",
+      "closure_decision": "productize_runtime_family",
+      "productization_class": "high_risk_safety",
+      "safety_boundary_tier": "high",
+      "category": "botanical",
+      "pattern_keywords": [
+        "Lion's Mane Mushroom",
+        "lion s mane mushroom",
+        "lion mane",
+        "hericium"
+      ],
+      "runtime_lane_keys": [
+        "primary_use_context",
+        "safety_and_boundary_context",
+        "form_source_and_label_context"
+      ],
+      "evidence_review_status": "approved",
+      "hard_boundary": "Hard boundary: do not present Lion S Mane Mushroom as treating, preventing, or curing disease, replacing medication, or guaranteeing outcomes; keep comparison on disclosed identity, amount, form/source, and safety cautions.",
+      "notes": [
+        "Mapped to runtime family lion_s_mane_mushroom.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative.",
+        "Productized for runtime inference; evidence promotion still requires approved LSR review."
+      ]
+    },
+    {
+      "source_ingredient_id": "lipase",
+      "display_name": "Lipase",
+      "canonical_family": "lipase",
+      "original_mapping_status": "mapped_existing_family",
+      "closure_decision": "productize_runtime_family",
+      "productization_class": "low_risk_structural",
+      "safety_boundary_tier": "standard",
+      "category": "enzyme",
+      "pattern_keywords": [
+        "Lipase",
+        "lipase"
+      ],
+      "runtime_lane_keys": [
+        "functional_context",
+        "activity_and_delivery_context",
+        "formula_context"
+      ],
+      "evidence_review_status": "approved",
+      "hard_boundary": "Do not turn Lipase context into disease-treatment, guaranteed-outcome, universal best-form, or superiority language.",
+      "notes": [
+        "Mapped to runtime family lipase.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative.",
+        "Productized for runtime inference; evidence promotion still requires approved LSR review."
+      ]
+    },
+    {
+      "source_ingredient_id": "lutein",
+      "display_name": "Lutein",
+      "canonical_family": "lutein",
+      "original_mapping_status": "mapped_existing_family",
+      "closure_decision": "productize_runtime_family",
+      "productization_class": "low_risk_structural",
+      "safety_boundary_tier": "standard",
+      "category": "other",
+      "pattern_keywords": [
+        "Lutein",
+        "lutein"
+      ],
+      "runtime_lane_keys": [
+        "primary_context",
+        "form_and_disclosure_context",
+        "formula_context"
+      ],
+      "evidence_review_status": "approved",
+      "hard_boundary": "Do not turn Lutein context into disease-treatment, guaranteed-outcome, universal best-form, or superiority language.",
+      "notes": [
+        "Mapped to runtime family lutein.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative.",
+        "Productized for runtime inference; evidence promotion still requires approved LSR review."
+      ]
+    },
+    {
+      "source_ingredient_id": "lycopene",
+      "display_name": "Lycopene",
+      "canonical_family": "lycopene",
+      "original_mapping_status": "mapped_existing_family",
+      "closure_decision": "productize_runtime_family",
+      "productization_class": "low_risk_structural",
+      "safety_boundary_tier": "standard",
+      "category": "other",
+      "pattern_keywords": [
+        "Lycopene",
+        "lycopene"
+      ],
+      "runtime_lane_keys": [
+        "primary_context",
+        "form_and_disclosure_context",
+        "formula_context"
+      ],
+      "evidence_review_status": "approved",
+      "hard_boundary": "Do not turn Lycopene context into disease-treatment, guaranteed-outcome, universal best-form, or superiority language.",
+      "notes": [
+        "Mapped to runtime family lycopene.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative.",
+        "Productized for runtime inference; evidence promotion still requires approved LSR review."
+      ]
+    },
+    {
+      "source_ingredient_id": "maca",
+      "display_name": "Maca",
+      "canonical_family": "maca",
+      "original_mapping_status": "mapped_existing_family",
+      "closure_decision": "productize_runtime_family",
+      "productization_class": "high_risk_safety",
+      "safety_boundary_tier": "high",
+      "category": "botanical",
+      "pattern_keywords": [
+        "Maca",
+        "maca"
+      ],
+      "runtime_lane_keys": [
+        "primary_use_context",
+        "safety_and_boundary_context",
+        "form_source_and_label_context"
+      ],
+      "evidence_review_status": "approved",
+      "hard_boundary": "Hard boundary: do not present Maca as treating, preventing, or curing disease, replacing medication, or guaranteeing outcomes; keep comparison on disclosed identity, amount, form/source, and safety cautions.",
+      "notes": [
+        "Mapped to runtime family maca.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative.",
+        "Productized for runtime inference; evidence promotion still requires approved LSR review."
+      ]
+    },
+    {
+      "source_ingredient_id": "maitake_mushroom",
+      "display_name": "Maitake Mushroom",
+      "canonical_family": "maitake_mushroom",
+      "original_mapping_status": "mapped_existing_family",
+      "closure_decision": "productize_runtime_family",
+      "productization_class": "high_risk_safety",
+      "safety_boundary_tier": "high",
+      "category": "botanical",
+      "pattern_keywords": [
+        "Maitake Mushroom",
+        "maitake mushroom",
+        "grifola"
+      ],
+      "runtime_lane_keys": [
+        "primary_use_context",
+        "safety_and_boundary_context",
+        "form_source_and_label_context"
+      ],
+      "evidence_review_status": "approved",
+      "hard_boundary": "Hard boundary: do not present Maitake Mushroom as treating, preventing, or curing disease, replacing medication, or guaranteeing outcomes; keep comparison on disclosed identity, amount, form/source, and safety cautions.",
+      "notes": [
+        "Mapped to runtime family maitake_mushroom.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative.",
+        "Productized for runtime inference; evidence promotion still requires approved LSR review."
+      ]
+    },
+    {
+      "source_ingredient_id": "mct_oil",
+      "display_name": "MCT Oil",
+      "canonical_family": "mct_oil",
+      "original_mapping_status": "mapped_existing_family",
+      "closure_decision": "rescue_to_canonical_runtime_family",
+      "productization_class": "crosswalk_rescue",
+      "safety_boundary_tier": "high",
+      "category": "lipid",
+      "pattern_keywords": [
+        "MCT Oil",
+        "mct oil",
+        "medium-chain triglycerides"
+      ],
+      "runtime_lane_keys": [
+        "primary_use_context",
+        "safety_and_boundary_context",
+        "form_source_and_label_context"
+      ],
+      "evidence_review_status": "approved",
+      "hard_boundary": "Hard boundary: do not present MCT oil as treating, preventing, or curing disease, replacing medication, or guaranteeing outcomes; keep comparison on disclosed identity, amount, form/source, and safety cautions.",
+      "notes": [
+        "Mapped to runtime family mct_oil.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative.",
+        "Rescued into an explicit canonical runtime family with high-boundary evidence review."
+      ]
+    },
+    {
+      "source_ingredient_id": "nadh",
+      "display_name": "NADH",
+      "canonical_family": "nadh",
+      "original_mapping_status": "mapped_existing_family",
+      "closure_decision": "rescue_to_canonical_runtime_family",
+      "productization_class": "crosswalk_rescue",
+      "safety_boundary_tier": "high",
+      "category": "other",
+      "pattern_keywords": [
+        "NADH",
+        "nadh"
+      ],
+      "runtime_lane_keys": [
+        "primary_use_context",
+        "safety_and_boundary_context",
+        "form_source_and_label_context"
+      ],
+      "evidence_review_status": "rejected",
+      "hard_boundary": "Hard boundary: do not present NADH as treating, preventing, or curing disease, replacing medication, or guaranteeing outcomes; keep comparison on disclosed identity, amount, form/source, and safety cautions.",
+      "notes": [
+        "Mapped to runtime family nadh.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative.",
+        "Rescued into an explicit canonical runtime family with high-boundary evidence review."
+      ]
+    },
+    {
+      "source_ingredient_id": "naringin",
+      "display_name": "Naringin",
+      "canonical_family": "naringin",
+      "original_mapping_status": "mapped_existing_family",
+      "closure_decision": "productize_runtime_family",
+      "productization_class": "low_risk_structural",
+      "safety_boundary_tier": "standard",
+      "category": "other",
+      "pattern_keywords": [
+        "Naringin",
+        "naringin"
+      ],
+      "runtime_lane_keys": [
+        "primary_context",
+        "form_and_disclosure_context",
+        "formula_context"
+      ],
+      "evidence_review_status": "approved",
+      "hard_boundary": "Do not turn Naringin context into disease-treatment, guaranteed-outcome, universal best-form, or superiority language.",
+      "notes": [
+        "Mapped to runtime family naringin.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative.",
+        "Productized for runtime inference; evidence promotion still requires approved LSR review."
+      ]
+    },
+    {
+      "source_ingredient_id": "nattokinase",
+      "display_name": "Nattokinase",
+      "canonical_family": "nattokinase",
+      "original_mapping_status": "mapped_existing_family",
+      "closure_decision": "productize_runtime_family",
+      "productization_class": "high_risk_safety",
+      "safety_boundary_tier": "high",
+      "category": "enzyme",
+      "pattern_keywords": [
+        "Nattokinase",
+        "nattokinase"
+      ],
+      "runtime_lane_keys": [
+        "primary_use_context",
+        "safety_and_boundary_context",
+        "form_source_and_label_context"
+      ],
+      "evidence_review_status": "approved",
+      "hard_boundary": "Hard boundary: do not present Nattokinase as treating, preventing, or curing disease, replacing medication, or guaranteeing outcomes; keep comparison on disclosed identity, amount, form/source, and safety cautions.",
+      "notes": [
+        "Mapped to runtime family nattokinase.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative.",
+        "Productized for runtime inference; evidence promotion still requires approved LSR review."
+      ]
+    },
+    {
+      "source_ingredient_id": "phosphatidylserine",
+      "display_name": "Phosphatidylserine",
+      "canonical_family": "phosphatidylserine",
+      "original_mapping_status": "mapped_existing_family",
+      "closure_decision": "rescue_to_canonical_runtime_family",
+      "productization_class": "crosswalk_rescue",
+      "safety_boundary_tier": "high",
+      "category": "lipid",
+      "pattern_keywords": [
+        "Phosphatidylserine",
+        "phosphatidylserine"
+      ],
+      "runtime_lane_keys": [
+        "primary_use_context",
+        "safety_and_boundary_context",
+        "form_source_and_label_context"
+      ],
+      "evidence_review_status": "approved",
+      "hard_boundary": "Hard boundary: do not present Phosphatidylserine as treating, preventing, or curing disease, replacing medication, or guaranteeing outcomes; keep comparison on disclosed identity, amount, form/source, and safety cautions.",
+      "notes": [
+        "Mapped to runtime family phosphatidylserine.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative.",
+        "Rescued into an explicit canonical runtime family with high-boundary evidence review."
+      ]
+    },
+    {
+      "source_ingredient_id": "pine_bark_extract",
+      "display_name": "Pine Bark Extract",
+      "canonical_family": "pine_bark_extract",
+      "original_mapping_status": "mapped_existing_family",
+      "closure_decision": "productize_runtime_family",
+      "productization_class": "high_risk_safety",
+      "safety_boundary_tier": "high",
+      "category": "botanical",
+      "pattern_keywords": [
+        "Pine Bark Extract",
+        "pine bark extract",
+        "pycnogenol",
+        "pinus pinaster"
+      ],
+      "runtime_lane_keys": [
+        "primary_use_context",
+        "safety_and_boundary_context",
+        "form_source_and_label_context"
+      ],
+      "evidence_review_status": "approved",
+      "hard_boundary": "Hard boundary: do not present Pine Bark Extract as treating, preventing, or curing disease, replacing medication, or guaranteeing outcomes; keep comparison on disclosed identity, amount, form/source, and safety cautions.",
+      "notes": [
+        "Mapped to runtime family pine_bark_extract.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative.",
+        "Productized for runtime inference; evidence promotion still requires approved LSR review."
+      ]
+    },
+    {
+      "source_ingredient_id": "pqq",
+      "display_name": "PQQ",
+      "canonical_family": "pqq",
+      "original_mapping_status": "mapped_existing_family",
+      "closure_decision": "rescue_to_canonical_runtime_family",
+      "productization_class": "crosswalk_rescue",
+      "safety_boundary_tier": "high",
+      "category": "other",
+      "pattern_keywords": [
+        "PQQ",
+        "pqq"
+      ],
+      "runtime_lane_keys": [
+        "primary_use_context",
+        "safety_and_boundary_context",
+        "form_source_and_label_context"
+      ],
+      "evidence_review_status": "approved",
+      "hard_boundary": "Hard boundary: do not present PQQ as treating, preventing, or curing disease, replacing medication, or guaranteeing outcomes; keep comparison on disclosed identity, amount, form/source, and safety cautions.",
+      "notes": [
+        "Mapped to runtime family pqq.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative.",
+        "Rescued into an explicit canonical runtime family with high-boundary evidence review."
+      ]
+    },
+    {
+      "source_ingredient_id": "protease",
+      "display_name": "Protease",
+      "canonical_family": "protease",
+      "original_mapping_status": "mapped_existing_family",
+      "closure_decision": "productize_runtime_family",
+      "productization_class": "low_risk_structural",
+      "safety_boundary_tier": "standard",
+      "category": "enzyme",
+      "pattern_keywords": [
+        "Protease",
+        "protease"
+      ],
+      "runtime_lane_keys": [
+        "functional_context",
+        "activity_and_delivery_context",
+        "formula_context"
+      ],
+      "evidence_review_status": "approved",
+      "hard_boundary": "Do not turn Protease context into disease-treatment, guaranteed-outcome, universal best-form, or superiority language.",
+      "notes": [
+        "Mapped to runtime family protease.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative.",
+        "Productized for runtime inference; evidence promotion still requires approved LSR review."
+      ]
+    },
+    {
+      "source_ingredient_id": "pumpkin_seed_oil",
+      "display_name": "Pumpkin Seed Oil",
+      "canonical_family": "pumpkin_seed_oil",
+      "original_mapping_status": "mapped_existing_family",
+      "closure_decision": "productize_runtime_family",
+      "productization_class": "low_risk_structural",
+      "safety_boundary_tier": "standard",
+      "category": "lipid",
+      "pattern_keywords": [
+        "Pumpkin Seed Oil",
+        "pumpkin seed oil"
+      ],
+      "runtime_lane_keys": [
+        "primary_context",
+        "form_and_disclosure_context",
+        "formula_context"
+      ],
+      "evidence_review_status": "approved",
+      "hard_boundary": "Do not turn Pumpkin Seed Oil context into disease-treatment, guaranteed-outcome, universal best-form, or superiority language.",
+      "notes": [
+        "Mapped to runtime family pumpkin_seed_oil.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative.",
+        "Productized for runtime inference; evidence promotion still requires approved LSR review."
+      ]
+    },
+    {
+      "source_ingredient_id": "reishi_mushroom",
+      "display_name": "Reishi Mushroom",
+      "canonical_family": "reishi_mushroom",
+      "original_mapping_status": "mapped_existing_family",
+      "closure_decision": "productize_runtime_family",
+      "productization_class": "high_risk_safety",
+      "safety_boundary_tier": "high",
+      "category": "botanical",
+      "pattern_keywords": [
+        "Reishi Mushroom",
+        "reishi mushroom",
+        "ganoderma"
+      ],
+      "runtime_lane_keys": [
+        "primary_use_context",
+        "safety_and_boundary_context",
+        "form_source_and_label_context"
+      ],
+      "evidence_review_status": "approved",
+      "hard_boundary": "Hard boundary: do not present Reishi Mushroom as treating, preventing, or curing disease, replacing medication, or guaranteeing outcomes; keep comparison on disclosed identity, amount, form/source, and safety cautions.",
+      "notes": [
+        "Mapped to runtime family reishi_mushroom.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative.",
+        "Productized for runtime inference; evidence promotion still requires approved LSR review."
+      ]
+    },
+    {
+      "source_ingredient_id": "rhodiola_rosea",
+      "display_name": "Rhodiola rosea",
+      "canonical_family": "rhodiola_rosea",
+      "original_mapping_status": "mapped_existing_family",
+      "closure_decision": "productize_runtime_family",
+      "productization_class": "high_risk_safety",
+      "safety_boundary_tier": "high",
+      "category": "botanical",
+      "pattern_keywords": [
+        "Rhodiola rosea",
+        "rhodiola rosea",
+        "rhodiola",
+        "rosavins",
+        "salidroside"
+      ],
+      "runtime_lane_keys": [
+        "primary_use_context",
+        "safety_and_boundary_context",
+        "form_source_and_label_context"
+      ],
+      "evidence_review_status": "approved",
+      "hard_boundary": "Hard boundary: do not present Rhodiola Rosea as treating, preventing, or curing disease, replacing medication, or guaranteeing outcomes; keep comparison on disclosed identity, amount, form/source, and safety cautions.",
+      "notes": [
+        "Mapped to runtime family rhodiola_rosea.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative.",
+        "Productized for runtime inference; evidence promotion still requires approved LSR review."
+      ]
+    },
+    {
+      "source_ingredient_id": "same",
+      "display_name": "SAMe",
+      "canonical_family": "same",
+      "original_mapping_status": "mapped_existing_family",
+      "closure_decision": "rescue_to_canonical_runtime_family",
+      "productization_class": "crosswalk_rescue",
+      "safety_boundary_tier": "high",
+      "category": "other",
+      "pattern_keywords": [
+        "SAMe",
+        "S-adenosyl methionine",
+        "SAM-e"
+      ],
+      "runtime_lane_keys": [
+        "primary_use_context",
+        "safety_and_boundary_context",
+        "form_source_and_label_context"
+      ],
+      "evidence_review_status": "needs_edit",
+      "hard_boundary": "Hard boundary: do not present SAMe as treating, preventing, or curing disease, replacing medication, or guaranteeing outcomes; keep comparison on disclosed identity, amount, form/source, and safety cautions.",
+      "notes": [
+        "Mapped to runtime family same.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative.",
+        "Rescued into an explicit canonical runtime family with high-boundary evidence review."
+      ]
+    },
+    {
+      "source_ingredient_id": "saw_palmetto",
+      "display_name": "Saw palmetto",
+      "canonical_family": "saw_palmetto",
+      "original_mapping_status": "mapped_existing_family",
+      "closure_decision": "productize_runtime_family",
+      "productization_class": "high_risk_safety",
+      "safety_boundary_tier": "high",
+      "category": "botanical",
+      "pattern_keywords": [
+        "Saw palmetto",
+        "saw palmetto",
+        "serenoa repens"
+      ],
+      "runtime_lane_keys": [
+        "primary_use_context",
+        "safety_and_boundary_context",
+        "form_source_and_label_context"
+      ],
+      "evidence_review_status": "approved",
+      "hard_boundary": "Hard boundary: do not present Saw Palmetto as treating, preventing, or curing disease, replacing medication, or guaranteeing outcomes; keep comparison on disclosed identity, amount, form/source, and safety cautions.",
+      "notes": [
+        "Mapped to runtime family saw_palmetto.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative.",
+        "Productized for runtime inference; evidence promotion still requires approved LSR review."
+      ]
+    },
+    {
+      "source_ingredient_id": "schisandra_chinensis",
+      "display_name": "Schisandra Chinensis",
+      "canonical_family": "schisandra_chinensis",
+      "original_mapping_status": "mapped_existing_family",
+      "closure_decision": "productize_runtime_family",
+      "productization_class": "high_risk_safety",
+      "safety_boundary_tier": "high",
+      "category": "botanical",
+      "pattern_keywords": [
+        "Schisandra Chinensis",
+        "schisandra chinensis",
+        "schisandra"
+      ],
+      "runtime_lane_keys": [
+        "primary_use_context",
+        "safety_and_boundary_context",
+        "form_source_and_label_context"
+      ],
+      "evidence_review_status": "needs_edit",
+      "hard_boundary": "Hard boundary: do not present Schisandra Chinensis as treating, preventing, or curing disease, replacing medication, or guaranteeing outcomes; keep comparison on disclosed identity, amount, form/source, and safety cautions.",
+      "notes": [
+        "Mapped to runtime family schisandra_chinensis.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative.",
+        "Productized for runtime inference; evidence promotion still requires approved LSR review."
+      ]
+    },
+    {
+      "source_ingredient_id": "shilajit",
+      "display_name": "Shilajit",
+      "canonical_family": "shilajit",
+      "original_mapping_status": "mapped_existing_family",
+      "closure_decision": "productize_runtime_family",
+      "productization_class": "high_risk_safety",
+      "safety_boundary_tier": "high",
+      "category": "botanical",
+      "pattern_keywords": [
+        "Shilajit",
+        "shilajit"
+      ],
+      "runtime_lane_keys": [
+        "primary_use_context",
+        "safety_and_boundary_context",
+        "form_source_and_label_context"
+      ],
+      "evidence_review_status": "approved",
+      "hard_boundary": "Hard boundary: do not present Shilajit as treating, preventing, or curing disease, replacing medication, or guaranteeing outcomes; keep comparison on disclosed identity, amount, form/source, and safety cautions.",
+      "notes": [
+        "Mapped to runtime family shilajit.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative.",
+        "Productized for runtime inference; evidence promotion still requires approved LSR review."
+      ]
+    },
+    {
+      "source_ingredient_id": "spermidine",
+      "display_name": "Spermidine",
+      "canonical_family": "spermidine",
+      "original_mapping_status": "mapped_existing_family",
+      "closure_decision": "productize_runtime_family",
+      "productization_class": "low_risk_structural",
+      "safety_boundary_tier": "standard",
+      "category": "other",
+      "pattern_keywords": [
+        "Spermidine",
+        "spermidine"
+      ],
+      "runtime_lane_keys": [
+        "primary_context",
+        "form_and_disclosure_context",
+        "formula_context"
+      ],
+      "evidence_review_status": "approved",
+      "hard_boundary": "Do not turn Spermidine context into disease-treatment, guaranteed-outcome, universal best-form, or superiority language.",
+      "notes": [
+        "Mapped to runtime family spermidine.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative.",
+        "Productized for runtime inference; evidence promotion still requires approved LSR review."
+      ]
+    },
+    {
+      "source_ingredient_id": "stinging_nettle_root",
+      "display_name": "Stinging Nettle Root",
+      "canonical_family": "stinging_nettle_root",
+      "original_mapping_status": "mapped_existing_family",
+      "closure_decision": "productize_runtime_family",
+      "productization_class": "high_risk_safety",
+      "safety_boundary_tier": "high",
+      "category": "botanical",
+      "pattern_keywords": [
+        "Stinging Nettle Root",
+        "stinging nettle root",
+        "nettle root",
+        "urtica"
+      ],
+      "runtime_lane_keys": [
+        "primary_use_context",
+        "safety_and_boundary_context",
+        "form_source_and_label_context"
+      ],
+      "evidence_review_status": "approved",
+      "hard_boundary": "Hard boundary: do not present Stinging Nettle Root as treating, preventing, or curing disease, replacing medication, or guaranteeing outcomes; keep comparison on disclosed identity, amount, form/source, and safety cautions.",
+      "notes": [
+        "Mapped to runtime family stinging_nettle_root.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative.",
+        "Productized for runtime inference; evidence promotion still requires approved LSR review."
+      ]
+    },
+    {
+      "source_ingredient_id": "tocotrienols",
+      "display_name": "Tocotrienols",
+      "canonical_family": "tocotrienols",
+      "original_mapping_status": "mapped_existing_family",
+      "closure_decision": "rescue_to_canonical_runtime_family",
+      "productization_class": "crosswalk_rescue",
+      "safety_boundary_tier": "high",
+      "category": "lipid",
+      "pattern_keywords": [
+        "Tocotrienols",
+        "tocotrienols",
+        "vitamin E tocotrienol"
+      ],
+      "runtime_lane_keys": [
+        "primary_use_context",
+        "safety_and_boundary_context",
+        "form_source_and_label_context"
+      ],
+      "evidence_review_status": "needs_edit",
+      "hard_boundary": "Hard boundary: do not present Tocotrienols as treating, preventing, or curing disease, replacing medication, or guaranteeing outcomes; keep comparison on disclosed identity, amount, form/source, and safety cautions.",
+      "notes": [
+        "Mapped to runtime family tocotrienols.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative.",
+        "Rescued into an explicit canonical runtime family with high-boundary evidence review."
+      ]
+    },
+    {
+      "source_ingredient_id": "tongkat_ali",
+      "display_name": "Tongkat Ali",
+      "canonical_family": "tongkat_ali",
+      "original_mapping_status": "mapped_existing_family",
+      "closure_decision": "productize_runtime_family",
+      "productization_class": "high_risk_safety",
+      "safety_boundary_tier": "high",
+      "category": "botanical",
+      "pattern_keywords": [
+        "Tongkat Ali",
+        "tongkat ali",
+        "eurycoma",
+        "longjack"
+      ],
+      "runtime_lane_keys": [
+        "primary_use_context",
+        "safety_and_boundary_context",
+        "form_source_and_label_context"
+      ],
+      "evidence_review_status": "approved",
+      "hard_boundary": "Hard boundary: do not present Tongkat Ali as treating, preventing, or curing disease, replacing medication, or guaranteeing outcomes; keep comparison on disclosed identity, amount, form/source, and safety cautions.",
+      "notes": [
+        "Mapped to runtime family tongkat_ali.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative.",
+        "Productized for runtime inference; evidence promotion still requires approved LSR review."
+      ]
+    },
+    {
+      "source_ingredient_id": "urolithin_a",
+      "display_name": "Urolithin A",
+      "canonical_family": "urolithin_a",
+      "original_mapping_status": "mapped_existing_family",
+      "closure_decision": "productize_runtime_family",
+      "productization_class": "low_risk_structural",
+      "safety_boundary_tier": "standard",
+      "category": "other",
+      "pattern_keywords": [
+        "Urolithin A",
+        "urolithin a"
+      ],
+      "runtime_lane_keys": [
+        "primary_context",
+        "form_and_disclosure_context",
+        "formula_context"
+      ],
+      "evidence_review_status": "approved",
+      "hard_boundary": "Do not turn Urolithin A context into disease-treatment, guaranteed-outcome, universal best-form, or superiority language.",
+      "notes": [
+        "Mapped to runtime family urolithin_a.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative.",
+        "Productized for runtime inference; evidence promotion still requires approved LSR review."
+      ]
+    },
+    {
+      "source_ingredient_id": "vitex",
+      "display_name": "Vitex",
+      "canonical_family": "vitex",
+      "original_mapping_status": "mapped_existing_family",
+      "closure_decision": "productize_runtime_family",
+      "productization_class": "high_risk_safety",
+      "safety_boundary_tier": "high",
+      "category": "botanical",
+      "pattern_keywords": [
+        "Vitex",
+        "vitex",
+        "chasteberry",
+        "chaste tree"
+      ],
+      "runtime_lane_keys": [
+        "primary_use_context",
+        "safety_and_boundary_context",
+        "form_source_and_label_context"
+      ],
+      "evidence_review_status": "approved",
+      "hard_boundary": "Hard boundary: do not present Vitex as treating, preventing, or curing disease, replacing medication, or guaranteeing outcomes; keep comparison on disclosed identity, amount, form/source, and safety cautions.",
+      "notes": [
+        "Mapped to runtime family vitex.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative.",
+        "Productized for runtime inference; evidence promotion still requires approved LSR review."
+      ]
+    },
+    {
+      "source_ingredient_id": "white_willow_bark",
+      "display_name": "White Willow Bark",
+      "canonical_family": "white_willow_bark",
+      "original_mapping_status": "mapped_existing_family",
+      "closure_decision": "productize_runtime_family",
+      "productization_class": "high_risk_safety",
+      "safety_boundary_tier": "high",
+      "category": "botanical",
+      "pattern_keywords": [
+        "White Willow Bark",
+        "white willow bark",
+        "salix alba"
+      ],
+      "runtime_lane_keys": [
+        "primary_use_context",
+        "safety_and_boundary_context",
+        "form_source_and_label_context"
+      ],
+      "evidence_review_status": "approved",
+      "hard_boundary": "Hard boundary: do not present White Willow Bark as treating, preventing, or curing disease, replacing medication, or guaranteeing outcomes; keep comparison on disclosed identity, amount, form/source, and safety cautions.",
+      "notes": [
+        "Mapped to runtime family white_willow_bark.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative.",
+        "Productized for runtime inference; evidence promotion still requires approved LSR review."
+      ]
+    }
+  ]
+}

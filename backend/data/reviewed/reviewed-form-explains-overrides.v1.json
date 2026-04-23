@@ -2,7 +2,9 @@
   "metadata": {
     "package_version": "reviewed-overrides.v1",
     "source_version": "reviewed-overrides.v1",
-    "generated_at": "2026-02-23T11:15:43.556Z"
+    "generated_at": "2026-02-23T11:15:43.556Z",
+    "nutri_minimal_v4_prompt_grounding_promoted_at": "2026-04-23T20:18:17.343Z",
+    "nutri_minimal_v4_prompt_grounding_source": "backend/data/staging/nutri-minimal-v4/prompt-grounding-review-queue.json"
   },
   "form_explain_overrides": [
     {
@@ -476,6 +478,248 @@
               "sentence_id": "override_folic_acid_folic_acid_cav_1",
               "evidence_grade": "D",
               "evidence_reference_id": "ref_reviewed_override_20260223"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "ingredient_id": "magnesium",
+      "ingredient": "Magnesium",
+      "form_key": "aspartate",
+      "form_display": "Aspartate",
+      "evidence_grade": "C",
+      "overall_confidence": 0.56,
+      "relative_factor": 1,
+      "override_id": "nutri_minimal_v4_prompt_grounding_x_0bc54007a1fa3ae9",
+      "reference_ids": [
+        "ref_836fb57ba9df"
+      ],
+      "promotion": {
+        "source": "nutri_minimal_v4_prompt_grounding",
+        "source_ids": [
+          "x_0bc54007a1fa3ae9"
+        ],
+        "mapped_family": "magnesium",
+        "promoted_at": "2026-04-23T20:18:17.342Z",
+        "review_status": "approved"
+      },
+      "segments": {
+        "absorption": {
+          "en": [
+            {
+              "text": "NIH ODS states that magnesium supplements come in different forms and absorption varies; forms that dissolve well in liquid tend to have higher absorption. It notes that aspartate, citrate, lactate, and chloride forms tend to have higher bioavailability than magnesium oxide and magnesium sulfate in small studies.",
+              "sentence_id": "magnesium_aspartate_sentence_absorption_001",
+              "evidence_snippet_id": "magnesium_aspartate_excerpt_absorption_001",
+              "evidence_reference_id": "ref_836fb57ba9df",
+              "evidence_grade": "C",
+              "source": "nutri_minimal_v4_prompt_grounding"
+            }
+          ]
+        },
+        "caveats": {
+          "en": [
+            {
+              "text": "Use this as form-level label context only; it should not become a disease-treatment, guaranteed-outcome, or universal best-form claim.",
+              "sentence_id": "magnesium_aspartate_sentence_caveat_001",
+              "evidence_snippet_id": "magnesium_aspartate_excerpt_caveat_001",
+              "evidence_reference_id": "ref_836fb57ba9df",
+              "evidence_grade": "C",
+              "source": "nutri_minimal_v4_prompt_grounding"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "ingredient_id": "coq10",
+      "ingredient": "Coq10",
+      "form_key": "ubiquinol",
+      "form_display": "Ubiquinol",
+      "evidence_grade": "C",
+      "overall_confidence": 0.56,
+      "relative_factor": 1,
+      "override_id": "nutri_minimal_v4_prompt_grounding_x_3088d7acc9a76917",
+      "reference_ids": [
+        "ref_6f97c574fb6d"
+      ],
+      "promotion": {
+        "source": "nutri_minimal_v4_prompt_grounding",
+        "source_ids": [
+          "x_3088d7acc9a76917"
+        ],
+        "mapped_family": "coq10",
+        "promoted_at": "2026-04-23T20:18:17.343Z",
+        "review_status": "approved"
+      },
+      "segments": {
+        "absorption": {
+          "en": [
+            {
+              "text": "StatPearls summarizes CoQ10 biology and notes that supplementation has been studied across several conditions, while evidence and routine use can remain inconclusive in some populations.",
+              "sentence_id": "coq10_ubiquinol_sentence_absorption_001",
+              "evidence_snippet_id": "coq10_ubiquinol_excerpt_absorption_001",
+              "evidence_reference_id": "ref_6f97c574fb6d",
+              "evidence_grade": "C",
+              "source": "nutri_minimal_v4_prompt_grounding"
+            }
+          ]
+        },
+        "caveats": {
+          "en": [
+            {
+              "text": "Use this as form-level label context only; it should not become a disease-treatment, guaranteed-outcome, or universal best-form claim.",
+              "sentence_id": "coq10_ubiquinol_sentence_caveat_001",
+              "evidence_snippet_id": "coq10_ubiquinol_excerpt_caveat_001",
+              "evidence_reference_id": "ref_6f97c574fb6d",
+              "evidence_grade": "C",
+              "source": "nutri_minimal_v4_prompt_grounding"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "ingredient_id": "zinc",
+      "ingredient": "Zinc",
+      "form_key": "bisglycinate",
+      "form_display": "Bisglycinate",
+      "evidence_grade": "C",
+      "overall_confidence": 0.56,
+      "relative_factor": 1,
+      "override_id": "nutri_minimal_v4_prompt_grounding_x_53e0aeb063365dec",
+      "reference_ids": [
+        "ref_3226a97a5e81"
+      ],
+      "promotion": {
+        "source": "nutri_minimal_v4_prompt_grounding",
+        "source_ids": [
+          "x_53e0aeb063365dec"
+        ],
+        "mapped_family": "zinc",
+        "promoted_at": "2026-04-23T20:18:17.343Z",
+        "review_status": "approved"
+      },
+      "segments": {
+        "absorption": {
+          "en": [
+            {
+              "text": "NIH ODS notes that zinc bioavailability from vegetarian diets is often lower than from nonvegetarian diets because phytates in legumes and whole grains bind zinc and inhibit absorption. It also states that food preparation techniques that reduce phytate binding (e.g., soaking) and organic acids in fermented foods might increase zinc absorption.",
+              "sentence_id": "zinc_bisglycinate_sentence_absorption_001",
+              "evidence_snippet_id": "zinc_bisglycinate_excerpt_absorption_001",
+              "evidence_reference_id": "ref_3226a97a5e81",
+              "evidence_grade": "C",
+              "source": "nutri_minimal_v4_prompt_grounding"
+            }
+          ]
+        },
+        "caveats": {
+          "en": [
+            {
+              "text": "Use this as form-level label context only; it should not become a disease-treatment, guaranteed-outcome, or universal best-form claim.",
+              "sentence_id": "zinc_bisglycinate_sentence_caveat_001",
+              "evidence_snippet_id": "zinc_bisglycinate_excerpt_caveat_001",
+              "evidence_reference_id": "ref_3226a97a5e81",
+              "evidence_grade": "C",
+              "source": "nutri_minimal_v4_prompt_grounding"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "ingredient_id": "curcumin",
+      "ingredient": "Curcumin",
+      "form_key": "cyclodextrin_complex",
+      "form_display": "Cyclodextrin Complex",
+      "evidence_grade": "C",
+      "overall_confidence": 0.56,
+      "relative_factor": 1,
+      "override_id": "nutri_minimal_v4_prompt_grounding_x_7cb6a789fc6950b9",
+      "reference_ids": [
+        "ref_3bd8ba77b708",
+        "ref_308010f957ae"
+      ],
+      "promotion": {
+        "source": "nutri_minimal_v4_prompt_grounding",
+        "source_ids": [
+          "x_7cb6a789fc6950b9",
+          "x_cba7bc8e17d4ac91"
+        ],
+        "mapped_family": "curcumin",
+        "promoted_at": "2026-04-23T20:18:17.343Z",
+        "review_status": "approved"
+      },
+      "segments": {
+        "absorption": {
+          "en": [
+            {
+              "text": "NCCIH notes that highly bioavailable curcumin formulations may harm the liver, and that combining curcumin with piperine is one way to improve curcumin bioavailability. It also states that higher‑quality evidence is still needed to reach definitive conclusions on benefits. A PubMed record on innovative curcumin formulations describes pharmacokinetic comparisons using plasma concentration–time curves and metrics such as AUC and Cmax to calculate relative absorption for different formulations.",
+              "sentence_id": "curcumin_cyclodextrin_complex_sentence_absorption_001",
+              "evidence_snippet_id": "curcumin_cyclodextrin_complex_excerpt_absorption_001",
+              "evidence_reference_id": "ref_3bd8ba77b708",
+              "evidence_grade": "C",
+              "source": "nutri_minimal_v4_prompt_grounding"
+            }
+          ]
+        },
+        "caveats": {
+          "en": [
+            {
+              "text": "Use this as form-level label context only; it should not become a disease-treatment, guaranteed-outcome, or universal best-form claim.",
+              "sentence_id": "curcumin_cyclodextrin_complex_sentence_caveat_001",
+              "evidence_snippet_id": "curcumin_cyclodextrin_complex_excerpt_caveat_001",
+              "evidence_reference_id": "ref_3bd8ba77b708",
+              "evidence_grade": "C",
+              "source": "nutri_minimal_v4_prompt_grounding"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "ingredient_id": "vitamin_c",
+      "ingredient": "Vitamin C",
+      "form_key": "ascorbic_acid",
+      "form_display": "Ascorbic Acid",
+      "evidence_grade": "C",
+      "overall_confidence": 0.56,
+      "relative_factor": 1,
+      "override_id": "nutri_minimal_v4_prompt_grounding_x_9d4f7af897c09dfc",
+      "reference_ids": [
+        "ref_0c7d1c9cb8f8"
+      ],
+      "promotion": {
+        "source": "nutri_minimal_v4_prompt_grounding",
+        "source_ids": [
+          "x_9d4f7af897c09dfc"
+        ],
+        "mapped_family": "vitamin_c",
+        "promoted_at": "2026-04-23T20:18:17.343Z",
+        "review_status": "approved"
+      },
+      "segments": {
+        "absorption": {
+          "en": [
+            {
+              "text": "NIH ODS explains that vitamin C supplements come in multiple forms (e.g., ascorbic acid, sodium/calcium ascorbate, and combination products such as Ester‑C). It reports that some human studies found similar plasma vitamin C across forms, and that authors concluded simple ascorbic acid is often the preferred source due to cost.",
+              "sentence_id": "vitamin_c_ascorbic_acid_sentence_absorption_001",
+              "evidence_snippet_id": "vitamin_c_ascorbic_acid_excerpt_absorption_001",
+              "evidence_reference_id": "ref_0c7d1c9cb8f8",
+              "evidence_grade": "C",
+              "source": "nutri_minimal_v4_prompt_grounding"
+            }
+          ]
+        },
+        "caveats": {
+          "en": [
+            {
+              "text": "Use this as form-level label context only; it should not become a disease-treatment, guaranteed-outcome, or universal best-form claim.",
+              "sentence_id": "vitamin_c_ascorbic_acid_sentence_caveat_001",
+              "evidence_snippet_id": "vitamin_c_ascorbic_acid_excerpt_caveat_001",
+              "evidence_reference_id": "ref_0c7d1c9cb8f8",
+              "evidence_grade": "C",
+              "source": "nutri_minimal_v4_prompt_grounding"
             }
           ]
         }
