@@ -74,6 +74,23 @@ test("admitted full-lane streams can immediately fall back when admission remain
   assert.match(fallbackSlice, /emitAdmissionCoreFallbackAndFinalize\("PRE_REV1_PRESSURE_GUARD"\)/);
 });
 
+test("admission core fallback enforces an outer quick-digest budget", async () => {
+  const source = await readFile(SERVER_PATH, "utf8");
+  const helperStart = source.indexOf("const withAdmissionCoreFallbackBudget =");
+  assert.ok(helperStart >= 0, "missing admission fallback budget helper");
+  const helperSlice = source.slice(helperStart, helperStart + 900);
+
+  assert.match(helperSlice, /setTimeout/);
+  assert.match(helperSlice, /new TimeoutError\("admission_core_fallback_budget_exhausted"\)/);
+  assert.match(helperSlice, /clearTimeout\(timer\)/);
+  const fallbackStart = source.indexOf("const emitAdmissionCoreFallbackAndFinalize =");
+  assert.ok(fallbackStart > helperStart, "fallback helper should be available before admission fallback");
+  const fallbackSlice = source.slice(fallbackStart, fallbackStart + 1600);
+  assert.match(fallbackSlice, /withAdmissionCoreFallbackBudget\(/);
+  assert.match(fallbackSlice, /buildMySupplementDigestQuick\(/);
+  assert.match(fallbackSlice, /ENRICH_STREAM_ADMISSION_CORE_FALLBACK_BUDGET_MS/);
+});
+
 test("global watchdog uses request-level deadline", async () => {
   const source = await readFile(SERVER_PATH, "utf8");
   const watchdogStart = source.indexOf("if (!globalWatchdog)");

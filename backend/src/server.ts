@@ -15383,6 +15383,17 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
       });
     }
   };
+  const withAdmissionCoreFallbackBudget = async <T>(
+    promise: Promise<T>,
+    budgetMs: number,
+  ): Promise<T> =>
+    new Promise<T>((resolve, reject) => {
+      const timer = setTimeout(() => {
+        reject(new TimeoutError("admission_core_fallback_budget_exhausted"));
+      }, Math.max(1, budgetMs));
+      (timer as { unref?: () => void }).unref?.();
+      promise.then(resolve, reject).finally(() => clearTimeout(timer));
+    });
   const emitAdmissionCoreFallbackAndFinalize = async (
     reasonCode: "QUEUE_FULL" | "QUEUE_WAIT_TIMEOUT" | "PRE_REV1_PRESSURE_GUARD",
   ): Promise<boolean> => {
@@ -15396,13 +15407,16 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
     terminalReason = fallbackCode;
 
     try {
-      const quickDigest = await buildMySupplementDigestQuick({
-        supplementId: barcodeGtin14,
-        barcode: normalized.code,
-        brandName: "",
-        productName: "",
-        budgetMs: ENRICH_STREAM_ADMISSION_CORE_FALLBACK_BUDGET_MS,
-      });
+      const quickDigest = await withAdmissionCoreFallbackBudget(
+        buildMySupplementDigestQuick({
+          supplementId: barcodeGtin14,
+          barcode: normalized.code,
+          brandName: "",
+          productName: "",
+          budgetMs: ENRICH_STREAM_ADMISSION_CORE_FALLBACK_BUDGET_MS,
+        }),
+        ENRICH_STREAM_ADMISSION_CORE_FALLBACK_BUDGET_MS,
+      );
       const digest = quickDigest.digest;
       const identityType = digest.identity.type;
       const identityValue = String(digest.identity.value || barcodeGtin14);
