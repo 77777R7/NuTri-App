@@ -60,4 +60,13 @@ test("authority regression sample defaults to stable LNHPD scan-history sample w
     /authorityFailMode\s*=\s*"timeout"/,
     "regression sample should not force LNHPD fetch timeout unless requested by header",
   );
+
+  const cachedFastStart = source.indexOf("let bypassCachedFastPathForAuthority = false;");
+  assert.ok(cachedFastStart >= 0, "missing cached fast authority bypass guard");
+  const cachedFastBlock = source.slice(cachedFastStart, source.indexOf("if (cachedFast) {", cachedFastStart));
+  assert.match(
+    cachedFastBlock,
+    /if \(authorityRegressionScenarioActive\) \{[\s\S]*bypassCachedFastPathForAuthority = true;/,
+    "authority regression sample must bypass stale web-only snapshot cache before LNHPD bootstrap",
+  );
 });

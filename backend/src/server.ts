@@ -17291,6 +17291,12 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
     let bypassCachedFastPathForAuthority = false;
     let cachedLooksWebOnly = false;
     let prefetchedNameMatchFacts: LnhpdFacts | null = null;
+    if (authorityRegressionScenarioActive) {
+      bypassCachedFastPathForAuthority = true;
+      console.info("[ResolutionV2] Bypassing cached snapshot for authority regression sample", {
+        barcode: barcodeGtin14,
+      });
+    }
     if (cachedFast) {
       const cachedOverlayClaims = await getOverlayClaimsForBarcode();
       const cachedNeedsOverlayRefresh =
