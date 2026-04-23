@@ -586,7 +586,7 @@ const RESILIENCE_GOOGLE_QUEUE_TIMEOUT_MS = Number(process.env.RESILIENCE_GOOGLE_
 const RESILIENCE_DEEPSEEK_QUEUE_TIMEOUT_MS = Number(process.env.RESILIENCE_DEEPSEEK_QUEUE_TIMEOUT_MS ?? 300);
 const REG_MAP_SECOND_CHANCE_TIMEOUT_MS = Number(process.env.REG_MAP_SECOND_CHANCE_TIMEOUT_MS ?? 450);
 const authorityRegressionSampleBarcodeNormalized = normalizeBarcodeInput(
-  process.env.AUTHORITY_REGRESSION_SAMPLE_BARCODE ?? "",
+  process.env.AUTHORITY_REGRESSION_SAMPLE_BARCODE ?? "00628747100045",
 );
 const AUTHORITY_REGRESSION_SAMPLE_BARCODE =
   authorityRegressionSampleBarcodeNormalized?.code.padStart(14, "0") ?? "";
@@ -7054,6 +7054,20 @@ const decisionSupportFetchCounter = createDecisionSupportFetchCounter({
 });
 
 const verifySupabaseToken = async (req: Request, res: Response, next: NextFunction) => {
+  // CI regression requests may also carry x-auth-disabled for preview/staging convenience.
+  // Mark regression auth first so internal debug/audit contracts stay gated by the token,
+  // not accidentally hidden by the broader auth-bypass path.
+  if (regressionAuthToken && regressionAuthRoutes.has(req.path)) {
+    const regressionHeader = req.headers["x-regression-token"];
+    const hasRegressionToken = Array.isArray(regressionHeader)
+      ? regressionHeader.includes(regressionAuthToken)
+      : regressionHeader === regressionAuthToken;
+    if (hasRegressionToken) {
+      (req as AuthenticatedRequest).regressionAuth = true;
+      return next();
+    }
+  }
+
   if (authDisabled) {
     return next();
   }
@@ -7072,18 +7086,6 @@ const verifySupabaseToken = async (req: Request, res: Response, next: NextFuncti
       (req as AuthenticatedRequest).user = { id: debugUserId };
     }
     return next();
-  }
-
-  // CI regression path: scoped token only for non-destructive analysis endpoints.
-  if (regressionAuthToken && regressionAuthRoutes.has(req.path)) {
-    const regressionHeader = req.headers["x-regression-token"];
-    const hasRegressionToken = Array.isArray(regressionHeader)
-      ? regressionHeader.includes(regressionAuthToken)
-      : regressionHeader === regressionAuthToken;
-    if (hasRegressionToken) {
-      (req as AuthenticatedRequest).regressionAuth = true;
-      return next();
-    }
   }
 
   const authHeader = req.headers.authorization;
@@ -15609,9 +15611,6 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
       AUTHORITY_REGRESSION_SAMPLE_ENABLED &&
       isRegressionLikeRequest &&
       barcodeGtin14 === AUTHORITY_REGRESSION_SAMPLE_BARCODE;
-    if (authorityRegressionScenarioActive) {
-      authorityFailMode = "timeout";
-    }
 
     let regulatoryMapStatus: "hit" | "stale" | "miss" | "timeout" = "miss";
     let regMapPrimaryAttempted = false;

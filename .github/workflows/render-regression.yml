@@ -185,7 +185,7 @@ jobs:
           # Keep push/pr runs observable but non-blocking while scan recovery work is still converging on main.
           RENDER_OBSERVE_ONLY: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && '1' || github.event_name == 'pull_request' && steps.target.outputs.deploy_mode == 'primary' && '1' || '0' }}
           RENDER_ARTIFACT_DIR: ${{ steps.artifact.outputs.artifact_dir }}
-          RENDER_LNHPD_BARCODE: "00029537001069"
+          RENDER_LNHPD_BARCODE: "00628747100045"
           RENDER_DSLD_BARCODE: "026664275110"
           RENDER_DSLD_NOFORM_BARCODE: "026664275110"
           # Keep multiple zinc-citrate samples; catalog mappings can drift.
@@ -202,7 +202,8 @@ jobs:
           RENDER_DSLD_BISGLYCINATE_BARCODE2: ${{ vars.RENDER_DSLD_BISGLYCINATE_BARCODE2 }}
           RENDER_DSLD_GLYCINATE_BARCODE: ${{ vars.RENDER_DSLD_GLYCINATE_BARCODE }}
           RENDER_DSLD_GLYCINATE_BARCODE2: ${{ vars.RENDER_DSLD_GLYCINATE_BARCODE2 }}
-          RENDER_WEB_BARCODE: "000000000000"
+          RENDER_WEB_BARCODE: "00654749351604"
+          RENDER_WEB_BARCODE2: "00666183000154"
           RENDER_DETAIL_LIMIT: "6"
         run: node scripts/ci/render-regression.mjs
 

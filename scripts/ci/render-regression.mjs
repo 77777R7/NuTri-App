@@ -84,7 +84,7 @@ const lnhpdWithFormBarcode2 = process.env.RENDER_LNHPD_WITH_FORM_BARCODE2 || "00
 const lnhpdWithFormBarcode3 = process.env.RENDER_LNHPD_WITH_FORM_BARCODE3 || "00029537001069";
 
 const DEFAULT_CASES = [
-  { id: "lnhpd", barcodes: [process.env.RENDER_LNHPD_BARCODE || "00029537001069"], expectedSourceType: "lnhpd" },
+  { id: "lnhpd", barcodes: [process.env.RENDER_LNHPD_BARCODE || "00628747100045"], expectedSourceType: "lnhpd" },
   { id: "dsld_no_form", barcodes: [dsldNoFormBarcode], expectedSourceType: "dsld" },
   {
     id: "dsld_with_form",
@@ -124,7 +124,7 @@ const DEFAULT_CASES = [
   },
   {
     id: "web",
-    barcodes: [process.env.RENDER_WEB_BARCODE || "000000000000", process.env.RENDER_WEB_BARCODE2 || null].filter(
+    barcodes: [process.env.RENDER_WEB_BARCODE || "00654749351604", process.env.RENDER_WEB_BARCODE2 || "00666183000154"].filter(
       Boolean,
     ),
     expectedSourceType: "web",
@@ -1835,7 +1835,7 @@ async function main() {
     process.env.RENDER_WARMUP_BARCODE ||
     CASES?.[0]?.barcodes?.[0] ||
     process.env.RENDER_LNHPD_BARCODE ||
-    "00029537001069";
+    "00628747100045";
   const WARMUP_TIMEOUT_MS = Number(process.env.RENDER_WARMUP_TIMEOUT_MS || 240_000);
   const warmupAttempts = Number(process.env.RENDER_WARMUP_ATTEMPTS || 2);
   for (let i = 1; i <= warmupAttempts; i += 1) {
