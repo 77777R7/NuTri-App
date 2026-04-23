@@ -152,12 +152,17 @@ import {
 import { normalizeIherbSupplementFactsRows } from "./iherbOverlayIngredients.js";
 import { getKbRuntime, lookupKbFormExplain, lookupKbRuntimeFormInsights, lookupSafeScienceSignals } from "./kbRuntime.js";
 import { type LabelDraft } from "./labelTypes.js";
-import { getMetricsSnapshot, incrementMetric, recordMetricTiming, startMetricsFlush } from "./metrics.js";
+import { getMetricsSnapshot, incrementMetric, recordMetricTiming, recordSidecarMetric, startMetricsFlush } from "./metrics.js";
 import { buildMySupplementFactsV1, type MySupplementFactsV1 } from "./mySupplementFacts.js";
 import { getMySupplementOverviewV2GateReason } from "./mySupplementOverviewGate.js";
 import { getNutriTipsData } from "./nutriTips.js";
 import { buildRuleBasedOverview } from "./overviewRuleBased.js";
 import { getProductSearchBootstrap, searchProducts, warmProductSearchIndex } from "./productSearch.js";
+import {
+  buildScanSidecarCacheKey,
+  getScanSidecarPolicy,
+  type ScanSidecarRoute,
+} from "./scanSidecarPolicy.js";
 import * as profileResolverModule from "../../lib/personalization/core/profileResolver.ts";
 import {
   buildEnsureOverviewInflightKey,
@@ -2997,15 +3002,48 @@ const mergeFastAnalysisBundle = (params: {
         : null,
   });
   const digest = patched.digest;
-  const decisionSupport = compileDecisionSupport({
-    digest,
-    factsDigestHash: skeleton.meta.factsDigestHash,
-    viewMode: DECISION_SUPPORT_DEFAULT_VIEW_MODE,
-    locale: skeleton.meta.locale,
-    flagsSnapshot: collectDecisionSupportFlagsSnapshot(),
-    patchActivation: patched.activation,
-    overlayClaims: params.overlayClaims ?? null,
-  });
+  const canReuseInlineDecisionSupport = Boolean(
+    skeleton.meta.decisionSupportInline
+    && skeleton.meta.decisionSupportDigest
+    && skeleton.meta.decisionInputsHash
+    && skeleton.meta.decisionContractVersion
+    && skeleton.meta.overlayClaimsHash
+    && skeleton.meta.patchActivationCanonical,
+  );
+  const decisionSupport = canReuseInlineDecisionSupport
+    ? null
+    : compileDecisionSupport({
+      digest,
+      factsDigestHash: skeleton.meta.factsDigestHash,
+      viewMode: DECISION_SUPPORT_DEFAULT_VIEW_MODE,
+      locale: skeleton.meta.locale,
+      flagsSnapshot: collectDecisionSupportFlagsSnapshot(),
+      patchActivation: patched.activation,
+      overlayClaims: params.overlayClaims ?? null,
+    });
+  const decisionSupportMeta = canReuseInlineDecisionSupport
+    ? {
+      decisionSupportDigest: skeleton.meta.decisionSupportDigest,
+      decisionInputsHash: skeleton.meta.decisionInputsHash,
+      decisionContractVersion: skeleton.meta.decisionContractVersion,
+      overlayClaimsHash: skeleton.meta.overlayClaimsHash,
+      overlayAugmentationVersion: skeleton.meta.overlayAugmentationVersion,
+      overlayAugmentationSource: skeleton.meta.overlayAugmentationSource,
+      patchActivationCanonical: skeleton.meta.patchActivationCanonical,
+      decisionDebug: skeleton.meta.decisionDebug,
+      decisionSupportInline: skeleton.meta.decisionSupportInline,
+    }
+    : {
+      decisionSupportDigest: decisionSupport!.digest,
+      decisionInputsHash: decisionSupport!.decisionInputsHash,
+      decisionContractVersion: decisionSupport!.decisionContractVersion,
+      overlayClaimsHash: decisionSupport!.overlayClaimsHash,
+      overlayAugmentationVersion: decisionSupport!.overlayAugmentationVersion,
+      overlayAugmentationSource: decisionSupport!.overlayAugmentationSource,
+      patchActivationCanonical: decisionSupport!.patchActivationCanonical,
+      decisionDebug: decisionSupport!.decisionDebug,
+      decisionSupportInline: toDecisionSupportInline(decisionSupport!),
+    };
   const ingredientsCover = buildIngredientsCover(digest, params.deterministicSignals);
   const ingredientsDataStatus = digest.actives.length > 0 ? "complete" : "not_provided";
   const allowedFormKeywords = buildAllowedFormKeywordSet(digest);
@@ -3239,19 +3277,19 @@ const mergeFastAnalysisBundle = (params: {
       deterministicSignals: summarizeDeterministicSignals(params.deterministicSignals),
       phase: "fast_ai",
       revision: skeleton.meta.revision + 1,
-      decisionSupportDigest: decisionSupport.digest,
-      decisionInputsHash: decisionSupport.decisionInputsHash,
-      decisionContractVersion: decisionSupport.decisionContractVersion,
-      overlayClaimsHash: decisionSupport.overlayClaimsHash,
-      overlayAugmentationVersion: decisionSupport.overlayAugmentationVersion,
-      overlayAugmentationSource: decisionSupport.overlayAugmentationSource,
-      patchActivationCanonical: decisionSupport.patchActivationCanonical,
-      ...(params.includeDecisionDebug && decisionSupport.decisionDebug
+      decisionSupportDigest: decisionSupportMeta.decisionSupportDigest,
+      decisionInputsHash: decisionSupportMeta.decisionInputsHash,
+      decisionContractVersion: decisionSupportMeta.decisionContractVersion,
+      overlayClaimsHash: decisionSupportMeta.overlayClaimsHash,
+      overlayAugmentationVersion: decisionSupportMeta.overlayAugmentationVersion,
+      overlayAugmentationSource: decisionSupportMeta.overlayAugmentationSource,
+      patchActivationCanonical: decisionSupportMeta.patchActivationCanonical,
+      ...(params.includeDecisionDebug && decisionSupportMeta.decisionDebug
         ? {
-          decisionDebug: decisionSupport.decisionDebug,
+          decisionDebug: decisionSupportMeta.decisionDebug,
         }
         : {}),
-      decisionSupportInline: toDecisionSupportInline(decisionSupport),
+      decisionSupportInline: decisionSupportMeta.decisionSupportInline,
     },
     sections: {
       overview: {
@@ -6986,6 +7024,26 @@ app.set("etag", false);
 app.use(cors());
 app.use(express.json({ limit: "10mb" })); // P0-2: Increased from 1mb for image base64
 
+const resolveScanSidecarRouteForPath = (path: string): ScanSidecarRoute | null => {
+  if (path === "/api/decision-support/v1") return "decision_support";
+  if (path.startsWith("/api/scan-facts/v1/")) return "scan_facts";
+  if (path === "/api/ingredient-overview/v1") return "ingredient_overview";
+  if (path === "/api/scientific-background/v1") return "scientific_background";
+  if (path === "/api/product-overview-ai/v1") return "product_overview_ai";
+  if (path === "/api/summary/safety") return "summary_safety";
+  return null;
+};
+
+const recordScanSidecarRouteTiming = (route: ScanSidecarRoute, durationMs: number): void => {
+  const policy = getScanSidecarPolicy(route);
+  recordSidecarMetric({
+    route,
+    priority: policy.priority,
+    latencyMs: durationMs,
+    fetched: true,
+  });
+};
+
 // Minimal request logging (no body / no secrets)
 app.use((req: Request, res: Response, next: NextFunction) => {
   const requestId = randomUUID();
@@ -6994,6 +7052,10 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   let finished = false;
   let aborted = false;
   const recordRouteTimingMetrics = (durationMs: number) => {
+    const sidecarRoute = resolveScanSidecarRouteForPath(req.path);
+    if (sidecarRoute) {
+      recordScanSidecarRouteTiming(sidecarRoute, durationMs);
+    }
     if (req.path === "/api/ingredient-overview/v1") {
       recordMetricTiming("ingredient_overview_ms", durationMs);
       return;
@@ -10394,27 +10456,47 @@ const decisionSupportAuthorityBundleInflight = new Map<string, Promise<DecisionS
 let activeScientificBackgroundRefreshCount = 0;
 const queuedScientificBackgroundRefreshTasks: Array<() => void> = [];
 
+const recordScanSidecarCacheStatus = (
+  route: ScanSidecarRoute,
+  cacheStatus: "hit" | "miss" | "stale" | "write" | "bypass",
+): void => {
+  const policy = getScanSidecarPolicy(route);
+  recordSidecarMetric({
+    route,
+    priority: policy.priority,
+    cacheStatus,
+  });
+};
+
 const buildIngredientOverviewSidecarCacheKey = (params: {
+  barcode?: string;
   decisionDigest: string;
   decisionInputsHash: string;
   personalizationScopeHash: string;
 }): string =>
-  [
-    params.decisionDigest,
-    params.decisionInputsHash,
-    params.personalizationScopeHash,
-    INGREDIENT_OVERVIEW_PROMPT_VERSION,
-  ].join("|");
+  buildScanSidecarCacheKey({
+    route: "ingredient_overview",
+    barcode: params.barcode,
+    decisionDigest: params.decisionDigest,
+    decisionInputsHash: params.decisionInputsHash,
+    personalizationScopeHash: params.personalizationScopeHash,
+    promptVersion: INGREDIENT_OVERVIEW_PROMPT_VERSION,
+  });
 
 const readIngredientOverviewSidecarCache = (
   cacheKey: string,
 ): IngredientOverviewSidecarResponse | null => {
   const entry = ingredientOverviewSidecarCache.get(cacheKey);
-  if (!entry) return null;
-  if (entry.expiresAt <= Date.now()) {
-    ingredientOverviewSidecarCache.delete(cacheKey);
+  if (!entry) {
+    recordScanSidecarCacheStatus("ingredient_overview", "miss");
     return null;
   }
+  if (entry.expiresAt <= Date.now()) {
+    ingredientOverviewSidecarCache.delete(cacheKey);
+    recordScanSidecarCacheStatus("ingredient_overview", "stale");
+    return null;
+  }
+  recordScanSidecarCacheStatus("ingredient_overview", "hit");
   return entry.payload;
 };
 
@@ -10423,9 +10505,11 @@ const writeIngredientOverviewSidecarCache = (
   payload: IngredientOverviewSidecarResponse,
 ): void => {
   ingredientOverviewSidecarCache.set(cacheKey, {
-    expiresAt: Date.now() + INGREDIENT_OVERVIEW_FALLBACK_CACHE_TTL_MS,
+    expiresAt: Date.now()
+      + (getScanSidecarPolicy("ingredient_overview").defaultTtlMs || INGREDIENT_OVERVIEW_FALLBACK_CACHE_TTL_MS),
     payload,
   });
+  recordScanSidecarCacheStatus("ingredient_overview", "write");
   if (ingredientOverviewSidecarCache.size <= INGREDIENT_OVERVIEW_RESULT_CACHE_LIMIT) return;
   const oldestKey = ingredientOverviewSidecarCache.keys().next().value;
   if (typeof oldestKey === "string") {
@@ -10502,34 +10586,63 @@ const readScientificBackgroundSidecarCache = (
   cacheKey: string,
 ): ScientificBackgroundSidecarResponse | null => {
   const entry = scientificBackgroundSidecarCache.get(cacheKey);
-  if (!entry) return null;
-  if (entry.expiresAt <= Date.now()) {
-    scientificBackgroundSidecarCache.delete(cacheKey);
+  if (!entry) {
+    recordScanSidecarCacheStatus("scientific_background", "miss");
     return null;
   }
+  if (entry.expiresAt <= Date.now()) {
+    scientificBackgroundSidecarCache.delete(cacheKey);
+    recordScanSidecarCacheStatus("scientific_background", "stale");
+    return null;
+  }
+  recordScanSidecarCacheStatus("scientific_background", "hit");
   return entry.payload;
 };
 
+const buildScientificBackgroundSidecarCacheKey = (params: {
+  barcode?: string;
+  decisionDigest: string;
+  decisionInputsHash: string;
+  personalizationScopeHash: string;
+  selectedIngredientKey: string;
+  promptVersion: string;
+}): string =>
+  buildScanSidecarCacheKey({
+    route: "scientific_background",
+    barcode: params.barcode,
+    decisionDigest: params.decisionDigest,
+    decisionInputsHash: params.decisionInputsHash,
+    personalizationScopeHash: params.personalizationScopeHash,
+    selectedIngredientKey: params.selectedIngredientKey,
+    promptVersion: params.promptVersion,
+  });
+
 const findScientificBackgroundSidecarCacheByRequest = (params: {
+  barcode?: string;
   decisionDigest: string;
   decisionInputsHash: string;
   personalizationScopeHash: string;
   selectedIngredientKey: string;
 }): { cacheKey: string; payload: ScientificBackgroundSidecarResponse } | null => {
-  const prefix = [
-    params.decisionDigest,
-    params.decisionInputsHash,
-    params.personalizationScopeHash,
-    params.selectedIngredientKey,
-  ].join("|") + "|";
+  const prefix = buildScanSidecarCacheKey({
+    route: "scientific_background",
+    barcode: params.barcode,
+    decisionDigest: params.decisionDigest,
+    decisionInputsHash: params.decisionInputsHash,
+    personalizationScopeHash: params.personalizationScopeHash,
+    selectedIngredientKey: params.selectedIngredientKey,
+  }) + "|";
   for (const [cacheKey, entry] of scientificBackgroundSidecarCache.entries()) {
     if (!cacheKey.startsWith(prefix)) continue;
     if (entry.expiresAt <= Date.now()) {
       scientificBackgroundSidecarCache.delete(cacheKey);
+      recordScanSidecarCacheStatus("scientific_background", "stale");
       continue;
     }
+    recordScanSidecarCacheStatus("scientific_background", "hit");
     return { cacheKey, payload: entry.payload };
   }
+  recordScanSidecarCacheStatus("scientific_background", "miss");
   return null;
 };
 
@@ -10542,6 +10655,7 @@ const writeScientificBackgroundSidecarCache = (
     expiresAt: Date.now() + ttlMs,
     payload,
   });
+  recordScanSidecarCacheStatus("scientific_background", "write");
   if (scientificBackgroundSidecarCache.size <= SCIENTIFIC_BACKGROUND_RESULT_CACHE_LIMIT) return;
   const oldestKey = scientificBackgroundSidecarCache.keys().next().value;
   if (typeof oldestKey === "string") {
@@ -10553,11 +10667,12 @@ const resolveScientificBackgroundCacheTtlMs = (
   payload: ScientificBackgroundSidecarResponse,
   executionProfile: ScientificBackgroundExecutionProfile,
 ): number => {
-  if (payload.source === "api") return executionProfile.cacheTtlMs;
+  const policyTtlMs = getScanSidecarPolicy("scientific_background").defaultTtlMs;
+  if (payload.source === "api") return executionProfile.cacheTtlMs || policyTtlMs;
   if (payload.scientificBackground.mode === "research_mode") {
     return SCIENTIFIC_BACKGROUND_RESEARCH_FALLBACK_CACHE_TTL_MS;
   }
-  return executionProfile.cacheTtlMs;
+  return executionProfile.cacheTtlMs || policyTtlMs;
 };
 
 const withScientificBackgroundRefreshHint = (
@@ -10804,6 +10919,7 @@ const writeDecisionSupportAuthorityBundleCache = (
     expiresAt: Date.now() + DECISION_SUPPORT_AUTHORITY_BUNDLE_CACHE_TTL_MS,
     bundle,
   });
+  recordScanSidecarCacheStatus("decision_support", "write");
   if (decisionSupportAuthorityBundleCache.size <= DECISION_SUPPORT_AUTHORITY_BUNDLE_CACHE_LIMIT) return;
   const oldestKey = decisionSupportAuthorityBundleCache.keys().next().value;
   if (typeof oldestKey === "string") {
@@ -10815,11 +10931,16 @@ const readDecisionSupportAuthorityBundleCache = (
   cacheKey: string,
 ): DecisionSupportAuthorityBundle | null => {
   const cached = decisionSupportAuthorityBundleCache.get(cacheKey);
-  if (!cached) return null;
-  if (cached.expiresAt <= Date.now()) {
-    decisionSupportAuthorityBundleCache.delete(cacheKey);
+  if (!cached) {
+    recordScanSidecarCacheStatus("decision_support", "miss");
     return null;
   }
+  if (cached.expiresAt <= Date.now()) {
+    decisionSupportAuthorityBundleCache.delete(cacheKey);
+    recordScanSidecarCacheStatus("decision_support", "stale");
+    return null;
+  }
+  recordScanSidecarCacheStatus("decision_support", "hit");
   return cached.bundle;
 };
 
@@ -10835,7 +10956,10 @@ const buildDecisionSupportAuthorityBundle = async (
   if (cached) return cached;
 
   const existingInflight = decisionSupportAuthorityBundleInflight.get(cacheKey);
-  if (existingInflight) return existingInflight;
+  if (existingInflight) {
+    recordScanSidecarCacheStatus("decision_support", "hit");
+    return existingInflight;
+  }
 
   const promise = buildDecisionSupportAuthorityBundleUncached(normalizedBarcode, options)
     .then((bundle) => {
@@ -11191,23 +11315,10 @@ app.get("/api/decision-support/v1", verifySupabaseToken, async (req: Request, re
 
   try {
     const authedReq = req as AuthenticatedRequest;
-    const userId = authedReq.user?.id ?? null;
-    const localDecisionSupportContext = parseLocalDecisionSupportContext(req);
-    const localDecisionSupportHeader = String(req.header("x-local-personalization") ?? "").trim() || null;
     const barcodeGtin14 = normalizedBarcode.code.padStart(14, "0");
     const fetchCount = recordDecisionSupportFetchForScanSession(scanSessionId, barcodeGtin14);
-    const overlayClaims = await fetchIherbOverlayClaimsByBarcode(barcodeGtin14);
-    const quickDigest = await buildMySupplementDigestQuick({
-      supplementId: barcodeGtin14,
-      barcode: normalizedBarcode.code,
-      brandName: "",
-      productName: "",
-      budgetMs: 4_500,
-    });
-    const patched = applyPatchShadowToFactsDigest({
-      digest: quickDigest.digest,
-      barcodeGtin14,
-    });
+    const authority = await buildDecisionSupportAuthorityBundle(normalizedBarcode, { req, viewMode });
+    const { overlayClaims, quickDigest, patched, decisionSupport, personalizationScopeHash } = authority;
     const debugIdentityValue = String(quickDigest.digest?.identity?.value ?? "").trim();
     const debugIdentityType = String(quickDigest.digest?.identity?.type ?? "").trim().toLowerCase();
     const debugSourceType = String(quickDigest.digest?.sourceType ?? "").trim().toLowerCase();
@@ -11218,51 +11329,6 @@ app.get("/api/decision-support/v1", verifySupabaseToken, async (req: Request, re
     const debugLookup = getPatchShadowLookup({
       barcodeGtin14,
       identityKeys: debugIdentityKeys,
-    });
-    const [userProfile, productFlags, remoteStackInputs] = await Promise.all([
-      fetchUserDecisionSupportProfile(userId),
-      fetchProductAllergenFlagsForDecisionSupport(patched.digest, barcodeGtin14),
-      userId ? fetchRemoteStackOverlapInputs(userId) : Promise.resolve(null),
-    ]);
-    const localUserProfile = buildUserDecisionSupportProfileRowFromLocalProfile(
-      localDecisionSupportContext?.profile,
-    );
-    const effectiveUserProfile = mergeDecisionSupportProfileRows({
-      remoteProfile: userProfile,
-      localProfile: localUserProfile,
-    });
-    const allergyContext = buildDecisionSupportAllergyContext({
-      userProfile: effectiveUserProfile,
-      productFlags,
-    });
-    const personalizationContext = buildDecisionSupportPersonalizationContext({
-      userProfile: effectiveUserProfile,
-      allergyContext,
-      remoteStackInputs,
-      currentProductInput: buildDecisionSupportCurrentStackInput({
-        digest: patched.digest,
-        barcodeGtin14,
-      }),
-      fallbackSavedStackCount: userId ? 0 : (localDecisionSupportContext?.savedSupplements.length ?? 0),
-    });
-    const personalizationScopeHash = buildPersonalizationScopeHash({
-      userId,
-      localDecisionSupportHeader,
-      effectiveUserProfile,
-      allergyContext,
-      personalizationContext,
-    });
-
-    const decisionSupport = compileDecisionSupport({
-      digest: patched.digest,
-      factsDigestHash: quickDigest.factsDigestHash,
-      viewMode,
-      locale: "en",
-      flagsSnapshot: collectDecisionSupportFlagsSnapshot(),
-      patchActivation: patched.activation,
-      overlayClaims,
-      allergyContext,
-      personalizationContext,
     });
 
     if (
@@ -11393,6 +11459,7 @@ app.post("/api/ingredient-overview/v1", verifySupabaseToken, async (req: Request
       && parsedBody.personalizationScopeHash
     ) {
       const fastCacheKey = buildIngredientOverviewSidecarCacheKey({
+        barcode: normalizedBarcode.code,
         decisionDigest: parsedBody.decisionDigest,
         decisionInputsHash: parsedBody.decisionInputsHash,
         personalizationScopeHash: parsedBody.personalizationScopeHash,
@@ -11441,6 +11508,17 @@ app.post("/api/ingredient-overview/v1", verifySupabaseToken, async (req: Request
       );
     }
 
+    const cacheKey = buildIngredientOverviewSidecarCacheKey({
+      barcode: normalizedBarcode.code,
+      decisionDigest: authority.decisionSupport.digest,
+      decisionInputsHash: authority.decisionSupport.decisionInputsHash,
+      personalizationScopeHash: authority.personalizationScopeHash,
+    });
+    const cached = readIngredientOverviewSidecarCache(cacheKey);
+    if (cached) {
+      return res.json(cached);
+    }
+
     const deepseekKey = process.env.DEEPSEEK_API_KEY?.trim() || null;
     const deepseekModel = process.env.DEEPSEEK_MODEL?.trim() || "deepseek-chat";
     const executionProfile = resolveIngredientOverviewExecutionProfile(authority.ingredientScienceContext);
@@ -11471,11 +11549,7 @@ app.post("/api/ingredient-overview/v1", verifySupabaseToken, async (req: Request
       promptVersion: compiled.promptVersion,
     };
     writeIngredientOverviewSidecarCache(
-      buildIngredientOverviewSidecarCacheKey({
-        decisionDigest: authority.decisionSupport.digest,
-        decisionInputsHash: authority.decisionSupport.decisionInputsHash,
-        personalizationScopeHash: authority.personalizationScopeHash,
-      }),
+      cacheKey,
       payload,
     );
 
@@ -11507,6 +11581,7 @@ app.post("/api/scientific-background/v1", verifySupabaseToken, async (req: Reque
       && parsedBody.personalizationScopeHash
       && fastSelectedIngredientKey
         ? findScientificBackgroundSidecarCacheByRequest({
+          barcode: normalizedBarcode.code,
           decisionDigest: parsedBody.decisionDigest,
           decisionInputsHash: parsedBody.decisionInputsHash,
           personalizationScopeHash: parsedBody.personalizationScopeHash,
@@ -11577,14 +11652,14 @@ app.post("/api/scientific-background/v1", verifySupabaseToken, async (req: Reque
       selectedIngredientName: selectedDescriptor.name,
     });
     const executionProfile = resolveScientificBackgroundExecutionProfile(plan);
-    const cacheKey = [
-      authority.decisionSupport.digest,
-      authority.decisionSupport.decisionInputsHash,
-      authority.personalizationScopeHash,
-      selectedDescriptor.key,
-      plan.mode,
-      SCIENTIFIC_BACKGROUND_PROMPT_VERSION,
-    ].join("|");
+    const cacheKey = buildScientificBackgroundSidecarCacheKey({
+      barcode: normalizedBarcode.code,
+      decisionDigest: authority.decisionSupport.digest,
+      decisionInputsHash: authority.decisionSupport.decisionInputsHash,
+      personalizationScopeHash: authority.personalizationScopeHash,
+      selectedIngredientKey: selectedDescriptor.key,
+      promptVersion: `${plan.mode}:${SCIENTIFIC_BACKGROUND_PROMPT_VERSION}`,
+    });
     const deepseekKey = process.env.DEEPSEEK_API_KEY?.trim() || null;
     const deepseekModel = process.env.DEEPSEEK_MODEL?.trim() || "deepseek-chat";
     const ensureScientificBackgroundBackgroundRefresh = (): boolean => {
@@ -11838,6 +11913,71 @@ const productOverviewAiBodySchema = z.object({
   isLikelySingleIngredient: z.boolean().optional(),
 });
 
+type ProductOverviewAiSidecarResponse = {
+  status: "ok";
+  digest: string;
+  source: "api" | "fallback";
+  promptVersion: string;
+  fallbackUsed: boolean;
+  fallbackReason?: string;
+  overviewAi:
+    | ReturnType<typeof buildProductOverviewWhatIsItFallback>
+    | NonNullable<Awaited<ReturnType<typeof fetchProductOverviewWhatIsIt>>>;
+};
+
+const PRODUCT_OVERVIEW_AI_RESULT_CACHE_LIMIT = 120;
+const productOverviewAiSidecarCache = new Map<string, {
+  expiresAt: number;
+  payload: ProductOverviewAiSidecarResponse;
+}>();
+
+const buildProductOverviewAiSidecarCacheKey = (params: {
+  decisionDigest: string;
+  promptPayload: unknown;
+}): string =>
+  buildScanSidecarCacheKey({
+    route: "product_overview_ai",
+    decisionDigest: params.decisionDigest,
+    decisionInputsHash: createHash("sha256")
+      .update(stableStringifyScopeValue(params.promptPayload))
+      .digest("hex"),
+    personalizationScopeHash: "none",
+    promptVersion: PRODUCT_OVERVIEW_WHAT_IS_IT_PROMPT_VERSION,
+  });
+
+const readProductOverviewAiSidecarCache = (
+  cacheKey: string,
+): ProductOverviewAiSidecarResponse | null => {
+  const entry = productOverviewAiSidecarCache.get(cacheKey);
+  if (!entry) {
+    recordScanSidecarCacheStatus("product_overview_ai", "miss");
+    return null;
+  }
+  if (entry.expiresAt <= Date.now()) {
+    productOverviewAiSidecarCache.delete(cacheKey);
+    recordScanSidecarCacheStatus("product_overview_ai", "stale");
+    return null;
+  }
+  recordScanSidecarCacheStatus("product_overview_ai", "hit");
+  return entry.payload;
+};
+
+const writeProductOverviewAiSidecarCache = (
+  cacheKey: string,
+  payload: ProductOverviewAiSidecarResponse,
+): void => {
+  productOverviewAiSidecarCache.set(cacheKey, {
+    expiresAt: Date.now() + getScanSidecarPolicy("product_overview_ai").defaultTtlMs,
+    payload,
+  });
+  recordScanSidecarCacheStatus("product_overview_ai", "write");
+  if (productOverviewAiSidecarCache.size <= PRODUCT_OVERVIEW_AI_RESULT_CACHE_LIMIT) return;
+  const oldestKey = productOverviewAiSidecarCache.keys().next().value;
+  if (typeof oldestKey === "string") {
+    productOverviewAiSidecarCache.delete(oldestKey);
+  }
+};
+
 const normalizeOverviewAiToken = (value?: string | null): string =>
   safeTrim(value)?.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim() ?? "";
 
@@ -11921,20 +12061,6 @@ app.post("/api/product-overview-ai/v1", verifySupabaseToken, async (req: Request
     isLikelySingleIngredient: parsedBody.isLikelySingleIngredient ?? false,
   });
 
-  const respondWithOverviewFallback = (reason: string) => res.json({
-    status: "ok",
-    digest: parsedBody.digest,
-    source: "fallback",
-    promptVersion: `${PRODUCT_OVERVIEW_WHAT_IS_IT_PROMPT_VERSION}:fallback`,
-    fallbackUsed: true,
-    fallbackReason: reason,
-    overviewAi: fallbackOverviewAi,
-  });
-
-  if (!deepseekKey) {
-    return respondWithOverviewFallback("ai_not_configured");
-  }
-
   const promptPayload = {
     productName: parsedBody.productName,
     brandName: parsedBody.brandName ?? null,
@@ -11967,6 +12093,32 @@ app.post("/api/product-overview-ai/v1", verifySupabaseToken, async (req: Request
       richModeOnlyWhenSimple: true,
     },
   };
+  const cacheKey = buildProductOverviewAiSidecarCacheKey({
+    decisionDigest: parsedBody.digest,
+    promptPayload,
+  });
+  const cached = readProductOverviewAiSidecarCache(cacheKey);
+  if (cached) {
+    return res.json(cached);
+  }
+
+  const respondWithOverviewFallback = (reason: string) => {
+    const payload: ProductOverviewAiSidecarResponse = {
+      status: "ok",
+      digest: parsedBody.digest,
+      source: "fallback",
+      promptVersion: `${PRODUCT_OVERVIEW_WHAT_IS_IT_PROMPT_VERSION}:fallback`,
+      fallbackUsed: true,
+      fallbackReason: reason,
+      overviewAi: fallbackOverviewAi,
+    };
+    writeProductOverviewAiSidecarCache(cacheKey, payload);
+    return res.json(payload);
+  };
+
+  if (!deepseekKey) {
+    return respondWithOverviewFallback("ai_not_configured");
+  }
 
   try {
     const ai = await fetchProductOverviewWhatIsIt(
@@ -12003,14 +12155,16 @@ app.post("/api/product-overview-ai/v1", verifySupabaseToken, async (req: Request
       return respondWithOverviewFallback("gate_rejected");
     }
 
-    return res.json({
+    const payload: ProductOverviewAiSidecarResponse = {
       status: "ok",
       digest: parsedBody.digest,
       source: "api",
       promptVersion: PRODUCT_OVERVIEW_WHAT_IS_IT_PROMPT_VERSION,
       fallbackUsed: false,
       overviewAi: ai,
-    });
+    };
+    writeProductOverviewAiSidecarCache(cacheKey, payload);
+    return res.json(payload);
   } catch (error) {
     captureException(error, { route: "/api/product-overview-ai/v1" });
     return respondWithOverviewFallback("unexpected_error");
