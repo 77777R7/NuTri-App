@@ -55,6 +55,13 @@ import {
   fetchProductOverviewWhatIsIt,
   prepareContextSources
 } from "./deepseek.js";
+import { resolveEnrichStreamAdmissionPolicy } from "./scanStreamAdmissionPolicy.js";
+import {
+  DEFAULT_BUNDLE_ONLY_DONE_DELAY_MS,
+  DEFAULT_FULL_REV1_DONE_DELAY_MS,
+  resolveScanStreamRev1DonePolicy,
+  toNonNegativeDelayMs,
+} from "./scanStreamTimingPolicy.js";
 import {
   buildFactsDigestFromDsld,
   buildFactsDigestFromLnhpd,
@@ -752,32 +759,28 @@ const ANALYSIS_BUNDLE_PROMPT_VERSION_VERSIONED = withDecisionContractPromptVersi
 const ANALYSIS_BUNDLE_FAST_TIMEOUT_MS = Number(process.env.ANALYSIS_BUNDLE_FAST_TIMEOUT_MS ?? 3500);
 const SSE_FAST_GRACE_MS = Number(process.env.SSE_FAST_GRACE_MS ?? 500);
 const SSE_GLOBAL_STREAM_TIMEOUT_MS = Number(process.env.SSE_GLOBAL_STREAM_TIMEOUT_MS ?? 15000);
-const ENRICH_STREAM_MAX_ACTIVE = Math.max(1, Number(process.env.ENRICH_STREAM_MAX_ACTIVE ?? 4));
-const ENRICH_STREAM_MAX_QUEUE = Math.max(0, Number(process.env.ENRICH_STREAM_MAX_QUEUE ?? 20));
-const ENRICH_STREAM_MAX_ACTIVE_FULL = Math.max(
-  1,
-  Number(process.env.ENRICH_STREAM_MAX_ACTIVE_FULL ?? process.env.ENRICH_STREAM_MAX_ACTIVE ?? 4),
-);
-const ENRICH_STREAM_MAX_QUEUE_FULL = Math.max(
-  0,
-  Number(process.env.ENRICH_STREAM_MAX_QUEUE_FULL ?? process.env.ENRICH_STREAM_MAX_QUEUE ?? 20),
-);
-const ENRICH_STREAM_MAX_ACTIVE_BUNDLE_ONLY = Math.max(
-  1,
-  Number(process.env.ENRICH_STREAM_MAX_ACTIVE_BUNDLE_ONLY ?? process.env.ENRICH_STREAM_MAX_ACTIVE ?? 12),
-);
-const ENRICH_STREAM_MAX_QUEUE_BUNDLE_ONLY = Math.max(
-  0,
-  Number(process.env.ENRICH_STREAM_MAX_QUEUE_BUNDLE_ONLY ?? process.env.ENRICH_STREAM_MAX_QUEUE ?? 50),
-);
-const ENRICH_STREAM_QUEUE_WAIT_MS = Math.max(0, Number(process.env.ENRICH_STREAM_QUEUE_WAIT_MS ?? 1500));
-const ENRICH_STREAM_QUEUE_WAIT_MS_BUNDLE_ONLY = Math.max(
-  0,
-  Number(process.env.ENRICH_STREAM_QUEUE_WAIT_MS_BUNDLE_ONLY ?? 1500),
-);
-const ENRICH_STREAM_BUNDLE_ONLY_DONE_DELAY_MS = Math.max(
-  0,
-  Number(process.env.ENRICH_STREAM_BUNDLE_ONLY_DONE_DELAY_MS ?? 250),
+const ENRICH_STREAM_ADMISSION_POLICY =
+  resolveEnrichStreamAdmissionPolicy(process.env);
+const ENRICH_STREAM_MAX_ACTIVE =
+  ENRICH_STREAM_ADMISSION_POLICY.shared.maxActive;
+const ENRICH_STREAM_MAX_QUEUE =
+  ENRICH_STREAM_ADMISSION_POLICY.shared.maxQueue;
+const ENRICH_STREAM_MAX_ACTIVE_FULL =
+  ENRICH_STREAM_ADMISSION_POLICY.full.maxActive;
+const ENRICH_STREAM_MAX_QUEUE_FULL =
+  ENRICH_STREAM_ADMISSION_POLICY.full.maxQueue;
+const ENRICH_STREAM_MAX_ACTIVE_BUNDLE_ONLY =
+  ENRICH_STREAM_ADMISSION_POLICY.bundleOnly.maxActive;
+const ENRICH_STREAM_MAX_QUEUE_BUNDLE_ONLY =
+  ENRICH_STREAM_ADMISSION_POLICY.bundleOnly.maxQueue;
+const ENRICH_STREAM_QUEUE_WAIT_MS =
+  ENRICH_STREAM_ADMISSION_POLICY.full.queueWaitMs;
+const ENRICH_STREAM_QUEUE_WAIT_MS_BUNDLE_ONLY =
+  ENRICH_STREAM_ADMISSION_POLICY.bundleOnly.queueWaitMs;
+const ENRICH_STREAM_BUNDLE_ONLY_DONE_DELAY_MS = toNonNegativeDelayMs(
+  process.env.ENRICH_STREAM_BUNDLE_ONLY_DONE_DELAY_MS ??
+    DEFAULT_BUNDLE_ONLY_DONE_DELAY_MS,
+  DEFAULT_BUNDLE_ONLY_DONE_DELAY_MS,
 );
 const ENRICH_STREAM_REV0_FALLBACK_DELAY_MS = Math.max(
   50,
@@ -787,18 +790,17 @@ const ENRICH_STREAM_REV0_FALLBACK_DELAY_MS_BUNDLE_ONLY = Math.max(
   ENRICH_STREAM_REV0_FALLBACK_DELAY_MS,
   Number(process.env.ENRICH_STREAM_REV0_FALLBACK_DELAY_MS_BUNDLE_ONLY ?? 750),
 );
-const ENRICH_STREAM_WEB_REV1_DONE_DELAY_MS = Math.max(
-  0,
-  Number(process.env.ENRICH_STREAM_WEB_REV1_DONE_DELAY_MS ?? 3500),
+const ENRICH_STREAM_WEB_REV1_DONE_DELAY_MS = toNonNegativeDelayMs(
+  process.env.ENRICH_STREAM_WEB_REV1_DONE_DELAY_MS ??
+    DEFAULT_FULL_REV1_DONE_DELAY_MS,
+  DEFAULT_FULL_REV1_DONE_DELAY_MS,
 );
 const ENRICH_STREAM_BUNDLE_ONLY_TERMINAL_GUARD_MS = Math.max(
   ENRICH_STREAM_BUNDLE_ONLY_DONE_DELAY_MS + 1000,
   Number(process.env.ENRICH_STREAM_BUNDLE_ONLY_TERMINAL_GUARD_MS ?? 3000),
 );
-const ENRICH_STREAM_OVERLOAD_INFLIGHT_THRESHOLD = Math.max(
-  1,
-  Number(process.env.ENRICH_STREAM_OVERLOAD_INFLIGHT_THRESHOLD ?? 6),
-);
+const ENRICH_STREAM_OVERLOAD_INFLIGHT_THRESHOLD =
+  ENRICH_STREAM_ADMISSION_POLICY.overloadInflightThreshold;
 const ENRICH_STREAM_OVERLOAD_RETRY_AFTER_MS = Math.max(
   0,
   Number(process.env.ENRICH_STREAM_OVERLOAD_RETRY_AFTER_MS ?? 2000),
@@ -14690,42 +14692,40 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
     if (streamState.doneSent || streamState.ended || res.writableEnded || streamState.clientDisconnected) return;
     if (!streamState.rev1Sent) return;
 
-    if (streamAnalysisBundleOnly) {
-      if (bundleOnlyDoneTimer) return;
-      doneTimerKind = "bundle_only_done";
-      doneTimerPlannedDelayMs = ENRICH_STREAM_BUNDLE_ONLY_DONE_DELAY_MS;
-      doneTimerScheduledAtMs = Date.now();
-      doneTimerDriftMs = null;
-      bundleOnlyDoneTimer = setTimeout(() => {
-        bundleOnlyDoneTimer = null;
-        const plannedDelayMs = Number(doneTimerPlannedDelayMs ?? ENRICH_STREAM_BUNDLE_ONLY_DONE_DELAY_MS);
-        const scheduledAtMs = Number(doneTimerScheduledAtMs ?? Date.now());
-        doneTimerDriftMs = Math.max(0, Date.now() - scheduledAtMs - plannedDelayMs);
-        if (streamState.doneSent || streamState.ended || res.writableEnded || streamState.clientDisconnected) return;
-        finalizeStream("analysis_bundle_only_rev1_complete");
-      }, ENRICH_STREAM_BUNDLE_ONLY_DONE_DELAY_MS);
-      (bundleOnlyDoneTimer as { unref?: () => void }).unref?.();
-      return;
-    }
+    const rev1DonePolicy = resolveScanStreamRev1DonePolicy({
+      analysisBundleOnly: streamAnalysisBundleOnly,
+      bundleOnlyDoneDelayMs: ENRICH_STREAM_BUNDLE_ONLY_DONE_DELAY_MS,
+      fullRev1DoneDelayMs: ENRICH_STREAM_WEB_REV1_DONE_DELAY_MS,
+    });
+    if (!rev1DonePolicy) return;
 
-    if (ENRICH_STREAM_WEB_REV1_DONE_DELAY_MS <= 0) return;
-    if (webRev1DoneTimer) return;
+    if (rev1DonePolicy.timerKind === "bundle_only_done" && bundleOnlyDoneTimer) return;
+    if (rev1DonePolicy.timerKind === "full_rev1_watchdog" && webRev1DoneTimer) return;
 
-    // For full-lane flows, cap post-rev1 stream lifetime so clients that stop shortly
-    // after rev1 still receive terminal done deterministically across all source types.
-    doneTimerKind = "full_rev1_watchdog";
-    doneTimerPlannedDelayMs = ENRICH_STREAM_WEB_REV1_DONE_DELAY_MS;
+    doneTimerKind = rev1DonePolicy.timerKind;
+    doneTimerPlannedDelayMs = rev1DonePolicy.delayMs;
     doneTimerScheduledAtMs = Date.now();
     doneTimerDriftMs = null;
-    webRev1DoneTimer = setTimeout(() => {
-      webRev1DoneTimer = null;
-      const plannedDelayMs = Number(doneTimerPlannedDelayMs ?? ENRICH_STREAM_WEB_REV1_DONE_DELAY_MS);
+
+    const timer = setTimeout(() => {
+      if (rev1DonePolicy.timerKind === "bundle_only_done") {
+        bundleOnlyDoneTimer = null;
+      } else {
+        webRev1DoneTimer = null;
+      }
+      const plannedDelayMs = Number(doneTimerPlannedDelayMs ?? rev1DonePolicy.delayMs);
       const scheduledAtMs = Number(doneTimerScheduledAtMs ?? Date.now());
       doneTimerDriftMs = Math.max(0, Date.now() - scheduledAtMs - plannedDelayMs);
       if (streamState.doneSent || streamState.ended || res.writableEnded || streamState.clientDisconnected) return;
-      finalizeStream("full_rev1_watchdog_complete");
-    }, ENRICH_STREAM_WEB_REV1_DONE_DELAY_MS);
-    (webRev1DoneTimer as { unref?: () => void }).unref?.();
+      finalizeStream(rev1DonePolicy.finalizeReason);
+    }, rev1DonePolicy.delayMs);
+    (timer as { unref?: () => void }).unref?.();
+
+    if (rev1DonePolicy.timerKind === "bundle_only_done") {
+      bundleOnlyDoneTimer = timer;
+    } else {
+      webRev1DoneTimer = timer;
+    }
   };
   type NotFoundStage = "v2_gate" | "negative_cache" | "search" | "cheap_pass" | "facts";
   const NOT_FOUND_ERROR_SCHEMA_VERSION = 1 as const;
