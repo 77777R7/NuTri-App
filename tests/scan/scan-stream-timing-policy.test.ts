@@ -58,18 +58,18 @@ test("delay parsing clamps invalid or negative values to a stable fallback", () 
   assert.equal(toNonNegativeDelayMs("not-a-number", 2500), 2500);
 });
 
-test("full stream admission defaults can absorb the parallel9 gate without queueing first", () => {
+test("full stream admission defaults stay instance-safe while bundle-only keeps headroom", () => {
   const policy = resolveEnrichStreamAdmissionPolicy({});
 
-  assert.equal(DEFAULT_FULL_STREAM_MAX_ACTIVE, 9);
-  assert.equal(DEFAULT_FULL_STREAM_QUEUE_WAIT_MS, 750);
-  assert.equal(policy.full.maxActive, 9);
+  assert.equal(DEFAULT_FULL_STREAM_MAX_ACTIVE, 4);
+  assert.equal(DEFAULT_FULL_STREAM_QUEUE_WAIT_MS, 1500);
+  assert.equal(policy.full.maxActive, 4);
   assert.equal(policy.full.maxQueue, 20);
-  assert.equal(policy.full.queueWaitMs, 750);
+  assert.equal(policy.full.queueWaitMs, 1500);
   assert.equal(policy.bundleOnly.maxActive, 12);
   assert.equal(policy.bundleOnly.maxQueue, 50);
   assert.equal(policy.bundleOnly.queueWaitMs, 1500);
-  assert.equal(policy.overloadInflightThreshold, 10);
+  assert.equal(policy.overloadInflightThreshold, 6);
 });
 
 test("stream admission policy preserves explicit operator overrides", () => {
