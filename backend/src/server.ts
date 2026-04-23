@@ -60,6 +60,10 @@ import {
   shouldRejectEnrichStreamForServerOverload,
 } from "./scanStreamAdmissionPolicy.js";
 import {
+  createEventLoopLagWindowSampler,
+  resolveEventLoopLagStaleAfterMs,
+} from "./scanEventLoopLagWindow.js";
+import {
   DEFAULT_BUNDLE_ONLY_DONE_DELAY_MS,
   DEFAULT_FULL_REV1_DONE_DELAY_MS,
   resolveScanStreamRev1DonePolicy,
@@ -901,6 +905,10 @@ const EVENT_LOOP_LAG_SAMPLE_MS = Math.max(
   50,
   Number(process.env.EVENT_LOOP_LAG_SAMPLE_MS ?? 250),
 );
+const EVENT_LOOP_LAG_STALE_AFTER_MS = resolveEventLoopLagStaleAfterMs({
+  sampleMs: EVENT_LOOP_LAG_SAMPLE_MS,
+  rawValue: process.env.EVENT_LOOP_LAG_STALE_AFTER_MS,
+});
 const SSE_LIFECYCLE_LOG_ENABLED = parseBooleanEnv(process.env.SSE_LIFECYCLE_LOG_ENABLED, false);
 const ANALYSIS_DETAIL_LIMIT_DEFAULT = Number(process.env.ANALYSIS_DETAIL_LIMIT_DEFAULT ?? 8);
 const ANALYSIS_DETAIL_LIMIT_MAX = Number(process.env.ANALYSIS_DETAIL_LIMIT_MAX ?? 12);
@@ -1013,15 +1021,22 @@ const eventLoopLagMonitor = monitorEventLoopDelay({
 });
 eventLoopLagMonitor.enable();
 
-const readEventLoopLagP95Ms = (): number => {
+const eventLoopLagWindowSampler = createEventLoopLagWindowSampler({
+  histogram: eventLoopLagMonitor,
+  staleAfterMs: EVENT_LOOP_LAG_STALE_AFTER_MS,
+});
+eventLoopLagWindowSampler.sampleAndReset();
+const eventLoopLagWindowTimer = setInterval(() => {
   try {
-    const rawNs = eventLoopLagMonitor.percentile(95);
-    if (!Number.isFinite(rawNs) || rawNs <= 0) return 0;
-    return rawNs / 1_000_000;
+    eventLoopLagWindowSampler.sampleAndReset();
   } catch {
-    return 0;
+    // Keep the stream path available if the guardrail sampler fails.
   }
-};
+}, EVENT_LOOP_LAG_SAMPLE_MS);
+(eventLoopLagWindowTimer as { unref?: () => void }).unref?.();
+
+const readEventLoopLagP95Ms = (): number =>
+  eventLoopLagWindowSampler.readFreshP95Ms();
 
 const isEventLoopLagOverThreshold = (): boolean =>
   readEventLoopLagP95Ms() > EVENT_LOOP_LAG_P95_THRESHOLD_MS;
