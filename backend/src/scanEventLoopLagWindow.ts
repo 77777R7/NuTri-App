@@ -29,6 +29,16 @@ export const readEventLoopLagP95MsFromHistogram = (
   }
 };
 
+export const resetEventLoopLagHistogram = (
+  histogram: EventLoopLagHistogramLike,
+): void => {
+  try {
+    histogram.reset?.();
+  } catch {
+    // Event-loop lag is a guardrail signal; reset failures should not break streams.
+  }
+};
+
 export const resolveEventLoopLagStaleAfterMs = (params: {
   sampleMs: number;
   rawValue?: unknown;
@@ -58,6 +68,15 @@ export const createEventLoopLagWindowSampler = (params: {
     return snapshot;
   };
 
+  const resetWindow = (): EventLoopLagWindowSnapshot => {
+    resetEventLoopLagHistogram(params.histogram);
+    snapshot = {
+      lagP95Ms: 0,
+      sampledAtMs: nowMs(),
+    };
+    return snapshot;
+  };
+
   const readFreshP95Ms = (): number => {
     if (snapshot.sampledAtMs <= 0) return 0;
     const ageMs = nowMs() - snapshot.sampledAtMs;
@@ -67,6 +86,7 @@ export const createEventLoopLagWindowSampler = (params: {
 
   return {
     sampleAndReset,
+    resetWindow,
     readFreshP95Ms,
     getSnapshot: (): EventLoopLagWindowSnapshot => snapshot,
   };

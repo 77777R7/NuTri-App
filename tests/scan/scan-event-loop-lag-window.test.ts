@@ -64,6 +64,25 @@ test("event-loop lag sampler exposes only a fresh resettable window", () => {
   assert.equal(sampler.readFreshP95Ms(), 0);
 });
 
+test("event-loop lag sampler can clear a stale high window before a new request", () => {
+  let now = 2_000;
+  const histogram = new FakeHistogram([250_000_000, 20_000_000, 20_000_000]);
+  const sampler = createEventLoopLagWindowSampler({
+    histogram,
+    nowMs: () => now,
+    staleAfterMs: 500,
+  });
+
+  sampler.sampleAndReset();
+  assert.equal(sampler.readFreshP95Ms(), 250);
+
+  now += 10;
+  sampler.resetWindow();
+  assert.equal(sampler.readFreshP95Ms(), 0);
+  assert.equal(histogram.resetCount, 2);
+  assert.equal(sampler.sampleAndReset().lagP95Ms, 20);
+});
+
 test("event-loop lag stale window keeps a minimum reset horizon", () => {
   assert.equal(
     resolveEventLoopLagStaleAfterMs({ sampleMs: 250, rawValue: undefined }),

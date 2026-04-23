@@ -61,7 +61,6 @@ import {
 } from "./scanStreamAdmissionPolicy.js";
 import {
   createEventLoopLagWindowSampler,
-  resolveEventLoopLagStaleAfterMs,
 } from "./scanEventLoopLagWindow.js";
 import {
   DEFAULT_BUNDLE_ONLY_DONE_DELAY_MS,
@@ -905,10 +904,6 @@ const EVENT_LOOP_LAG_SAMPLE_MS = Math.max(
   50,
   Number(process.env.EVENT_LOOP_LAG_SAMPLE_MS ?? 250),
 );
-const EVENT_LOOP_LAG_STALE_AFTER_MS = resolveEventLoopLagStaleAfterMs({
-  sampleMs: EVENT_LOOP_LAG_SAMPLE_MS,
-  rawValue: process.env.EVENT_LOOP_LAG_STALE_AFTER_MS,
-});
 const SSE_LIFECYCLE_LOG_ENABLED = parseBooleanEnv(process.env.SSE_LIFECYCLE_LOG_ENABLED, false);
 const ANALYSIS_DETAIL_LIMIT_DEFAULT = Number(process.env.ANALYSIS_DETAIL_LIMIT_DEFAULT ?? 8);
 const ANALYSIS_DETAIL_LIMIT_MAX = Number(process.env.ANALYSIS_DETAIL_LIMIT_MAX ?? 12);
@@ -1023,20 +1018,15 @@ eventLoopLagMonitor.enable();
 
 const eventLoopLagWindowSampler = createEventLoopLagWindowSampler({
   histogram: eventLoopLagMonitor,
-  staleAfterMs: EVENT_LOOP_LAG_STALE_AFTER_MS,
+  staleAfterMs: EVENT_LOOP_LAG_SAMPLE_MS,
 });
-eventLoopLagWindowSampler.sampleAndReset();
-const eventLoopLagWindowTimer = setInterval(() => {
-  try {
-    eventLoopLagWindowSampler.sampleAndReset();
-  } catch {
-    // Keep the stream path available if the guardrail sampler fails.
-  }
-}, EVENT_LOOP_LAG_SAMPLE_MS);
-(eventLoopLagWindowTimer as { unref?: () => void }).unref?.();
 
 const readEventLoopLagP95Ms = (): number =>
-  eventLoopLagWindowSampler.readFreshP95Ms();
+  eventLoopLagWindowSampler.sampleAndReset().lagP95Ms;
+
+const resetEventLoopLagP95Window = (): void => {
+  eventLoopLagWindowSampler.resetWindow();
+};
 
 const isEventLoopLagOverThreshold = (): boolean =>
   readEventLoopLagP95Ms() > EVENT_LOOP_LAG_P95_THRESHOLD_MS;
@@ -14477,6 +14467,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
     }
   };
   const startLagSampler = () => {
+    resetEventLoopLagP95Window();
     sampleRequestLag();
     if (lagSamplerTimer) return;
     lagSamplerTimer = setInterval(sampleRequestLag, EVENT_LOOP_LAG_SAMPLE_MS);
