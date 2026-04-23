@@ -55,6 +55,25 @@ test("admission gate runs after SSE init and before main pipeline work", async (
   assert.match(source, /streamAdmissionGate\.acquire/);
 });
 
+test("admitted full-lane streams can immediately fall back when admission remains pressured", async () => {
+  const source = await readFile(SERVER_PATH, "utf8");
+  const routeStart = source.indexOf('app.post("/api/enrich-stream"');
+  assert.ok(routeStart >= 0, "missing enrich-stream route");
+
+  const acquireStart = source.indexOf("const admissionLease = await streamAdmissionGate.acquire", routeStart);
+  const immediateFallbackStart = source.indexOf("const admissionStateAfterAcquire = streamAdmissionGate.getState();", acquireStart);
+  const invalidCheck = source.indexOf('code: "INVALID_BARCODE"', acquireStart);
+
+  assert.ok(acquireStart >= 0, "missing admission acquire");
+  assert.ok(immediateFallbackStart > acquireStart, "missing immediate pressure fallback after acquire");
+  assert.ok(immediateFallbackStart < invalidCheck, "pressure fallback should guard before heavier route work");
+  const fallbackSlice = source.slice(immediateFallbackStart, immediateFallbackStart + 900);
+  assert.match(fallbackSlice, /!streamAnalysisBundleOnly/);
+  assert.match(fallbackSlice, /admissionStateAfterAcquire\.queue > 0/);
+  assert.match(fallbackSlice, /admissionStateAfterAcquire\.active >= admissionStateAfterAcquire\.maxActive/);
+  assert.match(fallbackSlice, /emitAdmissionCoreFallbackAndFinalize\("PRE_REV1_PRESSURE_GUARD"\)/);
+});
+
 test("global watchdog uses request-level deadline", async () => {
   const source = await readFile(SERVER_PATH, "utf8");
   const watchdogStart = source.indexOf("if (!globalWatchdog)");

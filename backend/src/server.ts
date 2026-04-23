@@ -15537,6 +15537,19 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
         waitMs: admissionWaitMs,
       });
       releaseAdmission = admissionLease.release;
+      const admissionStateAfterAcquire = streamAdmissionGate.getState();
+      const shouldUseImmediatePressureFallback =
+        !streamAnalysisBundleOnly
+        && (
+          admissionStateAfterAcquire.queue > 0
+          || admissionStateAfterAcquire.active >= admissionStateAfterAcquire.maxActive
+        );
+      if (shouldUseImmediatePressureFallback) {
+        const fallbackEmitted = await emitAdmissionCoreFallbackAndFinalize("PRE_REV1_PRESSURE_GUARD");
+        if (fallbackEmitted) {
+          return;
+        }
+      }
     } catch (error) {
       if (error instanceof EnrichStreamAdmissionError && error.code === "ABORTED") {
         return;
