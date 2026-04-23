@@ -158,14 +158,16 @@ test("authoritative stage0 deterministic rev1 toggle defaults to enabled", async
   );
 });
 
-test("overload guard rejects early when inFlight or lag threshold is exceeded", async () => {
+test("overload guard rejects early from in-flight capacity, not historical event-loop lag", async () => {
   const source = await readServerSource();
   const guardStart = source.indexOf("const inFlightCount = barcodeEnrichInFlight.size;");
   assert.ok(guardStart >= 0, "missing overload guard");
-  const guardSlice = source.slice(guardStart, guardStart + 260);
+  const guardSlice = source.slice(guardStart, guardStart + 420);
 
-  assert.match(guardSlice, /inFlightCount > ENRICH_STREAM_OVERLOAD_INFLIGHT_THRESHOLD/);
-  assert.match(guardSlice, /isEventLoopLagOverThreshold\(\)/);
+  assert.match(guardSlice, /shouldRejectEnrichStreamForServerOverload\(\{/);
+  assert.match(guardSlice, /inFlightCount,/);
+  assert.match(guardSlice, /overloadInflightThreshold:\s*ENRICH_STREAM_OVERLOAD_INFLIGHT_THRESHOLD/);
+  assert.doesNotMatch(guardSlice, /isEventLoopLagOverThreshold\(\)/);
   assert.match(guardSlice, /emitStreamBusyAndFinalize\("SERVER_OVERLOAD"\)/);
 });
 
@@ -201,12 +203,12 @@ test("safety signal pack is attached in skeleton, provisional, and rev1 safety s
 
   const safetyPackStart = source.indexOf("const buildBaseSafetySignalPack =");
   assert.ok(safetyPackStart >= 0, "missing buildBaseSafetySignalPack helper");
-  const safetyPackSlice = source.slice(safetyPackStart, safetyPackStart + 7000);
+  const safetyPackSlice = source.slice(safetyPackStart, safetyPackStart + 12000);
   assert.match(safetyPackSlice, /ulEntries:\s*\[\]/);
 
   const skeletonStart = source.indexOf("const buildAnalysisBundleSkeleton =");
   assert.ok(skeletonStart >= 0, "missing buildAnalysisBundleSkeleton helper");
-  const skeletonSlice = source.slice(skeletonStart, skeletonStart + 4200);
+  const skeletonSlice = source.slice(skeletonStart, skeletonStart + 9000);
   assert.match(
     skeletonSlice,
     /const baseSafetySignals = buildBaseSafetySignalPack\(\{\s*digest,\s*deterministicSignals:\s*params\.deterministicSignals,\s*\}\)/,
@@ -215,13 +217,13 @@ test("safety signal pack is attached in skeleton, provisional, and rev1 safety s
 
   const provisionalStart = source.indexOf("const buildProvisionalAnalysisBundle =");
   assert.ok(provisionalStart >= 0, "missing buildProvisionalAnalysisBundle helper");
-  const provisionalSlice = source.slice(provisionalStart, provisionalStart + 3000);
+  const provisionalSlice = source.slice(provisionalStart, provisionalStart + 6000);
   assert.match(provisionalSlice, /buildBaseSafetySignalPack\(\{ digest: null, safetyDetail: null \}\)/);
   assert.match(provisionalSlice, /signals:\s*baseSafetySignals/);
 
   const mergeFastStart = source.indexOf("const mergeFastAnalysisBundle =");
   assert.ok(mergeFastStart >= 0, "missing mergeFastAnalysisBundle helper");
-  const mergeFastSlice = source.slice(mergeFastStart, mergeFastStart + 15000);
+  const mergeFastSlice = source.slice(mergeFastStart, mergeFastStart + 24000);
   assert.match(mergeFastSlice, /const safetySignalsFinal = buildBaseSafetySignalPack\(/);
   assert.match(mergeFastSlice, /signals:\s*safetySignalsFinal/);
 });

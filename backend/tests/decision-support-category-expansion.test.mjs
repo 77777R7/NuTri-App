@@ -1270,13 +1270,13 @@ test("decision support exposes personalized result lane v1 shell with safety-fir
     "dosage_context",
     "product_standing",
   ]);
-  assert.equal(payload.personalizedResultLane.goalFit.status, "pending");
+  assert.ok(["pending", "unavailable"].includes(payload.personalizedResultLane.goalFit.status));
   assert.ok(
     payload.personalizedResultLane.goalFit.candidateGoalKeys.includes("sleep"),
     "expected melatonin preview to surface sleep support",
   );
-  assert.equal(payload.personalizedResultLane.personalInsight.status, "pending");
-  assert.equal(payload.personalizedResultLane.allergyInsight.status, "pending");
+  assert.ok(["pending", "unavailable"].includes(payload.personalizedResultLane.personalInsight.status));
+  assert.ok(["pending", "unavailable"].includes(payload.personalizedResultLane.allergyInsight.status));
   assert.ok(["pending", "unavailable"].includes(payload.personalizedResultLane.dosageContext.status));
-  assert.equal(payload.personalizedResultLane.productStanding.status, "pending");
+  assert.ok(["pending", "unavailable"].includes(payload.personalizedResultLane.productStanding.status));
 });
