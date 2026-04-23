@@ -20720,6 +20720,403 @@
           "url": "https://pubmed.ncbi.nlm.nih.gov/37235713/"
         }
       ]
+    },
+    {
+      "ingredient_family": "devil_s_claw",
+      "section_key": "primary_use_context",
+      "evidence_grade": "B",
+      "overall_confidence": 0.68,
+      "display_text": "Devil's Claw should be compared as a Harpagophytum extract line with safety cautions visible, not as a broad pain-relief promise.",
+      "segments": {
+        "summary_support": {
+          "en": [
+            {
+              "text": "Devil's Claw has human and review-level Harpagophytum context, but the useful shopper lane is extract identity, dose, and safety boundary rather than a front-label relief claim.",
+              "sentence_id": "devil_s_claw_primary_rescue_summary_001",
+              "evidence_snippet_id": "devil_s_claw_primary_rescue_excerpt_001",
+              "evidence_reference_id": "pmid:15369596",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "evidence_read_support": {
+          "en": [
+            {
+              "text": "The reviewed support includes Harpagophytum systematic reviews and a randomized extract trial, so the evidence is narrow and condition-adjacent rather than a universal supplement story.",
+              "sentence_id": "devil_s_claw_primary_rescue_evidence_001",
+              "evidence_snippet_id": "devil_s_claw_primary_rescue_excerpt_001",
+              "evidence_reference_id": "pmid:18236448",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "shopper_meaning_support": {
+          "en": [
+            {
+              "text": "When comparing Devil's Claw products, check the exact Harpagophytum source, extract standardization, dose, and warning language before treating two labels as equivalent.",
+              "sentence_id": "devil_s_claw_primary_rescue_shopper_001",
+              "evidence_snippet_id": "devil_s_claw_primary_rescue_excerpt_001",
+              "evidence_reference_id": "pmid:10101629",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "caveats": {
+          "en": [
+            {
+              "text": "Do not present Devil's Claw as treating osteoarthritis, low back pain, inflammation, or any disease; keep the comparison caution-forward.",
+              "sentence_id": "devil_s_claw_primary_rescue_caveat_001",
+              "evidence_snippet_id": "devil_s_claw_primary_rescue_excerpt_001",
+              "evidence_reference_id": "pmid:18236448",
+              "evidence_grade": "C",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        }
+      },
+      "supporting_references": [
+        {
+          "id": "pmid:15369596",
+          "source": "pubmed",
+          "title": "Harpgophytum procumbens for osteoarthritis and low back pain: a systematic review.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/15369596/"
+        },
+        {
+          "id": "pmid:18236448",
+          "source": "pubmed",
+          "title": "Systematic review on the safety of Harpagophytum preparations for osteoarthritic and low back pain.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/18236448/"
+        },
+        {
+          "id": "pmid:10101629",
+          "source": "pubmed",
+          "title": "Effectiveness of Harpagophytum extract WS 1531 in the treatment of exacerbation of low back pain: a randomized, placebo-controlled, double-blind study.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/10101629/"
+        }
+      ]
+    },
+    {
+      "ingredient_family": "l_leucine",
+      "section_key": "primary_context",
+      "evidence_grade": "B",
+      "overall_confidence": 0.69,
+      "display_text": "L-leucine is best compared as an amino-acid or protein-formula cue, where dose, protein context, and training setting matter more than standalone performance copy.",
+      "segments": {
+        "summary_support": {
+          "en": [
+            {
+              "text": "L-leucine has human trial and review-level context, but shopper interpretation should stay tied to protein source, dose, and whether the product is built around training or formula support.",
+              "sentence_id": "l_leucine_primary_rescue_summary_001",
+              "evidence_snippet_id": "l_leucine_primary_rescue_excerpt_001",
+              "evidence_reference_id": "pmid:31577520",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "evidence_read_support": {
+          "en": [
+            {
+              "text": "The reviewed support includes a leucine randomized trial and protein/resistance-training systematic-review context, so the lane should not be read as proof that leucine alone drives outcomes.",
+              "sentence_id": "l_leucine_primary_rescue_evidence_001",
+              "evidence_snippet_id": "l_leucine_primary_rescue_excerpt_001",
+              "evidence_reference_id": "pmid:28698222",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "shopper_meaning_support": {
+          "en": [
+            {
+              "text": "When comparing L-leucine labels, check grams or milligrams, free-form versus blend disclosure, and whether leucine is central or supporting within a protein or amino-acid stack.",
+              "sentence_id": "l_leucine_primary_rescue_shopper_001",
+              "evidence_snippet_id": "l_leucine_primary_rescue_excerpt_001",
+              "evidence_reference_id": "pmid:31577520",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "caveats": {
+          "en": [
+            {
+              "text": "Do not imply leucine alone guarantees muscle gain, recovery, or performance, and do not generalize older-adult or sarcopenia literature to every shopper.",
+              "sentence_id": "l_leucine_primary_rescue_caveat_001",
+              "evidence_snippet_id": "l_leucine_primary_rescue_excerpt_001",
+              "evidence_reference_id": "pmid:40937507",
+              "evidence_grade": "C",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        }
+      },
+      "supporting_references": [
+        {
+          "id": "pmid:31577520",
+          "source": "pubmed",
+          "title": "Efficacy of L-leucine Supplementation Coupled With Resistance Training in Untrained Midlife Women.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/31577520/"
+        },
+        {
+          "id": "pmid:28698222",
+          "source": "pubmed",
+          "title": "A systematic review, meta-analysis and meta-regression of the effect of protein supplementation on resistance training-induced gains in muscle mass and strength in healthy adults.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/28698222/"
+        },
+        {
+          "id": "pmid:40937507",
+          "source": "pubmed",
+          "title": "Enhancing Muscle Quality: Exploring Leucine and Whey Protein in Sarcopenic Individuals.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/40937507/"
+        }
+      ]
+    },
+    {
+      "ingredient_family": "same",
+      "section_key": "primary_use_context",
+      "evidence_grade": "B",
+      "overall_confidence": 0.67,
+      "display_text": "SAMe is a medication-adjacent research lane, so product comparison should foreground exact identity, amount, release/form wording, and safety cautions.",
+      "segments": {
+        "summary_support": {
+          "en": [
+            {
+              "text": "SAMe has systematic-review support in several medical-adjacent contexts, which makes it useful for label interpretation only when the wording stays bounded.",
+              "sentence_id": "same_primary_rescue_summary_001",
+              "evidence_snippet_id": "same_primary_rescue_excerpt_001",
+              "evidence_reference_id": "pmid:28682528",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "evidence_read_support": {
+          "en": [
+            {
+              "text": "The reviewed PubMed set includes systematic reviews for SAMe in neuropsychiatric, joint, and liver-health contexts, so the evidence should be read by study context rather than as a broad benefit.",
+              "sentence_id": "same_primary_rescue_evidence_001",
+              "evidence_snippet_id": "same_primary_rescue_excerpt_001",
+              "evidence_reference_id": "pmid:19821403",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "shopper_meaning_support": {
+          "en": [
+            {
+              "text": "When comparing SAMe products, check the exact SAMe identity, dose, enteric or salt-form wording, and warning language before relying on mood, joint, or liver positioning.",
+              "sentence_id": "same_primary_rescue_shopper_001",
+              "evidence_snippet_id": "same_primary_rescue_excerpt_001",
+              "evidence_reference_id": "pmid:39519500",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "caveats": {
+          "en": [
+            {
+              "text": "Do not present SAMe as treating depression, osteoarthritis, liver disease, or any condition, and do not imply it replaces medication or clinician guidance.",
+              "sentence_id": "same_primary_rescue_caveat_001",
+              "evidence_snippet_id": "same_primary_rescue_excerpt_001",
+              "evidence_reference_id": "pmid:28682528",
+              "evidence_grade": "C",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        }
+      },
+      "supporting_references": [
+        {
+          "id": "pmid:28682528",
+          "source": "pubmed",
+          "title": "S-Adenosylmethionine (SAMe) for Neuropsychiatric Disorders: A Clinician-Oriented Review of Research.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/28682528/"
+        },
+        {
+          "id": "pmid:19821403",
+          "source": "pubmed",
+          "title": "S-Adenosylmethionine for osteoarthritis of the knee or hip.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/19821403/"
+        },
+        {
+          "id": "pmid:39519500",
+          "source": "pubmed",
+          "title": "S-Adenosylmethionine (SAMe) for Liver Health: A Systematic Review.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/39519500/"
+        }
+      ]
+    },
+    {
+      "ingredient_family": "schisandra_chinensis",
+      "section_key": "primary_use_context",
+      "evidence_grade": "B",
+      "overall_confidence": 0.66,
+      "display_text": "Schisandra should be read as an extract/adaptogen label-context lane, with study setting and safety boundaries kept visible.",
+      "segments": {
+        "summary_support": {
+          "en": [
+            {
+              "text": "Schisandra chinensis has human randomized-trial and review context, but the useful comparison lane is exact extract identity and intended use setting, not a broad adaptogen promise.",
+              "sentence_id": "schisandra_chinensis_primary_rescue_summary_001",
+              "evidence_snippet_id": "schisandra_chinensis_primary_rescue_excerpt_001",
+              "evidence_reference_id": "pmid:32260466",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "evidence_read_support": {
+          "en": [
+            {
+              "text": "The reviewed support spans Schisandra trials in specific populations and broader adaptogen review context, so the evidence should stay narrower than immune, liver, fatigue, or hormone-adjacent marketing.",
+              "sentence_id": "schisandra_chinensis_primary_rescue_evidence_001",
+              "evidence_snippet_id": "schisandra_chinensis_primary_rescue_excerpt_001",
+              "evidence_reference_id": "pmid:23538076",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "shopper_meaning_support": {
+          "en": [
+            {
+              "text": "When comparing Schisandra products, check the plant identity, extract or marker wording, dose, and whether Schisandra is the main active or one part of a botanical blend.",
+              "sentence_id": "schisandra_chinensis_primary_rescue_shopper_001",
+              "evidence_snippet_id": "schisandra_chinensis_primary_rescue_excerpt_001",
+              "evidence_reference_id": "pmid:33710261",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "caveats": {
+          "en": [
+            {
+              "text": "Do not generalize menopause, metabolic, fatigue, liver, immune, or adaptogen evidence into disease-treatment or guaranteed-outcome language.",
+              "sentence_id": "schisandra_chinensis_primary_rescue_caveat_001",
+              "evidence_snippet_id": "schisandra_chinensis_primary_rescue_excerpt_001",
+              "evidence_reference_id": "pmid:27763802",
+              "evidence_grade": "C",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        }
+      },
+      "supporting_references": [
+        {
+          "id": "pmid:32260466",
+          "source": "pubmed",
+          "title": "Effect of Schisandra Chinensis Extract Supplementation on Quadriceps Muscle Strength and Fatigue in Adult Women: A Randomized, Double-Blind, Placebo-Controlled Trial.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/32260466/"
+        },
+        {
+          "id": "pmid:33710261",
+          "source": "pubmed",
+          "title": "Effect of Schisandra chinensis Baillon extracts and regular low-intensity exercise on muscle strength and mass in older adults: a randomized, double-blind, placebo-controlled trial.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/33710261/"
+        },
+        {
+          "id": "pmid:23538076",
+          "source": "pubmed",
+          "title": "Adaptogens in mental and behavioral disorders.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/23538076/"
+        },
+        {
+          "id": "pmid:27763802",
+          "source": "pubmed",
+          "title": "A randomized, double-blind, placebo-controlled trial of Schisandra chinensis for menopausal symptoms.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/27763802/"
+        }
+      ]
+    },
+    {
+      "ingredient_family": "tocotrienols",
+      "section_key": "primary_use_context",
+      "evidence_grade": "B",
+      "overall_confidence": 0.7,
+      "display_text": "Tocotrienol labels should be compared as tocotrienol-specific vitamin E products, with formulation and outcome context separated from generic antioxidant copy.",
+      "segments": {
+        "summary_support": {
+          "en": [
+            {
+              "text": "Tocotrienols have human systematic-review support, but the clearest shopper value is distinguishing tocotrienol-specific evidence from generic vitamin E or tocopherol language.",
+              "sentence_id": "tocotrienols_primary_rescue_summary_001",
+              "evidence_snippet_id": "tocotrienols_primary_rescue_excerpt_001",
+              "evidence_reference_id": "pmid:32951713",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "evidence_read_support": {
+          "en": [
+            {
+              "text": "The reviewed PubMed set includes meta-analyses on lipid profile and oxidative-stress markers plus bioavailability work, so interpretation should stay outcome- and formulation-specific.",
+              "sentence_id": "tocotrienols_primary_rescue_evidence_001",
+              "evidence_snippet_id": "tocotrienols_primary_rescue_excerpt_001",
+              "evidence_reference_id": "pmid:34297765",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "shopper_meaning_support": {
+          "en": [
+            {
+              "text": "When comparing tocotrienol products, check whether the label discloses tocotrienol-rich fraction, isoform mix, softgel or enhanced-delivery wording, and the stated amount.",
+              "sentence_id": "tocotrienols_primary_rescue_shopper_001",
+              "evidence_snippet_id": "tocotrienols_primary_rescue_excerpt_001",
+              "evidence_reference_id": "pmid:36932765",
+              "evidence_grade": "B",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        },
+        "caveats": {
+          "en": [
+            {
+              "text": "Do not turn lipid, liver, inflammation, or bioavailability findings into cardiovascular, liver, anti-inflammatory, or superiority claims for every tocotrienol product.",
+              "sentence_id": "tocotrienols_primary_rescue_caveat_001",
+              "evidence_snippet_id": "tocotrienols_primary_rescue_excerpt_001",
+              "evidence_reference_id": "pmid:26323969",
+              "evidence_grade": "C",
+              "source": "reviewed_curated_v1"
+            }
+          ]
+        }
+      },
+      "supporting_references": [
+        {
+          "id": "pmid:32951713",
+          "source": "pubmed",
+          "title": "The effects of tocotrienol supplementation on lipid profile: A meta-analysis of randomized controlled trials.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/32951713/"
+        },
+        {
+          "id": "pmid:34297765",
+          "source": "pubmed",
+          "title": "Effects of tocotrienols supplementation on markers of inflammation and oxidative stress: A systematic review and meta-analysis of randomized controlled trials.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/34297765/"
+        },
+        {
+          "id": "pmid:36932765",
+          "source": "pubmed",
+          "title": "Pharmacokinetics and bioavailability of tocotrienols in healthy human volunteers: a systematic review.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/36932765/"
+        },
+        {
+          "id": "pmid:26323969",
+          "source": "pubmed",
+          "title": "A new formulation of Gamma Delta Tocotrienol has superior bioavailability compared to existing Tocotrienol-Rich Fraction in healthy human subjects.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/26323969/"
+        }
+      ]
     }
   ],
   "candidate_pubmed_searches": [
@@ -34446,6 +34843,265 @@
       "selection_notes": [
         "Keep White Willow Bark anchored to human supplement context and preserve hard safety boundaries.",
         "Hard boundary: do not present White Willow Bark as treating, preventing, or curing disease, replacing medication, or guaranteeing outcomes; keep comparison on disclosed identity, amount, form/source, and safety cautions."
+      ]
+    },
+    {
+      "family": "devil_s_claw",
+      "lane": "primary_use_context",
+      "source": "life-science-research:ncbi-entrez-skill",
+      "retrieved_at": "2026-04-23",
+      "query": "Harpagophytum procumbens randomized trial systematic review humans",
+      "candidates": [
+        {
+          "pmid": "15369596",
+          "title": "Harpgophytum procumbens for osteoarthritis and low back pain: a systematic review.",
+          "pubdate": "2004 Sep 15",
+          "pubtype": [
+            "Comparative Study",
+            "Journal Article",
+            "Systematic Review"
+          ],
+          "url": "https://pubmed.ncbi.nlm.nih.gov/15369596/"
+        },
+        {
+          "pmid": "18236448",
+          "title": "Systematic review on the safety of Harpagophytum preparations for osteoarthritic and low back pain.",
+          "pubdate": "2008 Feb",
+          "pubtype": [
+            "Journal Article",
+            "Systematic Review"
+          ],
+          "url": "https://pubmed.ncbi.nlm.nih.gov/18236448/"
+        },
+        {
+          "pmid": "10101629",
+          "title": "Effectiveness of Harpagophytum extract WS 1531 in the treatment of exacerbation of low back pain: a randomized, placebo-controlled, double-blind study.",
+          "pubdate": "1999 Feb",
+          "pubtype": [
+            "Clinical Trial",
+            "Journal Article",
+            "Randomized Controlled Trial"
+          ],
+          "url": "https://pubmed.ncbi.nlm.nih.gov/10101629/"
+        }
+      ],
+      "priority": "P0",
+      "selection_notes": [
+        "Keep Devil's Claw anchored to human supplement context and preserve hard safety boundaries.",
+        "Hard boundary: do not present Devil S Claw as treating, preventing, or curing disease, replacing medication, or guaranteeing outcomes; keep comparison on disclosed identity, amount, form/source, and safety cautions.",
+        "Approved only as bounded Devil's Claw comparison context: exact Harpagophytum identity, extract wording, dose, and safety cautions matter more than pain-relief marketing.",
+        "Do not present Devil's Claw as treating osteoarthritis, low back pain, inflammation, or any disease; use the evidence to keep claims narrow and caution-forward."
+      ]
+    },
+    {
+      "family": "l_leucine",
+      "lane": "primary_context",
+      "source": "life-science-research:ncbi-entrez-skill",
+      "retrieved_at": "2026-04-23",
+      "query": "leucine supplementation systematic review randomized trial resistance training",
+      "candidates": [
+        {
+          "pmid": "31577520",
+          "title": "Efficacy of L-leucine Supplementation Coupled With Resistance Training in Untrained Midlife Women.",
+          "pubdate": "2020 May-Jun",
+          "pubtype": [
+            "Journal Article",
+            "Randomized Controlled Trial"
+          ],
+          "url": "https://pubmed.ncbi.nlm.nih.gov/31577520/"
+        },
+        {
+          "pmid": "28698222",
+          "title": "A systematic review, meta-analysis and meta-regression of the effect of protein supplementation on resistance training-induced gains in muscle mass and strength in healthy adults.",
+          "pubdate": "2018 Mar",
+          "pubtype": [
+            "Journal Article",
+            "Meta-Analysis",
+            "Systematic Review"
+          ],
+          "url": "https://pubmed.ncbi.nlm.nih.gov/28698222/"
+        },
+        {
+          "pmid": "40937507",
+          "title": "Enhancing Muscle Quality: Exploring Leucine and Whey Protein in Sarcopenic Individuals.",
+          "pubdate": "2025 Oct",
+          "pubtype": [
+            "Journal Article",
+            "Systematic Review"
+          ],
+          "url": "https://pubmed.ncbi.nlm.nih.gov/40937507/"
+        }
+      ],
+      "priority": "P0",
+      "selection_notes": [
+        "Keep L-Leucine anchored to human supplementation context instead of broad wellness or performance marketing.",
+        "Do not turn L Leucine context into disease-treatment, guaranteed-outcome, universal best-form, or superiority language.",
+        "Approved as amino-acid/protein-formula comparison context: leucine should be read with protein source, dose, and training/formula setting.",
+        "Do not imply leucine alone guarantees muscle gain, recovery, or performance, and do not generalize older-adult or sarcopenia literature to every shopper."
+      ]
+    },
+    {
+      "family": "same",
+      "lane": "primary_use_context",
+      "source": "life-science-research:ncbi-entrez-skill",
+      "retrieved_at": "2026-04-23",
+      "query": "S-adenosylmethionine SAMe systematic review safety human",
+      "candidates": [
+        {
+          "pmid": "28682528",
+          "title": "S-Adenosylmethionine (SAMe) for Neuropsychiatric Disorders: A Clinician-Oriented Review of Research.",
+          "pubdate": "2017 Jun",
+          "pubtype": [
+            "Journal Article",
+            "Systematic Review"
+          ],
+          "url": "https://pubmed.ncbi.nlm.nih.gov/28682528/"
+        },
+        {
+          "pmid": "19821403",
+          "title": "S-Adenosylmethionine for osteoarthritis of the knee or hip.",
+          "pubdate": "2009 Oct 7",
+          "pubtype": [
+            "Journal Article",
+            "Meta-Analysis",
+            "Systematic Review"
+          ],
+          "url": "https://pubmed.ncbi.nlm.nih.gov/19821403/"
+        },
+        {
+          "pmid": "39519500",
+          "title": "S-Adenosylmethionine (SAMe) for Liver Health: A Systematic Review.",
+          "pubdate": "2024 Oct 28",
+          "pubtype": [
+            "Journal Article",
+            "Systematic Review"
+          ],
+          "url": "https://pubmed.ncbi.nlm.nih.gov/39519500/"
+        }
+      ],
+      "priority": "P0",
+      "selection_notes": [
+        "Keep SAMe anchored to human supplement context and preserve hard safety boundaries.",
+        "Hard boundary: do not present SAMe as treating, preventing, or curing disease, replacing medication, or guaranteeing outcomes; keep comparison on disclosed identity, amount, form/source, and safety cautions.",
+        "Approved only as medication-adjacent SAMe label context: compare exact SAMe identity, form/release wording, amount, and safety cautions before accepting mood, joint, or liver positioning.",
+        "Do not present SAMe as treating depression, osteoarthritis, liver disease, or any condition, and do not imply it replaces medication or clinician guidance."
+      ]
+    },
+    {
+      "family": "schisandra_chinensis",
+      "lane": "primary_use_context",
+      "source": "life-science-research:ncbi-entrez-skill",
+      "retrieved_at": "2026-04-23",
+      "query": "Schisandra chinensis randomized placebo trial human review",
+      "candidates": [
+        {
+          "pmid": "32260466",
+          "title": "Effect of Schisandra Chinensis Extract Supplementation on Quadriceps Muscle Strength and Fatigue in Adult Women: A Randomized, Double-Blind, Placebo-Controlled Trial.",
+          "pubdate": "2020 Apr 4",
+          "pubtype": [
+            "Journal Article",
+            "Randomized Controlled Trial",
+            "Research Support, Non-U.S. Gov't"
+          ],
+          "url": "https://pubmed.ncbi.nlm.nih.gov/32260466/"
+        },
+        {
+          "pmid": "33710261",
+          "title": "Effect of Schisandra chinensis Baillon extracts and regular low-intensity exercise on muscle strength and mass in older adults: a randomized, double-blind, placebo-controlled trial.",
+          "pubdate": "2021 Jun 1",
+          "pubtype": [
+            "Journal Article",
+            "Randomized Controlled Trial"
+          ],
+          "url": "https://pubmed.ncbi.nlm.nih.gov/33710261/"
+        },
+        {
+          "pmid": "23538076",
+          "title": "Adaptogens in mental and behavioral disorders.",
+          "pubdate": "2013 Mar",
+          "pubtype": [
+            "Journal Article",
+            "Review"
+          ],
+          "url": "https://pubmed.ncbi.nlm.nih.gov/23538076/"
+        },
+        {
+          "pmid": "27763802",
+          "title": "A randomized, double-blind, placebo-controlled trial of Schisandra chinensis for menopausal symptoms.",
+          "pubdate": "2016 Dec",
+          "pubtype": [
+            "Journal Article",
+            "Randomized Controlled Trial"
+          ],
+          "url": "https://pubmed.ncbi.nlm.nih.gov/27763802/"
+        }
+      ],
+      "priority": "P0",
+      "selection_notes": [
+        "Keep Schisandra Chinensis anchored to human supplement context and preserve hard safety boundaries.",
+        "Hard boundary: do not present Schisandra Chinensis as treating, preventing, or curing disease, replacing medication, or guaranteeing outcomes; keep comparison on disclosed identity, amount, form/source, and safety cautions.",
+        "Approved only as bounded Schisandra extract/adaptogen label context, with exact extract identity and study setting kept visible.",
+        "Exclude animal/feed papers from support; do not turn menopause, metabolic, fatigue, liver, immune, or adaptogen context into disease-treatment claims."
+      ]
+    },
+    {
+      "family": "tocotrienols",
+      "lane": "primary_use_context",
+      "source": "life-science-research:ncbi-entrez-skill",
+      "retrieved_at": "2026-04-23",
+      "query": "tocotrienol supplementation systematic review humans",
+      "candidates": [
+        {
+          "pmid": "32951713",
+          "title": "The effects of tocotrienol supplementation on lipid profile: A meta-analysis of randomized controlled trials.",
+          "pubdate": "2020 Aug",
+          "pubtype": [
+            "Journal Article",
+            "Meta-Analysis",
+            "Systematic Review"
+          ],
+          "url": "https://pubmed.ncbi.nlm.nih.gov/32951713/"
+        },
+        {
+          "pmid": "34297765",
+          "title": "Effects of tocotrienols supplementation on markers of inflammation and oxidative stress: A systematic review and meta-analysis of randomized controlled trials.",
+          "pubdate": "2021",
+          "pubtype": [
+            "Journal Article",
+            "Meta-Analysis",
+            "Research Support, Non-U.S. Gov't",
+            "Systematic Review"
+          ],
+          "url": "https://pubmed.ncbi.nlm.nih.gov/34297765/"
+        },
+        {
+          "pmid": "36932765",
+          "title": "Pharmacokinetics and bioavailability of tocotrienols in healthy human volunteers: a systematic review.",
+          "pubdate": "2023 Mar",
+          "pubtype": [
+            "Systematic Review",
+            "Journal Article"
+          ],
+          "url": "https://pubmed.ncbi.nlm.nih.gov/36932765/"
+        },
+        {
+          "pmid": "26323969",
+          "title": "A new formulation of Gamma Delta Tocotrienol has superior bioavailability compared to existing Tocotrienol-Rich Fraction in healthy human subjects.",
+          "pubdate": "2015 Sep 1",
+          "pubtype": [
+            "Journal Article",
+            "Randomized Controlled Trial",
+            "Research Support, Non-U.S. Gov't"
+          ],
+          "url": "https://pubmed.ncbi.nlm.nih.gov/26323969/"
+        }
+      ],
+      "priority": "P0",
+      "selection_notes": [
+        "Keep Tocotrienols anchored to human supplement context and preserve hard safety boundaries.",
+        "Hard boundary: do not present Tocotrienols as treating, preventing, or curing disease, replacing medication, or guaranteeing outcomes; keep comparison on disclosed identity, amount, form/source, and safety cautions.",
+        "Approved only as tocotrienol-specific vitamin E comparison context: do not flatten tocotrienols into generic vitamin E or tocopherol copy.",
+        "Keep lipid, inflammation, liver, and bioavailability findings bounded by population, formulation, and outcome; no cardiovascular, liver, or anti-inflammatory treatment claims."
       ]
     }
   ]

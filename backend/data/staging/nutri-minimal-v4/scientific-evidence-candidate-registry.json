@@ -3043,7 +3043,7 @@
       "lane": "primary_use_context",
       "source": "life-science-research:ncbi-entrez-skill",
       "retrieved_at": "2026-04-23",
-      "query": "((Devil's Claw[Title/Abstract] OR devil s claw[Title/Abstract] OR devils claw[Title/Abstract] OR harpagophytum[Title/Abstract]) AND (human[Title/Abstract] OR supplementation[Title/Abstract] OR oral[Title/Abstract])) AND (systematic review[Title/Abstract] OR review[Publication Type] OR meta-analysis[Publication Type] OR randomized[Title/Abstract] OR trial[Title/Abstract])",
+      "query": "Harpagophytum procumbens randomized trial systematic review humans",
       "seed_citations": [
         {
           "id": "ref_85631c436912",
@@ -3068,9 +3068,66 @@
           "link_status": "search",
           "seed_kind": "search_url",
           "search_query": "Devil's Claw osteoarthritis joint pain dose trial"
+        },
+        {
+          "id": "manual_pmid_15369596",
+          "type": "pubmed_pmid",
+          "identifier": "PMID:15369596",
+          "source": "PubMed",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/15369596/",
+          "audit_status": "lsr_verified",
+          "resolution_priority": 1,
+          "link_status": "resolved",
+          "seed_kind": "pmid",
+          "search_query": "Harpgophytum procumbens for osteoarthritis and low back pain: a systematic review."
+        },
+        {
+          "id": "manual_pmid_18236448",
+          "type": "pubmed_pmid",
+          "identifier": "PMID:18236448",
+          "source": "PubMed",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/18236448/",
+          "audit_status": "lsr_verified",
+          "resolution_priority": 1,
+          "link_status": "resolved",
+          "seed_kind": "pmid",
+          "search_query": "Systematic review on the safety of Harpagophytum preparations for osteoarthritic and low back pain."
+        },
+        {
+          "id": "manual_pmid_10101629",
+          "type": "pubmed_pmid",
+          "identifier": "PMID:10101629",
+          "source": "PubMed",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/10101629/",
+          "audit_status": "lsr_verified",
+          "resolution_priority": 1,
+          "link_status": "resolved",
+          "seed_kind": "pmid",
+          "search_query": "Effectiveness of Harpagophytum extract WS 1531 in the treatment of exacerbation of low back pain: a randomized, placebo-controlled, double-blind study."
         }
       ],
       "plugin_verified_pmids": [
+        {
+          "pmid": "15369596",
+          "title": "Harpgophytum procumbens for osteoarthritis and low back pain: a systematic review.",
+          "pubdate": "2004 Sep 15",
+          "pubtype": [
+            "Comparative Study",
+            "Journal Article",
+            "Systematic Review"
+          ],
+          "url": "https://pubmed.ncbi.nlm.nih.gov/15369596/"
+        },
+        {
+          "pmid": "18236448",
+          "title": "Systematic review on the safety of Harpagophytum preparations for osteoarthritic and low back pain.",
+          "pubdate": "2008 Feb",
+          "pubtype": [
+            "Journal Article",
+            "Systematic Review"
+          ],
+          "url": "https://pubmed.ncbi.nlm.nih.gov/18236448/"
+        },
         {
           "pmid": "10101629",
           "title": "Effectiveness of Harpagophytum extract WS 1531 in the treatment of exacerbation of low back pain: a randomized, placebo-controlled, double-blind study.",
@@ -3086,11 +3143,13 @@
       "priority": "P0",
       "selection_notes": [
         "Keep Devil's Claw anchored to human supplement context and preserve hard safety boundaries.",
-        "Hard boundary: do not present Devil S Claw as treating, preventing, or curing disease, replacing medication, or guaranteeing outcomes; keep comparison on disclosed identity, amount, form/source, and safety cautions."
+        "Hard boundary: do not present Devil S Claw as treating, preventing, or curing disease, replacing medication, or guaranteeing outcomes; keep comparison on disclosed identity, amount, form/source, and safety cautions.",
+        "Approved only as bounded Devil's Claw comparison context: exact Harpagophytum identity, extract wording, dose, and safety cautions matter more than pain-relief marketing.",
+        "Do not present Devil's Claw as treating osteoarthritis, low back pain, inflammation, or any disease; use the evidence to keep claims narrow and caution-forward."
       ],
-      "review_status": "needs_edit",
+      "review_status": "approved",
       "review_reasons": [
-        "needs_boundary_support"
+        "approved_with_verified_pmids"
       ],
       "source_ingredient_ids": [
         "devil_s_claw"
@@ -6178,7 +6237,7 @@
       "lane": "primary_context",
       "source": "life-science-research:ncbi-entrez-skill",
       "retrieved_at": "2026-04-23",
-      "query": "((L-Leucine[Title/Abstract] OR l leucine[Title/Abstract]) AND (supplementation[Title/Abstract] OR human[Title/Abstract] OR oral[Title/Abstract])) AND (systematic review[Title/Abstract] OR review[Publication Type] OR meta-analysis[Publication Type] OR randomized[Title/Abstract] OR trial[Title/Abstract])",
+      "query": "leucine supplementation systematic review randomized trial resistance training",
       "seed_citations": [
         {
           "id": "ref_49313f51f87e",
@@ -6203,6 +6262,42 @@
           "link_status": "search",
           "seed_kind": "search_url",
           "search_query": "L-Leucine exercise performance fatigue dose trial"
+        },
+        {
+          "id": "manual_pmid_31577520",
+          "type": "pubmed_pmid",
+          "identifier": "PMID:31577520",
+          "source": "PubMed",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/31577520/",
+          "audit_status": "lsr_verified",
+          "resolution_priority": 1,
+          "link_status": "resolved",
+          "seed_kind": "pmid",
+          "search_query": "Efficacy of L-leucine Supplementation Coupled With Resistance Training in Untrained Midlife Women."
+        },
+        {
+          "id": "manual_pmid_28698222",
+          "type": "pubmed_pmid",
+          "identifier": "PMID:28698222",
+          "source": "PubMed",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/28698222/",
+          "audit_status": "lsr_verified",
+          "resolution_priority": 1,
+          "link_status": "resolved",
+          "seed_kind": "pmid",
+          "search_query": "A systematic review, meta-analysis and meta-regression of the effect of protein supplementation on resistance training-induced gains in muscle mass and strength in healthy adults."
+        },
+        {
+          "id": "manual_pmid_40937507",
+          "type": "pubmed_pmid",
+          "identifier": "PMID:40937507",
+          "source": "PubMed",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/40937507/",
+          "audit_status": "lsr_verified",
+          "resolution_priority": 1,
+          "link_status": "resolved",
+          "seed_kind": "pmid",
+          "search_query": "Enhancing Muscle Quality: Exploring Leucine and Whey Protein in Sarcopenic Individuals."
         }
       ],
       "plugin_verified_pmids": [
@@ -6215,16 +6310,39 @@
             "Randomized Controlled Trial"
           ],
           "url": "https://pubmed.ncbi.nlm.nih.gov/31577520/"
+        },
+        {
+          "pmid": "28698222",
+          "title": "A systematic review, meta-analysis and meta-regression of the effect of protein supplementation on resistance training-induced gains in muscle mass and strength in healthy adults.",
+          "pubdate": "2018 Mar",
+          "pubtype": [
+            "Journal Article",
+            "Meta-Analysis",
+            "Systematic Review"
+          ],
+          "url": "https://pubmed.ncbi.nlm.nih.gov/28698222/"
+        },
+        {
+          "pmid": "40937507",
+          "title": "Enhancing Muscle Quality: Exploring Leucine and Whey Protein in Sarcopenic Individuals.",
+          "pubdate": "2025 Oct",
+          "pubtype": [
+            "Journal Article",
+            "Systematic Review"
+          ],
+          "url": "https://pubmed.ncbi.nlm.nih.gov/40937507/"
         }
       ],
       "priority": "P0",
       "selection_notes": [
         "Keep L-Leucine anchored to human supplementation context instead of broad wellness or performance marketing.",
-        "Do not turn L Leucine context into disease-treatment, guaranteed-outcome, universal best-form, or superiority language."
+        "Do not turn L Leucine context into disease-treatment, guaranteed-outcome, universal best-form, or superiority language.",
+        "Approved as amino-acid/protein-formula comparison context: leucine should be read with protein source, dose, and training/formula setting.",
+        "Do not imply leucine alone guarantees muscle gain, recovery, or performance, and do not generalize older-adult or sarcopenia literature to every shopper."
       ],
-      "review_status": "needs_edit",
+      "review_status": "approved",
       "review_reasons": [
-        "needs_boundary_support"
+        "approved_with_verified_pmids"
       ],
       "source_ingredient_ids": [
         "l_leucine"
@@ -6609,7 +6727,7 @@
       "lane": "primary_context",
       "source": "life-science-research:ncbi-entrez-skill",
       "retrieved_at": "2026-04-23",
-      "query": "((L-Threonine[Title/Abstract] OR l threonine[Title/Abstract]) AND (supplementation[Title/Abstract] OR human[Title/Abstract] OR oral[Title/Abstract])) AND (systematic review[Title/Abstract] OR review[Publication Type] OR meta-analysis[Publication Type] OR randomized[Title/Abstract] OR trial[Title/Abstract])",
+      "query": "L-threonine supplementation healthy adults randomized trial",
       "seed_citations": [
         {
           "id": "ref_b4bc07a54a0c",
@@ -6634,36 +6752,38 @@
           "link_status": "search",
           "seed_kind": "search_url",
           "search_query": "L-Threonine exercise performance fatigue systematic review"
+        },
+        {
+          "id": "manual_pmid_40419835",
+          "type": "pubmed_pmid",
+          "identifier": "PMID:40419835",
+          "source": "PubMed",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/40419835/",
+          "audit_status": "lsr_verified",
+          "resolution_priority": 1,
+          "link_status": "resolved",
+          "seed_kind": "pmid",
+          "search_query": "Evaluation of safe utilization of L-threonine for supplementation in healthy adults: a randomized double blind controlled trial."
         }
       ],
       "plugin_verified_pmids": [
         {
-          "pmid": "30504005",
-          "title": "l-Threonine improves intestinal mucin synthesis and immune function of intrauterine growth-retarded weanling piglets.",
-          "pubdate": "2019 Mar",
+          "pmid": "40419835",
+          "title": "Evaluation of safe utilization of L-threonine for supplementation in healthy adults: a randomized double blind controlled trial.",
+          "pubdate": "2025 May 27",
           "pubtype": [
             "Journal Article",
-            "Research Support, Non-U.S. Gov't"
+            "Randomized Controlled Trial"
           ],
-          "url": "https://pubmed.ncbi.nlm.nih.gov/30504005/"
-        },
-        {
-          "pmid": "8296531",
-          "title": "A double-blind study of L-threonine in patients with spinal spasticity.",
-          "pubdate": "1993 Nov",
-          "pubtype": [
-            "Clinical Trial",
-            "Journal Article",
-            "Randomized Controlled Trial",
-            "Research Support, Non-U.S. Gov't"
-          ],
-          "url": "https://pubmed.ncbi.nlm.nih.gov/8296531/"
+          "url": "https://pubmed.ncbi.nlm.nih.gov/40419835/"
         }
       ],
       "priority": "P0",
       "selection_notes": [
         "Keep L-Threonine anchored to human supplementation context instead of broad wellness or performance marketing.",
-        "Do not turn L Threonine context into disease-treatment, guaranteed-outcome, universal best-form, or superiority language."
+        "Do not turn L Threonine context into disease-treatment, guaranteed-outcome, universal best-form, or superiority language.",
+        "LSR found a healthy-adult safety RCT, but not enough review-level or shopper-use-context support to approve a live Scientific Background lane yet.",
+        "Keep L-threonine blocked from live grounding until an additional review-level or label-relevant human source supports the primary lane boundary."
       ],
       "review_status": "needs_edit",
       "review_reasons": [
@@ -9635,7 +9755,7 @@
       "lane": "primary_use_context",
       "source": "life-science-research:ncbi-entrez-skill",
       "retrieved_at": "2026-04-23",
-      "query": "((SAMe[Title/Abstract] OR S-adenosyl methionine[Title/Abstract] OR SAM-e[Title/Abstract]) AND (human[Title/Abstract] OR supplementation[Title/Abstract] OR oral[Title/Abstract])) AND (systematic review[Title/Abstract] OR review[Publication Type] OR meta-analysis[Publication Type] OR randomized[Title/Abstract] OR trial[Title/Abstract])",
+      "query": "S-adenosylmethionine SAMe systematic review safety human",
       "seed_citations": [
         {
           "id": "ref_8319447b8466",
@@ -9660,17 +9780,87 @@
           "link_status": "search",
           "seed_kind": "search_url",
           "search_query": "s-adenosylmethionine depression systematic review"
+        },
+        {
+          "id": "manual_pmid_28682528",
+          "type": "pubmed_pmid",
+          "identifier": "PMID:28682528",
+          "source": "PubMed",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/28682528/",
+          "audit_status": "lsr_verified",
+          "resolution_priority": 1,
+          "link_status": "resolved",
+          "seed_kind": "pmid",
+          "search_query": "S-Adenosylmethionine (SAMe) for Neuropsychiatric Disorders: A Clinician-Oriented Review of Research."
+        },
+        {
+          "id": "manual_pmid_19821403",
+          "type": "pubmed_pmid",
+          "identifier": "PMID:19821403",
+          "source": "PubMed",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/19821403/",
+          "audit_status": "lsr_verified",
+          "resolution_priority": 1,
+          "link_status": "resolved",
+          "seed_kind": "pmid",
+          "search_query": "S-Adenosylmethionine for osteoarthritis of the knee or hip."
+        },
+        {
+          "id": "manual_pmid_39519500",
+          "type": "pubmed_pmid",
+          "identifier": "PMID:39519500",
+          "source": "PubMed",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/39519500/",
+          "audit_status": "lsr_verified",
+          "resolution_priority": 1,
+          "link_status": "resolved",
+          "seed_kind": "pmid",
+          "search_query": "S-Adenosylmethionine (SAMe) for Liver Health: A Systematic Review."
         }
       ],
-      "plugin_verified_pmids": [],
+      "plugin_verified_pmids": [
+        {
+          "pmid": "28682528",
+          "title": "S-Adenosylmethionine (SAMe) for Neuropsychiatric Disorders: A Clinician-Oriented Review of Research.",
+          "pubdate": "2017 Jun",
+          "pubtype": [
+            "Journal Article",
+            "Systematic Review"
+          ],
+          "url": "https://pubmed.ncbi.nlm.nih.gov/28682528/"
+        },
+        {
+          "pmid": "19821403",
+          "title": "S-Adenosylmethionine for osteoarthritis of the knee or hip.",
+          "pubdate": "2009 Oct 7",
+          "pubtype": [
+            "Journal Article",
+            "Meta-Analysis",
+            "Systematic Review"
+          ],
+          "url": "https://pubmed.ncbi.nlm.nih.gov/19821403/"
+        },
+        {
+          "pmid": "39519500",
+          "title": "S-Adenosylmethionine (SAMe) for Liver Health: A Systematic Review.",
+          "pubdate": "2024 Oct 28",
+          "pubtype": [
+            "Journal Article",
+            "Systematic Review"
+          ],
+          "url": "https://pubmed.ncbi.nlm.nih.gov/39519500/"
+        }
+      ],
       "priority": "P0",
       "selection_notes": [
         "Keep SAMe anchored to human supplement context and preserve hard safety boundaries.",
-        "Hard boundary: do not present SAMe as treating, preventing, or curing disease, replacing medication, or guaranteeing outcomes; keep comparison on disclosed identity, amount, form/source, and safety cautions."
+        "Hard boundary: do not present SAMe as treating, preventing, or curing disease, replacing medication, or guaranteeing outcomes; keep comparison on disclosed identity, amount, form/source, and safety cautions.",
+        "Approved only as medication-adjacent SAMe label context: compare exact SAMe identity, form/release wording, amount, and safety cautions before accepting mood, joint, or liver positioning.",
+        "Do not present SAMe as treating depression, osteoarthritis, liver disease, or any condition, and do not imply it replaces medication or clinician guidance."
       ],
-      "review_status": "needs_edit",
+      "review_status": "approved",
       "review_reasons": [
-        "no_plugin_verified_pmids"
+        "approved_with_verified_pmids"
       ],
       "source_ingredient_ids": [
         "same"
@@ -9759,7 +9949,7 @@
       "lane": "primary_use_context",
       "source": "life-science-research:ncbi-entrez-skill",
       "retrieved_at": "2026-04-23",
-      "query": "((Schisandra Chinensis[Title/Abstract] OR schisandra chinensis[Title/Abstract] OR schisandra[Title/Abstract]) AND (human[Title/Abstract] OR supplementation[Title/Abstract] OR oral[Title/Abstract])) AND (systematic review[Title/Abstract] OR review[Publication Type] OR meta-analysis[Publication Type] OR randomized[Title/Abstract] OR trial[Title/Abstract])",
+      "query": "Schisandra chinensis randomized placebo trial human review",
       "seed_citations": [
         {
           "id": "ref_80c3a98ff247",
@@ -9784,38 +9974,109 @@
           "link_status": "search",
           "seed_kind": "search_url",
           "search_query": "Schisandra Chinensis immune dose trial"
+        },
+        {
+          "id": "manual_pmid_32260466",
+          "type": "pubmed_pmid",
+          "identifier": "PMID:32260466",
+          "source": "PubMed",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/32260466/",
+          "audit_status": "lsr_verified",
+          "resolution_priority": 1,
+          "link_status": "resolved",
+          "seed_kind": "pmid",
+          "search_query": "Effect of Schisandra Chinensis Extract Supplementation on Quadriceps Muscle Strength and Fatigue in Adult Women: A Randomized, Double-Blind, Placebo-Controlled Trial."
+        },
+        {
+          "id": "manual_pmid_33710261",
+          "type": "pubmed_pmid",
+          "identifier": "PMID:33710261",
+          "source": "PubMed",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/33710261/",
+          "audit_status": "lsr_verified",
+          "resolution_priority": 1,
+          "link_status": "resolved",
+          "seed_kind": "pmid",
+          "search_query": "Effect of Schisandra chinensis Baillon extracts and regular low-intensity exercise on muscle strength and mass in older adults: a randomized, double-blind, placebo-controlled trial."
+        },
+        {
+          "id": "manual_pmid_23538076",
+          "type": "pubmed_pmid",
+          "identifier": "PMID:23538076",
+          "source": "PubMed",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/23538076/",
+          "audit_status": "lsr_verified",
+          "resolution_priority": 1,
+          "link_status": "resolved",
+          "seed_kind": "pmid",
+          "search_query": "Adaptogens in mental and behavioral disorders."
+        },
+        {
+          "id": "manual_pmid_27763802",
+          "type": "pubmed_pmid",
+          "identifier": "PMID:27763802",
+          "source": "PubMed",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/27763802/",
+          "audit_status": "lsr_verified",
+          "resolution_priority": 1,
+          "link_status": "resolved",
+          "seed_kind": "pmid",
+          "search_query": "A randomized, double-blind, placebo-controlled trial of Schisandra chinensis for menopausal symptoms."
         }
       ],
       "plugin_verified_pmids": [
         {
-          "pmid": "41426213",
-          "title": "Supplementation effects of feed additive containing eggshell, Schisandra chinensis by-products combined with multi-probiotics strains in laying hens.",
-          "pubdate": "2025 Nov",
-          "pubtype": [
-            "Journal Article"
-          ],
-          "url": "https://pubmed.ncbi.nlm.nih.gov/41426213/"
-        },
-        {
-          "pmid": "26048342",
-          "title": "Schisandra chinensis fruit modulates the gut microbiota composition in association with metabolic markers in obese women: a randomized, double-blind placebo-controlled study.",
-          "pubdate": "2015 Aug",
+          "pmid": "32260466",
+          "title": "Effect of Schisandra Chinensis Extract Supplementation on Quadriceps Muscle Strength and Fatigue in Adult Women: A Randomized, Double-Blind, Placebo-Controlled Trial.",
+          "pubdate": "2020 Apr 4",
           "pubtype": [
             "Journal Article",
             "Randomized Controlled Trial",
             "Research Support, Non-U.S. Gov't"
           ],
-          "url": "https://pubmed.ncbi.nlm.nih.gov/26048342/"
+          "url": "https://pubmed.ncbi.nlm.nih.gov/32260466/"
+        },
+        {
+          "pmid": "33710261",
+          "title": "Effect of Schisandra chinensis Baillon extracts and regular low-intensity exercise on muscle strength and mass in older adults: a randomized, double-blind, placebo-controlled trial.",
+          "pubdate": "2021 Jun 1",
+          "pubtype": [
+            "Journal Article",
+            "Randomized Controlled Trial"
+          ],
+          "url": "https://pubmed.ncbi.nlm.nih.gov/33710261/"
+        },
+        {
+          "pmid": "23538076",
+          "title": "Adaptogens in mental and behavioral disorders.",
+          "pubdate": "2013 Mar",
+          "pubtype": [
+            "Journal Article",
+            "Review"
+          ],
+          "url": "https://pubmed.ncbi.nlm.nih.gov/23538076/"
+        },
+        {
+          "pmid": "27763802",
+          "title": "A randomized, double-blind, placebo-controlled trial of Schisandra chinensis for menopausal symptoms.",
+          "pubdate": "2016 Dec",
+          "pubtype": [
+            "Journal Article",
+            "Randomized Controlled Trial"
+          ],
+          "url": "https://pubmed.ncbi.nlm.nih.gov/27763802/"
         }
       ],
       "priority": "P0",
       "selection_notes": [
         "Keep Schisandra Chinensis anchored to human supplement context and preserve hard safety boundaries.",
-        "Hard boundary: do not present Schisandra Chinensis as treating, preventing, or curing disease, replacing medication, or guaranteeing outcomes; keep comparison on disclosed identity, amount, form/source, and safety cautions."
+        "Hard boundary: do not present Schisandra Chinensis as treating, preventing, or curing disease, replacing medication, or guaranteeing outcomes; keep comparison on disclosed identity, amount, form/source, and safety cautions.",
+        "Approved only as bounded Schisandra extract/adaptogen label context, with exact extract identity and study setting kept visible.",
+        "Exclude animal/feed papers from support; do not turn menopause, metabolic, fatigue, liver, immune, or adaptogen context into disease-treatment claims."
       ],
-      "review_status": "needs_edit",
+      "review_status": "approved",
       "review_reasons": [
-        "needs_boundary_support"
+        "approved_with_verified_pmids"
       ],
       "source_ingredient_ids": [
         "schisandra_chinensis"
@@ -10439,7 +10700,7 @@
       "lane": "primary_use_context",
       "source": "life-science-research:ncbi-entrez-skill",
       "retrieved_at": "2026-04-23",
-      "query": "((Tocotrienols[Title/Abstract] OR tocotrienols[Title/Abstract] OR vitamin E tocotrienol[Title/Abstract]) AND (human[Title/Abstract] OR supplementation[Title/Abstract] OR oral[Title/Abstract])) AND (systematic review[Title/Abstract] OR review[Publication Type] OR meta-analysis[Publication Type] OR randomized[Title/Abstract] OR trial[Title/Abstract])",
+      "query": "tocotrienol supplementation systematic review humans",
       "seed_citations": [
         {
           "id": "ref_0a7ab40a4cb4",
@@ -10464,17 +10725,112 @@
           "link_status": "search",
           "seed_kind": "search_url",
           "search_query": "Tocotrienols cholesterol triglycerides systematic review"
+        },
+        {
+          "id": "manual_pmid_32951713",
+          "type": "pubmed_pmid",
+          "identifier": "PMID:32951713",
+          "source": "PubMed",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/32951713/",
+          "audit_status": "lsr_verified",
+          "resolution_priority": 1,
+          "link_status": "resolved",
+          "seed_kind": "pmid",
+          "search_query": "The effects of tocotrienol supplementation on lipid profile: A meta-analysis of randomized controlled trials."
+        },
+        {
+          "id": "manual_pmid_34297765",
+          "type": "pubmed_pmid",
+          "identifier": "PMID:34297765",
+          "source": "PubMed",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/34297765/",
+          "audit_status": "lsr_verified",
+          "resolution_priority": 1,
+          "link_status": "resolved",
+          "seed_kind": "pmid",
+          "search_query": "Effects of tocotrienols supplementation on markers of inflammation and oxidative stress: A systematic review and meta-analysis of randomized controlled trials."
+        },
+        {
+          "id": "manual_pmid_36932765",
+          "type": "pubmed_pmid",
+          "identifier": "PMID:36932765",
+          "source": "PubMed",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/36932765/",
+          "audit_status": "lsr_verified",
+          "resolution_priority": 1,
+          "link_status": "resolved",
+          "seed_kind": "pmid",
+          "search_query": "Pharmacokinetics and bioavailability of tocotrienols in healthy human volunteers: a systematic review."
+        },
+        {
+          "id": "manual_pmid_26323969",
+          "type": "pubmed_pmid",
+          "identifier": "PMID:26323969",
+          "source": "PubMed",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/26323969/",
+          "audit_status": "lsr_verified",
+          "resolution_priority": 1,
+          "link_status": "resolved",
+          "seed_kind": "pmid",
+          "search_query": "A new formulation of Gamma Delta Tocotrienol has superior bioavailability compared to existing Tocotrienol-Rich Fraction in healthy human subjects."
         }
       ],
-      "plugin_verified_pmids": [],
+      "plugin_verified_pmids": [
+        {
+          "pmid": "32951713",
+          "title": "The effects of tocotrienol supplementation on lipid profile: A meta-analysis of randomized controlled trials.",
+          "pubdate": "2020 Aug",
+          "pubtype": [
+            "Journal Article",
+            "Meta-Analysis",
+            "Systematic Review"
+          ],
+          "url": "https://pubmed.ncbi.nlm.nih.gov/32951713/"
+        },
+        {
+          "pmid": "34297765",
+          "title": "Effects of tocotrienols supplementation on markers of inflammation and oxidative stress: A systematic review and meta-analysis of randomized controlled trials.",
+          "pubdate": "2021",
+          "pubtype": [
+            "Journal Article",
+            "Meta-Analysis",
+            "Research Support, Non-U.S. Gov't",
+            "Systematic Review"
+          ],
+          "url": "https://pubmed.ncbi.nlm.nih.gov/34297765/"
+        },
+        {
+          "pmid": "36932765",
+          "title": "Pharmacokinetics and bioavailability of tocotrienols in healthy human volunteers: a systematic review.",
+          "pubdate": "2023 Mar",
+          "pubtype": [
+            "Systematic Review",
+            "Journal Article"
+          ],
+          "url": "https://pubmed.ncbi.nlm.nih.gov/36932765/"
+        },
+        {
+          "pmid": "26323969",
+          "title": "A new formulation of Gamma Delta Tocotrienol has superior bioavailability compared to existing Tocotrienol-Rich Fraction in healthy human subjects.",
+          "pubdate": "2015 Sep 1",
+          "pubtype": [
+            "Journal Article",
+            "Randomized Controlled Trial",
+            "Research Support, Non-U.S. Gov't"
+          ],
+          "url": "https://pubmed.ncbi.nlm.nih.gov/26323969/"
+        }
+      ],
       "priority": "P0",
       "selection_notes": [
         "Keep Tocotrienols anchored to human supplement context and preserve hard safety boundaries.",
-        "Hard boundary: do not present Tocotrienols as treating, preventing, or curing disease, replacing medication, or guaranteeing outcomes; keep comparison on disclosed identity, amount, form/source, and safety cautions."
+        "Hard boundary: do not present Tocotrienols as treating, preventing, or curing disease, replacing medication, or guaranteeing outcomes; keep comparison on disclosed identity, amount, form/source, and safety cautions.",
+        "Approved only as tocotrienol-specific vitamin E comparison context: do not flatten tocotrienols into generic vitamin E or tocopherol copy.",
+        "Keep lipid, inflammation, liver, and bioavailability findings bounded by population, formulation, and outcome; no cardiovascular, liver, or anti-inflammatory treatment claims."
       ],
-      "review_status": "needs_edit",
+      "review_status": "approved",
       "review_reasons": [
-        "no_plugin_verified_pmids"
+        "approved_with_verified_pmids"
       ],
       "source_ingredient_ids": [
         "tocotrienols"

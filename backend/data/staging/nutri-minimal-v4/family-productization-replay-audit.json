@@ -1,6 +1,6 @@
 {
   "version": "nutri_minimal_v4_family_replay_audit.v1",
-  "generated_at": "2026-04-23T23:32:56.060Z",
+  "generated_at": "2026-04-23T23:54:28.793Z",
   "summary": {
     "manifest_rows": 95,
     "local_validation_title_replays": 10,
@@ -8,8 +8,8 @@
     "inference_pass": 95,
     "scientific_background_section_pass": 95,
     "evidence_grounding_gate_pass": 95,
-    "approved_primary_lanes": 77,
-    "needs_edit_primary_lanes": 6,
+    "approved_primary_lanes": 82,
+    "needs_edit_primary_lanes": 1,
     "rejected_primary_lanes": 12,
     "failures": 0
   },
@@ -1018,12 +1018,12 @@
       },
       "evidence_grounding": {
         "pass": true,
-        "review_status": "needs_edit",
-        "expected_reviewed_evidence": false,
-        "reviewed_evidence_found": false,
-        "first_reference_id": null,
+        "review_status": "approved",
+        "expected_reviewed_evidence": true,
+        "reviewed_evidence_found": true,
+        "first_reference_id": "pmid:15369596",
         "review_reasons": [
-          "needs_boundary_support"
+          "approved_with_verified_pmids"
         ]
       }
     },
@@ -2338,12 +2338,12 @@
       },
       "evidence_grounding": {
         "pass": true,
-        "review_status": "needs_edit",
-        "expected_reviewed_evidence": false,
-        "reviewed_evidence_found": false,
-        "first_reference_id": null,
+        "review_status": "approved",
+        "expected_reviewed_evidence": true,
+        "reviewed_evidence_found": true,
+        "first_reference_id": "pmid:31577520",
         "review_reasons": [
-          "needs_boundary_support"
+          "approved_with_verified_pmids"
         ]
       }
     },
@@ -3262,12 +3262,12 @@
       },
       "evidence_grounding": {
         "pass": true,
-        "review_status": "needs_edit",
-        "expected_reviewed_evidence": false,
-        "reviewed_evidence_found": false,
-        "first_reference_id": null,
+        "review_status": "approved",
+        "expected_reviewed_evidence": true,
+        "reviewed_evidence_found": true,
+        "first_reference_id": "pmid:32260466",
         "review_reasons": [
-          "needs_boundary_support"
+          "approved_with_verified_pmids"
         ]
       }
     },
@@ -4142,12 +4142,12 @@
       },
       "evidence_grounding": {
         "pass": true,
-        "review_status": "needs_edit",
-        "expected_reviewed_evidence": false,
-        "reviewed_evidence_found": false,
-        "first_reference_id": null,
+        "review_status": "approved",
+        "expected_reviewed_evidence": true,
+        "reviewed_evidence_found": true,
+        "first_reference_id": "pmid:28682528",
         "review_reasons": [
-          "no_plugin_verified_pmids"
+          "approved_with_verified_pmids"
         ]
       }
     },
@@ -4186,12 +4186,12 @@
       },
       "evidence_grounding": {
         "pass": true,
-        "review_status": "needs_edit",
-        "expected_reviewed_evidence": false,
-        "reviewed_evidence_found": false,
-        "first_reference_id": null,
+        "review_status": "approved",
+        "expected_reviewed_evidence": true,
+        "reviewed_evidence_found": true,
+        "first_reference_id": "pmid:32951713",
         "review_reasons": [
-          "no_plugin_verified_pmids"
+          "approved_with_verified_pmids"
         ]
       }
     }

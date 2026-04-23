@@ -279,6 +279,206 @@ const buildReviewedEvidenceRowFromCandidate = (
   });
 };
 
+const buildEvidenceBacklogRescueSeedRows = (): ReviewedEvidenceRow[] => [
+  buildSimpleReviewedEvidenceRow({
+    family: "devil_s_claw",
+    sectionKey: "primary_use_context",
+    evidenceGrade: "B",
+    overallConfidence: 0.68,
+    displayText:
+      "Devil's Claw should be compared as a Harpagophytum extract line with safety cautions visible, not as a broad pain-relief promise.",
+    sentencePrefix: "devil_s_claw_primary_rescue",
+    summary:
+      "Devil's Claw has human and review-level Harpagophytum context, but the useful shopper lane is extract identity, dose, and safety boundary rather than a front-label relief claim.",
+    evidenceRead:
+      "The reviewed support includes Harpagophytum systematic reviews and a randomized extract trial, so the evidence is narrow and condition-adjacent rather than a universal supplement story.",
+    shopperMeaning:
+      "When comparing Devil's Claw products, check the exact Harpagophytum source, extract standardization, dose, and warning language before treating two labels as equivalent.",
+    caveat:
+      "Do not present Devil's Claw as treating osteoarthritis, low back pain, inflammation, or any disease; keep the comparison caution-forward.",
+    summaryReferenceId: "pmid:15369596",
+    evidenceReferenceId: "pmid:18236448",
+    shopperReferenceId: "pmid:10101629",
+    caveatReferenceId: "pmid:18236448",
+    references: [
+      {
+        pmid: "15369596",
+        title:
+          "Harpgophytum procumbens for osteoarthritis and low back pain: a systematic review.",
+      },
+      {
+        pmid: "18236448",
+        title:
+          "Systematic review on the safety of Harpagophytum preparations for osteoarthritic and low back pain.",
+      },
+      {
+        pmid: "10101629",
+        title:
+          "Effectiveness of Harpagophytum extract WS 1531 in the treatment of exacerbation of low back pain: a randomized, placebo-controlled, double-blind study.",
+      },
+    ],
+  }),
+  buildSimpleReviewedEvidenceRow({
+    family: "same",
+    sectionKey: "primary_use_context",
+    evidenceGrade: "B",
+    overallConfidence: 0.67,
+    displayText:
+      "SAMe is a medication-adjacent research lane, so product comparison should foreground exact identity, amount, release/form wording, and safety cautions.",
+    sentencePrefix: "same_primary_rescue",
+    summary:
+      "SAMe has systematic-review support in several medical-adjacent contexts, which makes it useful for label interpretation only when the wording stays bounded.",
+    evidenceRead:
+      "The reviewed PubMed set includes systematic reviews for SAMe in neuropsychiatric, joint, and liver-health contexts, so the evidence should be read by study context rather than as a broad benefit.",
+    shopperMeaning:
+      "When comparing SAMe products, check the exact SAMe identity, dose, enteric or salt-form wording, and warning language before relying on mood, joint, or liver positioning.",
+    caveat:
+      "Do not present SAMe as treating depression, osteoarthritis, liver disease, or any condition, and do not imply it replaces medication or clinician guidance.",
+    summaryReferenceId: "pmid:28682528",
+    evidenceReferenceId: "pmid:19821403",
+    shopperReferenceId: "pmid:39519500",
+    caveatReferenceId: "pmid:28682528",
+    references: [
+      {
+        pmid: "28682528",
+        title:
+          "S-Adenosylmethionine (SAMe) for Neuropsychiatric Disorders: A Clinician-Oriented Review of Research.",
+      },
+      {
+        pmid: "19821403",
+        title: "S-Adenosylmethionine for osteoarthritis of the knee or hip.",
+      },
+      {
+        pmid: "39519500",
+        title: "S-Adenosylmethionine (SAMe) for Liver Health: A Systematic Review.",
+      },
+    ],
+  }),
+  buildSimpleReviewedEvidenceRow({
+    family: "tocotrienols",
+    sectionKey: "primary_use_context",
+    evidenceGrade: "B",
+    overallConfidence: 0.7,
+    displayText:
+      "Tocotrienol labels should be compared as tocotrienol-specific vitamin E products, with formulation and outcome context separated from generic antioxidant copy.",
+    sentencePrefix: "tocotrienols_primary_rescue",
+    summary:
+      "Tocotrienols have human systematic-review support, but the clearest shopper value is distinguishing tocotrienol-specific evidence from generic vitamin E or tocopherol language.",
+    evidenceRead:
+      "The reviewed PubMed set includes meta-analyses on lipid profile and oxidative-stress markers plus bioavailability work, so interpretation should stay outcome- and formulation-specific.",
+    shopperMeaning:
+      "When comparing tocotrienol products, check whether the label discloses tocotrienol-rich fraction, isoform mix, softgel or enhanced-delivery wording, and the stated amount.",
+    caveat:
+      "Do not turn lipid, liver, inflammation, or bioavailability findings into cardiovascular, liver, anti-inflammatory, or superiority claims for every tocotrienol product.",
+    summaryReferenceId: "pmid:32951713",
+    evidenceReferenceId: "pmid:34297765",
+    shopperReferenceId: "pmid:36932765",
+    caveatReferenceId: "pmid:26323969",
+    references: [
+      {
+        pmid: "32951713",
+        title:
+          "The effects of tocotrienol supplementation on lipid profile: A meta-analysis of randomized controlled trials.",
+      },
+      {
+        pmid: "34297765",
+        title:
+          "Effects of tocotrienols supplementation on markers of inflammation and oxidative stress: A systematic review and meta-analysis of randomized controlled trials.",
+      },
+      {
+        pmid: "36932765",
+        title:
+          "Pharmacokinetics and bioavailability of tocotrienols in healthy human volunteers: a systematic review.",
+      },
+      {
+        pmid: "26323969",
+        title:
+          "A new formulation of Gamma Delta Tocotrienol has superior bioavailability compared to existing Tocotrienol-Rich Fraction in healthy human subjects.",
+      },
+    ],
+  }),
+  buildSimpleReviewedEvidenceRow({
+    family: "schisandra_chinensis",
+    sectionKey: "primary_use_context",
+    evidenceGrade: "B",
+    overallConfidence: 0.66,
+    displayText:
+      "Schisandra should be read as an extract/adaptogen label-context lane, with study setting and safety boundaries kept visible.",
+    sentencePrefix: "schisandra_chinensis_primary_rescue",
+    summary:
+      "Schisandra chinensis has human randomized-trial and review context, but the useful comparison lane is exact extract identity and intended use setting, not a broad adaptogen promise.",
+    evidenceRead:
+      "The reviewed support spans Schisandra trials in specific populations and broader adaptogen review context, so the evidence should stay narrower than immune, liver, fatigue, or hormone-adjacent marketing.",
+    shopperMeaning:
+      "When comparing Schisandra products, check the plant identity, extract or marker wording, dose, and whether Schisandra is the main active or one part of a botanical blend.",
+    caveat:
+      "Do not generalize menopause, metabolic, fatigue, liver, immune, or adaptogen evidence into disease-treatment or guaranteed-outcome language.",
+    summaryReferenceId: "pmid:32260466",
+    evidenceReferenceId: "pmid:23538076",
+    shopperReferenceId: "pmid:33710261",
+    caveatReferenceId: "pmid:27763802",
+    references: [
+      {
+        pmid: "32260466",
+        title:
+          "Effect of Schisandra Chinensis Extract Supplementation on Quadriceps Muscle Strength and Fatigue in Adult Women: A Randomized, Double-Blind, Placebo-Controlled Trial.",
+      },
+      {
+        pmid: "33710261",
+        title:
+          "Effect of Schisandra chinensis Baillon extracts and regular low-intensity exercise on muscle strength and mass in older adults: a randomized, double-blind, placebo-controlled trial.",
+      },
+      {
+        pmid: "23538076",
+        title: "Adaptogens in mental and behavioral disorders.",
+      },
+      {
+        pmid: "27763802",
+        title:
+          "A randomized, double-blind, placebo-controlled trial of Schisandra chinensis for menopausal symptoms.",
+      },
+    ],
+  }),
+  buildSimpleReviewedEvidenceRow({
+    family: "l_leucine",
+    sectionKey: "primary_context",
+    evidenceGrade: "B",
+    overallConfidence: 0.69,
+    displayText:
+      "L-leucine is best compared as an amino-acid or protein-formula cue, where dose, protein context, and training setting matter more than standalone performance copy.",
+    sentencePrefix: "l_leucine_primary_rescue",
+    summary:
+      "L-leucine has human trial and review-level context, but shopper interpretation should stay tied to protein source, dose, and whether the product is built around training or formula support.",
+    evidenceRead:
+      "The reviewed support includes a leucine randomized trial and protein/resistance-training systematic-review context, so the lane should not be read as proof that leucine alone drives outcomes.",
+    shopperMeaning:
+      "When comparing L-leucine labels, check grams or milligrams, free-form versus blend disclosure, and whether leucine is central or supporting within a protein or amino-acid stack.",
+    caveat:
+      "Do not imply leucine alone guarantees muscle gain, recovery, or performance, and do not generalize older-adult or sarcopenia literature to every shopper.",
+    summaryReferenceId: "pmid:31577520",
+    evidenceReferenceId: "pmid:28698222",
+    shopperReferenceId: "pmid:31577520",
+    caveatReferenceId: "pmid:40937507",
+    references: [
+      {
+        pmid: "31577520",
+        title:
+          "Efficacy of L-leucine Supplementation Coupled With Resistance Training in Untrained Midlife Women.",
+      },
+      {
+        pmid: "28698222",
+        title:
+          "A systematic review, meta-analysis and meta-regression of the effect of protein supplementation on resistance training-induced gains in muscle mass and strength in healthy adults.",
+      },
+      {
+        pmid: "40937507",
+        title:
+          "Enhancing Muscle Quality: Exploring Leucine and Whey Protein in Sarcopenic Individuals.",
+      },
+    ],
+  }),
+];
+
 const REGISTRY_TEMPLATE_COPY_PATTERN =
   /has approved PubMed-backed context|can be grounded through primary|candidate set|primary reviewed candidate/i;
 
@@ -385,6 +585,7 @@ const polishRegistryTemplateEvidenceRows = (
 };
 
 const buildReviewedEvidenceSeedRows = (): ReviewedEvidenceRow[] => [
+  ...buildEvidenceBacklogRescueSeedRows(),
   {
     ingredient_family: "quercetin",
     section_key: "primary_use_context",

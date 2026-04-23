@@ -16,8 +16,8 @@
     "high_risk_safety": 47,
     "crosswalk_rescue": 10,
     "rejected_from_runtime_productization": 0,
-    "evidence_review_approved": 77,
-    "evidence_review_needs_edit": 6,
+    "evidence_review_approved": 82,
+    "evidence_review_needs_edit": 1,
     "evidence_review_rejected": 12
   },
   "full_family_productization_manifest": [
@@ -731,13 +731,15 @@
         "safety_and_boundary_context",
         "form_source_and_label_context"
       ],
-      "evidence_review_status": "needs_edit",
+      "evidence_review_status": "approved",
       "hard_boundary": "Hard boundary: do not present Devil S Claw as treating, preventing, or curing disease, replacing medication, or guaranteeing outcomes; keep comparison on disclosed identity, amount, form/source, and safety cautions.",
       "notes": [
         "Mapped to runtime family devil_s_claw.",
         "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
         "Identity confidence is low in workbook coverage; keep crosswalk conservative.",
-        "Productized for runtime inference; evidence promotion still requires approved LSR review."
+        "Productized for runtime inference; evidence promotion still requires approved LSR review.",
+        "Approved only as bounded Devil's Claw comparison context: exact Harpagophytum identity, extract wording, dose, and safety cautions matter more than pain-relief marketing.",
+        "Do not present Devil's Claw as treating osteoarthritis, low back pain, inflammation, or any disease; use the evidence to keep claims narrow and caution-forward."
       ]
     },
     {
@@ -1643,13 +1645,15 @@
         "form_and_disclosure_context",
         "formula_context"
       ],
-      "evidence_review_status": "needs_edit",
+      "evidence_review_status": "approved",
       "hard_boundary": "Do not turn L Leucine context into disease-treatment, guaranteed-outcome, universal best-form, or superiority language.",
       "notes": [
         "Mapped to runtime family l_leucine.",
         "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
         "Identity confidence is low in workbook coverage; keep crosswalk conservative.",
-        "Productized for runtime inference; evidence promotion still requires approved LSR review."
+        "Productized for runtime inference; evidence promotion still requires approved LSR review.",
+        "Approved as amino-acid/protein-formula comparison context: leucine should be read with protein source, dose, and training/formula setting.",
+        "Do not imply leucine alone guarantees muscle gain, recovery, or performance, and do not generalize older-adult or sarcopenia literature to every shopper."
       ]
     },
     {
@@ -1785,7 +1789,9 @@
         "Mapped to runtime family l_threonine.",
         "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
         "Identity confidence is low in workbook coverage; keep crosswalk conservative.",
-        "Productized for runtime inference; evidence promotion still requires approved LSR review."
+        "Productized for runtime inference; evidence promotion still requires approved LSR review.",
+        "LSR found a healthy-adult safety RCT, but not enough review-level or shopper-use-context support to approve a live Scientific Background lane yet.",
+        "Keep L-threonine blocked from live grounding until an additional review-level or label-relevant human source supports the primary lane boundary."
       ]
     },
     {
@@ -2357,13 +2363,15 @@
         "safety_and_boundary_context",
         "form_source_and_label_context"
       ],
-      "evidence_review_status": "needs_edit",
+      "evidence_review_status": "approved",
       "hard_boundary": "Hard boundary: do not present SAMe as treating, preventing, or curing disease, replacing medication, or guaranteeing outcomes; keep comparison on disclosed identity, amount, form/source, and safety cautions.",
       "notes": [
         "Mapped to runtime family same.",
         "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
         "Identity confidence is low in workbook coverage; keep crosswalk conservative.",
-        "Rescued into an explicit canonical runtime family with high-boundary evidence review."
+        "Rescued into an explicit canonical runtime family with high-boundary evidence review.",
+        "Approved only as medication-adjacent SAMe label context: compare exact SAMe identity, form/release wording, amount, and safety cautions before accepting mood, joint, or liver positioning.",
+        "Do not present SAMe as treating depression, osteoarthritis, liver disease, or any condition, and do not imply it replaces medication or clinician guidance."
       ]
     },
     {
@@ -2413,13 +2421,15 @@
         "safety_and_boundary_context",
         "form_source_and_label_context"
       ],
-      "evidence_review_status": "needs_edit",
+      "evidence_review_status": "approved",
       "hard_boundary": "Hard boundary: do not present Schisandra Chinensis as treating, preventing, or curing disease, replacing medication, or guaranteeing outcomes; keep comparison on disclosed identity, amount, form/source, and safety cautions.",
       "notes": [
         "Mapped to runtime family schisandra_chinensis.",
         "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
         "Identity confidence is low in workbook coverage; keep crosswalk conservative.",
-        "Productized for runtime inference; evidence promotion still requires approved LSR review."
+        "Productized for runtime inference; evidence promotion still requires approved LSR review.",
+        "Approved only as bounded Schisandra extract/adaptogen label context, with exact extract identity and study setting kept visible.",
+        "Exclude animal/feed papers from support; do not turn menopause, metabolic, fatigue, liver, immune, or adaptogen context into disease-treatment claims."
       ]
     },
     {
@@ -2524,13 +2534,15 @@
         "safety_and_boundary_context",
         "form_source_and_label_context"
       ],
-      "evidence_review_status": "needs_edit",
+      "evidence_review_status": "approved",
       "hard_boundary": "Hard boundary: do not present Tocotrienols as treating, preventing, or curing disease, replacing medication, or guaranteeing outcomes; keep comparison on disclosed identity, amount, form/source, and safety cautions.",
       "notes": [
         "Mapped to runtime family tocotrienols.",
         "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
         "Identity confidence is low in workbook coverage; keep crosswalk conservative.",
-        "Rescued into an explicit canonical runtime family with high-boundary evidence review."
+        "Rescued into an explicit canonical runtime family with high-boundary evidence review.",
+        "Approved only as tocotrienol-specific vitamin E comparison context: do not flatten tocotrienols into generic vitamin E or tocopherol copy.",
+        "Keep lipid, inflammation, liver, and bioavailability findings bounded by population, formulation, and outcome; no cardiovascular, liver, or anti-inflammatory treatment claims."
       ]
     },
     {
