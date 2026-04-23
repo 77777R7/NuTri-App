@@ -70,8 +70,18 @@ test("admitted full-lane streams can immediately fall back when admission remain
   const fallbackSlice = source.slice(immediateFallbackStart, immediateFallbackStart + 900);
   assert.match(fallbackSlice, /!streamAnalysisBundleOnly/);
   assert.match(fallbackSlice, /admissionStateAfterAcquire\.queue > 0/);
-  assert.match(fallbackSlice, /admissionStateAfterAcquire\.active >= admissionStateAfterAcquire\.maxActive/);
   assert.match(fallbackSlice, /emitAdmissionCoreFallbackAndFinalize\("PRE_REV1_PRESSURE_GUARD"\)/);
+});
+
+test("pressure fallback requires queued demand rather than active count alone", async () => {
+  const source = await readFile(SERVER_PATH, "utf8");
+  const timerStart = source.indexOf("if (!streamAnalysisBundleOnly && !fullPressureCoreFallbackTimer)");
+  assert.ok(timerStart >= 0, "missing pressure fallback timer");
+  const timerSlice = source.slice(timerStart, timerStart + 900);
+
+  assert.match(timerSlice, /const admissionState = streamAdmissionGate\.getState\(\);/);
+  assert.match(timerSlice, /if \(admissionState\.queue <= 0\) return;/);
+  assert.equal(timerSlice.includes("admissionState.active < admissionState.maxActive"), false);
 });
 
 test("admission core fallback enforces an outer quick-digest budget", async () => {
