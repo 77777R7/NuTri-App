@@ -13878,6 +13878,10 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
   const isAuthBypassRequest = Array.isArray(authBypassHeader)
     ? authBypassHeader.includes("1")
     : authBypassHeader === "1";
+  const regressionTokenHeaderRaw = req.headers["x-regression-token"];
+  const hasRegressionTokenHeader = Array.isArray(regressionTokenHeaderRaw)
+    ? regressionTokenHeaderRaw.some((value) => String(value ?? "").trim().length > 0)
+    : String(regressionTokenHeaderRaw ?? "").trim().length > 0;
   const authorityRegressionSampleHeaderRaw = req.headers["x-authority-regression-sample"];
   const authorityRegressionSampleRequested = Array.isArray(authorityRegressionSampleHeaderRaw)
     ? authorityRegressionSampleHeaderRaw.some((value) => String(value).trim().toLowerCase() === "1" || String(value).trim().toLowerCase() === "true")
@@ -13895,6 +13899,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
       })();
   const isRegressionLikeRequest =
     isRegressionRequest ||
+    ((authDisabled || isAuthBypassRequest) && hasRegressionTokenHeader) ||
     (process.env.NODE_ENV !== "production" && isAuthBypassRequest && authorityRegressionSampleRequested);
   const authorityFailModeHeaderRaw =
     typeof req.headers["x-authority-fail-mode"] === "string"

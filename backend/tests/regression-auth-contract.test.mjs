@@ -42,6 +42,13 @@ test("authority regression sample defaults to stable LNHPD scan-history sample w
 
   const activeStart = source.indexOf("const authorityRegressionScenarioActive =");
   assert.ok(activeStart >= 0, "missing authority regression sample guard");
+  const streamRouteStart = source.indexOf('app.post("/api/enrich-stream"');
+  const activeRouteBlock = source.slice(streamRouteStart, activeStart);
+  assert.match(
+    activeRouteBlock,
+    /\(\(authDisabled \|\| isAuthBypassRequest\) && hasRegressionTokenHeader\)/,
+    "enrich-stream should recognize regression marker even when auth middleware short-circuits",
+  );
   const activeBlock = source.slice(activeStart, source.indexOf("let regulatoryMapStatus", activeStart));
   assert.doesNotMatch(
     activeBlock,
