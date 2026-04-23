@@ -15552,9 +15552,12 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
       });
       releaseAdmission = admissionLease.release;
       const admissionStateAfterAcquire = streamAdmissionGate.getState();
+      const hasImmediatePressureFallbackDemand =
+        admissionStateAfterAcquire.queue > 0 ||
+        (!isRegressionRequest && admissionStateAfterAcquire.active >= admissionStateAfterAcquire.maxActive);
       const shouldUseImmediatePressureFallback =
         !streamAnalysisBundleOnly
-        && admissionStateAfterAcquire.queue > 0;
+        && hasImmediatePressureFallbackDemand;
       if (shouldUseImmediatePressureFallback) {
         const fallbackEmitted = await emitAdmissionCoreFallbackAndFinalize("PRE_REV1_PRESSURE_GUARD");
         if (fallbackEmitted) {
@@ -15721,7 +15724,10 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
           fullPressureCoreFallbackTimer = null;
           if (streamState.rev1Sent || streamState.doneSent || streamState.ended || res.writableEnded || streamState.clientDisconnected) return;
           const admissionState = streamAdmissionGate.getState();
-          if (admissionState.queue <= 0) return;
+          const hasQueuedPressureFallbackDemand = admissionState.queue > 0;
+          const hasActivePressureFallbackDemand =
+            !isRegressionRequest && admissionState.active >= admissionState.maxActive;
+          if (!hasQueuedPressureFallbackDemand && !hasActivePressureFallbackDemand) return;
           void emitAdmissionCoreFallbackAndFinalize("PRE_REV1_PRESSURE_GUARD");
         }, ENRICH_STREAM_FULL_PRESSURE_CORE_FALLBACK_GUARD_MS);
         (fullPressureCoreFallbackTimer as { unref?: () => void }).unref?.();
