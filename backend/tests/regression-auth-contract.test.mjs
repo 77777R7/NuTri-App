@@ -16,7 +16,7 @@ test("regression token is marked before auth-bypass short-circuit", async () => 
   assert.ok(middlewareStart >= 0, "missing verifySupabaseToken");
 
   const middleware = source.slice(middlewareStart, source.indexOf("const authHeader", middlewareStart));
-  const regressionCheck = middleware.indexOf("regressionAuthToken && regressionAuthRoutes.has(req.path)");
+  const regressionCheck = middleware.indexOf("regressionAuthRoutes.has(req.path)");
   const authDisabledCheck = middleware.indexOf("if (authDisabled)");
   const authBypassCheck = middleware.indexOf("if (allowBypass)");
   const marker = middleware.indexOf("(req as AuthenticatedRequest).regressionAuth = true");
@@ -28,6 +28,11 @@ test("regression token is marked before auth-bypass short-circuit", async () => 
   assert.ok(regressionCheck < authDisabledCheck, "regression token must be checked before authDisabled");
   assert.ok(regressionCheck < authBypassCheck, "regression token must be checked before auth bypass");
   assert.ok(marker < authBypassCheck, "regressionAuth must be set before auth bypass can return");
+  assert.match(
+    middleware,
+    /const hasBypassRegressionMarker =[\s\S]*allowBypass && hasRegressionTokenHeader/,
+    "staging auth-bypass regression marker should still set regressionAuth",
+  );
 });
 
 test("authority regression sample defaults to stable LNHPD scan-history sample without forced LNHPD timeout", async () => {

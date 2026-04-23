@@ -7054,15 +7054,31 @@ const decisionSupportFetchCounter = createDecisionSupportFetchCounter({
 });
 
 const verifySupabaseToken = async (req: Request, res: Response, next: NextFunction) => {
+  const authBypassHeader = req.headers["x-auth-disabled"];
+  const allowBypass =
+    (Array.isArray(authBypassHeader)
+      ? authBypassHeader.includes("1")
+      : authBypassHeader === "1") &&
+    (process.env.NODE_ENV !== "production" || allowAuthBypass);
+  const regressionHeader = req.headers["x-regression-token"];
+  const hasRegressionTokenHeader = Array.isArray(regressionHeader)
+    ? regressionHeader.some((value) => String(value ?? "").trim().length > 0)
+    : String(regressionHeader ?? "").trim().length > 0;
   // CI regression requests may also carry x-auth-disabled for preview/staging convenience.
   // Mark regression auth first so internal debug/audit contracts stay gated by the token,
-  // not accidentally hidden by the broader auth-bypass path.
-  if (regressionAuthToken && regressionAuthRoutes.has(req.path)) {
-    const regressionHeader = req.headers["x-regression-token"];
-    const hasRegressionToken = Array.isArray(regressionHeader)
-      ? regressionHeader.includes(regressionAuthToken)
-      : regressionHeader === regressionAuthToken;
-    if (hasRegressionToken) {
+  // not accidentally hidden by the broader auth-bypass path. On staging/preview, auth-bypass
+  // itself is the environment gate; a non-empty regression token header selects the CI contract.
+  if (regressionAuthRoutes.has(req.path)) {
+    const hasRegressionToken = regressionAuthToken
+      ? (
+        Array.isArray(regressionHeader)
+          ? regressionHeader.includes(regressionAuthToken)
+          : regressionHeader === regressionAuthToken
+      )
+      : false;
+    const hasBypassRegressionMarker =
+      allowBypass && hasRegressionTokenHeader;
+    if (hasRegressionToken || hasBypassRegressionMarker) {
       (req as AuthenticatedRequest).regressionAuth = true;
       return next();
     }
@@ -7071,12 +7087,6 @@ const verifySupabaseToken = async (req: Request, res: Response, next: NextFuncti
   if (authDisabled) {
     return next();
   }
-  const authBypassHeader = req.headers["x-auth-disabled"];
-  const allowBypass =
-    (Array.isArray(authBypassHeader)
-      ? authBypassHeader.includes("1")
-      : authBypassHeader === "1") &&
-    (process.env.NODE_ENV !== "production" || allowAuthBypass);
   if (allowBypass) {
     const debugUserHeader = req.headers["x-debug-user-id"];
     const debugUserId = Array.isArray(debugUserHeader)
@@ -12643,6 +12653,34 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
             fallback: { code: "facts_digest_missing" },
             fallbackReason: "facts_digest_missing",
             scoreAvailable: fallbackScoreAvailable,
+          },
+          timingMs: 0,
+        });
+        return;
+      }
+
+      const terminalNoDigestIdentity =
+        identity.type === "webCanonicalId" || identity.type === "gtin14";
+      if (terminalNoDigestIdentity) {
+        res.status(200).json({
+          section: "ingredients",
+          detail: { items: [], overallSummary: null, overlapNotes: null },
+          dataStatus: "not_provided",
+          page: {
+            limit: rawRequestedLimit,
+            cursor,
+            nextCursor: null,
+            hasMore: false,
+            totalActives: 0,
+          },
+          meta: {
+            bundleId: randomUUID(),
+            revision: 1,
+            factsDigestHash: requestedFactsDigestHash,
+            fallbackUsed: "skeleton",
+            fallback: { code: "facts_digest_missing" },
+            fallbackReason: "facts_digest_missing",
+            scoreAvailable: false,
           },
           timingMs: 0,
         });
