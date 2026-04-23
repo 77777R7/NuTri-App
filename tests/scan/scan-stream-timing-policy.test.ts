@@ -62,15 +62,15 @@ test("delay parsing clamps invalid or negative values to a stable fallback", () 
 test("full stream admission defaults stay instance-safe while bundle-only keeps headroom", () => {
   const policy = resolveEnrichStreamAdmissionPolicy({});
 
-  assert.equal(DEFAULT_FULL_STREAM_MAX_ACTIVE, 4);
-  assert.equal(DEFAULT_FULL_STREAM_QUEUE_WAIT_MS, 1500);
-  assert.equal(policy.full.maxActive, 4);
+  assert.equal(DEFAULT_FULL_STREAM_MAX_ACTIVE, 2);
+  assert.equal(DEFAULT_FULL_STREAM_QUEUE_WAIT_MS, 1000);
+  assert.equal(policy.full.maxActive, 2);
   assert.equal(policy.full.maxQueue, 20);
-  assert.equal(policy.full.queueWaitMs, 1500);
+  assert.equal(policy.full.queueWaitMs, 1000);
   assert.equal(policy.bundleOnly.maxActive, 12);
   assert.equal(policy.bundleOnly.maxQueue, 50);
   assert.equal(policy.bundleOnly.queueWaitMs, 1500);
-  assert.equal(policy.overloadInflightThreshold, 6);
+  assert.equal(policy.overloadInflightThreshold, 4);
 });
 
 test("stream admission policy preserves explicit operator overrides", () => {
@@ -98,15 +98,15 @@ test("stream admission policy preserves explicit operator overrides", () => {
 test("server overload rejection only uses in-flight capacity, not transient lag", () => {
   assert.equal(
     shouldRejectEnrichStreamForServerOverload({
-      inFlightCount: 6,
-      overloadInflightThreshold: 6,
+      inFlightCount: 4,
+      overloadInflightThreshold: 4,
     }),
     false,
   );
   assert.equal(
     shouldRejectEnrichStreamForServerOverload({
-      inFlightCount: 7,
-      overloadInflightThreshold: 6,
+      inFlightCount: 5,
+      overloadInflightThreshold: 4,
     }),
     true,
   );
