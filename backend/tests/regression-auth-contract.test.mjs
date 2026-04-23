@@ -42,6 +42,21 @@ test("authority regression sample defaults to stable LNHPD scan-history sample w
 
   const activeStart = source.indexOf("const authorityRegressionScenarioActive =");
   assert.ok(activeStart >= 0, "missing authority regression sample guard");
+  assert.match(
+    source,
+    /const lnhpdRuntimeEnabledForRequest = LNHPD_RUNTIME_ENABLED \|\| authorityRegressionScenarioActive;/,
+    "authority regression sample should be allowed to exercise LNHPD even when the staging runtime flag is off",
+  );
+  assert.match(
+    source,
+    /allowWhenRuntimeDisabled\?: boolean;/,
+    "LNHPD lookup helper should expose a request-scoped regression override instead of changing global runtime config",
+  );
+  assert.match(
+    source,
+    /if \(!LNHPD_RUNTIME_ENABLED && !options\?\.allowWhenRuntimeDisabled\)/,
+    "LNHPD lookup helper should keep the runtime gate for normal requests",
+  );
   const streamRouteStart = source.indexOf('app.post("/api/enrich-stream"');
   const activeRouteBlock = source.slice(streamRouteStart, activeStart);
   assert.match(
@@ -68,5 +83,13 @@ test("authority regression sample defaults to stable LNHPD scan-history sample w
     cachedFastBlock,
     /if \(authorityRegressionScenarioActive\) \{[\s\S]*bypassCachedFastPathForAuthority = true;/,
     "authority regression sample must bypass stale web-only snapshot cache before LNHPD bootstrap",
+  );
+  const lnhpdFetchStart = source.indexOf("const lnhpdLookup = await fetchLnhpdFactsWithSecondChance(candidate.npn");
+  assert.ok(lnhpdFetchStart >= 0, "missing Stage0 LNHPD candidate fetch");
+  const lnhpdFetchBlock = source.slice(lnhpdFetchStart, lnhpdFetchStart + 400);
+  assert.match(
+    lnhpdFetchBlock,
+    /allowWhenRuntimeDisabled: authorityRegressionScenarioActive/,
+    "authority regression sample must bypass the LNHPD runtime flag only for the fixed regression candidate fetch",
   );
 });

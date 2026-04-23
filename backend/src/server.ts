@@ -4628,6 +4628,7 @@ const fetchLnhpdFactsWithSecondChance = async (
     firstTimeoutMs?: number;
     secondTimeoutMs?: number;
     forceMode?: LnhpdForcedFailureMode | null;
+    allowWhenRuntimeDisabled?: boolean;
   },
 ): Promise<{
   facts: LnhpdFacts | null;
@@ -4636,7 +4637,7 @@ const fetchLnhpdFactsWithSecondChance = async (
   finalStatus: Exclude<LnhpdLookupStatus, "not_attempted">;
   secondChanceUsed: boolean;
 }> => {
-  if (!LNHPD_RUNTIME_ENABLED) {
+  if (!LNHPD_RUNTIME_ENABLED && !options?.allowWhenRuntimeDisabled) {
     return {
       facts: null,
       attempt1Status: "not_attempted",
@@ -15650,6 +15651,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
     const authorityRegressionScenarioActive =
       isRegressionLikeRequest &&
       barcodeGtin14 === AUTHORITY_REGRESSION_SAMPLE_BARCODE;
+    const lnhpdRuntimeEnabledForRequest = LNHPD_RUNTIME_ENABLED || authorityRegressionScenarioActive;
 
     let regulatoryMapStatus: "hit" | "stale" | "miss" | "timeout" = "miss";
     let regMapPrimaryAttempted = false;
@@ -18219,7 +18221,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
     // Hard rule: Stage 1 web resolution must not start (or short-circuit) before we
     // give first-party resolvers (A/Catalog/LNHPD) a chance to terminate.
     let regulatoryMap: Awaited<ReturnType<typeof getBarcodeRegulatoryMap>> | null = null;
-    if (LNHPD_RUNTIME_ENABLED) {
+    if (lnhpdRuntimeEnabledForRequest) {
       regMapPrimaryAttempted = true;
       try {
         regulatoryMap = await regulatoryMapPromise;
@@ -18233,7 +18235,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
       }
     }
 
-    if (LNHPD_RUNTIME_ENABLED && authorityRegressionScenarioActive && !requestSignal.aborted) {
+    if (lnhpdRuntimeEnabledForRequest && authorityRegressionScenarioActive && !requestSignal.aborted) {
       const seededNpnFromMap =
         typeof regulatoryMap?.npn === "string" ? regulatoryMap.npn.replace(/\D/g, "").trim() : "";
       authorityRegressionScenarioHistoricalNpn =
@@ -18254,7 +18256,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
     // Stage0 hardening: if the first map read misses (or times out), do one direct second-chance
     // read without the shared read semaphore to avoid false Web fallback during transient queue pressure.
     // Safety rule: this must stay exact-match only (same gtin14 + same raw digits), no fuzzy lookup.
-    if (LNHPD_RUNTIME_ENABLED && !regulatoryMap && !requestSignal.aborted) {
+    if (lnhpdRuntimeEnabledForRequest && !regulatoryMap && !requestSignal.aborted) {
       regMapSecondChanceAttempted = true;
       if (authorityRegressionScenarioActive) {
         regMapSecondChanceLatencyMs = 0;
@@ -18312,7 +18314,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
         mapMinConfidence: REGULATORY_MAP_MIN_CONFIDENCE,
         staleWindowMs: REGULATORY_MAP_STALE_WINDOW_MS,
         historicalNpn: historicalNpn ?? null,
-        allowLnhpd: LNHPD_RUNTIME_ENABLED,
+        allowLnhpd: lnhpdRuntimeEnabledForRequest,
       });
 
     let authority = resolveCandidate();
@@ -18323,7 +18325,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
 
     // Root-fix for cache resets: if map/snapshot are gone, recover LNHPD candidate
     // from prior successful scans of the same GTIN14 before falling into Web.
-    if (LNHPD_RUNTIME_ENABLED && !candidate && !requestSignal.aborted) {
+    if (lnhpdRuntimeEnabledForRequest && !candidate && !requestSignal.aborted) {
       if (authorityRegressionScenarioActive && authorityRegressionScenarioHistoricalNpn) {
         historicalLnhpd = {
           barcode_gtin14: barcodeGtin14,
@@ -18351,7 +18353,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
 
     // Name/brand fallback: when barcode mapping misses but we still have stable product hints
     // (usually from cached snapshot metadata), try a strict LNHPD name match before Web Stage 1.
-    if (LNHPD_RUNTIME_ENABLED && !candidate && !requestSignal.aborted) {
+    if (lnhpdRuntimeEnabledForRequest && !candidate && !requestSignal.aborted) {
       const hintBrand =
         cachedFast?.analysisPayload?.productInfo?.brand ??
         cachedFast?.snapshot?.product?.brand ??
@@ -18464,6 +18466,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
             firstTimeoutMs: RESILIENCE_LNHPD_TIMEOUT_MS,
             secondTimeoutMs: RESILIENCE_LNHPD_SECOND_CHANCE_TIMEOUT_MS,
             forceMode: authorityFailMode,
+            allowWhenRuntimeDisabled: authorityRegressionScenarioActive,
           });
           authorityLnhpdAttempt1Status = lnhpdLookup.attempt1Status;
           authorityLnhpdAttempt2Status = lnhpdLookup.attempt2Status;
