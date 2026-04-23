@@ -792,6 +792,10 @@ const ENRICH_STREAM_ADMISSION_CORE_FALLBACK_BUDGET_MS = Math.max(
   250,
   Number(process.env.ENRICH_STREAM_ADMISSION_CORE_FALLBACK_BUDGET_MS ?? 650),
 );
+const ENRICH_STREAM_FULL_PRESSURE_CORE_FALLBACK_GUARD_MS = Math.max(
+  250,
+  Number(process.env.ENRICH_STREAM_FULL_PRESSURE_CORE_FALLBACK_GUARD_MS ?? 650),
+);
 const ENRICH_STREAM_BUNDLE_ONLY_DONE_DELAY_MS = toNonNegativeDelayMs(
   process.env.ENRICH_STREAM_BUNDLE_ONLY_DONE_DELAY_MS ??
     DEFAULT_BUNDLE_ONLY_DONE_DELAY_MS,
@@ -14572,6 +14576,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
   let globalWatchdog: ReturnType<typeof setTimeout> | null = null;
   let bundleOnlyDoneTimer: ReturnType<typeof setTimeout> | null = null;
   let bundleOnlyTerminalGuardTimer: ReturnType<typeof setTimeout> | null = null;
+  let fullPressureCoreFallbackTimer: ReturnType<typeof setTimeout> | null = null;
   let fullPreRev1TerminalGuardTimer: ReturnType<typeof setTimeout> | null = null;
   let webRev1DoneTimer: ReturnType<typeof setTimeout> | null = null;
   let hardTerminalWatchdog: ReturnType<typeof setTimeout> | null = null;
@@ -14600,6 +14605,10 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
     if (bundleOnlyTerminalGuardTimer) {
       clearTimeout(bundleOnlyTerminalGuardTimer);
       bundleOnlyTerminalGuardTimer = null;
+    }
+    if (fullPressureCoreFallbackTimer) {
+      clearTimeout(fullPressureCoreFallbackTimer);
+      fullPressureCoreFallbackTimer = null;
     }
     if (fullPreRev1TerminalGuardTimer) {
       clearTimeout(fullPreRev1TerminalGuardTimer);
@@ -15498,7 +15507,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
     }
   };
   const emitAdmissionCoreFallbackAndFinalize = async (
-    reasonCode: "QUEUE_FULL" | "QUEUE_WAIT_TIMEOUT",
+    reasonCode: "QUEUE_FULL" | "QUEUE_WAIT_TIMEOUT" | "PRE_REV1_PRESSURE_GUARD",
   ): Promise<boolean> => {
     if (streamAnalysisBundleOnly) return false;
     if (!normalized) return false;
@@ -15805,6 +15814,16 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
           }, bundleOnlyGuardMs);
           (bundleOnlyTerminalGuardTimer as { unref?: () => void }).unref?.();
         }
+      }
+      if (!streamAnalysisBundleOnly && !fullPressureCoreFallbackTimer) {
+        fullPressureCoreFallbackTimer = setTimeout(() => {
+          fullPressureCoreFallbackTimer = null;
+          if (streamState.rev1Sent || streamState.doneSent || streamState.ended || res.writableEnded || streamState.clientDisconnected) return;
+          const admissionState = streamAdmissionGate.getState();
+          if (admissionState.active < admissionState.maxActive && admissionState.queue <= 0) return;
+          void emitAdmissionCoreFallbackAndFinalize("PRE_REV1_PRESSURE_GUARD");
+        }, ENRICH_STREAM_FULL_PRESSURE_CORE_FALLBACK_GUARD_MS);
+        (fullPressureCoreFallbackTimer as { unref?: () => void }).unref?.();
       }
       if (!streamAnalysisBundleOnly && !fullPreRev1TerminalGuardTimer) {
         const remainingMs = globalDeadlineAt - Date.now();
