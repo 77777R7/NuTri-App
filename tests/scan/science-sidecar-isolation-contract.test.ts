@@ -43,10 +43,9 @@ test('server exposes ingredient overview and scientific background sidecars with
   assert.match(serverSource, /revalidateFallback:\s*z\.boolean\(\)\.optional\(\)/);
   assert.match(serverSource, /authority\.decisionSupport\.decisionInputsHash/);
   assert.match(serverSource, /authority\.personalizationScopeHash/);
-  assert.match(
-    serverSource,
-    /const cacheKey = \[\s*authority\.decisionSupport\.digest,\s*authority\.decisionSupport\.decisionInputsHash,\s*authority\.personalizationScopeHash,/,
-  );
+  assert.match(serverSource, /const buildScientificBackgroundSidecarCacheKey = \(params: \{/);
+  assert.match(serverSource, /buildScanSidecarCacheKey\(\{\s*route: "scientific_background"/);
+  assert.match(serverSource, /const cacheKey = buildScientificBackgroundSidecarCacheKey\(\{/);
   assert.ok(serverSource.includes('normalizeIngredientScienceKey(parsedBody.selectedIngredientName)'));
   assert.ok(serverSource.includes('backgroundRefreshPending: boolean;'));
   assert.ok(serverSource.includes('recommendedRetryAfterMs: number | null;'));

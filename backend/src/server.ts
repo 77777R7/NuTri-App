@@ -56,18 +56,15 @@ import {
   prepareContextSources
 } from "./deepseek.js";
 import {
-  resolveEnrichStreamAdmissionPolicy,
   shouldRejectEnrichStreamForServerOverload,
 } from "./scanStreamAdmissionPolicy.js";
 import {
   createEventLoopLagWindowSampler,
 } from "./scanEventLoopLagWindow.js";
 import {
-  DEFAULT_BUNDLE_ONLY_DONE_DELAY_MS,
-  DEFAULT_FULL_REV1_DONE_DELAY_MS,
   resolveScanStreamRev1DonePolicy,
-  toNonNegativeDelayMs,
 } from "./scanStreamTimingPolicy.js";
+import { resolveScanStreamRuntimeConfig } from "./scanStreamRuntimeConfig.js";
 import {
   buildFactsDigestFromDsld,
   buildFactsDigestFromLnhpd,
@@ -152,7 +149,7 @@ import {
 import { normalizeIherbSupplementFactsRows } from "./iherbOverlayIngredients.js";
 import { getKbRuntime, lookupKbFormExplain, lookupKbRuntimeFormInsights, lookupSafeScienceSignals } from "./kbRuntime.js";
 import { type LabelDraft } from "./labelTypes.js";
-import { getMetricsSnapshot, incrementMetric, recordMetricTiming, recordSidecarMetric, startMetricsFlush } from "./metrics.js";
+import { getMetricsSnapshot, incrementMetric, recordMetricTiming, startMetricsFlush } from "./metrics.js";
 import { buildMySupplementFactsV1, type MySupplementFactsV1 } from "./mySupplementFacts.js";
 import { getMySupplementOverviewV2GateReason } from "./mySupplementOverviewGate.js";
 import { getNutriTipsData } from "./nutriTips.js";
@@ -161,8 +158,12 @@ import { getProductSearchBootstrap, searchProducts, warmProductSearchIndex } fro
 import {
   buildScanSidecarCacheKey,
   getScanSidecarPolicy,
-  type ScanSidecarRoute,
 } from "./scanSidecarPolicy.js";
+import {
+  recordKnownScanSidecarRouteTimings,
+  recordScanSidecarCacheStatus,
+} from "./scanSidecarRouteMetrics.js";
+import { createDecisionSupportFetchCounter } from "./decisionSupportFetchCounter.js";
 import * as profileResolverModule from "../../lib/personalization/core/profileResolver.ts";
 import {
   buildEnsureOverviewInflightKey,
@@ -770,93 +771,39 @@ const ANALYSIS_BUNDLE_PROMPT_VERSION_VERSIONED = withDecisionContractPromptVersi
 const ANALYSIS_BUNDLE_FAST_TIMEOUT_MS = Number(process.env.ANALYSIS_BUNDLE_FAST_TIMEOUT_MS ?? 3500);
 const SSE_FAST_GRACE_MS = Number(process.env.SSE_FAST_GRACE_MS ?? 500);
 const SSE_GLOBAL_STREAM_TIMEOUT_MS = Number(process.env.SSE_GLOBAL_STREAM_TIMEOUT_MS ?? 15000);
-const ENRICH_STREAM_ADMISSION_POLICY =
-  resolveEnrichStreamAdmissionPolicy(process.env);
-const ENRICH_STREAM_MAX_ACTIVE =
-  ENRICH_STREAM_ADMISSION_POLICY.shared.maxActive;
-const ENRICH_STREAM_MAX_QUEUE =
-  ENRICH_STREAM_ADMISSION_POLICY.shared.maxQueue;
-const ENRICH_STREAM_MAX_ACTIVE_FULL =
-  ENRICH_STREAM_ADMISSION_POLICY.full.maxActive;
-const ENRICH_STREAM_MAX_QUEUE_FULL =
-  ENRICH_STREAM_ADMISSION_POLICY.full.maxQueue;
-const ENRICH_STREAM_MAX_ACTIVE_BUNDLE_ONLY =
-  ENRICH_STREAM_ADMISSION_POLICY.bundleOnly.maxActive;
-const ENRICH_STREAM_MAX_QUEUE_BUNDLE_ONLY =
-  ENRICH_STREAM_ADMISSION_POLICY.bundleOnly.maxQueue;
-const ENRICH_STREAM_QUEUE_WAIT_MS =
-  ENRICH_STREAM_ADMISSION_POLICY.full.queueWaitMs;
-const ENRICH_STREAM_QUEUE_WAIT_MS_BUNDLE_ONLY =
-  ENRICH_STREAM_ADMISSION_POLICY.bundleOnly.queueWaitMs;
-const ENRICH_STREAM_ADMISSION_CORE_FALLBACK_BUDGET_MS = Math.max(
-  250,
-  Number(process.env.ENRICH_STREAM_ADMISSION_CORE_FALLBACK_BUDGET_MS ?? 650),
-);
-const ENRICH_STREAM_FULL_PRESSURE_CORE_FALLBACK_GUARD_MS = Math.max(
-  250,
-  Number(process.env.ENRICH_STREAM_FULL_PRESSURE_CORE_FALLBACK_GUARD_MS ?? 650),
-);
-const ENRICH_STREAM_BUNDLE_ONLY_DONE_DELAY_MS = toNonNegativeDelayMs(
-  process.env.ENRICH_STREAM_BUNDLE_ONLY_DONE_DELAY_MS ??
-    DEFAULT_BUNDLE_ONLY_DONE_DELAY_MS,
-  DEFAULT_BUNDLE_ONLY_DONE_DELAY_MS,
-);
-const ENRICH_STREAM_REV0_FALLBACK_DELAY_MS = Math.max(
-  50,
-  Number(process.env.ENRICH_STREAM_REV0_FALLBACK_DELAY_MS ?? 250),
-);
-const ENRICH_STREAM_REV0_FALLBACK_DELAY_MS_BUNDLE_ONLY = Math.max(
-  ENRICH_STREAM_REV0_FALLBACK_DELAY_MS,
-  Number(process.env.ENRICH_STREAM_REV0_FALLBACK_DELAY_MS_BUNDLE_ONLY ?? 750),
-);
-const ENRICH_STREAM_WEB_REV1_DONE_DELAY_MS = toNonNegativeDelayMs(
-  process.env.ENRICH_STREAM_WEB_REV1_DONE_DELAY_MS ??
-    DEFAULT_FULL_REV1_DONE_DELAY_MS,
-  DEFAULT_FULL_REV1_DONE_DELAY_MS,
-);
-const ENRICH_STREAM_BUNDLE_ONLY_TERMINAL_GUARD_MS = Math.max(
-  ENRICH_STREAM_BUNDLE_ONLY_DONE_DELAY_MS + 1000,
-  Number(process.env.ENRICH_STREAM_BUNDLE_ONLY_TERMINAL_GUARD_MS ?? 3000),
-);
-const ENRICH_STREAM_OVERLOAD_INFLIGHT_THRESHOLD =
-  ENRICH_STREAM_ADMISSION_POLICY.overloadInflightThreshold;
-const ENRICH_STREAM_OVERLOAD_RETRY_AFTER_MS = Math.max(
-  0,
-  Number(process.env.ENRICH_STREAM_OVERLOAD_RETRY_AFTER_MS ?? 2000),
-);
-const ENRICH_STREAM_CLIENT_DISCONNECT_GRACE_MS = Math.max(
-  0,
-  Number(process.env.ENRICH_STREAM_CLIENT_DISCONNECT_GRACE_MS ?? 2500),
-);
-const SSE_CLIENT_TIMEOUT_MS = Number(
-  process.env.SSE_CLIENT_TIMEOUT_MS ?? process.env.WEB_E2E_SSE_TIMEOUT_MS ?? 50000,
-);
-const SSE_TIMEOUT_SAFETY_MARGIN_MS = Number(process.env.SSE_TIMEOUT_SAFETY_MARGIN_MS ?? 3000);
-const ENRICH_STREAM_STAGE_BUNDLE_AWAIT_TIMEOUT_MS = Math.max(
-  500,
-  Number(process.env.ENRICH_STREAM_STAGE_BUNDLE_AWAIT_TIMEOUT_MS ?? 3500),
-);
-const ENRICH_STREAM_FULL_PRE_REV1_TERMINAL_GUARD_MS = Math.max(
-  1000,
-  Number(
-    process.env.ENRICH_STREAM_FULL_PRE_REV1_TERMINAL_GUARD_MS
-      ?? Math.max(ENRICH_STREAM_STAGE_BUNDLE_AWAIT_TIMEOUT_MS + 1000, 5000),
-  ),
-);
-const ENRICH_STREAM_CRASH_CANARY_PRE_REV1_TERMINAL_GUARD_MS = Math.max(
-  500,
-  Number(process.env.ENRICH_STREAM_CRASH_CANARY_PRE_REV1_TERMINAL_GUARD_MS ?? 3500),
-);
-const ENRICH_STREAM_HARD_TERMINAL_FALLBACK_MS = Math.max(
-  1000,
-  Number(
-    process.env.ENRICH_STREAM_HARD_TERMINAL_FALLBACK_MS ??
-    Math.min(
-      Math.max(SSE_GLOBAL_STREAM_TIMEOUT_MS + 2500, 12000),
-      Math.max(2000, SSE_CLIENT_TIMEOUT_MS - 1000),
-    ),
-  ),
-);
+const ENRICH_STREAM_RUNTIME_CONFIG = resolveScanStreamRuntimeConfig(process.env);
+const ENRICH_STREAM_ADMISSION_POLICY = ENRICH_STREAM_RUNTIME_CONFIG.admissionPolicy;
+const ENRICH_STREAM_MAX_ACTIVE = ENRICH_STREAM_RUNTIME_CONFIG.sharedMaxActive;
+const ENRICH_STREAM_MAX_QUEUE = ENRICH_STREAM_RUNTIME_CONFIG.sharedMaxQueue;
+const ENRICH_STREAM_MAX_ACTIVE_FULL = ENRICH_STREAM_RUNTIME_CONFIG.fullMaxActive;
+const ENRICH_STREAM_MAX_QUEUE_FULL = ENRICH_STREAM_RUNTIME_CONFIG.fullMaxQueue;
+const ENRICH_STREAM_MAX_ACTIVE_BUNDLE_ONLY = ENRICH_STREAM_RUNTIME_CONFIG.bundleOnlyMaxActive;
+const ENRICH_STREAM_MAX_QUEUE_BUNDLE_ONLY = ENRICH_STREAM_RUNTIME_CONFIG.bundleOnlyMaxQueue;
+const ENRICH_STREAM_QUEUE_WAIT_MS = ENRICH_STREAM_RUNTIME_CONFIG.fullQueueWaitMs;
+const ENRICH_STREAM_QUEUE_WAIT_MS_BUNDLE_ONLY = ENRICH_STREAM_RUNTIME_CONFIG.bundleOnlyQueueWaitMs;
+const ENRICH_STREAM_ADMISSION_CORE_FALLBACK_BUDGET_MS =
+  ENRICH_STREAM_RUNTIME_CONFIG.admissionCoreFallbackBudgetMs;
+const ENRICH_STREAM_FULL_PRESSURE_CORE_FALLBACK_GUARD_MS =
+  ENRICH_STREAM_RUNTIME_CONFIG.fullPressureCoreFallbackGuardMs;
+const ENRICH_STREAM_BUNDLE_ONLY_DONE_DELAY_MS = ENRICH_STREAM_RUNTIME_CONFIG.bundleOnlyDoneDelayMs;
+const ENRICH_STREAM_REV0_FALLBACK_DELAY_MS = ENRICH_STREAM_RUNTIME_CONFIG.rev0FallbackDelayMs;
+const ENRICH_STREAM_REV0_FALLBACK_DELAY_MS_BUNDLE_ONLY =
+  ENRICH_STREAM_RUNTIME_CONFIG.rev0FallbackDelayMsBundleOnly;
+const ENRICH_STREAM_WEB_REV1_DONE_DELAY_MS = ENRICH_STREAM_RUNTIME_CONFIG.fullRev1DoneDelayMs;
+const ENRICH_STREAM_BUNDLE_ONLY_TERMINAL_GUARD_MS =
+  ENRICH_STREAM_RUNTIME_CONFIG.bundleOnlyTerminalGuardMs;
+const ENRICH_STREAM_OVERLOAD_INFLIGHT_THRESHOLD = ENRICH_STREAM_RUNTIME_CONFIG.overloadInflightThreshold;
+const ENRICH_STREAM_OVERLOAD_RETRY_AFTER_MS = ENRICH_STREAM_RUNTIME_CONFIG.overloadRetryAfterMs;
+const ENRICH_STREAM_CLIENT_DISCONNECT_GRACE_MS = ENRICH_STREAM_RUNTIME_CONFIG.clientDisconnectGraceMs;
+const SSE_CLIENT_TIMEOUT_MS = ENRICH_STREAM_RUNTIME_CONFIG.sseClientTimeoutMs;
+const SSE_TIMEOUT_SAFETY_MARGIN_MS = ENRICH_STREAM_RUNTIME_CONFIG.sseTimeoutSafetyMarginMs;
+const ENRICH_STREAM_STAGE_BUNDLE_AWAIT_TIMEOUT_MS =
+  ENRICH_STREAM_RUNTIME_CONFIG.stageBundleAwaitTimeoutMs;
+const ENRICH_STREAM_FULL_PRE_REV1_TERMINAL_GUARD_MS =
+  ENRICH_STREAM_RUNTIME_CONFIG.fullPreRev1TerminalGuardMs;
+const ENRICH_STREAM_CRASH_CANARY_PRE_REV1_TERMINAL_GUARD_MS =
+  ENRICH_STREAM_RUNTIME_CONFIG.crashCanaryPreRev1TerminalGuardMs;
+const ENRICH_STREAM_HARD_TERMINAL_FALLBACK_MS = ENRICH_STREAM_RUNTIME_CONFIG.hardTerminalFallbackMs;
 const ANALYSIS_BUNDLE_DETAIL_TIMEOUT_MS = Number(process.env.ANALYSIS_BUNDLE_DETAIL_TIMEOUT_MS ?? 7000);
 const ANALYSIS_BUNDLE_DETAIL_TIMEOUT_MS_DSLD = Number(
   process.env.ANALYSIS_BUNDLE_DETAIL_TIMEOUT_MS_DSLD ?? 4500,
@@ -7032,26 +6979,6 @@ app.set("etag", false);
 app.use(cors());
 app.use(express.json({ limit: "10mb" })); // P0-2: Increased from 1mb for image base64
 
-const resolveScanSidecarRouteForPath = (path: string): ScanSidecarRoute | null => {
-  if (path === "/api/decision-support/v1") return "decision_support";
-  if (path.startsWith("/api/scan-facts/v1/")) return "scan_facts";
-  if (path === "/api/ingredient-overview/v1") return "ingredient_overview";
-  if (path === "/api/scientific-background/v1") return "scientific_background";
-  if (path === "/api/product-overview-ai/v1") return "product_overview_ai";
-  if (path === "/api/summary/safety") return "summary_safety";
-  return null;
-};
-
-const recordScanSidecarRouteTiming = (route: ScanSidecarRoute, durationMs: number): void => {
-  const policy = getScanSidecarPolicy(route);
-  recordSidecarMetric({
-    route,
-    priority: policy.priority,
-    latencyMs: durationMs,
-    fetched: true,
-  });
-};
-
 // Minimal request logging (no body / no secrets)
 app.use((req: Request, res: Response, next: NextFunction) => {
   const requestId = randomUUID();
@@ -7060,17 +6987,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   let finished = false;
   let aborted = false;
   const recordRouteTimingMetrics = (durationMs: number) => {
-    const sidecarRoute = resolveScanSidecarRouteForPath(req.path);
-    if (sidecarRoute) {
-      recordScanSidecarRouteTiming(sidecarRoute, durationMs);
-    }
-    if (req.path === "/api/ingredient-overview/v1") {
-      recordMetricTiming("ingredient_overview_ms", durationMs);
-      return;
-    }
-    if (req.path === "/api/scientific-background/v1") {
-      recordMetricTiming("scientific_background_ms", durationMs);
-    }
+    recordKnownScanSidecarRouteTimings({ path: req.path, durationMs });
   };
 
   res.on("finish", () => {
@@ -7132,37 +7049,9 @@ const regressionAuthRoutes = new Set([
   "/api/kb/runtime/form-insights/batch",
   "/api/patch-shadow/status",
 ]);
-const DECISION_SUPPORT_FETCH_WINDOW_MS = 10 * 60 * 1000;
-const decisionSupportFetchCountsByScanSession = new Map<string, { count: number; lastSeenAt: number }>();
-
-const pruneDecisionSupportFetchCounts = (now: number) => {
-  for (const [key, value] of decisionSupportFetchCountsByScanSession.entries()) {
-    if (now - value.lastSeenAt > DECISION_SUPPORT_FETCH_WINDOW_MS) {
-      decisionSupportFetchCountsByScanSession.delete(key);
-    }
-  }
-};
-
-const recordDecisionSupportFetchForScanSession = (
-  scanSessionId: string | null,
-  barcodeGtin14: string,
-): number | null => {
-  const normalizedScanSessionId = String(scanSessionId ?? "").trim();
-  if (!normalizedScanSessionId) return null;
-  const now = Date.now();
-  pruneDecisionSupportFetchCounts(now);
-  const key = `${normalizedScanSessionId}:${barcodeGtin14}`;
-  const current = decisionSupportFetchCountsByScanSession.get(key);
-  const count = (current?.count ?? 0) + 1;
-  decisionSupportFetchCountsByScanSession.set(key, {
-    count,
-    lastSeenAt: now,
-  });
-  if (count > 1) {
-    incrementMetric("decision_support_refetch_count_per_scan");
-  }
-  return count;
-};
+const decisionSupportFetchCounter = createDecisionSupportFetchCounter({
+  onRefetch: () => incrementMetric("decision_support_refetch_count_per_scan"),
+});
 
 const verifySupabaseToken = async (req: Request, res: Response, next: NextFunction) => {
   if (authDisabled) {
@@ -10464,18 +10353,6 @@ const decisionSupportAuthorityBundleInflight = new Map<string, Promise<DecisionS
 let activeScientificBackgroundRefreshCount = 0;
 const queuedScientificBackgroundRefreshTasks: Array<() => void> = [];
 
-const recordScanSidecarCacheStatus = (
-  route: ScanSidecarRoute,
-  cacheStatus: "hit" | "miss" | "stale" | "write" | "bypass",
-): void => {
-  const policy = getScanSidecarPolicy(route);
-  recordSidecarMetric({
-    route,
-    priority: policy.priority,
-    cacheStatus,
-  });
-};
-
 const buildIngredientOverviewSidecarCacheKey = (params: {
   barcode?: string;
   decisionDigest: string;
@@ -11324,7 +11201,7 @@ app.get("/api/decision-support/v1", verifySupabaseToken, async (req: Request, re
   try {
     const authedReq = req as AuthenticatedRequest;
     const barcodeGtin14 = normalizedBarcode.code.padStart(14, "0");
-    const fetchCount = recordDecisionSupportFetchForScanSession(scanSessionId, barcodeGtin14);
+    const fetchCount = decisionSupportFetchCounter.record(scanSessionId, barcodeGtin14);
     const authority = await buildDecisionSupportAuthorityBundle(normalizedBarcode, { req, viewMode });
     const { overlayClaims, quickDigest, patched, decisionSupport, personalizationScopeHash } = authority;
     const debugIdentityValue = String(quickDigest.digest?.identity?.value ?? "").trim();
