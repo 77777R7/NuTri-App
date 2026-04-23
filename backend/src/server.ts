@@ -788,6 +788,10 @@ const ENRICH_STREAM_QUEUE_WAIT_MS =
   ENRICH_STREAM_ADMISSION_POLICY.full.queueWaitMs;
 const ENRICH_STREAM_QUEUE_WAIT_MS_BUNDLE_ONLY =
   ENRICH_STREAM_ADMISSION_POLICY.bundleOnly.queueWaitMs;
+const ENRICH_STREAM_ADMISSION_CORE_FALLBACK_BUDGET_MS = Math.max(
+  250,
+  Number(process.env.ENRICH_STREAM_ADMISSION_CORE_FALLBACK_BUDGET_MS ?? 650),
+);
 const ENRICH_STREAM_BUNDLE_ONLY_DONE_DELAY_MS = toNonNegativeDelayMs(
   process.env.ENRICH_STREAM_BUNDLE_ONLY_DONE_DELAY_MS ??
     DEFAULT_BUNDLE_ONLY_DONE_DELAY_MS,
@@ -15493,6 +15497,106 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
       });
     }
   };
+  const emitAdmissionCoreFallbackAndFinalize = async (
+    reasonCode: "QUEUE_FULL" | "QUEUE_WAIT_TIMEOUT",
+  ): Promise<boolean> => {
+    if (streamAnalysisBundleOnly) return false;
+    if (!normalized) return false;
+    if (streamState.doneSent || streamState.ended || streamState.clientDisconnected || res.writableEnded) return true;
+
+    const fallbackCode = `admission_core_fallback_${reasonCode.toLowerCase()}`;
+    const barcodeGtin14 = normalized.code.padStart(14, "0");
+    streamBarcode = normalized.code;
+    terminalReason = fallbackCode;
+
+    try {
+      const quickDigest = await buildMySupplementDigestQuick({
+        supplementId: barcodeGtin14,
+        barcode: normalized.code,
+        brandName: "",
+        productName: "",
+        budgetMs: ENRICH_STREAM_ADMISSION_CORE_FALLBACK_BUDGET_MS,
+      });
+      const digest = quickDigest.digest;
+      const identityType = digest.identity.type;
+      const identityValue = String(digest.identity.value || barcodeGtin14);
+      const deterministicSignals = DETERMINISTIC_SIGNALS_PRIMARY
+        ? extractDeterministicSignalPack({
+          sourceRole: digest.sourceType,
+          digest,
+        })
+        : null;
+      const fallbackBundle = buildAnalysisBundleSkeleton({
+        digest,
+        deterministicSignals,
+        bundleId,
+        revision: 1,
+        phase: "fast_ai",
+        locale: streamLocale,
+        factsDigestHash: quickDigest.factsDigestHash || computeFactsDigestHash(digest),
+        factsSourceVersion: quickDigest.factsSourceVersion,
+        identityType,
+        identityValue,
+        dataStatus: {
+          overview: "limited",
+          usage: "limited",
+          safety: "limited",
+        },
+        overlayClaims: null,
+        includeDecisionDebug: debugDecisionRequested && (authDisabled || isRegressionRequest),
+      });
+      emitRev1Once(
+        {
+          ...fallbackBundle,
+          meta: {
+            ...fallbackBundle.meta,
+            sourceTypeFinal: digest.sourceType === "lnhpd" || digest.sourceType === "dsld",
+            detailReady: digest.actives.length > 0,
+            fallback: { code: fallbackCode },
+            fallbackReason: fallbackCode,
+            admissionFallback: {
+              reasonCode,
+              budgetMs: ENRICH_STREAM_ADMISSION_CORE_FALLBACK_BUDGET_MS,
+            },
+          },
+        },
+        "fallback",
+        fallbackCode,
+      );
+    } catch (error) {
+      console.warn("[enrich-stream] admission core fallback used provisional bundle", {
+        requestId: requestId || null,
+        reasonCode,
+        error: error instanceof Error ? error.message : String(error),
+      });
+      const provisionalBundle = buildProvisionalAnalysisBundle({
+        bundleId,
+        locale: streamLocale,
+        barcodeGtin14,
+        revision: 1,
+        phase: "fast_ai",
+        fallbackReason: fallbackCode,
+      });
+      emitRev1Once(
+        {
+          ...provisionalBundle,
+          meta: {
+            ...provisionalBundle.meta,
+            admissionFallback: {
+              reasonCode,
+              budgetMs: ENRICH_STREAM_ADMISSION_CORE_FALLBACK_BUDGET_MS,
+            },
+          },
+        },
+        "fallback",
+        fallbackCode,
+      );
+    }
+
+    if (!streamState.rev1Sent) return false;
+    finalizeStream(fallbackCode);
+    return true;
+  };
   const maybeDegradeForEventLoopLag = (): boolean => {
     sampleRequestLag();
     if (eventLoopLagP95DuringRequest <= EVENT_LOOP_LAG_P95_THRESHOLD_MS) {
@@ -15555,6 +15659,12 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
         error instanceof EnrichStreamAdmissionError && error.code === "QUEUE_FULL"
           ? "QUEUE_FULL"
           : "QUEUE_WAIT_TIMEOUT";
+      if (reasonCode === "QUEUE_WAIT_TIMEOUT" || reasonCode === "QUEUE_FULL") {
+        const fallbackEmitted = await emitAdmissionCoreFallbackAndFinalize(reasonCode);
+        if (fallbackEmitted) {
+          return;
+        }
+      }
       emitStreamBusyAndFinalize(reasonCode);
       return;
     }
