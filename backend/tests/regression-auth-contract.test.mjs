@@ -37,8 +37,8 @@ test("regression token is marked before auth-bypass short-circuit", async () => 
 
 test("authority regression sample defaults to stable LNHPD scan-history sample without forced LNHPD timeout", async () => {
   const source = await readFile(SERVER_PATH, "utf8");
-  assert.match(source, /process\.env\.AUTHORITY_REGRESSION_SAMPLE_BARCODE \?\? "00628747100045"/);
-  assert.match(source, /process\.env\.AUTHORITY_REGRESSION_SAMPLE_HISTORICAL_NPN \?\? "80062961"/);
+  assert.match(source, /String\(process\.env\.AUTHORITY_REGRESSION_SAMPLE_BARCODE \?\? ""\)\.trim\(\) \|\| "00628747100045"/);
+  assert.match(source, /String\(process\.env\.AUTHORITY_REGRESSION_SAMPLE_HISTORICAL_NPN \?\? ""\)\.trim\(\) \|\| "80062961"/);
 
   const activeStart = source.indexOf("const authorityRegressionScenarioActive =");
   assert.ok(activeStart >= 0, "missing authority regression sample guard");
@@ -50,6 +50,11 @@ test("authority regression sample defaults to stable LNHPD scan-history sample w
     "enrich-stream should recognize regression marker even when auth middleware short-circuits",
   );
   const activeBlock = source.slice(activeStart, source.indexOf("let regulatoryMapStatus", activeStart));
+  assert.doesNotMatch(
+    activeBlock,
+    /AUTHORITY_REGRESSION_SAMPLE_ENABLED/,
+    "CI regression marker should not be disabled by stale Render env",
+  );
   assert.doesNotMatch(
     activeBlock,
     /authorityFailMode\s*=\s*"timeout"/,

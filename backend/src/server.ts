@@ -586,15 +586,12 @@ const RESILIENCE_GOOGLE_QUEUE_TIMEOUT_MS = Number(process.env.RESILIENCE_GOOGLE_
 const RESILIENCE_DEEPSEEK_QUEUE_TIMEOUT_MS = Number(process.env.RESILIENCE_DEEPSEEK_QUEUE_TIMEOUT_MS ?? 300);
 const REG_MAP_SECOND_CHANCE_TIMEOUT_MS = Number(process.env.REG_MAP_SECOND_CHANCE_TIMEOUT_MS ?? 450);
 const authorityRegressionSampleBarcodeNormalized = normalizeBarcodeInput(
-  process.env.AUTHORITY_REGRESSION_SAMPLE_BARCODE ?? "00628747100045",
+  String(process.env.AUTHORITY_REGRESSION_SAMPLE_BARCODE ?? "").trim() || "00628747100045",
 );
 const AUTHORITY_REGRESSION_SAMPLE_BARCODE =
   authorityRegressionSampleBarcodeNormalized?.code.padStart(14, "0") ?? "";
-const AUTHORITY_REGRESSION_SAMPLE_ENABLED =
-  parseBooleanEnv(process.env.AUTHORITY_REGRESSION_SAMPLE_ENABLED, true)
-  && AUTHORITY_REGRESSION_SAMPLE_BARCODE.length > 0;
 const AUTHORITY_REGRESSION_SAMPLE_HISTORICAL_NPN = String(
-  process.env.AUTHORITY_REGRESSION_SAMPLE_HISTORICAL_NPN ?? "80062961",
+  String(process.env.AUTHORITY_REGRESSION_SAMPLE_HISTORICAL_NPN ?? "").trim() || "80062961",
 )
   .replace(/\D/g, "")
   .trim();
@@ -15651,7 +15648,6 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
       return overlayClaimsForBarcodePromise;
     };
     const authorityRegressionScenarioActive =
-      AUTHORITY_REGRESSION_SAMPLE_ENABLED &&
       isRegressionLikeRequest &&
       barcodeGtin14 === AUTHORITY_REGRESSION_SAMPLE_BARCODE;
 
