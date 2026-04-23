@@ -71,7 +71,7 @@ export const resolveScanStreamRuntimeConfig = (
   );
   const fullPreRev1TerminalGuardMs = minNumber(
     env.ENRICH_STREAM_FULL_PRE_REV1_TERMINAL_GUARD_MS,
-    Math.max(stageBundleAwaitTimeoutMs + 1000, 5000),
+    3000,
     1000,
   );
 
@@ -85,10 +85,10 @@ export const resolveScanStreamRuntimeConfig = (
     bundleOnlyMaxQueue: admissionPolicy.bundleOnly.maxQueue,
     fullQueueWaitMs: admissionPolicy.full.queueWaitMs,
     bundleOnlyQueueWaitMs: admissionPolicy.bundleOnly.queueWaitMs,
-    admissionCoreFallbackBudgetMs: minNumber(env.ENRICH_STREAM_ADMISSION_CORE_FALLBACK_BUDGET_MS, 650, 250),
+    admissionCoreFallbackBudgetMs: minNumber(env.ENRICH_STREAM_ADMISSION_CORE_FALLBACK_BUDGET_MS, 400, 250),
     fullPressureCoreFallbackGuardMs: minNumber(
       env.ENRICH_STREAM_FULL_PRESSURE_CORE_FALLBACK_GUARD_MS,
-      650,
+      400,
       250,
     ),
     bundleOnlyDoneDelayMs,
@@ -124,4 +124,3 @@ export const resolveScanStreamRuntimeConfig = (
     ),
   };
 };
-

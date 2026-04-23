@@ -15395,7 +15395,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
       promise.then(resolve, reject).finally(() => clearTimeout(timer));
     });
   const emitAdmissionCoreFallbackAndFinalize = async (
-    reasonCode: "QUEUE_FULL" | "QUEUE_WAIT_TIMEOUT" | "PRE_REV1_PRESSURE_GUARD",
+    reasonCode: "QUEUE_FULL" | "QUEUE_WAIT_TIMEOUT" | "PRE_REV1_PRESSURE_GUARD" | "PRE_REV1_TERMINAL_GUARD",
   ): Promise<boolean> => {
     if (streamAnalysisBundleOnly) return false;
     if (!normalized) return false;
@@ -15742,7 +15742,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
             1,
             Math.min(preRev1GuardBudgetMs, remainingMs),
           );
-          fullPreRev1TerminalGuardTimer = setTimeout(() => {
+          fullPreRev1TerminalGuardTimer = setTimeout(async () => {
             try {
               fullPreRev1TerminalGuardTimer = null;
               if (streamState.ended || streamState.doneSent || res.writableEnded || streamState.clientDisconnected) return;
@@ -15753,16 +15753,8 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
                 emitDegradedLimitedRev1AndFinalize("DEGRADED_WEB_BUDGET");
                 return;
               }
-              const webHintLikeSourceAttribution = latestProductIdentity?.sourceAttribution === "web_hint_unverified";
-              const webHintLikeSourceType = streamState.latestSourceType === "web";
-              const webHintLikeIdentityType = streamState.latestIdentityType === "webCanonicalId";
-              const isWebHintLike =
-                activeStage0Winner === "web_hint_unverified"
-                || webHintLikeSourceAttribution
-                || webHintLikeSourceType
-                || webHintLikeIdentityType;
-              if (isWebHintLike) {
-                emitDegradedLimitedRev1AndFinalize("DEGRADED_WEB_BUDGET");
+              const fallbackEmitted = await emitAdmissionCoreFallbackAndFinalize("PRE_REV1_TERMINAL_GUARD");
+              if (fallbackEmitted) {
                 return;
               }
               emitTerminalErrorAndFinalize({

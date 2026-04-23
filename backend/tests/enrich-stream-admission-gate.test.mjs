@@ -26,7 +26,7 @@ test("admission gate runtime config exists with expected names", async () => {
   assert.match(configSource, /admissionCoreFallbackBudgetMs/);
   assert.match(configSource, /fullPressureCoreFallbackGuardMs/);
   assert.match(admissionPolicySource, /DEFAULT_FULL_STREAM_MAX_ACTIVE = 2/);
-  assert.match(admissionPolicySource, /DEFAULT_FULL_STREAM_QUEUE_WAIT_MS = 450/);
+  assert.match(admissionPolicySource, /DEFAULT_FULL_STREAM_QUEUE_WAIT_MS = 250/);
   assert.match(source, /const enrichStreamAdmissionGateFull = new EnrichStreamAdmissionGate\(/);
   assert.match(source, /const enrichStreamAdmissionGateBundleOnly = new EnrichStreamAdmissionGate\(/);
   assert.match(source, /type EnrichStreamAdmissionLane = "full" \| "bundle_only"/);
@@ -89,6 +89,21 @@ test("admission core fallback enforces an outer quick-digest budget", async () =
   assert.match(fallbackSlice, /withAdmissionCoreFallbackBudget\(/);
   assert.match(fallbackSlice, /buildMySupplementDigestQuick\(/);
   assert.match(fallbackSlice, /ENRICH_STREAM_ADMISSION_CORE_FALLBACK_BUDGET_MS/);
+});
+
+test("full pre-rev1 terminal guard prefers core fallback over timeout", async () => {
+  const source = await readFile(SERVER_PATH, "utf8");
+  const guardStart = source.indexOf("if (!streamAnalysisBundleOnly && !fullPreRev1TerminalGuardTimer)");
+  assert.ok(guardStart >= 0, "missing full pre-rev1 guard");
+  const guardSlice = source.slice(guardStart, guardStart + 2200);
+
+  assert.match(guardSlice, /emitAdmissionCoreFallbackAndFinalize\("PRE_REV1_TERMINAL_GUARD"\)/);
+  assert.match(guardSlice, /emitTerminalErrorAndFinalize\(\{/);
+  assert.ok(
+    guardSlice.indexOf('emitAdmissionCoreFallbackAndFinalize("PRE_REV1_TERMINAL_GUARD")')
+      < guardSlice.indexOf("emitTerminalErrorAndFinalize({"),
+    "core fallback should be attempted before timeout terminal",
+  );
 });
 
 test("global watchdog uses request-level deadline", async () => {

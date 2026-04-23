@@ -8,13 +8,14 @@ test("scan stream runtime config centralizes production-safe defaults", () => {
 
   assert.equal(config.fullMaxActive, 2);
   assert.equal(config.fullMaxQueue, 20);
-  assert.equal(config.fullQueueWaitMs, 450);
+  assert.equal(config.fullQueueWaitMs, 250);
   assert.equal(config.bundleOnlyMaxActive, 12);
   assert.equal(config.bundleOnlyQueueWaitMs, 1500);
-  assert.equal(config.admissionCoreFallbackBudgetMs, 650);
-  assert.equal(config.fullPressureCoreFallbackGuardMs, 650);
+  assert.equal(config.admissionCoreFallbackBudgetMs, 400);
+  assert.equal(config.fullPressureCoreFallbackGuardMs, 400);
   assert.equal(config.fullRev1DoneDelayMs, 250);
   assert.equal(config.stageBundleAwaitTimeoutMs, 3500);
+  assert.equal(config.fullPreRev1TerminalGuardMs, 3000);
   assert.equal(config.hardTerminalFallbackMs, 17500);
 });
 
@@ -37,4 +38,3 @@ test("scan stream runtime config clamps unsafe low operator overrides", () => {
   assert.equal(config.stageBundleAwaitTimeoutMs, 500);
   assert.equal(config.fullPreRev1TerminalGuardMs, 1000);
 });
-
