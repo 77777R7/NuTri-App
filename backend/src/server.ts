@@ -13896,7 +13896,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
       })();
   const isRegressionLikeRequest =
     isRegressionRequest ||
-    ((authDisabled || isAuthBypassRequest) && hasRegressionTokenHeader) ||
+    ((authDisabled || isAuthBypassRequest) && (hasRegressionTokenHeader || authorityRegressionSampleRequested)) ||
     (process.env.NODE_ENV !== "production" && isAuthBypassRequest && authorityRegressionSampleRequested);
   const authorityFailModeHeaderRaw =
     typeof req.headers["x-authority-fail-mode"] === "string"
