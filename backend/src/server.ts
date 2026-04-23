@@ -279,6 +279,11 @@ const parseBooleanEnv = (value: string | undefined, fallback: boolean): boolean 
   if (normalized === "0" || normalized === "false" || normalized === "no") return false;
   return fallback;
 };
+const PRODUCT_SEARCH_WARM_ON_STARTUP = parseBooleanEnv(process.env.PRODUCT_SEARCH_WARM_ON_STARTUP, false);
+const PRODUCT_SEARCH_STARTUP_WARM_DELAY_MS = Math.max(
+  0,
+  Number(process.env.PRODUCT_SEARCH_STARTUP_WARM_DELAY_MS ?? 30_000),
+);
 const parseDebugDecisionRequested = (req: Request): boolean => {
   const queryValue = req.query.debugDecision;
   const queryRequested = Array.isArray(queryValue)
@@ -24430,5 +24435,10 @@ process.on("uncaughtException", (err) => {
 
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`Search backend listening on http://0.0.0.0:${PORT}`);
-  warmProductSearchIndex();
+  if (PRODUCT_SEARCH_WARM_ON_STARTUP) {
+    const timer = setTimeout(() => {
+      warmProductSearchIndex();
+    }, PRODUCT_SEARCH_STARTUP_WARM_DELAY_MS);
+    timer.unref?.();
+  }
 });
