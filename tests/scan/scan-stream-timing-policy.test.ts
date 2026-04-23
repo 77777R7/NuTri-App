@@ -14,7 +14,7 @@ import {
 } from "../../backend/src/scanStreamAdmissionPolicy.js";
 
 test("full stream rev1 done policy caps the post-rev1 tail below the release gate", () => {
-  assert.equal(DEFAULT_FULL_REV1_DONE_DELAY_MS, 1000);
+  assert.equal(DEFAULT_FULL_REV1_DONE_DELAY_MS, 250);
 
   const policy = resolveScanStreamRev1DonePolicy({
     analysisBundleOnly: false,
@@ -23,7 +23,7 @@ test("full stream rev1 done policy caps the post-rev1 tail below the release gat
   });
 
   assert.deepEqual(policy, {
-    delayMs: 1000,
+    delayMs: 250,
     finalizeReason: "full_rev1_watchdog_complete",
     timerKind: "full_rev1_watchdog",
   });
