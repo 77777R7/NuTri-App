@@ -7066,8 +7066,8 @@ const verifySupabaseToken = async (req: Request, res: Response, next: NextFuncti
     : String(regressionHeader ?? "").trim().length > 0;
   // CI regression requests may also carry x-auth-disabled for preview/staging convenience.
   // Mark regression auth first so internal debug/audit contracts stay gated by the token,
-  // not accidentally hidden by the broader auth-bypass path. On staging/preview, auth-bypass
-  // itself is the environment gate; a non-empty regression token header selects the CI contract.
+  // not accidentally hidden by the broader auth-bypass path. On staging/preview, auth-disabled
+  // modes are the environment gate; a non-empty regression token header selects the CI contract.
   if (regressionAuthRoutes.has(req.path)) {
     const hasRegressionToken = regressionAuthToken
       ? (
@@ -7077,7 +7077,7 @@ const verifySupabaseToken = async (req: Request, res: Response, next: NextFuncti
       )
       : false;
     const hasBypassRegressionMarker =
-      allowBypass && hasRegressionTokenHeader;
+      (authDisabled || allowBypass) && hasRegressionTokenHeader;
     if (hasRegressionToken || hasBypassRegressionMarker) {
       (req as AuthenticatedRequest).regressionAuth = true;
       return next();

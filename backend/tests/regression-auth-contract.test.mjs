@@ -30,8 +30,8 @@ test("regression token is marked before auth-bypass short-circuit", async () => 
   assert.ok(marker < authBypassCheck, "regressionAuth must be set before auth bypass can return");
   assert.match(
     middleware,
-    /const hasBypassRegressionMarker =[\s\S]*allowBypass && hasRegressionTokenHeader/,
-    "staging auth-bypass regression marker should still set regressionAuth",
+    /const hasBypassRegressionMarker =[\s\S]*\(authDisabled \|\| allowBypass\) && hasRegressionTokenHeader/,
+    "staging auth-disabled regression marker should still set regressionAuth",
   );
 });
 
