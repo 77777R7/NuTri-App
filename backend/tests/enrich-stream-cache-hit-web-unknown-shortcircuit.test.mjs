@@ -7,9 +7,13 @@ import { fileURLToPath } from "node:url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const SERVER_PATH = path.resolve(__dirname, "../src/server.ts");
+const ROUTE_PATH = path.resolve(__dirname, "../src/routes/enrichStreamRoute.ts");
+
+const readEnrichStreamSource = async () =>
+  `${await readFile(SERVER_PATH, "utf8")}\n${await readFile(ROUTE_PATH, "utf8")}`;
 
 test("cache-hit web-only with empty core facts short-circuits to NOT_FOUND", async () => {
-  const source = await readFile(SERVER_PATH, "utf8");
+  const source = await readEnrichStreamSource();
   const branchStart = source.indexOf("if (cachedFast && !bypassCachedFastPathForAuthority)");
   assert.ok(branchStart >= 0, "missing cachedFast branch");
   const branchSlice = source.slice(branchStart, branchStart + 1400);
@@ -21,7 +25,7 @@ test("cache-hit web-only with empty core facts short-circuits to NOT_FOUND", asy
 });
 
 test("web-only unknown short-circuit runs before cached snapshot emit", async () => {
-  const source = await readFile(SERVER_PATH, "utf8");
+  const source = await readEnrichStreamSource();
   const branchStart = source.indexOf("if (cachedFast && !bypassCachedFastPathForAuthority)");
   assert.ok(branchStart >= 0, "missing cachedFast branch");
 

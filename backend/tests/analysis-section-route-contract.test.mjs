@@ -16,7 +16,8 @@ test("analysis-section route is registered from a dedicated module", async () =>
   assert.match(serverSource, /import \{ registerAnalysisSectionRoute \} from "\.\/routes\/analysisSectionRoute\.js";/);
   assert.match(serverSource, /registerAnalysisSectionRoute\(app, \{/);
   assert.doesNotMatch(serverSource, /app\.post\("\/api\/analysis-section"/);
-  assert.match(serverSource, /app\.post\("\/api\/enrich-stream"/);
+  assert.doesNotMatch(serverSource, /app\.post\("\/api\/enrich-stream"/);
+  assert.match(serverSource, /registerEnrichStreamRoute\(app, \{/);
 
   assert.match(routeSource, /export const registerAnalysisSectionRoute = /);
   assert.match(routeSource, /app\.post\("\/api\/analysis-section", deps\.verifySupabaseToken/);

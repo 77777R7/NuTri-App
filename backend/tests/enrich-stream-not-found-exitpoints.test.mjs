@@ -7,9 +7,13 @@ import { fileURLToPath } from "node:url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const SERVER_PATH = path.resolve(__dirname, "../src/server.ts");
+const ROUTE_PATH = path.resolve(__dirname, "../src/routes/enrichStreamRoute.ts");
+
+const readEnrichStreamSource = async () =>
+  `${await readFile(SERVER_PATH, "utf8")}\n${await readFile(ROUTE_PATH, "utf8")}`;
 
 test("server.ts no longer has scattered Product not found sendSSE exits", async () => {
-  const source = await readFile(SERVER_PATH, "utf8");
+  const source = await readEnrichStreamSource();
 
   const legacyMatches = source.match(/sendSSE\(res,\s*"error",\s*\{\s*message:\s*"Product not found"\s*\}\)/g) ?? [];
   assert.equal(

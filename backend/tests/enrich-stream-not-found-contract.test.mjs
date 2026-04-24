@@ -7,9 +7,13 @@ import { fileURLToPath } from "node:url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const SERVER_PATH = path.resolve(__dirname, "../src/server.ts");
+const ROUTE_PATH = path.resolve(__dirname, "../src/routes/enrichStreamRoute.ts");
+
+const readEnrichStreamSource = async () =>
+  `${await readFile(SERVER_PATH, "utf8")}\n${await readFile(ROUTE_PATH, "utf8")}`;
 
 test("enrich-stream NOT_FOUND helper emits stable payload fields", async () => {
-  const source = await readFile(SERVER_PATH, "utf8");
+  const source = await readEnrichStreamSource();
   const helperStart = source.indexOf("const emitProductNotFoundAndFinalize");
   assert.ok(helperStart >= 0, "missing emitProductNotFoundAndFinalize helper");
   const helperSlice = source.slice(helperStart, helperStart + 5200);
@@ -24,7 +28,7 @@ test("enrich-stream NOT_FOUND helper emits stable payload fields", async () => {
 });
 
 test("enrich-stream STREAM_TIMEOUT terminal payload remains stable", async () => {
-  const source = await readFile(SERVER_PATH, "utf8");
+  const source = await readEnrichStreamSource();
   const helperStart = source.indexOf("const emitTerminalErrorAndFinalize");
   assert.ok(helperStart >= 0, "missing emitTerminalErrorAndFinalize helper");
   const helperSlice = source.slice(helperStart, helperStart + 2600);

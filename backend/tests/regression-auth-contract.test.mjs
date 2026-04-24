@@ -7,9 +7,13 @@ import { fileURLToPath } from "node:url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const SERVER_PATH = path.resolve(__dirname, "../src/server.ts");
+const ROUTE_PATH = path.resolve(__dirname, "../src/routes/enrichStreamRoute.ts");
+
+const readEnrichStreamSource = async () =>
+  `${await readFile(SERVER_PATH, "utf8")}\n${await readFile(ROUTE_PATH, "utf8")}`;
 
 test("regression token is marked before auth-bypass short-circuit", async () => {
-  const source = await readFile(SERVER_PATH, "utf8");
+  const source = await readEnrichStreamSource();
   const routeSet = source.indexOf("const regressionAuthRoutes = new Set");
   const middlewareStart = source.indexOf("const verifySupabaseToken = async");
   assert.ok(routeSet >= 0, "missing regressionAuthRoutes");
@@ -36,7 +40,7 @@ test("regression token is marked before auth-bypass short-circuit", async () => 
 });
 
 test("authority regression sample defaults to stable LNHPD scan-history sample without forced LNHPD timeout", async () => {
-  const source = await readFile(SERVER_PATH, "utf8");
+  const source = await readEnrichStreamSource();
   assert.match(source, /String\(process\.env\.AUTHORITY_REGRESSION_SAMPLE_BARCODE \?\? ""\)\.trim\(\) \|\| "00628747100045"/);
   assert.match(source, /String\(process\.env\.AUTHORITY_REGRESSION_SAMPLE_HISTORICAL_NPN \?\? ""\)\.trim\(\) \|\| "80062961"/);
 
