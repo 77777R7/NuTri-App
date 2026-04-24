@@ -158,7 +158,7 @@ test("authoritative stage0 deterministic rev1 toggle defaults to enabled", async
   );
 });
 
-test("overload guard rejects early from in-flight capacity, not historical event-loop lag", async () => {
+test("overload guard rejects early when inFlight threshold is exceeded", async () => {
   const source = await readServerSource();
   const guardStart = source.indexOf("const inFlightCount = barcodeEnrichInFlight.size;");
   assert.ok(guardStart >= 0, "missing overload guard");
@@ -223,7 +223,7 @@ test("safety signal pack is attached in skeleton, provisional, and rev1 safety s
 
   const mergeFastStart = source.indexOf("const mergeFastAnalysisBundle =");
   assert.ok(mergeFastStart >= 0, "missing mergeFastAnalysisBundle helper");
-  const mergeFastSlice = source.slice(mergeFastStart, mergeFastStart + 24000);
+  const mergeFastSlice = source.slice(mergeFastStart, mergeFastStart + 26000);
   assert.match(mergeFastSlice, /const safetySignalsFinal = buildBaseSafetySignalPack\(/);
   assert.match(mergeFastSlice, /signals:\s*safetySignalsFinal/);
 });

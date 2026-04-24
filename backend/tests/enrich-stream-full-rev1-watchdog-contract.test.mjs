@@ -18,6 +18,7 @@ test("scheduleBundleOnlyFinalize applies rev1 watchdog to full lane with stable 
   assert.match(slice, /analysisBundleOnly:\s*streamAnalysisBundleOnly/);
   assert.match(slice, /bundleOnlyDoneDelayMs:\s*ENRICH_STREAM_BUNDLE_ONLY_DONE_DELAY_MS/);
   assert.match(slice, /fullRev1DoneDelayMs:\s*ENRICH_STREAM_WEB_REV1_DONE_DELAY_MS/);
+  assert.match(slice, /if \(!rev1DonePolicy\) return;/);
   assert.match(slice, /rev1DonePolicy\.timerKind === "bundle_only_done"/);
   assert.match(slice, /rev1DonePolicy\.timerKind === "full_rev1_watchdog"/);
 

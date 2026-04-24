@@ -279,6 +279,11 @@ const parseBooleanEnv = (value: string | undefined, fallback: boolean): boolean 
   if (normalized === "0" || normalized === "false" || normalized === "no") return false;
   return fallback;
 };
+const PRODUCT_SEARCH_WARM_ON_STARTUP = parseBooleanEnv(process.env.PRODUCT_SEARCH_WARM_ON_STARTUP, false);
+const PRODUCT_SEARCH_STARTUP_WARM_DELAY_MS = Math.max(
+  0,
+  Number(process.env.PRODUCT_SEARCH_STARTUP_WARM_DELAY_MS ?? 30_000),
+);
 const parseDebugDecisionRequested = (req: Request): boolean => {
   const queryValue = req.query.debugDecision;
   const queryRequested = Array.isArray(queryValue)
@@ -586,15 +591,12 @@ const RESILIENCE_GOOGLE_QUEUE_TIMEOUT_MS = Number(process.env.RESILIENCE_GOOGLE_
 const RESILIENCE_DEEPSEEK_QUEUE_TIMEOUT_MS = Number(process.env.RESILIENCE_DEEPSEEK_QUEUE_TIMEOUT_MS ?? 300);
 const REG_MAP_SECOND_CHANCE_TIMEOUT_MS = Number(process.env.REG_MAP_SECOND_CHANCE_TIMEOUT_MS ?? 450);
 const authorityRegressionSampleBarcodeNormalized = normalizeBarcodeInput(
-  process.env.AUTHORITY_REGRESSION_SAMPLE_BARCODE ?? "",
+  String(process.env.AUTHORITY_REGRESSION_SAMPLE_BARCODE ?? "").trim() || "00628747100045",
 );
 const AUTHORITY_REGRESSION_SAMPLE_BARCODE =
   authorityRegressionSampleBarcodeNormalized?.code.padStart(14, "0") ?? "";
-const AUTHORITY_REGRESSION_SAMPLE_ENABLED =
-  parseBooleanEnv(process.env.AUTHORITY_REGRESSION_SAMPLE_ENABLED, true)
-  && AUTHORITY_REGRESSION_SAMPLE_BARCODE.length > 0;
 const AUTHORITY_REGRESSION_SAMPLE_HISTORICAL_NPN = String(
-  process.env.AUTHORITY_REGRESSION_SAMPLE_HISTORICAL_NPN ?? "80062961",
+  String(process.env.AUTHORITY_REGRESSION_SAMPLE_HISTORICAL_NPN ?? "").trim() || "80062961",
 )
   .replace(/\D/g, "")
   .trim();
@@ -4631,6 +4633,7 @@ const fetchLnhpdFactsWithSecondChance = async (
     firstTimeoutMs?: number;
     secondTimeoutMs?: number;
     forceMode?: LnhpdForcedFailureMode | null;
+    allowWhenRuntimeDisabled?: boolean;
   },
 ): Promise<{
   facts: LnhpdFacts | null;
@@ -4639,7 +4642,7 @@ const fetchLnhpdFactsWithSecondChance = async (
   finalStatus: Exclude<LnhpdLookupStatus, "not_attempted">;
   secondChanceUsed: boolean;
 }> => {
-  if (!LNHPD_RUNTIME_ENABLED) {
+  if (!LNHPD_RUNTIME_ENABLED && !options?.allowWhenRuntimeDisabled) {
     return {
       facts: null,
       attempt1Status: "not_attempted",
@@ -7054,15 +7057,39 @@ const decisionSupportFetchCounter = createDecisionSupportFetchCounter({
 });
 
 const verifySupabaseToken = async (req: Request, res: Response, next: NextFunction) => {
-  if (authDisabled) {
-    return next();
-  }
   const authBypassHeader = req.headers["x-auth-disabled"];
   const allowBypass =
     (Array.isArray(authBypassHeader)
       ? authBypassHeader.includes("1")
       : authBypassHeader === "1") &&
     (process.env.NODE_ENV !== "production" || allowAuthBypass);
+  const regressionHeader = req.headers["x-regression-token"];
+  const hasRegressionTokenHeader = Array.isArray(regressionHeader)
+    ? regressionHeader.some((value) => String(value ?? "").trim().length > 0)
+    : String(regressionHeader ?? "").trim().length > 0;
+  // CI regression requests may also carry x-auth-disabled for preview/staging convenience.
+  // Mark regression auth first so internal debug/audit contracts stay gated by the token,
+  // not accidentally hidden by the broader auth-bypass path. On staging/preview, auth-disabled
+  // modes are the environment gate; a non-empty regression token header selects the CI contract.
+  if (regressionAuthRoutes.has(req.path)) {
+    const hasRegressionToken = regressionAuthToken
+      ? (
+        Array.isArray(regressionHeader)
+          ? regressionHeader.includes(regressionAuthToken)
+          : regressionHeader === regressionAuthToken
+      )
+      : false;
+    const hasBypassRegressionMarker =
+      (authDisabled || allowBypass) && hasRegressionTokenHeader;
+    if (hasRegressionToken || hasBypassRegressionMarker) {
+      (req as AuthenticatedRequest).regressionAuth = true;
+      return next();
+    }
+  }
+
+  if (authDisabled) {
+    return next();
+  }
   if (allowBypass) {
     const debugUserHeader = req.headers["x-debug-user-id"];
     const debugUserId = Array.isArray(debugUserHeader)
@@ -7072,18 +7099,6 @@ const verifySupabaseToken = async (req: Request, res: Response, next: NextFuncti
       (req as AuthenticatedRequest).user = { id: debugUserId };
     }
     return next();
-  }
-
-  // CI regression path: scoped token only for non-destructive analysis endpoints.
-  if (regressionAuthToken && regressionAuthRoutes.has(req.path)) {
-    const regressionHeader = req.headers["x-regression-token"];
-    const hasRegressionToken = Array.isArray(regressionHeader)
-      ? regressionHeader.includes(regressionAuthToken)
-      : regressionHeader === regressionAuthToken;
-    if (hasRegressionToken) {
-      (req as AuthenticatedRequest).regressionAuth = true;
-      return next();
-    }
   }
 
   const authHeader = req.headers.authorization;
@@ -12647,6 +12662,34 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
         return;
       }
 
+      const terminalNoDigestIdentity =
+        identity.type === "webCanonicalId" || identity.type === "gtin14";
+      if (terminalNoDigestIdentity) {
+        res.status(200).json({
+          section: "ingredients",
+          detail: { items: [], overallSummary: null, overlapNotes: null },
+          dataStatus: "not_provided",
+          page: {
+            limit: rawRequestedLimit,
+            cursor,
+            nextCursor: null,
+            hasMore: false,
+            totalActives: 0,
+          },
+          meta: {
+            bundleId: randomUUID(),
+            revision: 1,
+            factsDigestHash: requestedFactsDigestHash,
+            fallbackUsed: "skeleton",
+            fallback: { code: "facts_digest_missing" },
+            fallbackReason: "facts_digest_missing",
+            scoreAvailable: false,
+          },
+          timingMs: 0,
+        });
+        return;
+      }
+
       res.status(200).json({
         section: "ingredients",
         detail: null,
@@ -13838,6 +13881,10 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
   const isAuthBypassRequest = Array.isArray(authBypassHeader)
     ? authBypassHeader.includes("1")
     : authBypassHeader === "1";
+  const regressionTokenHeaderRaw = req.headers["x-regression-token"];
+  const hasRegressionTokenHeader = Array.isArray(regressionTokenHeaderRaw)
+    ? regressionTokenHeaderRaw.some((value) => String(value ?? "").trim().length > 0)
+    : String(regressionTokenHeaderRaw ?? "").trim().length > 0;
   const authorityRegressionSampleHeaderRaw = req.headers["x-authority-regression-sample"];
   const authorityRegressionSampleRequested = Array.isArray(authorityRegressionSampleHeaderRaw)
     ? authorityRegressionSampleHeaderRaw.some((value) => String(value).trim().toLowerCase() === "1" || String(value).trim().toLowerCase() === "true")
@@ -13855,6 +13902,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
       })();
   const isRegressionLikeRequest =
     isRegressionRequest ||
+    ((authDisabled || isAuthBypassRequest) && (hasRegressionTokenHeader || authorityRegressionSampleRequested)) ||
     (process.env.NODE_ENV !== "production" && isAuthBypassRequest && authorityRegressionSampleRequested);
   const authorityFailModeHeaderRaw =
     typeof req.headers["x-authority-fail-mode"] === "string"
@@ -15606,12 +15654,9 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
       return overlayClaimsForBarcodePromise;
     };
     const authorityRegressionScenarioActive =
-      AUTHORITY_REGRESSION_SAMPLE_ENABLED &&
       isRegressionLikeRequest &&
       barcodeGtin14 === AUTHORITY_REGRESSION_SAMPLE_BARCODE;
-    if (authorityRegressionScenarioActive) {
-      authorityFailMode = "timeout";
-    }
+    const lnhpdRuntimeEnabledForRequest = LNHPD_RUNTIME_ENABLED || authorityRegressionScenarioActive;
 
     let regulatoryMapStatus: "hit" | "stale" | "miss" | "timeout" = "miss";
     let regMapPrimaryAttempted = false;
@@ -17253,6 +17298,12 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
     let bypassCachedFastPathForAuthority = false;
     let cachedLooksWebOnly = false;
     let prefetchedNameMatchFacts: LnhpdFacts | null = null;
+    if (authorityRegressionScenarioActive) {
+      bypassCachedFastPathForAuthority = true;
+      console.info("[ResolutionV2] Bypassing cached snapshot for authority regression sample", {
+        barcode: barcodeGtin14,
+      });
+    }
     if (cachedFast) {
       const cachedOverlayClaims = await getOverlayClaimsForBarcode();
       const cachedNeedsOverlayRefresh =
@@ -18175,7 +18226,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
     // Hard rule: Stage 1 web resolution must not start (or short-circuit) before we
     // give first-party resolvers (A/Catalog/LNHPD) a chance to terminate.
     let regulatoryMap: Awaited<ReturnType<typeof getBarcodeRegulatoryMap>> | null = null;
-    if (LNHPD_RUNTIME_ENABLED) {
+    if (lnhpdRuntimeEnabledForRequest) {
       regMapPrimaryAttempted = true;
       try {
         regulatoryMap = await regulatoryMapPromise;
@@ -18189,7 +18240,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
       }
     }
 
-    if (LNHPD_RUNTIME_ENABLED && authorityRegressionScenarioActive && !requestSignal.aborted) {
+    if (lnhpdRuntimeEnabledForRequest && authorityRegressionScenarioActive && !requestSignal.aborted) {
       const seededNpnFromMap =
         typeof regulatoryMap?.npn === "string" ? regulatoryMap.npn.replace(/\D/g, "").trim() : "";
       authorityRegressionScenarioHistoricalNpn =
@@ -18210,7 +18261,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
     // Stage0 hardening: if the first map read misses (or times out), do one direct second-chance
     // read without the shared read semaphore to avoid false Web fallback during transient queue pressure.
     // Safety rule: this must stay exact-match only (same gtin14 + same raw digits), no fuzzy lookup.
-    if (LNHPD_RUNTIME_ENABLED && !regulatoryMap && !requestSignal.aborted) {
+    if (lnhpdRuntimeEnabledForRequest && !regulatoryMap && !requestSignal.aborted) {
       regMapSecondChanceAttempted = true;
       if (authorityRegressionScenarioActive) {
         regMapSecondChanceLatencyMs = 0;
@@ -18268,7 +18319,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
         mapMinConfidence: REGULATORY_MAP_MIN_CONFIDENCE,
         staleWindowMs: REGULATORY_MAP_STALE_WINDOW_MS,
         historicalNpn: historicalNpn ?? null,
-        allowLnhpd: LNHPD_RUNTIME_ENABLED,
+        allowLnhpd: lnhpdRuntimeEnabledForRequest,
       });
 
     let authority = resolveCandidate();
@@ -18279,7 +18330,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
 
     // Root-fix for cache resets: if map/snapshot are gone, recover LNHPD candidate
     // from prior successful scans of the same GTIN14 before falling into Web.
-    if (LNHPD_RUNTIME_ENABLED && !candidate && !requestSignal.aborted) {
+    if (lnhpdRuntimeEnabledForRequest && !candidate && !requestSignal.aborted) {
       if (authorityRegressionScenarioActive && authorityRegressionScenarioHistoricalNpn) {
         historicalLnhpd = {
           barcode_gtin14: barcodeGtin14,
@@ -18307,7 +18358,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
 
     // Name/brand fallback: when barcode mapping misses but we still have stable product hints
     // (usually from cached snapshot metadata), try a strict LNHPD name match before Web Stage 1.
-    if (LNHPD_RUNTIME_ENABLED && !candidate && !requestSignal.aborted) {
+    if (lnhpdRuntimeEnabledForRequest && !candidate && !requestSignal.aborted) {
       const hintBrand =
         cachedFast?.analysisPayload?.productInfo?.brand ??
         cachedFast?.snapshot?.product?.brand ??
@@ -18420,6 +18471,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
             firstTimeoutMs: RESILIENCE_LNHPD_TIMEOUT_MS,
             secondTimeoutMs: RESILIENCE_LNHPD_SECOND_CHANCE_TIMEOUT_MS,
             forceMode: authorityFailMode,
+            allowWhenRuntimeDisabled: authorityRegressionScenarioActive,
           });
           authorityLnhpdAttempt1Status = lnhpdLookup.attempt1Status;
           authorityLnhpdAttempt2Status = lnhpdLookup.attempt2Status;
@@ -24383,5 +24435,10 @@ process.on("uncaughtException", (err) => {
 
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`Search backend listening on http://0.0.0.0:${PORT}`);
-  warmProductSearchIndex();
+  if (PRODUCT_SEARCH_WARM_ON_STARTUP) {
+    const timer = setTimeout(() => {
+      warmProductSearchIndex();
+    }, PRODUCT_SEARCH_STARTUP_WARM_DELAY_MS);
+    timer.unref?.();
+  }
 });

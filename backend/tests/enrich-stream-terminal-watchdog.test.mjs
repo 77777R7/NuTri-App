@@ -46,7 +46,10 @@ test("global watchdog emits STREAM_TIMEOUT for rev0-only and finalizes", async (
 
 test("full-lane rev1 watchdog finalizes stream for all source types when post-rev1 tail drifts", async () => {
   const source = await readFile(SERVER_PATH, "utf8");
-  assert.match(source, /const ENRICH_STREAM_WEB_REV1_DONE_DELAY_MS = ENRICH_STREAM_RUNTIME_CONFIG\.fullRev1DoneDelayMs;/);
+  assert.match(
+    source,
+    /const ENRICH_STREAM_WEB_REV1_DONE_DELAY_MS = ENRICH_STREAM_RUNTIME_CONFIG\.fullRev1DoneDelayMs;/,
+  );
 
   const scheduleStart = source.indexOf("const scheduleBundleOnlyFinalize = () => {");
   assert.ok(scheduleStart >= 0, "missing post-rev1 finalize scheduler");
@@ -54,6 +57,9 @@ test("full-lane rev1 watchdog finalizes stream for all source types when post-re
 
   assert.match(scheduleSlice, /if \(!streamState\.rev1Sent\) return;/);
   assert.doesNotMatch(scheduleSlice, /if \(streamState\.latestSourceType !== "web"\) return;/);
+  assert.match(scheduleSlice, /resolveScanStreamRev1DonePolicy\(\{/);
+  assert.match(scheduleSlice, /analysisBundleOnly:\s*streamAnalysisBundleOnly/);
+  assert.match(scheduleSlice, /fullRev1DoneDelayMs:\s*ENRICH_STREAM_WEB_REV1_DONE_DELAY_MS/);
   assert.match(scheduleSlice, /rev1DonePolicy\.timerKind === "full_rev1_watchdog" && webRev1DoneTimer/);
   assert.match(scheduleSlice, /finalizeStream\(rev1DonePolicy\.finalizeReason\)/);
 });
@@ -89,11 +95,17 @@ test("full-lane pre-rev1 terminal guard emits stable timeout reason and finalize
   assert.match(guardSlice, /isCrashCanaryRequest/);
   assert.match(guardSlice, /emitDegradedLimitedRev1AndFinalize\("DEGRADED_WEB_BUDGET"\)/);
   assert.match(guardSlice, /emitAdmissionCoreFallbackAndFinalize\("PRE_REV1_TERMINAL_GUARD"\)/);
+  assert.match(guardSlice, /if \(fallbackEmitted\) \{\s*return;\s*\}/);
   assert.match(guardSlice, /emitTerminalErrorAndFinalize\(\{/);
   assert.match(guardSlice, /code:\s*"STREAM_TIMEOUT"/);
   assert.match(guardSlice, /stage:\s*"watchdog"/);
   assert.match(guardSlice, /reasonCode:\s*"FULL_REV1_MISSING_GUARD_TIMEOUT"/);
   assert.match(guardSlice, /finalizeReason:\s*"full_pre_rev1_guard_timeout"/);
+  assert.ok(
+    guardSlice.indexOf('emitAdmissionCoreFallbackAndFinalize("PRE_REV1_TERMINAL_GUARD")')
+      < guardSlice.indexOf("emitTerminalErrorAndFinalize({"),
+    "core fallback should be attempted before terminal timeout",
+  );
 });
 
 test("terminal error payload includes terminalSnapshot fields", async () => {
