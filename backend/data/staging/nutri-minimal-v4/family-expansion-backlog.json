@@ -1,0 +1,4111 @@
+{
+  "version": "v4.0",
+  "generated_at": "2026-02-05T06:33:15Z",
+  "meta": {
+    "version": "v4.0",
+    "source_workbook": "/Users/howard07/Library/Mobile Documents/com~apple~CloudDocs/nutri_minimal_data_package_v4_0_en_only_review_excerpts.xlsx",
+    "generated_at": "2026-02-05T06:33:15Z"
+  },
+  "family_expansion_backlog": [
+    {
+      "source_ingredient_id": "5_htp",
+      "display_name": "5-HTP",
+      "mapped_family": "5htp",
+      "mapping_status": "mapped_existing_family",
+      "category": "amino_acid",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 6,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family 5htp.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "acetyl_l_carnitine",
+      "display_name": "Acetyl-L-Carnitine",
+      "mapped_family": "carnitine",
+      "mapping_status": "mapped_existing_family",
+      "category": "amino_acid",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family carnitine.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "aloe_vera",
+      "display_name": "Aloe Vera",
+      "mapped_family": "aloe_vera",
+      "mapping_status": "mapped_existing_family",
+      "category": "botanical",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 8,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "search_ref_heavy"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family aloe_vera.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "alpha_gpc",
+      "display_name": "Alpha-GPC",
+      "mapped_family": "choline",
+      "mapping_status": "mapped_existing_family",
+      "category": "other",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family choline.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "alpha_lipoic_acid",
+      "display_name": "Alpha lipoic acid",
+      "mapped_family": "alpha_lipoic_acid",
+      "mapping_status": "mapped_existing_family",
+      "category": "other",
+      "forms_count": 5,
+      "evidence_count": 3,
+      "refs_count": 8,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "premium_form_low_factor_confidence",
+        "search_ref_heavy"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family alpha_lipoic_acid.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "american_ginseng",
+      "display_name": "American Ginseng",
+      "mapped_family": "ginseng",
+      "mapping_status": "mapped_existing_family",
+      "category": "botanical",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "premium_form_low_factor_confidence",
+        "search_ref_heavy"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family ginseng.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "amylase",
+      "display_name": "Amylase",
+      "mapped_family": "amylase",
+      "mapping_status": "mapped_existing_family",
+      "category": "enzyme",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "premium_form_low_factor_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family amylase.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "arginine_alpha_ketoglutarate",
+      "display_name": "Arginine Alpha-Ketoglutarate",
+      "mapped_family": "arginine_alpha_ketoglutarate",
+      "mapping_status": "mapped_existing_family",
+      "category": "amino_acid",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "search_ref_heavy"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family arginine_alpha_ketoglutarate.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "artichoke_extract",
+      "display_name": "Artichoke extract",
+      "mapped_family": "artichoke_extract",
+      "mapping_status": "mapped_existing_family",
+      "category": "botanical",
+      "forms_count": 4,
+      "evidence_count": 3,
+      "refs_count": 4,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "premium_form_low_factor_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family artichoke_extract.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "ashwagandha",
+      "display_name": "Ashwagandha",
+      "mapped_family": "ashwagandha",
+      "mapping_status": "mapped_existing_family",
+      "category": "lipid",
+      "forms_count": 4,
+      "evidence_count": 3,
+      "refs_count": 6,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "search_ref_heavy"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family ashwagandha.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "astaxanthin",
+      "display_name": "Astaxanthin",
+      "mapped_family": "astaxanthin_carotenoid",
+      "mapping_status": "mapped_existing_family",
+      "category": "other",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "premium_form_low_factor_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family astaxanthin_carotenoid.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "astragalus",
+      "display_name": "Astragalus",
+      "mapped_family": "astragalus",
+      "mapping_status": "mapped_existing_family",
+      "category": "botanical",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "premium_form_low_factor_confidence",
+        "search_ref_heavy"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family astragalus.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "bacopa_monnieri",
+      "display_name": "Bacopa monnieri",
+      "mapped_family": "bacopa_monnieri",
+      "mapping_status": "mapped_existing_family",
+      "category": "botanical",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 4,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family bacopa_monnieri.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "bee_propolis",
+      "display_name": "Bee Propolis",
+      "mapped_family": "bee_propolis",
+      "mapping_status": "mapped_existing_family",
+      "category": "botanical",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "premium_form_low_factor_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family bee_propolis.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "berberine",
+      "display_name": "Berberine",
+      "mapped_family": "berberine",
+      "mapping_status": "mapped_existing_family",
+      "category": "botanical",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "premium_form_low_factor_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family berberine.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "beta_alanine",
+      "display_name": "Beta-alanine",
+      "mapped_family": "beta_alanine",
+      "mapping_status": "mapped_existing_family",
+      "category": "amino_acid",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 4,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "search_ref_heavy"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family beta_alanine.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "beta_carotene",
+      "display_name": "Beta-Carotene",
+      "mapped_family": "beta_carotene",
+      "mapping_status": "mapped_existing_family",
+      "category": "lipid",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "premium_form_low_factor_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family beta_carotene.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "betaine",
+      "display_name": "Betaine",
+      "mapped_family": "betaine",
+      "mapping_status": "mapped_existing_family",
+      "category": "other",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "search_ref_heavy"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family betaine.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "bilberry",
+      "display_name": "Bilberry",
+      "mapped_family": "bilberry",
+      "mapping_status": "mapped_existing_family",
+      "category": "botanical",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 7,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family bilberry.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "biotin",
+      "display_name": "Biotin",
+      "mapped_family": "biotin",
+      "mapping_status": "mapped_existing_family",
+      "category": "vitamin",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "search_ref_heavy"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family biotin.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion."
+      ]
+    },
+    {
+      "source_ingredient_id": "bitter_melon",
+      "display_name": "Bitter Melon",
+      "mapped_family": "bitter_melon",
+      "mapping_status": "mapped_existing_family",
+      "category": "botanical",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 7,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family bitter_melon.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "black_cohosh",
+      "display_name": "Black Cohosh",
+      "mapped_family": "black_cohosh",
+      "mapping_status": "mapped_existing_family",
+      "category": "botanical",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "premium_form_low_factor_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family black_cohosh.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "black_seed_oil",
+      "display_name": "Black seed oil",
+      "mapped_family": "black_seed_oil",
+      "mapping_status": "mapped_existing_family",
+      "category": "lipid",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "premium_form_low_factor_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family black_seed_oil.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "borage_oil",
+      "display_name": "Borage Oil",
+      "mapped_family": "borage_oil",
+      "mapping_status": "mapped_existing_family",
+      "category": "lipid",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family borage_oil.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "boron",
+      "display_name": "Boron",
+      "mapped_family": "boron",
+      "mapping_status": "mapped_existing_family",
+      "category": "mineral",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "premium_form_low_factor_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family boron.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "boswellia",
+      "display_name": "Boswellia",
+      "mapped_family": "boswellia",
+      "mapping_status": "mapped_existing_family",
+      "category": "botanical",
+      "forms_count": 6,
+      "evidence_count": 3,
+      "refs_count": 9,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "premium_form_low_factor_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family boswellia.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "broccoli_sprout_extract",
+      "display_name": "Broccoli Sprout Extract",
+      "mapped_family": "broccoli_sprout_extract",
+      "mapping_status": "mapped_existing_family",
+      "category": "other",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "premium_form_low_factor_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family broccoli_sprout_extract.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "bromelain",
+      "display_name": "Bromelain",
+      "mapped_family": "bromelain",
+      "mapping_status": "mapped_existing_family",
+      "category": "enzyme",
+      "forms_count": 4,
+      "evidence_count": 3,
+      "refs_count": 6,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "premium_form_low_factor_confidence",
+        "search_ref_heavy"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family bromelain.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "caffeine",
+      "display_name": "Caffeine",
+      "mapped_family": "caffeine",
+      "mapping_status": "mapped_existing_family",
+      "category": "other",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family caffeine.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "calcium",
+      "display_name": "Calcium",
+      "mapped_family": "calcium",
+      "mapping_status": "mapped_existing_family",
+      "category": "mineral",
+      "forms_count": 9,
+      "evidence_count": 3,
+      "refs_count": 11,
+      "coverage_gap_flags": [
+        "search_ref_heavy"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family calcium.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion."
+      ]
+    },
+    {
+      "source_ingredient_id": "calcium_d_glucarate",
+      "display_name": "Calcium D-Glucarate",
+      "mapped_family": "calcium_d_glucarate",
+      "mapping_status": "mapped_existing_family",
+      "category": "other",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "premium_form_low_factor_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family calcium_d_glucarate.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "chaga_mushroom",
+      "display_name": "Chaga Mushroom",
+      "mapped_family": "chaga_mushroom",
+      "mapping_status": "mapped_existing_family",
+      "category": "botanical",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "premium_form_low_factor_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family chaga_mushroom.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "chamomile",
+      "display_name": "Chamomile",
+      "mapped_family": "chamomile",
+      "mapping_status": "mapped_existing_family",
+      "category": "botanical",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 4,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "search_ref_heavy"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family chamomile.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "chlorella",
+      "display_name": "Chlorella",
+      "mapped_family": "chlorella",
+      "mapping_status": "mapped_existing_family",
+      "category": "other",
+      "forms_count": 4,
+      "evidence_count": 3,
+      "refs_count": 4,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "premium_form_low_factor_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family chlorella.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "chlorophyll",
+      "display_name": "Chlorophyll",
+      "mapped_family": "chlorophyll",
+      "mapping_status": "mapped_existing_family",
+      "category": "botanical",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "premium_form_low_factor_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family chlorophyll.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "choline",
+      "display_name": "Choline",
+      "mapped_family": "choline",
+      "mapping_status": "mapped_existing_family",
+      "category": "nutrient",
+      "forms_count": 4,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "premium_form_low_factor_confidence",
+        "search_ref_heavy"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family choline.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "chondroitin",
+      "display_name": "Chondroitin",
+      "mapped_family": "chondroitin",
+      "mapping_status": "mapped_existing_family",
+      "category": "other",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 4,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family chondroitin.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "chromium",
+      "display_name": "Chromium",
+      "mapped_family": "chromium",
+      "mapping_status": "mapped_existing_family",
+      "category": "mineral",
+      "forms_count": 5,
+      "evidence_count": 3,
+      "refs_count": 6,
+      "coverage_gap_flags": [
+        "search_ref_heavy"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family chromium.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion."
+      ]
+    },
+    {
+      "source_ingredient_id": "cinnamon",
+      "display_name": "Cinnamon",
+      "mapped_family": "cinnamon_extract",
+      "mapping_status": "mapped_existing_family",
+      "category": "botanical",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 4,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family cinnamon_extract.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "cinnamon_extract",
+      "display_name": "Cinnamon Extract",
+      "mapped_family": "cinnamon_extract",
+      "mapping_status": "mapped_existing_family",
+      "category": "botanical",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "premium_form_low_factor_confidence",
+        "search_ref_heavy"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family cinnamon_extract.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "citicoline",
+      "display_name": "Citicoline",
+      "mapped_family": "citicoline",
+      "mapping_status": "mapped_existing_family",
+      "category": "other",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "search_ref_heavy"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family citicoline.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "citrulline_malate",
+      "display_name": "Citrulline Malate",
+      "mapped_family": "citrulline_malate",
+      "mapping_status": "mapped_existing_family",
+      "category": "amino_acid",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "search_ref_heavy"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family citrulline_malate.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "colostrum",
+      "display_name": "Colostrum",
+      "mapped_family": "colostrum",
+      "mapping_status": "mapped_existing_family",
+      "category": "botanical",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "premium_form_low_factor_confidence",
+        "search_ref_heavy"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family colostrum.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "conjugated_linoleic_acid",
+      "display_name": "Conjugated Linoleic Acid",
+      "mapped_family": "cla",
+      "mapping_status": "mapped_existing_family",
+      "category": "lipid",
+      "forms_count": 6,
+      "evidence_count": 3,
+      "refs_count": 9,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family cla.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "copper",
+      "display_name": "Copper",
+      "mapped_family": "copper",
+      "mapping_status": "mapped_existing_family",
+      "category": "mineral",
+      "forms_count": 4,
+      "evidence_count": 3,
+      "refs_count": 4,
+      "coverage_gap_flags": [
+        "premium_form_low_factor_confidence"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family copper."
+      ]
+    },
+    {
+      "source_ingredient_id": "coq10",
+      "display_name": "CoQ10",
+      "mapped_family": "coq10",
+      "mapping_status": "mapped_existing_family",
+      "category": "other",
+      "forms_count": 5,
+      "evidence_count": 3,
+      "refs_count": 8,
+      "coverage_gap_flags": [
+        "premium_form_low_factor_confidence"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family coq10."
+      ]
+    },
+    {
+      "source_ingredient_id": "cordyceps_mushroom",
+      "display_name": "Cordyceps Mushroom",
+      "mapped_family": "cordyceps_mushroom",
+      "mapping_status": "mapped_existing_family",
+      "category": "botanical",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "premium_form_low_factor_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family cordyceps_mushroom.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "cranberry_extract",
+      "display_name": "Cranberry extract",
+      "mapped_family": "cranberry_extract",
+      "mapping_status": "mapped_existing_family",
+      "category": "botanical",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 4,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "premium_form_low_factor_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family cranberry_extract.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "creatine",
+      "display_name": "Creatine",
+      "mapped_family": "creatine",
+      "mapping_status": "mapped_existing_family",
+      "category": "amino_acid",
+      "forms_count": 6,
+      "evidence_count": 3,
+      "refs_count": 9,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "search_ref_heavy"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family creatine.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "curcumin",
+      "display_name": "Curcumin",
+      "mapped_family": "curcumin",
+      "mapping_status": "mapped_existing_family",
+      "category": "botanical",
+      "forms_count": 8,
+      "evidence_count": 3,
+      "refs_count": 14,
+      "coverage_gap_flags": [],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family curcumin."
+      ]
+    },
+    {
+      "source_ingredient_id": "d_ribose",
+      "display_name": "D-Ribose",
+      "mapped_family": "d_ribose",
+      "mapping_status": "mapped_existing_family",
+      "category": "amino_acid",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "search_ref_heavy"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family d_ribose.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "dandelion_root",
+      "display_name": "Dandelion Root",
+      "mapped_family": "dandelion_root",
+      "mapping_status": "mapped_existing_family",
+      "category": "botanical",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "premium_form_low_factor_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family dandelion_root.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "devil_s_claw",
+      "display_name": "Devil's Claw",
+      "mapped_family": "devil_s_claw",
+      "mapping_status": "mapped_existing_family",
+      "category": "botanical",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "premium_form_low_factor_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family devil_s_claw.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "dgl_licorice",
+      "display_name": "DGL Licorice",
+      "mapped_family": "dgl_licorice",
+      "mapping_status": "mapped_existing_family",
+      "category": "botanical",
+      "forms_count": 4,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family dgl_licorice."
+      ]
+    },
+    {
+      "source_ingredient_id": "dim",
+      "display_name": "DIM",
+      "mapped_family": "dim",
+      "mapping_status": "mapped_existing_family",
+      "category": "other",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "premium_form_low_factor_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family dim.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "dong_quai",
+      "display_name": "Dong Quai",
+      "mapped_family": "dong_quai",
+      "mapping_status": "mapped_existing_family",
+      "category": "botanical",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "premium_form_low_factor_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family dong_quai.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "echinacea",
+      "display_name": "Echinacea",
+      "mapped_family": "echinacea",
+      "mapping_status": "mapped_existing_family",
+      "category": "botanical",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 4,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family echinacea.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "elderberry",
+      "display_name": "Elderberry",
+      "mapped_family": "elderberry",
+      "mapping_status": "mapped_existing_family",
+      "category": "botanical",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 4,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family elderberry.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "eleuthero",
+      "display_name": "Eleuthero",
+      "mapped_family": "eleuthero",
+      "mapping_status": "mapped_existing_family",
+      "category": "botanical",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "premium_form_low_factor_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family eleuthero.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "evening_primrose_oil",
+      "display_name": "Evening primrose oil",
+      "mapped_family": "evening_primrose_oil",
+      "mapping_status": "mapped_existing_family",
+      "category": "lipid",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 4,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family evening_primrose_oil.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "fenugreek",
+      "display_name": "Fenugreek",
+      "mapped_family": "fenugreek",
+      "mapping_status": "mapped_existing_family",
+      "category": "botanical",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "premium_form_low_factor_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family fenugreek.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "folate",
+      "display_name": "Folate",
+      "mapped_family": "folate",
+      "mapping_status": "mapped_existing_family",
+      "category": "vitamin",
+      "forms_count": 4,
+      "evidence_count": 3,
+      "refs_count": 7,
+      "coverage_gap_flags": [
+        "premium_form_low_factor_confidence",
+        "search_ref_heavy"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family folate.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion."
+      ]
+    },
+    {
+      "source_ingredient_id": "forskolin",
+      "display_name": "Forskolin",
+      "mapped_family": "forskolin",
+      "mapping_status": "mapped_existing_family",
+      "category": "botanical",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "premium_form_low_factor_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family forskolin.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "fructooligosaccharides",
+      "display_name": "Fructooligosaccharides",
+      "mapped_family": "fiber",
+      "mapping_status": "mapped_existing_family",
+      "category": "nutrient",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family fiber.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "fucoidan",
+      "display_name": "Fucoidan",
+      "mapped_family": "fucoidan",
+      "mapping_status": "mapped_existing_family",
+      "category": "botanical",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "premium_form_low_factor_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family fucoidan.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "galactooligosaccharides",
+      "display_name": "Galactooligosaccharides",
+      "mapped_family": "fiber",
+      "mapping_status": "mapped_existing_family",
+      "category": "nutrient",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "search_ref_heavy"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family fiber.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "gamma_linolenic_acid",
+      "display_name": "Gamma-Linolenic Acid",
+      "mapped_family": "gamma_linolenic_acid",
+      "mapping_status": "mapped_existing_family",
+      "category": "lipid",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family gamma_linolenic_acid.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "garcinia_cambogia",
+      "display_name": "Garcinia cambogia",
+      "mapped_family": "garcinia_cambogia",
+      "mapping_status": "mapped_existing_family",
+      "category": "botanical",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 4,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family garcinia_cambogia.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "garlic_extract",
+      "display_name": "Garlic Extract",
+      "mapped_family": "garlic_extract",
+      "mapping_status": "mapped_existing_family",
+      "category": "botanical",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "premium_form_low_factor_confidence",
+        "search_ref_heavy"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family garlic_extract.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "ginger_root",
+      "display_name": "Ginger Root",
+      "mapped_family": "ginger_root",
+      "mapping_status": "mapped_existing_family",
+      "category": "botanical",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "premium_form_low_factor_confidence",
+        "search_ref_heavy"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family ginger_root.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "ginkgo_biloba",
+      "display_name": "Ginkgo biloba",
+      "mapped_family": "ginkgo_biloba",
+      "mapping_status": "mapped_existing_family",
+      "category": "botanical",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 4,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family ginkgo_biloba.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "glucomannan",
+      "display_name": "Glucomannan",
+      "mapped_family": "glucomannan",
+      "mapping_status": "mapped_existing_family",
+      "category": "other",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 4,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family glucomannan.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "glucosamine",
+      "display_name": "Glucosamine",
+      "mapped_family": "glucosamine",
+      "mapping_status": "mapped_existing_family",
+      "category": "other",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 4,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family glucosamine.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "glutathione",
+      "display_name": "Glutathione",
+      "mapped_family": "glutathione",
+      "mapping_status": "mapped_existing_family",
+      "category": "other",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 7,
+      "coverage_gap_flags": [],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family glutathione."
+      ]
+    },
+    {
+      "source_ingredient_id": "grape_seed_extract",
+      "display_name": "Grape Seed Extract",
+      "mapped_family": "grape_seed_extract",
+      "mapping_status": "mapped_existing_family",
+      "category": "other",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "premium_form_low_factor_confidence",
+        "search_ref_heavy"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family grape_seed_extract.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "grapefruit_seed_extract",
+      "display_name": "Grapefruit Seed Extract",
+      "mapped_family": "grapefruit_seed_extract",
+      "mapping_status": "mapped_existing_family",
+      "category": "botanical",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family grapefruit_seed_extract.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "green_coffee_bean_extract",
+      "display_name": "Green Coffee Bean Extract",
+      "mapped_family": "green_coffee_bean_extract",
+      "mapping_status": "mapped_existing_family",
+      "category": "botanical",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "premium_form_low_factor_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family green_coffee_bean_extract.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "green_tea_extract",
+      "display_name": "Green Tea Extract",
+      "mapped_family": "green_tea_extract",
+      "mapping_status": "mapped_existing_family",
+      "category": "botanical",
+      "forms_count": 6,
+      "evidence_count": 3,
+      "refs_count": 11,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "premium_form_low_factor_confidence",
+        "search_ref_heavy"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family green_tea_extract.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "gymnema",
+      "display_name": "Gymnema",
+      "mapped_family": "gymnema",
+      "mapping_status": "mapped_existing_family",
+      "category": "botanical",
+      "forms_count": 5,
+      "evidence_count": 3,
+      "refs_count": 8,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "premium_form_low_factor_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family gymnema.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "hawthorn",
+      "display_name": "Hawthorn",
+      "mapped_family": "hawthorn",
+      "mapping_status": "mapped_existing_family",
+      "category": "botanical",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 7,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family hawthorn.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "hesperidin",
+      "display_name": "Hesperidin",
+      "mapped_family": "hesperidin",
+      "mapping_status": "mapped_existing_family",
+      "category": "other",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "premium_form_low_factor_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family hesperidin.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "hmb",
+      "display_name": "HMB",
+      "mapped_family": "hmb",
+      "mapping_status": "mapped_existing_family",
+      "category": "amino_acid",
+      "forms_count": 5,
+      "evidence_count": 3,
+      "refs_count": 8,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "premium_form_low_factor_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family hmb.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "holy_basil",
+      "display_name": "Holy Basil",
+      "mapped_family": "holy_basil",
+      "mapping_status": "mapped_existing_family",
+      "category": "botanical",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "premium_form_low_factor_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family holy_basil.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "huperzine_a",
+      "display_name": "Huperzine A",
+      "mapped_family": "huperzine_a",
+      "mapping_status": "mapped_existing_family",
+      "category": "other",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family huperzine_a.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "hyaluronic_acid",
+      "display_name": "Hyaluronic acid",
+      "mapped_family": "hyaluronic_acid",
+      "mapping_status": "mapped_existing_family",
+      "category": "other",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "premium_form_low_factor_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family hyaluronic_acid.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "indole_3_carbinol",
+      "display_name": "Indole-3-Carbinol",
+      "mapped_family": "indole_3_carbinol",
+      "mapping_status": "mapped_existing_family",
+      "category": "other",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "premium_form_low_factor_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family indole_3_carbinol.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "inulin",
+      "display_name": "Inulin",
+      "mapped_family": "fiber",
+      "mapping_status": "mapped_existing_family",
+      "category": "nutrient",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 4,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family fiber.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "iron",
+      "display_name": "Iron",
+      "mapped_family": "iron",
+      "mapping_status": "mapped_existing_family",
+      "category": "mineral",
+      "forms_count": 9,
+      "evidence_count": 3,
+      "refs_count": 10,
+      "coverage_gap_flags": [
+        "premium_form_low_factor_confidence",
+        "search_ref_heavy"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family iron.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion."
+      ]
+    },
+    {
+      "source_ingredient_id": "kava",
+      "display_name": "Kava",
+      "mapped_family": "kava",
+      "mapping_status": "mapped_existing_family",
+      "category": "botanical",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 8,
+      "coverage_gap_flags": [
+        "search_ref_heavy"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family kava.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion."
+      ]
+    },
+    {
+      "source_ingredient_id": "krill_oil",
+      "display_name": "Krill Oil",
+      "mapped_family": "krill_oil",
+      "mapping_status": "mapped_existing_family",
+      "category": "lipid",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "premium_form_low_factor_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family krill_oil.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "l_alanine",
+      "display_name": "L-Alanine",
+      "mapped_family": "l_alanine",
+      "mapping_status": "mapped_existing_family",
+      "category": "amino_acid",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family l_alanine.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "l_arginine",
+      "display_name": "L-Arginine",
+      "mapped_family": "l_arginine",
+      "mapping_status": "mapped_existing_family",
+      "category": "amino_acid",
+      "forms_count": 4,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "search_ref_heavy"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family l_arginine.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "l_aspartic_acid",
+      "display_name": "L-Aspartic Acid",
+      "mapped_family": "l_aspartic_acid",
+      "mapping_status": "mapped_existing_family",
+      "category": "amino_acid",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family l_aspartic_acid.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "l_citrulline",
+      "display_name": "L-Citrulline",
+      "mapped_family": "l_citrulline",
+      "mapping_status": "mapped_existing_family",
+      "category": "amino_acid",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 4,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "premium_form_low_factor_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family l_citrulline.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "l_glutamic_acid",
+      "display_name": "L-Glutamic Acid",
+      "mapped_family": "l_glutamic_acid",
+      "mapping_status": "mapped_existing_family",
+      "category": "amino_acid",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family l_glutamic_acid.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "l_histidine",
+      "display_name": "L-Histidine",
+      "mapped_family": "l_histidine",
+      "mapping_status": "mapped_existing_family",
+      "category": "amino_acid",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family l_histidine.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "l_isoleucine",
+      "display_name": "L-Isoleucine",
+      "mapped_family": "l_isoleucine",
+      "mapping_status": "mapped_existing_family",
+      "category": "amino_acid",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family l_isoleucine.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "l_leucine",
+      "display_name": "L-Leucine",
+      "mapped_family": "l_leucine",
+      "mapping_status": "mapped_existing_family",
+      "category": "amino_acid",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family l_leucine.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "l_methionine",
+      "display_name": "L-Methionine",
+      "mapped_family": "l_methionine",
+      "mapping_status": "mapped_existing_family",
+      "category": "amino_acid",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "search_ref_heavy"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family l_methionine.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "l_ornithine",
+      "display_name": "L-Ornithine",
+      "mapped_family": "l_ornithine",
+      "mapping_status": "mapped_existing_family",
+      "category": "amino_acid",
+      "forms_count": 4,
+      "evidence_count": 3,
+      "refs_count": 6,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "search_ref_heavy"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family l_ornithine.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "l_phenylalanine",
+      "display_name": "L-Phenylalanine",
+      "mapped_family": "l_phenylalanine",
+      "mapping_status": "mapped_existing_family",
+      "category": "amino_acid",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family l_phenylalanine.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "l_serine",
+      "display_name": "L-Serine",
+      "mapped_family": "l_serine",
+      "mapping_status": "mapped_existing_family",
+      "category": "amino_acid",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family l_serine.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "l_theanine",
+      "display_name": "L-Theanine",
+      "mapped_family": "l_theanine",
+      "mapping_status": "mapped_existing_family",
+      "category": "amino_acid",
+      "forms_count": 2,
+      "evidence_count": 3,
+      "refs_count": 4,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family l_theanine.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "l_threonine",
+      "display_name": "L-Threonine",
+      "mapped_family": "l_threonine",
+      "mapping_status": "mapped_existing_family",
+      "category": "amino_acid",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family l_threonine.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "l_tryptophan",
+      "display_name": "L-Tryptophan",
+      "mapped_family": "l_tryptophan",
+      "mapping_status": "mapped_existing_family",
+      "category": "amino_acid",
+      "forms_count": 2,
+      "evidence_count": 3,
+      "refs_count": 6,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family l_tryptophan.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "l_valine",
+      "display_name": "L-Valine",
+      "mapped_family": "l_valine",
+      "mapping_status": "mapped_existing_family",
+      "category": "amino_acid",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "search_ref_heavy"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family l_valine.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "lactase",
+      "display_name": "Lactase",
+      "mapped_family": "lactase",
+      "mapping_status": "mapped_existing_family",
+      "category": "enzyme",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "premium_form_low_factor_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family lactase.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "lavender",
+      "display_name": "Lavender",
+      "mapped_family": "lavender",
+      "mapping_status": "mapped_existing_family",
+      "category": "botanical",
+      "forms_count": 4,
+      "evidence_count": 3,
+      "refs_count": 4,
+      "coverage_gap_flags": [
+        "premium_form_low_factor_confidence",
+        "search_ref_heavy"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family lavender.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion."
+      ]
+    },
+    {
+      "source_ingredient_id": "lemon_balm",
+      "display_name": "Lemon balm",
+      "mapped_family": "lemon_balm",
+      "mapping_status": "mapped_existing_family",
+      "category": "botanical",
+      "forms_count": 4,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "search_ref_heavy"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family lemon_balm.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "lion_s_mane_mushroom",
+      "display_name": "Lion's Mane Mushroom",
+      "mapped_family": "lion_s_mane_mushroom",
+      "mapping_status": "mapped_existing_family",
+      "category": "botanical",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "premium_form_low_factor_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family lion_s_mane_mushroom.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "lipase",
+      "display_name": "Lipase",
+      "mapped_family": "lipase",
+      "mapping_status": "mapped_existing_family",
+      "category": "enzyme",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "premium_form_low_factor_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family lipase.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "lutein",
+      "display_name": "Lutein",
+      "mapped_family": "lutein",
+      "mapping_status": "mapped_existing_family",
+      "category": "other",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 4,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "premium_form_low_factor_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family lutein.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "lycopene",
+      "display_name": "Lycopene",
+      "mapped_family": "lycopene",
+      "mapping_status": "mapped_existing_family",
+      "category": "other",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 4,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "premium_form_low_factor_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family lycopene.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "maca",
+      "display_name": "Maca",
+      "mapped_family": "maca",
+      "mapping_status": "mapped_existing_family",
+      "category": "botanical",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "premium_form_low_factor_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family maca.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "magnesium",
+      "display_name": "Magnesium",
+      "mapped_family": "magnesium",
+      "mapping_status": "mapped_existing_family",
+      "category": "mineral",
+      "forms_count": 10,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family magnesium."
+      ]
+    },
+    {
+      "source_ingredient_id": "maitake_mushroom",
+      "display_name": "Maitake Mushroom",
+      "mapped_family": "maitake_mushroom",
+      "mapping_status": "mapped_existing_family",
+      "category": "botanical",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "premium_form_low_factor_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family maitake_mushroom.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "mct_oil",
+      "display_name": "MCT Oil",
+      "mapped_family": "mct_oil",
+      "mapping_status": "mapped_existing_family",
+      "category": "lipid",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family mct_oil.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "melatonin",
+      "display_name": "Melatonin",
+      "mapped_family": "melatonin",
+      "mapping_status": "mapped_existing_family",
+      "category": "other",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "search_ref_heavy"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family melatonin.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "milk_thistle",
+      "display_name": "Milk thistle",
+      "mapped_family": "milk_thistle",
+      "mapping_status": "mapped_existing_family",
+      "category": "botanical",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 4,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "premium_form_low_factor_confidence",
+        "search_ref_heavy"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family milk_thistle.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "n_acetylcysteine",
+      "display_name": "N-Acetylcysteine (NAC)",
+      "mapped_family": "nac",
+      "mapping_status": "mapped_existing_family",
+      "category": "amino_acid",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "premium_form_low_factor_confidence"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family nac."
+      ]
+    },
+    {
+      "source_ingredient_id": "nadh",
+      "display_name": "NADH",
+      "mapped_family": "nadh",
+      "mapping_status": "mapped_existing_family",
+      "category": "other",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "premium_form_low_factor_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family nadh.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "naringin",
+      "display_name": "Naringin",
+      "mapped_family": "naringin",
+      "mapping_status": "mapped_existing_family",
+      "category": "other",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "premium_form_low_factor_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family naringin.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "nattokinase",
+      "display_name": "Nattokinase",
+      "mapped_family": "nattokinase",
+      "mapping_status": "mapped_existing_family",
+      "category": "enzyme",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "premium_form_low_factor_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family nattokinase.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "niacin",
+      "display_name": "Niacin",
+      "mapped_family": "b3_niacinamide",
+      "mapping_status": "mapped_existing_family",
+      "category": "vitamin",
+      "forms_count": 4,
+      "evidence_count": 3,
+      "refs_count": 6,
+      "coverage_gap_flags": [
+        "search_ref_heavy"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family b3_niacinamide.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion."
+      ]
+    },
+    {
+      "source_ingredient_id": "nicotinamide_mononucleotide",
+      "display_name": "Nicotinamide Mononucleotide",
+      "mapped_family": "nicotinamide_mononucleotide",
+      "mapping_status": "mapped_existing_family",
+      "category": "other",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 4,
+      "coverage_gap_flags": [
+        "premium_form_low_factor_confidence"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family nicotinamide_mononucleotide."
+      ]
+    },
+    {
+      "source_ingredient_id": "oat_beta_glucan",
+      "display_name": "Oat Beta-Glucan",
+      "mapped_family": "fiber",
+      "mapping_status": "mapped_existing_family",
+      "category": "nutrient",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "premium_form_low_factor_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family fiber.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "olive_leaf_extract",
+      "display_name": "Olive Leaf Extract",
+      "mapped_family": "olive_leaf_extract",
+      "mapping_status": "mapped_existing_family",
+      "category": "botanical",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "premium_form_low_factor_confidence",
+        "search_ref_heavy"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family olive_leaf_extract.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "omega_3",
+      "display_name": "Omega-3",
+      "mapped_family": "omega_3",
+      "mapping_status": "mapped_existing_family",
+      "category": "lipid",
+      "forms_count": 5,
+      "evidence_count": 3,
+      "refs_count": 10,
+      "coverage_gap_flags": [
+        "search_ref_heavy"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family omega_3.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion."
+      ]
+    },
+    {
+      "source_ingredient_id": "panax_ginseng",
+      "display_name": "Panax ginseng",
+      "mapped_family": "ginseng",
+      "mapping_status": "mapped_existing_family",
+      "category": "botanical",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "premium_form_low_factor_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family ginseng.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "pantothenic_acid",
+      "display_name": "Pantothenic Acid",
+      "mapped_family": "pantothenic_acid",
+      "mapping_status": "mapped_existing_family",
+      "category": "vitamin",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 4,
+      "coverage_gap_flags": [
+        "premium_form_low_factor_confidence"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family pantothenic_acid."
+      ]
+    },
+    {
+      "source_ingredient_id": "papain",
+      "display_name": "Papain",
+      "mapped_family": "papain",
+      "mapping_status": "mapped_existing_family",
+      "category": "enzyme",
+      "forms_count": 4,
+      "evidence_count": 3,
+      "refs_count": 4,
+      "coverage_gap_flags": [
+        "search_ref_heavy"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family papain.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion."
+      ]
+    },
+    {
+      "source_ingredient_id": "partially_hydrolyzed_guar_gum",
+      "display_name": "Partially Hydrolyzed Guar Gum",
+      "mapped_family": "fiber",
+      "mapping_status": "mapped_existing_family",
+      "category": "nutrient",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "search_ref_heavy"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family fiber.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "passionflower",
+      "display_name": "Passionflower",
+      "mapped_family": "passionflower",
+      "mapping_status": "mapped_existing_family",
+      "category": "botanical",
+      "forms_count": 4,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family passionflower.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "phosphatidylserine",
+      "display_name": "Phosphatidylserine",
+      "mapped_family": "phosphatidylserine",
+      "mapping_status": "mapped_existing_family",
+      "category": "lipid",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 4,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family phosphatidylserine.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "pine_bark_extract",
+      "display_name": "Pine Bark Extract",
+      "mapped_family": "pine_bark_extract",
+      "mapping_status": "mapped_existing_family",
+      "category": "botanical",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 7,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family pine_bark_extract.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "pqq",
+      "display_name": "PQQ",
+      "mapped_family": "pqq",
+      "mapping_status": "mapped_existing_family",
+      "category": "other",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family pqq.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "protease",
+      "display_name": "Protease",
+      "mapped_family": "protease",
+      "mapping_status": "mapped_existing_family",
+      "category": "enzyme",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "premium_form_low_factor_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family protease.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "psyllium_husk",
+      "display_name": "Psyllium husk",
+      "mapped_family": "fiber",
+      "mapping_status": "mapped_existing_family",
+      "category": "nutrient",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family fiber.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "pumpkin_seed_oil",
+      "display_name": "Pumpkin Seed Oil",
+      "mapped_family": "pumpkin_seed_oil",
+      "mapping_status": "mapped_existing_family",
+      "category": "lipid",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family pumpkin_seed_oil.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "pygeum",
+      "display_name": "Pygeum",
+      "mapped_family": "pygeum",
+      "mapping_status": "mapped_existing_family",
+      "category": "botanical",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "premium_form_low_factor_confidence",
+        "search_ref_heavy"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family pygeum.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "quercetin",
+      "display_name": "Quercetin",
+      "mapped_family": "quercetin",
+      "mapping_status": "mapped_existing_family",
+      "category": "botanical",
+      "forms_count": 5,
+      "evidence_count": 3,
+      "refs_count": 10,
+      "coverage_gap_flags": [],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family quercetin."
+      ]
+    },
+    {
+      "source_ingredient_id": "red_yeast_rice",
+      "display_name": "Red Yeast Rice",
+      "mapped_family": "red_yeast_rice",
+      "mapping_status": "mapped_existing_family",
+      "category": "botanical",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "premium_form_low_factor_confidence",
+        "search_ref_heavy"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family red_yeast_rice.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "reishi_mushroom",
+      "display_name": "Reishi Mushroom",
+      "mapped_family": "reishi_mushroom",
+      "mapping_status": "mapped_existing_family",
+      "category": "botanical",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "premium_form_low_factor_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family reishi_mushroom.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "resistant_dextrin",
+      "display_name": "Resistant Dextrin",
+      "mapped_family": "fiber",
+      "mapping_status": "mapped_existing_family",
+      "category": "nutrient",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "search_ref_heavy"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family fiber.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "resistant_starch",
+      "display_name": "Resistant Starch",
+      "mapped_family": "fiber",
+      "mapping_status": "mapped_existing_family",
+      "category": "nutrient",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "search_ref_heavy"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family fiber.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "resveratrol",
+      "display_name": "Resveratrol",
+      "mapped_family": "resveratrol",
+      "mapping_status": "mapped_existing_family",
+      "category": "other",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "premium_form_low_factor_confidence",
+        "search_ref_heavy"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family resveratrol.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "rhodiola_rosea",
+      "display_name": "Rhodiola rosea",
+      "mapped_family": "rhodiola_rosea",
+      "mapping_status": "mapped_existing_family",
+      "category": "botanical",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 4,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "premium_form_low_factor_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family rhodiola_rosea.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "riboflavin",
+      "display_name": "Riboflavin",
+      "mapped_family": "riboflavin",
+      "mapping_status": "mapped_existing_family",
+      "category": "vitamin",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "search_ref_heavy"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family riboflavin.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion."
+      ]
+    },
+    {
+      "source_ingredient_id": "royal_jelly",
+      "display_name": "Royal Jelly",
+      "mapped_family": "royal_jelly",
+      "mapping_status": "mapped_existing_family",
+      "category": "botanical",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "premium_form_low_factor_confidence",
+        "search_ref_heavy"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family royal_jelly.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "saffron_extract",
+      "display_name": "Saffron Extract",
+      "mapped_family": "saffron_extract",
+      "mapping_status": "mapped_existing_family",
+      "category": "botanical",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "premium_form_low_factor_confidence",
+        "search_ref_heavy"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family saffron_extract.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "same",
+      "display_name": "SAMe",
+      "mapped_family": "same",
+      "mapping_status": "mapped_existing_family",
+      "category": "other",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 6,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "premium_form_low_factor_confidence",
+        "search_ref_heavy"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family same.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "saw_palmetto",
+      "display_name": "Saw palmetto",
+      "mapped_family": "saw_palmetto",
+      "mapping_status": "mapped_existing_family",
+      "category": "botanical",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 4,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family saw_palmetto.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "schisandra_chinensis",
+      "display_name": "Schisandra Chinensis",
+      "mapped_family": "schisandra_chinensis",
+      "mapping_status": "mapped_existing_family",
+      "category": "botanical",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "premium_form_low_factor_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family schisandra_chinensis.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "selenium",
+      "display_name": "Selenium",
+      "mapped_family": "selenium",
+      "mapping_status": "mapped_existing_family",
+      "category": "mineral",
+      "forms_count": 4,
+      "evidence_count": 3,
+      "refs_count": 6,
+      "coverage_gap_flags": [
+        "search_ref_heavy"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family selenium.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion."
+      ]
+    },
+    {
+      "source_ingredient_id": "serrapeptase",
+      "display_name": "Serrapeptase",
+      "mapped_family": "serrapeptase",
+      "mapping_status": "mapped_existing_family",
+      "category": "enzyme",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "premium_form_low_factor_confidence",
+        "search_ref_heavy"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family serrapeptase.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "shilajit",
+      "display_name": "Shilajit",
+      "mapped_family": "shilajit",
+      "mapping_status": "mapped_existing_family",
+      "category": "botanical",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "premium_form_low_factor_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family shilajit.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "slippery_elm",
+      "display_name": "Slippery elm",
+      "mapped_family": "slippery_elm",
+      "mapping_status": "mapped_existing_family",
+      "category": "botanical",
+      "forms_count": 4,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family slippery_elm."
+      ]
+    },
+    {
+      "source_ingredient_id": "spermidine",
+      "display_name": "Spermidine",
+      "mapped_family": "spermidine",
+      "mapping_status": "mapped_existing_family",
+      "category": "other",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "premium_form_low_factor_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family spermidine.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "spirulina",
+      "display_name": "Spirulina",
+      "mapped_family": "spirulina",
+      "mapping_status": "mapped_existing_family",
+      "category": "other",
+      "forms_count": 4,
+      "evidence_count": 3,
+      "refs_count": 4,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "premium_form_low_factor_confidence",
+        "search_ref_heavy"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family spirulina.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "st_john_s_wort",
+      "display_name": "St. John's Wort",
+      "mapped_family": "st_john_s_wort",
+      "mapping_status": "mapped_existing_family",
+      "category": "botanical",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 8,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "search_ref_heavy"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family st_john_s_wort.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "stinging_nettle_root",
+      "display_name": "Stinging Nettle Root",
+      "mapped_family": "stinging_nettle_root",
+      "mapping_status": "mapped_existing_family",
+      "category": "botanical",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "premium_form_low_factor_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family stinging_nettle_root.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "taurine",
+      "display_name": "Taurine",
+      "mapped_family": "taurine",
+      "mapping_status": "mapped_existing_family",
+      "category": "amino_acid",
+      "forms_count": 2,
+      "evidence_count": 3,
+      "refs_count": 4,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family taurine.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "tocotrienols",
+      "display_name": "Tocotrienols",
+      "mapped_family": "tocotrienols",
+      "mapping_status": "mapped_existing_family",
+      "category": "lipid",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "premium_form_low_factor_confidence",
+        "search_ref_heavy"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family tocotrienols.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "tongkat_ali",
+      "display_name": "Tongkat Ali",
+      "mapped_family": "tongkat_ali",
+      "mapping_status": "mapped_existing_family",
+      "category": "botanical",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "premium_form_low_factor_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family tongkat_ali.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "tribulus_terrestris",
+      "display_name": "Tribulus Terrestris",
+      "mapped_family": "tribulus_terrestris",
+      "mapping_status": "mapped_existing_family",
+      "category": "botanical",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "premium_form_low_factor_confidence",
+        "search_ref_heavy"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family tribulus_terrestris.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "turkey_tail_mushroom",
+      "display_name": "Turkey Tail Mushroom",
+      "mapped_family": "turkey_tail_mushroom",
+      "mapping_status": "mapped_existing_family",
+      "category": "botanical",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "premium_form_low_factor_confidence",
+        "search_ref_heavy"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family turkey_tail_mushroom.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "urolithin_a",
+      "display_name": "Urolithin A",
+      "mapped_family": "urolithin_a",
+      "mapping_status": "mapped_existing_family",
+      "category": "other",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "premium_form_low_factor_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family urolithin_a.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "valerian",
+      "display_name": "Valerian",
+      "mapped_family": "valerian",
+      "mapping_status": "mapped_existing_family",
+      "category": "botanical",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "search_ref_heavy"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family valerian.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "vitamin_a",
+      "display_name": "Vitamin A",
+      "mapped_family": "vitamin_a",
+      "mapping_status": "mapped_existing_family",
+      "category": "vitamin",
+      "forms_count": 4,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family vitamin_a."
+      ]
+    },
+    {
+      "source_ingredient_id": "vitamin_c",
+      "display_name": "Vitamin C",
+      "mapped_family": "vitamin_c",
+      "mapping_status": "mapped_existing_family",
+      "category": "vitamin",
+      "forms_count": 7,
+      "evidence_count": 3,
+      "refs_count": 7,
+      "coverage_gap_flags": [
+        "premium_form_low_factor_confidence"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family vitamin_c."
+      ]
+    },
+    {
+      "source_ingredient_id": "vitamin_d",
+      "display_name": "Vitamin D",
+      "mapped_family": "vitamin_d",
+      "mapping_status": "mapped_existing_family",
+      "category": "vitamin",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "premium_form_low_factor_confidence",
+        "search_ref_heavy"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family vitamin_d.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion."
+      ]
+    },
+    {
+      "source_ingredient_id": "vitamin_e",
+      "display_name": "Vitamin E",
+      "mapped_family": "vitamin_e",
+      "mapping_status": "mapped_existing_family",
+      "category": "vitamin",
+      "forms_count": 6,
+      "evidence_count": 3,
+      "refs_count": 7,
+      "coverage_gap_flags": [
+        "search_ref_heavy"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family vitamin_e.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion."
+      ]
+    },
+    {
+      "source_ingredient_id": "vitamin_k2",
+      "display_name": "Vitamin K2",
+      "mapped_family": "vitamin_k2",
+      "mapping_status": "mapped_existing_family",
+      "category": "vitamin",
+      "forms_count": 4,
+      "evidence_count": 3,
+      "refs_count": 8,
+      "coverage_gap_flags": [
+        "search_ref_heavy"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family vitamin_k2.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion."
+      ]
+    },
+    {
+      "source_ingredient_id": "vitex",
+      "display_name": "Vitex",
+      "mapped_family": "vitex",
+      "mapping_status": "mapped_existing_family",
+      "category": "botanical",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "premium_form_low_factor_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family vitex.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "white_willow_bark",
+      "display_name": "White Willow Bark",
+      "mapped_family": "white_willow_bark",
+      "mapping_status": "mapped_existing_family",
+      "category": "botanical",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "premium_form_low_factor_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family white_willow_bark.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "yeast_beta_glucan",
+      "display_name": "Yeast Beta-Glucan",
+      "mapped_family": "fiber",
+      "mapping_status": "mapped_existing_family",
+      "category": "nutrient",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "premium_form_low_factor_confidence",
+        "search_ref_heavy"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family fiber.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "zinc",
+      "display_name": "Zinc",
+      "mapped_family": "zinc",
+      "mapping_status": "mapped_existing_family",
+      "category": "mineral",
+      "forms_count": 9,
+      "evidence_count": 3,
+      "refs_count": 7,
+      "coverage_gap_flags": [
+        "premium_form_low_factor_confidence"
+      ],
+      "proposed_priority": "P0",
+      "notes": [
+        "Mapped to runtime family zinc."
+      ]
+    },
+    {
+      "source_ingredient_id": "bacillus_coagulans",
+      "display_name": "Bacillus coagulans",
+      "mapped_family": "probiotic_or_blend",
+      "mapping_status": "mapped_existing_family",
+      "category": "other",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "premium_form_low_factor_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook",
+        "backlog_only_runtime_family"
+      ],
+      "proposed_priority": "P1",
+      "notes": [
+        "Mapped to runtime family probiotic_or_blend.",
+        "Keep in backlog for this wave; do not productize directly.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "bacillus_subtilis",
+      "display_name": "Bacillus subtilis",
+      "mapped_family": "probiotic_or_blend",
+      "mapping_status": "mapped_existing_family",
+      "category": "other",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "premium_form_low_factor_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook",
+        "backlog_only_runtime_family"
+      ],
+      "proposed_priority": "P1",
+      "notes": [
+        "Mapped to runtime family probiotic_or_blend.",
+        "Keep in backlog for this wave; do not productize directly.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "bifidobacterium_lactis",
+      "display_name": "Bifidobacterium lactis",
+      "mapped_family": "probiotic_or_blend",
+      "mapping_status": "mapped_existing_family",
+      "category": "other",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "premium_form_low_factor_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook",
+        "backlog_only_runtime_family"
+      ],
+      "proposed_priority": "P1",
+      "notes": [
+        "Mapped to runtime family probiotic_or_blend.",
+        "Keep in backlog for this wave; do not productize directly.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "carnosine",
+      "display_name": "Carnosine",
+      "mapped_family": "carnosine",
+      "mapping_status": "mapped_existing_family",
+      "category": "amino_acid",
+      "forms_count": 2,
+      "evidence_count": 3,
+      "refs_count": 3,
+      "coverage_gap_flags": [
+        "low_identity_confidence"
+      ],
+      "proposed_priority": "P1",
+      "notes": [
+        "Mapped to runtime family carnosine.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "collagen_peptides",
+      "display_name": "Collagen peptides",
+      "mapped_family": "collagen",
+      "mapping_status": "mapped_existing_family",
+      "category": "nutrient",
+      "forms_count": 6,
+      "evidence_count": 3,
+      "refs_count": 7,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook",
+        "backlog_only_runtime_family"
+      ],
+      "proposed_priority": "P1",
+      "notes": [
+        "Mapped to runtime family collagen.",
+        "Keep in backlog for this wave; do not productize directly.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "d_mannose",
+      "display_name": "D-Mannose",
+      "mapped_family": "d_mannose",
+      "mapping_status": "mapped_existing_family",
+      "category": "other",
+      "forms_count": 2,
+      "evidence_count": 3,
+      "refs_count": 3,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "proposed_priority": "P1",
+      "notes": [
+        "Mapped to runtime family d_mannose.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "gaba",
+      "display_name": "GABA",
+      "mapped_family": "gaba",
+      "mapping_status": "mapped_existing_family",
+      "category": "other",
+      "forms_count": 2,
+      "evidence_count": 3,
+      "refs_count": 3,
+      "coverage_gap_flags": [
+        "low_identity_confidence"
+      ],
+      "proposed_priority": "P1",
+      "notes": [
+        "Mapped to runtime family gaba.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "glycine",
+      "display_name": "Glycine",
+      "mapped_family": "glycine",
+      "mapping_status": "mapped_existing_family",
+      "category": "amino_acid",
+      "forms_count": 2,
+      "evidence_count": 3,
+      "refs_count": 3,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "proposed_priority": "P1",
+      "notes": [
+        "Mapped to runtime family glycine.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "iodine",
+      "display_name": "Iodine",
+      "mapped_family": "iodine",
+      "mapping_status": "mapped_existing_family",
+      "category": "mineral",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 2,
+      "coverage_gap_flags": [],
+      "proposed_priority": "P1",
+      "notes": [
+        "Mapped to runtime family iodine."
+      ]
+    },
+    {
+      "source_ingredient_id": "l_glutamine",
+      "display_name": "L-Glutamine",
+      "mapped_family": "l_glutamine",
+      "mapping_status": "mapped_existing_family",
+      "category": "amino_acid",
+      "forms_count": 2,
+      "evidence_count": 3,
+      "refs_count": 3,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "proposed_priority": "P1",
+      "notes": [
+        "Mapped to runtime family l_glutamine.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "l_lysine",
+      "display_name": "L-Lysine",
+      "mapped_family": "l_lysine",
+      "mapping_status": "mapped_existing_family",
+      "category": "amino_acid",
+      "forms_count": 2,
+      "evidence_count": 3,
+      "refs_count": 3,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "proposed_priority": "P1",
+      "notes": [
+        "Mapped to runtime family l_lysine.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "l_tyrosine",
+      "display_name": "L-Tyrosine",
+      "mapped_family": "l_tyrosine",
+      "mapping_status": "mapped_existing_family",
+      "category": "amino_acid",
+      "forms_count": 2,
+      "evidence_count": 3,
+      "refs_count": 3,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook"
+      ],
+      "proposed_priority": "P1",
+      "notes": [
+        "Mapped to runtime family l_tyrosine.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "lactobacillus",
+      "display_name": "Lactobacillus",
+      "mapped_family": "probiotic_or_blend",
+      "mapping_status": "mapped_existing_family",
+      "category": "nutrient",
+      "forms_count": 4,
+      "evidence_count": 3,
+      "refs_count": 6,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "premium_form_low_factor_confidence",
+        "search_ref_heavy",
+        "backlog_only_runtime_family"
+      ],
+      "proposed_priority": "P1",
+      "notes": [
+        "Mapped to runtime family probiotic_or_blend.",
+        "Keep in backlog for this wave; do not productize directly.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "manganese",
+      "display_name": "Manganese",
+      "mapped_family": "manganese",
+      "mapping_status": "mapped_existing_family",
+      "category": "mineral",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 3,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "premium_form_low_factor_confidence"
+      ],
+      "proposed_priority": "P1",
+      "notes": [
+        "Mapped to runtime family manganese.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "molybdenum",
+      "display_name": "Molybdenum",
+      "mapped_family": "molybdenum",
+      "mapping_status": "mapped_existing_family",
+      "category": "mineral",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 3,
+      "coverage_gap_flags": [],
+      "proposed_priority": "P1",
+      "notes": [
+        "Mapped to runtime family molybdenum."
+      ]
+    },
+    {
+      "source_ingredient_id": "msm",
+      "display_name": "MSM",
+      "mapped_family": "msm",
+      "mapping_status": "mapped_existing_family",
+      "category": "other",
+      "forms_count": 2,
+      "evidence_count": 3,
+      "refs_count": 3,
+      "coverage_gap_flags": [
+        "low_identity_confidence"
+      ],
+      "proposed_priority": "P1",
+      "notes": [
+        "Mapped to runtime family msm.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "nicotinamide_riboside",
+      "display_name": "Nicotinamide Riboside",
+      "mapped_family": "nicotinamide_riboside",
+      "mapping_status": "mapped_existing_family",
+      "category": "other",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 1,
+      "coverage_gap_flags": [
+        "premium_form_low_factor_confidence"
+      ],
+      "proposed_priority": "P1",
+      "notes": [
+        "Mapped to runtime family nicotinamide_riboside."
+      ]
+    },
+    {
+      "source_ingredient_id": "potassium",
+      "display_name": "Potassium",
+      "mapped_family": "potassium",
+      "mapping_status": "mapped_existing_family",
+      "category": "mineral",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 2,
+      "coverage_gap_flags": [],
+      "proposed_priority": "P1",
+      "notes": [
+        "Mapped to runtime family potassium."
+      ]
+    },
+    {
+      "source_ingredient_id": "saccharomyces_boulardii",
+      "display_name": "Saccharomyces boulardii",
+      "mapped_family": "probiotic_or_blend",
+      "mapping_status": "mapped_existing_family",
+      "category": "other",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 5,
+      "coverage_gap_flags": [
+        "low_identity_confidence",
+        "premium_form_low_factor_confidence",
+        "search_ref_heavy",
+        "no_verified_refs_in_workbook",
+        "backlog_only_runtime_family"
+      ],
+      "proposed_priority": "P1",
+      "notes": [
+        "Mapped to runtime family probiotic_or_blend.",
+        "Keep in backlog for this wave; do not productize directly.",
+        "Workbook evidence is search-link heavy; LSR verification is required before promotion.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    },
+    {
+      "source_ingredient_id": "thiamin",
+      "display_name": "Thiamin",
+      "mapped_family": "thiamin",
+      "mapping_status": "mapped_existing_family",
+      "category": "vitamin",
+      "forms_count": 3,
+      "evidence_count": 3,
+      "refs_count": 2,
+      "coverage_gap_flags": [
+        "premium_form_low_factor_confidence"
+      ],
+      "proposed_priority": "P1",
+      "notes": [
+        "Mapped to runtime family thiamin."
+      ]
+    },
+    {
+      "source_ingredient_id": "vitamin_b12",
+      "display_name": "Vitamin B12",
+      "mapped_family": "b12",
+      "mapping_status": "mapped_existing_family",
+      "category": "vitamin",
+      "forms_count": 4,
+      "evidence_count": 3,
+      "refs_count": 3,
+      "coverage_gap_flags": [],
+      "proposed_priority": "P1",
+      "notes": [
+        "Mapped to runtime family b12."
+      ]
+    },
+    {
+      "source_ingredient_id": "vitamin_b6",
+      "display_name": "Vitamin B6",
+      "mapped_family": "b6",
+      "mapping_status": "mapped_existing_family",
+      "category": "vitamin",
+      "forms_count": 2,
+      "evidence_count": 3,
+      "refs_count": 3,
+      "coverage_gap_flags": [],
+      "proposed_priority": "P1",
+      "notes": [
+        "Mapped to runtime family b6."
+      ]
+    },
+    {
+      "source_ingredient_id": "vitamin_k1",
+      "display_name": "Vitamin K1",
+      "mapped_family": "vitamin_k1",
+      "mapping_status": "mapped_existing_family",
+      "category": "vitamin",
+      "forms_count": 2,
+      "evidence_count": 3,
+      "refs_count": 2,
+      "coverage_gap_flags": [],
+      "proposed_priority": "P1",
+      "notes": [
+        "Mapped to runtime family vitamin_k1."
+      ]
+    },
+    {
+      "source_ingredient_id": "zeaxanthin",
+      "display_name": "Zeaxanthin",
+      "mapped_family": "zeaxanthin",
+      "mapping_status": "mapped_existing_family",
+      "category": "other",
+      "forms_count": 2,
+      "evidence_count": 3,
+      "refs_count": 3,
+      "coverage_gap_flags": [
+        "low_identity_confidence"
+      ],
+      "proposed_priority": "P1",
+      "notes": [
+        "Mapped to runtime family zeaxanthin.",
+        "Identity confidence is low in workbook coverage; keep crosswalk conservative."
+      ]
+    }
+  ]
+}

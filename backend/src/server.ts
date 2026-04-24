@@ -118,8 +118,28 @@ import {
   isOnlyInferredLnhpdDigestActives,
 } from "./lnhpd/inferredActives.js";
 import { factsDtoSchemaV2 } from "./insights/scanInsightsSchema.js";
-import { buildIngredientScienceContext } from "./ingredientScienceContext.js";
+import {
+  compileIngredientOverviewAsync,
+  type IngredientOverviewCompileDiagnostics,
+  INGREDIENT_OVERVIEW_PROMPT_VERSION,
+  resolveIngredientOverviewExecutionProfile,
+} from "./insights/ingredientOverviewCompiler.js";
+import {
+  compileScientificBackgroundAsync,
+  planScientificBackgroundSections,
+  resolveScientificBackgroundExecutionProfile,
+  SCIENTIFIC_BACKGROUND_PROMPT_VERSION,
+  type ScientificBackgroundCompileDiagnostics,
+} from "./insights/scientificBackgroundCompiler.js";
+import {
+  buildIngredientScienceContext,
+  normalizeIngredientScienceKey,
+} from "./ingredientScienceContext.js";
 import { normalizeIherbSupplementFactsRows } from "./iherbOverlayIngredients.js";
+import {
+  type SearchDetailDeepDiveSettled,
+  SearchDetailDeepDiveSectionRuntime,
+} from "./searchDetailDeepDiveAsync.js";
 import { getKbRuntime, lookupKbFormExplain, lookupKbRuntimeFormInsights } from "./kbRuntime.js";
 import { type LabelDraft } from "./labelTypes.js";
 import {
@@ -566,6 +586,64 @@ const RESILIENCE_LNHPD_SECOND_CHANCE_TIMEOUT_MS = Number(
 const RESILIENCE_GOOGLE_TIMEOUT_MS = Number(process.env.RESILIENCE_GOOGLE_TIMEOUT_MS ?? 2500);
 const RESILIENCE_DEEPSEEK_TIMEOUT_MS = Number(process.env.RESILIENCE_DEEPSEEK_TIMEOUT_MS ?? 10_000);
 const MY_SUPP_OVERVIEW_TIMEOUT_MS = Number(process.env.MY_SUPP_OVERVIEW_TIMEOUT_MS ?? 4_000);
+const SEARCH_DETAIL_INGREDIENT_RETRY_AFTER_MS = Number(
+  process.env.SEARCH_DETAIL_INGREDIENT_RETRY_AFTER_MS ??
+    process.env.SEARCH_DETAIL_DEEP_DIVE_RETRY_AFTER_MS ??
+    1_500,
+);
+const SEARCH_DETAIL_SCIENTIFIC_RETRY_AFTER_MS = Number(
+  process.env.SEARCH_DETAIL_SCIENTIFIC_RETRY_AFTER_MS ??
+    process.env.SEARCH_DETAIL_DEEP_DIVE_RETRY_AFTER_MS ??
+    2_000,
+);
+const SEARCH_DETAIL_INGREDIENT_BACKGROUND_TIMEOUT_MS = Number(
+  process.env.SEARCH_DETAIL_INGREDIENT_BACKGROUND_TIMEOUT_MS ?? 10_000,
+);
+const SEARCH_DETAIL_INGREDIENT_BACKGROUND_MAX_TOKENS = Number(
+  process.env.SEARCH_DETAIL_INGREDIENT_BACKGROUND_MAX_TOKENS ?? 280,
+);
+const SEARCH_DETAIL_INGREDIENT_BACKGROUND_MAX_INGREDIENT_ROWS = Number(
+  process.env.SEARCH_DETAIL_INGREDIENT_BACKGROUND_MAX_INGREDIENT_ROWS ?? 8,
+);
+const SEARCH_DETAIL_INGREDIENT_BACKGROUND_MAX_CO_INGREDIENTS = Number(
+  process.env.SEARCH_DETAIL_INGREDIENT_BACKGROUND_MAX_CO_INGREDIENTS ?? 2,
+);
+const SEARCH_DETAIL_INGREDIENT_BACKGROUND_MAX_RELATIONSHIP_CANDIDATES = Number(
+  process.env.SEARCH_DETAIL_INGREDIENT_BACKGROUND_MAX_RELATIONSHIP_CANDIDATES ??
+    1,
+);
+const SEARCH_DETAIL_SCIENTIFIC_BACKGROUND_TIMEOUT_MS = Number(
+  process.env.SEARCH_DETAIL_SCIENTIFIC_BACKGROUND_TIMEOUT_MS ?? 15_000,
+);
+const SEARCH_DETAIL_SCIENTIFIC_BACKGROUND_MAX_TOKENS = Number(
+  process.env.SEARCH_DETAIL_SCIENTIFIC_BACKGROUND_MAX_TOKENS ?? 280,
+);
+const SEARCH_DETAIL_SCIENTIFIC_BACKGROUND_MAX_PROMPT_SECTIONS = Number(
+  process.env.SEARCH_DETAIL_SCIENTIFIC_BACKGROUND_MAX_PROMPT_SECTIONS ?? 1,
+);
+const SEARCH_DETAIL_INGREDIENT_BACKGROUND_MAX_RETRIES = Number(
+  process.env.SEARCH_DETAIL_INGREDIENT_BACKGROUND_MAX_RETRIES ??
+    process.env.SEARCH_DETAIL_BACKGROUND_MAX_RETRIES ??
+    0,
+);
+const SEARCH_DETAIL_SCIENTIFIC_BACKGROUND_MAX_RETRIES = Number(
+  process.env.SEARCH_DETAIL_SCIENTIFIC_BACKGROUND_MAX_RETRIES ??
+    process.env.SEARCH_DETAIL_BACKGROUND_MAX_RETRIES ??
+    0,
+);
+const SEARCH_DETAIL_INGREDIENT_CACHE_LIMIT = Number(
+  process.env.SEARCH_DETAIL_INGREDIENT_CACHE_LIMIT ?? 120,
+);
+const SEARCH_DETAIL_INGREDIENT_FALLBACK_CACHE_TTL_MS = Number(
+  process.env.SEARCH_DETAIL_INGREDIENT_FALLBACK_CACHE_TTL_MS ?? 20_000,
+);
+const SEARCH_DETAIL_SCIENTIFIC_BACKGROUND_CACHE_LIMIT = Number(
+  process.env.SEARCH_DETAIL_SCIENTIFIC_BACKGROUND_CACHE_LIMIT ?? 120,
+);
+const SEARCH_DETAIL_SCIENTIFIC_BACKGROUND_FALLBACK_CACHE_TTL_MS = Number(
+  process.env.SEARCH_DETAIL_SCIENTIFIC_BACKGROUND_FALLBACK_CACHE_TTL_MS ??
+    20_000,
+);
 const RESILIENCE_DEEPSEEK_BACKGROUND_BUDGET_MS = Number(
   process.env.RESILIENCE_DEEPSEEK_BACKGROUND_BUDGET_MS ?? 12_000,
 );
@@ -986,6 +1064,28 @@ const deepseekSemaphore = new Semaphore(RESILIENCE_DEEPSEEK_CONCURRENCY);
 const deepseekDsldMinimalSemaphore = new Semaphore(RESILIENCE_DEEPSEEK_DSLD_MIN_CONCURRENCY);
 const contextFetchSemaphore = new Semaphore(RESILIENCE_CONTEXT_FETCH_CONCURRENCY);
 const supabaseReadSemaphore = new Semaphore(RESILIENCE_SUPABASE_READ_CONCURRENCY);
+
+const searchDetailIngredientRuntime = new SearchDetailDeepDiveSectionRuntime<
+  Awaited<
+    ReturnType<typeof compileIngredientOverviewAsync>
+  >["ingredientOverview"],
+  IngredientOverviewCompileDiagnostics
+>({
+  cacheLimit: SEARCH_DETAIL_INGREDIENT_CACHE_LIMIT,
+  fallbackTtlMs: SEARCH_DETAIL_INGREDIENT_FALLBACK_CACHE_TTL_MS,
+  recommendedRetryAfterMs: SEARCH_DETAIL_INGREDIENT_RETRY_AFTER_MS,
+});
+
+const searchDetailScientificRuntime = new SearchDetailDeepDiveSectionRuntime<
+  Awaited<
+    ReturnType<typeof compileScientificBackgroundAsync>
+  >["scientificBackground"],
+  ScientificBackgroundCompileDiagnostics
+>({
+  cacheLimit: SEARCH_DETAIL_SCIENTIFIC_BACKGROUND_CACHE_LIMIT,
+  fallbackTtlMs: SEARCH_DETAIL_SCIENTIFIC_BACKGROUND_FALLBACK_CACHE_TTL_MS,
+  recommendedRetryAfterMs: SEARCH_DETAIL_SCIENTIFIC_RETRY_AFTER_MS,
+});
 
 const googleBreaker = new CircuitBreaker({
   windowMs: RESILIENCE_BREAKER_WINDOW_MS,
@@ -9455,6 +9555,63 @@ const kbFormInsightsBatchBodySchema = z
     items: value.items?.length ? value.items : (value.requests ?? []),
   }));
 
+const buildDeepseekJsonLlmFn = (params: {
+  deepseekKey: string | null;
+  deepseekModel: string;
+  timeoutMs: number;
+  maxTokens: number;
+}): ((prompt: string) => Promise<string>) | undefined => {
+  if (!params.deepseekKey) return undefined;
+
+  return async (prompt: string): Promise<string> => {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), params.timeoutMs);
+    try {
+      const response = await fetch(
+        "https://api.deepseek.com/v1/chat/completions",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${params.deepseekKey}`,
+          },
+          body: JSON.stringify({
+            model: params.deepseekModel,
+            messages: [
+              {
+                role: "system",
+                content:
+                  "Return ONLY a valid JSON object. No markdown. No commentary. No code fences.",
+              },
+              { role: "user", content: prompt },
+            ],
+            temperature: 0.1,
+            stream: false,
+            max_tokens: params.maxTokens,
+            response_format: { type: "json_object" },
+          }),
+          signal: controller.signal,
+        },
+      );
+
+      if (!response.ok) {
+        throw new Error(`deepseek_http_${response.status}`);
+      }
+
+      const payload = (await response.json()) as {
+        choices?: Array<{ message?: { content?: string } }>;
+      };
+      const content = payload.choices?.[0]?.message?.content;
+      if (typeof content !== "string" || content.trim().length === 0) {
+        throw new Error("deepseek_empty_content");
+      }
+      return content;
+    } finally {
+      clearTimeout(timer);
+    }
+  };
+};
+
 // ============================================================================
 // ENDPOINTS
 // ============================================================================
@@ -9564,6 +9721,497 @@ app.get("/api/search/bootstrap", async (_req: Request, res: Response) => {
       success: false,
       message: "Search bootstrap temporarily unavailable",
     });
+  }
+});
+
+type SearchDetailLlmDiagnostics = {
+  liveWriterConfigured: boolean;
+  liveWriterAttempted: boolean;
+  liveWriterHit: boolean;
+  attemptCount: number;
+  timeoutMs: number;
+  maxRetries: number;
+  fallbackReason: string | null;
+  lastError: string | null;
+  parseFailureSnippet: string | null;
+  gateRejectSnippet: string | null;
+  gateRejectReasons: string[];
+  parseFailureCount: number;
+  gateRejectCount: number;
+  timeoutCount: number;
+  errorCount: number;
+};
+
+const parseSearchDetailRevalidateFallback = (value: unknown): boolean => {
+  const values = Array.isArray(value) ? value : [value];
+  return values.some((entry) => {
+    if (typeof entry !== "string") return false;
+    const normalized = entry.trim().toLowerCase();
+    return normalized === "1" || normalized === "true" || normalized === "yes";
+  });
+};
+
+const normalizeSearchDetailDiagnostics = (
+  diagnostics: Partial<SearchDetailLlmDiagnostics> | null | undefined,
+  defaults: {
+    timeoutMs: number;
+    maxRetries: number;
+    liveWriterConfigured: boolean;
+  },
+): SearchDetailLlmDiagnostics => ({
+  liveWriterConfigured:
+    diagnostics?.liveWriterConfigured ?? defaults.liveWriterConfigured,
+  liveWriterAttempted: diagnostics?.liveWriterAttempted ?? false,
+  liveWriterHit: diagnostics?.liveWriterHit ?? false,
+  attemptCount: diagnostics?.attemptCount ?? 0,
+  timeoutMs: diagnostics?.timeoutMs ?? defaults.timeoutMs,
+  maxRetries: diagnostics?.maxRetries ?? defaults.maxRetries,
+  fallbackReason: diagnostics?.fallbackReason ?? null,
+  lastError: diagnostics?.lastError ?? null,
+  parseFailureSnippet: diagnostics?.parseFailureSnippet ?? null,
+  gateRejectSnippet: diagnostics?.gateRejectSnippet ?? null,
+  gateRejectReasons: diagnostics?.gateRejectReasons ?? [],
+  parseFailureCount: diagnostics?.parseFailureCount ?? 0,
+  gateRejectCount: diagnostics?.gateRejectCount ?? 0,
+  timeoutCount: diagnostics?.timeoutCount ?? 0,
+  errorCount: diagnostics?.errorCount ?? 0,
+});
+
+app.get("/api/search/product-detail", async (req: Request, res: Response) => {
+  const productId =
+    typeof req.query.productId === "string" ? req.query.productId.trim() : "";
+  if (!productId) {
+    return res.status(400).json({
+      error: "invalid_request",
+      detail: "productId is required",
+    } satisfies ErrorResponse);
+  }
+  const revalidateFallback = parseSearchDetailRevalidateFallback(
+    req.query.revalidateFallback,
+  );
+
+  try {
+    const { data, error } = await supabase
+      .from("iherb_overlay_products")
+      .select(
+        "product_id,upc_code,barcode_gtin14,brand_name,title,link,product_catalog_image,product_images,categories,supplement_facts,serving,description_sections,source_zip_path,updated_at",
+      )
+      .eq("product_id", productId)
+      .order("updated_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (error) {
+      throw new Error(error.message);
+    }
+    if (!data) {
+      return res.status(404).json({
+        error: "not_found",
+        detail: "search product detail not found",
+      } satisfies ErrorResponse);
+    }
+
+    const overlayClaims = toDecisionSupportOverlayClaims(
+      data as Record<string, unknown>,
+    );
+    const normalizeSearchDetailText = (
+      value: string | null | undefined,
+    ): string =>
+      String(value ?? "")
+        .replace(/\s+/g, " ")
+        .trim();
+    const overlayFactLines = (overlayClaims.nutritionalFacts ?? [])
+      .map((fact) =>
+        [fact.substancy, fact.amountPerServing].filter(Boolean).join(" "),
+      )
+      .map((line) => normalizeSearchDetailText(line))
+      .filter(Boolean);
+    const ingredientText =
+      overlayFactLines.length > 0
+        ? overlayFactLines.join("\n")
+        : normalizeSearchDetailText(overlayClaims.otherIngredients);
+    const canonicalDomain = (() => {
+      if (!overlayClaims.link) return null;
+      try {
+        return new URL(overlayClaims.link).hostname;
+      } catch {
+        return null;
+      }
+    })();
+    const digest = buildFactsDigestFromWeb({
+      facts: {
+        barcode:
+          overlayClaims.barcodeGtin14 ??
+          overlayClaims.upcCode ??
+          overlayClaims.productId ??
+          productId,
+        canonical: {
+          name: overlayClaims.title,
+          brand: overlayClaims.brandName,
+          url: overlayClaims.link,
+          domain: canonicalDomain,
+        },
+        identifiers: {},
+        textFacts: {
+          ingredientsText: ingredientText || null,
+          directionsText:
+            normalizeSearchDetailText(overlayClaims.suggestedUse) || null,
+          warningsText:
+            normalizeSearchDetailText(overlayClaims.warnings) || null,
+          servingSizeText:
+            normalizeSearchDetailText(overlayClaims.servingSize) || null,
+        },
+        coverageScore: 100,
+        missingFields: [],
+      },
+      identityType: "webCanonicalId",
+      identityValue: overlayClaims.productId ?? productId,
+    });
+    const factsDigestHash = computeFactsDigestHash(digest);
+    const decisionSupport = compileDecisionSupport({
+      digest,
+      factsDigestHash,
+      viewMode: "details",
+      locale: "en",
+      flagsSnapshot: collectDecisionSupportFlagsSnapshot(),
+      patchActivation: null,
+      overlayClaims,
+      allergyContext: null,
+      personalizationContext: null,
+    });
+    const ingredientScienceContext = buildIngredientScienceContext({
+      digest,
+      overlayClaims,
+    });
+    const selectedDescriptor =
+      ingredientScienceContext.ingredientDescriptors[0] ??
+      (ingredientScienceContext.anchorIngredient
+        ? (ingredientScienceContext.ingredientDescriptors.find(
+            (descriptor) =>
+              descriptor.name ===
+              ingredientScienceContext.anchorIngredient?.name,
+          ) ?? null)
+        : null);
+    const defaultRow =
+      decisionSupport.scienceBlock?.ingredientRows?.[0] ?? null;
+    const selectedScientificName =
+      normalizeSearchDetailText(
+        selectedDescriptor?.name ??
+          defaultRow?.name ??
+          ingredientScienceContext.anchorIngredient?.name ??
+          overlayClaims.title ??
+          "Supplement label context",
+      ) || "Supplement label context";
+
+    const ingredientOverviewExecutionProfile =
+      resolveIngredientOverviewExecutionProfile(ingredientScienceContext);
+    const scientificBackgroundPlan = planScientificBackgroundSections({
+      context: ingredientScienceContext,
+      selectedIngredientName: selectedScientificName,
+    });
+    const scientificBackgroundExecutionProfile =
+      resolveScientificBackgroundExecutionProfile(scientificBackgroundPlan);
+    const searchDetailScientificPromptSections =
+      scientificBackgroundPlan.mode === "research_mode"
+        ? Math.max(1, SEARCH_DETAIL_SCIENTIFIC_BACKGROUND_MAX_PROMPT_SECTIONS)
+        : 1;
+    const deepseekKey = process.env.DEEPSEEK_API_KEY?.trim() || null;
+    const deepseekModel = process.env.DEEPSEEK_MODEL?.trim() || "deepseek-chat";
+    const searchDetailIngredientBackgroundMaxRetries = Math.max(
+      0,
+      SEARCH_DETAIL_INGREDIENT_BACKGROUND_MAX_RETRIES,
+    );
+    const searchDetailScientificBackgroundMaxRetries = Math.max(
+      0,
+      SEARCH_DETAIL_SCIENTIFIC_BACKGROUND_MAX_RETRIES,
+    );
+    const ingredientBackgroundLlmFn = deepseekKey
+      ? buildDeepseekJsonLlmFn({
+          deepseekKey,
+          deepseekModel,
+          timeoutMs: SEARCH_DETAIL_INGREDIENT_BACKGROUND_TIMEOUT_MS,
+          maxTokens: Math.min(
+            ingredientOverviewExecutionProfile.maxTokens,
+            SEARCH_DETAIL_INGREDIENT_BACKGROUND_MAX_TOKENS,
+          ),
+        })
+      : null;
+
+    const ingredientCacheKey = [
+      overlayClaims.productId ?? productId,
+      decisionSupport.digest,
+      decisionSupport.decisionInputsHash,
+      INGREDIENT_OVERVIEW_PROMPT_VERSION,
+    ].join("|");
+    const ingredientOverviewResult =
+      await searchDetailIngredientRuntime.resolve({
+        cacheKey: ingredientCacheKey,
+        revalidateFallback,
+        backgroundRefreshEnabled: Boolean(ingredientBackgroundLlmFn),
+        computeFallback: async (): Promise<
+          SearchDetailDeepDiveSettled<
+            Awaited<
+              ReturnType<typeof compileIngredientOverviewAsync>
+            >["ingredientOverview"],
+            IngredientOverviewCompileDiagnostics
+          >
+        > => {
+          const compiled = await compileIngredientOverviewAsync(
+            ingredientScienceContext,
+            {
+              timeoutMs: ingredientOverviewExecutionProfile.timeoutMs,
+              maxRetries: 0,
+            },
+          );
+          const diagnostics = normalizeSearchDetailDiagnostics(
+            compiled.diagnostics,
+            {
+              timeoutMs: ingredientOverviewExecutionProfile.timeoutMs,
+              maxRetries: 0,
+              liveWriterConfigured: false,
+            },
+          );
+          return {
+            payload: compiled.ingredientOverview,
+            source: compiled.source,
+            diagnostics,
+            fallbackUsed: compiled.fallbackUsed,
+            fallbackReason: diagnostics.fallbackReason,
+            promptVersion: compiled.promptVersion,
+          };
+        },
+        scheduleBackgroundRefresh:
+          async (): Promise<SearchDetailDeepDiveSettled<
+            Awaited<
+              ReturnType<typeof compileIngredientOverviewAsync>
+            >["ingredientOverview"],
+            IngredientOverviewCompileDiagnostics
+          > | null> => {
+            if (!ingredientBackgroundLlmFn) return null;
+            let compiled = await compileIngredientOverviewAsync(
+              ingredientScienceContext,
+              {
+                llmFn: ingredientBackgroundLlmFn,
+                timeoutMs: SEARCH_DETAIL_INGREDIENT_BACKGROUND_TIMEOUT_MS,
+                maxRetries: searchDetailIngredientBackgroundMaxRetries,
+                forceCompactPrompt: true,
+                maxIngredientRows:
+                  SEARCH_DETAIL_INGREDIENT_BACKGROUND_MAX_INGREDIENT_ROWS,
+                maxCoIngredients:
+                  SEARCH_DETAIL_INGREDIENT_BACKGROUND_MAX_CO_INGREDIENTS,
+                maxRelationshipCandidates:
+                  SEARCH_DETAIL_INGREDIENT_BACKGROUND_MAX_RELATIONSHIP_CANDIDATES,
+              },
+            );
+            const diagnostics = normalizeSearchDetailDiagnostics(
+              compiled.diagnostics,
+              {
+                timeoutMs: SEARCH_DETAIL_INGREDIENT_BACKGROUND_TIMEOUT_MS,
+                maxRetries: searchDetailIngredientBackgroundMaxRetries,
+                liveWriterConfigured: true,
+              },
+            );
+            return {
+              payload: compiled.ingredientOverview,
+              source: compiled.source,
+              diagnostics,
+              fallbackUsed: compiled.fallbackUsed,
+              fallbackReason: diagnostics.fallbackReason,
+              promptVersion: compiled.promptVersion,
+            };
+          },
+        resolveTtlMs: (settled) =>
+          settled.source === "api"
+            ? ingredientOverviewExecutionProfile.cacheTtlMs
+            : SEARCH_DETAIL_INGREDIENT_FALLBACK_CACHE_TTL_MS,
+      });
+
+    const selectedScientificKey =
+      normalizeIngredientScienceKey(selectedScientificName) ||
+      normalizeSearchDetailText(selectedScientificName).toLowerCase();
+    const scientificCacheKey = [
+      overlayClaims.productId ?? productId,
+      decisionSupport.digest,
+      decisionSupport.decisionInputsHash,
+      selectedScientificKey || "scientific",
+      scientificBackgroundPlan.mode,
+      SCIENTIFIC_BACKGROUND_PROMPT_VERSION,
+    ].join("|");
+    const scientificBackgroundLlmFn = deepseekKey
+      ? buildDeepseekJsonLlmFn({
+          deepseekKey,
+          deepseekModel,
+          timeoutMs: SEARCH_DETAIL_SCIENTIFIC_BACKGROUND_TIMEOUT_MS,
+          maxTokens: Math.min(
+            scientificBackgroundExecutionProfile.maxTokens,
+            SEARCH_DETAIL_SCIENTIFIC_BACKGROUND_MAX_TOKENS,
+          ),
+        })
+      : null;
+    const scientificBackgroundResult =
+      await searchDetailScientificRuntime.resolve({
+        cacheKey: scientificCacheKey,
+        revalidateFallback,
+        backgroundRefreshEnabled: Boolean(scientificBackgroundLlmFn),
+        computeFallback: async (): Promise<
+          SearchDetailDeepDiveSettled<
+            Awaited<
+              ReturnType<typeof compileScientificBackgroundAsync>
+            >["scientificBackground"],
+            ScientificBackgroundCompileDiagnostics
+          >
+        > => {
+          const compiled = await compileScientificBackgroundAsync(
+            ingredientScienceContext,
+            selectedScientificName,
+            {
+              timeoutMs: scientificBackgroundExecutionProfile.timeoutMs,
+              maxRetries: 0,
+            },
+          );
+          const diagnostics = normalizeSearchDetailDiagnostics(
+            compiled.diagnostics,
+            {
+              timeoutMs: scientificBackgroundExecutionProfile.timeoutMs,
+              maxRetries: 0,
+              liveWriterConfigured: false,
+            },
+          );
+          return {
+            payload: compiled.scientificBackground,
+            source: compiled.source,
+            diagnostics,
+            fallbackUsed: compiled.fallbackUsed,
+            fallbackReason: diagnostics.fallbackReason,
+            promptVersion: compiled.promptVersion,
+          };
+        },
+        scheduleBackgroundRefresh:
+          async (): Promise<SearchDetailDeepDiveSettled<
+            Awaited<
+              ReturnType<typeof compileScientificBackgroundAsync>
+            >["scientificBackground"],
+            ScientificBackgroundCompileDiagnostics
+          > | null> => {
+            if (!scientificBackgroundLlmFn) return null;
+            let compiled = await compileScientificBackgroundAsync(
+              ingredientScienceContext,
+              selectedScientificName,
+              {
+                llmFn: scientificBackgroundLlmFn,
+                timeoutMs: SEARCH_DETAIL_SCIENTIFIC_BACKGROUND_TIMEOUT_MS,
+                maxRetries: searchDetailScientificBackgroundMaxRetries,
+                forceCompactPrompt: true,
+                maxPromptSections: searchDetailScientificPromptSections,
+              },
+            );
+            const diagnostics = normalizeSearchDetailDiagnostics(
+              compiled.diagnostics,
+              {
+                timeoutMs: SEARCH_DETAIL_SCIENTIFIC_BACKGROUND_TIMEOUT_MS,
+                maxRetries: searchDetailScientificBackgroundMaxRetries,
+                liveWriterConfigured: true,
+              },
+            );
+            return {
+              payload: compiled.scientificBackground,
+              source: compiled.source,
+              diagnostics,
+              fallbackUsed: compiled.fallbackUsed,
+              fallbackReason: diagnostics.fallbackReason,
+              promptVersion: compiled.promptVersion,
+            };
+          },
+        resolveTtlMs: (settled) =>
+          settled.source === "api"
+            ? scientificBackgroundExecutionProfile.cacheTtlMs
+            : SEARCH_DETAIL_SCIENTIFIC_BACKGROUND_FALLBACK_CACHE_TTL_MS,
+      });
+
+    const category = Array.isArray(overlayClaims.categories)
+      ? (overlayClaims.categories[0] ?? null)
+      : null;
+    const factsStatus = ingredientText
+      ? overlayFactLines.length > 0
+        ? "full"
+        : "partial"
+      : "none";
+
+    return res.json({
+      success: true,
+      data: {
+        product: {
+          productId: overlayClaims.productId ?? productId,
+          barcode: overlayClaims.barcodeGtin14 ?? null,
+          upcCode: overlayClaims.upcCode ?? null,
+          name: overlayClaims.title ?? "Supplement detail",
+          brand: overlayClaims.brandName ?? "Unknown brand",
+          category,
+          benefit: decisionSupport.overviewBlock?.bestForBullets?.[0] ?? null,
+          dose: defaultRow?.dose ?? null,
+          imageUrl: overlayClaims.imageUrl ?? null,
+          link: overlayClaims.link ?? null,
+          factsStatus,
+          coverageStatus:
+            factsStatus === "full"
+              ? "coverage_ready"
+              : "not_enough_structured_data",
+        },
+        defaultAnchor: {
+          name:
+            defaultRow?.name ??
+            ingredientScienceContext.anchorIngredient?.name ??
+            selectedScientificName ??
+            null,
+          dose:
+            defaultRow?.dose ??
+            ingredientScienceContext.anchorIngredient?.dose ??
+            null,
+          sourceTier:
+            decisionSupport.scienceBlock?.ingredientSourceTier ?? null,
+        },
+        nutriScoreCardV2: decisionSupport.nutriScoreCardV2,
+        personalizedResultLane: decisionSupport.personalizedResultLane,
+        topBlockers: decisionSupport.topBlockers,
+        overviewBlock: decisionSupport.overviewBlock,
+        scienceBlock: decisionSupport.scienceBlock,
+        ingredientOverview: ingredientOverviewResult.payload,
+        ingredientOverviewSource: ingredientOverviewResult.source,
+        ingredientOverviewDiagnostics: ingredientOverviewResult.diagnostics,
+        scientificBackground: scientificBackgroundResult.payload,
+        scientificBackgroundSource: scientificBackgroundResult.source,
+        scientificBackgroundDiagnostics: scientificBackgroundResult.diagnostics,
+        deepDiveAsync: {
+          ingredientOverview: {
+            backgroundRefreshPending:
+              ingredientOverviewResult.backgroundRefreshPending,
+            recommendedRetryAfterMs:
+              ingredientOverviewResult.recommendedRetryAfterMs,
+          },
+          scientificBackground: {
+            backgroundRefreshPending:
+              scientificBackgroundResult.backgroundRefreshPending,
+            recommendedRetryAfterMs:
+              scientificBackgroundResult.recommendedRetryAfterMs,
+          },
+        },
+        usageBlock: decisionSupport.usageBlock,
+        safetyBlock: decisionSupport.safetyBlock,
+        suggestedUse: overlayClaims.suggestedUse ?? null,
+        warnings: overlayClaims.warnings ?? null,
+        decisionDigest: decisionSupport.digest,
+      },
+    });
+  } catch (error) {
+    captureException(error, { route: "/api/search/product-detail" });
+    console.error("/api/search/product-detail unexpected error", error);
+    const detail =
+      error instanceof Error
+        ? `${error.name}: ${error.message}`
+        : String(error);
+    return res
+      .status(500)
+      .json({ error: "unexpected_error", detail } satisfies ErrorResponse);
   }
 });
 

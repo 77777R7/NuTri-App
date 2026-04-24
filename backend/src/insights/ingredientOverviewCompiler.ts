@@ -19,6 +19,22 @@ export type IngredientOverviewCompileResult = {
   source: "api" | "fallback";
   fallbackUsed: boolean;
   promptVersion: string;
+  diagnostics: IngredientOverviewCompileDiagnostics;
+};
+
+export type IngredientOverviewCompileDiagnostics = {
+  liveWriterConfigured: boolean;
+  liveWriterAttempted: boolean;
+  liveWriterHit: boolean;
+  attemptCount: number;
+  timeoutMs: number;
+  maxRetries: number;
+  fallbackReason: string | null;
+  lastError: string | null;
+  parseFailureCount: number;
+  gateRejectCount: number;
+  timeoutCount: number;
+  errorCount: number;
 };
 
 export type CompileIngredientOverviewOpts = {
@@ -29,46 +45,25 @@ export type CompileIngredientOverviewOpts = {
 
 export type IngredientOverviewExecutionProfile = {
   timeoutMs: number;
+  backgroundRefreshTimeoutMs: number;
   maxRetries: number;
+  backgroundRefreshMaxRetries: number;
   maxTokens: number;
+  cacheTtlMs: number;
 };
 
-export const INGREDIENT_OVERVIEW_PROMPT_VERSION = "ingredient_overview_v5";
+export const INGREDIENT_OVERVIEW_PROMPT_VERSION = "ingredient_overview_v8";
 
 const LLM_TIMEOUT_MS = 9_000;
 const LLM_MAX_RETRIES = 1;
-const INGREDIENT_OVERVIEW_STANDARD_TIMEOUT_MS = 3_500;
-const INGREDIENT_OVERVIEW_BLEND_TIMEOUT_MS = 2_500;
-const INGREDIENT_OVERVIEW_FOOD_LIKE_TIMEOUT_MS = 1_200;
-const INGREDIENT_OVERVIEW_STANDARD_MAX_TOKENS = 520;
-const INGREDIENT_OVERVIEW_BLEND_MAX_TOKENS = 420;
-const INGREDIENT_OVERVIEW_FOOD_LIKE_MAX_TOKENS = 320;
-
-export const resolveIngredientOverviewExecutionProfile = (
-  context: IngredientScienceContext,
-): IngredientOverviewExecutionProfile => {
-  if (context.productArchetype === "functional_food_like") {
-    return {
-      timeoutMs: INGREDIENT_OVERVIEW_FOOD_LIKE_TIMEOUT_MS,
-      maxRetries: 0,
-      maxTokens: INGREDIENT_OVERVIEW_FOOD_LIKE_MAX_TOKENS,
-    };
-  }
-
-  if (context.formulaMode === "blend") {
-    return {
-      timeoutMs: INGREDIENT_OVERVIEW_BLEND_TIMEOUT_MS,
-      maxRetries: 0,
-      maxTokens: INGREDIENT_OVERVIEW_BLEND_MAX_TOKENS,
-    };
-  }
-
-  return {
-    timeoutMs: INGREDIENT_OVERVIEW_STANDARD_TIMEOUT_MS,
-    maxRetries: 0,
-    maxTokens: INGREDIENT_OVERVIEW_STANDARD_MAX_TOKENS,
-  };
-};
+const SINGLE_ANCHOR_TIMEOUT_MS = 2_500;
+const MULTI_ANCHOR_TIMEOUT_MS = 2_750;
+const BLEND_ANCHOR_TIMEOUT_MS = 2_500;
+const COMPLEX_FORMULA_TIMEOUT_MS = 3_250;
+const BACKGROUND_REFRESH_TIMEOUT_MS = 14_000;
+const COMPLEX_BACKGROUND_REFRESH_TIMEOUT_MS = 18_000;
+const INGREDIENT_OVERVIEW_MAX_TOKENS = 450;
+const INGREDIENT_OVERVIEW_CACHE_TTL_MS = 10 * 60_000;
 
 const BANNED_PATTERNS = [
   /people take this/i,
@@ -99,17 +94,97 @@ const FACTUAL_RESTATEMENT_PATTERNS = [
 ];
 const SPECIFIC_COMPARE_HINT_PATTERN =
   /\b(per serving|stated amount|disclosed amount|breakdown|epa|dha|source|form|delivery|strain|cfu|blend total|item[- ]level|disclosure|label)\b/i;
+const ALGAL_OMEGA_SOURCE_PATTERN =
+  /\balgal(?:\b|\s+oil)\b|\balgae\b|\bschizochytrium\b|\bplant\s+based\s+omega\s*-?\s*3\b/i;
+const FLAX_OMEGA_SOURCE_PATTERN =
+  /\bflax(?:\s+seed)?\s+oil\b|\bflaxseed\s+oil\b|\blinseed\s+oil\b/i;
+const KRILL_OMEGA_SOURCE_PATTERN = /\bkrill\s+oil\b/i;
+const SALMON_OMEGA_SOURCE_PATTERN = /\bsalmon\s+oil\b/i;
+const FISH_OMEGA_SOURCE_PATTERN = /\bfish\s+oil\b|\bsalmon\s+oil\b|\boil\s+concentrate\b/i;
 
 const normalizeText = (value: string | null | undefined): string =>
   String(value ?? "")
     .replace(/\s+/g, " ")
     .trim();
 
+const normalizeDiagnosticReason = (value: string | null | undefined): string | null => {
+  const normalized = normalizeText(value)
+    .toLowerCase()
+    .replace(/[^a-z0-9_:-]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+  return normalized || null;
+};
+
+const resolveErrorReason = (error: unknown): string => {
+  if (!(error instanceof Error)) return "unknown_error";
+  if (error.name === "AbortError" || /aborted/i.test(error.message)) return "llm_timeout";
+  const normalized = normalizeDiagnosticReason(error.message);
+  return normalized ?? "unknown_error";
+};
+
 const normalizeComparable = (value: string | null | undefined): string =>
   normalizeText(value)
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, " ")
     .trim();
+
+const lowerFirst = (value: string | null | undefined): string => {
+  const normalized = normalizeText(value);
+  if (!normalized) return "";
+  return normalized.charAt(0).toLowerCase() + normalized.slice(1);
+};
+
+const lineRoleLabel = (value: string | null | undefined): string => {
+  switch (value) {
+    case "primary_active":
+      return "lead active";
+    case "companion_nutrient":
+      return "supporting nutrient";
+    case "source_line":
+      return "source line";
+    case "aggregate_line":
+      return "total line";
+    case "breakdown_line":
+      return "breakdown line";
+    case "blend_line":
+      return "grouped formula line";
+    default:
+      return "supporting formula line";
+  }
+};
+
+const joinNames = (values: string[]): string => {
+  if (values.length <= 1) return values[0] ?? "";
+  if (values.length === 2) return `${values[0]} and ${values[1]}`;
+  return `${values.slice(0, -1).join(", ")}, and ${values[values.length - 1]}`;
+};
+
+const buildFormulaRoleSummary = (context: IngredientScienceContext): string | null => {
+  const anchorName = normalizeText(context.anchorIngredient?.name);
+  if (!anchorName) return null;
+  const companionNames = context.coIngredients
+    .filter((row) => row.lineRole === "companion_nutrient" || row.lineRole === "generic_line")
+    .map((row) => row.name)
+    .slice(0, 3);
+  const structuralNames = context.coIngredients
+    .filter((row) => row.lineRole !== "companion_nutrient" && row.lineRole !== "generic_line")
+    .map((row) => `${row.name} (${lineRoleLabel(row.lineRole)})`)
+    .slice(0, 2);
+  const relationships = context.relationshipCandidates.map((candidate) => candidate.safeStatement).slice(0, 2);
+
+  const parts = [
+    `${anchorName} is the lead active in this formula.`,
+    companionNames.length
+      ? `${joinNames(companionNames)} appear as companion or supporting lines around that anchor.`
+      : null,
+    structuralNames.length
+      ? `The label also includes ${joinNames(structuralNames)} that shape how the formula should be read.`
+      : null,
+    relationships[0] ?? null,
+  ].filter(Boolean);
+
+  return parts.length > 0 ? parts.join(" ") : null;
+};
 
 const asSentence = (value: string | null | undefined): string => {
   const normalized = normalizeText(value);
@@ -122,6 +197,19 @@ const splitSentences = (value: string): string[] =>
     .split(/(?<=[.!?])\s+/)
     .map((part) => normalizeText(part))
     .filter(Boolean);
+
+const removeWeakOrUnsafeSentences = (
+  context: IngredientScienceContext,
+  value: string | null | undefined,
+): string => {
+  const kept = splitSentences(String(value ?? "")).filter((sentence) => {
+    if (BANNED_PATTERNS.some((pattern) => pattern.test(sentence))) return false;
+    if (FACTUAL_RESTATEMENT_PATTERNS.some((pattern) => pattern.test(sentence))) return false;
+    if (countDoseMentions(context, sentence) > 0) return false;
+    return true;
+  });
+  return normalizeText(kept.join(" "));
+};
 
 const isSentenceLikeTitle = (value: string | null | undefined): boolean => {
   const normalized = normalizeText(value);
@@ -156,19 +244,118 @@ const getMode = (context: IngredientScienceContext): IngredientOverviewMode => {
   return "multi_anchor";
 };
 
+const getFallbackLeadFamily = (context: IngredientScienceContext) =>
+  context.anchorIngredient?.ingredientFamily ?? context.ingredientFamily;
+
+const hasAnchorFamilyDrift = (context: IngredientScienceContext): boolean =>
+  Boolean(
+    context.anchorIngredient?.ingredientFamily &&
+    context.anchorIngredient.ingredientFamily !== context.ingredientFamily,
+  );
+
+const resolveOmega3SourceCopy = (context: IngredientScienceContext): {
+  titleLine: string;
+  sourcePhrase: string;
+  detailPhrase?: string;
+  compareHint?: string;
+} | null => {
+  const anchorName = normalizeText(context.anchorIngredient?.name);
+  const sourceEvidence = [
+    anchorName,
+    normalizeText(context.productName),
+    ...context.ingredientRows.map((row) => normalizeText(row.name)),
+    ...context.ingredientSnapshotNames.map((name) => normalizeText(name)),
+  ]
+    .filter(Boolean)
+    .join(" ");
+  if (!sourceEvidence) return null;
+
+  if (ALGAL_OMEGA_SOURCE_PATTERN.test(anchorName)) {
+    return {
+      titleLine: anchorName,
+      sourcePhrase: "algal oil",
+    };
+  }
+  if (KRILL_OMEGA_SOURCE_PATTERN.test(anchorName)) {
+    return {
+      titleLine: anchorName,
+      sourcePhrase: "krill oil",
+    };
+  }
+  if (FISH_OMEGA_SOURCE_PATTERN.test(anchorName)) {
+    const sourcePhrase = SALMON_OMEGA_SOURCE_PATTERN.test(anchorName) ? "salmon oil" : "fish oil";
+    return {
+      titleLine: anchorName,
+      sourcePhrase,
+    };
+  }
+  if (FLAX_OMEGA_SOURCE_PATTERN.test(anchorName)) {
+    return {
+      titleLine: anchorName,
+      sourcePhrase: "flax seed oil",
+      detailPhrase: "the omega-3, omega-6, and omega-9 fatty acid lines underneath it",
+      compareHint: "When comparing flax seed oil products, focus on the source oil and the disclosed omega-3, omega-6, and omega-9 amounts rather than treating it like a marine EPA/DHA label.",
+    };
+  }
+
+  if (ALGAL_OMEGA_SOURCE_PATTERN.test(sourceEvidence)) {
+    return {
+      titleLine: "Algal Oil",
+      sourcePhrase: "algal oil",
+    };
+  }
+  if (FLAX_OMEGA_SOURCE_PATTERN.test(sourceEvidence)) {
+    return {
+      titleLine: "Flax Seed Oil",
+      sourcePhrase: "flax seed oil",
+      detailPhrase: "the omega-3, omega-6, and omega-9 fatty acid lines underneath it",
+      compareHint: "When comparing flax seed oil products, focus on the source oil and the disclosed omega-3, omega-6, and omega-9 amounts rather than treating it like a marine EPA/DHA label.",
+    };
+  }
+  if (KRILL_OMEGA_SOURCE_PATTERN.test(sourceEvidence)) {
+    return {
+      titleLine: "Krill Oil",
+      sourcePhrase: "krill oil",
+    };
+  }
+  if (FISH_OMEGA_SOURCE_PATTERN.test(sourceEvidence)) {
+    const sourcePhrase = SALMON_OMEGA_SOURCE_PATTERN.test(sourceEvidence) ? "salmon oil" : "fish oil";
+    return {
+      titleLine: SALMON_OMEGA_SOURCE_PATTERN.test(sourceEvidence) ? "Salmon Oil" : "Fish Oil",
+      sourcePhrase,
+    };
+  }
+  return null;
+};
+
+const isSpecificBlendAnchorName = (value: string | null | undefined): boolean => {
+  const normalized = normalizeText(value);
+  if (!normalized) return false;
+  return !/^(?:blend|supplement\s+blend|ingredient\s+blend|formula\s+blend)$/i.test(normalized);
+};
+
 const buildTitleLineFallback = (context: IngredientScienceContext): string | null => {
   if (context.formulaMode === "single_ingredient") {
     return context.anchorIngredient?.name ?? "Single-ingredient formula";
   }
-  if (context.ingredientFamily === "omega_3") return "Omega-3 formula";
-  if (context.ingredientFamily === "probiotic_or_blend") return "Blend-style formula";
+  if (hasAnchorFamilyDrift(context) && context.anchorIngredient?.name) {
+    return context.anchorIngredient.name;
+  }
+  if (context.ingredientFamily === "omega_3") {
+    return resolveOmega3SourceCopy(context)?.titleLine ?? "Omega-3 formula";
+  }
+  if (context.ingredientFamily === "probiotic_or_blend") {
+    return isSpecificBlendAnchorName(context.anchorIngredient?.name) && context.anchorIngredient?.name
+      ? context.anchorIngredient.name
+      : "Formula blend";
+  }
   if (context.anchorIngredient?.name) return context.anchorIngredient.name;
   return "Supplement formula";
 };
 
 const buildSingleAnchorFallback = (context: IngredientScienceContext): IngredientOverviewBlock => {
   const anchorName = context.anchorIngredient?.name ?? "This ingredient";
-  switch (context.ingredientFamily) {
+  switch (getFallbackLeadFamily(context)) {
     case "astaxanthin_carotenoid":
       return {
         mode: "single_anchor",
@@ -178,13 +365,22 @@ const buildSingleAnchorFallback = (context: IngredientScienceContext): Ingredien
         compareHint: "When comparing products, focus on the stated amount per serving, the named source, and whether the label clearly identifies the form or delivery type.",
       };
     case "vitamin_c":
-      return {
-        mode: "single_anchor",
-        titleLine: "Vitamin C",
-        paragraph1: "Vitamin C is a single-ingredient vitamin formula, and this label names the active directly instead of burying it inside a broader blend or matrix.",
-        paragraph2: "That makes the product easier to compare because shoppers can focus on the exact ingredient identity and stated form without decoding a more complex formula first.",
-        compareHint: "When comparing products, look first at the stated vitamin C amount and then check whether the label clearly states the exact form and delivery type.",
-      };
+      {
+        const titleEvidence = `${anchorName} ${context.productName}`;
+        const vitaminCTitleLine = /\bliposomal\s+vitamin\s+c\b/i.test(titleEvidence)
+          ? "Liposomal Vitamin C"
+          : "Vitamin C";
+        const leadPhrase = vitaminCTitleLine === "Vitamin C" ? "Vitamin C" : vitaminCTitleLine;
+        const compareSubject = vitaminCTitleLine === "Vitamin C" ? "vitamin C products" : "liposomal vitamin C products";
+
+        return {
+          mode: "single_anchor",
+          titleLine: vitaminCTitleLine,
+          paragraph1: `${leadPhrase} is a single-ingredient vitamin formula, and this label names the active directly instead of burying it inside a broader blend or matrix.`,
+          paragraph2: "That makes the product easier to compare because shoppers can focus on the exact ingredient identity and stated form without decoding a more complex formula first.",
+          compareHint: `When comparing ${compareSubject}, look first at the stated vitamin C amount and then check whether the label clearly states the exact form and delivery type.`,
+        };
+      }
     case "zinc":
       return {
         mode: "single_anchor",
@@ -213,13 +409,16 @@ const buildSingleAnchorFallback = (context: IngredientScienceContext): Ingredien
 };
 
 const buildMultiAnchorFallback = (context: IngredientScienceContext): IngredientOverviewBlock => {
-  if (context.ingredientFamily === "omega_3") {
+  if (!hasAnchorFamilyDrift(context) && getFallbackLeadFamily(context) === "omega_3") {
+    const sourceCopy = resolveOmega3SourceCopy(context);
+    const sourcePhrase = sourceCopy?.sourcePhrase ?? "fish oil";
+    const detailPhrase = sourceCopy?.detailPhrase ?? "the EPA and DHA amounts that matter most";
     return {
       mode: "multi_anchor",
-      titleLine: "Omega-3 formula",
-      paragraph1: "This omega-3 product is organized around fish oil as the source ingredient, with separate lines that break out total omega-3 and the specific fatty acids underneath it.",
-      paragraph2: "That structure helps distinguish the source oil from the EPA and DHA amounts that matter most when you compare products side by side.",
-      compareHint: "When comparing omega-3 products, focus on total omega-3 plus the disclosed EPA and DHA amounts, not just the fish-oil total.",
+      titleLine: sourceCopy?.titleLine ?? "Omega-3 formula",
+      paragraph1: `This omega-3 product is organized around ${sourcePhrase} as the source ingredient, with separate lines that break out total omega-3 and the specific fatty acids underneath it.`,
+      paragraph2: `That structure helps distinguish the source oil from ${detailPhrase} when you compare products side by side.`,
+      compareHint: sourceCopy?.compareHint ?? `When comparing omega-3 products, focus on total omega-3 plus the disclosed EPA and DHA amounts, not just the ${sourcePhrase} total.`,
     };
   }
 
@@ -233,6 +432,32 @@ const buildMultiAnchorFallback = (context: IngredientScienceContext): Ingredient
     };
   }
 
+  if (context.anchorIngredient?.name) {
+    const anchorName = context.anchorIngredient.name;
+    const companionNames = context.coIngredients
+      .filter((row) => row.lineRole === "companion_nutrient" || row.lineRole === "generic_line")
+      .map((row) => row.name)
+      .slice(0, 3);
+    const structuralNames = context.coIngredients
+      .filter((row) => row.lineRole !== "companion_nutrient" && row.lineRole !== "generic_line")
+      .map((row) => `${row.name} as a ${lineRoleLabel(row.lineRole)}`)
+      .slice(0, 2);
+    const companionSummary = companionNames.length
+      ? `${joinNames(companionNames)} appear as supporting formula lines around that lead active.`
+      : "The surrounding rows work more as supporting formula lines than as equal co-headliners.";
+    const structureSummary = structuralNames.length
+      ? `The label also uses ${joinNames(structuralNames)}, which changes how the formula should be compared.`
+      : "That makes the most useful reading start with the lead active and then move outward to the supporting lines.";
+
+    return {
+      mode: "multi_anchor",
+      titleLine: buildTitleLineFallback(context),
+      paragraph1: `${anchorName} stays as the main named active in this multi-part formula rather than reading like one ingredient among equals.`,
+      paragraph2: `${companionSummary} ${structureSummary}`,
+      compareHint: "When comparing products, start with the lead active line and then check whether the companion and structural rows are disclosed clearly enough to show what role they actually play.",
+    };
+  }
+
   return {
     mode: "multi_anchor",
     titleLine: buildTitleLineFallback(context),
@@ -243,20 +468,31 @@ const buildMultiAnchorFallback = (context: IngredientScienceContext): Ingredient
 };
 
 const buildBlendAnchorFallback = (context: IngredientScienceContext): IngredientOverviewBlock => {
+  const titleLine = buildTitleLineFallback(context) ?? "Formula blend";
+  const leadLine =
+    titleLine === "Formula blend" ? "This formula blend" : `The ${titleLine} line`;
+  const usesProbioticCopy =
+    /\b(?:probiotic|probiotics|acidophilus|lactobacillus|bifidobacterium|bacillus|cfu|flora|biotic)\b/i
+      .test(`${titleLine} ${context.productName}`);
+
   if (context.ingredientFamily === "probiotic_or_blend") {
     return {
       mode: "blend_anchor",
-      titleLine: "Blend-style formula",
-      paragraph1: "This product is organized around broad blend-style label lines rather than a fully itemized ingredient list.",
-      paragraph2: "That can describe the formula category at a glance, but it gives less precision about which strains or components are doing the work and in what amounts.",
-      compareHint: "When comparing products, look for strain names, item-level disclosure, and whether the label gives more than a single blend total.",
+      titleLine,
+      paragraph1: `${leadLine} is organized as a grouped formula line rather than a fully itemized ingredient list.`,
+      paragraph2: usesProbioticCopy
+        ? "That can describe the probiotic formula category at a glance, but it gives less precision about which strains or components are doing the work and in what amounts."
+        : "That can describe the formula category at a glance, but it gives less precision about which components are doing the work and in what amounts.",
+      compareHint: usesProbioticCopy
+        ? "When comparing products, look for strain names, item-level disclosure, and whether the label gives more than a single blend total."
+        : "When comparing products, look for item-level disclosure and whether the label gives more than a single blend total.",
     };
   }
 
   return {
     mode: "blend_anchor",
-    titleLine: buildTitleLineFallback(context),
-    paragraph1: "This product is organized as a blend-style formula rather than a fully itemized ingredient list.",
+    titleLine,
+    paragraph1: `${leadLine} is organized as a grouped formula line rather than a fully itemized ingredient list.`,
     paragraph2: "That makes the overall formula easier to summarize, but it also limits how precisely the label can be compared with a more transparent product.",
     compareHint: "When comparing products, look for item-level naming and whether the label provides more than a broad total for the blend.",
   };
@@ -272,13 +508,21 @@ const buildFallbackBlock = (context: IngredientScienceContext): IngredientOvervi
 const buildPrompt = (context: IngredientScienceContext): string => {
   const payload = {
     productName: context.productName,
+    sourceType: context.sourceType,
+    ingredientSourceTier: context.ingredientSourceTier,
     formulaMode: getMode(context),
     anchorIngredient: context.anchorIngredient,
+    formulaRoleSummary: buildFormulaRoleSummary(context),
+    coIngredients: context.coIngredients.slice(0, 4),
+    relationshipCandidates: context.relationshipCandidates.slice(0, 3),
     ingredientRows: context.ingredientDescriptors.map((descriptor) => ({
       name: descriptor.name,
       dose: descriptor.dose,
       ingredientFamily: descriptor.ingredientFamily,
       lineRole: descriptor.lineRole,
+      categoryHint: descriptor.categoryHint,
+      sourceContext: descriptor.sourceContext,
+      formContext: descriptor.formContext,
     })),
     labelConstraints: context.labelConstraints,
   };
@@ -288,6 +532,10 @@ const buildPrompt = (context: IngredientScienceContext): string => {
     "Your job is to decode the formula in plain English, not to rewrite the ingredient list and not to summarize research.",
     "Explain what kind of ingredient or formula this product centers on and how the label is structured.",
     "Add one short comparison-oriented hint that tells the shopper what matters most when comparing products.",
+    "Use the anchor ingredient as the lead active unless the payload makes clear that the label is acting like a source line, total line, or blend line.",
+    "Use coIngredients, relationshipCandidates, categoryHint, sourceContext, formContext, and lineRole to explain how the selected formula is arranged.",
+    "Distinguish the lead active from companion nutrients or supporting formula lines so the shopper can tell which rows are central and which are contextual.",
+    "Keep the explanation tied to this specific formula. Do not drift into general ingredient encyclopedia copy.",
     'Do not start with phrases like "This supplement provides", "This formula delivers", or "This product contains".',
     "Do not turn the factual ingredient rows into prose and do not enumerate multiple ingredient amounts line by line.",
     "Do not repeat the exact milligram amount or exact per-serving dose from the factual card above.",
@@ -363,6 +611,40 @@ const normalizeTitleLine = (context: IngredientScienceContext, titleLine: string
   return normalized;
 };
 
+const repairBlock = (
+  context: IngredientScienceContext,
+  candidate: IngredientOverviewBlock,
+  fallbackBlock: IngredientOverviewBlock,
+): IngredientOverviewBlock => {
+  const anchorName = normalizeText(context.anchorIngredient?.name);
+  const normalizedParagraphOne = removeWeakOrUnsafeSentences(context, candidate.paragraph1);
+  const normalizedParagraphTwo = removeWeakOrUnsafeSentences(context, candidate.paragraph2);
+  const normalizedCompareHint = removeWeakOrUnsafeSentences(context, candidate.compareHint);
+  const repairedParagraphOne = (() => {
+    if (!anchorName || !normalizedParagraphOne) return normalizedParagraphOne;
+    const existing = normalizeComparable(normalizedParagraphOne);
+    if (existing.includes(normalizeComparable(anchorName))) return normalizedParagraphOne;
+    return `${anchorName} anchors this formula, and ${lowerFirst(normalizedParagraphOne)}`;
+  })();
+
+  const repaired: IngredientOverviewBlock = {
+    mode: candidate.mode ?? fallbackBlock.mode,
+    titleLine: normalizeTitleLine(context, candidate.titleLine ?? fallbackBlock.titleLine),
+    paragraph1: asSentence(repairedParagraphOne || fallbackBlock.paragraph1),
+    paragraph2: normalizedParagraphTwo ? asSentence(normalizedParagraphTwo) : (fallbackBlock.paragraph2 ?? null),
+    compareHint:
+      normalizedCompareHint && hasSpecificCompareHint(normalizedCompareHint)
+        ? asSentence(normalizedCompareHint)
+        : fallbackBlock.compareHint,
+  };
+
+  if (!addsFormulaMeaning(repaired) && fallbackBlock.paragraph2) {
+    repaired.paragraph2 = fallbackBlock.paragraph2;
+  }
+
+  return repaired;
+};
+
 const gateBlock = (context: IngredientScienceContext, block: IngredientOverviewBlock): boolean => {
   if (!block.mode) return false;
   if (!block.paragraph1) return false;
@@ -397,12 +679,78 @@ const withTimeout = async <T>(promise: Promise<T>, timeoutMs: number): Promise<T
   }
 };
 
+export const resolveIngredientOverviewExecutionProfile = (
+  context: IngredientScienceContext,
+): IngredientOverviewExecutionProfile => {
+  const mode = getMode(context);
+  const family = context.ingredientFamily;
+  const companionCount = context.coIngredients.length;
+
+  if (family === "omega_3") {
+    return {
+      timeoutMs: COMPLEX_FORMULA_TIMEOUT_MS,
+      backgroundRefreshTimeoutMs: COMPLEX_BACKGROUND_REFRESH_TIMEOUT_MS,
+      maxRetries: 0,
+      backgroundRefreshMaxRetries: 1,
+      maxTokens: INGREDIENT_OVERVIEW_MAX_TOKENS,
+      cacheTtlMs: INGREDIENT_OVERVIEW_CACHE_TTL_MS,
+    };
+  }
+
+  if (mode === "single_anchor") {
+    return {
+      timeoutMs: SINGLE_ANCHOR_TIMEOUT_MS,
+      backgroundRefreshTimeoutMs: BACKGROUND_REFRESH_TIMEOUT_MS,
+      maxRetries: 0,
+      backgroundRefreshMaxRetries: 1,
+      maxTokens: INGREDIENT_OVERVIEW_MAX_TOKENS,
+      cacheTtlMs: INGREDIENT_OVERVIEW_CACHE_TTL_MS,
+    };
+  }
+
+  if (mode === "blend_anchor") {
+    return {
+      timeoutMs: BLEND_ANCHOR_TIMEOUT_MS,
+      backgroundRefreshTimeoutMs: BACKGROUND_REFRESH_TIMEOUT_MS,
+      maxRetries: 0,
+      backgroundRefreshMaxRetries: 1,
+      maxTokens: INGREDIENT_OVERVIEW_MAX_TOKENS,
+      cacheTtlMs: INGREDIENT_OVERVIEW_CACHE_TTL_MS,
+    };
+  }
+
+  return {
+    timeoutMs: companionCount >= 3 ? COMPLEX_FORMULA_TIMEOUT_MS : MULTI_ANCHOR_TIMEOUT_MS,
+    backgroundRefreshTimeoutMs: companionCount >= 3 ? COMPLEX_BACKGROUND_REFRESH_TIMEOUT_MS : BACKGROUND_REFRESH_TIMEOUT_MS,
+    maxRetries: 0,
+    backgroundRefreshMaxRetries: 1,
+    maxTokens: INGREDIENT_OVERVIEW_MAX_TOKENS,
+    cacheTtlMs: INGREDIENT_OVERVIEW_CACHE_TTL_MS,
+  };
+};
+
 export const compileIngredientOverviewAsync = async (
   context: IngredientScienceContext,
   opts?: CompileIngredientOverviewOpts,
 ): Promise<IngredientOverviewCompileResult> => {
   const fallbackBlock = buildFallbackBlock(context);
   const llmFn = opts?.llmFn;
+  const timeoutMs = opts?.timeoutMs ?? LLM_TIMEOUT_MS;
+  const maxRetries = opts?.maxRetries ?? LLM_MAX_RETRIES;
+  const diagnostics: IngredientOverviewCompileDiagnostics = {
+    liveWriterConfigured: Boolean(llmFn),
+    liveWriterAttempted: false,
+    liveWriterHit: false,
+    attemptCount: 0,
+    timeoutMs,
+    maxRetries,
+    fallbackReason: null,
+    lastError: null,
+    parseFailureCount: 0,
+    gateRejectCount: 0,
+    timeoutCount: 0,
+    errorCount: 0,
+  };
 
   if (!llmFn) {
     return {
@@ -410,36 +758,58 @@ export const compileIngredientOverviewAsync = async (
       source: "fallback",
       fallbackUsed: true,
       promptVersion: INGREDIENT_OVERVIEW_PROMPT_VERSION,
+      diagnostics: {
+        ...diagnostics,
+        fallbackReason: "llm_unconfigured",
+      },
     };
   }
 
   const prompt = buildPrompt(context);
-  const timeoutMs = opts?.timeoutMs ?? LLM_TIMEOUT_MS;
-  const maxRetries = opts?.maxRetries ?? LLM_MAX_RETRIES;
 
   for (let attempt = 0; attempt <= maxRetries; attempt += 1) {
+    diagnostics.liveWriterAttempted = true;
+    diagnostics.attemptCount = attempt + 1;
     try {
       const raw = await withTimeout(llmFn(prompt), timeoutMs);
       const parsed = parseBlock(raw);
-      if (!parsed?.mode) continue;
+      if (!parsed) {
+        diagnostics.parseFailureCount += 1;
+        diagnostics.fallbackReason = "parse_failed";
+        continue;
+      }
       const candidate: IngredientOverviewBlock = {
-        mode: parsed.mode,
+        mode: parsed.mode ?? fallbackBlock.mode,
         titleLine: normalizeTitleLine(context, parsed.titleLine ?? null),
         paragraph1: asSentence(parsed.paragraph1),
         paragraph2: parsed.paragraph2 ? asSentence(parsed.paragraph2) : null,
         compareHint: parsed.compareHint ? asSentence(parsed.compareHint) : null,
       };
-      if (!gateBlock(context, candidate)) continue;
+      const repairedCandidate = repairBlock(context, candidate, fallbackBlock);
+      if (!gateBlock(context, repairedCandidate)) {
+        diagnostics.gateRejectCount += 1;
+        diagnostics.fallbackReason = "quality_gate_rejected";
+        continue;
+      }
       return {
-        ingredientOverview: candidate,
+        ingredientOverview: repairedCandidate,
         source: "api",
         fallbackUsed: false,
         promptVersion: INGREDIENT_OVERVIEW_PROMPT_VERSION,
+        diagnostics: {
+          ...diagnostics,
+          liveWriterHit: true,
+          fallbackReason: null,
+          lastError: null,
+        },
       };
     } catch (error) {
-      if (!(error instanceof Error) || error.message !== "llm_timeout") {
-        continue;
-      }
+      const reason = resolveErrorReason(error);
+      diagnostics.lastError = reason;
+      diagnostics.fallbackReason = reason;
+      if (reason === "llm_timeout") diagnostics.timeoutCount += 1;
+      else diagnostics.errorCount += 1;
+      continue;
     }
   }
 
@@ -448,6 +818,16 @@ export const compileIngredientOverviewAsync = async (
     source: "fallback",
     fallbackUsed: true,
     promptVersion: INGREDIENT_OVERVIEW_PROMPT_VERSION,
+    diagnostics: {
+      ...diagnostics,
+      fallbackReason:
+        diagnostics.fallbackReason ??
+        (diagnostics.parseFailureCount > 0
+          ? "parse_failed"
+          : diagnostics.gateRejectCount > 0
+            ? "quality_gate_rejected"
+            : "exhausted_without_valid_output"),
+    },
   };
 };
 
