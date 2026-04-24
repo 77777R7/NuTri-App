@@ -7961,16 +7961,23 @@
           "search_query": null
         }
       ],
-      "plugin_verified_pmids": [],
+      "plugin_verified_pmids": [
+        {
+          "pmid": "18334810",
+          "title": "An updated systematic review with meta-analysis for the clinical evidence of silymarin."
+        }
+      ],
       "priority": "P0",
       "selection_notes": [
         "Keep milk thistle anchored to human-use context rather than broad botanical or traditional-use marketing.",
         "Approved through LSR ncbi-entrez P0 lane review; wording must remain comparison-safe and avoid disease-treatment promises.",
-        "P0 relevance filter kept 3 family-title-matching PMID(s) and dropped 2 off-target PMID(s)."
+        "P0 relevance filter kept 3 family-title-matching PMID(s) and dropped 2 off-target PMID(s).",
+        "Registry status synced after reviewed package promotion so live grounding never treats needs_edit rows as approved."
       ],
-      "review_status": "needs_edit",
+      "review_status": "approved",
       "review_reasons": [
-        "no_plugin_verified_pmids"
+        "approved_with_verified_pmids",
+        "synced_from_reviewed_package_primary_lane"
       ],
       "source_ingredient_ids": [
         "milk_thistle"
@@ -9204,16 +9211,23 @@
           "search_query": "Pygeum prostate testosterone systematic review"
         }
       ],
-      "plugin_verified_pmids": [],
+      "plugin_verified_pmids": [
+        {
+          "pmid": "11099686",
+          "title": "Pygeum africanum for the treatment of patients with benign prostatic hyperplasia: a systematic review and quantitative meta-analysis."
+        }
+      ],
       "priority": "P0",
       "selection_notes": [
         "Keep pygeum anchored to human-use context rather than broad botanical or traditional-use marketing.",
         "Approved through LSR ncbi-entrez P0 lane review; wording must remain comparison-safe and avoid disease-treatment promises.",
-        "P0 relevance filter kept 3 family-title-matching PMID(s) and dropped 2 off-target PMID(s)."
+        "P0 relevance filter kept 3 family-title-matching PMID(s) and dropped 2 off-target PMID(s).",
+        "Registry status synced after reviewed package promotion so live grounding never treats needs_edit rows as approved."
       ],
-      "review_status": "needs_edit",
+      "review_status": "approved",
       "review_reasons": [
-        "no_plugin_verified_pmids"
+        "approved_with_verified_pmids",
+        "synced_from_reviewed_package_primary_lane"
       ],
       "source_ingredient_ids": [
         "pygeum"
@@ -9332,16 +9346,23 @@
           "search_query": "Red Yeast Rice cholesterol triglycerides dose trial"
         }
       ],
-      "plugin_verified_pmids": [],
+      "plugin_verified_pmids": [
+        {
+          "pmid": "36259545",
+          "title": "Impact of red yeast rice supplementation on lipid profile: a systematic review and meta-analysis of randomized-controlled trials."
+        }
+      ],
       "priority": "P0",
       "selection_notes": [
         "Keep red yeast rice anchored to human-use context rather than broad botanical or traditional-use marketing.",
         "Approved through LSR ncbi-entrez P0 lane review; wording must remain comparison-safe and avoid disease-treatment promises.",
-        "P0 relevance filter kept 2 family-title-matching PMID(s) and dropped 3 off-target PMID(s)."
+        "P0 relevance filter kept 2 family-title-matching PMID(s) and dropped 3 off-target PMID(s).",
+        "Registry status synced after reviewed package promotion so live grounding never treats needs_edit rows as approved."
       ],
-      "review_status": "needs_edit",
+      "review_status": "approved",
       "review_reasons": [
-        "no_plugin_verified_pmids"
+        "approved_with_verified_pmids",
+        "synced_from_reviewed_package_primary_lane"
       ],
       "source_ingredient_ids": [
         "red_yeast_rice"
@@ -10980,16 +11001,23 @@
           "search_query": "Tribulus Terrestris prostate testosterone systematic review"
         }
       ],
-      "plugin_verified_pmids": [],
+      "plugin_verified_pmids": [
+        {
+          "pmid": "24559105",
+          "title": "A systematic review on the herbal extract Tribulus terrestris and the roots of its putative aphrodisiac and performance enhancing effect."
+        }
+      ],
       "priority": "P0",
       "selection_notes": [
         "Keep tribulus terrestris anchored to human-use context rather than broad botanical or traditional-use marketing.",
         "Approved through LSR ncbi-entrez P0 lane review; wording must remain comparison-safe and avoid disease-treatment promises.",
-        "P0 relevance filter kept 3 family-title-matching PMID(s) and dropped 2 off-target PMID(s)."
+        "P0 relevance filter kept 3 family-title-matching PMID(s) and dropped 2 off-target PMID(s).",
+        "Registry status synced after reviewed package promotion so live grounding never treats needs_edit rows as approved."
       ],
-      "review_status": "needs_edit",
+      "review_status": "approved",
       "review_reasons": [
-        "no_plugin_verified_pmids"
+        "approved_with_verified_pmids",
+        "synced_from_reviewed_package_primary_lane"
       ],
       "source_ingredient_ids": [
         "tribulus_terrestris"
