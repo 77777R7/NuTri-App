@@ -14,13 +14,15 @@ test("ops routes are registered from a dedicated route module", async () => {
   const routesSource = await readFile(OPS_ROUTES_PATH, "utf8");
 
   assert.match(serverSource, /import \{ registerOpsRoutes \} from "\.\/routes\/opsRoutes\.js";/);
-  assert.match(serverSource, /registerOpsRoutes\(app, \{\s*getMetricsSnapshot,\s*\}\);/s);
+  assert.match(serverSource, /registerOpsRoutes\(app, \{\s*getMetricsSnapshot,\s*recordScanUxMetric,\s*\}\);/s);
   assert.doesNotMatch(serverSource, /app\.get\("\/internal\/metrics"/);
   assert.doesNotMatch(serverSource, /app\.get\("\/health"/);
 
   assert.match(routesSource, /export const registerOpsRoutes = /);
   assert.match(routesSource, /app\.get\("\/internal\/metrics"/);
   assert.match(routesSource, /getMetricsSnapshot\(\)/);
+  assert.match(routesSource, /app\.post\("\/api\/scan-ux-metrics"/);
+  assert.match(routesSource, /recordScanUxMetric/);
   assert.match(routesSource, /app\.get\("\/health"/);
   assert.match(routesSource, /googleCse/);
   assert.match(routesSource, /deepseek/);

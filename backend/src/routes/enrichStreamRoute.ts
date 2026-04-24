@@ -313,6 +313,7 @@ export const registerEnrichStreamRoute = (
     queueShadowCompare,
     readEventLoopLagP95Ms,
     recordMetricTiming,
+    recordScanStreamTerminal,
     recordNpnNegativeAttempt,
     recordResolutionCacheFailure,
     resetEventLoopLagP95Window,
@@ -1178,6 +1179,12 @@ export const registerEnrichStreamRoute = (
           streamState.doneSent = true;
           streamState.tDone = Date.now();
           recordStreamTimingOnce("time_to_done_ms", "done");
+          recordScanStreamTerminal?.({
+            terminal: "DONE",
+            reason: pendingDoneReason ?? "implicit_end_guard",
+            degradedMode,
+            sourceType: streamState.latestSourceType ?? null,
+          });
           markPipelineStepEnd("emit", "ok");
           logDoneEvent("success", { emit_path: "res_end_guard_send_done" });
         } else {
@@ -1266,6 +1273,12 @@ export const registerEnrichStreamRoute = (
       if (emitted) {
         streamState.doneSent = true;
         streamState.tDone = Date.now();
+        recordScanStreamTerminal?.({
+          terminal: "DONE",
+          reason: resolvedReason,
+          degradedMode,
+          sourceType: streamState.latestSourceType ?? null,
+        });
         markPipelineStepEnd("emit", "ok");
         logDoneEvent("success", { emit_path: "finalize_stream_send_done" });
       } else {
@@ -1399,6 +1412,12 @@ export const registerEnrichStreamRoute = (
       payload.admissionGateState = params.admissionGateState;
     }
     sendSSE(res, "error", payload);
+    recordScanStreamTerminal?.({
+      terminal: params.code ?? "STREAM_ERROR",
+      reason: params.reasonCode ?? params.finalizeReason,
+      degradedMode,
+      sourceType: streamState.latestSourceType ?? null,
+    });
     finalizeStream(params.finalizeReason);
     releaseInFlightOnce(params.releaseError);
     releaseAdmissionOnce();
