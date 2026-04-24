@@ -10,6 +10,9 @@ const createFakeApp = () => {
     get(path, handler) {
       handlers.set(path, handler);
     },
+    post(path, handler) {
+      handlers.set(path, handler);
+    },
   };
 };
 
@@ -17,6 +20,16 @@ const createJsonResponse = () => {
   const calls = [];
   return {
     calls,
+    statusCode: 200,
+    ended: false,
+    status(code) {
+      this.statusCode = code;
+      return this;
+    },
+    end() {
+      this.ended = true;
+      return this;
+    },
     json(payload) {
       calls.push(payload);
       return this;
@@ -71,4 +84,37 @@ test("ops route module preserves metrics response passthrough", () => {
   handler({}, res);
 
   assert.deepEqual(res.calls, [snapshot]);
+});
+
+test("ops route records scan UX metrics without changing response shape", () => {
+  const recorded = [];
+  const app = createFakeApp();
+  registerOpsRoutes(app, {
+    getMetricsSnapshot: () => ({}),
+    recordScanUxMetric: (payload) => recorded.push(payload),
+  });
+
+  const handler = app.handlers.get("/api/scan-ux-metrics");
+  assert.equal(typeof handler, "function");
+
+  const res = createJsonResponse();
+  handler({
+    body: {
+      event: "time_to_score_visible",
+      payload: {
+        elapsedMs: 987,
+        count: 2,
+      },
+    },
+  }, res);
+
+  assert.equal(res.statusCode, 204);
+  assert.equal(res.ended, true);
+  assert.deepEqual(recorded, [
+    {
+      event: "time_to_score_visible",
+      elapsedMs: 987,
+      count: 2,
+    },
+  ]);
 });

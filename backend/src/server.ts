@@ -122,7 +122,14 @@ import { buildIngredientScienceContext } from "./ingredientScienceContext.js";
 import { normalizeIherbSupplementFactsRows } from "./iherbOverlayIngredients.js";
 import { getKbRuntime, lookupKbFormExplain, lookupKbRuntimeFormInsights } from "./kbRuntime.js";
 import { type LabelDraft } from "./labelTypes.js";
-import { getMetricsSnapshot, incrementMetric, recordMetricTiming, startMetricsFlush } from "./metrics.js";
+import {
+  getMetricsSnapshot,
+  incrementMetric,
+  recordMetricTiming,
+  recordScanStreamTerminal,
+  recordScanUxMetric,
+  startMetricsFlush,
+} from "./metrics.js";
 import { buildMySupplementFactsV1, type MySupplementFactsV1 } from "./mySupplementFacts.js";
 import { getMySupplementOverviewV2GateReason } from "./mySupplementOverviewGate.js";
 import { getNutriTipsData } from "./nutriTips.js";
@@ -11420,6 +11427,7 @@ registerEnrichStreamRoute(app, {
   queueShadowCompare,
   readEventLoopLagP95Ms,
   recordMetricTiming,
+  recordScanStreamTerminal,
   recordNpnNegativeAttempt,
   recordResolutionCacheFailure,
   resetEventLoopLagP95Window,
@@ -12063,6 +12071,7 @@ app.get("/internal/legacy-runtime-usage", (_req: Request, res: Response) => {
 
 registerOpsRoutes(app, {
   getMetricsSnapshot,
+  recordScanUxMetric,
 });
 
 // Minimal error logging (no secrets)

@@ -1494,6 +1494,21 @@ function emitScanUxMetric(event: string, payload: Record<string, unknown> = {}) 
         event,
         ...payload,
     });
+    const apiBaseUrl = Config.apiBaseUrl?.replace(/\/+$/, '');
+    if (!apiBaseUrl) return;
+    void fetch(`${apiBaseUrl}/api/scan-ux-metrics`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            event,
+            payload,
+            emittedAt: new Date().toISOString(),
+        }),
+    }).catch(() => {
+        // Metrics must never affect scan rendering.
+    });
 }
 
 function resolveSimpleTaxonomyLabel(label: string, fallback: string = 'Official record') {
