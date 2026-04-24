@@ -155,6 +155,7 @@ import { getMySupplementOverviewV2GateReason } from "./mySupplementOverviewGate.
 import { getNutriTipsData } from "./nutriTips.js";
 import { buildRuleBasedOverview } from "./overviewRuleBased.js";
 import { getProductSearchBootstrap, searchProducts, warmProductSearchIndex } from "./productSearch.js";
+import { registerOpsRoutes } from "./routes/opsRoutes.js";
 import {
   buildScanSidecarCacheKey,
   getScanSidecarPolicy,
@@ -24348,13 +24349,6 @@ app.post("/api/enrich-supplement", async (_req: Request, res: Response) => {
   });
 });
 
-/**
- * Internal metrics (lightweight counters)
- */
-app.get("/internal/metrics", (_req: Request, res: Response) => {
-  res.json(getMetricsSnapshot());
-});
-
 app.get("/internal/legacy-runtime-usage", (_req: Request, res: Response) => {
   const todayKey = new Date().toISOString().slice(0, 10);
   const todayRow = legacyRuntimeUsage.byDay[todayKey] ?? {
@@ -24388,21 +24382,8 @@ app.get("/internal/legacy-runtime-usage", (_req: Request, res: Response) => {
   });
 });
 
-/**
- * Health check
- */
-app.get("/health", (_req: Request, res: Response) => {
-  const googleCseConfigured = Boolean(process.env.GOOGLE_CSE_API_KEY && process.env.GOOGLE_CSE_CX);
-  const deepseekConfigured = Boolean(process.env.DEEPSEEK_API_KEY);
-
-  res.json({
-    status: "ok",
-    uptimeSec: Math.round(process.uptime()),
-    configured: {
-      googleCse: googleCseConfigured,
-      deepseek: deepseekConfigured,
-    },
-  });
+registerOpsRoutes(app, {
+  getMetricsSnapshot,
 });
 
 // Minimal error logging (no secrets)
