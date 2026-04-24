@@ -11442,7 +11442,6 @@ registerEnrichStreamRoute(app, {
   shouldReEnrich,
   shouldRejectEnrichStreamForServerOverload,
   snapshotPayloadUsesIherbOverlaySupport,
-  stage0Winner,
   storeSnapshotCache,
   summarizeDeterministicSignals,
   supabaseReadBreaker,

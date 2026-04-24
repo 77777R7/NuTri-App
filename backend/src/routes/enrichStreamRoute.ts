@@ -335,7 +335,6 @@ export const registerEnrichStreamRoute = (
     shouldReEnrich,
     shouldRejectEnrichStreamForServerOverload,
     snapshotPayloadUsesIherbOverlaySupport,
-    stage0Winner,
     storeSnapshotCache,
     summarizeDeterministicSignals,
     supabaseReadBreaker,
