@@ -155,6 +155,7 @@ import { getMySupplementOverviewV2GateReason } from "./mySupplementOverviewGate.
 import { getNutriTipsData } from "./nutriTips.js";
 import { buildRuleBasedOverview } from "./overviewRuleBased.js";
 import { getProductSearchBootstrap, searchProducts, warmProductSearchIndex } from "./productSearch.js";
+import { registerDecisionSupportRoutes } from "./routes/decisionSupportRoutes.js";
 import { registerOpsRoutes } from "./routes/opsRoutes.js";
 import {
   buildScanSidecarCacheKey,
@@ -11187,158 +11188,30 @@ const buildDecisionSupportAllergyContext = (params: {
   };
 };
 
-app.get("/api/decision-support/v1", verifySupabaseToken, async (req: Request, res: Response) => {
-  const barcodeRaw = typeof req.query.barcode === "string" ? req.query.barcode.trim() : "";
-  const normalizedBarcode = normalizeBarcodeInput(barcodeRaw);
-  if (!normalizedBarcode) {
-    return res
-      .status(400)
-      .json({ error: "invalid_request", detail: "barcode is required" } satisfies ErrorResponse);
-  }
-
-  const requestedDigestRaw = typeof req.query.digest === "string" ? req.query.digest.trim() : "";
-  const requestedDigest = requestedDigestRaw.length > 0 ? requestedDigestRaw : null;
-  const requestedDecisionInputsHashRaw =
-    typeof req.query.decisionInputsHash === "string" ? req.query.decisionInputsHash.trim() : "";
-  const requestedDecisionInputsHash =
-    requestedDecisionInputsHashRaw.length > 0 ? requestedDecisionInputsHashRaw : null;
-  const scanSessionIdRaw = typeof req.query.scanSessionId === "string" ? req.query.scanSessionId.trim() : "";
-  const scanSessionId = scanSessionIdRaw.length > 0 ? scanSessionIdRaw : null;
-  const viewMode = parseDecisionSupportViewMode(
-    typeof req.query.viewMode === "string" ? req.query.viewMode : null,
-  );
-  const debugPatchRequested = (() => {
-    const raw = req.query.debugPatch;
-    if (Array.isArray(raw)) return raw.some((value) => String(value).trim() === "1");
-    return String(raw ?? "").trim() === "1";
-  })();
-  const debugDecisionRequested = parseDebugDecisionRequested(req);
-
-  try {
-    const authedReq = req as AuthenticatedRequest;
-    const barcodeGtin14 = normalizedBarcode.code.padStart(14, "0");
-    const fetchCount = decisionSupportFetchCounter.record(scanSessionId, barcodeGtin14);
-    const authority = await buildDecisionSupportAuthorityBundle(normalizedBarcode, { req, viewMode });
-    const { overlayClaims, quickDigest, patched, decisionSupport, personalizationScopeHash } = authority;
-    const debugIdentityValue = String(quickDigest.digest?.identity?.value ?? "").trim();
-    const debugIdentityType = String(quickDigest.digest?.identity?.type ?? "").trim().toLowerCase();
-    const debugSourceType = String(quickDigest.digest?.sourceType ?? "").trim().toLowerCase();
-    const debugIdentityKeys = [
-      debugSourceType && debugIdentityValue ? `${debugSourceType}:${debugIdentityValue}`.toLowerCase() : null,
-      debugIdentityType && debugIdentityValue ? `${debugIdentityType}:${debugIdentityValue}`.toLowerCase() : null,
-    ].filter((value): value is string => Boolean(value));
-    const debugLookup = getPatchShadowLookup({
-      barcodeGtin14,
-      identityKeys: debugIdentityKeys,
-    });
-
-    if (
-      requestedDecisionInputsHash &&
-      requestedDecisionInputsHash !== decisionSupport.decisionInputsHash
-    ) {
-      incrementMetric("decision_inputs_hash_mismatch");
-      console.warn("[telemetry] decision_inputs_hash_mismatch", {
-        barcode: barcodeGtin14,
-        scanSessionId,
-        requestedDecisionInputsHash,
-        latestDecisionInputsHash: decisionSupport.decisionInputsHash,
-        latestDigest: decisionSupport.digest,
-      });
-    }
-
-    if (requestedDigest && requestedDigest !== decisionSupport.digest) {
-      incrementMetric("decision_support_digest_mismatch");
-      console.warn("[telemetry] decision_support_digest_mismatch", {
-        barcode: barcodeGtin14,
-        scanSessionId,
-        requestedDigest,
-        latestDigest: decisionSupport.digest,
-        requestedDecisionInputsHash,
-        latestDecisionInputsHash: decisionSupport.decisionInputsHash,
-      });
-      const mismatchPayload = {
-        error: "DECISION_SUPPORT_DIGEST_MISMATCH",
-        reasonCode: "DECISION_SUPPORT_DIGEST_MISMATCH",
-        message: "Decision support content has updated. Refresh with latest digest.",
-        latestDigest: decisionSupport.digest,
-        latestDecisionInputsHash: decisionSupport.decisionInputsHash,
-        latestPersonalizationScopeHash: personalizationScopeHash,
-      };
-      return res.status(409).json(mismatchPayload);
-    }
-
-    const comparisonStanding = await buildDecisionSupportComparisonStanding({
-      barcodeGtin14,
-      overlayClaims,
-      digest: patched.digest,
-      decisionSupport,
-    });
-    const decisionSupportWithComparison = comparisonStanding
-      ? {
-        ...decisionSupport,
-        personalizedResultLane: {
-          ...decisionSupport.personalizedResultLane,
-          productStanding: comparisonStanding,
-        },
-      }
-      : decisionSupport;
-
-    const allowPatchDebug = authDisabled || authedReq.regressionAuth === true;
-    const allowDecisionDebug = allowPatchDebug && debugDecisionRequested;
-    return res.json({
-      status: "ok",
-      barcode: barcodeGtin14,
-      sourceType: patched.digest.sourceType,
-      factsDigestHash: quickDigest.factsDigestHash,
-      digest: decisionSupportWithComparison.digest,
-      decisionSupportDigest: decisionSupportWithComparison.digest,
-      decisionInputsHash: decisionSupportWithComparison.decisionInputsHash,
-      personalizationScopeHash,
-      decisionContractVersion: decisionSupportWithComparison.decisionContractVersion,
-      overlayClaimsHash: decisionSupportWithComparison.overlayClaimsHash,
-      overlayAugmentationVersion: decisionSupportWithComparison.overlayAugmentationVersion,
-      overlayAugmentationSource: decisionSupportWithComparison.overlayAugmentationSource,
-      patchActivationCanonical: decisionSupportWithComparison.patchActivationCanonical,
-      rubricVersion: decisionSupportWithComparison.rubricVersion,
-      categoryId: decisionSupportWithComparison.categoryId,
-      categoryProfileVersion: decisionSupportWithComparison.categoryProfileVersion,
-      viewMode: decisionSupportWithComparison.viewMode,
-      verdict: decisionSupportWithComparison.verdict,
-      verdictReason: decisionSupportWithComparison.verdictReason,
-      subscores: decisionSupportWithComparison.subscores,
-      checklist: decisionSupportWithComparison.checklist,
-      blockers: decisionSupportWithComparison.blockers,
-      topBlockers: decisionSupportWithComparison.topBlockers,
-      extraTrustSignals: decisionSupportWithComparison.extraTrustSignals,
-      sourceTiers: decisionSupportWithComparison.sourceTiers,
-      nutriScoreCardV2: decisionSupportWithComparison.nutriScoreCardV2,
-      overviewBlock: decisionSupportWithComparison.overviewBlock,
-      scienceBlock: decisionSupportWithComparison.scienceBlock,
-      usageBlock: decisionSupportWithComparison.usageBlock,
-      safetyBlock: decisionSupportWithComparison.safetyBlock,
-      personalizedResultLane: decisionSupportWithComparison.personalizedResultLane,
-      qualityMark: decisionSupportWithComparison.qualityMark,
-      ...(typeof fetchCount === "number" ? { decisionSupportFetchCount: fetchCount } : {}),
-      ...(allowDecisionDebug && decisionSupportWithComparison.decisionDebug
-        ? {
-          decisionDebug: decisionSupportWithComparison.decisionDebug,
-        }
-        : {}),
-      ...(debugPatchRequested && allowPatchDebug
-        ? {
-          patchDebug: {
-            ...patched.activation,
-            digestIdentityKeys: debugIdentityKeys,
-            lookup: debugLookup,
-          },
-        }
-        : {}),
-    });
-  } catch (error) {
-    captureException(error, { route: "/api/decision-support/v1" });
-    const detail = error instanceof Error ? `${error.name}: ${error.message}` : String(error);
-    return res.status(500).json({ error: "unexpected_error", detail } satisfies ErrorResponse);
-  }
+registerDecisionSupportRoutes(app, {
+  verifySupabaseToken,
+  normalizeBarcodeInput,
+  parseDecisionSupportViewMode,
+  parseDebugDecisionRequested,
+  recordDecisionSupportFetch: (scanSessionId, barcodeGtin14) =>
+    decisionSupportFetchCounter.record(scanSessionId, barcodeGtin14),
+  buildDecisionSupportAuthorityBundle: (normalizedBarcode, options) =>
+    buildDecisionSupportAuthorityBundle(normalizedBarcode, {
+      req: options.req,
+      viewMode: options.viewMode as DecisionSupportViewMode,
+    }),
+  buildDecisionSupportComparisonStanding: (params) =>
+    buildDecisionSupportComparisonStanding({
+      barcodeGtin14: params.barcodeGtin14,
+      overlayClaims: params.overlayClaims as DecisionSupportOverlayClaims | null,
+      digest: params.digest as FactsDigest,
+      decisionSupport: params.decisionSupport as ReturnType<typeof compileDecisionSupport>,
+    }),
+  buildDecisionSupportDigestMismatchPayload,
+  getPatchShadowLookup,
+  incrementMetric,
+  allowDebugFields: (req) => authDisabled || (req as AuthenticatedRequest).regressionAuth === true,
+  captureException,
 });
 
 app.post("/api/ingredient-overview/v1", verifySupabaseToken, async (req: Request, res: Response) => {

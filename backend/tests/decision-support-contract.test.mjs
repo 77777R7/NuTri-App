@@ -8,9 +8,11 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const DECISION_SUPPORT_PATH = path.resolve(__dirname, "../src/decisionSupport.ts");
 const SERVER_PATH = path.resolve(__dirname, "../src/server.ts");
+const DECISION_SUPPORT_ROUTES_PATH = path.resolve(__dirname, "../src/routes/decisionSupportRoutes.ts");
 
 const readDecisionSupportSource = async () => readFile(DECISION_SUPPORT_PATH, "utf8");
 const readServerSource = async () => readFile(SERVER_PATH, "utf8");
+const readDecisionSupportRoutesSource = async () => readFile(DECISION_SUPPORT_ROUTES_PATH, "utf8");
 
 test("decision support digest is canonicalized with delimiter and category id", async () => {
   const source = await readDecisionSupportSource();
@@ -62,18 +64,27 @@ test("decision support includes personalized result lane v1 contract and inline 
 });
 
 test("decision support route exposes 409 digest mismatch contract", async () => {
-  const source = await readServerSource();
+  const source = await readDecisionSupportRoutesSource();
+  const serverSource = await readServerSource();
   const routeStart = source.indexOf('app.get("/api/decision-support/v1"');
   assert.ok(routeStart >= 0, "missing /api/decision-support/v1 route");
   const routeSlice = source.slice(routeStart, routeStart + 12000);
 
-  assert.match(routeSlice, /verifySupabaseToken/);
+  assert.match(routeSlice, /deps\.verifySupabaseToken/);
   assert.match(routeSlice, /requestedDigest/);
   assert.match(routeSlice, /res\.status\(409\)\.json\(/);
-  assert.match(routeSlice, /DECISION_SUPPORT_DIGEST_MISMATCH/);
-  assert.match(routeSlice, /latestDigest:\s*decisionSupport\.digest/);
-  assert.match(routeSlice, /latestDecisionInputsHash:\s*decisionSupport\.decisionInputsHash/);
-  assert.match(routeSlice, /latestPersonalizationScopeHash:\s*personalizationScopeHash/);
+  assert.match(routeSlice, /buildDecisionSupportDigestMismatchPayload\(/);
+  assert.match(routeSlice, /decisionSupport\.digest/);
+  assert.match(routeSlice, /decisionSupport\.decisionInputsHash/);
+  assert.match(routeSlice, /personalizationScopeHash/);
+
+  const helperStart = serverSource.indexOf("const buildDecisionSupportDigestMismatchPayload =");
+  assert.ok(helperStart >= 0, "missing digest mismatch payload builder");
+  const helperSlice = serverSource.slice(helperStart, helperStart + 800);
+  assert.match(helperSlice, /DECISION_SUPPORT_DIGEST_MISMATCH/);
+  assert.match(helperSlice, /latestDigest/);
+  assert.match(helperSlice, /latestDecisionInputsHash/);
+  assert.match(helperSlice, /latestPersonalizationScopeHash/);
   assert.match(routeSlice, /personalizationScopeHash,/);
   assert.match(routeSlice, /personalizedResultLane:\s*decisionSupport(?:WithComparison)?\.personalizedResultLane/);
 });
