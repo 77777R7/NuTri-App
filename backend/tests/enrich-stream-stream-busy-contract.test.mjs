@@ -29,9 +29,10 @@ test("admission rejects map to STREAM_BUSY terminal path", async () => {
   const source = await readFile(SERVER_PATH, "utf8");
   const tryStart = source.indexOf("const admissionWaitMs =");
   assert.ok(tryStart >= 0, "missing admission gate block");
-  const trySlice = source.slice(tryStart, tryStart + 1200);
+  const trySlice = source.slice(tryStart, tryStart + 2200);
 
   assert.match(trySlice, /streamAdmissionGate\.acquire/);
+  assert.match(trySlice, /emitAdmissionCoreFallbackAndFinalize\("PRE_REV1_PRESSURE_GUARD"\)/);
   assert.match(trySlice, /emitStreamBusyAndFinalize\(reasonCode\)/);
   assert.match(trySlice, /QUEUE_FULL/);
   assert.match(trySlice, /QUEUE_WAIT_TIMEOUT/);

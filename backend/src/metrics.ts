@@ -1,3 +1,5 @@
+import type { ScanSidecarPriority, ScanSidecarRoute } from "./scanSidecarPolicy.js";
+
 export const METRIC_NAMES = [
   "snapshot_write_success",
   "snapshot_write_timeout",
@@ -50,6 +52,21 @@ type TimingMetricSummary = {
 
 type TimingMetricsState = Record<TimingMetricName, TimingMetricSummary>;
 
+export type SidecarCacheStatus = "hit" | "miss" | "stale" | "write" | "bypass";
+
+type SidecarMetricSummary = {
+  priority: ScanSidecarPriority;
+  fetchCount: number;
+  cacheHitCount: number;
+  cacheMissCount: number;
+  cacheStaleCount: number;
+  cacheWriteCount: number;
+  cacheBypassCount: number;
+  latency: TimingMetricSummary;
+};
+
+type SidecarMetricsState = Partial<Record<ScanSidecarRoute, SidecarMetricSummary>>;
+
 type RegulatoryWritePolicyDecisionKind =
   | "wouldBlock"
   | "wouldUpgrade"
@@ -98,6 +115,17 @@ const buildEmptyTimings = (): TimingMetricsState =>
     return acc;
   }, {} as TimingMetricsState);
 
+const buildEmptySidecarSummary = (priority: ScanSidecarPriority): SidecarMetricSummary => ({
+  priority,
+  fetchCount: 0,
+  cacheHitCount: 0,
+  cacheMissCount: 0,
+  cacheStaleCount: 0,
+  cacheWriteCount: 0,
+  cacheBypassCount: 0,
+  latency: buildEmptyTimingSummary(),
+});
+
 const buildEmptyRegulatoryPolicyDecisionCounts = (): RegulatoryWritePolicyDecisionCounts =>
   REGULATORY_POLICY_DECISIONS.reduce((acc, decision) => {
     acc[decision] = 0;
@@ -114,6 +142,8 @@ const totals = buildEmptyCounts();
 let windowCounts = buildEmptyCounts();
 const timingTotals = buildEmptyTimings();
 let timingWindow = buildEmptyTimings();
+const sidecarTotals: SidecarMetricsState = {};
+let sidecarWindow: SidecarMetricsState = {};
 const startedAt = new Date().toISOString();
 let lastFlushAt = startedAt;
 let flushStarted = false;
@@ -171,6 +201,87 @@ export const recordMetricTiming = (name: TimingMetricName, ms: number): void => 
     current.minMs = current.count === 1 ? roundedMs : Math.min(current.minMs, roundedMs);
   }
 };
+
+const getSidecarSummary = (
+  state: SidecarMetricsState,
+  route: ScanSidecarRoute,
+  priority: ScanSidecarPriority,
+): SidecarMetricSummary => {
+  const existing = state[route];
+  if (existing) {
+    existing.priority = priority;
+    return existing;
+  }
+  const created = buildEmptySidecarSummary(priority);
+  state[route] = created;
+  return created;
+};
+
+const recordSidecarLatency = (summary: SidecarMetricSummary, ms: number): void => {
+  if (!Number.isFinite(ms) || ms < 0) return;
+  const roundedMs = Math.round(ms * 10) / 10;
+  const current = summary.latency;
+  current.count += 1;
+  current.totalMs += roundedMs;
+  current.lastMs = roundedMs;
+  current.maxMs = Math.max(current.maxMs, roundedMs);
+  current.minMs = current.count === 1 ? roundedMs : Math.min(current.minMs, roundedMs);
+};
+
+const recordSidecarMetricInto = (
+  state: SidecarMetricsState,
+  params: {
+    route: ScanSidecarRoute;
+    priority: ScanSidecarPriority;
+    latencyMs?: number;
+    cacheStatus?: SidecarCacheStatus;
+    fetched?: boolean;
+    amount?: number;
+  },
+): void => {
+  const summary = getSidecarSummary(state, params.route, params.priority);
+  const amount = Number.isFinite(params.amount) && Number(params.amount) > 0
+    ? Math.floor(Number(params.amount))
+    : 1;
+  if (params.fetched) summary.fetchCount += amount;
+  if (params.cacheStatus === "hit") summary.cacheHitCount += amount;
+  if (params.cacheStatus === "miss") summary.cacheMissCount += amount;
+  if (params.cacheStatus === "stale") summary.cacheStaleCount += amount;
+  if (params.cacheStatus === "write") summary.cacheWriteCount += amount;
+  if (params.cacheStatus === "bypass") summary.cacheBypassCount += amount;
+  if (typeof params.latencyMs === "number") recordSidecarLatency(summary, params.latencyMs);
+};
+
+export const recordSidecarMetric = (params: {
+  route: ScanSidecarRoute;
+  priority: ScanSidecarPriority;
+  latencyMs?: number;
+  cacheStatus?: SidecarCacheStatus;
+  fetched?: boolean;
+  amount?: number;
+}): void => {
+  recordSidecarMetricInto(sidecarTotals, params);
+  recordSidecarMetricInto(sidecarWindow, params);
+};
+
+const serializeTimingSummary = (summary: TimingMetricSummary) => ({
+  ...summary,
+  minMs: summary.count ? summary.minMs : 0,
+  avgMs: summary.count
+    ? Math.round((summary.totalMs / summary.count) * 10) / 10
+    : 0,
+});
+
+const serializeSidecarMetrics = (state: SidecarMetricsState) =>
+  Object.fromEntries(
+    Object.entries(state).map(([route, summary]) => [
+      route,
+      {
+        ...summary,
+        latency: serializeTimingSummary(summary.latency),
+      },
+    ]),
+  );
 
 const bumpRegulatoryPolicyBucket = (
   bucket: RegulatoryWritePolicyBucket,
@@ -247,6 +358,10 @@ export const getMetricsSnapshot = () => ({
       },
     ]),
   ),
+  sidecars: {
+    totals: serializeSidecarMetrics(sidecarTotals),
+    window: serializeSidecarMetrics(sidecarWindow),
+  },
   debug: {
     regulatoryWritePolicy: {
       totals: { ...regulatoryWritePolicyTotals },
@@ -268,6 +383,29 @@ const formatTimingCounts = (counts: TimingMetricsState): string =>
     return `${name}={count:${metric.count},avgMs:${avg},lastMs:${metric.lastMs}}`;
   }).join(" ");
 
+const hasSidecarActivity = (state: SidecarMetricsState): boolean =>
+  Object.values(state).some((summary) =>
+    Boolean(summary && (
+      summary.fetchCount > 0
+      || summary.cacheHitCount > 0
+      || summary.cacheMissCount > 0
+      || summary.cacheStaleCount > 0
+      || summary.cacheWriteCount > 0
+      || summary.cacheBypassCount > 0
+      || summary.latency.count > 0
+    )),
+  );
+
+const formatSidecarCounts = (state: SidecarMetricsState): string =>
+  Object.entries(state)
+    .map(([route, summary]) => {
+      const avg = summary.latency.count
+        ? Math.round((summary.latency.totalMs / summary.latency.count) * 10) / 10
+        : 0;
+      return `${route}={priority:${summary.priority},fetch:${summary.fetchCount},hit:${summary.cacheHitCount},miss:${summary.cacheMissCount},write:${summary.cacheWriteCount},avgMs:${avg}}`;
+    })
+    .join(" ");
+
 export const startMetricsFlush = (): void => {
   if (flushStarted) return;
   flushStarted = true;
@@ -275,11 +413,15 @@ export const startMetricsFlush = (): void => {
   setInterval(() => {
     const hasActivity = METRIC_NAMES.some((name) => windowCounts[name] > 0);
     const hasTimingActivity = TIMING_METRIC_NAMES.some((name) => timingWindow[name].count > 0);
-    if ((hasActivity || hasTimingActivity) && METRICS_WINDOW_LOG_ENABLED) {
-      console.log(`[metrics] window ${formatCounts(windowCounts)} timings=${formatTimingCounts(timingWindow)}`);
+    const hasSidecars = hasSidecarActivity(sidecarWindow);
+    if ((hasActivity || hasTimingActivity || hasSidecars) && METRICS_WINDOW_LOG_ENABLED) {
+      console.log(
+        `[metrics] window ${formatCounts(windowCounts)} timings=${formatTimingCounts(timingWindow)} sidecars=${formatSidecarCounts(sidecarWindow)}`,
+      );
     }
     windowCounts = buildEmptyCounts();
     timingWindow = buildEmptyTimings();
+    sidecarWindow = {};
     lastFlushAt = new Date().toISOString();
   }, 60_000);
 };

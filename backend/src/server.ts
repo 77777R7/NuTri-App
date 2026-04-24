@@ -56,15 +56,15 @@ import {
   prepareContextSources
 } from "./deepseek.js";
 import {
-  resolveEnrichStreamAdmissionPolicy,
   shouldRejectEnrichStreamForServerOverload,
 } from "./scanStreamAdmissionPolicy.js";
 import {
-  DEFAULT_BUNDLE_ONLY_DONE_DELAY_MS,
-  DEFAULT_FULL_REV1_DONE_DELAY_MS,
+  createEventLoopLagWindowSampler,
+} from "./scanEventLoopLagWindow.js";
+import {
   resolveScanStreamRev1DonePolicy,
-  toNonNegativeDelayMs,
 } from "./scanStreamTimingPolicy.js";
+import { resolveScanStreamRuntimeConfig } from "./scanStreamRuntimeConfig.js";
 import {
   buildFactsDigestFromDsld,
   buildFactsDigestFromLnhpd,
@@ -155,6 +155,15 @@ import { getMySupplementOverviewV2GateReason } from "./mySupplementOverviewGate.
 import { getNutriTipsData } from "./nutriTips.js";
 import { buildRuleBasedOverview } from "./overviewRuleBased.js";
 import { getProductSearchBootstrap, searchProducts, warmProductSearchIndex } from "./productSearch.js";
+import {
+  buildScanSidecarCacheKey,
+  getScanSidecarPolicy,
+} from "./scanSidecarPolicy.js";
+import {
+  recordKnownScanSidecarRouteTimings,
+  recordScanSidecarCacheStatus,
+} from "./scanSidecarRouteMetrics.js";
+import { createDecisionSupportFetchCounter } from "./decisionSupportFetchCounter.js";
 import * as profileResolverModule from "../../lib/personalization/core/profileResolver.ts";
 import {
   buildEnsureOverviewInflightKey,
@@ -270,6 +279,11 @@ const parseBooleanEnv = (value: string | undefined, fallback: boolean): boolean 
   if (normalized === "0" || normalized === "false" || normalized === "no") return false;
   return fallback;
 };
+const PRODUCT_SEARCH_WARM_ON_STARTUP = parseBooleanEnv(process.env.PRODUCT_SEARCH_WARM_ON_STARTUP, false);
+const PRODUCT_SEARCH_STARTUP_WARM_DELAY_MS = Math.max(
+  0,
+  Number(process.env.PRODUCT_SEARCH_STARTUP_WARM_DELAY_MS ?? 30_000),
+);
 const parseDebugDecisionRequested = (req: Request): boolean => {
   const queryValue = req.query.debugDecision;
   const queryRequested = Array.isArray(queryValue)
@@ -577,15 +591,12 @@ const RESILIENCE_GOOGLE_QUEUE_TIMEOUT_MS = Number(process.env.RESILIENCE_GOOGLE_
 const RESILIENCE_DEEPSEEK_QUEUE_TIMEOUT_MS = Number(process.env.RESILIENCE_DEEPSEEK_QUEUE_TIMEOUT_MS ?? 300);
 const REG_MAP_SECOND_CHANCE_TIMEOUT_MS = Number(process.env.REG_MAP_SECOND_CHANCE_TIMEOUT_MS ?? 450);
 const authorityRegressionSampleBarcodeNormalized = normalizeBarcodeInput(
-  process.env.AUTHORITY_REGRESSION_SAMPLE_BARCODE ?? "",
+  String(process.env.AUTHORITY_REGRESSION_SAMPLE_BARCODE ?? "").trim() || "00628747100045",
 );
 const AUTHORITY_REGRESSION_SAMPLE_BARCODE =
   authorityRegressionSampleBarcodeNormalized?.code.padStart(14, "0") ?? "";
-const AUTHORITY_REGRESSION_SAMPLE_ENABLED =
-  parseBooleanEnv(process.env.AUTHORITY_REGRESSION_SAMPLE_ENABLED, true)
-  && AUTHORITY_REGRESSION_SAMPLE_BARCODE.length > 0;
 const AUTHORITY_REGRESSION_SAMPLE_HISTORICAL_NPN = String(
-  process.env.AUTHORITY_REGRESSION_SAMPLE_HISTORICAL_NPN ?? "80062961",
+  String(process.env.AUTHORITY_REGRESSION_SAMPLE_HISTORICAL_NPN ?? "").trim() || "80062961",
 )
   .replace(/\D/g, "")
   .trim();
@@ -762,85 +773,39 @@ const ANALYSIS_BUNDLE_PROMPT_VERSION_VERSIONED = withDecisionContractPromptVersi
 const ANALYSIS_BUNDLE_FAST_TIMEOUT_MS = Number(process.env.ANALYSIS_BUNDLE_FAST_TIMEOUT_MS ?? 3500);
 const SSE_FAST_GRACE_MS = Number(process.env.SSE_FAST_GRACE_MS ?? 500);
 const SSE_GLOBAL_STREAM_TIMEOUT_MS = Number(process.env.SSE_GLOBAL_STREAM_TIMEOUT_MS ?? 15000);
-const ENRICH_STREAM_ADMISSION_POLICY =
-  resolveEnrichStreamAdmissionPolicy(process.env);
-const ENRICH_STREAM_MAX_ACTIVE =
-  ENRICH_STREAM_ADMISSION_POLICY.shared.maxActive;
-const ENRICH_STREAM_MAX_QUEUE =
-  ENRICH_STREAM_ADMISSION_POLICY.shared.maxQueue;
-const ENRICH_STREAM_MAX_ACTIVE_FULL =
-  ENRICH_STREAM_ADMISSION_POLICY.full.maxActive;
-const ENRICH_STREAM_MAX_QUEUE_FULL =
-  ENRICH_STREAM_ADMISSION_POLICY.full.maxQueue;
-const ENRICH_STREAM_MAX_ACTIVE_BUNDLE_ONLY =
-  ENRICH_STREAM_ADMISSION_POLICY.bundleOnly.maxActive;
-const ENRICH_STREAM_MAX_QUEUE_BUNDLE_ONLY =
-  ENRICH_STREAM_ADMISSION_POLICY.bundleOnly.maxQueue;
-const ENRICH_STREAM_QUEUE_WAIT_MS =
-  ENRICH_STREAM_ADMISSION_POLICY.full.queueWaitMs;
-const ENRICH_STREAM_QUEUE_WAIT_MS_BUNDLE_ONLY =
-  ENRICH_STREAM_ADMISSION_POLICY.bundleOnly.queueWaitMs;
-const ENRICH_STREAM_BUNDLE_ONLY_DONE_DELAY_MS = toNonNegativeDelayMs(
-  process.env.ENRICH_STREAM_BUNDLE_ONLY_DONE_DELAY_MS ??
-    DEFAULT_BUNDLE_ONLY_DONE_DELAY_MS,
-  DEFAULT_BUNDLE_ONLY_DONE_DELAY_MS,
-);
-const ENRICH_STREAM_REV0_FALLBACK_DELAY_MS = Math.max(
-  50,
-  Number(process.env.ENRICH_STREAM_REV0_FALLBACK_DELAY_MS ?? 250),
-);
-const ENRICH_STREAM_REV0_FALLBACK_DELAY_MS_BUNDLE_ONLY = Math.max(
-  ENRICH_STREAM_REV0_FALLBACK_DELAY_MS,
-  Number(process.env.ENRICH_STREAM_REV0_FALLBACK_DELAY_MS_BUNDLE_ONLY ?? 750),
-);
-const ENRICH_STREAM_WEB_REV1_DONE_DELAY_MS = toNonNegativeDelayMs(
-  process.env.ENRICH_STREAM_WEB_REV1_DONE_DELAY_MS ??
-    DEFAULT_FULL_REV1_DONE_DELAY_MS,
-  DEFAULT_FULL_REV1_DONE_DELAY_MS,
-);
-const ENRICH_STREAM_BUNDLE_ONLY_TERMINAL_GUARD_MS = Math.max(
-  ENRICH_STREAM_BUNDLE_ONLY_DONE_DELAY_MS + 1000,
-  Number(process.env.ENRICH_STREAM_BUNDLE_ONLY_TERMINAL_GUARD_MS ?? 3000),
-);
-const ENRICH_STREAM_OVERLOAD_INFLIGHT_THRESHOLD =
-  ENRICH_STREAM_ADMISSION_POLICY.overloadInflightThreshold;
-const ENRICH_STREAM_OVERLOAD_RETRY_AFTER_MS = Math.max(
-  0,
-  Number(process.env.ENRICH_STREAM_OVERLOAD_RETRY_AFTER_MS ?? 2000),
-);
-const ENRICH_STREAM_CLIENT_DISCONNECT_GRACE_MS = Math.max(
-  0,
-  Number(process.env.ENRICH_STREAM_CLIENT_DISCONNECT_GRACE_MS ?? 2500),
-);
-const SSE_CLIENT_TIMEOUT_MS = Number(
-  process.env.SSE_CLIENT_TIMEOUT_MS ?? process.env.WEB_E2E_SSE_TIMEOUT_MS ?? 50000,
-);
-const SSE_TIMEOUT_SAFETY_MARGIN_MS = Number(process.env.SSE_TIMEOUT_SAFETY_MARGIN_MS ?? 3000);
-const ENRICH_STREAM_STAGE_BUNDLE_AWAIT_TIMEOUT_MS = Math.max(
-  500,
-  Number(process.env.ENRICH_STREAM_STAGE_BUNDLE_AWAIT_TIMEOUT_MS ?? 3500),
-);
-const ENRICH_STREAM_FULL_PRE_REV1_TERMINAL_GUARD_MS = Math.max(
-  1000,
-  Number(
-    process.env.ENRICH_STREAM_FULL_PRE_REV1_TERMINAL_GUARD_MS
-      ?? Math.max(ENRICH_STREAM_STAGE_BUNDLE_AWAIT_TIMEOUT_MS + 1000, 5000),
-  ),
-);
-const ENRICH_STREAM_CRASH_CANARY_PRE_REV1_TERMINAL_GUARD_MS = Math.max(
-  500,
-  Number(process.env.ENRICH_STREAM_CRASH_CANARY_PRE_REV1_TERMINAL_GUARD_MS ?? 3500),
-);
-const ENRICH_STREAM_HARD_TERMINAL_FALLBACK_MS = Math.max(
-  1000,
-  Number(
-    process.env.ENRICH_STREAM_HARD_TERMINAL_FALLBACK_MS ??
-    Math.min(
-      Math.max(SSE_GLOBAL_STREAM_TIMEOUT_MS + 2500, 12000),
-      Math.max(2000, SSE_CLIENT_TIMEOUT_MS - 1000),
-    ),
-  ),
-);
+const ENRICH_STREAM_RUNTIME_CONFIG = resolveScanStreamRuntimeConfig(process.env);
+const ENRICH_STREAM_ADMISSION_POLICY = ENRICH_STREAM_RUNTIME_CONFIG.admissionPolicy;
+const ENRICH_STREAM_MAX_ACTIVE = ENRICH_STREAM_RUNTIME_CONFIG.sharedMaxActive;
+const ENRICH_STREAM_MAX_QUEUE = ENRICH_STREAM_RUNTIME_CONFIG.sharedMaxQueue;
+const ENRICH_STREAM_MAX_ACTIVE_FULL = ENRICH_STREAM_RUNTIME_CONFIG.fullMaxActive;
+const ENRICH_STREAM_MAX_QUEUE_FULL = ENRICH_STREAM_RUNTIME_CONFIG.fullMaxQueue;
+const ENRICH_STREAM_MAX_ACTIVE_BUNDLE_ONLY = ENRICH_STREAM_RUNTIME_CONFIG.bundleOnlyMaxActive;
+const ENRICH_STREAM_MAX_QUEUE_BUNDLE_ONLY = ENRICH_STREAM_RUNTIME_CONFIG.bundleOnlyMaxQueue;
+const ENRICH_STREAM_QUEUE_WAIT_MS = ENRICH_STREAM_RUNTIME_CONFIG.fullQueueWaitMs;
+const ENRICH_STREAM_QUEUE_WAIT_MS_BUNDLE_ONLY = ENRICH_STREAM_RUNTIME_CONFIG.bundleOnlyQueueWaitMs;
+const ENRICH_STREAM_ADMISSION_CORE_FALLBACK_BUDGET_MS =
+  ENRICH_STREAM_RUNTIME_CONFIG.admissionCoreFallbackBudgetMs;
+const ENRICH_STREAM_FULL_PRESSURE_CORE_FALLBACK_GUARD_MS =
+  ENRICH_STREAM_RUNTIME_CONFIG.fullPressureCoreFallbackGuardMs;
+const ENRICH_STREAM_BUNDLE_ONLY_DONE_DELAY_MS = ENRICH_STREAM_RUNTIME_CONFIG.bundleOnlyDoneDelayMs;
+const ENRICH_STREAM_REV0_FALLBACK_DELAY_MS = ENRICH_STREAM_RUNTIME_CONFIG.rev0FallbackDelayMs;
+const ENRICH_STREAM_REV0_FALLBACK_DELAY_MS_BUNDLE_ONLY =
+  ENRICH_STREAM_RUNTIME_CONFIG.rev0FallbackDelayMsBundleOnly;
+const ENRICH_STREAM_WEB_REV1_DONE_DELAY_MS = ENRICH_STREAM_RUNTIME_CONFIG.fullRev1DoneDelayMs;
+const ENRICH_STREAM_BUNDLE_ONLY_TERMINAL_GUARD_MS =
+  ENRICH_STREAM_RUNTIME_CONFIG.bundleOnlyTerminalGuardMs;
+const ENRICH_STREAM_OVERLOAD_INFLIGHT_THRESHOLD = ENRICH_STREAM_RUNTIME_CONFIG.overloadInflightThreshold;
+const ENRICH_STREAM_OVERLOAD_RETRY_AFTER_MS = ENRICH_STREAM_RUNTIME_CONFIG.overloadRetryAfterMs;
+const ENRICH_STREAM_CLIENT_DISCONNECT_GRACE_MS = ENRICH_STREAM_RUNTIME_CONFIG.clientDisconnectGraceMs;
+const SSE_CLIENT_TIMEOUT_MS = ENRICH_STREAM_RUNTIME_CONFIG.sseClientTimeoutMs;
+const SSE_TIMEOUT_SAFETY_MARGIN_MS = ENRICH_STREAM_RUNTIME_CONFIG.sseTimeoutSafetyMarginMs;
+const ENRICH_STREAM_STAGE_BUNDLE_AWAIT_TIMEOUT_MS =
+  ENRICH_STREAM_RUNTIME_CONFIG.stageBundleAwaitTimeoutMs;
+const ENRICH_STREAM_FULL_PRE_REV1_TERMINAL_GUARD_MS =
+  ENRICH_STREAM_RUNTIME_CONFIG.fullPreRev1TerminalGuardMs;
+const ENRICH_STREAM_CRASH_CANARY_PRE_REV1_TERMINAL_GUARD_MS =
+  ENRICH_STREAM_RUNTIME_CONFIG.crashCanaryPreRev1TerminalGuardMs;
+const ENRICH_STREAM_HARD_TERMINAL_FALLBACK_MS = ENRICH_STREAM_RUNTIME_CONFIG.hardTerminalFallbackMs;
 const ANALYSIS_BUNDLE_DETAIL_TIMEOUT_MS = Number(process.env.ANALYSIS_BUNDLE_DETAIL_TIMEOUT_MS ?? 7000);
 const ANALYSIS_BUNDLE_DETAIL_TIMEOUT_MS_DSLD = Number(
   process.env.ANALYSIS_BUNDLE_DETAIL_TIMEOUT_MS_DSLD ?? 4500,
@@ -1013,14 +978,16 @@ const eventLoopLagMonitor = monitorEventLoopDelay({
 });
 eventLoopLagMonitor.enable();
 
-const readEventLoopLagP95Ms = (): number => {
-  try {
-    const rawNs = eventLoopLagMonitor.percentile(95);
-    if (!Number.isFinite(rawNs) || rawNs <= 0) return 0;
-    return rawNs / 1_000_000;
-  } catch {
-    return 0;
-  }
+const eventLoopLagWindowSampler = createEventLoopLagWindowSampler({
+  histogram: eventLoopLagMonitor,
+  staleAfterMs: EVENT_LOOP_LAG_SAMPLE_MS,
+});
+
+const readEventLoopLagP95Ms = (): number =>
+  eventLoopLagWindowSampler.sampleAndReset().lagP95Ms;
+
+const resetEventLoopLagP95Window = (): void => {
+  eventLoopLagWindowSampler.resetWindow();
 };
 
 const isEventLoopLagOverThreshold = (): boolean =>
@@ -2992,15 +2959,48 @@ const mergeFastAnalysisBundle = (params: {
         : null,
   });
   const digest = patched.digest;
-  const decisionSupport = compileDecisionSupport({
-    digest,
-    factsDigestHash: skeleton.meta.factsDigestHash,
-    viewMode: DECISION_SUPPORT_DEFAULT_VIEW_MODE,
-    locale: skeleton.meta.locale,
-    flagsSnapshot: collectDecisionSupportFlagsSnapshot(),
-    patchActivation: patched.activation,
-    overlayClaims: params.overlayClaims ?? null,
-  });
+  const canReuseInlineDecisionSupport = Boolean(
+    skeleton.meta.decisionSupportInline
+    && skeleton.meta.decisionSupportDigest
+    && skeleton.meta.decisionInputsHash
+    && skeleton.meta.decisionContractVersion
+    && skeleton.meta.overlayClaimsHash
+    && skeleton.meta.patchActivationCanonical,
+  );
+  const decisionSupport = canReuseInlineDecisionSupport
+    ? null
+    : compileDecisionSupport({
+      digest,
+      factsDigestHash: skeleton.meta.factsDigestHash,
+      viewMode: DECISION_SUPPORT_DEFAULT_VIEW_MODE,
+      locale: skeleton.meta.locale,
+      flagsSnapshot: collectDecisionSupportFlagsSnapshot(),
+      patchActivation: patched.activation,
+      overlayClaims: params.overlayClaims ?? null,
+    });
+  const decisionSupportMeta = canReuseInlineDecisionSupport
+    ? {
+      decisionSupportDigest: skeleton.meta.decisionSupportDigest,
+      decisionInputsHash: skeleton.meta.decisionInputsHash,
+      decisionContractVersion: skeleton.meta.decisionContractVersion,
+      overlayClaimsHash: skeleton.meta.overlayClaimsHash,
+      overlayAugmentationVersion: skeleton.meta.overlayAugmentationVersion,
+      overlayAugmentationSource: skeleton.meta.overlayAugmentationSource,
+      patchActivationCanonical: skeleton.meta.patchActivationCanonical,
+      decisionDebug: skeleton.meta.decisionDebug,
+      decisionSupportInline: skeleton.meta.decisionSupportInline,
+    }
+    : {
+      decisionSupportDigest: decisionSupport!.digest,
+      decisionInputsHash: decisionSupport!.decisionInputsHash,
+      decisionContractVersion: decisionSupport!.decisionContractVersion,
+      overlayClaimsHash: decisionSupport!.overlayClaimsHash,
+      overlayAugmentationVersion: decisionSupport!.overlayAugmentationVersion,
+      overlayAugmentationSource: decisionSupport!.overlayAugmentationSource,
+      patchActivationCanonical: decisionSupport!.patchActivationCanonical,
+      decisionDebug: decisionSupport!.decisionDebug,
+      decisionSupportInline: toDecisionSupportInline(decisionSupport!),
+    };
   const ingredientsCover = buildIngredientsCover(digest, params.deterministicSignals);
   const ingredientsDataStatus = digest.actives.length > 0 ? "complete" : "not_provided";
   const allowedFormKeywords = buildAllowedFormKeywordSet(digest);
@@ -3234,19 +3234,19 @@ const mergeFastAnalysisBundle = (params: {
       deterministicSignals: summarizeDeterministicSignals(params.deterministicSignals),
       phase: "fast_ai",
       revision: skeleton.meta.revision + 1,
-      decisionSupportDigest: decisionSupport.digest,
-      decisionInputsHash: decisionSupport.decisionInputsHash,
-      decisionContractVersion: decisionSupport.decisionContractVersion,
-      overlayClaimsHash: decisionSupport.overlayClaimsHash,
-      overlayAugmentationVersion: decisionSupport.overlayAugmentationVersion,
-      overlayAugmentationSource: decisionSupport.overlayAugmentationSource,
-      patchActivationCanonical: decisionSupport.patchActivationCanonical,
-      ...(params.includeDecisionDebug && decisionSupport.decisionDebug
+      decisionSupportDigest: decisionSupportMeta.decisionSupportDigest,
+      decisionInputsHash: decisionSupportMeta.decisionInputsHash,
+      decisionContractVersion: decisionSupportMeta.decisionContractVersion,
+      overlayClaimsHash: decisionSupportMeta.overlayClaimsHash,
+      overlayAugmentationVersion: decisionSupportMeta.overlayAugmentationVersion,
+      overlayAugmentationSource: decisionSupportMeta.overlayAugmentationSource,
+      patchActivationCanonical: decisionSupportMeta.patchActivationCanonical,
+      ...(params.includeDecisionDebug && decisionSupportMeta.decisionDebug
         ? {
-          decisionDebug: decisionSupport.decisionDebug,
+          decisionDebug: decisionSupportMeta.decisionDebug,
         }
         : {}),
-      decisionSupportInline: toDecisionSupportInline(decisionSupport),
+      decisionSupportInline: decisionSupportMeta.decisionSupportInline,
     },
     sections: {
       overview: {
@@ -4633,6 +4633,7 @@ const fetchLnhpdFactsWithSecondChance = async (
     firstTimeoutMs?: number;
     secondTimeoutMs?: number;
     forceMode?: LnhpdForcedFailureMode | null;
+    allowWhenRuntimeDisabled?: boolean;
   },
 ): Promise<{
   facts: LnhpdFacts | null;
@@ -4641,7 +4642,7 @@ const fetchLnhpdFactsWithSecondChance = async (
   finalStatus: Exclude<LnhpdLookupStatus, "not_attempted">;
   secondChanceUsed: boolean;
 }> => {
-  if (!LNHPD_RUNTIME_ENABLED) {
+  if (!LNHPD_RUNTIME_ENABLED && !options?.allowWhenRuntimeDisabled) {
     return {
       facts: null,
       attempt1Status: "not_attempted",
@@ -6989,13 +6990,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   let finished = false;
   let aborted = false;
   const recordRouteTimingMetrics = (durationMs: number) => {
-    if (req.path === "/api/ingredient-overview/v1") {
-      recordMetricTiming("ingredient_overview_ms", durationMs);
-      return;
-    }
-    if (req.path === "/api/scientific-background/v1") {
-      recordMetricTiming("scientific_background_ms", durationMs);
-    }
+    recordKnownScanSidecarRouteTimings({ path: req.path, durationMs });
   };
 
   res.on("finish", () => {
@@ -7057,48 +7052,44 @@ const regressionAuthRoutes = new Set([
   "/api/kb/runtime/form-insights/batch",
   "/api/patch-shadow/status",
 ]);
-const DECISION_SUPPORT_FETCH_WINDOW_MS = 10 * 60 * 1000;
-const decisionSupportFetchCountsByScanSession = new Map<string, { count: number; lastSeenAt: number }>();
-
-const pruneDecisionSupportFetchCounts = (now: number) => {
-  for (const [key, value] of decisionSupportFetchCountsByScanSession.entries()) {
-    if (now - value.lastSeenAt > DECISION_SUPPORT_FETCH_WINDOW_MS) {
-      decisionSupportFetchCountsByScanSession.delete(key);
-    }
-  }
-};
-
-const recordDecisionSupportFetchForScanSession = (
-  scanSessionId: string | null,
-  barcodeGtin14: string,
-): number | null => {
-  const normalizedScanSessionId = String(scanSessionId ?? "").trim();
-  if (!normalizedScanSessionId) return null;
-  const now = Date.now();
-  pruneDecisionSupportFetchCounts(now);
-  const key = `${normalizedScanSessionId}:${barcodeGtin14}`;
-  const current = decisionSupportFetchCountsByScanSession.get(key);
-  const count = (current?.count ?? 0) + 1;
-  decisionSupportFetchCountsByScanSession.set(key, {
-    count,
-    lastSeenAt: now,
-  });
-  if (count > 1) {
-    incrementMetric("decision_support_refetch_count_per_scan");
-  }
-  return count;
-};
+const decisionSupportFetchCounter = createDecisionSupportFetchCounter({
+  onRefetch: () => incrementMetric("decision_support_refetch_count_per_scan"),
+});
 
 const verifySupabaseToken = async (req: Request, res: Response, next: NextFunction) => {
-  if (authDisabled) {
-    return next();
-  }
   const authBypassHeader = req.headers["x-auth-disabled"];
   const allowBypass =
     (Array.isArray(authBypassHeader)
       ? authBypassHeader.includes("1")
       : authBypassHeader === "1") &&
     (process.env.NODE_ENV !== "production" || allowAuthBypass);
+  const regressionHeader = req.headers["x-regression-token"];
+  const hasRegressionTokenHeader = Array.isArray(regressionHeader)
+    ? regressionHeader.some((value) => String(value ?? "").trim().length > 0)
+    : String(regressionHeader ?? "").trim().length > 0;
+  // CI regression requests may also carry x-auth-disabled for preview/staging convenience.
+  // Mark regression auth first so internal debug/audit contracts stay gated by the token,
+  // not accidentally hidden by the broader auth-bypass path. On staging/preview, auth-disabled
+  // modes are the environment gate; a non-empty regression token header selects the CI contract.
+  if (regressionAuthRoutes.has(req.path)) {
+    const hasRegressionToken = regressionAuthToken
+      ? (
+        Array.isArray(regressionHeader)
+          ? regressionHeader.includes(regressionAuthToken)
+          : regressionHeader === regressionAuthToken
+      )
+      : false;
+    const hasBypassRegressionMarker =
+      (authDisabled || allowBypass) && hasRegressionTokenHeader;
+    if (hasRegressionToken || hasBypassRegressionMarker) {
+      (req as AuthenticatedRequest).regressionAuth = true;
+      return next();
+    }
+  }
+
+  if (authDisabled) {
+    return next();
+  }
   if (allowBypass) {
     const debugUserHeader = req.headers["x-debug-user-id"];
     const debugUserId = Array.isArray(debugUserHeader)
@@ -7108,18 +7099,6 @@ const verifySupabaseToken = async (req: Request, res: Response, next: NextFuncti
       (req as AuthenticatedRequest).user = { id: debugUserId };
     }
     return next();
-  }
-
-  // CI regression path: scoped token only for non-destructive analysis endpoints.
-  if (regressionAuthToken && regressionAuthRoutes.has(req.path)) {
-    const regressionHeader = req.headers["x-regression-token"];
-    const hasRegressionToken = Array.isArray(regressionHeader)
-      ? regressionHeader.includes(regressionAuthToken)
-      : regressionHeader === regressionAuthToken;
-    if (hasRegressionToken) {
-      (req as AuthenticatedRequest).regressionAuth = true;
-      return next();
-    }
   }
 
   const authHeader = req.headers.authorization;
@@ -10390,26 +10369,34 @@ let activeScientificBackgroundRefreshCount = 0;
 const queuedScientificBackgroundRefreshTasks: Array<() => void> = [];
 
 const buildIngredientOverviewSidecarCacheKey = (params: {
+  barcode?: string;
   decisionDigest: string;
   decisionInputsHash: string;
   personalizationScopeHash: string;
 }): string =>
-  [
-    params.decisionDigest,
-    params.decisionInputsHash,
-    params.personalizationScopeHash,
-    INGREDIENT_OVERVIEW_PROMPT_VERSION,
-  ].join("|");
+  buildScanSidecarCacheKey({
+    route: "ingredient_overview",
+    barcode: params.barcode,
+    decisionDigest: params.decisionDigest,
+    decisionInputsHash: params.decisionInputsHash,
+    personalizationScopeHash: params.personalizationScopeHash,
+    promptVersion: INGREDIENT_OVERVIEW_PROMPT_VERSION,
+  });
 
 const readIngredientOverviewSidecarCache = (
   cacheKey: string,
 ): IngredientOverviewSidecarResponse | null => {
   const entry = ingredientOverviewSidecarCache.get(cacheKey);
-  if (!entry) return null;
-  if (entry.expiresAt <= Date.now()) {
-    ingredientOverviewSidecarCache.delete(cacheKey);
+  if (!entry) {
+    recordScanSidecarCacheStatus("ingredient_overview", "miss");
     return null;
   }
+  if (entry.expiresAt <= Date.now()) {
+    ingredientOverviewSidecarCache.delete(cacheKey);
+    recordScanSidecarCacheStatus("ingredient_overview", "stale");
+    return null;
+  }
+  recordScanSidecarCacheStatus("ingredient_overview", "hit");
   return entry.payload;
 };
 
@@ -10418,9 +10405,11 @@ const writeIngredientOverviewSidecarCache = (
   payload: IngredientOverviewSidecarResponse,
 ): void => {
   ingredientOverviewSidecarCache.set(cacheKey, {
-    expiresAt: Date.now() + INGREDIENT_OVERVIEW_FALLBACK_CACHE_TTL_MS,
+    expiresAt: Date.now()
+      + (getScanSidecarPolicy("ingredient_overview").defaultTtlMs || INGREDIENT_OVERVIEW_FALLBACK_CACHE_TTL_MS),
     payload,
   });
+  recordScanSidecarCacheStatus("ingredient_overview", "write");
   if (ingredientOverviewSidecarCache.size <= INGREDIENT_OVERVIEW_RESULT_CACHE_LIMIT) return;
   const oldestKey = ingredientOverviewSidecarCache.keys().next().value;
   if (typeof oldestKey === "string") {
@@ -10497,34 +10486,63 @@ const readScientificBackgroundSidecarCache = (
   cacheKey: string,
 ): ScientificBackgroundSidecarResponse | null => {
   const entry = scientificBackgroundSidecarCache.get(cacheKey);
-  if (!entry) return null;
-  if (entry.expiresAt <= Date.now()) {
-    scientificBackgroundSidecarCache.delete(cacheKey);
+  if (!entry) {
+    recordScanSidecarCacheStatus("scientific_background", "miss");
     return null;
   }
+  if (entry.expiresAt <= Date.now()) {
+    scientificBackgroundSidecarCache.delete(cacheKey);
+    recordScanSidecarCacheStatus("scientific_background", "stale");
+    return null;
+  }
+  recordScanSidecarCacheStatus("scientific_background", "hit");
   return entry.payload;
 };
 
+const buildScientificBackgroundSidecarCacheKey = (params: {
+  barcode?: string;
+  decisionDigest: string;
+  decisionInputsHash: string;
+  personalizationScopeHash: string;
+  selectedIngredientKey: string;
+  promptVersion: string;
+}): string =>
+  buildScanSidecarCacheKey({
+    route: "scientific_background",
+    barcode: params.barcode,
+    decisionDigest: params.decisionDigest,
+    decisionInputsHash: params.decisionInputsHash,
+    personalizationScopeHash: params.personalizationScopeHash,
+    selectedIngredientKey: params.selectedIngredientKey,
+    promptVersion: params.promptVersion,
+  });
+
 const findScientificBackgroundSidecarCacheByRequest = (params: {
+  barcode?: string;
   decisionDigest: string;
   decisionInputsHash: string;
   personalizationScopeHash: string;
   selectedIngredientKey: string;
 }): { cacheKey: string; payload: ScientificBackgroundSidecarResponse } | null => {
-  const prefix = [
-    params.decisionDigest,
-    params.decisionInputsHash,
-    params.personalizationScopeHash,
-    params.selectedIngredientKey,
-  ].join("|") + "|";
+  const prefix = buildScanSidecarCacheKey({
+    route: "scientific_background",
+    barcode: params.barcode,
+    decisionDigest: params.decisionDigest,
+    decisionInputsHash: params.decisionInputsHash,
+    personalizationScopeHash: params.personalizationScopeHash,
+    selectedIngredientKey: params.selectedIngredientKey,
+  }) + "|";
   for (const [cacheKey, entry] of scientificBackgroundSidecarCache.entries()) {
     if (!cacheKey.startsWith(prefix)) continue;
     if (entry.expiresAt <= Date.now()) {
       scientificBackgroundSidecarCache.delete(cacheKey);
+      recordScanSidecarCacheStatus("scientific_background", "stale");
       continue;
     }
+    recordScanSidecarCacheStatus("scientific_background", "hit");
     return { cacheKey, payload: entry.payload };
   }
+  recordScanSidecarCacheStatus("scientific_background", "miss");
   return null;
 };
 
@@ -10537,6 +10555,7 @@ const writeScientificBackgroundSidecarCache = (
     expiresAt: Date.now() + ttlMs,
     payload,
   });
+  recordScanSidecarCacheStatus("scientific_background", "write");
   if (scientificBackgroundSidecarCache.size <= SCIENTIFIC_BACKGROUND_RESULT_CACHE_LIMIT) return;
   const oldestKey = scientificBackgroundSidecarCache.keys().next().value;
   if (typeof oldestKey === "string") {
@@ -10548,11 +10567,12 @@ const resolveScientificBackgroundCacheTtlMs = (
   payload: ScientificBackgroundSidecarResponse,
   executionProfile: ScientificBackgroundExecutionProfile,
 ): number => {
-  if (payload.source === "api") return executionProfile.cacheTtlMs;
+  const policyTtlMs = getScanSidecarPolicy("scientific_background").defaultTtlMs;
+  if (payload.source === "api") return executionProfile.cacheTtlMs || policyTtlMs;
   if (payload.scientificBackground.mode === "research_mode") {
     return SCIENTIFIC_BACKGROUND_RESEARCH_FALLBACK_CACHE_TTL_MS;
   }
-  return executionProfile.cacheTtlMs;
+  return executionProfile.cacheTtlMs || policyTtlMs;
 };
 
 const withScientificBackgroundRefreshHint = (
@@ -10799,6 +10819,7 @@ const writeDecisionSupportAuthorityBundleCache = (
     expiresAt: Date.now() + DECISION_SUPPORT_AUTHORITY_BUNDLE_CACHE_TTL_MS,
     bundle,
   });
+  recordScanSidecarCacheStatus("decision_support", "write");
   if (decisionSupportAuthorityBundleCache.size <= DECISION_SUPPORT_AUTHORITY_BUNDLE_CACHE_LIMIT) return;
   const oldestKey = decisionSupportAuthorityBundleCache.keys().next().value;
   if (typeof oldestKey === "string") {
@@ -10810,11 +10831,16 @@ const readDecisionSupportAuthorityBundleCache = (
   cacheKey: string,
 ): DecisionSupportAuthorityBundle | null => {
   const cached = decisionSupportAuthorityBundleCache.get(cacheKey);
-  if (!cached) return null;
-  if (cached.expiresAt <= Date.now()) {
-    decisionSupportAuthorityBundleCache.delete(cacheKey);
+  if (!cached) {
+    recordScanSidecarCacheStatus("decision_support", "miss");
     return null;
   }
+  if (cached.expiresAt <= Date.now()) {
+    decisionSupportAuthorityBundleCache.delete(cacheKey);
+    recordScanSidecarCacheStatus("decision_support", "stale");
+    return null;
+  }
+  recordScanSidecarCacheStatus("decision_support", "hit");
   return cached.bundle;
 };
 
@@ -10830,7 +10856,10 @@ const buildDecisionSupportAuthorityBundle = async (
   if (cached) return cached;
 
   const existingInflight = decisionSupportAuthorityBundleInflight.get(cacheKey);
-  if (existingInflight) return existingInflight;
+  if (existingInflight) {
+    recordScanSidecarCacheStatus("decision_support", "hit");
+    return existingInflight;
+  }
 
   const promise = buildDecisionSupportAuthorityBundleUncached(normalizedBarcode, options)
     .then((bundle) => {
@@ -11186,23 +11215,10 @@ app.get("/api/decision-support/v1", verifySupabaseToken, async (req: Request, re
 
   try {
     const authedReq = req as AuthenticatedRequest;
-    const userId = authedReq.user?.id ?? null;
-    const localDecisionSupportContext = parseLocalDecisionSupportContext(req);
-    const localDecisionSupportHeader = String(req.header("x-local-personalization") ?? "").trim() || null;
     const barcodeGtin14 = normalizedBarcode.code.padStart(14, "0");
-    const fetchCount = recordDecisionSupportFetchForScanSession(scanSessionId, barcodeGtin14);
-    const overlayClaims = await fetchIherbOverlayClaimsByBarcode(barcodeGtin14);
-    const quickDigest = await buildMySupplementDigestQuick({
-      supplementId: barcodeGtin14,
-      barcode: normalizedBarcode.code,
-      brandName: "",
-      productName: "",
-      budgetMs: 4_500,
-    });
-    const patched = applyPatchShadowToFactsDigest({
-      digest: quickDigest.digest,
-      barcodeGtin14,
-    });
+    const fetchCount = decisionSupportFetchCounter.record(scanSessionId, barcodeGtin14);
+    const authority = await buildDecisionSupportAuthorityBundle(normalizedBarcode, { req, viewMode });
+    const { overlayClaims, quickDigest, patched, decisionSupport, personalizationScopeHash } = authority;
     const debugIdentityValue = String(quickDigest.digest?.identity?.value ?? "").trim();
     const debugIdentityType = String(quickDigest.digest?.identity?.type ?? "").trim().toLowerCase();
     const debugSourceType = String(quickDigest.digest?.sourceType ?? "").trim().toLowerCase();
@@ -11213,51 +11229,6 @@ app.get("/api/decision-support/v1", verifySupabaseToken, async (req: Request, re
     const debugLookup = getPatchShadowLookup({
       barcodeGtin14,
       identityKeys: debugIdentityKeys,
-    });
-    const [userProfile, productFlags, remoteStackInputs] = await Promise.all([
-      fetchUserDecisionSupportProfile(userId),
-      fetchProductAllergenFlagsForDecisionSupport(patched.digest, barcodeGtin14),
-      userId ? fetchRemoteStackOverlapInputs(userId) : Promise.resolve(null),
-    ]);
-    const localUserProfile = buildUserDecisionSupportProfileRowFromLocalProfile(
-      localDecisionSupportContext?.profile,
-    );
-    const effectiveUserProfile = mergeDecisionSupportProfileRows({
-      remoteProfile: userProfile,
-      localProfile: localUserProfile,
-    });
-    const allergyContext = buildDecisionSupportAllergyContext({
-      userProfile: effectiveUserProfile,
-      productFlags,
-    });
-    const personalizationContext = buildDecisionSupportPersonalizationContext({
-      userProfile: effectiveUserProfile,
-      allergyContext,
-      remoteStackInputs,
-      currentProductInput: buildDecisionSupportCurrentStackInput({
-        digest: patched.digest,
-        barcodeGtin14,
-      }),
-      fallbackSavedStackCount: userId ? 0 : (localDecisionSupportContext?.savedSupplements.length ?? 0),
-    });
-    const personalizationScopeHash = buildPersonalizationScopeHash({
-      userId,
-      localDecisionSupportHeader,
-      effectiveUserProfile,
-      allergyContext,
-      personalizationContext,
-    });
-
-    const decisionSupport = compileDecisionSupport({
-      digest: patched.digest,
-      factsDigestHash: quickDigest.factsDigestHash,
-      viewMode,
-      locale: "en",
-      flagsSnapshot: collectDecisionSupportFlagsSnapshot(),
-      patchActivation: patched.activation,
-      overlayClaims,
-      allergyContext,
-      personalizationContext,
     });
 
     if (
@@ -11388,6 +11359,7 @@ app.post("/api/ingredient-overview/v1", verifySupabaseToken, async (req: Request
       && parsedBody.personalizationScopeHash
     ) {
       const fastCacheKey = buildIngredientOverviewSidecarCacheKey({
+        barcode: normalizedBarcode.code,
         decisionDigest: parsedBody.decisionDigest,
         decisionInputsHash: parsedBody.decisionInputsHash,
         personalizationScopeHash: parsedBody.personalizationScopeHash,
@@ -11436,6 +11408,17 @@ app.post("/api/ingredient-overview/v1", verifySupabaseToken, async (req: Request
       );
     }
 
+    const cacheKey = buildIngredientOverviewSidecarCacheKey({
+      barcode: normalizedBarcode.code,
+      decisionDigest: authority.decisionSupport.digest,
+      decisionInputsHash: authority.decisionSupport.decisionInputsHash,
+      personalizationScopeHash: authority.personalizationScopeHash,
+    });
+    const cached = readIngredientOverviewSidecarCache(cacheKey);
+    if (cached) {
+      return res.json(cached);
+    }
+
     const deepseekKey = process.env.DEEPSEEK_API_KEY?.trim() || null;
     const deepseekModel = process.env.DEEPSEEK_MODEL?.trim() || "deepseek-chat";
     const executionProfile = resolveIngredientOverviewExecutionProfile(authority.ingredientScienceContext);
@@ -11466,11 +11449,7 @@ app.post("/api/ingredient-overview/v1", verifySupabaseToken, async (req: Request
       promptVersion: compiled.promptVersion,
     };
     writeIngredientOverviewSidecarCache(
-      buildIngredientOverviewSidecarCacheKey({
-        decisionDigest: authority.decisionSupport.digest,
-        decisionInputsHash: authority.decisionSupport.decisionInputsHash,
-        personalizationScopeHash: authority.personalizationScopeHash,
-      }),
+      cacheKey,
       payload,
     );
 
@@ -11502,6 +11481,7 @@ app.post("/api/scientific-background/v1", verifySupabaseToken, async (req: Reque
       && parsedBody.personalizationScopeHash
       && fastSelectedIngredientKey
         ? findScientificBackgroundSidecarCacheByRequest({
+          barcode: normalizedBarcode.code,
           decisionDigest: parsedBody.decisionDigest,
           decisionInputsHash: parsedBody.decisionInputsHash,
           personalizationScopeHash: parsedBody.personalizationScopeHash,
@@ -11572,14 +11552,14 @@ app.post("/api/scientific-background/v1", verifySupabaseToken, async (req: Reque
       selectedIngredientName: selectedDescriptor.name,
     });
     const executionProfile = resolveScientificBackgroundExecutionProfile(plan);
-    const cacheKey = [
-      authority.decisionSupport.digest,
-      authority.decisionSupport.decisionInputsHash,
-      authority.personalizationScopeHash,
-      selectedDescriptor.key,
-      plan.mode,
-      SCIENTIFIC_BACKGROUND_PROMPT_VERSION,
-    ].join("|");
+    const cacheKey = buildScientificBackgroundSidecarCacheKey({
+      barcode: normalizedBarcode.code,
+      decisionDigest: authority.decisionSupport.digest,
+      decisionInputsHash: authority.decisionSupport.decisionInputsHash,
+      personalizationScopeHash: authority.personalizationScopeHash,
+      selectedIngredientKey: selectedDescriptor.key,
+      promptVersion: `${plan.mode}:${SCIENTIFIC_BACKGROUND_PROMPT_VERSION}`,
+    });
     const deepseekKey = process.env.DEEPSEEK_API_KEY?.trim() || null;
     const deepseekModel = process.env.DEEPSEEK_MODEL?.trim() || "deepseek-chat";
     const ensureScientificBackgroundBackgroundRefresh = (): boolean => {
@@ -11833,6 +11813,71 @@ const productOverviewAiBodySchema = z.object({
   isLikelySingleIngredient: z.boolean().optional(),
 });
 
+type ProductOverviewAiSidecarResponse = {
+  status: "ok";
+  digest: string;
+  source: "api" | "fallback";
+  promptVersion: string;
+  fallbackUsed: boolean;
+  fallbackReason?: string;
+  overviewAi:
+    | ReturnType<typeof buildProductOverviewWhatIsItFallback>
+    | NonNullable<Awaited<ReturnType<typeof fetchProductOverviewWhatIsIt>>>;
+};
+
+const PRODUCT_OVERVIEW_AI_RESULT_CACHE_LIMIT = 120;
+const productOverviewAiSidecarCache = new Map<string, {
+  expiresAt: number;
+  payload: ProductOverviewAiSidecarResponse;
+}>();
+
+const buildProductOverviewAiSidecarCacheKey = (params: {
+  decisionDigest: string;
+  promptPayload: unknown;
+}): string =>
+  buildScanSidecarCacheKey({
+    route: "product_overview_ai",
+    decisionDigest: params.decisionDigest,
+    decisionInputsHash: createHash("sha256")
+      .update(stableStringifyScopeValue(params.promptPayload))
+      .digest("hex"),
+    personalizationScopeHash: "none",
+    promptVersion: PRODUCT_OVERVIEW_WHAT_IS_IT_PROMPT_VERSION,
+  });
+
+const readProductOverviewAiSidecarCache = (
+  cacheKey: string,
+): ProductOverviewAiSidecarResponse | null => {
+  const entry = productOverviewAiSidecarCache.get(cacheKey);
+  if (!entry) {
+    recordScanSidecarCacheStatus("product_overview_ai", "miss");
+    return null;
+  }
+  if (entry.expiresAt <= Date.now()) {
+    productOverviewAiSidecarCache.delete(cacheKey);
+    recordScanSidecarCacheStatus("product_overview_ai", "stale");
+    return null;
+  }
+  recordScanSidecarCacheStatus("product_overview_ai", "hit");
+  return entry.payload;
+};
+
+const writeProductOverviewAiSidecarCache = (
+  cacheKey: string,
+  payload: ProductOverviewAiSidecarResponse,
+): void => {
+  productOverviewAiSidecarCache.set(cacheKey, {
+    expiresAt: Date.now() + getScanSidecarPolicy("product_overview_ai").defaultTtlMs,
+    payload,
+  });
+  recordScanSidecarCacheStatus("product_overview_ai", "write");
+  if (productOverviewAiSidecarCache.size <= PRODUCT_OVERVIEW_AI_RESULT_CACHE_LIMIT) return;
+  const oldestKey = productOverviewAiSidecarCache.keys().next().value;
+  if (typeof oldestKey === "string") {
+    productOverviewAiSidecarCache.delete(oldestKey);
+  }
+};
+
 const normalizeOverviewAiToken = (value?: string | null): string =>
   safeTrim(value)?.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim() ?? "";
 
@@ -11916,20 +11961,6 @@ app.post("/api/product-overview-ai/v1", verifySupabaseToken, async (req: Request
     isLikelySingleIngredient: parsedBody.isLikelySingleIngredient ?? false,
   });
 
-  const respondWithOverviewFallback = (reason: string) => res.json({
-    status: "ok",
-    digest: parsedBody.digest,
-    source: "fallback",
-    promptVersion: `${PRODUCT_OVERVIEW_WHAT_IS_IT_PROMPT_VERSION}:fallback`,
-    fallbackUsed: true,
-    fallbackReason: reason,
-    overviewAi: fallbackOverviewAi,
-  });
-
-  if (!deepseekKey) {
-    return respondWithOverviewFallback("ai_not_configured");
-  }
-
   const promptPayload = {
     productName: parsedBody.productName,
     brandName: parsedBody.brandName ?? null,
@@ -11962,6 +11993,32 @@ app.post("/api/product-overview-ai/v1", verifySupabaseToken, async (req: Request
       richModeOnlyWhenSimple: true,
     },
   };
+  const cacheKey = buildProductOverviewAiSidecarCacheKey({
+    decisionDigest: parsedBody.digest,
+    promptPayload,
+  });
+  const cached = readProductOverviewAiSidecarCache(cacheKey);
+  if (cached) {
+    return res.json(cached);
+  }
+
+  const respondWithOverviewFallback = (reason: string) => {
+    const payload: ProductOverviewAiSidecarResponse = {
+      status: "ok",
+      digest: parsedBody.digest,
+      source: "fallback",
+      promptVersion: `${PRODUCT_OVERVIEW_WHAT_IS_IT_PROMPT_VERSION}:fallback`,
+      fallbackUsed: true,
+      fallbackReason: reason,
+      overviewAi: fallbackOverviewAi,
+    };
+    writeProductOverviewAiSidecarCache(cacheKey, payload);
+    return res.json(payload);
+  };
+
+  if (!deepseekKey) {
+    return respondWithOverviewFallback("ai_not_configured");
+  }
 
   try {
     const ai = await fetchProductOverviewWhatIsIt(
@@ -11998,14 +12055,16 @@ app.post("/api/product-overview-ai/v1", verifySupabaseToken, async (req: Request
       return respondWithOverviewFallback("gate_rejected");
     }
 
-    return res.json({
+    const payload: ProductOverviewAiSidecarResponse = {
       status: "ok",
       digest: parsedBody.digest,
       source: "api",
       promptVersion: PRODUCT_OVERVIEW_WHAT_IS_IT_PROMPT_VERSION,
       fallbackUsed: false,
       overviewAi: ai,
-    });
+    };
+    writeProductOverviewAiSidecarCache(cacheKey, payload);
+    return res.json(payload);
   } catch (error) {
     captureException(error, { route: "/api/product-overview-ai/v1" });
     return respondWithOverviewFallback("unexpected_error");
@@ -12597,6 +12656,34 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
             fallback: { code: "facts_digest_missing" },
             fallbackReason: "facts_digest_missing",
             scoreAvailable: fallbackScoreAvailable,
+          },
+          timingMs: 0,
+        });
+        return;
+      }
+
+      const terminalNoDigestIdentity =
+        identity.type === "webCanonicalId" || identity.type === "gtin14";
+      if (terminalNoDigestIdentity) {
+        res.status(200).json({
+          section: "ingredients",
+          detail: { items: [], overallSummary: null, overlapNotes: null },
+          dataStatus: "not_provided",
+          page: {
+            limit: rawRequestedLimit,
+            cursor,
+            nextCursor: null,
+            hasMore: false,
+            totalActives: 0,
+          },
+          meta: {
+            bundleId: randomUUID(),
+            revision: 1,
+            factsDigestHash: requestedFactsDigestHash,
+            fallbackUsed: "skeleton",
+            fallback: { code: "facts_digest_missing" },
+            fallbackReason: "facts_digest_missing",
+            scoreAvailable: false,
           },
           timingMs: 0,
         });
@@ -13794,6 +13881,10 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
   const isAuthBypassRequest = Array.isArray(authBypassHeader)
     ? authBypassHeader.includes("1")
     : authBypassHeader === "1";
+  const regressionTokenHeaderRaw = req.headers["x-regression-token"];
+  const hasRegressionTokenHeader = Array.isArray(regressionTokenHeaderRaw)
+    ? regressionTokenHeaderRaw.some((value) => String(value ?? "").trim().length > 0)
+    : String(regressionTokenHeaderRaw ?? "").trim().length > 0;
   const authorityRegressionSampleHeaderRaw = req.headers["x-authority-regression-sample"];
   const authorityRegressionSampleRequested = Array.isArray(authorityRegressionSampleHeaderRaw)
     ? authorityRegressionSampleHeaderRaw.some((value) => String(value).trim().toLowerCase() === "1" || String(value).trim().toLowerCase() === "true")
@@ -13811,6 +13902,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
       })();
   const isRegressionLikeRequest =
     isRegressionRequest ||
+    ((authDisabled || isAuthBypassRequest) && (hasRegressionTokenHeader || authorityRegressionSampleRequested)) ||
     (process.env.NODE_ENV !== "production" && isAuthBypassRequest && authorityRegressionSampleRequested);
   const authorityFailModeHeaderRaw =
     typeof req.headers["x-authority-fail-mode"] === "string"
@@ -14409,6 +14501,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
   let globalWatchdog: ReturnType<typeof setTimeout> | null = null;
   let bundleOnlyDoneTimer: ReturnType<typeof setTimeout> | null = null;
   let bundleOnlyTerminalGuardTimer: ReturnType<typeof setTimeout> | null = null;
+  let fullPressureCoreFallbackTimer: ReturnType<typeof setTimeout> | null = null;
   let fullPreRev1TerminalGuardTimer: ReturnType<typeof setTimeout> | null = null;
   let webRev1DoneTimer: ReturnType<typeof setTimeout> | null = null;
   let hardTerminalWatchdog: ReturnType<typeof setTimeout> | null = null;
@@ -14438,6 +14531,10 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
       clearTimeout(bundleOnlyTerminalGuardTimer);
       bundleOnlyTerminalGuardTimer = null;
     }
+    if (fullPressureCoreFallbackTimer) {
+      clearTimeout(fullPressureCoreFallbackTimer);
+      fullPressureCoreFallbackTimer = null;
+    }
     if (fullPreRev1TerminalGuardTimer) {
       clearTimeout(fullPreRev1TerminalGuardTimer);
       fullPreRev1TerminalGuardTimer = null;
@@ -14462,6 +14559,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
     }
   };
   const startLagSampler = () => {
+    resetEventLoopLagP95Window();
     sampleRequestLag();
     if (lagSamplerTimer) return;
     lagSamplerTimer = setInterval(sampleRequestLag, EVENT_LOOP_LAG_SAMPLE_MS);
@@ -15333,6 +15431,120 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
       });
     }
   };
+  const withAdmissionCoreFallbackBudget = async <T>(
+    promise: Promise<T>,
+    budgetMs: number,
+  ): Promise<T> =>
+    new Promise<T>((resolve, reject) => {
+      const timer = setTimeout(() => {
+        reject(new TimeoutError("admission_core_fallback_budget_exhausted"));
+      }, Math.max(1, budgetMs));
+      (timer as { unref?: () => void }).unref?.();
+      promise.then(resolve, reject).finally(() => clearTimeout(timer));
+    });
+  const emitAdmissionCoreFallbackAndFinalize = async (
+    reasonCode: "QUEUE_FULL" | "QUEUE_WAIT_TIMEOUT" | "PRE_REV1_PRESSURE_GUARD" | "PRE_REV1_TERMINAL_GUARD",
+  ): Promise<boolean> => {
+    if (streamAnalysisBundleOnly) return false;
+    if (!normalized) return false;
+    if (streamState.doneSent || streamState.ended || streamState.clientDisconnected || res.writableEnded) return true;
+
+    const fallbackCode = `admission_core_fallback_${reasonCode.toLowerCase()}`;
+    const barcodeGtin14 = normalized.code.padStart(14, "0");
+    streamBarcode = normalized.code;
+    terminalReason = fallbackCode;
+
+    try {
+      const quickDigest = await withAdmissionCoreFallbackBudget(
+        buildMySupplementDigestQuick({
+          supplementId: barcodeGtin14,
+          barcode: normalized.code,
+          brandName: "",
+          productName: "",
+          budgetMs: ENRICH_STREAM_ADMISSION_CORE_FALLBACK_BUDGET_MS,
+        }),
+        ENRICH_STREAM_ADMISSION_CORE_FALLBACK_BUDGET_MS,
+      );
+      const digest = quickDigest.digest;
+      const identityType = digest.identity.type;
+      const identityValue = String(digest.identity.value || barcodeGtin14);
+      const deterministicSignals = DETERMINISTIC_SIGNALS_PRIMARY
+        ? extractDeterministicSignalPack({
+          sourceRole: digest.sourceType,
+          digest,
+        })
+        : null;
+      const fallbackBundle = buildAnalysisBundleSkeleton({
+        digest,
+        deterministicSignals,
+        bundleId,
+        revision: 1,
+        phase: "fast_ai",
+        locale: streamLocale,
+        factsDigestHash: quickDigest.factsDigestHash || computeFactsDigestHash(digest),
+        factsSourceVersion: quickDigest.factsSourceVersion,
+        identityType,
+        identityValue,
+        dataStatus: {
+          overview: "limited",
+          usage: "limited",
+          safety: "limited",
+        },
+        overlayClaims: null,
+        includeDecisionDebug: debugDecisionRequested && (authDisabled || isRegressionRequest),
+      });
+      emitRev1Once(
+        {
+          ...fallbackBundle,
+          meta: {
+            ...fallbackBundle.meta,
+            sourceTypeFinal: digest.sourceType === "lnhpd" || digest.sourceType === "dsld",
+            detailReady: digest.actives.length > 0,
+            fallback: { code: fallbackCode },
+            fallbackReason: fallbackCode,
+            admissionFallback: {
+              reasonCode,
+              budgetMs: ENRICH_STREAM_ADMISSION_CORE_FALLBACK_BUDGET_MS,
+            },
+          },
+        },
+        "fallback",
+        fallbackCode,
+      );
+    } catch (error) {
+      console.warn("[enrich-stream] admission core fallback used provisional bundle", {
+        requestId: requestId || null,
+        reasonCode,
+        error: error instanceof Error ? error.message : String(error),
+      });
+      const provisionalBundle = buildProvisionalAnalysisBundle({
+        bundleId,
+        locale: streamLocale,
+        barcodeGtin14,
+        revision: 1,
+        phase: "fast_ai",
+        fallbackReason: fallbackCode,
+      });
+      emitRev1Once(
+        {
+          ...provisionalBundle,
+          meta: {
+            ...provisionalBundle.meta,
+            admissionFallback: {
+              reasonCode,
+              budgetMs: ENRICH_STREAM_ADMISSION_CORE_FALLBACK_BUDGET_MS,
+            },
+          },
+        },
+        "fallback",
+        fallbackCode,
+      );
+    }
+
+    if (!streamState.rev1Sent) return false;
+    finalizeStream(fallbackCode);
+    return true;
+  };
   const maybeDegradeForEventLoopLag = (): boolean => {
     sampleRequestLag();
     if (eventLoopLagP95DuringRequest <= EVENT_LOOP_LAG_P95_THRESHOLD_MS) {
@@ -15387,6 +15599,19 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
         waitMs: admissionWaitMs,
       });
       releaseAdmission = admissionLease.release;
+      const admissionStateAfterAcquire = streamAdmissionGate.getState();
+      const hasImmediatePressureFallbackDemand =
+        admissionStateAfterAcquire.queue > 0 ||
+        (!isRegressionRequest && admissionStateAfterAcquire.active >= admissionStateAfterAcquire.maxActive);
+      const shouldUseImmediatePressureFallback =
+        !streamAnalysisBundleOnly
+        && hasImmediatePressureFallbackDemand;
+      if (shouldUseImmediatePressureFallback) {
+        const fallbackEmitted = await emitAdmissionCoreFallbackAndFinalize("PRE_REV1_PRESSURE_GUARD");
+        if (fallbackEmitted) {
+          return;
+        }
+      }
     } catch (error) {
       if (error instanceof EnrichStreamAdmissionError && error.code === "ABORTED") {
         return;
@@ -15395,6 +15620,12 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
         error instanceof EnrichStreamAdmissionError && error.code === "QUEUE_FULL"
           ? "QUEUE_FULL"
           : "QUEUE_WAIT_TIMEOUT";
+      if (reasonCode === "QUEUE_WAIT_TIMEOUT" || reasonCode === "QUEUE_FULL") {
+        const fallbackEmitted = await emitAdmissionCoreFallbackAndFinalize(reasonCode);
+        if (fallbackEmitted) {
+          return;
+        }
+      }
       emitStreamBusyAndFinalize(reasonCode);
       return;
     }
@@ -15423,12 +15654,9 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
       return overlayClaimsForBarcodePromise;
     };
     const authorityRegressionScenarioActive =
-      AUTHORITY_REGRESSION_SAMPLE_ENABLED &&
       isRegressionLikeRequest &&
       barcodeGtin14 === AUTHORITY_REGRESSION_SAMPLE_BARCODE;
-    if (authorityRegressionScenarioActive) {
-      authorityFailMode = "timeout";
-    }
+    const lnhpdRuntimeEnabledForRequest = LNHPD_RUNTIME_ENABLED || authorityRegressionScenarioActive;
 
     let regulatoryMapStatus: "hit" | "stale" | "miss" | "timeout" = "miss";
     let regMapPrimaryAttempted = false;
@@ -15536,6 +15764,19 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
           (bundleOnlyTerminalGuardTimer as { unref?: () => void }).unref?.();
         }
       }
+      if (!streamAnalysisBundleOnly && !fullPressureCoreFallbackTimer) {
+        fullPressureCoreFallbackTimer = setTimeout(() => {
+          fullPressureCoreFallbackTimer = null;
+          if (streamState.rev1Sent || streamState.doneSent || streamState.ended || res.writableEnded || streamState.clientDisconnected) return;
+          const admissionState = streamAdmissionGate.getState();
+          const hasQueuedPressureFallbackDemand = admissionState.queue > 0;
+          const hasActivePressureFallbackDemand =
+            !isRegressionRequest && admissionState.active >= admissionState.maxActive;
+          if (!hasQueuedPressureFallbackDemand && !hasActivePressureFallbackDemand) return;
+          void emitAdmissionCoreFallbackAndFinalize("PRE_REV1_PRESSURE_GUARD");
+        }, ENRICH_STREAM_FULL_PRESSURE_CORE_FALLBACK_GUARD_MS);
+        (fullPressureCoreFallbackTimer as { unref?: () => void }).unref?.();
+      }
       if (!streamAnalysisBundleOnly && !fullPreRev1TerminalGuardTimer) {
         const remainingMs = globalDeadlineAt - Date.now();
         if (remainingMs > 0) {
@@ -15549,7 +15790,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
             1,
             Math.min(preRev1GuardBudgetMs, remainingMs),
           );
-          fullPreRev1TerminalGuardTimer = setTimeout(() => {
+          fullPreRev1TerminalGuardTimer = setTimeout(async () => {
             try {
               fullPreRev1TerminalGuardTimer = null;
               if (streamState.ended || streamState.doneSent || res.writableEnded || streamState.clientDisconnected) return;
@@ -15560,16 +15801,8 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
                 emitDegradedLimitedRev1AndFinalize("DEGRADED_WEB_BUDGET");
                 return;
               }
-              const webHintLikeSourceAttribution = latestProductIdentity?.sourceAttribution === "web_hint_unverified";
-              const webHintLikeSourceType = streamState.latestSourceType === "web";
-              const webHintLikeIdentityType = streamState.latestIdentityType === "webCanonicalId";
-              const isWebHintLike =
-                activeStage0Winner === "web_hint_unverified"
-                || webHintLikeSourceAttribution
-                || webHintLikeSourceType
-                || webHintLikeIdentityType;
-              if (isWebHintLike) {
-                emitDegradedLimitedRev1AndFinalize("DEGRADED_WEB_BUDGET");
+              const fallbackEmitted = await emitAdmissionCoreFallbackAndFinalize("PRE_REV1_TERMINAL_GUARD");
+              if (fallbackEmitted) {
                 return;
               }
               emitTerminalErrorAndFinalize({
@@ -17065,6 +17298,12 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
     let bypassCachedFastPathForAuthority = false;
     let cachedLooksWebOnly = false;
     let prefetchedNameMatchFacts: LnhpdFacts | null = null;
+    if (authorityRegressionScenarioActive) {
+      bypassCachedFastPathForAuthority = true;
+      console.info("[ResolutionV2] Bypassing cached snapshot for authority regression sample", {
+        barcode: barcodeGtin14,
+      });
+    }
     if (cachedFast) {
       const cachedOverlayClaims = await getOverlayClaimsForBarcode();
       const cachedNeedsOverlayRefresh =
@@ -17987,7 +18226,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
     // Hard rule: Stage 1 web resolution must not start (or short-circuit) before we
     // give first-party resolvers (A/Catalog/LNHPD) a chance to terminate.
     let regulatoryMap: Awaited<ReturnType<typeof getBarcodeRegulatoryMap>> | null = null;
-    if (LNHPD_RUNTIME_ENABLED) {
+    if (lnhpdRuntimeEnabledForRequest) {
       regMapPrimaryAttempted = true;
       try {
         regulatoryMap = await regulatoryMapPromise;
@@ -18001,7 +18240,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
       }
     }
 
-    if (LNHPD_RUNTIME_ENABLED && authorityRegressionScenarioActive && !requestSignal.aborted) {
+    if (lnhpdRuntimeEnabledForRequest && authorityRegressionScenarioActive && !requestSignal.aborted) {
       const seededNpnFromMap =
         typeof regulatoryMap?.npn === "string" ? regulatoryMap.npn.replace(/\D/g, "").trim() : "";
       authorityRegressionScenarioHistoricalNpn =
@@ -18022,7 +18261,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
     // Stage0 hardening: if the first map read misses (or times out), do one direct second-chance
     // read without the shared read semaphore to avoid false Web fallback during transient queue pressure.
     // Safety rule: this must stay exact-match only (same gtin14 + same raw digits), no fuzzy lookup.
-    if (LNHPD_RUNTIME_ENABLED && !regulatoryMap && !requestSignal.aborted) {
+    if (lnhpdRuntimeEnabledForRequest && !regulatoryMap && !requestSignal.aborted) {
       regMapSecondChanceAttempted = true;
       if (authorityRegressionScenarioActive) {
         regMapSecondChanceLatencyMs = 0;
@@ -18080,7 +18319,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
         mapMinConfidence: REGULATORY_MAP_MIN_CONFIDENCE,
         staleWindowMs: REGULATORY_MAP_STALE_WINDOW_MS,
         historicalNpn: historicalNpn ?? null,
-        allowLnhpd: LNHPD_RUNTIME_ENABLED,
+        allowLnhpd: lnhpdRuntimeEnabledForRequest,
       });
 
     let authority = resolveCandidate();
@@ -18091,7 +18330,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
 
     // Root-fix for cache resets: if map/snapshot are gone, recover LNHPD candidate
     // from prior successful scans of the same GTIN14 before falling into Web.
-    if (LNHPD_RUNTIME_ENABLED && !candidate && !requestSignal.aborted) {
+    if (lnhpdRuntimeEnabledForRequest && !candidate && !requestSignal.aborted) {
       if (authorityRegressionScenarioActive && authorityRegressionScenarioHistoricalNpn) {
         historicalLnhpd = {
           barcode_gtin14: barcodeGtin14,
@@ -18119,7 +18358,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
 
     // Name/brand fallback: when barcode mapping misses but we still have stable product hints
     // (usually from cached snapshot metadata), try a strict LNHPD name match before Web Stage 1.
-    if (LNHPD_RUNTIME_ENABLED && !candidate && !requestSignal.aborted) {
+    if (lnhpdRuntimeEnabledForRequest && !candidate && !requestSignal.aborted) {
       const hintBrand =
         cachedFast?.analysisPayload?.productInfo?.brand ??
         cachedFast?.snapshot?.product?.brand ??
@@ -18232,6 +18471,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
             firstTimeoutMs: RESILIENCE_LNHPD_TIMEOUT_MS,
             secondTimeoutMs: RESILIENCE_LNHPD_SECOND_CHANCE_TIMEOUT_MS,
             forceMode: authorityFailMode,
+            allowWhenRuntimeDisabled: authorityRegressionScenarioActive,
           });
           authorityLnhpdAttempt1Status = lnhpdLookup.attempt1Status;
           authorityLnhpdAttempt2Status = lnhpdLookup.attempt2Status;
@@ -24195,5 +24435,10 @@ process.on("uncaughtException", (err) => {
 
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`Search backend listening on http://0.0.0.0:${PORT}`);
-  warmProductSearchIndex();
+  if (PRODUCT_SEARCH_WARM_ON_STARTUP) {
+    const timer = setTimeout(() => {
+      warmProductSearchIndex();
+    }, PRODUCT_SEARCH_STARTUP_WARM_DELAY_MS);
+    timer.unref?.();
+  }
 });

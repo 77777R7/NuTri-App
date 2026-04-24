@@ -1,5 +1,5 @@
 export const DEFAULT_BUNDLE_ONLY_DONE_DELAY_MS = 250;
-export const DEFAULT_FULL_REV1_DONE_DELAY_MS = 1000;
+export const DEFAULT_FULL_REV1_DONE_DELAY_MS = 250;
 
 export type ScanStreamDoneTimerKind =
   | "bundle_only_done"
