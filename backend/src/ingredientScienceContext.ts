@@ -1,5 +1,11 @@
 import type { FactsDigest } from "./factsDigest.js";
 import { selectScienceIngredientRows, type ScienceIngredientRow } from "./iherbOverlayIngredients.js";
+import {
+  getNutriMinimalDefinitionForFamily,
+  NUTRI_MINIMAL_FULL_FAMILY_DEFINITIONS,
+  NUTRI_MINIMAL_FULL_RUNTIME_FAMILIES,
+  type NutriMinimalRuntimeFamily,
+} from "./nutriMinimalFullFamilyProductization.js";
 
 type OverlayNutritionalFactRow = {
   substancy?: string | null;
@@ -47,6 +53,12 @@ export type IngredientScienceIngredientFamily =
   | "melatonin"
   | "omega_3"
   | "probiotic_or_blend"
+  | "red_yeast_rice"
+  | "pygeum"
+  | "milk_thistle"
+  | "tribulus_terrestris"
+  | "caffeine"
+  | NutriMinimalRuntimeFamily
   | "generic";
 
 export type IngredientScienceLineRole =
@@ -131,8 +143,30 @@ const CARNITINE_PATTERN = /\bacetyl[\s-]*l[\s-]*carnitine\b|\bl[\s-]*carnitine\b
 const CURCUMIN_PATTERN = /\bcurcumin\b|\bturmeric\s+extract\b|\bcurcuminoids?\b/i;
 const ASHWAGANDHA_PATTERN = /\bashwagandha\b|\bwithania\s+somnifera\b|\bksm-?66\b|\bsensoril\b/i;
 const GINSENG_PATTERN = /\bginseng\b|\bpanax\b|\bamerican\s+ginseng\b|\bred\s+ginseng\b/i;
+const CAFFEINE_PATTERN = /\bcaffeine\b/i;
 const GREEN_TEA_EXTRACT_PATTERN = /\bgreen\s+tea(?:\s+extract)?\b|\begcg\b|\bcatechins?\b|\bcamellia\s+sinensis\b/i;
 const ELDERBERRY_PATTERN = /\belderberry\b|\bsambucus\b/i;
+const PYGEUM_PATTERN = /\bpygeum\b|\bprunus\s+africana\b/i;
+const RED_YEAST_RICE_PATTERN =
+  /\bred\s+yeast\s+rice\b|\bmonascus\s+purpureus\b|\bmonacolin\s*k?\b/i;
+const TRIBULUS_TERRESTRIS_PATTERN =
+  /\btribulus(?:\s+terrestris)?\b|\bpuncturevine\b|\bprotodioscin\b/i;
+const MILK_THISTLE_PATTERN =
+  /\bmilk\s+thistle\b|\bsilybum\s+marianum\b|\bsilymarin\b/i;
+const PQQ_PATTERN =
+  /\bpqq\b|\bnutripqq\b|\bpyrroloquinoline\s+quinone\b/i;
+const NUTRI_MINIMAL_FULL_FAMILY_PATTERN_ROWS =
+  NUTRI_MINIMAL_FULL_FAMILY_DEFINITIONS.filter(
+    (definition) => definition.canonicalFamily !== "same",
+  ).map((definition) => ({
+    family: definition.canonicalFamily as IngredientScienceIngredientFamily,
+    pattern: definition.pattern,
+  }));
+const isSameFamilyText = (text: string): boolean =>
+  /\bSAMe\b|\bSAM-e\b/.test(text) ||
+  /\bs[\s_-]*adenosyl[\s_-]*(?:l[\s_-]*)?methionine\b|\bademetionine\b|\bbutanedisulfonate\b/i.test(
+    text,
+  );
 const MAGNESIUM_PATTERN =
   /\bmagnesium\b|\bmagtein\b|\bmagnesium\s+(?:glycinate|citrate|oxide|malate|taurate|threonate|chloride|l-threonate)\b/i;
 const MAGNESIUM_BRANDED_SOURCE_PATTERN = /\bmagtein\b/i;
@@ -223,14 +257,26 @@ const dedupeIngredientRows = (rows: ScienceIngredientRow[]): ScienceIngredientRo
 };
 
 const inferFamilyFromText = (combined: string): IngredientScienceIngredientFamily => {
-  if (/astaxanthin|carotenoid/.test(combined)) return "astaxanthin_carotenoid";
+  const normalized = combined.toLowerCase();
+  if (/astaxanthin|carotenoid/.test(normalized)) return "astaxanthin_carotenoid";
   if (CURCUMIN_PATTERN.test(combined)) return "curcumin";
   if (ASHWAGANDHA_PATTERN.test(combined)) return "ashwagandha";
   if (GINSENG_PATTERN.test(combined)) return "ginseng";
+  if (CAFFEINE_PATTERN.test(combined)) return "caffeine";
   if (GREEN_TEA_EXTRACT_PATTERN.test(combined)) return "green_tea_extract";
   if (SEVEN_KETO_PATTERN.test(combined)) return "7keto_dhea_metabolite";
   if (CLA_PATTERN.test(combined)) return "cla";
   if (CARNITINE_PATTERN.test(combined)) return "carnitine";
+  if (isSameFamilyText(combined)) return "same";
+  const nutriMinimalMatch = NUTRI_MINIMAL_FULL_FAMILY_PATTERN_ROWS.find((row) =>
+    row.pattern.test(combined),
+  );
+  if (nutriMinimalMatch) return nutriMinimalMatch.family;
+  if (PYGEUM_PATTERN.test(combined)) return "pygeum" as IngredientScienceIngredientFamily;
+  if (RED_YEAST_RICE_PATTERN.test(combined)) return "red_yeast_rice" as IngredientScienceIngredientFamily;
+  if (TRIBULUS_TERRESTRIS_PATTERN.test(combined)) return "tribulus_terrestris" as IngredientScienceIngredientFamily;
+  if (MILK_THISTLE_PATTERN.test(combined)) return "milk_thistle" as IngredientScienceIngredientFamily;
+  if (PQQ_PATTERN.test(combined)) return "pqq";
   if (HTP5_PATTERN.test(combined)) return "5htp";
   if (B3_PATTERN.test(combined)) return "b3_niacinamide";
   if (GLYCINE_PATTERN.test(combined)) return "glycine";
@@ -240,17 +286,17 @@ const inferFamilyFromText = (combined: string): IngredientScienceIngredientFamil
   if (B12_PATTERN.test(combined)) return "b12";
   if (FOLATE_PATTERN.test(combined)) return "folate";
   if (B6_PATTERN.test(combined)) return "b6";
-  if (/\bvitamin\s*c\b|\bascorbic\b|\bester\s*c\b/.test(combined)) return "vitamin_c";
-  if (/\bzinc\b/.test(combined)) return "zinc";
+  if (/\bvitamin\s*c\b|\bascorbic\b|\bester\s*c\b/.test(normalized)) return "vitamin_c";
+  if (/\bzinc\b/.test(normalized)) return "zinc";
   if (MAGNESIUM_PATTERN.test(combined)) return "magnesium";
   if (CALCIUM_PATTERN.test(combined)) return "calcium";
   if (IRON_PATTERN.test(combined)) return "iron";
   if (MELATONIN_PATTERN.test(combined)) return "melatonin";
-  if (/\bfish\s*oil\b|\bomega\s*-?\s*3\b|\bepa\b|\bdha\b|\bkrill\b|\balgal\s*oil\b/.test(combined)) {
+  if (/\bfish\s*oil\b|\bomega\s*-?\s*3\b|\bepa\b|\bdha\b|\bkrill\b|\balgal\s*oil\b/.test(normalized)) {
     return "omega_3";
   }
   if (
-    /probiotic|lactobacillus|bifidobacterium|saccharomyces|microbiome|phage/.test(combined) ||
+    /probiotic|lactobacillus|bifidobacterium|saccharomyces|microbiome|phage/.test(normalized) ||
     HARD_BLEND_LIKE_PATTERN.test(combined) ||
     SOFT_BLEND_LIKE_PATTERN.test(combined)
   ) {
@@ -263,13 +309,13 @@ const inferRowIngredientFamily = (params: {
   rowName: string | null;
   productName?: string | null | undefined;
 }): IngredientScienceIngredientFamily => {
-  const rowText = normalizeText(params.rowName).toLowerCase();
+  const rowText = normalizeText(params.rowName);
   if (!rowText) return "generic";
 
   const rowFamily = inferFamilyFromText(rowText);
   if (rowFamily !== "generic") return rowFamily;
 
-  const productText = normalizeText(params.productName).toLowerCase();
+  const productText = normalizeText(params.productName);
   if (!productText) return "generic";
 
   // Only use product-level hints when the selected row is too generic to classify on its own.
@@ -285,9 +331,9 @@ const inferContextIngredientFamily = (params: {
   productName: string | null | undefined;
   rows: ScienceIngredientRow[];
 }): IngredientScienceIngredientFamily => {
-  const anchorText = normalizeText(params.seedText).toLowerCase();
-  const productText = normalizeText(params.productName).toLowerCase();
-  const combined = [anchorText, productText, ...params.rows.map((row) => normalizeText(row.name).toLowerCase())]
+  const anchorText = normalizeText(params.seedText);
+  const productText = normalizeText(params.productName);
+  const combined = [anchorText, productText, ...params.rows.map((row) => normalizeText(row.name))]
     .join(" ")
     .trim();
 
@@ -304,6 +350,7 @@ const categoryHintForFamily = (
   if (family === "ashwagandha") return "botanical extract";
   if (family === "ginseng") return "botanical extract";
   if (family === "green_tea_extract") return "botanical extract";
+  if (family === "caffeine") return "single-active ingredient";
   if (family === "7keto_dhea_metabolite") return "metabolite";
   if (family === "cla") return "fatty acid";
   if (family === "carnitine") return "amino acid derivative";
@@ -324,6 +371,11 @@ const categoryHintForFamily = (
   if (family === "melatonin") return "sleep-related ingredient";
   if (family === "omega_3") return "omega-3 fatty acids";
   if (family === "probiotic_or_blend") return "probiotic blend";
+  if (family === "red_yeast_rice" || family === "pygeum" || family === "milk_thistle" || family === "tribulus_terrestris") {
+    return "botanical extract";
+  }
+  const nutriMinimalDefinition = getNutriMinimalDefinitionForFamily(family);
+  if (nutriMinimalDefinition) return nutriMinimalDefinition.categoryHint;
   return null;
 };
 
@@ -331,7 +383,8 @@ const isBotanicalExtractFamily = (family: IngredientScienceIngredientFamily | nu
   family === "curcumin" ||
   family === "ashwagandha" ||
   family === "ginseng" ||
-  family === "green_tea_extract";
+  family === "green_tea_extract" ||
+  getNutriMinimalDefinitionForFamily(family)?.category === "botanical";
 
 const isBlendLike = (
   name: string | null | undefined,
@@ -367,6 +420,13 @@ const inferFormContext = (
   if (family === "5htp") return "amino-acid derivative line";
   if (family === "b3_niacinamide" || family === "b6" || family === "b12" || family === "folate") {
     return "vitamin-form line";
+  }
+  const nutriMinimalDefinition = getNutriMinimalDefinitionForFamily(family);
+  if (nutriMinimalDefinition) {
+    if (nutriMinimalDefinition.category === "enzyme") return "enzyme line";
+    if (nutriMinimalDefinition.category === "mineral") return "mineral line";
+    if (nutriMinimalDefinition.category === "amino_acid") return "amino-acid line";
+    if (nutriMinimalDefinition.category === "botanical") return "botanical line";
   }
   return null;
 };
@@ -413,8 +473,16 @@ const STRONG_LEAD_ACTIVE_FAMILIES = new Set<IngredientScienceIngredientFamily>([
   "glycine",
   "taurine",
   "inositol",
+  "caffeine",
+  "red_yeast_rice",
+  "pygeum",
+  "milk_thistle",
+  "tribulus_terrestris",
   "melatonin",
   "omega_3",
+  ...NUTRI_MINIMAL_FULL_RUNTIME_FAMILIES.map(
+    (family) => family as IngredientScienceIngredientFamily,
+  ),
 ]);
 
 const PRIMARY_ACTIVE_FAMILIES = new Set<IngredientScienceIngredientFamily>([
@@ -429,10 +497,18 @@ const PRIMARY_ACTIVE_FAMILIES = new Set<IngredientScienceIngredientFamily>([
   "glycine",
   "taurine",
   "inositol",
+  "caffeine",
+  "red_yeast_rice",
+  "pygeum",
+  "milk_thistle",
+  "tribulus_terrestris",
   "vitamin_c",
   "vitamin_d",
   "melatonin",
   "omega_3",
+  ...NUTRI_MINIMAL_FULL_RUNTIME_FAMILIES.map(
+    (family) => family as IngredientScienceIngredientFamily,
+  ),
 ]);
 
 const FAMILY_TITLE_HINTS: Array<{ family: IngredientScienceIngredientFamily; pattern: RegExp }> = [
@@ -445,6 +521,11 @@ const FAMILY_TITLE_HINTS: Array<{ family: IngredientScienceIngredientFamily; pat
   { family: "curcumin", pattern: /\bcurcumin\b|\bturmeric\b/i },
   { family: "ashwagandha", pattern: /\bashwagandha\b/i },
   { family: "ginseng", pattern: /\bginseng\b/i },
+  { family: "caffeine", pattern: CAFFEINE_PATTERN },
+  { family: "red_yeast_rice", pattern: RED_YEAST_RICE_PATTERN },
+  { family: "pygeum", pattern: PYGEUM_PATTERN },
+  { family: "milk_thistle", pattern: MILK_THISTLE_PATTERN },
+  { family: "tribulus_terrestris", pattern: TRIBULUS_TERRESTRIS_PATTERN },
   { family: "melatonin", pattern: /\bmelatonin\b/i },
   { family: "magnesium", pattern: /\bmagnesium\b/i },
   { family: "calcium", pattern: /\bcalcium\b/i },
@@ -453,6 +534,7 @@ const FAMILY_TITLE_HINTS: Array<{ family: IngredientScienceIngredientFamily; pat
   { family: "vitamin_d", pattern: /\bvitamin\s*d\b|\bd3\b|\bd2\b/i },
   { family: "vitamin_c", pattern: /\bvitamin\s*c\b|\bascorbic\b/i },
   { family: "probiotic_or_blend", pattern: /\bprobiotic|flora|microbiome|live cultures?\b/i },
+  ...NUTRI_MINIMAL_FULL_FAMILY_PATTERN_ROWS,
 ];
 
 const parseDoseMagnitude = (value: string | null | undefined): number => {

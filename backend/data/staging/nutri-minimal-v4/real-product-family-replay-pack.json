@@ -1,0 +1,2300 @@
+{
+  "version": "nutri_minimal_v4_real_product_family_replay.v1",
+  "generated_at": "2026-04-24T21:06:38.268Z",
+  "source_files": [
+    "backend/data/staging/nutri-minimal-v4/real-product-replay-source-fixtures.json",
+    "backend/data/personalization/goal_navigator_candidate_bundle.v1.json",
+    "data/validation/stable-gate-baseline.v1.json",
+    "data/validation/canadian-upc-explicit-next-lane.v0.json",
+    "output/rapidapi_yield_first_apply_candidate_1776541800000_retry1600/merge_report/overlay_merge_coverage_report.json",
+    "output/rapidapi_yield_first_apply_candidate_1776541800000_retry1600/merge_report_apply/overlay_merge_coverage_report.json",
+    "output/rapidapi_yield_first_apply_candidate_1776541800000_retry1600/raw_brand_fetches.json",
+    "output/rapidapi_yield_first_apply_candidate_1776541800000_retry1600/staging_products.rapidapi_missing_brand_wave.json",
+    "output/onboarding_remaining28_rapidapi_wave_retry_1776571000000/merge_report/overlay_merge_coverage_report.json",
+    "output/onboarding_remaining28_rapidapi_wave_retry_1776571000000/merge_report_apply/overlay_merge_coverage_report.json",
+    "output/onboarding_remaining28_rapidapi_wave_retry_1776571000000/raw_brand_fetches.json",
+    "output/onboarding_remaining28_rapidapi_wave_retry_1776571000000/staging_products.rapidapi_missing_brand_wave.json",
+    "output/onboarding_second20_rapidapi_wave_1776562000000/merge_report/overlay_merge_coverage_report.json",
+    "output/onboarding_second20_rapidapi_wave_1776562000000/merge_report_apply/overlay_merge_coverage_report.json",
+    "output/onboarding_second20_rapidapi_wave_1776562000000/raw_brand_fetches.json",
+    "output/onboarding_second20_rapidapi_wave_1776562000000/staging_products.rapidapi_missing_brand_wave.json",
+    "output/onboarding_top20_rapidapi_wave_1776558000000/merge_report/overlay_merge_coverage_report.json",
+    "output/onboarding_top20_rapidapi_wave_1776558000000/merge_report_apply/overlay_merge_coverage_report.json",
+    "output/full_db_api_fill_queue_after_top20_brand_map_1776557000000/1776544813874/api_fill_queue.by_runner.json",
+    "output/full_db_api_fill_queue_after_food_honesty_1776545200000/1776543023667/api_fill_queue.by_runner.json",
+    "output/full_db_api_fill_queue_after_onboarding_final5_apply_1776574000000/1776547384961/api_fill_queue.by_runner.json",
+    "output/full_db_api_fill_queue_after_tropical_oasis_closure_v1_1776586000000/1776549081247/api_fill_queue.by_runner.json",
+    "output/full_db_api_fill_queue_after_partial_conversion_merge_apply_v1_1776581700000/1776548349041/api_fill_queue.by_runner.json",
+    "output/current57_partial_conversion_merge_1776581500000/current_staging_products.payload.json"
+  ],
+  "summary": {
+    "source_product_candidates": 190,
+    "sampled_families": 26,
+    "required_priority_families": 10,
+    "required_real_product_coverage": 10,
+    "structured_ingredient_samples": 26,
+    "title_or_description_only_samples": 0,
+    "family_inference_pass": 26,
+    "scientific_background_specific_pass": 26,
+    "evidence_grounding_gate_pass": 26,
+    "safety_claim_gate_pass": 26,
+    "approved_reviewed_grounding_rows": 23,
+    "blocked_unapproved_grounding_rows": 3,
+    "registry_traceability_warnings": 0,
+    "failures": 0
+  },
+  "required_families": [
+    "same",
+    "tocotrienols",
+    "devil_s_claw",
+    "schisandra_chinensis",
+    "red_yeast_rice",
+    "pygeum",
+    "milk_thistle",
+    "tribulus_terrestris",
+    "chaga_mushroom",
+    "nadh"
+  ],
+  "failures": [],
+  "replay_rows": [
+    {
+      "family": "same",
+      "source_ingredient_id": "same",
+      "display_name": "SAMe",
+      "required": true,
+      "productization_class": "crosswalk_rescue",
+      "safety_boundary_tier": "high",
+      "category": "other",
+      "replay_product": {
+        "source_file": "backend/data/staging/nutri-minimal-v4/real-product-replay-source-fixtures.json",
+        "product_id": "96277",
+        "barcode": "898220016518",
+        "url": "https://www.iherb.com/pr/california-gold-nutrition-same-disulfate-tosylate-400-mg-60-enteric-coated-tablets/96277",
+        "brand": "California Gold Nutrition",
+        "title": "California Gold Nutrition, SAMe, Disulfate Tosylate, 400 mg, 60 Enteric Coated Tablets",
+        "facts_quality": "structured_ingredients",
+        "ingredient_rows": [
+          {
+            "name": "SAME (S-Adenosyl L-Methionine)(from S-Adenosyl-L-Methionine Disulfate Tosylate)",
+            "amountText": "400 mg"
+          }
+        ]
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "same",
+        "context_family": "same",
+        "anchor_family": "same",
+        "selected_descriptor_family": "same",
+        "selected_descriptor_name": "SAME (S-Adenosyl L-Methionine)(from S-Adenosyl-L-Methionine Disulfate Tosylate)",
+        "descriptor_families": [
+          "same"
+        ]
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "same",
+        "headings": [
+          "Primary use context",
+          "Safety and boundary context",
+          "Form, source, and label context"
+        ],
+        "heading_ids": [
+          "primary_use_context",
+          "safety_and_boundary_context",
+          "form_source_and_label_context"
+        ],
+        "generic_hits": [],
+        "contains_family_label": true,
+        "sample_summary": "SAMe has systematic-review support in several medical-adjacent contexts, which makes it useful for label interpretation only when the wording stays bounded.",
+        "sample_evidence_read": "The reviewed PubMed set includes systematic reviews for SAMe in neuropsychiatric, joint, and liver-health contexts, so the evidence should be read by study context rather than as a broad benefit. Do not present SAMe as treating depression, osteoarthritis, liver disease, or any condition, and do not imply it replaces medication or clinician guidance.",
+        "sample_shopper_meaning": "When comparing SAMe products, check the exact SAMe identity, dose, enteric or salt-form wording, and warning language before relying on mood, joint, or liver positioning."
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "primary_lane": "primary_use_context",
+        "registry_review_status": "approved",
+        "registry_review_reasons": [
+          "approved_with_verified_pmids"
+        ],
+        "reviewed_evidence_found": true,
+        "live_grounding_status": "approved_reviewed_row",
+        "expected_blocked_from_registry": false,
+        "first_reference_id": "pmid:28682528",
+        "reference_count": 3,
+        "registry_traceability_warning": false
+      },
+      "safety_claim_gate": {
+        "pass": true,
+        "unsafe_sentences": []
+      }
+    },
+    {
+      "family": "tocotrienols",
+      "source_ingredient_id": "tocotrienols",
+      "display_name": "Tocotrienols",
+      "required": true,
+      "productization_class": "crosswalk_rescue",
+      "safety_boundary_tier": "high",
+      "category": "lipid",
+      "replay_product": {
+        "source_file": "backend/data/staging/nutri-minimal-v4/real-product-replay-source-fixtures.json",
+        "product_id": "118598",
+        "barcode": "087614026800",
+        "url": "https://www.iherb.com/pr/swanson-tocotrienols-100-mg-60-liquid-caps/118598",
+        "brand": "Swanson",
+        "title": "Swanson, Tocotrienols, 100 mg, 60 Liquid Caps",
+        "facts_quality": "structured_ingredients",
+        "ingredient_rows": [
+          {
+            "name": "Tocotrienols(from DeltaGold® tocotrienols)delta-Tocotrienols minimum 84%gamma-Tocotrienols minimum 8%",
+            "amountText": "100 mg"
+          }
+        ]
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "tocotrienols",
+        "context_family": "tocotrienols",
+        "anchor_family": "tocotrienols",
+        "selected_descriptor_family": "tocotrienols",
+        "selected_descriptor_name": "Tocotrienols(from DeltaGold® tocotrienols)delta-Tocotrienols minimum 84%gamma-Tocotrienols minimum 8%",
+        "descriptor_families": [
+          "tocotrienols"
+        ]
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "tocotrienols",
+        "headings": [
+          "Primary use context",
+          "Safety and boundary context",
+          "Form, source, and label context"
+        ],
+        "heading_ids": [
+          "primary_use_context",
+          "safety_and_boundary_context",
+          "form_source_and_label_context"
+        ],
+        "generic_hits": [],
+        "contains_family_label": true,
+        "sample_summary": "Tocotrienols have human systematic-review support, but the clearest shopper value is distinguishing tocotrienol-specific evidence from generic vitamin E or tocopherol language.",
+        "sample_evidence_read": "The reviewed PubMed set includes meta-analyses on lipid profile and oxidative-stress markers plus bioavailability work, so interpretation should stay outcome- and formulation-specific. Do not turn lipid, liver, inflammation, or bioavailability findings into cardiovascular, liver, anti-inflammatory, or superiority claims for every tocotrienol product.",
+        "sample_shopper_meaning": "When comparing tocotrienol products, check whether the label discloses tocotrienol-rich fraction, isoform mix, softgel or enhanced-delivery wording, and the stated amount."
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "primary_lane": "primary_use_context",
+        "registry_review_status": "approved",
+        "registry_review_reasons": [
+          "approved_with_verified_pmids"
+        ],
+        "reviewed_evidence_found": true,
+        "live_grounding_status": "approved_reviewed_row",
+        "expected_blocked_from_registry": false,
+        "first_reference_id": "pmid:32951713",
+        "reference_count": 4,
+        "registry_traceability_warning": false
+      },
+      "safety_claim_gate": {
+        "pass": true,
+        "unsafe_sentences": []
+      }
+    },
+    {
+      "family": "devil_s_claw",
+      "source_ingredient_id": "devil_s_claw",
+      "display_name": "Devil's Claw",
+      "required": true,
+      "productization_class": "high_risk_safety",
+      "safety_boundary_tier": "high",
+      "category": "botanical",
+      "replay_product": {
+        "source_file": "backend/data/staging/nutri-minimal-v4/real-product-replay-source-fixtures.json",
+        "product_id": "118464",
+        "barcode": "087614019598",
+        "url": "https://www.iherb.com/pr/swanson-full-spectrum-devil-s-claw-500-mg-100-capsules/118464",
+        "brand": "Swanson",
+        "title": "Swanson, Full Spectrum® Devil's Claw, 500 mg, 100 Capsules",
+        "facts_quality": "structured_ingredients",
+        "ingredient_rows": [
+          {
+            "name": "Devil’s Claw (Harpagophytum spp.) (root)",
+            "amountText": "1 g"
+          }
+        ]
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "devil_s_claw",
+        "context_family": "devil_s_claw",
+        "anchor_family": "devil_s_claw",
+        "selected_descriptor_family": "devil_s_claw",
+        "selected_descriptor_name": "Devil’s Claw (Harpagophytum spp.) (root)",
+        "descriptor_families": [
+          "devil_s_claw"
+        ]
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "devil_s_claw",
+        "headings": [
+          "Primary use context",
+          "Safety and boundary context",
+          "Form, source, and label context"
+        ],
+        "heading_ids": [
+          "primary_use_context",
+          "safety_and_boundary_context",
+          "form_source_and_label_context"
+        ],
+        "generic_hits": [],
+        "contains_family_label": true,
+        "sample_summary": "Devil's Claw has human and review-level Harpagophytum context, but the useful shopper lane is extract identity, dose, and safety boundary rather than a front-label relief claim.",
+        "sample_evidence_read": "The reviewed support includes Harpagophytum systematic reviews and a randomized extract trial, so the evidence is narrow and condition-adjacent rather than a universal supplement story. Do not present Devil's Claw as treating osteoarthritis, low back pain, inflammation, or any disease; keep the comparison caution-forward.",
+        "sample_shopper_meaning": "When comparing Devil's Claw products, check the exact Harpagophytum source, extract standardization, dose, and warning language before treating two labels as equivalent."
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "primary_lane": "primary_use_context",
+        "registry_review_status": "approved",
+        "registry_review_reasons": [
+          "approved_with_verified_pmids"
+        ],
+        "reviewed_evidence_found": true,
+        "live_grounding_status": "approved_reviewed_row",
+        "expected_blocked_from_registry": false,
+        "first_reference_id": "pmid:15369596",
+        "reference_count": 3,
+        "registry_traceability_warning": false
+      },
+      "safety_claim_gate": {
+        "pass": true,
+        "unsafe_sentences": []
+      }
+    },
+    {
+      "family": "schisandra_chinensis",
+      "source_ingredient_id": "schisandra_chinensis",
+      "display_name": "Schisandra Chinensis",
+      "required": true,
+      "productization_class": "high_risk_safety",
+      "safety_boundary_tier": "high",
+      "category": "botanical",
+      "replay_product": {
+        "source_file": "backend/data/staging/nutri-minimal-v4/real-product-replay-source-fixtures.json",
+        "product_id": "132064",
+        "barcode": "693465251119",
+        "url": "https://www.iherb.com/pr/vital-nutrients-schisandra-extract-90-vegan-capsules-500-mg-per-capsule/132064",
+        "brand": "Vital Nutrients",
+        "title": "Vital Nutrients, Schisandra Extract, 90 Vegan Capsules (500 mg per Capsule)",
+        "facts_quality": "structured_ingredients",
+        "ingredient_rows": [
+          {
+            "name": "Schisandra Extract(Schisandra chinensis, berry, standardized to 2% total schizandrins)",
+            "amountText": "1,000 mg"
+          }
+        ]
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "schisandra_chinensis",
+        "context_family": "schisandra_chinensis",
+        "anchor_family": "schisandra_chinensis",
+        "selected_descriptor_family": "schisandra_chinensis",
+        "selected_descriptor_name": "Schisandra Extract",
+        "descriptor_families": [
+          "schisandra_chinensis"
+        ]
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "schisandra_chinensis",
+        "headings": [
+          "Primary use context",
+          "Safety and boundary context",
+          "Form, source, and label context"
+        ],
+        "heading_ids": [
+          "primary_use_context",
+          "safety_and_boundary_context",
+          "form_source_and_label_context"
+        ],
+        "generic_hits": [],
+        "contains_family_label": true,
+        "sample_summary": "Schisandra chinensis has human randomized-trial and review context, but the useful comparison lane is exact extract identity and intended use setting, not a broad adaptogen promise.",
+        "sample_evidence_read": "The reviewed support spans Schisandra trials in specific populations and broader adaptogen review context, so the evidence should stay narrower than immune, liver, fatigue, or hormone-adjacent marketing. Do not generalize menopause, metabolic, fatigue, liver, immune, or adaptogen evidence into disease-treatment or guaranteed-outcome language.",
+        "sample_shopper_meaning": "When comparing Schisandra products, check the plant identity, extract or marker wording, dose, and whether Schisandra is the main active or one part of a botanical blend."
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "primary_lane": "primary_use_context",
+        "registry_review_status": "approved",
+        "registry_review_reasons": [
+          "approved_with_verified_pmids"
+        ],
+        "reviewed_evidence_found": true,
+        "live_grounding_status": "approved_reviewed_row",
+        "expected_blocked_from_registry": false,
+        "first_reference_id": "pmid:32260466",
+        "reference_count": 4,
+        "registry_traceability_warning": false
+      },
+      "safety_claim_gate": {
+        "pass": true,
+        "unsafe_sentences": []
+      }
+    },
+    {
+      "family": "red_yeast_rice",
+      "source_ingredient_id": "red_yeast_rice",
+      "display_name": "Red yeast rice",
+      "required": true,
+      "productization_class": "existing_runtime_family",
+      "safety_boundary_tier": "high",
+      "category": "botanical",
+      "replay_product": {
+        "source_file": "backend/data/staging/nutri-minimal-v4/real-product-replay-source-fixtures.json",
+        "product_id": "113184",
+        "barcode": "810180023085",
+        "url": "https://www.iherb.com/pr/amazing-nutrition-red-yeast-rice-120-capsules-600-mg-per-capsule/113184",
+        "brand": "Amazing Nutrition",
+        "title": "Amazing Nutrition, Red Yeast Rice, 120 Capsules (600 mg per Capsule)",
+        "facts_quality": "structured_ingredients",
+        "ingredient_rows": [
+          {
+            "name": "Red Yeast Rice Powder (Monascus purpureus)",
+            "amountText": "1,200 mg (1.2 g)"
+          }
+        ]
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "red_yeast_rice",
+        "context_family": "red_yeast_rice",
+        "anchor_family": "red_yeast_rice",
+        "selected_descriptor_family": "red_yeast_rice",
+        "selected_descriptor_name": "Red Yeast Rice Powder (Monascus purpureus)",
+        "descriptor_families": [
+          "red_yeast_rice"
+        ]
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "red_yeast_rice",
+        "headings": [
+          "Primary use context",
+          "Extract and standardization context",
+          "Formula and label context"
+        ],
+        "heading_ids": [
+          "primary_use_context",
+          "extract_standardization_context",
+          "formula_and_label_context"
+        ],
+        "generic_hits": [],
+        "contains_family_label": true,
+        "sample_summary": "Red yeast rice has lipid-profile research, but supplement comparison must stay tied to exact red-yeast-rice disclosure, monacolin/citrinin context, dose, and safety-sensitive wording.",
+        "sample_evidence_read": "The systematic review supports a lipid-profile research lane, while the product category needs extra caution because monacolin-like positioning can drift into drug-like claims. Hard boundary: do not say red yeast rice treats cholesterol, replaces statins, prevents cardiovascular disease, or is safer than medication; flag medication and clinician-context sensitivity separately.",
+        "sample_shopper_meaning": "When comparing red yeast rice products, check serving amount, monacolin or “citrinin tested” wording, quality claims, and whether the label avoids implying medication-like effects."
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "primary_lane": "primary_use_context",
+        "registry_review_status": "approved",
+        "registry_review_reasons": [
+          "approved_with_verified_pmids",
+          "synced_from_reviewed_package_primary_lane"
+        ],
+        "reviewed_evidence_found": true,
+        "live_grounding_status": "approved_reviewed_row",
+        "expected_blocked_from_registry": false,
+        "first_reference_id": "pmid:36259545",
+        "reference_count": 2,
+        "registry_traceability_warning": false
+      },
+      "safety_claim_gate": {
+        "pass": true,
+        "unsafe_sentences": []
+      }
+    },
+    {
+      "family": "pygeum",
+      "source_ingredient_id": "pygeum",
+      "display_name": "Pygeum",
+      "required": true,
+      "productization_class": "existing_runtime_family",
+      "safety_boundary_tier": "high",
+      "category": "botanical",
+      "replay_product": {
+        "source_file": "backend/data/staging/nutri-minimal-v4/real-product-replay-source-fixtures.json",
+        "product_id": "70044",
+        "barcode": "076280037609",
+        "url": "https://www.iherb.com/pr/solaray-vital-extracts-pygeum-50-mg-60-vegcaps/70044",
+        "brand": "Solaray",
+        "title": "Solaray, Vital Extracts, Pygeum, 50 mg, 60 VegCaps",
+        "facts_quality": "structured_ingredients",
+        "ingredient_rows": [
+          {
+            "name": "Pygeum (Pygeum africanum) (bark extract) (Guaranteed to contain 6.5 mg [13%] total Plant Sterols)",
+            "amountText": "50 mg"
+          }
+        ]
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "pygeum",
+        "context_family": "pygeum",
+        "anchor_family": "pygeum",
+        "selected_descriptor_family": "pygeum",
+        "selected_descriptor_name": "Pygeum (Pygeum africanum) (bark extract) (Guaranteed to contain 6.5 mg [13%] total Plant Sterols)",
+        "descriptor_families": [
+          "pygeum"
+        ]
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "pygeum",
+        "headings": [
+          "Primary use context",
+          "Extract and standardization context",
+          "Formula and label context"
+        ],
+        "heading_ids": [
+          "primary_use_context",
+          "extract_standardization_context",
+          "formula_and_label_context"
+        ],
+        "generic_hits": [],
+        "contains_family_label": true,
+        "sample_summary": "Pygeum evidence is concentrated in a narrow male-health/prostate-adjacent context, so the shopper-facing summary should stay about label interpretation and extract disclosure.",
+        "sample_evidence_read": "The main review uses treatment-oriented clinical literature, which is useful for evidence boundaries but should not become a product promise on a supplement page. Hard boundary: do not say pygeum treats BPH, prostate disease, urinary symptoms, hair loss, or hormone problems; keep it as label-context and comparison guidance only.",
+        "sample_shopper_meaning": "When comparing pygeum products, check whether the label clearly names Pygeum africanum or Prunus africana, bark extract, extract amount, and whether it is paired with saw palmetto or other men’s-health botanicals."
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "primary_lane": "primary_use_context",
+        "registry_review_status": "approved",
+        "registry_review_reasons": [
+          "approved_with_verified_pmids",
+          "synced_from_reviewed_package_primary_lane"
+        ],
+        "reviewed_evidence_found": true,
+        "live_grounding_status": "approved_reviewed_row",
+        "expected_blocked_from_registry": false,
+        "first_reference_id": "pmid:11099686",
+        "reference_count": 3,
+        "registry_traceability_warning": false
+      },
+      "safety_claim_gate": {
+        "pass": true,
+        "unsafe_sentences": []
+      }
+    },
+    {
+      "family": "milk_thistle",
+      "source_ingredient_id": "milk_thistle",
+      "display_name": "Milk thistle",
+      "required": true,
+      "productization_class": "existing_runtime_family",
+      "safety_boundary_tier": "high",
+      "category": "botanical",
+      "replay_product": {
+        "source_file": "backend/data/staging/nutri-minimal-v4/real-product-replay-source-fixtures.json",
+        "product_id": "70955",
+        "barcode": "898220010974",
+        "url": "https://www.iherb.com/pr/california-gold-nutrition-euroherbs-milk-thistle-extract-euromed-quality-175-mg-60-veggie-capsules/70955",
+        "brand": "California Gold Nutrition",
+        "title": "California Gold Nutrition, EuroHerbs, Milk Thistle Extract, Euromed Quality, 175 mg, 60 Veggie Capsules",
+        "facts_quality": "structured_ingredients",
+        "ingredient_rows": [
+          {
+            "name": "Milk Thistle Extract(Silybum marianum) (seed)(Standardized to 80% Silymarin via UV-VIS)",
+            "amountText": "175 mg"
+          }
+        ]
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "milk_thistle",
+        "context_family": "milk_thistle",
+        "anchor_family": "milk_thistle",
+        "selected_descriptor_family": "milk_thistle",
+        "selected_descriptor_name": "Milk Thistle Extract",
+        "descriptor_families": [
+          "milk_thistle"
+        ]
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "milk_thistle",
+        "headings": [
+          "Primary use context",
+          "Extract and standardization context",
+          "Formula and label context"
+        ],
+        "heading_ids": [
+          "primary_use_context",
+          "extract_standardization_context",
+          "formula_and_label_context"
+        ],
+        "generic_hits": [],
+        "contains_family_label": true,
+        "sample_summary": "Milk thistle evidence centers on silymarin and liver-adjacent clinical literature, so shopper-facing copy should focus on exact extract and standardization disclosure.",
+        "sample_evidence_read": "The systematic review and later reviews support bounded interpretation; they do not justify saying every milk-thistle label supports liver detox, liver repair, or disease treatment. Hard boundary: do not say milk thistle treats NAFLD/NASH, hepatitis, liver disease, toxin exposure, hangovers, or detoxification; keep wording comparison-safe.",
+        "sample_shopper_meaning": "When comparing milk thistle products, check Silybum marianum, silymarin percentage, extract amount, phytosome wording, and whether it is paired with NAC, dandelion, or detox-positioned botanicals."
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "primary_lane": "primary_use_context",
+        "registry_review_status": "approved",
+        "registry_review_reasons": [
+          "approved_with_verified_pmids",
+          "synced_from_reviewed_package_primary_lane"
+        ],
+        "reviewed_evidence_found": true,
+        "live_grounding_status": "approved_reviewed_row",
+        "expected_blocked_from_registry": false,
+        "first_reference_id": "pmid:18334810",
+        "reference_count": 3,
+        "registry_traceability_warning": false
+      },
+      "safety_claim_gate": {
+        "pass": true,
+        "unsafe_sentences": []
+      }
+    },
+    {
+      "family": "tribulus_terrestris",
+      "source_ingredient_id": "tribulus_terrestris",
+      "display_name": "Tribulus terrestris",
+      "required": true,
+      "productization_class": "existing_runtime_family",
+      "safety_boundary_tier": "high",
+      "category": "botanical",
+      "replay_product": {
+        "source_file": "backend/data/staging/nutri-minimal-v4/real-product-replay-source-fixtures.json",
+        "product_id": "48458",
+        "barcode": "898220006632",
+        "url": "https://www.iherb.com/pr/california-gold-nutrition-sport-tribulus-1-000-mg-60-tablets/48458",
+        "brand": "California Gold Nutrition",
+        "title": "California Gold Nutrition, Sport, Tribulus, 1,000 mg, 60 Tablets",
+        "facts_quality": "structured_ingredients",
+        "ingredient_rows": [
+          {
+            "name": "Tribulus Extract (Tribulus terrestris) (whole herb/fruit) (std. to 45% Saponins)",
+            "amountText": "1,000 mg"
+          }
+        ]
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "tribulus_terrestris",
+        "context_family": "tribulus_terrestris",
+        "anchor_family": "tribulus_terrestris",
+        "selected_descriptor_family": "tribulus_terrestris",
+        "selected_descriptor_name": "Tribulus Extract (Tribulus terrestris) (whole herb/fruit) (std. to 45% Saponins)",
+        "descriptor_families": [
+          "tribulus_terrestris"
+        ]
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "tribulus_terrestris",
+        "headings": [
+          "Primary use context",
+          "Extract and standardization context",
+          "Formula and label context"
+        ],
+        "heading_ids": [
+          "primary_use_context",
+          "extract_standardization_context",
+          "formula_and_label_context"
+        ],
+        "generic_hits": [],
+        "contains_family_label": true,
+        "sample_summary": "Tribulus evidence is best used to explain why testosterone, libido, and performance labels need skepticism and exact extract disclosure rather than hype.",
+        "sample_evidence_read": "The systematic review directly challenges broad aphrodisiac and performance-enhancement assumptions, so evidenceRead should help users discount overconfident marketing. Hard boundary: do not say tribulus boosts testosterone, treats sexual dysfunction, improves fertility, treats prostate disease, or guarantees athletic performance.",
+        "sample_shopper_meaning": "When comparing tribulus products, check Tribulus terrestris extract, plant part, protodioscin or saponin standardization, dose, and whether the formula is making hormone-heavy claims."
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "primary_lane": "primary_use_context",
+        "registry_review_status": "approved",
+        "registry_review_reasons": [
+          "approved_with_verified_pmids",
+          "synced_from_reviewed_package_primary_lane"
+        ],
+        "reviewed_evidence_found": true,
+        "live_grounding_status": "approved_reviewed_row",
+        "expected_blocked_from_registry": false,
+        "first_reference_id": "pmid:24559105",
+        "reference_count": 3,
+        "registry_traceability_warning": false
+      },
+      "safety_claim_gate": {
+        "pass": true,
+        "unsafe_sentences": []
+      }
+    },
+    {
+      "family": "chaga_mushroom",
+      "source_ingredient_id": "chaga_mushroom",
+      "display_name": "Chaga Mushroom",
+      "required": true,
+      "productization_class": "high_risk_safety",
+      "safety_boundary_tier": "high",
+      "category": "botanical",
+      "replay_product": {
+        "source_file": "backend/data/staging/nutri-minimal-v4/real-product-replay-source-fixtures.json",
+        "product_id": "117779",
+        "barcode": "087614113852",
+        "url": "https://www.iherb.com/pr/swanson-full-spectrum-chaga-mushroom-400-mg-60-capsules/117779",
+        "brand": "Swanson",
+        "title": "Swanson, Full Spectrum® Chaga Mushroom, 400 mg, 60 Capsules",
+        "facts_quality": "structured_ingredients",
+        "ingredient_rows": [
+          {
+            "name": "Chaga Mushroom (Inonotus obliquus)(mycelium)",
+            "amountText": "400 mg"
+          }
+        ]
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "chaga_mushroom",
+        "context_family": "chaga_mushroom",
+        "anchor_family": "chaga_mushroom",
+        "selected_descriptor_family": "chaga_mushroom",
+        "selected_descriptor_name": "Chaga Mushroom (Inonotus obliquus)(mycelium)",
+        "descriptor_families": [
+          "chaga_mushroom"
+        ]
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "chaga_mushroom",
+        "headings": [
+          "Primary use context",
+          "Safety and boundary context",
+          "Form, source, and label context"
+        ],
+        "heading_ids": [
+          "primary_use_context",
+          "safety_and_boundary_context",
+          "form_source_and_label_context"
+        ],
+        "generic_hits": [],
+        "contains_family_label": true,
+        "sample_summary": "The useful way to read Chaga Mushroom in this formula depends on its role as a lead active, not just on the broad category it belongs to.",
+        "sample_evidence_read": "This is a formula-aware orientation section, not a universal claim about the ingredient in every product.",
+        "sample_shopper_meaning": "Use Chaga Mushroom as one part of the formula map, then compare how clearly the label separates the lead active from companion or structural lines."
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "primary_lane": "primary_use_context",
+        "registry_review_status": "rejected",
+        "registry_review_reasons": [
+          "only_search_url_without_resolved_source"
+        ],
+        "reviewed_evidence_found": false,
+        "live_grounding_status": "blocked_no_reviewed_row",
+        "expected_blocked_from_registry": true,
+        "first_reference_id": null,
+        "reference_count": 0,
+        "registry_traceability_warning": false
+      },
+      "safety_claim_gate": {
+        "pass": true,
+        "unsafe_sentences": []
+      }
+    },
+    {
+      "family": "nadh",
+      "source_ingredient_id": "nadh",
+      "display_name": "NADH",
+      "required": true,
+      "productization_class": "crosswalk_rescue",
+      "safety_boundary_tier": "high",
+      "category": "other",
+      "replay_product": {
+        "source_file": "backend/data/staging/nutri-minimal-v4/real-product-replay-source-fixtures.json",
+        "product_id": "155861",
+        "barcode": "076280595499",
+        "url": "https://www.iherb.com/pr/solaray-nadh-10-mg-30-vegcaps/155861",
+        "brand": "Solaray",
+        "title": "Solaray, NADH, 10 mg, 30 VegCaps",
+        "facts_quality": "structured_ingredients",
+        "ingredient_rows": [
+          {
+            "name": "NADH (PANMOL® NADH)",
+            "amountText": "10 mg"
+          }
+        ]
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "nadh",
+        "context_family": "nadh",
+        "anchor_family": "nadh",
+        "selected_descriptor_family": "nadh",
+        "selected_descriptor_name": "NADH",
+        "descriptor_families": [
+          "nadh"
+        ]
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "nadh",
+        "headings": [
+          "Primary use context",
+          "Safety and boundary context",
+          "Form, source, and label context"
+        ],
+        "heading_ids": [
+          "primary_use_context",
+          "safety_and_boundary_context",
+          "form_source_and_label_context"
+        ],
+        "generic_hits": [],
+        "contains_family_label": true,
+        "sample_summary": "The useful way to read NADH in this formula depends on its role as a lead active, not just on the broad category it belongs to.",
+        "sample_evidence_read": "This is a formula-aware orientation section, not a universal claim about the ingredient in every product.",
+        "sample_shopper_meaning": "Use NADH as one part of the formula map, then compare how clearly the label separates the lead active from companion or structural lines."
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "primary_lane": "primary_use_context",
+        "registry_review_status": "rejected",
+        "registry_review_reasons": [
+          "only_search_url_without_resolved_source"
+        ],
+        "reviewed_evidence_found": false,
+        "live_grounding_status": "blocked_no_reviewed_row",
+        "expected_blocked_from_registry": true,
+        "first_reference_id": null,
+        "reference_count": 0,
+        "registry_traceability_warning": false
+      },
+      "safety_claim_gate": {
+        "pass": true,
+        "unsafe_sentences": []
+      }
+    },
+    {
+      "family": "bee_propolis",
+      "source_ingredient_id": "bee_propolis",
+      "display_name": "Bee Propolis",
+      "required": false,
+      "productization_class": "high_risk_safety",
+      "safety_boundary_tier": "high",
+      "category": "botanical",
+      "replay_product": {
+        "source_file": "backend/data/personalization/goal_navigator_candidate_bundle.v1.json",
+        "product_id": "116620",
+        "barcode": "00656490192727",
+        "url": "https://www.iherb.com/pr/wishgarden-herbs-serious-v-fighter-2-fl-oz-59-ml/116620",
+        "brand": "WishGarden Herbs",
+        "title": "WishGarden Herbs, Serious™ V-Fighter, 2 fl oz (59 ml)",
+        "facts_quality": "structured_ingredients",
+        "ingredient_rows": [
+          {
+            "name": "Lomatium root",
+            "amountText": null
+          },
+          {
+            "name": "Bee propolis",
+            "amountText": null
+          },
+          {
+            "name": "Myrrh gum",
+            "amountText": null
+          },
+          {
+            "name": "Elderflower",
+            "amountText": null
+          },
+          {
+            "name": "Boneset aerials",
+            "amountText": null
+          },
+          {
+            "name": "Yarrow aerials",
+            "amountText": null
+          },
+          {
+            "name": "Goldenseal root",
+            "amountText": null
+          },
+          {
+            "name": "Grindelia aerials",
+            "amountText": null
+          }
+        ]
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "bee_propolis",
+        "context_family": "bee_propolis",
+        "anchor_family": "generic",
+        "selected_descriptor_family": "bee_propolis",
+        "selected_descriptor_name": "Bee propolis",
+        "descriptor_families": [
+          "generic",
+          "bee_propolis"
+        ]
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "bee_propolis",
+        "headings": [
+          "Primary use context",
+          "Safety and boundary context",
+          "Form, source, and label context"
+        ],
+        "heading_ids": [
+          "primary_use_context",
+          "safety_and_boundary_context",
+          "form_source_and_label_context"
+        ],
+        "generic_hits": [],
+        "contains_family_label": true,
+        "sample_summary": "Bee Propolis is most useful here as a comparison lens around extract/source identity, marker wording, and formula role, not as a broad front-label promise.",
+        "sample_evidence_read": "The reviewed PubMed set includes \"Biological activity of bee propolis in health and disease.\", so this lane should be read as bounded human or review-level context rather than a universal product claim. Hard boundary: do not present Bee Propolis as treating, preventing, or curing disease, replacing medication, or guaranteeing outcomes; keep comparison on disclosed identity, amount, form/source, and safety cautions.",
+        "sample_shopper_meaning": "When comparing Bee Propolis products, check identity, amount, source/form disclosure, and safety cautions before treating two labels as equivalent."
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "primary_lane": "primary_use_context",
+        "registry_review_status": "approved",
+        "registry_review_reasons": [
+          "approved_with_verified_pmids"
+        ],
+        "reviewed_evidence_found": true,
+        "live_grounding_status": "approved_reviewed_row",
+        "expected_blocked_from_registry": false,
+        "first_reference_id": "pmid:16629510",
+        "reference_count": 5,
+        "registry_traceability_warning": false
+      },
+      "safety_claim_gate": {
+        "pass": true,
+        "unsafe_sentences": []
+      }
+    },
+    {
+      "family": "betaine",
+      "source_ingredient_id": "betaine",
+      "display_name": "Betaine",
+      "required": false,
+      "productization_class": "crosswalk_rescue",
+      "safety_boundary_tier": "high",
+      "category": "other",
+      "replay_product": {
+        "source_file": "backend/data/personalization/goal_navigator_candidate_bundle.v1.json",
+        "product_id": "147573",
+        "barcode": "00810078474128",
+        "url": "https://www.iherb.com/pr/vitamatic-tmg-1-000-mg-120-tablets/147573",
+        "brand": "Vitamatic",
+        "title": "Vitamatic, TMG, 1,000 mg, 120 Tablets",
+        "facts_quality": "structured_ingredients",
+        "ingredient_rows": [
+          {
+            "name": "Trimethylglycine (TMG)(Betaine Anhydrous)",
+            "amountText": "1000 mg"
+          }
+        ]
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "betaine",
+        "context_family": "betaine",
+        "anchor_family": "betaine",
+        "selected_descriptor_family": "betaine",
+        "selected_descriptor_name": "Trimethylglycine (TMG)(Betaine Anhydrous)",
+        "descriptor_families": [
+          "betaine"
+        ]
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "betaine",
+        "headings": [
+          "Primary use context",
+          "Safety and boundary context",
+          "Form, source, and label context"
+        ],
+        "heading_ids": [
+          "primary_use_context",
+          "safety_and_boundary_context",
+          "form_source_and_label_context"
+        ],
+        "generic_hits": [],
+        "contains_family_label": true,
+        "sample_summary": "Betaine is most useful here as a comparison lens around the disclosed ingredient line and formula context, not as a broad front-label promise.",
+        "sample_evidence_read": "The reviewed PubMed set includes \"Betaine in Inflammation: Mechanistic Aspects and Applications.\", so this lane should be read as bounded human or review-level context rather than a universal product claim. Hard boundary: do not present Betaine as treating, preventing, or curing disease, replacing medication, or guaranteeing outcomes; keep comparison on disclosed identity, amount, form/source, and safety cautions.",
+        "sample_shopper_meaning": "When comparing Betaine products, check identity, amount, source/form disclosure, and safety cautions before treating two labels as equivalent."
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "primary_lane": "primary_use_context",
+        "registry_review_status": "approved",
+        "registry_review_reasons": [
+          "approved_with_verified_pmids"
+        ],
+        "reviewed_evidence_found": true,
+        "live_grounding_status": "approved_reviewed_row",
+        "expected_blocked_from_registry": false,
+        "first_reference_id": "pmid:29881379",
+        "reference_count": 3,
+        "registry_traceability_warning": false
+      },
+      "safety_claim_gate": {
+        "pass": true,
+        "unsafe_sentences": []
+      }
+    },
+    {
+      "family": "caffeine",
+      "source_ingredient_id": "caffeine",
+      "display_name": "Caffeine",
+      "required": false,
+      "productization_class": "high_risk_safety",
+      "safety_boundary_tier": "high",
+      "category": "other",
+      "replay_product": {
+        "source_file": "backend/data/personalization/goal_navigator_candidate_bundle.v1.json",
+        "product_id": "81132",
+        "barcode": "00848998000530",
+        "url": "https://www.iherb.com/pr/zahler-teenfocus-90-capsules/81132",
+        "brand": "Zahler",
+        "title": "Zahler, TeenFocus™, 90 Capsules",
+        "facts_quality": "structured_ingredients",
+        "ingredient_rows": [
+          {
+            "name": "Niacin",
+            "amountText": "16 mg"
+          },
+          {
+            "name": "Vitamin B6 (as Pyridoxal-5-Phosphate)",
+            "amountText": "1.7 mg"
+          },
+          {
+            "name": "Vitamin B12 (as Methylcobalamin)",
+            "amountText": "240 mcg"
+          },
+          {
+            "name": "Choline (from Cytidine Diphosphate (CDP) Choline Sodium Salt)",
+            "amountText": "50 mg"
+          },
+          {
+            "name": "Magnesium (as Chelamax Magnesium Bisglycinate)",
+            "amountText": "84 mg"
+          },
+          {
+            "name": "Lemon Balm Stem and Leaf Powder",
+            "amountText": "300 mg"
+          },
+          {
+            "name": "Citicoline (Cytidine Diphosphate (CDP) Choline Sodium Salt)",
+            "amountText": "250 mg"
+          },
+          {
+            "name": "L-Theanine",
+            "amountText": "150 mg"
+          }
+        ]
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "caffeine",
+        "context_family": "caffeine",
+        "anchor_family": "l_theanine",
+        "selected_descriptor_family": "caffeine",
+        "selected_descriptor_name": "Caffeine (from Green Tea Leaf Extract)",
+        "descriptor_families": [
+          "l_theanine",
+          "caffeine",
+          "generic",
+          "magnesium",
+          "b3_niacinamide",
+          "b6",
+          "b12"
+        ]
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "caffeine",
+        "headings": [
+          "Primary use context",
+          "Safety and boundary context",
+          "Form, source, and label context"
+        ],
+        "heading_ids": [
+          "primary_use_context",
+          "safety_and_boundary_context",
+          "form_source_and_label_context"
+        ],
+        "generic_hits": [],
+        "contains_family_label": true,
+        "sample_summary": "Caffeine is most useful here as a comparison lens around the disclosed ingredient line and formula context, not as a broad front-label promise.",
+        "sample_evidence_read": "The reviewed PubMed set includes \"International society of sports nutrition position stand: caffeine and exercise performance.\", so this lane should be read as bounded human or review-level context rather than a universal product claim. Hard boundary: do not present Caffeine as treating, preventing, or curing disease, replacing medication, or guaranteeing outcomes; keep comparison on disclosed identity, amount, form/source, and safety cautions.",
+        "sample_shopper_meaning": "When comparing Caffeine products, check identity, amount, source/form disclosure, and safety cautions before treating two labels as equivalent."
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "primary_lane": "primary_use_context",
+        "registry_review_status": "approved",
+        "registry_review_reasons": [
+          "approved_with_verified_pmids"
+        ],
+        "reviewed_evidence_found": true,
+        "live_grounding_status": "approved_reviewed_row",
+        "expected_blocked_from_registry": false,
+        "first_reference_id": "pmid:33388079",
+        "reference_count": 5,
+        "registry_traceability_warning": false
+      },
+      "safety_claim_gate": {
+        "pass": true,
+        "unsafe_sentences": []
+      }
+    },
+    {
+      "family": "cordyceps_mushroom",
+      "source_ingredient_id": "cordyceps_mushroom",
+      "display_name": "Cordyceps Mushroom",
+      "required": false,
+      "productization_class": "high_risk_safety",
+      "safety_boundary_tier": "high",
+      "category": "botanical",
+      "replay_product": {
+        "source_file": "backend/data/personalization/goal_navigator_candidate_bundle.v1.json",
+        "product_id": "148328",
+        "barcode": "00848998083625",
+        "url": "https://www.iherb.com/pr/zahler-mushroom-complex-60-capsules/148328",
+        "brand": "Zahler",
+        "title": "Zahler, Mushroom Complex, 60 Capsules",
+        "facts_quality": "structured_ingredients",
+        "ingredient_rows": [
+          {
+            "name": "Vitamin D (as Cholecalciferol) (from Lichen)",
+            "amountText": "25 mcg"
+          },
+          {
+            "name": "Selenium (as SelenoExcell Selenium Yeast from Saccharomyces cerevisiae)",
+            "amountText": "55 mcg"
+          },
+          {
+            "name": "Lion's Mane (Hericium erinaceus) Mycelium & Primordia Powder",
+            "amountText": "250 mg"
+          },
+          {
+            "name": "Chaga (Inontus obliquus) Mycelium & Primordia Powder",
+            "amountText": "200 mg"
+          },
+          {
+            "name": "Maitake (Grifola frondose) Fruiting Body Powder",
+            "amountText": "200 mg"
+          },
+          {
+            "name": "Shiitake (Lentinula edodes) Fruiting Body Powder",
+            "amountText": "200 mg"
+          },
+          {
+            "name": "Organic Turkey Tail (Trametes versicolor) Fruiting Body Extract",
+            "amountText": "100 mg"
+          },
+          {
+            "name": "Reishi (Ganoderma sichuanense) Fruiting Body Extract",
+            "amountText": "100 mg"
+          }
+        ]
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "cordyceps_mushroom",
+        "context_family": "chaga_mushroom",
+        "anchor_family": "lion_s_mane_mushroom",
+        "selected_descriptor_family": "cordyceps_mushroom",
+        "selected_descriptor_name": "Organic Cordyceps (Cordyceps militaris) Mycelium & Fruiting Body Powder",
+        "descriptor_families": [
+          "lion_s_mane_mushroom",
+          "chaga_mushroom",
+          "maitake_mushroom",
+          "reishi_mushroom",
+          "cordyceps_mushroom",
+          "generic",
+          "probiotic_or_blend",
+          "vitamin_d"
+        ]
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "cordyceps_mushroom",
+        "headings": [
+          "Primary use context",
+          "Safety and boundary context",
+          "Form, source, and label context"
+        ],
+        "heading_ids": [
+          "primary_use_context",
+          "safety_and_boundary_context",
+          "form_source_and_label_context"
+        ],
+        "generic_hits": [],
+        "contains_family_label": true,
+        "sample_summary": "Cordyceps Mushroom is most useful here as a comparison lens around extract/source identity, marker wording, and formula role, not as a broad front-label promise.",
+        "sample_evidence_read": "The reviewed PubMed set includes \"Bioactive Metabolites and Potential Mycotoxins Produced by Cordyceps Fungi: A Review of Safety.\", so this lane should be read as bounded human or review-level context rather than a universal product claim. Hard boundary: do not present Cordyceps Mushroom as treating, preventing, or curing disease, replacing medication, or guaranteeing outcomes; keep comparison on disclosed identity, amount, form/source, and safety cautions.",
+        "sample_shopper_meaning": "When comparing Cordyceps Mushroom products, check identity, amount, source/form disclosure, and safety cautions before treating two labels as equivalent."
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "primary_lane": "primary_use_context",
+        "registry_review_status": "approved",
+        "registry_review_reasons": [
+          "approved_with_verified_pmids"
+        ],
+        "reviewed_evidence_found": true,
+        "live_grounding_status": "approved_reviewed_row",
+        "expected_blocked_from_registry": false,
+        "first_reference_id": "pmid:32575649",
+        "reference_count": 3,
+        "registry_traceability_warning": false
+      },
+      "safety_claim_gate": {
+        "pass": true,
+        "unsafe_sentences": []
+      }
+    },
+    {
+      "family": "d_mannose",
+      "source_ingredient_id": "d_mannose",
+      "display_name": "D-Mannose",
+      "required": false,
+      "productization_class": "high_risk_safety",
+      "safety_boundary_tier": "high",
+      "category": "other",
+      "replay_product": {
+        "source_file": "backend/data/personalization/goal_navigator_candidate_bundle.v1.json",
+        "product_id": "76630",
+        "barcode": "00848998080730",
+        "url": "https://www.iherb.com/pr/zahler-revolution-complete-urinary-tract-formula-60-capsules/76630",
+        "brand": "Zahler",
+        "title": "Zahler, Revolution, Complete Urinary Tract Formula, 60 Capsules",
+        "facts_quality": "structured_ingredients",
+        "ingredient_rows": [
+          {
+            "name": "Vitamin C (as Ascorbic Acid)",
+            "amountText": "100 mg"
+          },
+          {
+            "name": "D-Mannose",
+            "amountText": "1200 mg"
+          },
+          {
+            "name": "Cran-Max Cranberry Fruit Concentrate",
+            "amountText": "1000 mg"
+          },
+          {
+            "name": "Probiotics",
+            "amountText": "50000000000 cfu"
+          },
+          {
+            "name": "Lactobacillus acidophilus **",
+            "amountText": "250 mg"
+          },
+          {
+            "name": "Pumpkin Seed Extract (Cucurbita moschata)",
+            "amountText": "100 mg"
+          },
+          {
+            "name": "NutraFlora Fructooligosaccharides",
+            "amountText": "80 mg"
+          },
+          {
+            "name": "Proprietary Blend",
+            "amountText": "50 mg"
+          }
+        ]
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "d_mannose",
+        "context_family": "dandelion_root",
+        "anchor_family": "d_mannose",
+        "selected_descriptor_family": "d_mannose",
+        "selected_descriptor_name": "D-Mannose",
+        "descriptor_families": [
+          "d_mannose",
+          "dandelion_root",
+          "probiotic_or_blend",
+          "generic",
+          "vitamin_c"
+        ]
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "d_mannose",
+        "headings": [
+          "Primary use context",
+          "Safety and boundary context",
+          "Form, source, and label context"
+        ],
+        "heading_ids": [
+          "primary_use_context",
+          "safety_and_boundary_context",
+          "form_source_and_label_context"
+        ],
+        "generic_hits": [],
+        "contains_family_label": true,
+        "sample_summary": "D-Mannose is most useful here as a comparison lens around the disclosed ingredient line and formula context, not as a broad front-label promise.",
+        "sample_evidence_read": "The reviewed PubMed set includes \"D-mannose for preventing and treating urinary tract infections.\", so this lane should be read as bounded human or review-level context rather than a universal product claim. Hard boundary: do not present D-mannose as treating, preventing, or curing disease, replacing medication, or guaranteeing outcomes; keep comparison on disclosed identity, amount, form/source, and safety cautions.",
+        "sample_shopper_meaning": "When comparing D-Mannose products, check identity, amount, source/form disclosure, and safety cautions before treating two labels as equivalent."
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "primary_lane": "primary_use_context",
+        "registry_review_status": "approved",
+        "registry_review_reasons": [
+          "approved_with_verified_pmids"
+        ],
+        "reviewed_evidence_found": true,
+        "live_grounding_status": "approved_reviewed_row",
+        "expected_blocked_from_registry": false,
+        "first_reference_id": "pmid:36041061",
+        "reference_count": 4,
+        "registry_traceability_warning": false
+      },
+      "safety_claim_gate": {
+        "pass": true,
+        "unsafe_sentences": []
+      }
+    },
+    {
+      "family": "dandelion_root",
+      "source_ingredient_id": "dandelion_root",
+      "display_name": "Dandelion Root",
+      "required": false,
+      "productization_class": "high_risk_safety",
+      "safety_boundary_tier": "high",
+      "category": "botanical",
+      "replay_product": {
+        "source_file": "backend/data/personalization/goal_navigator_candidate_bundle.v1.json",
+        "product_id": "147581",
+        "barcode": "00810078474814",
+        "url": "https://www.iherb.com/pr/vitamatic-milk-thistle-dandelion-root-180-vegetarian-capsules/147581",
+        "brand": "Vitamatic",
+        "title": "Vitamatic, Milk Thistle + Dandelion Root, 180 Vegetarian Capsules",
+        "facts_quality": "structured_ingredients",
+        "ingredient_rows": [
+          {
+            "name": "Milk Thistle Extract 50:1(Silybum marianum) (seed)(Equivalent to 25, 000 mg of Milk Thistle)",
+            "amountText": "500 mg"
+          },
+          {
+            "name": "Dandelion Root Extract 50:1(Taraxacum officinale)(Equivalent to 5000 mg of Dandelion Root)",
+            "amountText": "100 mg"
+          }
+        ]
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "dandelion_root",
+        "context_family": "dandelion_root",
+        "anchor_family": "milk_thistle",
+        "selected_descriptor_family": "dandelion_root",
+        "selected_descriptor_name": "Dandelion Root Extract 50:1(Taraxacum officinale)(Equivalent to 5000 mg of Dandelion Root)",
+        "descriptor_families": [
+          "milk_thistle",
+          "dandelion_root"
+        ]
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "dandelion_root",
+        "headings": [
+          "Primary use context",
+          "Safety and boundary context",
+          "Form, source, and label context"
+        ],
+        "heading_ids": [
+          "primary_use_context",
+          "safety_and_boundary_context",
+          "form_source_and_label_context"
+        ],
+        "generic_hits": [],
+        "contains_family_label": true,
+        "sample_summary": "The useful way to read Dandelion Root in this formula depends on its role as a supporting formula line around Milk Thistle Extract 50:1(Silybum marianum) (seed)(Equivalent to 25, 000 mg of Milk Thistle), not just on the broad category it belongs to.",
+        "sample_evidence_read": "This is a formula-aware orientation section, not a universal claim about the ingredient in every product.",
+        "sample_shopper_meaning": "Use Dandelion Root as one part of the formula map, then compare how clearly the label separates the lead active from companion or structural lines."
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "primary_lane": "primary_use_context",
+        "registry_review_status": "rejected",
+        "registry_review_reasons": [
+          "only_search_url_without_resolved_source"
+        ],
+        "reviewed_evidence_found": false,
+        "live_grounding_status": "blocked_no_reviewed_row",
+        "expected_blocked_from_registry": true,
+        "first_reference_id": null,
+        "reference_count": 0,
+        "registry_traceability_warning": false
+      },
+      "safety_claim_gate": {
+        "pass": true,
+        "unsafe_sentences": []
+      }
+    },
+    {
+      "family": "echinacea",
+      "source_ingredient_id": "echinacea",
+      "display_name": "Echinacea",
+      "required": false,
+      "productization_class": "high_risk_safety",
+      "safety_boundary_tier": "high",
+      "category": "botanical",
+      "replay_product": {
+        "source_file": "backend/data/personalization/goal_navigator_candidate_bundle.v1.json",
+        "product_id": "147528",
+        "barcode": "00810078471301",
+        "url": "https://www.iherb.com/pr/vitamatic-zinc-gummies-mixed-berry-60-gummies/147528",
+        "brand": "Vitamatic",
+        "title": "Vitamatic, Zinc Gummies, Mixed Berry, 60 Gummies",
+        "facts_quality": "structured_ingredients",
+        "ingredient_rows": [
+          {
+            "name": "Total Carbohydrates",
+            "amountText": "5 g"
+          },
+          {
+            "name": "Sugars",
+            "amountText": "5 g"
+          },
+          {
+            "name": "Vitamin D (as cholecalciferol) (2000 IU)",
+            "amountText": "50 mcg"
+          },
+          {
+            "name": "Zinc (as zinc citrate)",
+            "amountText": "50 mg"
+          },
+          {
+            "name": "Echinacea purpurea extract (flower)",
+            "amountText": "4 mg"
+          }
+        ]
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "echinacea",
+        "context_family": "echinacea",
+        "anchor_family": "zinc",
+        "selected_descriptor_family": "echinacea",
+        "selected_descriptor_name": "Echinacea purpurea extract (flower)",
+        "descriptor_families": [
+          "zinc",
+          "echinacea",
+          "generic",
+          "vitamin_d"
+        ]
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "echinacea",
+        "headings": [
+          "Primary use context",
+          "Safety and boundary context",
+          "Form, source, and label context"
+        ],
+        "heading_ids": [
+          "primary_use_context",
+          "safety_and_boundary_context",
+          "form_source_and_label_context"
+        ],
+        "generic_hits": [],
+        "contains_family_label": true,
+        "sample_summary": "Echinacea is most useful here as a comparison lens around extract/source identity, marker wording, and formula role, not as a broad front-label promise.",
+        "sample_evidence_read": "The reviewed PubMed set includes \"Echinacea: Bioactive Compounds and Agronomy.\", so this lane should be read as bounded human or review-level context rather than a universal product claim. Hard boundary: do not present Echinacea as treating, preventing, or curing disease, replacing medication, or guaranteeing outcomes; keep comparison on disclosed identity, amount, form/source, and safety cautions.",
+        "sample_shopper_meaning": "When comparing Echinacea products, check identity, amount, source/form disclosure, and safety cautions before treating two labels as equivalent."
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "primary_lane": "primary_use_context",
+        "registry_review_status": "approved",
+        "registry_review_reasons": [
+          "approved_with_verified_pmids"
+        ],
+        "reviewed_evidence_found": true,
+        "live_grounding_status": "approved_reviewed_row",
+        "expected_blocked_from_registry": false,
+        "first_reference_id": "pmid:38732450",
+        "reference_count": 3,
+        "registry_traceability_warning": false
+      },
+      "safety_claim_gate": {
+        "pass": true,
+        "unsafe_sentences": []
+      }
+    },
+    {
+      "family": "elderberry",
+      "source_ingredient_id": "elderberry",
+      "display_name": "Elderberry",
+      "required": false,
+      "productization_class": "high_risk_safety",
+      "safety_boundary_tier": "high",
+      "category": "botanical",
+      "replay_product": {
+        "source_file": "backend/data/personalization/goal_navigator_candidate_bundle.v1.json",
+        "product_id": "104751",
+        "barcode": "00848998082215",
+        "url": "https://www.iherb.com/pr/zahler-zinc-lozenges-bioactive-zinc-elderberry-elderberry-90-lozenges/104751",
+        "brand": "Zahler",
+        "title": "Zahler, Zinc Lozenges, Bioactive Zinc & Elderberry, Elderberry, 90 Lozenges",
+        "facts_quality": "structured_ingredients",
+        "ingredient_rows": [
+          {
+            "name": "Zinc (as Zinc Citrate and Zinc Gluconate)",
+            "amountText": "25 mg"
+          },
+          {
+            "name": "European Elder (Elderberry) Fruit Powder",
+            "amountText": "100 mg"
+          }
+        ]
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "elderberry",
+        "context_family": "elderberry",
+        "anchor_family": "zinc",
+        "selected_descriptor_family": "elderberry",
+        "selected_descriptor_name": "Elderberry",
+        "descriptor_families": [
+          "zinc",
+          "elderberry"
+        ]
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "label_context_mode",
+        "family": "elderberry",
+        "headings": [
+          "What this line means on the label",
+          "Why it matters for comparison"
+        ],
+        "heading_ids": [
+          "what_this_line_means",
+          "why_it_matters_for_comparison"
+        ],
+        "generic_hits": [],
+        "contains_family_label": true,
+        "sample_summary": "Elderberry is better interpreted as a label-structure line for this product than as a stand-alone research claim.",
+        "sample_evidence_read": "This is a label-meaning section rather than a traditional research summary.",
+        "sample_shopper_meaning": "Use Elderberry as context first, then rank comparison weight using the clearer ingredient rows around it."
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "primary_lane": "primary_use_context",
+        "registry_review_status": "approved",
+        "registry_review_reasons": [
+          "approved_with_verified_pmids"
+        ],
+        "reviewed_evidence_found": true,
+        "live_grounding_status": "approved_reviewed_row",
+        "expected_blocked_from_registry": false,
+        "first_reference_id": "pmid:30670267",
+        "reference_count": 5,
+        "registry_traceability_warning": false
+      },
+      "safety_claim_gate": {
+        "pass": true,
+        "unsafe_sentences": []
+      }
+    },
+    {
+      "family": "ginkgo_biloba",
+      "source_ingredient_id": "ginkgo_biloba",
+      "display_name": "Ginkgo biloba",
+      "required": false,
+      "productization_class": "high_risk_safety",
+      "safety_boundary_tier": "high",
+      "category": "botanical",
+      "replay_product": {
+        "source_file": "backend/data/personalization/goal_navigator_candidate_bundle.v1.json",
+        "product_id": "153962",
+        "barcode": "00810078475408",
+        "url": "https://www.iherb.com/pr/vitamatic-shilajit-complex-120-vegetarian-capsules/153962",
+        "brand": "Vitamatic",
+        "title": "Vitamatic, Shilajit Complex, 120 Vegetarian Capsules",
+        "facts_quality": "structured_ingredients",
+        "ingredient_rows": [
+          {
+            "name": "Shilajit (Asphaltum Punjabianum 30:1 Extract)(Equivalent to 900 mg of Shilajit Powder)",
+            "amountText": "300 mg"
+          },
+          {
+            "name": "Ashwagandha (Withania somnifera 20:1 Extract) (Root)(Equivalent to 200 mg of Ashwagandha Powder)",
+            "amountText": "100 mg"
+          },
+          {
+            "name": "Rhodiola Rosea (10:1 Extract) (Root)(Equivalent to 1000 mg of Rhodiola Rosea Powder)",
+            "amountText": "100 mg"
+          },
+          {
+            "name": "Ginseng (Panax ginseng 30:1 Extract)(Equivalent to 1500 mg of Ginseng Powder)",
+            "amountText": "50 mg"
+          },
+          {
+            "name": "Cordyceps Mushroom (Ophiocordyceps sinensis 10:1 Extract)(Equivalent to 500 mg of Cordyceps Powder)",
+            "amountText": "50 mg"
+          },
+          {
+            "name": "Ginkgo Biloba (Gingko biloba Linn. 10:1 Extract) (Leaf)(Equivalent to 500 mg Gingko Biloba Powder)",
+            "amountText": "50 mg"
+          },
+          {
+            "name": "Stinging Nettle (Urtica Dioica 10:1 Extract) (Root)(Equivalent to 250 mg of Stinging Nettle Powder)",
+            "amountText": "25 mg"
+          },
+          {
+            "name": "Turmeric (Curcuma Longa 20:1 Extract)(Equivalent to 500 mg of Turmeric Powder)",
+            "amountText": "25 mg"
+          }
+        ]
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "ginkgo_biloba",
+        "context_family": "ashwagandha",
+        "anchor_family": "shilajit",
+        "selected_descriptor_family": "ginkgo_biloba",
+        "selected_descriptor_name": "Ginkgo Biloba (Gingko biloba Linn. 10:1 Extract) (Leaf)(Equivalent to 500 mg Gingko Biloba Powder)",
+        "descriptor_families": [
+          "shilajit",
+          "ashwagandha",
+          "rhodiola_rosea",
+          "ginseng",
+          "cordyceps_mushroom",
+          "ginkgo_biloba",
+          "stinging_nettle_root",
+          "generic"
+        ]
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "ginkgo_biloba",
+        "headings": [
+          "Primary use context",
+          "Safety and boundary context",
+          "Form, source, and label context"
+        ],
+        "heading_ids": [
+          "primary_use_context",
+          "safety_and_boundary_context",
+          "form_source_and_label_context"
+        ],
+        "generic_hits": [],
+        "contains_family_label": true,
+        "sample_summary": "Ginkgo biloba is most useful here as a comparison lens around extract/source identity, marker wording, and formula role, not as a broad front-label promise.",
+        "sample_evidence_read": "The reviewed PubMed set includes \"Neuroprotective and Antioxidant Effect of Ginkgo biloba Extract Against AD and Other Neurological Disorders.\", so this lane should be read as bounded human or review-level context rather than a universal product claim. Hard boundary: do not present Ginkgo Biloba as treating, preventing, or curing disease, replacing medication, or guaranteeing outcomes; keep comparison on disclosed identity, amount, form/source, and safety cautions.",
+        "sample_shopper_meaning": "When comparing Ginkgo biloba products, check identity, amount, source/form disclosure, and safety cautions before treating two labels as equivalent."
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "primary_lane": "primary_use_context",
+        "registry_review_status": "approved",
+        "registry_review_reasons": [
+          "approved_with_verified_pmids"
+        ],
+        "reviewed_evidence_found": true,
+        "live_grounding_status": "approved_reviewed_row",
+        "expected_blocked_from_registry": false,
+        "first_reference_id": "pmid:31376068",
+        "reference_count": 2,
+        "registry_traceability_warning": false
+      },
+      "safety_claim_gate": {
+        "pass": true,
+        "unsafe_sentences": []
+      }
+    },
+    {
+      "family": "l_theanine",
+      "source_ingredient_id": "l_theanine",
+      "display_name": "L-Theanine",
+      "required": false,
+      "productization_class": "high_risk_safety",
+      "safety_boundary_tier": "high",
+      "category": "amino_acid",
+      "replay_product": {
+        "source_file": "backend/data/personalization/goal_navigator_candidate_bundle.v1.json",
+        "product_id": "150921",
+        "barcode": "00810078470618",
+        "url": "https://www.iherb.com/pr/vitamatic-melatonin-b6-l-theanine-natural-berry-120-fast-dissolve-tablets/150921",
+        "brand": "Vitamatic",
+        "title": "Vitamatic, Melatonin, B6 & L-Theanine, Natural Berry, 120 Fast Dissolve Tablets",
+        "facts_quality": "structured_ingredients",
+        "ingredient_rows": [
+          {
+            "name": "Melatonin",
+            "amountText": "30 mg"
+          },
+          {
+            "name": "L-Theanine",
+            "amountText": "25 mg"
+          }
+        ]
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "l_theanine",
+        "context_family": "l_theanine",
+        "anchor_family": "melatonin",
+        "selected_descriptor_family": "l_theanine",
+        "selected_descriptor_name": "L-Theanine",
+        "descriptor_families": [
+          "melatonin",
+          "l_theanine"
+        ]
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "l_theanine",
+        "headings": [
+          "Primary use context",
+          "Safety and boundary context",
+          "Form, source, and label context"
+        ],
+        "heading_ids": [
+          "primary_use_context",
+          "safety_and_boundary_context",
+          "form_source_and_label_context"
+        ],
+        "generic_hits": [],
+        "contains_family_label": true,
+        "sample_summary": "L-Theanine is most useful here as a comparison lens around the disclosed ingredient line and formula context, not as a broad front-label promise.",
+        "sample_evidence_read": "The reviewed PubMed set includes \"The Effects of Green Tea Amino Acid L-Theanine Consumption on the Ability to Manage Stress and Anxiety Levels: a Systematic Review.\", so this lane should be read as bounded human or review-level context rather than a universal product claim. Hard boundary: do not present L Theanine as treating, preventing, or curing disease, replacing medication, or guaranteeing outcomes; keep comparison on disclosed identity, amount, form/source, and safety cautions.",
+        "sample_shopper_meaning": "When comparing L-Theanine products, check identity, amount, source/form disclosure, and safety cautions before treating two labels as equivalent."
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "primary_lane": "primary_use_context",
+        "registry_review_status": "approved",
+        "registry_review_reasons": [
+          "approved_with_verified_pmids"
+        ],
+        "reviewed_evidence_found": true,
+        "live_grounding_status": "approved_reviewed_row",
+        "expected_blocked_from_registry": false,
+        "first_reference_id": "pmid:31758301",
+        "reference_count": 5,
+        "registry_traceability_warning": false
+      },
+      "safety_claim_gate": {
+        "pass": true,
+        "unsafe_sentences": []
+      }
+    },
+    {
+      "family": "lion_s_mane_mushroom",
+      "source_ingredient_id": "lion_s_mane_mushroom",
+      "display_name": "Lion's Mane Mushroom",
+      "required": false,
+      "productization_class": "high_risk_safety",
+      "safety_boundary_tier": "high",
+      "category": "botanical",
+      "replay_product": {
+        "source_file": "backend/data/personalization/goal_navigator_candidate_bundle.v1.json",
+        "product_id": "149563",
+        "barcode": "00088395864001",
+        "url": "https://www.iherb.com/pr/carlson-lion-s-mane-60-vegetarian-capsules/149563",
+        "brand": "Carlson",
+        "title": "Carlson, Lion's Mane, 60 Vegetarian Capsules",
+        "facts_quality": "structured_ingredients",
+        "ingredient_rows": [
+          {
+            "name": "Hericium erinaceusMushroom (Fruiting Body) Extract (Organic)",
+            "amountText": "1000 mg"
+          },
+          {
+            "name": "Beta-(1, 3) (1, 6)-glucans",
+            "amountText": "280 mg"
+          },
+          {
+            "name": "Hericium erinaceusMushroom (Fruiting Body) Extract (Organic)",
+            "amountText": "1,000 mg"
+          }
+        ]
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "lion_s_mane_mushroom",
+        "context_family": "lion_s_mane_mushroom",
+        "anchor_family": "lion_s_mane_mushroom",
+        "selected_descriptor_family": "lion_s_mane_mushroom",
+        "selected_descriptor_name": "Hericium erinaceusMushroom (Fruiting Body) Extract (Organic)",
+        "descriptor_families": [
+          "lion_s_mane_mushroom",
+          "generic"
+        ]
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "lion_s_mane_mushroom",
+        "headings": [
+          "Primary use context",
+          "Safety and boundary context",
+          "Form, source, and label context"
+        ],
+        "heading_ids": [
+          "primary_use_context",
+          "safety_and_boundary_context",
+          "form_source_and_label_context"
+        ],
+        "generic_hits": [],
+        "contains_family_label": true,
+        "sample_summary": "Lion's Mane Mushroom is most useful here as a comparison lens around extract/source identity, marker wording, and formula role, not as a broad front-label promise.",
+        "sample_evidence_read": "The reviewed PubMed set includes \"The Acute and Chronic Effects of Lion's Mane Mushroom Supplementation on Cognitive Function, Stress and Mood in Young Adults: A Double-Blind, Parallel Groups, Pilot Study.\", so this lane should be read as bounded human or review-level context rather than a universal product claim. Hard boundary: do not present Lion S Mane Mushroom as treating, preventing, or curing disease, replacing medication, or guaranteeing outcomes; keep comparison on disclosed identity, amount, form/source, and safety cautions.",
+        "sample_shopper_meaning": "When comparing Lion's Mane Mushroom products, check identity, amount, source/form disclosure, and safety cautions before treating two labels as equivalent."
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "primary_lane": "primary_use_context",
+        "registry_review_status": "approved",
+        "registry_review_reasons": [
+          "approved_with_verified_pmids"
+        ],
+        "reviewed_evidence_found": true,
+        "live_grounding_status": "approved_reviewed_row",
+        "expected_blocked_from_registry": false,
+        "first_reference_id": "pmid:38004235",
+        "reference_count": 5,
+        "registry_traceability_warning": false
+      },
+      "safety_claim_gate": {
+        "pass": true,
+        "unsafe_sentences": []
+      }
+    },
+    {
+      "family": "maitake_mushroom",
+      "source_ingredient_id": "maitake_mushroom",
+      "display_name": "Maitake Mushroom",
+      "required": false,
+      "productization_class": "high_risk_safety",
+      "safety_boundary_tier": "high",
+      "category": "botanical",
+      "replay_product": {
+        "source_file": "backend/data/personalization/goal_navigator_candidate_bundle.v1.json",
+        "product_id": "148052",
+        "barcode": "00088395863004",
+        "url": "https://www.iherb.com/pr/carlson-organic-blend-mushroom-immune-50-vegetarian-capsules/148052",
+        "brand": "Carlson",
+        "title": "Carlson, Organic Blend Mushroom Immune, 50 Vegetarian Capsules",
+        "facts_quality": "structured_ingredients",
+        "ingredient_rows": [
+          {
+            "name": "Mushroom Immune Complex",
+            "amountText": "1000 mg"
+          },
+          {
+            "name": "Beta-(1, 3)(1, 6)-glucans",
+            "amountText": "100 mg"
+          },
+          {
+            "name": "Chaga Mushroom (Inonotus obliquus) Extract Powder (Organic)",
+            "amountText": null
+          },
+          {
+            "name": "Maitake Mushroom (Grifola frondosa) Extract Powder (Organic)",
+            "amountText": null
+          },
+          {
+            "name": "Shiitake Mushroom (Lentinula edodes) Extract Powder (Organic)",
+            "amountText": null
+          },
+          {
+            "name": "Reishi Mushroom (Ganoderma lingzhi) Extract Powder (Organic)",
+            "amountText": null
+          },
+          {
+            "name": "Turkey Tail Mushroom (Trametes versicolor) Extract Powder (Organic)",
+            "amountText": null
+          },
+          {
+            "name": "Mushroom Immune Complex",
+            "amountText": "1,000 mg"
+          }
+        ]
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "maitake_mushroom",
+        "context_family": "chaga_mushroom",
+        "anchor_family": "chaga_mushroom",
+        "selected_descriptor_family": "maitake_mushroom",
+        "selected_descriptor_name": "Maitake Mushroom (Grifola frondosa) Extract Powder (Organic)",
+        "descriptor_families": [
+          "chaga_mushroom",
+          "maitake_mushroom",
+          "reishi_mushroom",
+          "generic",
+          "probiotic_or_blend"
+        ]
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "maitake_mushroom",
+        "headings": [
+          "Primary use context",
+          "Safety and boundary context",
+          "Form, source, and label context"
+        ],
+        "heading_ids": [
+          "primary_use_context",
+          "safety_and_boundary_context",
+          "form_source_and_label_context"
+        ],
+        "generic_hits": [],
+        "contains_family_label": true,
+        "sample_summary": "Maitake Mushroom is most useful here as a comparison lens around extract/source identity, marker wording, and formula role, not as a broad front-label promise.",
+        "sample_evidence_read": "The reviewed PubMed set includes \"Unveiling the full spectrum of maitake mushrooms: A comprehensive review of their medicinal, therapeutic, nutraceutical, and cosmetic potential.\", so this lane should be read as bounded human or review-level context rather than a universal product claim. Hard boundary: do not present Maitake Mushroom as treating, preventing, or curing disease, replacing medication, or guaranteeing outcomes; keep comparison on disclosed identity, amount, form/source, and safety cautions.",
+        "sample_shopper_meaning": "When comparing Maitake Mushroom products, check identity, amount, source/form disclosure, and safety cautions before treating two labels as equivalent."
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "primary_lane": "primary_use_context",
+        "registry_review_status": "approved",
+        "registry_review_reasons": [
+          "approved_with_verified_pmids"
+        ],
+        "reviewed_evidence_found": true,
+        "live_grounding_status": "approved_reviewed_row",
+        "expected_blocked_from_registry": false,
+        "first_reference_id": "pmid:38707308",
+        "reference_count": 4,
+        "registry_traceability_warning": false
+      },
+      "safety_claim_gate": {
+        "pass": true,
+        "unsafe_sentences": []
+      }
+    },
+    {
+      "family": "mct_oil",
+      "source_ingredient_id": "mct_oil",
+      "display_name": "MCT Oil",
+      "required": false,
+      "productization_class": "crosswalk_rescue",
+      "safety_boundary_tier": "high",
+      "category": "lipid",
+      "replay_product": {
+        "source_file": "backend/data/personalization/goal_navigator_candidate_bundle.v1.json",
+        "product_id": "81460",
+        "barcode": "00848998081874",
+        "url": "https://www.iherb.com/pr/zahler-paraguard-advanced-intestinal-flora-support-90-softgels/81460",
+        "brand": "Zahler",
+        "title": "Zahler, ParaGuard™, Advanced Intestinal Flora Support, 90 Softgels",
+        "facts_quality": "structured_ingredients",
+        "ingredient_rows": [
+          {
+            "name": "Sunflower Lecithin",
+            "amountText": null
+          },
+          {
+            "name": "Medium Chain Triglycerides",
+            "amountText": null
+          },
+          {
+            "name": "Black Walnut (Juglans nigra) Hull",
+            "amountText": null
+          },
+          {
+            "name": "Clove (Syzygium aromaticum) bud",
+            "amountText": null
+          },
+          {
+            "name": "Garlic (Allium sativum L.) Bulb",
+            "amountText": null
+          },
+          {
+            "name": "Peppermint (Mentha piperita) Leaf",
+            "amountText": null
+          },
+          {
+            "name": "Oregano (Origanum vulgare L.) Oil",
+            "amountText": null
+          },
+          {
+            "name": "Fennel (Foeniculum vulgare) Seed",
+            "amountText": null
+          }
+        ]
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "mct_oil",
+        "context_family": "mct_oil",
+        "anchor_family": "probiotic_or_blend",
+        "selected_descriptor_family": "mct_oil",
+        "selected_descriptor_name": "Medium Chain Triglycerides",
+        "descriptor_families": [
+          "probiotic_or_blend",
+          "generic",
+          "mct_oil"
+        ]
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "mct_oil",
+        "headings": [
+          "Primary use context",
+          "Safety and boundary context",
+          "Form, source, and label context"
+        ],
+        "heading_ids": [
+          "primary_use_context",
+          "safety_and_boundary_context",
+          "form_source_and_label_context"
+        ],
+        "generic_hits": [],
+        "contains_family_label": true,
+        "sample_summary": "MCT Oil is most useful here as a comparison lens around the disclosed ingredient line and formula context, not as a broad front-label promise.",
+        "sample_evidence_read": "The reviewed PubMed set includes \"Physiological effects of medium-chain triglycerides: potential agents in the prevention of obesity.\", so this lane should be read as bounded human or review-level context rather than a universal product claim. Hard boundary: do not present MCT oil as treating, preventing, or curing disease, replacing medication, or guaranteeing outcomes; keep comparison on disclosed identity, amount, form/source, and safety cautions.",
+        "sample_shopper_meaning": "When comparing MCT Oil products, check identity, amount, source/form disclosure, and safety cautions before treating two labels as equivalent."
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "primary_lane": "primary_use_context",
+        "registry_review_status": "approved",
+        "registry_review_reasons": [
+          "approved_with_verified_pmids"
+        ],
+        "reviewed_evidence_found": true,
+        "live_grounding_status": "approved_reviewed_row",
+        "expected_blocked_from_registry": false,
+        "first_reference_id": "pmid:11880549",
+        "reference_count": 1,
+        "registry_traceability_warning": false
+      },
+      "safety_claim_gate": {
+        "pass": true,
+        "unsafe_sentences": []
+      }
+    },
+    {
+      "family": "nattokinase",
+      "source_ingredient_id": "nattokinase",
+      "display_name": "Nattokinase",
+      "required": false,
+      "productization_class": "high_risk_safety",
+      "safety_boundary_tier": "high",
+      "category": "enzyme",
+      "replay_product": {
+        "source_file": "backend/data/personalization/goal_navigator_candidate_bundle.v1.json",
+        "product_id": "147592",
+        "barcode": "00810078473930",
+        "url": "https://www.iherb.com/pr/vitamatic-nattokinase-120-drcaps-100-mg-per-capsule/147592",
+        "brand": "Vitamatic",
+        "title": "Vitamatic, Nattokinase, 120 DRcaps® (100 mg per Capsule)",
+        "facts_quality": "structured_ingredients",
+        "ingredient_rows": [
+          {
+            "name": "Nattokinase 4000 FU(enzyme from Natto Extract) (Non-GMO soy derived)",
+            "amountText": "200 mg"
+          }
+        ]
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "nattokinase",
+        "context_family": "nattokinase",
+        "anchor_family": "nattokinase",
+        "selected_descriptor_family": "nattokinase",
+        "selected_descriptor_name": "Nattokinase 4000 FU(enzyme from Natto Extract) (Non-GMO soy derived)",
+        "descriptor_families": [
+          "nattokinase"
+        ]
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "nattokinase",
+        "headings": [
+          "Primary use context",
+          "Safety and boundary context",
+          "Form, source, and label context"
+        ],
+        "heading_ids": [
+          "primary_use_context",
+          "safety_and_boundary_context",
+          "form_source_and_label_context"
+        ],
+        "generic_hits": [],
+        "contains_family_label": true,
+        "sample_summary": "Nattokinase is most useful here as a comparison lens around enzyme identity, activity detail, and blend role, not as a broad front-label promise.",
+        "sample_evidence_read": "The reviewed PubMed set includes \"Nattokinase Supplementation and Cardiovascular Risk Factors: A Systematic Review and Meta-Analysis of Randomized Controlled Trials.\", so this lane should be read as bounded human or review-level context rather than a universal product claim. Hard boundary: do not present Nattokinase as treating, preventing, or curing disease, replacing medication, or guaranteeing outcomes; keep comparison on disclosed identity, amount, form/source, and safety cautions.",
+        "sample_shopper_meaning": "When comparing Nattokinase products, check identity, amount, source/form disclosure, and safety cautions before treating two labels as equivalent."
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "primary_lane": "primary_use_context",
+        "registry_review_status": "approved",
+        "registry_review_reasons": [
+          "approved_with_verified_pmids"
+        ],
+        "reviewed_evidence_found": true,
+        "live_grounding_status": "approved_reviewed_row",
+        "expected_blocked_from_registry": false,
+        "first_reference_id": "pmid:39076715",
+        "reference_count": 5,
+        "registry_traceability_warning": false
+      },
+      "safety_claim_gate": {
+        "pass": true,
+        "unsafe_sentences": []
+      }
+    },
+    {
+      "family": "pqq",
+      "source_ingredient_id": "pqq",
+      "display_name": "PQQ",
+      "required": false,
+      "productization_class": "crosswalk_rescue",
+      "safety_boundary_tier": "high",
+      "category": "other",
+      "replay_product": {
+        "source_file": "backend/data/personalization/goal_navigator_candidate_bundle.v1.json",
+        "product_id": "142877",
+        "barcode": "00850017272552",
+        "url": "https://www.iherb.com/pr/zahler-rise-citrus-coconut-4-1-oz-117-g/142877",
+        "brand": "Zahler",
+        "title": "Zahler, Rise, Citrus Coconut, 4.1 oz (117 g)",
+        "facts_quality": "structured_ingredients",
+        "ingredient_rows": [
+          {
+            "name": "Vitamin C (Ascorbic Acid)",
+            "amountText": "90 mg"
+          },
+          {
+            "name": "Thiamin (as Thiamine HCl)",
+            "amountText": "1.2 mg"
+          },
+          {
+            "name": "Riboflavin",
+            "amountText": "1.3 mg"
+          },
+          {
+            "name": "Niacin",
+            "amountText": "16 mg"
+          },
+          {
+            "name": "Vitamin B6 (as Pyridoxine HCl)",
+            "amountText": "2 mg"
+          },
+          {
+            "name": "Folate",
+            "amountText": "400 mcg"
+          },
+          {
+            "name": "Vitamin B12 (as Cyanocobalamin)",
+            "amountText": "2.4 mcg"
+          },
+          {
+            "name": "Biotin",
+            "amountText": "30 mcg"
+          }
+        ]
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "pqq",
+        "context_family": "pqq",
+        "anchor_family": "magnesium",
+        "selected_descriptor_family": "pqq",
+        "selected_descriptor_name": "NutriPQQ Pyrroloquinoline Quinone Disodium Salt",
+        "descriptor_families": [
+          "magnesium",
+          "pqq",
+          "generic",
+          "probiotic_or_blend",
+          "vitamin_c",
+          "calcium",
+          "b3_niacinamide",
+          "b6",
+          "folate",
+          "b12"
+        ]
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "pqq",
+        "headings": [
+          "Primary use context",
+          "Safety and boundary context",
+          "Form, source, and label context"
+        ],
+        "heading_ids": [
+          "primary_use_context",
+          "safety_and_boundary_context",
+          "form_source_and_label_context"
+        ],
+        "generic_hits": [],
+        "contains_family_label": true,
+        "sample_summary": "PQQ is most useful here as a comparison lens around the disclosed ingredient line and formula context, not as a broad front-label promise.",
+        "sample_evidence_read": "The reviewed PubMed set includes \"Pyrroloquinoline Quinone (PQQ): Its impact on human health and potential benefits: PQQ: Human health impacts and benefits.\", so this lane should be read as bounded human or review-level context rather than a universal product claim. Hard boundary: do not present PQQ as treating, preventing, or curing disease, replacing medication, or guaranteeing outcomes; keep comparison on disclosed identity, amount, form/source, and safety cautions.",
+        "sample_shopper_meaning": "When comparing PQQ products, check identity, amount, source/form disclosure, and safety cautions before treating two labels as equivalent."
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "primary_lane": "primary_use_context",
+        "registry_review_status": "approved",
+        "registry_review_reasons": [
+          "approved_with_verified_pmids"
+        ],
+        "reviewed_evidence_found": true,
+        "live_grounding_status": "approved_reviewed_row",
+        "expected_blocked_from_registry": false,
+        "first_reference_id": "pmid:39513102",
+        "reference_count": 2,
+        "registry_traceability_warning": false
+      },
+      "safety_claim_gate": {
+        "pass": true,
+        "unsafe_sentences": []
+      }
+    },
+    {
+      "family": "reishi_mushroom",
+      "source_ingredient_id": "reishi_mushroom",
+      "display_name": "Reishi Mushroom",
+      "required": false,
+      "productization_class": "high_risk_safety",
+      "safety_boundary_tier": "high",
+      "category": "botanical",
+      "replay_product": {
+        "source_file": "backend/data/personalization/goal_navigator_candidate_bundle.v1.json",
+        "product_id": "148052",
+        "barcode": "00088395863004",
+        "url": "https://www.iherb.com/pr/carlson-organic-blend-mushroom-immune-50-vegetarian-capsules/148052",
+        "brand": "Carlson",
+        "title": "Carlson, Organic Blend Mushroom Immune, 50 Vegetarian Capsules",
+        "facts_quality": "structured_ingredients",
+        "ingredient_rows": [
+          {
+            "name": "Mushroom Immune Complex",
+            "amountText": "1000 mg"
+          },
+          {
+            "name": "Beta-(1, 3)(1, 6)-glucans",
+            "amountText": "100 mg"
+          },
+          {
+            "name": "Chaga Mushroom (Inonotus obliquus) Extract Powder (Organic)",
+            "amountText": null
+          },
+          {
+            "name": "Maitake Mushroom (Grifola frondosa) Extract Powder (Organic)",
+            "amountText": null
+          },
+          {
+            "name": "Shiitake Mushroom (Lentinula edodes) Extract Powder (Organic)",
+            "amountText": null
+          },
+          {
+            "name": "Reishi Mushroom (Ganoderma lingzhi) Extract Powder (Organic)",
+            "amountText": null
+          },
+          {
+            "name": "Turkey Tail Mushroom (Trametes versicolor) Extract Powder (Organic)",
+            "amountText": null
+          },
+          {
+            "name": "Mushroom Immune Complex",
+            "amountText": "1,000 mg"
+          }
+        ]
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "reishi_mushroom",
+        "context_family": "chaga_mushroom",
+        "anchor_family": "chaga_mushroom",
+        "selected_descriptor_family": "reishi_mushroom",
+        "selected_descriptor_name": "Reishi Mushroom (Ganoderma lingzhi) Extract Powder (Organic)",
+        "descriptor_families": [
+          "chaga_mushroom",
+          "maitake_mushroom",
+          "reishi_mushroom",
+          "generic",
+          "probiotic_or_blend"
+        ]
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "reishi_mushroom",
+        "headings": [
+          "Primary use context",
+          "Safety and boundary context",
+          "Form, source, and label context"
+        ],
+        "heading_ids": [
+          "primary_use_context",
+          "safety_and_boundary_context",
+          "form_source_and_label_context"
+        ],
+        "generic_hits": [],
+        "contains_family_label": true,
+        "sample_summary": "Reishi Mushroom is most useful here as a comparison lens around extract/source identity, marker wording, and formula role, not as a broad front-label promise.",
+        "sample_evidence_read": "The reviewed PubMed set includes \"Ganoderma lucidum (Reishi) an edible mushroom; a comprehensive and critical review of its nutritional, cosmeceutical, mycochemical, pharmacological, clinical, and toxicological properties.\", so this lane should be read as bounded human or review-level context rather than a universal product claim. Hard boundary: do not present Reishi Mushroom as treating, preventing, or curing disease, replacing medication, or guaranteeing outcomes; keep comparison on disclosed identity, amount, form/source, and safety cautions.",
+        "sample_shopper_meaning": "When comparing Reishi Mushroom products, check identity, amount, source/form disclosure, and safety cautions before treating two labels as equivalent."
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "primary_lane": "primary_use_context",
+        "registry_review_status": "approved",
+        "registry_review_reasons": [
+          "approved_with_verified_pmids"
+        ],
+        "reviewed_evidence_found": true,
+        "live_grounding_status": "approved_reviewed_row",
+        "expected_blocked_from_registry": false,
+        "first_reference_id": "pmid:34411377",
+        "reference_count": 5,
+        "registry_traceability_warning": false
+      },
+      "safety_claim_gate": {
+        "pass": true,
+        "unsafe_sentences": []
+      }
+    }
+  ]
+}

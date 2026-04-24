@@ -1,0 +1,146 @@
+{
+  "version": 1,
+  "source": "real_product_replay_minimal_fixtures",
+  "products": [
+    {
+      "family": "same",
+      "productId": "96277",
+      "barcode": "898220016518",
+      "brandName": "California Gold Nutrition",
+      "title": "California Gold Nutrition, SAMe, Disulfate Tosylate, 400 mg, 60 Enteric Coated Tablets",
+      "link": "https://www.iherb.com/pr/california-gold-nutrition-same-disulfate-tosylate-400-mg-60-enteric-coated-tablets/96277",
+      "ingredientInputs": [
+        {
+          "name": "SAME (S-Adenosyl L-Methionine)(from S-Adenosyl-L-Methionine Disulfate Tosylate)",
+          "amountText": "400 mg"
+        }
+      ]
+    },
+    {
+      "family": "tocotrienols",
+      "productId": "118598",
+      "barcode": "087614026800",
+      "brandName": "Swanson",
+      "title": "Swanson, Tocotrienols, 100 mg, 60 Liquid Caps",
+      "link": "https://www.iherb.com/pr/swanson-tocotrienols-100-mg-60-liquid-caps/118598",
+      "ingredientInputs": [
+        {
+          "name": "Tocotrienols(from DeltaGold® tocotrienols)delta-Tocotrienols minimum 84%gamma-Tocotrienols minimum 8%",
+          "amountText": "100 mg"
+        }
+      ]
+    },
+    {
+      "family": "devil_s_claw",
+      "productId": "118464",
+      "barcode": "087614019598",
+      "brandName": "Swanson",
+      "title": "Swanson, Full Spectrum® Devil's Claw, 500 mg, 100 Capsules",
+      "link": "https://www.iherb.com/pr/swanson-full-spectrum-devil-s-claw-500-mg-100-capsules/118464",
+      "ingredientInputs": [
+        {
+          "name": "Devil’s Claw (Harpagophytum spp.) (root)",
+          "amountText": "1 g"
+        }
+      ]
+    },
+    {
+      "family": "schisandra_chinensis",
+      "productId": "132064",
+      "barcode": "693465251119",
+      "brandName": "Vital Nutrients",
+      "title": "Vital Nutrients, Schisandra Extract, 90 Vegan Capsules (500 mg per Capsule)",
+      "link": "https://www.iherb.com/pr/vital-nutrients-schisandra-extract-90-vegan-capsules-500-mg-per-capsule/132064",
+      "ingredientInputs": [
+        {
+          "name": "Schisandra Extract(Schisandra chinensis, berry, standardized to 2% total schizandrins)",
+          "amountText": "1,000 mg"
+        }
+      ]
+    },
+    {
+      "family": "red_yeast_rice",
+      "productId": "113184",
+      "barcode": "810180023085",
+      "brandName": "Amazing Nutrition",
+      "title": "Amazing Nutrition, Red Yeast Rice, 120 Capsules (600 mg per Capsule)",
+      "link": "https://www.iherb.com/pr/amazing-nutrition-red-yeast-rice-120-capsules-600-mg-per-capsule/113184",
+      "ingredientInputs": [
+        {
+          "name": "Red Yeast Rice Powder (Monascus purpureus)",
+          "amountText": "1,200 mg (1.2 g)"
+        }
+      ]
+    },
+    {
+      "family": "pygeum",
+      "productId": "70044",
+      "barcode": "076280037609",
+      "brandName": "Solaray",
+      "title": "Solaray, Vital Extracts, Pygeum, 50 mg, 60 VegCaps",
+      "link": "https://www.iherb.com/pr/solaray-vital-extracts-pygeum-50-mg-60-vegcaps/70044",
+      "ingredientInputs": [
+        {
+          "name": "Pygeum (Pygeum africanum) (bark extract) (Guaranteed to contain 6.5 mg [13%] total Plant Sterols)",
+          "amountText": "50 mg"
+        }
+      ]
+    },
+    {
+      "family": "milk_thistle",
+      "productId": "70955",
+      "barcode": "898220010974",
+      "brandName": "California Gold Nutrition",
+      "title": "California Gold Nutrition, EuroHerbs, Milk Thistle Extract, Euromed Quality, 175 mg, 60 Veggie Capsules",
+      "link": "https://www.iherb.com/pr/california-gold-nutrition-euroherbs-milk-thistle-extract-euromed-quality-175-mg-60-veggie-capsules/70955",
+      "ingredientInputs": [
+        {
+          "name": "Milk Thistle Extract(Silybum marianum) (seed)(Standardized to 80% Silymarin via UV-VIS)",
+          "amountText": "175 mg"
+        }
+      ]
+    },
+    {
+      "family": "tribulus_terrestris",
+      "productId": "48458",
+      "barcode": "898220006632",
+      "brandName": "California Gold Nutrition",
+      "title": "California Gold Nutrition, Sport, Tribulus, 1,000 mg, 60 Tablets",
+      "link": "https://www.iherb.com/pr/california-gold-nutrition-sport-tribulus-1-000-mg-60-tablets/48458",
+      "ingredientInputs": [
+        {
+          "name": "Tribulus Extract (Tribulus terrestris) (whole herb/fruit) (std. to 45% Saponins)",
+          "amountText": "1,000 mg"
+        }
+      ]
+    },
+    {
+      "family": "chaga_mushroom",
+      "productId": "117779",
+      "barcode": "087614113852",
+      "brandName": "Swanson",
+      "title": "Swanson, Full Spectrum® Chaga Mushroom, 400 mg, 60 Capsules",
+      "link": "https://www.iherb.com/pr/swanson-full-spectrum-chaga-mushroom-400-mg-60-capsules/117779",
+      "ingredientInputs": [
+        {
+          "name": "Chaga Mushroom (Inonotus obliquus)(mycelium)",
+          "amountText": "400 mg"
+        }
+      ]
+    },
+    {
+      "family": "nadh",
+      "productId": "155861",
+      "barcode": "076280595499",
+      "brandName": "Solaray",
+      "title": "Solaray, NADH, 10 mg, 30 VegCaps",
+      "link": "https://www.iherb.com/pr/solaray-nadh-10-mg-30-vegcaps/155861",
+      "ingredientInputs": [
+        {
+          "name": "NADH (PANMOL® NADH)",
+          "amountText": "10 mg"
+        }
+      ]
+    }
+  ]
+}

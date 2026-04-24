@@ -1,0 +1,4199 @@
+{
+  "version": "nutri_minimal_v4_family_replay_audit.v1",
+  "generated_at": "2026-04-23T23:54:28.793Z",
+  "summary": {
+    "manifest_rows": 95,
+    "local_validation_title_replays": 10,
+    "manifest_fixture_replays": 85,
+    "inference_pass": 95,
+    "scientific_background_section_pass": 95,
+    "evidence_grounding_gate_pass": 95,
+    "approved_primary_lanes": 82,
+    "needs_edit_primary_lanes": 1,
+    "rejected_primary_lanes": 12,
+    "failures": 0
+  },
+  "failures": [],
+  "replay_rows": [
+    {
+      "source_ingredient_id": "amylase",
+      "family": "amylase",
+      "display_name": "Amylase",
+      "productization_class": "low_risk_structural",
+      "safety_boundary_tier": "standard",
+      "category": "enzyme",
+      "replay_product": {
+        "source": "manifest_fixture",
+        "source_file": null,
+        "product_id": null,
+        "barcode": null,
+        "brand": "Replay Fixture",
+        "title": "Replay supplement fixture"
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "amylase",
+        "anchor_family": "amylase",
+        "context_family": "amylase",
+        "anchor_name": "Amylase"
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "amylase",
+        "headings": [
+          "Functional context",
+          "Activity and delivery context",
+          "Formula context"
+        ],
+        "expected_first_heading": "Functional context"
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "review_status": "approved",
+        "expected_reviewed_evidence": true,
+        "reviewed_evidence_found": true,
+        "first_reference_id": "pmid:27640169",
+        "review_reasons": [
+          "approved_with_verified_pmids"
+        ]
+      }
+    },
+    {
+      "source_ingredient_id": "artichoke_extract",
+      "family": "artichoke_extract",
+      "display_name": "Artichoke extract",
+      "productization_class": "high_risk_safety",
+      "safety_boundary_tier": "high",
+      "category": "botanical",
+      "replay_product": {
+        "source": "manifest_fixture",
+        "source_file": null,
+        "product_id": null,
+        "barcode": null,
+        "brand": "Replay Fixture",
+        "title": "Replay supplement fixture"
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "artichoke_extract",
+        "anchor_family": "artichoke_extract",
+        "context_family": "artichoke_extract",
+        "anchor_name": "Artichoke extract"
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "artichoke_extract",
+        "headings": [
+          "Primary use context",
+          "Safety and boundary context",
+          "Form, source, and label context"
+        ],
+        "expected_first_heading": "Primary use context"
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "review_status": "approved",
+        "expected_reviewed_evidence": true,
+        "reviewed_evidence_found": true,
+        "first_reference_id": "pmid:38542782",
+        "review_reasons": [
+          "approved_with_verified_pmids"
+        ]
+      }
+    },
+    {
+      "source_ingredient_id": "bacopa_monnieri",
+      "family": "bacopa_monnieri",
+      "display_name": "Bacopa monnieri",
+      "productization_class": "high_risk_safety",
+      "safety_boundary_tier": "high",
+      "category": "botanical",
+      "replay_product": {
+        "source": "manifest_fixture",
+        "source_file": null,
+        "product_id": null,
+        "barcode": null,
+        "brand": "Replay Fixture",
+        "title": "Replay supplement fixture"
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "bacopa_monnieri",
+        "anchor_family": "bacopa_monnieri",
+        "context_family": "bacopa_monnieri",
+        "anchor_name": "Bacopa monnieri"
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "bacopa_monnieri",
+        "headings": [
+          "Primary use context",
+          "Safety and boundary context",
+          "Form, source, and label context"
+        ],
+        "expected_first_heading": "Primary use context"
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "review_status": "approved",
+        "expected_reviewed_evidence": true,
+        "reviewed_evidence_found": true,
+        "first_reference_id": "pmid:34254371",
+        "review_reasons": [
+          "approved_with_verified_pmids"
+        ]
+      }
+    },
+    {
+      "source_ingredient_id": "bee_propolis",
+      "family": "bee_propolis",
+      "display_name": "Bee Propolis",
+      "productization_class": "high_risk_safety",
+      "safety_boundary_tier": "high",
+      "category": "botanical",
+      "replay_product": {
+        "source": "manifest_fixture",
+        "source_file": null,
+        "product_id": null,
+        "barcode": null,
+        "brand": "Replay Fixture",
+        "title": "Replay supplement fixture"
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "bee_propolis",
+        "anchor_family": "bee_propolis",
+        "context_family": "bee_propolis",
+        "anchor_name": "Bee Propolis"
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "bee_propolis",
+        "headings": [
+          "Primary use context",
+          "Safety and boundary context",
+          "Form, source, and label context"
+        ],
+        "expected_first_heading": "Primary use context"
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "review_status": "approved",
+        "expected_reviewed_evidence": true,
+        "reviewed_evidence_found": true,
+        "first_reference_id": "pmid:16629510",
+        "review_reasons": [
+          "approved_with_verified_pmids"
+        ]
+      }
+    },
+    {
+      "source_ingredient_id": "beta_carotene",
+      "family": "beta_carotene",
+      "display_name": "Beta-Carotene",
+      "productization_class": "low_risk_structural",
+      "safety_boundary_tier": "standard",
+      "category": "lipid",
+      "replay_product": {
+        "source": "manifest_fixture",
+        "source_file": null,
+        "product_id": null,
+        "barcode": null,
+        "brand": "Replay Fixture",
+        "title": "Replay supplement fixture"
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "beta_carotene",
+        "anchor_family": "beta_carotene",
+        "context_family": "beta_carotene",
+        "anchor_name": "Beta-Carotene"
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "beta_carotene",
+        "headings": [
+          "Primary context",
+          "Form and disclosure context",
+          "Formula context"
+        ],
+        "expected_first_heading": "Primary context"
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "review_status": "approved",
+        "expected_reviewed_evidence": true,
+        "reviewed_evidence_found": true,
+        "first_reference_id": "pmid:30000966",
+        "review_reasons": [
+          "approved_with_verified_pmids"
+        ]
+      }
+    },
+    {
+      "source_ingredient_id": "bilberry",
+      "family": "bilberry",
+      "display_name": "Bilberry",
+      "productization_class": "low_risk_structural",
+      "safety_boundary_tier": "standard",
+      "category": "botanical",
+      "replay_product": {
+        "source": "manifest_fixture",
+        "source_file": null,
+        "product_id": null,
+        "barcode": null,
+        "brand": "Replay Fixture",
+        "title": "Replay supplement fixture"
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "bilberry",
+        "anchor_family": "bilberry",
+        "context_family": "bilberry",
+        "anchor_name": "Bilberry"
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "bilberry",
+        "headings": [
+          "Primary use context",
+          "Extract and standardization context",
+          "Formula and label context"
+        ],
+        "expected_first_heading": "Primary use context"
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "review_status": "approved",
+        "expected_reviewed_evidence": true,
+        "reviewed_evidence_found": true,
+        "first_reference_id": "pmid:32260262",
+        "review_reasons": [
+          "approved_with_verified_pmids"
+        ]
+      }
+    },
+    {
+      "source_ingredient_id": "bitter_melon",
+      "family": "bitter_melon",
+      "display_name": "Bitter Melon",
+      "productization_class": "high_risk_safety",
+      "safety_boundary_tier": "high",
+      "category": "botanical",
+      "replay_product": {
+        "source": "manifest_fixture",
+        "source_file": null,
+        "product_id": null,
+        "barcode": null,
+        "brand": "Replay Fixture",
+        "title": "Replay supplement fixture"
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "bitter_melon",
+        "anchor_family": "bitter_melon",
+        "context_family": "bitter_melon",
+        "anchor_name": "Bitter Melon"
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "bitter_melon",
+        "headings": [
+          "Primary use context",
+          "Safety and boundary context",
+          "Form, source, and label context"
+        ],
+        "expected_first_heading": "Primary use context"
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "review_status": "approved",
+        "expected_reviewed_evidence": true,
+        "reviewed_evidence_found": true,
+        "first_reference_id": "pmid:39079610",
+        "review_reasons": [
+          "approved_with_verified_pmids"
+        ]
+      }
+    },
+    {
+      "source_ingredient_id": "black_cohosh",
+      "family": "black_cohosh",
+      "display_name": "Black Cohosh",
+      "productization_class": "high_risk_safety",
+      "safety_boundary_tier": "high",
+      "category": "botanical",
+      "replay_product": {
+        "source": "manifest_fixture",
+        "source_file": null,
+        "product_id": null,
+        "barcode": null,
+        "brand": "Replay Fixture",
+        "title": "Replay supplement fixture"
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "black_cohosh",
+        "anchor_family": "black_cohosh",
+        "context_family": "black_cohosh",
+        "anchor_name": "Black Cohosh"
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "black_cohosh",
+        "headings": [
+          "Primary use context",
+          "Safety and boundary context",
+          "Form, source, and label context"
+        ],
+        "expected_first_heading": "Primary use context"
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "review_status": "approved",
+        "expected_reviewed_evidence": true,
+        "reviewed_evidence_found": true,
+        "first_reference_id": "pmid:41401209",
+        "review_reasons": [
+          "approved_with_verified_pmids"
+        ]
+      }
+    },
+    {
+      "source_ingredient_id": "borage_oil",
+      "family": "borage_oil",
+      "display_name": "Borage Oil",
+      "productization_class": "low_risk_structural",
+      "safety_boundary_tier": "standard",
+      "category": "lipid",
+      "replay_product": {
+        "source": "manifest_fixture",
+        "source_file": null,
+        "product_id": null,
+        "barcode": null,
+        "brand": "Replay Fixture",
+        "title": "Replay supplement fixture"
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "borage_oil",
+        "anchor_family": "borage_oil",
+        "context_family": "borage_oil",
+        "anchor_name": "Borage Oil"
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "borage_oil",
+        "headings": [
+          "Primary context",
+          "Form and disclosure context",
+          "Formula context"
+        ],
+        "expected_first_heading": "Primary context"
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "review_status": "approved",
+        "expected_reviewed_evidence": true,
+        "reviewed_evidence_found": true,
+        "first_reference_id": "pmid:23633319",
+        "review_reasons": [
+          "approved_with_verified_pmids"
+        ]
+      }
+    },
+    {
+      "source_ingredient_id": "boron",
+      "family": "boron",
+      "display_name": "Boron",
+      "productization_class": "low_risk_structural",
+      "safety_boundary_tier": "standard",
+      "category": "mineral",
+      "replay_product": {
+        "source": "manifest_fixture",
+        "source_file": null,
+        "product_id": null,
+        "barcode": null,
+        "brand": "Replay Fixture",
+        "title": "Replay supplement fixture"
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "boron",
+        "anchor_family": "boron",
+        "context_family": "boron",
+        "anchor_name": "Boron"
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "boron",
+        "headings": [
+          "Intake and status context",
+          "Form and absorption context",
+          "Comparison and cofactor context"
+        ],
+        "expected_first_heading": "Intake and status context"
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "review_status": "approved",
+        "expected_reviewed_evidence": true,
+        "reviewed_evidence_found": true,
+        "first_reference_id": "pmid:26770156",
+        "review_reasons": [
+          "approved_with_verified_pmids"
+        ]
+      }
+    },
+    {
+      "source_ingredient_id": "boswellia",
+      "family": "boswellia",
+      "display_name": "Boswellia",
+      "productization_class": "low_risk_structural",
+      "safety_boundary_tier": "standard",
+      "category": "botanical",
+      "replay_product": {
+        "source": "manifest_fixture",
+        "source_file": null,
+        "product_id": null,
+        "barcode": null,
+        "brand": "Replay Fixture",
+        "title": "Replay supplement fixture"
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "boswellia",
+        "anchor_family": "boswellia",
+        "context_family": "boswellia",
+        "anchor_name": "Boswellia"
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "boswellia",
+        "headings": [
+          "Primary use context",
+          "Extract and standardization context",
+          "Formula and label context"
+        ],
+        "expected_first_heading": "Primary use context"
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "review_status": "approved",
+        "expected_reviewed_evidence": true,
+        "reviewed_evidence_found": true,
+        "first_reference_id": "pmid:35512759",
+        "review_reasons": [
+          "approved_with_verified_pmids"
+        ]
+      }
+    },
+    {
+      "source_ingredient_id": "broccoli_sprout_extract",
+      "family": "broccoli_sprout_extract",
+      "display_name": "Broccoli Sprout Extract",
+      "productization_class": "high_risk_safety",
+      "safety_boundary_tier": "high",
+      "category": "other",
+      "replay_product": {
+        "source": "manifest_fixture",
+        "source_file": null,
+        "product_id": null,
+        "barcode": null,
+        "brand": "Replay Fixture",
+        "title": "Replay supplement fixture"
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "broccoli_sprout_extract",
+        "anchor_family": "broccoli_sprout_extract",
+        "context_family": "broccoli_sprout_extract",
+        "anchor_name": "Broccoli Sprout Extract"
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "broccoli_sprout_extract",
+        "headings": [
+          "Primary use context",
+          "Safety and boundary context",
+          "Form, source, and label context"
+        ],
+        "expected_first_heading": "Primary use context"
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "review_status": "approved",
+        "expected_reviewed_evidence": true,
+        "reviewed_evidence_found": true,
+        "first_reference_id": "pmid:29242678",
+        "review_reasons": [
+          "approved_with_verified_pmids"
+        ]
+      }
+    },
+    {
+      "source_ingredient_id": "caffeine",
+      "family": "caffeine",
+      "display_name": "Caffeine",
+      "productization_class": "high_risk_safety",
+      "safety_boundary_tier": "high",
+      "category": "other",
+      "replay_product": {
+        "source": "manifest_fixture",
+        "source_file": null,
+        "product_id": null,
+        "barcode": null,
+        "brand": "Replay Fixture",
+        "title": "Replay supplement fixture"
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "caffeine",
+        "anchor_family": "caffeine",
+        "context_family": "caffeine",
+        "anchor_name": "Caffeine"
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "caffeine",
+        "headings": [
+          "Primary use context",
+          "Safety and boundary context",
+          "Form, source, and label context"
+        ],
+        "expected_first_heading": "Primary use context"
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "review_status": "approved",
+        "expected_reviewed_evidence": true,
+        "reviewed_evidence_found": true,
+        "first_reference_id": "pmid:33388079",
+        "review_reasons": [
+          "approved_with_verified_pmids"
+        ]
+      }
+    },
+    {
+      "source_ingredient_id": "calcium_d_glucarate",
+      "family": "calcium_d_glucarate",
+      "display_name": "Calcium D-Glucarate",
+      "productization_class": "high_risk_safety",
+      "safety_boundary_tier": "high",
+      "category": "other",
+      "replay_product": {
+        "source": "manifest_fixture",
+        "source_file": null,
+        "product_id": null,
+        "barcode": null,
+        "brand": "Replay Fixture",
+        "title": "Replay supplement fixture"
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "calcium_d_glucarate",
+        "anchor_family": "calcium_d_glucarate",
+        "context_family": "calcium_d_glucarate",
+        "anchor_name": "Calcium D-Glucarate"
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "calcium_d_glucarate",
+        "headings": [
+          "Primary use context",
+          "Safety and boundary context",
+          "Form, source, and label context"
+        ],
+        "expected_first_heading": "Primary use context"
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "review_status": "approved",
+        "expected_reviewed_evidence": true,
+        "reviewed_evidence_found": true,
+        "first_reference_id": "pmid:12197785",
+        "review_reasons": [
+          "approved_with_verified_pmids"
+        ]
+      }
+    },
+    {
+      "source_ingredient_id": "chaga_mushroom",
+      "family": "chaga_mushroom",
+      "display_name": "Chaga Mushroom",
+      "productization_class": "high_risk_safety",
+      "safety_boundary_tier": "high",
+      "category": "botanical",
+      "replay_product": {
+        "source": "manifest_fixture",
+        "source_file": null,
+        "product_id": null,
+        "barcode": null,
+        "brand": "Replay Fixture",
+        "title": "Replay supplement fixture"
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "chaga_mushroom",
+        "anchor_family": "chaga_mushroom",
+        "context_family": "chaga_mushroom",
+        "anchor_name": "Chaga Mushroom"
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "chaga_mushroom",
+        "headings": [
+          "Primary use context",
+          "Safety and boundary context",
+          "Form, source, and label context"
+        ],
+        "expected_first_heading": "Primary use context"
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "review_status": "rejected",
+        "expected_reviewed_evidence": false,
+        "reviewed_evidence_found": false,
+        "first_reference_id": null,
+        "review_reasons": [
+          "only_search_url_without_resolved_source"
+        ]
+      }
+    },
+    {
+      "source_ingredient_id": "chlorella",
+      "family": "chlorella",
+      "display_name": "Chlorella",
+      "productization_class": "low_risk_structural",
+      "safety_boundary_tier": "standard",
+      "category": "other",
+      "replay_product": {
+        "source": "manifest_fixture",
+        "source_file": null,
+        "product_id": null,
+        "barcode": null,
+        "brand": "Replay Fixture",
+        "title": "Replay supplement fixture"
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "chlorella",
+        "anchor_family": "chlorella",
+        "context_family": "chlorella",
+        "anchor_name": "Chlorella"
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "chlorella",
+        "headings": [
+          "Primary context",
+          "Form and disclosure context",
+          "Formula context"
+        ],
+        "expected_first_heading": "Primary context"
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "review_status": "approved",
+        "expected_reviewed_evidence": true,
+        "reviewed_evidence_found": true,
+        "first_reference_id": "pmid:26561078",
+        "review_reasons": [
+          "approved_with_verified_pmids"
+        ]
+      }
+    },
+    {
+      "source_ingredient_id": "chlorophyll",
+      "family": "chlorophyll",
+      "display_name": "Chlorophyll",
+      "productization_class": "high_risk_safety",
+      "safety_boundary_tier": "high",
+      "category": "botanical",
+      "replay_product": {
+        "source": "manifest_fixture",
+        "source_file": null,
+        "product_id": null,
+        "barcode": null,
+        "brand": "Replay Fixture",
+        "title": "Replay supplement fixture"
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "chlorophyll",
+        "anchor_family": "chlorophyll",
+        "context_family": "chlorophyll",
+        "anchor_name": "Chlorophyll"
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "chlorophyll",
+        "headings": [
+          "Primary use context",
+          "Safety and boundary context",
+          "Form, source, and label context"
+        ],
+        "expected_first_heading": "Primary use context"
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "review_status": "rejected",
+        "expected_reviewed_evidence": false,
+        "reviewed_evidence_found": false,
+        "first_reference_id": null,
+        "review_reasons": [
+          "only_search_url_without_resolved_source"
+        ]
+      }
+    },
+    {
+      "source_ingredient_id": "chondroitin",
+      "family": "chondroitin",
+      "display_name": "Chondroitin",
+      "productization_class": "low_risk_structural",
+      "safety_boundary_tier": "standard",
+      "category": "other",
+      "replay_product": {
+        "source": "manifest_fixture",
+        "source_file": null,
+        "product_id": null,
+        "barcode": null,
+        "brand": "Replay Fixture",
+        "title": "Replay supplement fixture"
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "chondroitin",
+        "anchor_family": "chondroitin",
+        "context_family": "chondroitin",
+        "anchor_name": "Chondroitin"
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "chondroitin",
+        "headings": [
+          "Primary context",
+          "Form and disclosure context",
+          "Formula context"
+        ],
+        "expected_first_heading": "Primary context"
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "review_status": "approved",
+        "expected_reviewed_evidence": true,
+        "reviewed_evidence_found": true,
+        "first_reference_id": "pmid:31013685",
+        "review_reasons": [
+          "approved_with_verified_pmids"
+        ]
+      }
+    },
+    {
+      "source_ingredient_id": "cinnamon",
+      "family": "cinnamon_extract",
+      "display_name": "Cinnamon",
+      "productization_class": "low_risk_structural",
+      "safety_boundary_tier": "standard",
+      "category": "botanical",
+      "replay_product": {
+        "source": "local_validation_title",
+        "source_file": "data/validation/post-canadian-next-discovery-canary.v0.json",
+        "product_id": "138200",
+        "barcode": null,
+        "brand": "Yumi",
+        "title": "Yumi, Organic Bar, Toddler, Apple Cinnamon & Squash, 5 Bars, 0.74 oz (21 g) Each"
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "cinnamon_extract",
+        "anchor_family": "cinnamon_extract",
+        "context_family": "cinnamon_extract",
+        "anchor_name": "Cinnamon"
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "cinnamon_extract",
+        "headings": [
+          "Primary use context",
+          "Extract and standardization context",
+          "Formula and label context"
+        ],
+        "expected_first_heading": "Primary use context"
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "review_status": "approved",
+        "expected_reviewed_evidence": true,
+        "reviewed_evidence_found": true,
+        "first_reference_id": "pmid:37818728",
+        "review_reasons": [
+          "approved_with_verified_pmids"
+        ]
+      }
+    },
+    {
+      "source_ingredient_id": "cordyceps_mushroom",
+      "family": "cordyceps_mushroom",
+      "display_name": "Cordyceps Mushroom",
+      "productization_class": "high_risk_safety",
+      "safety_boundary_tier": "high",
+      "category": "botanical",
+      "replay_product": {
+        "source": "manifest_fixture",
+        "source_file": null,
+        "product_id": null,
+        "barcode": null,
+        "brand": "Replay Fixture",
+        "title": "Replay supplement fixture"
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "cordyceps_mushroom",
+        "anchor_family": "cordyceps_mushroom",
+        "context_family": "cordyceps_mushroom",
+        "anchor_name": "Cordyceps Mushroom"
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "cordyceps_mushroom",
+        "headings": [
+          "Primary use context",
+          "Safety and boundary context",
+          "Form, source, and label context"
+        ],
+        "expected_first_heading": "Primary use context"
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "review_status": "approved",
+        "expected_reviewed_evidence": true,
+        "reviewed_evidence_found": true,
+        "first_reference_id": "pmid:32575649",
+        "review_reasons": [
+          "approved_with_verified_pmids"
+        ]
+      }
+    },
+    {
+      "source_ingredient_id": "cranberry_extract",
+      "family": "cranberry_extract",
+      "display_name": "Cranberry extract",
+      "productization_class": "high_risk_safety",
+      "safety_boundary_tier": "high",
+      "category": "botanical",
+      "replay_product": {
+        "source": "manifest_fixture",
+        "source_file": null,
+        "product_id": null,
+        "barcode": null,
+        "brand": "Replay Fixture",
+        "title": "Replay supplement fixture"
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "cranberry_extract",
+        "anchor_family": "cranberry_extract",
+        "context_family": "cranberry_extract",
+        "anchor_name": "Cranberry extract"
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "cranberry_extract",
+        "headings": [
+          "Primary use context",
+          "Safety and boundary context",
+          "Form, source, and label context"
+        ],
+        "expected_first_heading": "Primary use context"
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "review_status": "approved",
+        "expected_reviewed_evidence": true,
+        "reviewed_evidence_found": true,
+        "first_reference_id": "pmid:29242685",
+        "review_reasons": [
+          "approved_with_verified_pmids"
+        ]
+      }
+    },
+    {
+      "source_ingredient_id": "dandelion_root",
+      "family": "dandelion_root",
+      "display_name": "Dandelion Root",
+      "productization_class": "high_risk_safety",
+      "safety_boundary_tier": "high",
+      "category": "botanical",
+      "replay_product": {
+        "source": "manifest_fixture",
+        "source_file": null,
+        "product_id": null,
+        "barcode": null,
+        "brand": "Replay Fixture",
+        "title": "Replay supplement fixture"
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "dandelion_root",
+        "anchor_family": "dandelion_root",
+        "context_family": "dandelion_root",
+        "anchor_name": "Dandelion Root"
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "dandelion_root",
+        "headings": [
+          "Primary use context",
+          "Safety and boundary context",
+          "Form, source, and label context"
+        ],
+        "expected_first_heading": "Primary use context"
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "review_status": "rejected",
+        "expected_reviewed_evidence": false,
+        "reviewed_evidence_found": false,
+        "first_reference_id": null,
+        "review_reasons": [
+          "only_search_url_without_resolved_source"
+        ]
+      }
+    },
+    {
+      "source_ingredient_id": "devil_s_claw",
+      "family": "devil_s_claw",
+      "display_name": "Devil's Claw",
+      "productization_class": "high_risk_safety",
+      "safety_boundary_tier": "high",
+      "category": "botanical",
+      "replay_product": {
+        "source": "manifest_fixture",
+        "source_file": null,
+        "product_id": null,
+        "barcode": null,
+        "brand": "Replay Fixture",
+        "title": "Replay supplement fixture"
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "devil_s_claw",
+        "anchor_family": "devil_s_claw",
+        "context_family": "devil_s_claw",
+        "anchor_name": "Devil's Claw"
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "devil_s_claw",
+        "headings": [
+          "Primary use context",
+          "Safety and boundary context",
+          "Form, source, and label context"
+        ],
+        "expected_first_heading": "Primary use context"
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "review_status": "approved",
+        "expected_reviewed_evidence": true,
+        "reviewed_evidence_found": true,
+        "first_reference_id": "pmid:15369596",
+        "review_reasons": [
+          "approved_with_verified_pmids"
+        ]
+      }
+    },
+    {
+      "source_ingredient_id": "dong_quai",
+      "family": "dong_quai",
+      "display_name": "Dong Quai",
+      "productization_class": "high_risk_safety",
+      "safety_boundary_tier": "high",
+      "category": "botanical",
+      "replay_product": {
+        "source": "manifest_fixture",
+        "source_file": null,
+        "product_id": null,
+        "barcode": null,
+        "brand": "Replay Fixture",
+        "title": "Replay supplement fixture"
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "dong_quai",
+        "anchor_family": "dong_quai",
+        "context_family": "dong_quai",
+        "anchor_name": "Dong Quai"
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "dong_quai",
+        "headings": [
+          "Primary use context",
+          "Safety and boundary context",
+          "Form, source, and label context"
+        ],
+        "expected_first_heading": "Primary use context"
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "review_status": "approved",
+        "expected_reviewed_evidence": true,
+        "reviewed_evidence_found": true,
+        "first_reference_id": "pmid:33293989",
+        "review_reasons": [
+          "approved_with_verified_pmids"
+        ]
+      }
+    },
+    {
+      "source_ingredient_id": "echinacea",
+      "family": "echinacea",
+      "display_name": "Echinacea",
+      "productization_class": "high_risk_safety",
+      "safety_boundary_tier": "high",
+      "category": "botanical",
+      "replay_product": {
+        "source": "manifest_fixture",
+        "source_file": null,
+        "product_id": null,
+        "barcode": null,
+        "brand": "Replay Fixture",
+        "title": "Replay supplement fixture"
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "echinacea",
+        "anchor_family": "echinacea",
+        "context_family": "echinacea",
+        "anchor_name": "Echinacea"
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "echinacea",
+        "headings": [
+          "Primary use context",
+          "Safety and boundary context",
+          "Form, source, and label context"
+        ],
+        "expected_first_heading": "Primary use context"
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "review_status": "approved",
+        "expected_reviewed_evidence": true,
+        "reviewed_evidence_found": true,
+        "first_reference_id": "pmid:38732450",
+        "review_reasons": [
+          "approved_with_verified_pmids"
+        ]
+      }
+    },
+    {
+      "source_ingredient_id": "elderberry",
+      "family": "elderberry",
+      "display_name": "Elderberry",
+      "productization_class": "high_risk_safety",
+      "safety_boundary_tier": "high",
+      "category": "botanical",
+      "replay_product": {
+        "source": "local_validation_title",
+        "source_file": "data/validation/post-canadian-next-discovery-canary.v0.json",
+        "product_id": "153393",
+        "barcode": null,
+        "brand": "The Smurfs",
+        "title": "The Smurfs, Elderberry Liquid Drops, Ages 1+, Berry, 1 fl oz (30 ml)"
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "elderberry",
+        "anchor_family": "elderberry",
+        "context_family": "elderberry",
+        "anchor_name": "Elderberry"
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "elderberry",
+        "headings": [
+          "Primary use context",
+          "Safety and boundary context",
+          "Form, source, and label context"
+        ],
+        "expected_first_heading": "Primary use context"
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "review_status": "approved",
+        "expected_reviewed_evidence": true,
+        "reviewed_evidence_found": true,
+        "first_reference_id": "pmid:30670267",
+        "review_reasons": [
+          "approved_with_verified_pmids"
+        ]
+      }
+    },
+    {
+      "source_ingredient_id": "eleuthero",
+      "family": "eleuthero",
+      "display_name": "Eleuthero",
+      "productization_class": "high_risk_safety",
+      "safety_boundary_tier": "high",
+      "category": "botanical",
+      "replay_product": {
+        "source": "manifest_fixture",
+        "source_file": null,
+        "product_id": null,
+        "barcode": null,
+        "brand": "Replay Fixture",
+        "title": "Replay supplement fixture"
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "eleuthero",
+        "anchor_family": "eleuthero",
+        "context_family": "eleuthero",
+        "anchor_name": "Eleuthero"
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "eleuthero",
+        "headings": [
+          "Primary use context",
+          "Safety and boundary context",
+          "Form, source, and label context"
+        ],
+        "expected_first_heading": "Primary use context"
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "review_status": "approved",
+        "expected_reviewed_evidence": true,
+        "reviewed_evidence_found": true,
+        "first_reference_id": "pmid:30000865",
+        "review_reasons": [
+          "approved_with_verified_pmids"
+        ]
+      }
+    },
+    {
+      "source_ingredient_id": "evening_primrose_oil",
+      "family": "evening_primrose_oil",
+      "display_name": "Evening primrose oil",
+      "productization_class": "low_risk_structural",
+      "safety_boundary_tier": "standard",
+      "category": "lipid",
+      "replay_product": {
+        "source": "manifest_fixture",
+        "source_file": null,
+        "product_id": null,
+        "barcode": null,
+        "brand": "Replay Fixture",
+        "title": "Replay supplement fixture"
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "evening_primrose_oil",
+        "anchor_family": "evening_primrose_oil",
+        "context_family": "evening_primrose_oil",
+        "anchor_name": "Evening primrose oil"
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "evening_primrose_oil",
+        "headings": [
+          "Primary context",
+          "Form and disclosure context",
+          "Formula context"
+        ],
+        "expected_first_heading": "Primary context"
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "review_status": "rejected",
+        "expected_reviewed_evidence": false,
+        "reviewed_evidence_found": false,
+        "first_reference_id": null,
+        "review_reasons": [
+          "only_search_url_without_resolved_source"
+        ]
+      }
+    },
+    {
+      "source_ingredient_id": "fenugreek",
+      "family": "fenugreek",
+      "display_name": "Fenugreek",
+      "productization_class": "high_risk_safety",
+      "safety_boundary_tier": "high",
+      "category": "botanical",
+      "replay_product": {
+        "source": "manifest_fixture",
+        "source_file": null,
+        "product_id": null,
+        "barcode": null,
+        "brand": "Replay Fixture",
+        "title": "Replay supplement fixture"
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "fenugreek",
+        "anchor_family": "fenugreek",
+        "context_family": "fenugreek",
+        "anchor_name": "Fenugreek"
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "fenugreek",
+        "headings": [
+          "Primary use context",
+          "Safety and boundary context",
+          "Form, source, and label context"
+        ],
+        "expected_first_heading": "Primary use context"
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "review_status": "approved",
+        "expected_reviewed_evidence": true,
+        "reviewed_evidence_found": true,
+        "first_reference_id": "pmid:33025616",
+        "review_reasons": [
+          "approved_with_verified_pmids"
+        ]
+      }
+    },
+    {
+      "source_ingredient_id": "forskolin",
+      "family": "forskolin",
+      "display_name": "Forskolin",
+      "productization_class": "high_risk_safety",
+      "safety_boundary_tier": "high",
+      "category": "botanical",
+      "replay_product": {
+        "source": "manifest_fixture",
+        "source_file": null,
+        "product_id": null,
+        "barcode": null,
+        "brand": "Replay Fixture",
+        "title": "Replay supplement fixture"
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "forskolin",
+        "anchor_family": "forskolin",
+        "context_family": "forskolin",
+        "anchor_name": "Forskolin"
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "forskolin",
+        "headings": [
+          "Primary use context",
+          "Safety and boundary context",
+          "Form, source, and label context"
+        ],
+        "expected_first_heading": "Primary use context"
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "review_status": "approved",
+        "expected_reviewed_evidence": true,
+        "reviewed_evidence_found": true,
+        "first_reference_id": "pmid:38623169",
+        "review_reasons": [
+          "approved_with_verified_pmids"
+        ]
+      }
+    },
+    {
+      "source_ingredient_id": "fucoidan",
+      "family": "fucoidan",
+      "display_name": "Fucoidan",
+      "productization_class": "low_risk_structural",
+      "safety_boundary_tier": "standard",
+      "category": "botanical",
+      "replay_product": {
+        "source": "manifest_fixture",
+        "source_file": null,
+        "product_id": null,
+        "barcode": null,
+        "brand": "Replay Fixture",
+        "title": "Replay supplement fixture"
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "fucoidan",
+        "anchor_family": "fucoidan",
+        "context_family": "fucoidan",
+        "anchor_name": "Fucoidan"
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "fucoidan",
+        "headings": [
+          "Primary use context",
+          "Extract and standardization context",
+          "Formula and label context"
+        ],
+        "expected_first_heading": "Primary use context"
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "review_status": "approved",
+        "expected_reviewed_evidence": true,
+        "reviewed_evidence_found": true,
+        "first_reference_id": "pmid:26347522",
+        "review_reasons": [
+          "approved_with_verified_pmids"
+        ]
+      }
+    },
+    {
+      "source_ingredient_id": "gamma_linolenic_acid",
+      "family": "gamma_linolenic_acid",
+      "display_name": "Gamma-Linolenic Acid",
+      "productization_class": "low_risk_structural",
+      "safety_boundary_tier": "standard",
+      "category": "lipid",
+      "replay_product": {
+        "source": "manifest_fixture",
+        "source_file": null,
+        "product_id": null,
+        "barcode": null,
+        "brand": "Replay Fixture",
+        "title": "Replay supplement fixture"
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "gamma_linolenic_acid",
+        "anchor_family": "gamma_linolenic_acid",
+        "context_family": "gamma_linolenic_acid",
+        "anchor_name": "Gamma-Linolenic Acid"
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "gamma_linolenic_acid",
+        "headings": [
+          "Primary context",
+          "Form and disclosure context",
+          "Formula context"
+        ],
+        "expected_first_heading": "Primary context"
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "review_status": "rejected",
+        "expected_reviewed_evidence": false,
+        "reviewed_evidence_found": false,
+        "first_reference_id": null,
+        "review_reasons": [
+          "only_search_url_without_resolved_source"
+        ]
+      }
+    },
+    {
+      "source_ingredient_id": "garcinia_cambogia",
+      "family": "garcinia_cambogia",
+      "display_name": "Garcinia cambogia",
+      "productization_class": "high_risk_safety",
+      "safety_boundary_tier": "high",
+      "category": "botanical",
+      "replay_product": {
+        "source": "manifest_fixture",
+        "source_file": null,
+        "product_id": null,
+        "barcode": null,
+        "brand": "Replay Fixture",
+        "title": "Replay supplement fixture"
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "garcinia_cambogia",
+        "anchor_family": "garcinia_cambogia",
+        "context_family": "garcinia_cambogia",
+        "anchor_name": "Garcinia cambogia"
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "garcinia_cambogia",
+        "headings": [
+          "Primary use context",
+          "Safety and boundary context",
+          "Form, source, and label context"
+        ],
+        "expected_first_heading": "Primary use context"
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "review_status": "approved",
+        "expected_reviewed_evidence": true,
+        "reviewed_evidence_found": true,
+        "first_reference_id": "pmid:15234082",
+        "review_reasons": [
+          "approved_with_verified_pmids"
+        ]
+      }
+    },
+    {
+      "source_ingredient_id": "ginkgo_biloba",
+      "family": "ginkgo_biloba",
+      "display_name": "Ginkgo biloba",
+      "productization_class": "high_risk_safety",
+      "safety_boundary_tier": "high",
+      "category": "botanical",
+      "replay_product": {
+        "source": "manifest_fixture",
+        "source_file": null,
+        "product_id": null,
+        "barcode": null,
+        "brand": "Replay Fixture",
+        "title": "Replay supplement fixture"
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "ginkgo_biloba",
+        "anchor_family": "ginkgo_biloba",
+        "context_family": "ginkgo_biloba",
+        "anchor_name": "Ginkgo biloba"
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "ginkgo_biloba",
+        "headings": [
+          "Primary use context",
+          "Safety and boundary context",
+          "Form, source, and label context"
+        ],
+        "expected_first_heading": "Primary use context"
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "review_status": "approved",
+        "expected_reviewed_evidence": true,
+        "reviewed_evidence_found": true,
+        "first_reference_id": "pmid:31376068",
+        "review_reasons": [
+          "approved_with_verified_pmids"
+        ]
+      }
+    },
+    {
+      "source_ingredient_id": "glucomannan",
+      "family": "glucomannan",
+      "display_name": "Glucomannan",
+      "productization_class": "high_risk_safety",
+      "safety_boundary_tier": "high",
+      "category": "other",
+      "replay_product": {
+        "source": "manifest_fixture",
+        "source_file": null,
+        "product_id": null,
+        "barcode": null,
+        "brand": "Replay Fixture",
+        "title": "Replay supplement fixture"
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "glucomannan",
+        "anchor_family": "glucomannan",
+        "context_family": "glucomannan",
+        "anchor_name": "Glucomannan"
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "glucomannan",
+        "headings": [
+          "Primary use context",
+          "Safety and boundary context",
+          "Form, source, and label context"
+        ],
+        "expected_first_heading": "Primary use context"
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "review_status": "approved",
+        "expected_reviewed_evidence": true,
+        "reviewed_evidence_found": true,
+        "first_reference_id": "pmid:38398881",
+        "review_reasons": [
+          "approved_with_verified_pmids"
+        ]
+      }
+    },
+    {
+      "source_ingredient_id": "glucosamine",
+      "family": "glucosamine",
+      "display_name": "Glucosamine",
+      "productization_class": "low_risk_structural",
+      "safety_boundary_tier": "standard",
+      "category": "other",
+      "replay_product": {
+        "source": "manifest_fixture",
+        "source_file": null,
+        "product_id": null,
+        "barcode": null,
+        "brand": "Replay Fixture",
+        "title": "Replay supplement fixture"
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "glucosamine",
+        "anchor_family": "glucosamine",
+        "context_family": "glucosamine",
+        "anchor_name": "Glucosamine"
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "glucosamine",
+        "headings": [
+          "Primary context",
+          "Form and disclosure context",
+          "Formula context"
+        ],
+        "expected_first_heading": "Primary context"
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "review_status": "approved",
+        "expected_reviewed_evidence": true,
+        "reviewed_evidence_found": true,
+        "first_reference_id": "pmid:37489348",
+        "review_reasons": [
+          "approved_with_verified_pmids"
+        ]
+      }
+    },
+    {
+      "source_ingredient_id": "grapefruit_seed_extract",
+      "family": "grapefruit_seed_extract",
+      "display_name": "Grapefruit Seed Extract",
+      "productization_class": "high_risk_safety",
+      "safety_boundary_tier": "high",
+      "category": "botanical",
+      "replay_product": {
+        "source": "manifest_fixture",
+        "source_file": null,
+        "product_id": null,
+        "barcode": null,
+        "brand": "Replay Fixture",
+        "title": "Replay supplement fixture"
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "grapefruit_seed_extract",
+        "anchor_family": "grapefruit_seed_extract",
+        "context_family": "grapefruit_seed_extract",
+        "anchor_name": "Grapefruit Seed Extract"
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "grapefruit_seed_extract",
+        "headings": [
+          "Primary use context",
+          "Safety and boundary context",
+          "Form, source, and label context"
+        ],
+        "expected_first_heading": "Primary use context"
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "review_status": "rejected",
+        "expected_reviewed_evidence": false,
+        "reviewed_evidence_found": false,
+        "first_reference_id": null,
+        "review_reasons": [
+          "only_search_url_without_resolved_source"
+        ]
+      }
+    },
+    {
+      "source_ingredient_id": "green_coffee_bean_extract",
+      "family": "green_coffee_bean_extract",
+      "display_name": "Green Coffee Bean Extract",
+      "productization_class": "high_risk_safety",
+      "safety_boundary_tier": "high",
+      "category": "botanical",
+      "replay_product": {
+        "source": "manifest_fixture",
+        "source_file": null,
+        "product_id": null,
+        "barcode": null,
+        "brand": "Replay Fixture",
+        "title": "Replay supplement fixture"
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "green_coffee_bean_extract",
+        "anchor_family": "green_coffee_bean_extract",
+        "context_family": "green_coffee_bean_extract",
+        "anchor_name": "Green Coffee Bean Extract"
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "green_coffee_bean_extract",
+        "headings": [
+          "Primary use context",
+          "Safety and boundary context",
+          "Form, source, and label context"
+        ],
+        "expected_first_heading": "Primary use context"
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "review_status": "approved",
+        "expected_reviewed_evidence": true,
+        "reviewed_evidence_found": true,
+        "first_reference_id": "pmid:32089239",
+        "review_reasons": [
+          "approved_with_verified_pmids"
+        ]
+      }
+    },
+    {
+      "source_ingredient_id": "gymnema",
+      "family": "gymnema",
+      "display_name": "Gymnema",
+      "productization_class": "high_risk_safety",
+      "safety_boundary_tier": "high",
+      "category": "botanical",
+      "replay_product": {
+        "source": "manifest_fixture",
+        "source_file": null,
+        "product_id": null,
+        "barcode": null,
+        "brand": "Replay Fixture",
+        "title": "Replay supplement fixture"
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "gymnema",
+        "anchor_family": "gymnema",
+        "context_family": "gymnema",
+        "anchor_name": "Gymnema"
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "gymnema",
+        "headings": [
+          "Primary use context",
+          "Safety and boundary context",
+          "Form, source, and label context"
+        ],
+        "expected_first_heading": "Primary use context"
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "review_status": "approved",
+        "expected_reviewed_evidence": true,
+        "reviewed_evidence_found": true,
+        "first_reference_id": "pmid:34467577",
+        "review_reasons": [
+          "approved_with_verified_pmids"
+        ]
+      }
+    },
+    {
+      "source_ingredient_id": "hawthorn",
+      "family": "hawthorn",
+      "display_name": "Hawthorn",
+      "productization_class": "high_risk_safety",
+      "safety_boundary_tier": "high",
+      "category": "botanical",
+      "replay_product": {
+        "source": "local_validation_title",
+        "source_file": "data/validation/stratified-nightly-additions.v1.json",
+        "product_id": "153978",
+        "barcode": "00810078475651",
+        "brand": "Vitamatic",
+        "title": "Vitamatic, Arjuna + Hawthorn, 120 Vegetable Capsules"
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "hawthorn",
+        "anchor_family": "hawthorn",
+        "context_family": "hawthorn",
+        "anchor_name": "Hawthorn"
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "hawthorn",
+        "headings": [
+          "Primary use context",
+          "Safety and boundary context",
+          "Form, source, and label context"
+        ],
+        "expected_first_heading": "Primary use context"
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "review_status": "approved",
+        "expected_reviewed_evidence": true,
+        "reviewed_evidence_found": true,
+        "first_reference_id": "pmid:36753600",
+        "review_reasons": [
+          "approved_with_verified_pmids"
+        ]
+      }
+    },
+    {
+      "source_ingredient_id": "hesperidin",
+      "family": "hesperidin",
+      "display_name": "Hesperidin",
+      "productization_class": "low_risk_structural",
+      "safety_boundary_tier": "standard",
+      "category": "other",
+      "replay_product": {
+        "source": "local_validation_title",
+        "source_file": "data/validation/post-canadian-next-discovery-canary.v0.json",
+        "product_id": "116330",
+        "barcode": null,
+        "brand": "Swanson",
+        "title": "Swanson, Diosmin & Hesperidin, 60 Capsules"
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "hesperidin",
+        "anchor_family": "hesperidin",
+        "context_family": "hesperidin",
+        "anchor_name": "Hesperidin"
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "hesperidin",
+        "headings": [
+          "Primary context",
+          "Form and disclosure context",
+          "Formula context"
+        ],
+        "expected_first_heading": "Primary context"
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "review_status": "approved",
+        "expected_reviewed_evidence": true,
+        "reviewed_evidence_found": true,
+        "first_reference_id": "pmid:31336963",
+        "review_reasons": [
+          "approved_with_verified_pmids"
+        ]
+      }
+    },
+    {
+      "source_ingredient_id": "holy_basil",
+      "family": "holy_basil",
+      "display_name": "Holy Basil",
+      "productization_class": "high_risk_safety",
+      "safety_boundary_tier": "high",
+      "category": "botanical",
+      "replay_product": {
+        "source": "manifest_fixture",
+        "source_file": null,
+        "product_id": null,
+        "barcode": null,
+        "brand": "Replay Fixture",
+        "title": "Replay supplement fixture"
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "holy_basil",
+        "anchor_family": "holy_basil",
+        "context_family": "holy_basil",
+        "anchor_name": "Holy Basil"
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "holy_basil",
+        "headings": [
+          "Primary use context",
+          "Safety and boundary context",
+          "Form, source, and label context"
+        ],
+        "expected_first_heading": "Primary use context"
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "review_status": "approved",
+        "expected_reviewed_evidence": true,
+        "reviewed_evidence_found": true,
+        "first_reference_id": "pmid:23629478",
+        "review_reasons": [
+          "approved_with_verified_pmids"
+        ]
+      }
+    },
+    {
+      "source_ingredient_id": "huperzine_a",
+      "family": "huperzine_a",
+      "display_name": "Huperzine A",
+      "productization_class": "high_risk_safety",
+      "safety_boundary_tier": "high",
+      "category": "other",
+      "replay_product": {
+        "source": "manifest_fixture",
+        "source_file": null,
+        "product_id": null,
+        "barcode": null,
+        "brand": "Replay Fixture",
+        "title": "Replay supplement fixture"
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "huperzine_a",
+        "anchor_family": "huperzine_a",
+        "context_family": "huperzine_a",
+        "anchor_name": "Huperzine A"
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "huperzine_a",
+        "headings": [
+          "Primary use context",
+          "Safety and boundary context",
+          "Form, source, and label context"
+        ],
+        "expected_first_heading": "Primary use context"
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "review_status": "approved",
+        "expected_reviewed_evidence": true,
+        "reviewed_evidence_found": true,
+        "first_reference_id": "pmid:16364207",
+        "review_reasons": [
+          "approved_with_verified_pmids"
+        ]
+      }
+    },
+    {
+      "source_ingredient_id": "hyaluronic_acid",
+      "family": "hyaluronic_acid",
+      "display_name": "Hyaluronic acid",
+      "productization_class": "low_risk_structural",
+      "safety_boundary_tier": "standard",
+      "category": "other",
+      "replay_product": {
+        "source": "manifest_fixture",
+        "source_file": null,
+        "product_id": null,
+        "barcode": null,
+        "brand": "Replay Fixture",
+        "title": "Replay supplement fixture"
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "hyaluronic_acid",
+        "anchor_family": "hyaluronic_acid",
+        "context_family": "hyaluronic_acid",
+        "anchor_name": "Hyaluronic acid"
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "hyaluronic_acid",
+        "headings": [
+          "Primary context",
+          "Form and disclosure context",
+          "Formula context"
+        ],
+        "expected_first_heading": "Primary context"
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "review_status": "approved",
+        "expected_reviewed_evidence": true,
+        "reviewed_evidence_found": true,
+        "first_reference_id": "pmid:32708202",
+        "review_reasons": [
+          "approved_with_verified_pmids"
+        ]
+      }
+    },
+    {
+      "source_ingredient_id": "indole_3_carbinol",
+      "family": "indole_3_carbinol",
+      "display_name": "Indole-3-Carbinol",
+      "productization_class": "high_risk_safety",
+      "safety_boundary_tier": "high",
+      "category": "other",
+      "replay_product": {
+        "source": "manifest_fixture",
+        "source_file": null,
+        "product_id": null,
+        "barcode": null,
+        "brand": "Replay Fixture",
+        "title": "Replay supplement fixture"
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "indole_3_carbinol",
+        "anchor_family": "indole_3_carbinol",
+        "context_family": "indole_3_carbinol",
+        "anchor_name": "Indole-3-Carbinol"
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "indole_3_carbinol",
+        "headings": [
+          "Primary use context",
+          "Safety and boundary context",
+          "Form, source, and label context"
+        ],
+        "expected_first_heading": "Primary use context"
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "review_status": "approved",
+        "expected_reviewed_evidence": true,
+        "reviewed_evidence_found": true,
+        "first_reference_id": "pmid:36972159",
+        "review_reasons": [
+          "approved_with_verified_pmids"
+        ]
+      }
+    },
+    {
+      "source_ingredient_id": "krill_oil",
+      "family": "krill_oil",
+      "display_name": "Krill Oil",
+      "productization_class": "low_risk_structural",
+      "safety_boundary_tier": "standard",
+      "category": "lipid",
+      "replay_product": {
+        "source": "local_validation_title",
+        "source_file": "data/validation/golden-journey-pack.v0.json",
+        "product_id": "fixture-krill-oil",
+        "barcode": null,
+        "brand": "Fixture Marine",
+        "title": "Krill Oil Omega-3"
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "krill_oil",
+        "anchor_family": "krill_oil",
+        "context_family": "krill_oil",
+        "anchor_name": "Krill Oil"
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "krill_oil",
+        "headings": [
+          "Primary context",
+          "Form and disclosure context",
+          "Formula context"
+        ],
+        "expected_first_heading": "Primary context"
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "review_status": "approved",
+        "expected_reviewed_evidence": true,
+        "reviewed_evidence_found": true,
+        "first_reference_id": "pmid:38776073",
+        "review_reasons": [
+          "approved_with_verified_pmids"
+        ]
+      }
+    },
+    {
+      "source_ingredient_id": "l_alanine",
+      "family": "l_alanine",
+      "display_name": "L-Alanine",
+      "productization_class": "low_risk_structural",
+      "safety_boundary_tier": "standard",
+      "category": "amino_acid",
+      "replay_product": {
+        "source": "manifest_fixture",
+        "source_file": null,
+        "product_id": null,
+        "barcode": null,
+        "brand": "Replay Fixture",
+        "title": "Replay supplement fixture"
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "l_alanine",
+        "anchor_family": "l_alanine",
+        "context_family": "l_alanine",
+        "anchor_name": "L-Alanine"
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "l_alanine",
+        "headings": [
+          "Primary context",
+          "Form and disclosure context",
+          "Formula context"
+        ],
+        "expected_first_heading": "Primary context"
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "review_status": "approved",
+        "expected_reviewed_evidence": true,
+        "reviewed_evidence_found": true,
+        "first_reference_id": "pmid:38417517",
+        "review_reasons": [
+          "approved_with_verified_pmids"
+        ]
+      }
+    },
+    {
+      "source_ingredient_id": "l_aspartic_acid",
+      "family": "l_aspartic_acid",
+      "display_name": "L-Aspartic Acid",
+      "productization_class": "low_risk_structural",
+      "safety_boundary_tier": "standard",
+      "category": "amino_acid",
+      "replay_product": {
+        "source": "manifest_fixture",
+        "source_file": null,
+        "product_id": null,
+        "barcode": null,
+        "brand": "Replay Fixture",
+        "title": "Replay supplement fixture"
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "l_aspartic_acid",
+        "anchor_family": "l_aspartic_acid",
+        "context_family": "l_aspartic_acid",
+        "anchor_name": "L-Aspartic Acid"
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "l_aspartic_acid",
+        "headings": [
+          "Primary context",
+          "Form and disclosure context",
+          "Formula context"
+        ],
+        "expected_first_heading": "Primary context"
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "review_status": "approved",
+        "expected_reviewed_evidence": true,
+        "reviewed_evidence_found": true,
+        "first_reference_id": "pmid:2671831",
+        "review_reasons": [
+          "approved_with_verified_pmids"
+        ]
+      }
+    },
+    {
+      "source_ingredient_id": "l_citrulline",
+      "family": "l_citrulline",
+      "display_name": "L-Citrulline",
+      "productization_class": "low_risk_structural",
+      "safety_boundary_tier": "standard",
+      "category": "amino_acid",
+      "replay_product": {
+        "source": "manifest_fixture",
+        "source_file": null,
+        "product_id": null,
+        "barcode": null,
+        "brand": "Replay Fixture",
+        "title": "Replay supplement fixture"
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "l_citrulline",
+        "anchor_family": "l_citrulline",
+        "context_family": "l_citrulline",
+        "anchor_name": "L-Citrulline"
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "l_citrulline",
+        "headings": [
+          "Primary context",
+          "Form and disclosure context",
+          "Formula context"
+        ],
+        "expected_first_heading": "Primary context"
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "review_status": "approved",
+        "expected_reviewed_evidence": true,
+        "reviewed_evidence_found": true,
+        "first_reference_id": "pmid:30029482",
+        "review_reasons": [
+          "approved_with_verified_pmids"
+        ]
+      }
+    },
+    {
+      "source_ingredient_id": "l_glutamic_acid",
+      "family": "l_glutamic_acid",
+      "display_name": "L-Glutamic Acid",
+      "productization_class": "low_risk_structural",
+      "safety_boundary_tier": "standard",
+      "category": "amino_acid",
+      "replay_product": {
+        "source": "manifest_fixture",
+        "source_file": null,
+        "product_id": null,
+        "barcode": null,
+        "brand": "Replay Fixture",
+        "title": "Replay supplement fixture"
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "l_glutamic_acid",
+        "anchor_family": "l_glutamic_acid",
+        "context_family": "l_glutamic_acid",
+        "anchor_name": "L-Glutamic Acid"
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "l_glutamic_acid",
+        "headings": [
+          "Primary context",
+          "Form and disclosure context",
+          "Formula context"
+        ],
+        "expected_first_heading": "Primary context"
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "review_status": "rejected",
+        "expected_reviewed_evidence": false,
+        "reviewed_evidence_found": false,
+        "first_reference_id": null,
+        "review_reasons": [
+          "only_search_url_without_resolved_source"
+        ]
+      }
+    },
+    {
+      "source_ingredient_id": "l_histidine",
+      "family": "l_histidine",
+      "display_name": "L-Histidine",
+      "productization_class": "low_risk_structural",
+      "safety_boundary_tier": "standard",
+      "category": "amino_acid",
+      "replay_product": {
+        "source": "manifest_fixture",
+        "source_file": null,
+        "product_id": null,
+        "barcode": null,
+        "brand": "Replay Fixture",
+        "title": "Replay supplement fixture"
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "l_histidine",
+        "anchor_family": "l_histidine",
+        "context_family": "l_histidine",
+        "anchor_name": "L-Histidine"
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "l_histidine",
+        "headings": [
+          "Primary context",
+          "Form and disclosure context",
+          "Formula context"
+        ],
+        "expected_first_heading": "Primary context"
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "review_status": "rejected",
+        "expected_reviewed_evidence": false,
+        "reviewed_evidence_found": false,
+        "first_reference_id": null,
+        "review_reasons": [
+          "only_search_url_without_resolved_source"
+        ]
+      }
+    },
+    {
+      "source_ingredient_id": "l_isoleucine",
+      "family": "l_isoleucine",
+      "display_name": "L-Isoleucine",
+      "productization_class": "low_risk_structural",
+      "safety_boundary_tier": "standard",
+      "category": "amino_acid",
+      "replay_product": {
+        "source": "manifest_fixture",
+        "source_file": null,
+        "product_id": null,
+        "barcode": null,
+        "brand": "Replay Fixture",
+        "title": "Replay supplement fixture"
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "l_isoleucine",
+        "anchor_family": "l_isoleucine",
+        "context_family": "l_isoleucine",
+        "anchor_name": "L-Isoleucine"
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "l_isoleucine",
+        "headings": [
+          "Primary context",
+          "Form and disclosure context",
+          "Formula context"
+        ],
+        "expected_first_heading": "Primary context"
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "review_status": "approved",
+        "expected_reviewed_evidence": true,
+        "reviewed_evidence_found": true,
+        "first_reference_id": "pmid:30663007",
+        "review_reasons": [
+          "approved_with_verified_pmids"
+        ]
+      }
+    },
+    {
+      "source_ingredient_id": "l_leucine",
+      "family": "l_leucine",
+      "display_name": "L-Leucine",
+      "productization_class": "low_risk_structural",
+      "safety_boundary_tier": "standard",
+      "category": "amino_acid",
+      "replay_product": {
+        "source": "manifest_fixture",
+        "source_file": null,
+        "product_id": null,
+        "barcode": null,
+        "brand": "Replay Fixture",
+        "title": "Replay supplement fixture"
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "l_leucine",
+        "anchor_family": "l_leucine",
+        "context_family": "l_leucine",
+        "anchor_name": "L-Leucine"
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "l_leucine",
+        "headings": [
+          "Primary context",
+          "Form and disclosure context",
+          "Formula context"
+        ],
+        "expected_first_heading": "Primary context"
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "review_status": "approved",
+        "expected_reviewed_evidence": true,
+        "reviewed_evidence_found": true,
+        "first_reference_id": "pmid:31577520",
+        "review_reasons": [
+          "approved_with_verified_pmids"
+        ]
+      }
+    },
+    {
+      "source_ingredient_id": "l_phenylalanine",
+      "family": "l_phenylalanine",
+      "display_name": "L-Phenylalanine",
+      "productization_class": "low_risk_structural",
+      "safety_boundary_tier": "standard",
+      "category": "amino_acid",
+      "replay_product": {
+        "source": "manifest_fixture",
+        "source_file": null,
+        "product_id": null,
+        "barcode": null,
+        "brand": "Replay Fixture",
+        "title": "Replay supplement fixture"
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "l_phenylalanine",
+        "anchor_family": "l_phenylalanine",
+        "context_family": "l_phenylalanine",
+        "anchor_name": "L-Phenylalanine"
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "l_phenylalanine",
+        "headings": [
+          "Primary context",
+          "Form and disclosure context",
+          "Formula context"
+        ],
+        "expected_first_heading": "Primary context"
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "review_status": "rejected",
+        "expected_reviewed_evidence": false,
+        "reviewed_evidence_found": false,
+        "first_reference_id": null,
+        "review_reasons": [
+          "only_search_url_without_resolved_source"
+        ]
+      }
+    },
+    {
+      "source_ingredient_id": "l_serine",
+      "family": "l_serine",
+      "display_name": "L-Serine",
+      "productization_class": "low_risk_structural",
+      "safety_boundary_tier": "standard",
+      "category": "amino_acid",
+      "replay_product": {
+        "source": "manifest_fixture",
+        "source_file": null,
+        "product_id": null,
+        "barcode": null,
+        "brand": "Replay Fixture",
+        "title": "Replay supplement fixture"
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "l_serine",
+        "anchor_family": "l_serine",
+        "context_family": "l_serine",
+        "anchor_name": "L-Serine"
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "l_serine",
+        "headings": [
+          "Primary context",
+          "Form and disclosure context",
+          "Formula context"
+        ],
+        "expected_first_heading": "Primary context"
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "review_status": "rejected",
+        "expected_reviewed_evidence": false,
+        "reviewed_evidence_found": false,
+        "first_reference_id": null,
+        "review_reasons": [
+          "only_search_url_without_resolved_source"
+        ]
+      }
+    },
+    {
+      "source_ingredient_id": "l_theanine",
+      "family": "l_theanine",
+      "display_name": "L-Theanine",
+      "productization_class": "high_risk_safety",
+      "safety_boundary_tier": "high",
+      "category": "amino_acid",
+      "replay_product": {
+        "source": "manifest_fixture",
+        "source_file": null,
+        "product_id": null,
+        "barcode": null,
+        "brand": "Replay Fixture",
+        "title": "Replay supplement fixture"
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "l_theanine",
+        "anchor_family": "l_theanine",
+        "context_family": "l_theanine",
+        "anchor_name": "L-Theanine"
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "l_theanine",
+        "headings": [
+          "Primary use context",
+          "Safety and boundary context",
+          "Form, source, and label context"
+        ],
+        "expected_first_heading": "Primary use context"
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "review_status": "approved",
+        "expected_reviewed_evidence": true,
+        "reviewed_evidence_found": true,
+        "first_reference_id": "pmid:31758301",
+        "review_reasons": [
+          "approved_with_verified_pmids"
+        ]
+      }
+    },
+    {
+      "source_ingredient_id": "l_threonine",
+      "family": "l_threonine",
+      "display_name": "L-Threonine",
+      "productization_class": "low_risk_structural",
+      "safety_boundary_tier": "standard",
+      "category": "amino_acid",
+      "replay_product": {
+        "source": "manifest_fixture",
+        "source_file": null,
+        "product_id": null,
+        "barcode": null,
+        "brand": "Replay Fixture",
+        "title": "Replay supplement fixture"
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "l_threonine",
+        "anchor_family": "l_threonine",
+        "context_family": "l_threonine",
+        "anchor_name": "L-Threonine"
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "l_threonine",
+        "headings": [
+          "Primary context",
+          "Form and disclosure context",
+          "Formula context"
+        ],
+        "expected_first_heading": "Primary context"
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "review_status": "needs_edit",
+        "expected_reviewed_evidence": false,
+        "reviewed_evidence_found": false,
+        "first_reference_id": null,
+        "review_reasons": [
+          "needs_boundary_support"
+        ]
+      }
+    },
+    {
+      "source_ingredient_id": "l_tryptophan",
+      "family": "l_tryptophan",
+      "display_name": "L-Tryptophan",
+      "productization_class": "high_risk_safety",
+      "safety_boundary_tier": "high",
+      "category": "amino_acid",
+      "replay_product": {
+        "source": "manifest_fixture",
+        "source_file": null,
+        "product_id": null,
+        "barcode": null,
+        "brand": "Replay Fixture",
+        "title": "Replay supplement fixture"
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "l_tryptophan",
+        "anchor_family": "l_tryptophan",
+        "context_family": "l_tryptophan",
+        "anchor_name": "L-Tryptophan"
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "l_tryptophan",
+        "headings": [
+          "Primary use context",
+          "Safety and boundary context",
+          "Form, source, and label context"
+        ],
+        "expected_first_heading": "Primary use context"
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "review_status": "approved",
+        "expected_reviewed_evidence": true,
+        "reviewed_evidence_found": true,
+        "first_reference_id": "pmid:32272859",
+        "review_reasons": [
+          "approved_with_verified_pmids"
+        ]
+      }
+    },
+    {
+      "source_ingredient_id": "lactase",
+      "family": "lactase",
+      "display_name": "Lactase",
+      "productization_class": "low_risk_structural",
+      "safety_boundary_tier": "standard",
+      "category": "enzyme",
+      "replay_product": {
+        "source": "manifest_fixture",
+        "source_file": null,
+        "product_id": null,
+        "barcode": null,
+        "brand": "Replay Fixture",
+        "title": "Replay supplement fixture"
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "lactase",
+        "anchor_family": "lactase",
+        "context_family": "lactase",
+        "anchor_name": "Lactase"
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "lactase",
+        "headings": [
+          "Functional context",
+          "Activity and delivery context",
+          "Formula context"
+        ],
+        "expected_first_heading": "Functional context"
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "review_status": "approved",
+        "expected_reviewed_evidence": true,
+        "reviewed_evidence_found": true,
+        "first_reference_id": "pmid:14616060",
+        "review_reasons": [
+          "approved_with_verified_pmids"
+        ]
+      }
+    },
+    {
+      "source_ingredient_id": "lion_s_mane_mushroom",
+      "family": "lion_s_mane_mushroom",
+      "display_name": "Lion's Mane Mushroom",
+      "productization_class": "high_risk_safety",
+      "safety_boundary_tier": "high",
+      "category": "botanical",
+      "replay_product": {
+        "source": "manifest_fixture",
+        "source_file": null,
+        "product_id": null,
+        "barcode": null,
+        "brand": "Replay Fixture",
+        "title": "Replay supplement fixture"
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "lion_s_mane_mushroom",
+        "anchor_family": "lion_s_mane_mushroom",
+        "context_family": "lion_s_mane_mushroom",
+        "anchor_name": "Lion's Mane Mushroom"
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "lion_s_mane_mushroom",
+        "headings": [
+          "Primary use context",
+          "Safety and boundary context",
+          "Form, source, and label context"
+        ],
+        "expected_first_heading": "Primary use context"
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "review_status": "approved",
+        "expected_reviewed_evidence": true,
+        "reviewed_evidence_found": true,
+        "first_reference_id": "pmid:38004235",
+        "review_reasons": [
+          "approved_with_verified_pmids"
+        ]
+      }
+    },
+    {
+      "source_ingredient_id": "lipase",
+      "family": "lipase",
+      "display_name": "Lipase",
+      "productization_class": "low_risk_structural",
+      "safety_boundary_tier": "standard",
+      "category": "enzyme",
+      "replay_product": {
+        "source": "manifest_fixture",
+        "source_file": null,
+        "product_id": null,
+        "barcode": null,
+        "brand": "Replay Fixture",
+        "title": "Replay supplement fixture"
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "lipase",
+        "anchor_family": "lipase",
+        "context_family": "lipase",
+        "anchor_name": "Lipase"
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "lipase",
+        "headings": [
+          "Functional context",
+          "Activity and delivery context",
+          "Formula context"
+        ],
+        "expected_first_heading": "Functional context"
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "review_status": "approved",
+        "expected_reviewed_evidence": true,
+        "reviewed_evidence_found": true,
+        "first_reference_id": "pmid:30370868",
+        "review_reasons": [
+          "approved_with_verified_pmids"
+        ]
+      }
+    },
+    {
+      "source_ingredient_id": "lutein",
+      "family": "lutein",
+      "display_name": "Lutein",
+      "productization_class": "low_risk_structural",
+      "safety_boundary_tier": "standard",
+      "category": "other",
+      "replay_product": {
+        "source": "manifest_fixture",
+        "source_file": null,
+        "product_id": null,
+        "barcode": null,
+        "brand": "Replay Fixture",
+        "title": "Replay supplement fixture"
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "lutein",
+        "anchor_family": "lutein",
+        "context_family": "lutein",
+        "anchor_name": "Lutein"
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "lutein",
+        "headings": [
+          "Primary context",
+          "Form and disclosure context",
+          "Formula context"
+        ],
+        "expected_first_heading": "Primary context"
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "review_status": "approved",
+        "expected_reviewed_evidence": true,
+        "reviewed_evidence_found": true,
+        "first_reference_id": "pmid:32526861",
+        "review_reasons": [
+          "approved_with_verified_pmids"
+        ]
+      }
+    },
+    {
+      "source_ingredient_id": "lycopene",
+      "family": "lycopene",
+      "display_name": "Lycopene",
+      "productization_class": "low_risk_structural",
+      "safety_boundary_tier": "standard",
+      "category": "other",
+      "replay_product": {
+        "source": "manifest_fixture",
+        "source_file": null,
+        "product_id": null,
+        "barcode": null,
+        "brand": "Replay Fixture",
+        "title": "Replay supplement fixture"
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "lycopene",
+        "anchor_family": "lycopene",
+        "context_family": "lycopene",
+        "anchor_name": "Lycopene"
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "lycopene",
+        "headings": [
+          "Primary context",
+          "Form and disclosure context",
+          "Formula context"
+        ],
+        "expected_first_heading": "Primary context"
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "review_status": "approved",
+        "expected_reviewed_evidence": true,
+        "reviewed_evidence_found": true,
+        "first_reference_id": "pmid:38935105",
+        "review_reasons": [
+          "approved_with_verified_pmids"
+        ]
+      }
+    },
+    {
+      "source_ingredient_id": "maca",
+      "family": "maca",
+      "display_name": "Maca",
+      "productization_class": "high_risk_safety",
+      "safety_boundary_tier": "high",
+      "category": "botanical",
+      "replay_product": {
+        "source": "manifest_fixture",
+        "source_file": null,
+        "product_id": null,
+        "barcode": null,
+        "brand": "Replay Fixture",
+        "title": "Replay supplement fixture"
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "maca",
+        "anchor_family": "maca",
+        "context_family": "maca",
+        "anchor_name": "Maca"
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "maca",
+        "headings": [
+          "Primary use context",
+          "Safety and boundary context",
+          "Form, source, and label context"
+        ],
+        "expected_first_heading": "Primary use context"
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "review_status": "approved",
+        "expected_reviewed_evidence": true,
+        "reviewed_evidence_found": true,
+        "first_reference_id": "pmid:31951246",
+        "review_reasons": [
+          "approved_with_verified_pmids"
+        ]
+      }
+    },
+    {
+      "source_ingredient_id": "maitake_mushroom",
+      "family": "maitake_mushroom",
+      "display_name": "Maitake Mushroom",
+      "productization_class": "high_risk_safety",
+      "safety_boundary_tier": "high",
+      "category": "botanical",
+      "replay_product": {
+        "source": "manifest_fixture",
+        "source_file": null,
+        "product_id": null,
+        "barcode": null,
+        "brand": "Replay Fixture",
+        "title": "Replay supplement fixture"
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "maitake_mushroom",
+        "anchor_family": "maitake_mushroom",
+        "context_family": "maitake_mushroom",
+        "anchor_name": "Maitake Mushroom"
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "maitake_mushroom",
+        "headings": [
+          "Primary use context",
+          "Safety and boundary context",
+          "Form, source, and label context"
+        ],
+        "expected_first_heading": "Primary use context"
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "review_status": "approved",
+        "expected_reviewed_evidence": true,
+        "reviewed_evidence_found": true,
+        "first_reference_id": "pmid:38707308",
+        "review_reasons": [
+          "approved_with_verified_pmids"
+        ]
+      }
+    },
+    {
+      "source_ingredient_id": "naringin",
+      "family": "naringin",
+      "display_name": "Naringin",
+      "productization_class": "low_risk_structural",
+      "safety_boundary_tier": "standard",
+      "category": "other",
+      "replay_product": {
+        "source": "manifest_fixture",
+        "source_file": null,
+        "product_id": null,
+        "barcode": null,
+        "brand": "Replay Fixture",
+        "title": "Replay supplement fixture"
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "naringin",
+        "anchor_family": "naringin",
+        "context_family": "naringin",
+        "anchor_name": "Naringin"
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "naringin",
+        "headings": [
+          "Primary context",
+          "Form and disclosure context",
+          "Formula context"
+        ],
+        "expected_first_heading": "Primary context"
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "review_status": "approved",
+        "expected_reviewed_evidence": true,
+        "reviewed_evidence_found": true,
+        "first_reference_id": "pmid:32910944",
+        "review_reasons": [
+          "approved_with_verified_pmids"
+        ]
+      }
+    },
+    {
+      "source_ingredient_id": "nattokinase",
+      "family": "nattokinase",
+      "display_name": "Nattokinase",
+      "productization_class": "high_risk_safety",
+      "safety_boundary_tier": "high",
+      "category": "enzyme",
+      "replay_product": {
+        "source": "manifest_fixture",
+        "source_file": null,
+        "product_id": null,
+        "barcode": null,
+        "brand": "Replay Fixture",
+        "title": "Replay supplement fixture"
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "nattokinase",
+        "anchor_family": "nattokinase",
+        "context_family": "nattokinase",
+        "anchor_name": "Nattokinase"
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "nattokinase",
+        "headings": [
+          "Primary use context",
+          "Safety and boundary context",
+          "Form, source, and label context"
+        ],
+        "expected_first_heading": "Primary use context"
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "review_status": "approved",
+        "expected_reviewed_evidence": true,
+        "reviewed_evidence_found": true,
+        "first_reference_id": "pmid:39076715",
+        "review_reasons": [
+          "approved_with_verified_pmids"
+        ]
+      }
+    },
+    {
+      "source_ingredient_id": "pine_bark_extract",
+      "family": "pine_bark_extract",
+      "display_name": "Pine Bark Extract",
+      "productization_class": "high_risk_safety",
+      "safety_boundary_tier": "high",
+      "category": "botanical",
+      "replay_product": {
+        "source": "manifest_fixture",
+        "source_file": null,
+        "product_id": null,
+        "barcode": null,
+        "brand": "Replay Fixture",
+        "title": "Replay supplement fixture"
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "pine_bark_extract",
+        "anchor_family": "pine_bark_extract",
+        "context_family": "pine_bark_extract",
+        "anchor_name": "Pine Bark Extract"
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "pine_bark_extract",
+        "headings": [
+          "Primary use context",
+          "Safety and boundary context",
+          "Form, source, and label context"
+        ],
+        "expected_first_heading": "Primary use context"
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "review_status": "approved",
+        "expected_reviewed_evidence": true,
+        "reviewed_evidence_found": true,
+        "first_reference_id": "pmid:38757130",
+        "review_reasons": [
+          "approved_with_verified_pmids"
+        ]
+      }
+    },
+    {
+      "source_ingredient_id": "protease",
+      "family": "protease",
+      "display_name": "Protease",
+      "productization_class": "low_risk_structural",
+      "safety_boundary_tier": "standard",
+      "category": "enzyme",
+      "replay_product": {
+        "source": "manifest_fixture",
+        "source_file": null,
+        "product_id": null,
+        "barcode": null,
+        "brand": "Replay Fixture",
+        "title": "Replay supplement fixture"
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "protease",
+        "anchor_family": "protease",
+        "context_family": "protease",
+        "anchor_name": "Protease"
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "protease",
+        "headings": [
+          "Functional context",
+          "Activity and delivery context",
+          "Formula context"
+        ],
+        "expected_first_heading": "Functional context"
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "review_status": "approved",
+        "expected_reviewed_evidence": true,
+        "reviewed_evidence_found": true,
+        "first_reference_id": "pmid:31170506",
+        "review_reasons": [
+          "approved_with_verified_pmids"
+        ]
+      }
+    },
+    {
+      "source_ingredient_id": "pumpkin_seed_oil",
+      "family": "pumpkin_seed_oil",
+      "display_name": "Pumpkin Seed Oil",
+      "productization_class": "low_risk_structural",
+      "safety_boundary_tier": "standard",
+      "category": "lipid",
+      "replay_product": {
+        "source": "manifest_fixture",
+        "source_file": null,
+        "product_id": null,
+        "barcode": null,
+        "brand": "Replay Fixture",
+        "title": "Replay supplement fixture"
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "pumpkin_seed_oil",
+        "anchor_family": "pumpkin_seed_oil",
+        "context_family": "pumpkin_seed_oil",
+        "anchor_name": "Pumpkin Seed Oil"
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "pumpkin_seed_oil",
+        "headings": [
+          "Primary context",
+          "Form and disclosure context",
+          "Formula context"
+        ],
+        "expected_first_heading": "Primary context"
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "review_status": "approved",
+        "expected_reviewed_evidence": true,
+        "reviewed_evidence_found": true,
+        "first_reference_id": "pmid:35904246",
+        "review_reasons": [
+          "approved_with_verified_pmids"
+        ]
+      }
+    },
+    {
+      "source_ingredient_id": "reishi_mushroom",
+      "family": "reishi_mushroom",
+      "display_name": "Reishi Mushroom",
+      "productization_class": "high_risk_safety",
+      "safety_boundary_tier": "high",
+      "category": "botanical",
+      "replay_product": {
+        "source": "manifest_fixture",
+        "source_file": null,
+        "product_id": null,
+        "barcode": null,
+        "brand": "Replay Fixture",
+        "title": "Replay supplement fixture"
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "reishi_mushroom",
+        "anchor_family": "reishi_mushroom",
+        "context_family": "reishi_mushroom",
+        "anchor_name": "Reishi Mushroom"
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "reishi_mushroom",
+        "headings": [
+          "Primary use context",
+          "Safety and boundary context",
+          "Form, source, and label context"
+        ],
+        "expected_first_heading": "Primary use context"
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "review_status": "approved",
+        "expected_reviewed_evidence": true,
+        "reviewed_evidence_found": true,
+        "first_reference_id": "pmid:34411377",
+        "review_reasons": [
+          "approved_with_verified_pmids"
+        ]
+      }
+    },
+    {
+      "source_ingredient_id": "rhodiola_rosea",
+      "family": "rhodiola_rosea",
+      "display_name": "Rhodiola rosea",
+      "productization_class": "high_risk_safety",
+      "safety_boundary_tier": "high",
+      "category": "botanical",
+      "replay_product": {
+        "source": "manifest_fixture",
+        "source_file": null,
+        "product_id": null,
+        "barcode": null,
+        "brand": "Replay Fixture",
+        "title": "Replay supplement fixture"
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "rhodiola_rosea",
+        "anchor_family": "rhodiola_rosea",
+        "context_family": "rhodiola_rosea",
+        "anchor_name": "Rhodiola rosea"
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "rhodiola_rosea",
+        "headings": [
+          "Primary use context",
+          "Safety and boundary context",
+          "Form, source, and label context"
+        ],
+        "expected_first_heading": "Primary use context"
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "review_status": "approved",
+        "expected_reviewed_evidence": true,
+        "reviewed_evidence_found": true,
+        "first_reference_id": "pmid:37641937",
+        "review_reasons": [
+          "approved_with_verified_pmids"
+        ]
+      }
+    },
+    {
+      "source_ingredient_id": "saw_palmetto",
+      "family": "saw_palmetto",
+      "display_name": "Saw palmetto",
+      "productization_class": "high_risk_safety",
+      "safety_boundary_tier": "high",
+      "category": "botanical",
+      "replay_product": {
+        "source": "manifest_fixture",
+        "source_file": null,
+        "product_id": null,
+        "barcode": null,
+        "brand": "Replay Fixture",
+        "title": "Replay supplement fixture"
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "saw_palmetto",
+        "anchor_family": "saw_palmetto",
+        "context_family": "saw_palmetto",
+        "anchor_name": "Saw palmetto"
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "saw_palmetto",
+        "headings": [
+          "Primary use context",
+          "Safety and boundary context",
+          "Form, source, and label context"
+        ],
+        "expected_first_heading": "Primary use context"
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "review_status": "approved",
+        "expected_reviewed_evidence": true,
+        "reviewed_evidence_found": true,
+        "first_reference_id": "pmid:33313047",
+        "review_reasons": [
+          "approved_with_verified_pmids"
+        ]
+      }
+    },
+    {
+      "source_ingredient_id": "schisandra_chinensis",
+      "family": "schisandra_chinensis",
+      "display_name": "Schisandra Chinensis",
+      "productization_class": "high_risk_safety",
+      "safety_boundary_tier": "high",
+      "category": "botanical",
+      "replay_product": {
+        "source": "manifest_fixture",
+        "source_file": null,
+        "product_id": null,
+        "barcode": null,
+        "brand": "Replay Fixture",
+        "title": "Replay supplement fixture"
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "schisandra_chinensis",
+        "anchor_family": "schisandra_chinensis",
+        "context_family": "schisandra_chinensis",
+        "anchor_name": "Schisandra Chinensis"
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "schisandra_chinensis",
+        "headings": [
+          "Primary use context",
+          "Safety and boundary context",
+          "Form, source, and label context"
+        ],
+        "expected_first_heading": "Primary use context"
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "review_status": "approved",
+        "expected_reviewed_evidence": true,
+        "reviewed_evidence_found": true,
+        "first_reference_id": "pmid:32260466",
+        "review_reasons": [
+          "approved_with_verified_pmids"
+        ]
+      }
+    },
+    {
+      "source_ingredient_id": "shilajit",
+      "family": "shilajit",
+      "display_name": "Shilajit",
+      "productization_class": "high_risk_safety",
+      "safety_boundary_tier": "high",
+      "category": "botanical",
+      "replay_product": {
+        "source": "manifest_fixture",
+        "source_file": null,
+        "product_id": null,
+        "barcode": null,
+        "brand": "Replay Fixture",
+        "title": "Replay supplement fixture"
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "shilajit",
+        "anchor_family": "shilajit",
+        "context_family": "shilajit",
+        "anchor_name": "Shilajit"
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "shilajit",
+        "headings": [
+          "Primary use context",
+          "Safety and boundary context",
+          "Form, source, and label context"
+        ],
+        "expected_first_heading": "Primary use context"
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "review_status": "approved",
+        "expected_reviewed_evidence": true,
+        "reviewed_evidence_found": true,
+        "first_reference_id": "pmid:23733436",
+        "review_reasons": [
+          "approved_with_verified_pmids"
+        ]
+      }
+    },
+    {
+      "source_ingredient_id": "spermidine",
+      "family": "spermidine",
+      "display_name": "Spermidine",
+      "productization_class": "low_risk_structural",
+      "safety_boundary_tier": "standard",
+      "category": "other",
+      "replay_product": {
+        "source": "manifest_fixture",
+        "source_file": null,
+        "product_id": null,
+        "barcode": null,
+        "brand": "Replay Fixture",
+        "title": "Replay supplement fixture"
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "spermidine",
+        "anchor_family": "spermidine",
+        "context_family": "spermidine",
+        "anchor_name": "Spermidine"
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "spermidine",
+        "headings": [
+          "Primary context",
+          "Form and disclosure context",
+          "Formula context"
+        ],
+        "expected_first_heading": "Primary context"
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "review_status": "approved",
+        "expected_reviewed_evidence": true,
+        "reviewed_evidence_found": true,
+        "first_reference_id": "pmid:29371440",
+        "review_reasons": [
+          "approved_with_verified_pmids"
+        ]
+      }
+    },
+    {
+      "source_ingredient_id": "stinging_nettle_root",
+      "family": "stinging_nettle_root",
+      "display_name": "Stinging Nettle Root",
+      "productization_class": "high_risk_safety",
+      "safety_boundary_tier": "high",
+      "category": "botanical",
+      "replay_product": {
+        "source": "manifest_fixture",
+        "source_file": null,
+        "product_id": null,
+        "barcode": null,
+        "brand": "Replay Fixture",
+        "title": "Replay supplement fixture"
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "stinging_nettle_root",
+        "anchor_family": "stinging_nettle_root",
+        "context_family": "stinging_nettle_root",
+        "anchor_name": "Stinging Nettle Root"
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "stinging_nettle_root",
+        "headings": [
+          "Primary use context",
+          "Safety and boundary context",
+          "Form, source, and label context"
+        ],
+        "expected_first_heading": "Primary use context"
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "review_status": "approved",
+        "expected_reviewed_evidence": true,
+        "reviewed_evidence_found": true,
+        "first_reference_id": "pmid:31362429",
+        "review_reasons": [
+          "approved_with_verified_pmids"
+        ]
+      }
+    },
+    {
+      "source_ingredient_id": "tongkat_ali",
+      "family": "tongkat_ali",
+      "display_name": "Tongkat Ali",
+      "productization_class": "high_risk_safety",
+      "safety_boundary_tier": "high",
+      "category": "botanical",
+      "replay_product": {
+        "source": "manifest_fixture",
+        "source_file": null,
+        "product_id": null,
+        "barcode": null,
+        "brand": "Replay Fixture",
+        "title": "Replay supplement fixture"
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "tongkat_ali",
+        "anchor_family": "tongkat_ali",
+        "context_family": "tongkat_ali",
+        "anchor_name": "Tongkat Ali"
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "tongkat_ali",
+        "headings": [
+          "Primary use context",
+          "Safety and boundary context",
+          "Form, source, and label context"
+        ],
+        "expected_first_heading": "Primary use context"
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "review_status": "approved",
+        "expected_reviewed_evidence": true,
+        "reviewed_evidence_found": true,
+        "first_reference_id": "pmid:36013514",
+        "review_reasons": [
+          "approved_with_verified_pmids"
+        ]
+      }
+    },
+    {
+      "source_ingredient_id": "urolithin_a",
+      "family": "urolithin_a",
+      "display_name": "Urolithin A",
+      "productization_class": "low_risk_structural",
+      "safety_boundary_tier": "standard",
+      "category": "other",
+      "replay_product": {
+        "source": "manifest_fixture",
+        "source_file": null,
+        "product_id": null,
+        "barcode": null,
+        "brand": "Replay Fixture",
+        "title": "Replay supplement fixture"
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "urolithin_a",
+        "anchor_family": "urolithin_a",
+        "context_family": "urolithin_a",
+        "anchor_name": "Urolithin A"
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "urolithin_a",
+        "headings": [
+          "Primary context",
+          "Form and disclosure context",
+          "Formula context"
+        ],
+        "expected_first_heading": "Primary context"
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "review_status": "approved",
+        "expected_reviewed_evidence": true,
+        "reviewed_evidence_found": true,
+        "first_reference_id": "pmid:34030963",
+        "review_reasons": [
+          "approved_with_verified_pmids"
+        ]
+      }
+    },
+    {
+      "source_ingredient_id": "vitex",
+      "family": "vitex",
+      "display_name": "Vitex",
+      "productization_class": "high_risk_safety",
+      "safety_boundary_tier": "high",
+      "category": "botanical",
+      "replay_product": {
+        "source": "manifest_fixture",
+        "source_file": null,
+        "product_id": null,
+        "barcode": null,
+        "brand": "Replay Fixture",
+        "title": "Replay supplement fixture"
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "vitex",
+        "anchor_family": "vitex",
+        "context_family": "vitex",
+        "anchor_name": "Vitex"
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "vitex",
+        "headings": [
+          "Primary use context",
+          "Safety and boundary context",
+          "Form, source, and label context"
+        ],
+        "expected_first_heading": "Primary use context"
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "review_status": "approved",
+        "expected_reviewed_evidence": true,
+        "reviewed_evidence_found": true,
+        "first_reference_id": "pmid:36745730",
+        "review_reasons": [
+          "approved_with_verified_pmids"
+        ]
+      }
+    },
+    {
+      "source_ingredient_id": "white_willow_bark",
+      "family": "white_willow_bark",
+      "display_name": "White Willow Bark",
+      "productization_class": "high_risk_safety",
+      "safety_boundary_tier": "high",
+      "category": "botanical",
+      "replay_product": {
+        "source": "manifest_fixture",
+        "source_file": null,
+        "product_id": null,
+        "barcode": null,
+        "brand": "Replay Fixture",
+        "title": "Replay supplement fixture"
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "white_willow_bark",
+        "anchor_family": "white_willow_bark",
+        "context_family": "white_willow_bark",
+        "anchor_name": "White Willow Bark"
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "white_willow_bark",
+        "headings": [
+          "Primary use context",
+          "Safety and boundary context",
+          "Form, source, and label context"
+        ],
+        "expected_first_heading": "Primary use context"
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "review_status": "approved",
+        "expected_reviewed_evidence": true,
+        "reviewed_evidence_found": true,
+        "first_reference_id": "pmid:25997859",
+        "review_reasons": [
+          "approved_with_verified_pmids"
+        ]
+      }
+    },
+    {
+      "source_ingredient_id": "d_mannose",
+      "family": "d_mannose",
+      "display_name": "D-Mannose",
+      "productization_class": "high_risk_safety",
+      "safety_boundary_tier": "high",
+      "category": "other",
+      "replay_product": {
+        "source": "manifest_fixture",
+        "source_file": null,
+        "product_id": null,
+        "barcode": null,
+        "brand": "Replay Fixture",
+        "title": "Replay supplement fixture"
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "d_mannose",
+        "anchor_family": "d_mannose",
+        "context_family": "d_mannose",
+        "anchor_name": "D-Mannose"
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "d_mannose",
+        "headings": [
+          "Primary use context",
+          "Safety and boundary context",
+          "Form, source, and label context"
+        ],
+        "expected_first_heading": "Primary use context"
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "review_status": "approved",
+        "expected_reviewed_evidence": true,
+        "reviewed_evidence_found": true,
+        "first_reference_id": "pmid:36041061",
+        "review_reasons": [
+          "approved_with_verified_pmids"
+        ]
+      }
+    },
+    {
+      "source_ingredient_id": "l_glutamine",
+      "family": "l_glutamine",
+      "display_name": "L-Glutamine",
+      "productization_class": "low_risk_structural",
+      "safety_boundary_tier": "standard",
+      "category": "amino_acid",
+      "replay_product": {
+        "source": "manifest_fixture",
+        "source_file": null,
+        "product_id": null,
+        "barcode": null,
+        "brand": "Replay Fixture",
+        "title": "Replay supplement fixture"
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "l_glutamine",
+        "anchor_family": "l_glutamine",
+        "context_family": "l_glutamine",
+        "anchor_name": "L-Glutamine"
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "l_glutamine",
+        "headings": [
+          "Primary context",
+          "Form and disclosure context",
+          "Formula context"
+        ],
+        "expected_first_heading": "Primary context"
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "review_status": "approved",
+        "expected_reviewed_evidence": true,
+        "reviewed_evidence_found": true,
+        "first_reference_id": "pmid:30021096",
+        "review_reasons": [
+          "approved_with_verified_pmids"
+        ]
+      }
+    },
+    {
+      "source_ingredient_id": "l_lysine",
+      "family": "l_lysine",
+      "display_name": "L-Lysine",
+      "productization_class": "low_risk_structural",
+      "safety_boundary_tier": "standard",
+      "category": "amino_acid",
+      "replay_product": {
+        "source": "manifest_fixture",
+        "source_file": null,
+        "product_id": null,
+        "barcode": null,
+        "brand": "Replay Fixture",
+        "title": "Replay supplement fixture"
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "l_lysine",
+        "anchor_family": "l_lysine",
+        "context_family": "l_lysine",
+        "anchor_name": "L-Lysine"
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "l_lysine",
+        "headings": [
+          "Primary context",
+          "Form and disclosure context",
+          "Formula context"
+        ],
+        "expected_first_heading": "Primary context"
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "review_status": "approved",
+        "expected_reviewed_evidence": true,
+        "reviewed_evidence_found": true,
+        "first_reference_id": "pmid:20641276",
+        "review_reasons": [
+          "approved_with_verified_pmids"
+        ]
+      }
+    },
+    {
+      "source_ingredient_id": "l_tyrosine",
+      "family": "l_tyrosine",
+      "display_name": "L-Tyrosine",
+      "productization_class": "low_risk_structural",
+      "safety_boundary_tier": "standard",
+      "category": "amino_acid",
+      "replay_product": {
+        "source": "manifest_fixture",
+        "source_file": null,
+        "product_id": null,
+        "barcode": null,
+        "brand": "Replay Fixture",
+        "title": "Replay supplement fixture"
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "l_tyrosine",
+        "anchor_family": "l_tyrosine",
+        "context_family": "l_tyrosine",
+        "anchor_name": "L-Tyrosine"
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "l_tyrosine",
+        "headings": [
+          "Primary context",
+          "Form and disclosure context",
+          "Formula context"
+        ],
+        "expected_first_heading": "Primary context"
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "review_status": "rejected",
+        "expected_reviewed_evidence": false,
+        "reviewed_evidence_found": false,
+        "first_reference_id": null,
+        "review_reasons": [
+          "only_search_url_without_resolved_source"
+        ]
+      }
+    },
+    {
+      "source_ingredient_id": "betaine",
+      "family": "betaine",
+      "display_name": "Betaine",
+      "productization_class": "crosswalk_rescue",
+      "safety_boundary_tier": "high",
+      "category": "other",
+      "replay_product": {
+        "source": "manifest_fixture",
+        "source_file": null,
+        "product_id": null,
+        "barcode": null,
+        "brand": "Replay Fixture",
+        "title": "Replay supplement fixture"
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "betaine",
+        "anchor_family": "betaine",
+        "context_family": "betaine",
+        "anchor_name": "Betaine"
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "betaine",
+        "headings": [
+          "Primary use context",
+          "Safety and boundary context",
+          "Form, source, and label context"
+        ],
+        "expected_first_heading": "Primary use context"
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "review_status": "approved",
+        "expected_reviewed_evidence": true,
+        "reviewed_evidence_found": true,
+        "first_reference_id": "pmid:29881379",
+        "review_reasons": [
+          "approved_with_verified_pmids"
+        ]
+      }
+    },
+    {
+      "source_ingredient_id": "black_seed_oil",
+      "family": "black_seed_oil",
+      "display_name": "Black seed oil",
+      "productization_class": "crosswalk_rescue",
+      "safety_boundary_tier": "high",
+      "category": "lipid",
+      "replay_product": {
+        "source": "local_validation_title",
+        "source_file": "data/validation/canadian-popular-brand-proof-pack.v0.json",
+        "product_id": "ca-official-organika-00620365013837",
+        "barcode": null,
+        "brand": "Organika",
+        "title": "Black Cumin Seed Oil"
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "black_seed_oil",
+        "anchor_family": "black_seed_oil",
+        "context_family": "black_seed_oil",
+        "anchor_name": "Black seed oil"
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "black_seed_oil",
+        "headings": [
+          "Primary use context",
+          "Safety and boundary context",
+          "Form, source, and label context"
+        ],
+        "expected_first_heading": "Primary use context"
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "review_status": "approved",
+        "expected_reviewed_evidence": true,
+        "reviewed_evidence_found": true,
+        "first_reference_id": "pmid:34073784",
+        "review_reasons": [
+          "approved_with_verified_pmids"
+        ]
+      }
+    },
+    {
+      "source_ingredient_id": "dim",
+      "family": "dim",
+      "display_name": "DIM",
+      "productization_class": "crosswalk_rescue",
+      "safety_boundary_tier": "high",
+      "category": "other",
+      "replay_product": {
+        "source": "local_validation_title",
+        "source_file": "data/validation/post-canadian-next-discovery-canary.v0.json",
+        "product_id": "118078",
+        "barcode": null,
+        "brand": "Swanson",
+        "title": "Swanson, DIM Complex, 30 Capsules"
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "dim",
+        "anchor_family": "dim",
+        "context_family": "dim",
+        "anchor_name": "DIM"
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "dim",
+        "headings": [
+          "Primary use context",
+          "Safety and boundary context",
+          "Form, source, and label context"
+        ],
+        "expected_first_heading": "Primary use context"
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "review_status": "approved",
+        "expected_reviewed_evidence": true,
+        "reviewed_evidence_found": true,
+        "first_reference_id": "pmid:26501150",
+        "review_reasons": [
+          "approved_with_verified_pmids"
+        ]
+      }
+    },
+    {
+      "source_ingredient_id": "hmb",
+      "family": "hmb",
+      "display_name": "HMB",
+      "productization_class": "crosswalk_rescue",
+      "safety_boundary_tier": "high",
+      "category": "amino_acid",
+      "replay_product": {
+        "source": "manifest_fixture",
+        "source_file": null,
+        "product_id": null,
+        "barcode": null,
+        "brand": "Replay Fixture",
+        "title": "Replay supplement fixture"
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "hmb",
+        "anchor_family": "hmb",
+        "context_family": "hmb",
+        "anchor_name": "HMB"
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "hmb",
+        "headings": [
+          "Primary use context",
+          "Safety and boundary context",
+          "Form, source, and label context"
+        ],
+        "expected_first_heading": "Primary use context"
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "review_status": "approved",
+        "expected_reviewed_evidence": true,
+        "reviewed_evidence_found": true,
+        "first_reference_id": "pmid:39699070",
+        "review_reasons": [
+          "approved_with_verified_pmids"
+        ]
+      }
+    },
+    {
+      "source_ingredient_id": "mct_oil",
+      "family": "mct_oil",
+      "display_name": "MCT Oil",
+      "productization_class": "crosswalk_rescue",
+      "safety_boundary_tier": "high",
+      "category": "lipid",
+      "replay_product": {
+        "source": "local_validation_title",
+        "source_file": "data/validation/food-like-route-honesty-stable-additions.v0.json",
+        "product_id": "142560",
+        "barcode": "00815709022716",
+        "brand": "BulletProof",
+        "title": "BulletProof, Brain Octane® C8 MCT Oil , 15 Packets, 0.5 fl oz (15 ml) Each"
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "mct_oil",
+        "anchor_family": "mct_oil",
+        "context_family": "mct_oil",
+        "anchor_name": "MCT Oil"
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "mct_oil",
+        "headings": [
+          "Primary use context",
+          "Safety and boundary context",
+          "Form, source, and label context"
+        ],
+        "expected_first_heading": "Primary use context"
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "review_status": "approved",
+        "expected_reviewed_evidence": true,
+        "reviewed_evidence_found": true,
+        "first_reference_id": "pmid:11880549",
+        "review_reasons": [
+          "approved_with_verified_pmids"
+        ]
+      }
+    },
+    {
+      "source_ingredient_id": "nadh",
+      "family": "nadh",
+      "display_name": "NADH",
+      "productization_class": "crosswalk_rescue",
+      "safety_boundary_tier": "high",
+      "category": "other",
+      "replay_product": {
+        "source": "manifest_fixture",
+        "source_file": null,
+        "product_id": null,
+        "barcode": null,
+        "brand": "Replay Fixture",
+        "title": "Replay supplement fixture"
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "nadh",
+        "anchor_family": "nadh",
+        "context_family": "nadh",
+        "anchor_name": "NADH"
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "nadh",
+        "headings": [
+          "Primary use context",
+          "Safety and boundary context",
+          "Form, source, and label context"
+        ],
+        "expected_first_heading": "Primary use context"
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "review_status": "rejected",
+        "expected_reviewed_evidence": false,
+        "reviewed_evidence_found": false,
+        "first_reference_id": null,
+        "review_reasons": [
+          "only_search_url_without_resolved_source"
+        ]
+      }
+    },
+    {
+      "source_ingredient_id": "phosphatidylserine",
+      "family": "phosphatidylserine",
+      "display_name": "Phosphatidylserine",
+      "productization_class": "crosswalk_rescue",
+      "safety_boundary_tier": "high",
+      "category": "lipid",
+      "replay_product": {
+        "source": "local_validation_title",
+        "source_file": "data/validation/stratified-nightly-additions.v1.json",
+        "product_id": "118604",
+        "barcode": "00087614027326",
+        "brand": "Swanson",
+        "title": "Swanson, Phosphatidylserine, Soy-Free Formula, 100 mg, 90 Softgels"
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "phosphatidylserine",
+        "anchor_family": "phosphatidylserine",
+        "context_family": "phosphatidylserine",
+        "anchor_name": "Phosphatidylserine"
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "phosphatidylserine",
+        "headings": [
+          "Primary use context",
+          "Safety and boundary context",
+          "Form, source, and label context"
+        ],
+        "expected_first_heading": "Primary use context"
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "review_status": "approved",
+        "expected_reviewed_evidence": true,
+        "reviewed_evidence_found": true,
+        "first_reference_id": "pmid:25933483",
+        "review_reasons": [
+          "approved_with_verified_pmids"
+        ]
+      }
+    },
+    {
+      "source_ingredient_id": "pqq",
+      "family": "pqq",
+      "display_name": "PQQ",
+      "productization_class": "crosswalk_rescue",
+      "safety_boundary_tier": "high",
+      "category": "other",
+      "replay_product": {
+        "source": "manifest_fixture",
+        "source_file": null,
+        "product_id": null,
+        "barcode": null,
+        "brand": "Replay Fixture",
+        "title": "Replay supplement fixture"
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "pqq",
+        "anchor_family": "pqq",
+        "context_family": "pqq",
+        "anchor_name": "PQQ"
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "pqq",
+        "headings": [
+          "Primary use context",
+          "Safety and boundary context",
+          "Form, source, and label context"
+        ],
+        "expected_first_heading": "Primary use context"
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "review_status": "approved",
+        "expected_reviewed_evidence": true,
+        "reviewed_evidence_found": true,
+        "first_reference_id": "pmid:39513102",
+        "review_reasons": [
+          "approved_with_verified_pmids"
+        ]
+      }
+    },
+    {
+      "source_ingredient_id": "same",
+      "family": "same",
+      "display_name": "SAMe",
+      "productization_class": "crosswalk_rescue",
+      "safety_boundary_tier": "high",
+      "category": "other",
+      "replay_product": {
+        "source": "local_validation_title",
+        "source_file": "data/validation/canadian-upc-explicit-next-lane.v0.json",
+        "product_id": "ca-official-webber-naturals-00625273039603",
+        "barcode": null,
+        "brand": "Replay Fixture",
+        "title": "Sesame Street Incredible Power Multi Chewables"
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "same",
+        "anchor_family": "same",
+        "context_family": "same",
+        "anchor_name": "SAMe"
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "same",
+        "headings": [
+          "Primary use context",
+          "Safety and boundary context",
+          "Form, source, and label context"
+        ],
+        "expected_first_heading": "Primary use context"
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "review_status": "approved",
+        "expected_reviewed_evidence": true,
+        "reviewed_evidence_found": true,
+        "first_reference_id": "pmid:28682528",
+        "review_reasons": [
+          "approved_with_verified_pmids"
+        ]
+      }
+    },
+    {
+      "source_ingredient_id": "tocotrienols",
+      "family": "tocotrienols",
+      "display_name": "Tocotrienols",
+      "productization_class": "crosswalk_rescue",
+      "safety_boundary_tier": "high",
+      "category": "lipid",
+      "replay_product": {
+        "source": "manifest_fixture",
+        "source_file": null,
+        "product_id": null,
+        "barcode": null,
+        "brand": "Replay Fixture",
+        "title": "Replay supplement fixture"
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "tocotrienols",
+        "anchor_family": "tocotrienols",
+        "context_family": "tocotrienols",
+        "anchor_name": "Tocotrienols"
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "tocotrienols",
+        "headings": [
+          "Primary use context",
+          "Safety and boundary context",
+          "Form, source, and label context"
+        ],
+        "expected_first_heading": "Primary use context"
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "review_status": "approved",
+        "expected_reviewed_evidence": true,
+        "reviewed_evidence_found": true,
+        "first_reference_id": "pmid:32951713",
+        "review_reasons": [
+          "approved_with_verified_pmids"
+        ]
+      }
+    }
+  ]
+}
