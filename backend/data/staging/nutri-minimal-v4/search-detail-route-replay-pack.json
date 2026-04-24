@@ -1,0 +1,752 @@
+{
+  "version": "nutri_minimal_v4_search_detail_route_replay.v1",
+  "generatedAt": "2026-04-24T04:20:45.999Z",
+  "apiBaseUrl": "http://127.0.0.1:3001",
+  "summary": {
+    "total": 10,
+    "route_ok": 10,
+    "family_inference_pass": 10,
+    "scientific_background_specific_pass": 10,
+    "evidence_grounding_gate_pass": 10,
+    "safety_claim_gate_pass": 10,
+    "approved_grounding_rows": 8,
+    "blocked_grounding_rows": 2,
+    "failures": 0
+  },
+  "failures": [],
+  "rows": [
+    {
+      "family": "same",
+      "productId": "96277",
+      "barcode": "898220016518",
+      "title": "California Gold Nutrition, SAMe, Disulfate Tosylate, 400 mg, 60 Enteric Coated Tablets",
+      "route": {
+        "pass": true,
+        "status": 200,
+        "attempts": 4,
+        "finalSource": "fallback",
+        "finalBackgroundRefreshPending": true,
+        "elapsedMsTotal": 7559,
+        "error": null
+      },
+      "routeProduct": {
+        "productId": "96277",
+        "barcode": "00898220016518",
+        "name": "California Gold Nutrition, SAMe, Disulfate Tosylate, 400 mg, 60 Enteric Coated Tablets",
+        "brand": "California Gold Nutrition",
+        "factsStatus": "full"
+      },
+      "familyInference": {
+        "pass": true,
+        "defaultAnchorName": "SAME (S-Adenosyl L-Methionine)(from S-Adenosyl-L-Methionine Disulfate Tosylate)",
+        "scienceRowNames": [
+          "SAME (S-Adenosyl L-Methionine)(from S-Adenosyl-L-Methionine Disulfate Tosylate)"
+        ],
+        "selectedLabel": "SAME (S-Adenosyl L-Methionine)(from S-Adenosyl-L-Methionine Disulfate Tosylate)",
+        "matchedFields": [
+          "defaultAnchor.name",
+          "scientificBackground.selectedLabel",
+          "scienceBlock.ingredientRows.0.name",
+          "product.name"
+        ]
+      },
+      "scientificBackground": {
+        "pass": true,
+        "source": "fallback",
+        "mode": "research_mode",
+        "genericHits": [],
+        "containsFamilySignal": true,
+        "headings": [
+          "Primary use context",
+          "Safety and boundary context",
+          "Form, source, and label context"
+        ],
+        "selectedLabel": "SAME (S-Adenosyl L-Methionine)(from S-Adenosyl-L-Methionine Disulfate Tosylate)",
+        "sampleSummary": "SAMe has systematic-review support in several medical-adjacent contexts, which makes it useful for label interpretation only when the wording stays bounded.",
+        "sampleEvidenceRead": "The reviewed PubMed set includes systematic reviews for SAMe in neuropsychiatric, joint, and liver-health contexts, so the evidence should be read by study context rather than as a broad benefit. Do not present SAMe as treating depression, osteoarthritis, liver disease, or any condition, and do not imply it replaces medication or clinician guidance.",
+        "sampleShopperMeaning": "When comparing SAMe products, check the exact SAMe identity, dose, enteric or salt-form wording, and warning language before relying on mood, joint, or liver positioning."
+      },
+      "evidenceGrounding": {
+        "pass": true,
+        "expectedLiveGroundingStatus": "approved_reviewed_row",
+        "reviewedEvidenceFound": true,
+        "primaryLane": "primary_use_context",
+        "reviewedReferenceIds": [
+          "pmid:28682528",
+          "pmid:19821403",
+          "pmid:39519500"
+        ],
+        "routeEvidenceSignalFound": true,
+        "routeEvidenceSignals": [
+          "SAMe has systematic-review support in several medical-adjacent contexts, which makes it us",
+          "The reviewed PubMed set includes systematic reviews for SAMe in neuropsychiatric, joint, a",
+          "When comparing SAMe products, check the exact SAMe identity, dose, enteric or salt-form wo",
+          "Do not present SAMe as treating depression, osteoarthritis, liver disease, or any conditio"
+        ],
+        "sourceAcceptedAsApiGrounded": false
+      },
+      "safetyClaimGate": {
+        "pass": true,
+        "unsafeSentences": []
+      }
+    },
+    {
+      "family": "tocotrienols",
+      "productId": "118598",
+      "barcode": "087614026800",
+      "title": "Swanson, Tocotrienols, 100 mg, 60 Liquid Caps",
+      "route": {
+        "pass": true,
+        "status": 200,
+        "attempts": 4,
+        "finalSource": "fallback",
+        "finalBackgroundRefreshPending": true,
+        "elapsedMsTotal": 7413,
+        "error": null
+      },
+      "routeProduct": {
+        "productId": "118598",
+        "barcode": "00087614026800",
+        "name": "Swanson, Tocotrienols, 100 mg, 60 Liquid Caps",
+        "brand": "Swanson",
+        "factsStatus": "full"
+      },
+      "familyInference": {
+        "pass": true,
+        "defaultAnchorName": "Tocotrienols(from DeltaGold tocotrienols) delta-Tocotrienols minimum 84%gamma-Tocotrienols minimum 8%",
+        "scienceRowNames": [
+          "Tocotrienols(from DeltaGold tocotrienols) delta-Tocotrienols minimum 84%gamma-Tocotrienols minimum 8%"
+        ],
+        "selectedLabel": "Tocotrienols(from DeltaGold tocotrienols) delta-Tocotrienols minimum 84%gamma-Tocotrienols minimum 8%",
+        "matchedFields": [
+          "defaultAnchor.name",
+          "scientificBackground.selectedLabel",
+          "scienceBlock.ingredientRows.0.name",
+          "product.name"
+        ]
+      },
+      "scientificBackground": {
+        "pass": true,
+        "source": "fallback",
+        "mode": "research_mode",
+        "genericHits": [],
+        "containsFamilySignal": true,
+        "headings": [
+          "Primary use context",
+          "Safety and boundary context",
+          "Form, source, and label context"
+        ],
+        "selectedLabel": "Tocotrienols(from DeltaGold tocotrienols) delta-Tocotrienols minimum 84%gamma-Tocotrienols minimum 8%",
+        "sampleSummary": "Tocotrienols have human systematic-review support, but the clearest shopper value is distinguishing tocotrienol-specific evidence from generic vitamin E or tocopherol language.",
+        "sampleEvidenceRead": "The reviewed PubMed set includes meta-analyses on lipid profile and oxidative-stress markers plus bioavailability work, so interpretation should stay outcome- and formulation-specific. Do not turn lipid, liver, inflammation, or bioavailability findings into cardiovascular, liver, anti-inflammatory, or superiority claims for every tocotrienol product.",
+        "sampleShopperMeaning": "When comparing tocotrienol products, check whether the label discloses tocotrienol-rich fraction, isoform mix, softgel or enhanced-delivery wording, and the stated amount."
+      },
+      "evidenceGrounding": {
+        "pass": true,
+        "expectedLiveGroundingStatus": "approved_reviewed_row",
+        "reviewedEvidenceFound": true,
+        "primaryLane": "primary_use_context",
+        "reviewedReferenceIds": [
+          "pmid:32951713",
+          "pmid:34297765",
+          "pmid:36932765",
+          "pmid:26323969"
+        ],
+        "routeEvidenceSignalFound": true,
+        "routeEvidenceSignals": [
+          "Tocotrienols have human systematic-review support, but the clearest shopper value is disti",
+          "The reviewed PubMed set includes meta-analyses on lipid profile and oxidative-stress marke",
+          "When comparing tocotrienol products, check whether the label discloses tocotrienol-rich fr",
+          "Do not turn lipid, liver, inflammation, or bioavailability findings into cardiovascular, l"
+        ],
+        "sourceAcceptedAsApiGrounded": false
+      },
+      "safetyClaimGate": {
+        "pass": true,
+        "unsafeSentences": []
+      }
+    },
+    {
+      "family": "devil_s_claw",
+      "productId": "118464",
+      "barcode": "087614019598",
+      "title": "Swanson, Full Spectrum® Devil's Claw, 500 mg, 100 Capsules",
+      "route": {
+        "pass": true,
+        "status": 200,
+        "attempts": 4,
+        "finalSource": "fallback",
+        "finalBackgroundRefreshPending": true,
+        "elapsedMsTotal": 7657,
+        "error": null
+      },
+      "routeProduct": {
+        "productId": "118464",
+        "barcode": "00087614019598",
+        "name": "Swanson, Full Spectrum® Devil's Claw, 500 mg, 100 Capsules",
+        "brand": "Swanson",
+        "factsStatus": "full"
+      },
+      "familyInference": {
+        "pass": true,
+        "defaultAnchorName": "Devil’s Claw (Harpagophytum spp.) (root)",
+        "scienceRowNames": [
+          "Devil’s Claw (Harpagophytum spp.) (root)"
+        ],
+        "selectedLabel": "Devil’s Claw (Harpagophytum spp.) (root)",
+        "matchedFields": [
+          "defaultAnchor.name",
+          "scientificBackground.selectedLabel",
+          "scienceBlock.ingredientRows.0.name",
+          "product.name"
+        ]
+      },
+      "scientificBackground": {
+        "pass": true,
+        "source": "fallback",
+        "mode": "research_mode",
+        "genericHits": [],
+        "containsFamilySignal": true,
+        "headings": [
+          "Primary use context",
+          "Safety and boundary context",
+          "Form, source, and label context"
+        ],
+        "selectedLabel": "Devil’s Claw (Harpagophytum spp.) (root)",
+        "sampleSummary": "Devil's Claw has human and review-level Harpagophytum context, but the useful shopper lane is extract identity, dose, and safety boundary rather than a front-label relief claim.",
+        "sampleEvidenceRead": "The reviewed support includes Harpagophytum systematic reviews and a randomized extract trial, so the evidence is narrow and condition-adjacent rather than a universal supplement story. Do not present Devil's Claw as treating osteoarthritis, low back pain, inflammation, or any disease; keep the comparison caution-forward.",
+        "sampleShopperMeaning": "When comparing Devil's Claw products, check the exact Harpagophytum source, extract standardization, dose, and warning language before treating two labels as equivalent."
+      },
+      "evidenceGrounding": {
+        "pass": true,
+        "expectedLiveGroundingStatus": "approved_reviewed_row",
+        "reviewedEvidenceFound": true,
+        "primaryLane": "primary_use_context",
+        "reviewedReferenceIds": [
+          "pmid:15369596",
+          "pmid:18236448",
+          "pmid:10101629"
+        ],
+        "routeEvidenceSignalFound": true,
+        "routeEvidenceSignals": [
+          "Devil's Claw has human and review-level Harpagophytum context, but the useful shopper lane",
+          "The reviewed support includes Harpagophytum systematic reviews and a randomized extract tr",
+          "When comparing Devil's Claw products, check the exact Harpagophytum source, extract standa",
+          "Do not present Devil's Claw as treating osteoarthritis, low back pain, inflammation, or an"
+        ],
+        "sourceAcceptedAsApiGrounded": false
+      },
+      "safetyClaimGate": {
+        "pass": true,
+        "unsafeSentences": []
+      }
+    },
+    {
+      "family": "schisandra_chinensis",
+      "productId": "132064",
+      "barcode": "693465251119",
+      "title": "Vital Nutrients, Schisandra Extract, 90 Vegan Capsules (500 mg per Capsule)",
+      "route": {
+        "pass": true,
+        "status": 200,
+        "attempts": 4,
+        "finalSource": "fallback",
+        "finalBackgroundRefreshPending": true,
+        "elapsedMsTotal": 8910,
+        "error": null
+      },
+      "routeProduct": {
+        "productId": "132064",
+        "barcode": "00693465251119",
+        "name": "Vital Nutrients, Schisandra Extract, 90 Vegan Capsules (500 mg per Capsule)",
+        "brand": "Vital Nutrients",
+        "factsStatus": "full"
+      },
+      "familyInference": {
+        "pass": true,
+        "defaultAnchorName": "Schisandra Extract",
+        "scienceRowNames": [
+          "Schisandra Extract"
+        ],
+        "selectedLabel": "Schisandra Extract",
+        "matchedFields": [
+          "defaultAnchor.name",
+          "scientificBackground.selectedLabel",
+          "scienceBlock.ingredientRows.0.name",
+          "product.name"
+        ]
+      },
+      "scientificBackground": {
+        "pass": true,
+        "source": "fallback",
+        "mode": "research_mode",
+        "genericHits": [],
+        "containsFamilySignal": true,
+        "headings": [
+          "Primary use context",
+          "Safety and boundary context",
+          "Form, source, and label context"
+        ],
+        "selectedLabel": "Schisandra Extract",
+        "sampleSummary": "Schisandra chinensis has human randomized-trial and review context, but the useful comparison lane is exact extract identity and intended use setting, not a broad adaptogen promise.",
+        "sampleEvidenceRead": "The reviewed support spans Schisandra trials in specific populations and broader adaptogen review context, so the evidence should stay narrower than immune, liver, fatigue, or hormone-adjacent marketing. Do not generalize menopause, metabolic, fatigue, liver, immune, or adaptogen evidence into disease-treatment or guaranteed-outcome language.",
+        "sampleShopperMeaning": "When comparing Schisandra products, check the plant identity, extract or marker wording, dose, and whether Schisandra is the main active or one part of a botanical blend."
+      },
+      "evidenceGrounding": {
+        "pass": true,
+        "expectedLiveGroundingStatus": "approved_reviewed_row",
+        "reviewedEvidenceFound": true,
+        "primaryLane": "primary_use_context",
+        "reviewedReferenceIds": [
+          "pmid:32260466",
+          "pmid:33710261",
+          "pmid:23538076",
+          "pmid:27763802"
+        ],
+        "routeEvidenceSignalFound": true,
+        "routeEvidenceSignals": [
+          "Schisandra chinensis has human randomized-trial and review context, but the useful compari",
+          "The reviewed support spans Schisandra trials in specific populations and broader adaptogen",
+          "When comparing Schisandra products, check the plant identity, extract or marker wording, d",
+          "Do not generalize menopause, metabolic, fatigue, liver, immune, or adaptogen evidence into"
+        ],
+        "sourceAcceptedAsApiGrounded": false
+      },
+      "safetyClaimGate": {
+        "pass": true,
+        "unsafeSentences": []
+      }
+    },
+    {
+      "family": "red_yeast_rice",
+      "productId": "113184",
+      "barcode": "810180023085",
+      "title": "Amazing Nutrition, Red Yeast Rice, 120 Capsules (600 mg per Capsule)",
+      "route": {
+        "pass": true,
+        "status": 200,
+        "attempts": 4,
+        "finalSource": "fallback",
+        "finalBackgroundRefreshPending": true,
+        "elapsedMsTotal": 7414,
+        "error": null
+      },
+      "routeProduct": {
+        "productId": "113184",
+        "barcode": "00810180023085",
+        "name": "Amazing Nutrition, Red Yeast Rice, 120 Capsules (600 mg per Capsule)",
+        "brand": "Amazing Nutrition",
+        "factsStatus": "full"
+      },
+      "familyInference": {
+        "pass": true,
+        "defaultAnchorName": "Red Yeast Rice Powder (Monascus purpureus)",
+        "scienceRowNames": [
+          "Red Yeast Rice Powder (Monascus purpureus)"
+        ],
+        "selectedLabel": "Red Yeast Rice Powder (Monascus purpureus)",
+        "matchedFields": [
+          "defaultAnchor.name",
+          "scientificBackground.selectedLabel",
+          "scienceBlock.ingredientRows.0.name",
+          "product.name"
+        ]
+      },
+      "scientificBackground": {
+        "pass": true,
+        "source": "fallback",
+        "mode": "research_mode",
+        "genericHits": [],
+        "containsFamilySignal": true,
+        "headings": [
+          "Primary use context",
+          "Extract and standardization context",
+          "Formula and label context"
+        ],
+        "selectedLabel": "Red Yeast Rice Powder (Monascus purpureus)",
+        "sampleSummary": "Red yeast rice has lipid-profile research, but supplement comparison must stay tied to exact red-yeast-rice disclosure, monacolin/citrinin context, dose, and safety-sensitive wording.",
+        "sampleEvidenceRead": "The systematic review supports a lipid-profile research lane, while the product category needs extra caution because monacolin-like positioning can drift into drug-like claims. Hard boundary: do not say red yeast rice treats cholesterol, replaces statins, prevents cardiovascular disease, or is safer than medication; flag medication and clinician-context sensitivity separately.",
+        "sampleShopperMeaning": "When comparing red yeast rice products, check serving amount, monacolin or “citrinin tested” wording, quality claims, and whether the label avoids implying medication-like effects."
+      },
+      "evidenceGrounding": {
+        "pass": true,
+        "expectedLiveGroundingStatus": "approved_reviewed_row",
+        "reviewedEvidenceFound": true,
+        "primaryLane": "primary_use_context",
+        "reviewedReferenceIds": [
+          "pmid:36259545",
+          "pmid:37242171"
+        ],
+        "routeEvidenceSignalFound": true,
+        "routeEvidenceSignals": [
+          "Red yeast rice has lipid-profile research, but supplement comparison must stay tied to exa",
+          "The systematic review supports a lipid-profile research lane, while the product category n",
+          "When comparing red yeast rice products, check serving amount, monacolin or “citrinin teste",
+          "Hard boundary: do not say red yeast rice treats cholesterol, replaces statins, prevents ca"
+        ],
+        "sourceAcceptedAsApiGrounded": false
+      },
+      "safetyClaimGate": {
+        "pass": true,
+        "unsafeSentences": []
+      }
+    },
+    {
+      "family": "pygeum",
+      "productId": "70044",
+      "barcode": "076280037609",
+      "title": "Solaray, Vital Extracts, Pygeum, 50 mg, 60 VegCaps",
+      "route": {
+        "pass": true,
+        "status": 200,
+        "attempts": 4,
+        "finalSource": "fallback",
+        "finalBackgroundRefreshPending": true,
+        "elapsedMsTotal": 7384,
+        "error": null
+      },
+      "routeProduct": {
+        "productId": "70044",
+        "barcode": "00076280037609",
+        "name": "Solaray, Vital Extracts, Pygeum, 50 mg, 60 VegCaps",
+        "brand": "Solaray",
+        "factsStatus": "full"
+      },
+      "familyInference": {
+        "pass": true,
+        "defaultAnchorName": "Pygeum (Pygeum africanum) (bark extract) (Guaranteed to contain 6.5 mg [13%] total Plant Sterols)",
+        "scienceRowNames": [
+          "Pygeum (Pygeum africanum) (bark extract) (Guaranteed to contain 6.5 mg [13%] total Plant Sterols)"
+        ],
+        "selectedLabel": "Pygeum (Pygeum africanum) (bark extract) (Guaranteed to contain 6.5 mg [13%] total Plant Sterols)",
+        "matchedFields": [
+          "defaultAnchor.name",
+          "scientificBackground.selectedLabel",
+          "scienceBlock.ingredientRows.0.name",
+          "product.name"
+        ]
+      },
+      "scientificBackground": {
+        "pass": true,
+        "source": "fallback",
+        "mode": "research_mode",
+        "genericHits": [],
+        "containsFamilySignal": true,
+        "headings": [
+          "Primary use context",
+          "Extract and standardization context",
+          "Formula and label context"
+        ],
+        "selectedLabel": "Pygeum (Pygeum africanum) (bark extract) (Guaranteed to contain 6.5 mg [13%] total Plant Sterols)",
+        "sampleSummary": "Pygeum evidence is concentrated in a narrow male-health/prostate-adjacent context, so the shopper-facing summary should stay about label interpretation and extract disclosure.",
+        "sampleEvidenceRead": "The main review uses treatment-oriented clinical literature, which is useful for evidence boundaries but should not become a product promise on a supplement page. Hard boundary: do not say pygeum treats BPH, prostate disease, urinary symptoms, hair loss, or hormone problems; keep it as label-context and comparison guidance only.",
+        "sampleShopperMeaning": "When comparing pygeum products, check whether the label clearly names Pygeum africanum or Prunus africana, bark extract, extract amount, and whether it is paired with saw palmetto or other men’s-health botanicals."
+      },
+      "evidenceGrounding": {
+        "pass": true,
+        "expectedLiveGroundingStatus": "approved_reviewed_row",
+        "reviewedEvidenceFound": true,
+        "primaryLane": "primary_use_context",
+        "reviewedReferenceIds": [
+          "pmid:11099686",
+          "pmid:39911983",
+          "pmid:11028748"
+        ],
+        "routeEvidenceSignalFound": true,
+        "routeEvidenceSignals": [
+          "Pygeum evidence is concentrated in a narrow male-health/prostate-adjacent context, so the ",
+          "The main review uses treatment-oriented clinical literature, which is useful for evidence ",
+          "When comparing pygeum products, check whether the label clearly names Pygeum africanum or ",
+          "Hard boundary: do not say pygeum treats BPH, prostate disease, urinary symptoms, hair loss"
+        ],
+        "sourceAcceptedAsApiGrounded": false
+      },
+      "safetyClaimGate": {
+        "pass": true,
+        "unsafeSentences": []
+      }
+    },
+    {
+      "family": "milk_thistle",
+      "productId": "70955",
+      "barcode": "898220010974",
+      "title": "California Gold Nutrition, EuroHerbs, Milk Thistle Extract, Euromed Quality, 175 mg, 60 Veggie Capsules",
+      "route": {
+        "pass": true,
+        "status": 200,
+        "attempts": 4,
+        "finalSource": "fallback",
+        "finalBackgroundRefreshPending": true,
+        "elapsedMsTotal": 7405,
+        "error": null
+      },
+      "routeProduct": {
+        "productId": "70955",
+        "barcode": "00898220010974",
+        "name": "California Gold Nutrition, EuroHerbs, Milk Thistle Extract, Euromed Quality, 175 mg, 60 Veggie Capsules",
+        "brand": "California Gold Nutrition",
+        "factsStatus": "full"
+      },
+      "familyInference": {
+        "pass": true,
+        "defaultAnchorName": "Milk Thistle Extract(Silybum marianum) (seed)",
+        "scienceRowNames": [
+          "Milk Thistle Extract(Silybum marianum) (seed)"
+        ],
+        "selectedLabel": "Milk Thistle Extract(Silybum marianum) (seed)",
+        "matchedFields": [
+          "defaultAnchor.name",
+          "scientificBackground.selectedLabel",
+          "scienceBlock.ingredientRows.0.name",
+          "product.name"
+        ]
+      },
+      "scientificBackground": {
+        "pass": true,
+        "source": "fallback",
+        "mode": "research_mode",
+        "genericHits": [],
+        "containsFamilySignal": true,
+        "headings": [
+          "Primary use context",
+          "Extract and standardization context",
+          "Formula and label context"
+        ],
+        "selectedLabel": "Milk Thistle Extract(Silybum marianum) (seed)",
+        "sampleSummary": "Milk thistle evidence centers on silymarin and liver-adjacent clinical literature, so shopper-facing copy should focus on exact extract and standardization disclosure.",
+        "sampleEvidenceRead": "The systematic review and later reviews support bounded interpretation; they do not justify saying every milk-thistle label supports liver detox, liver repair, or disease treatment. Hard boundary: do not say milk thistle treats NAFLD/NASH, hepatitis, liver disease, toxin exposure, hangovers, or detoxification; keep wording comparison-safe.",
+        "sampleShopperMeaning": "When comparing milk thistle products, check Silybum marianum, silymarin percentage, extract amount, phytosome wording, and whether it is paired with NAC, dandelion, or detox-positioned botanicals."
+      },
+      "evidenceGrounding": {
+        "pass": true,
+        "expectedLiveGroundingStatus": "approved_reviewed_row",
+        "reviewedEvidenceFound": true,
+        "primaryLane": "primary_use_context",
+        "reviewedReferenceIds": [
+          "pmid:18334810",
+          "pmid:32065376",
+          "pmid:38579127"
+        ],
+        "routeEvidenceSignalFound": true,
+        "routeEvidenceSignals": [
+          "Milk thistle evidence centers on silymarin and liver-adjacent clinical literature, so shop",
+          "The systematic review and later reviews support bounded interpretation; they do not justif",
+          "When comparing milk thistle products, check Silybum marianum, silymarin percentage, extrac",
+          "Hard boundary: do not say milk thistle treats NAFLD/NASH, hepatitis, liver disease, toxin "
+        ],
+        "sourceAcceptedAsApiGrounded": false
+      },
+      "safetyClaimGate": {
+        "pass": true,
+        "unsafeSentences": []
+      }
+    },
+    {
+      "family": "tribulus_terrestris",
+      "productId": "48458",
+      "barcode": "898220006632",
+      "title": "California Gold Nutrition, Sport, Tribulus, 1,000 mg, 60 Tablets",
+      "route": {
+        "pass": true,
+        "status": 200,
+        "attempts": 4,
+        "finalSource": "fallback",
+        "finalBackgroundRefreshPending": true,
+        "elapsedMsTotal": 7451,
+        "error": null
+      },
+      "routeProduct": {
+        "productId": "48458",
+        "barcode": "00898220006632",
+        "name": "California Gold Nutrition, Sport, Tribulus, 1,000 mg, 60 Tablets",
+        "brand": "California Gold Nutrition",
+        "factsStatus": "full"
+      },
+      "familyInference": {
+        "pass": true,
+        "defaultAnchorName": "Tribulus Extract (Tribulus terrestris) (whole herb/fruit)",
+        "scienceRowNames": [
+          "Tribulus Extract (Tribulus terrestris) (whole herb/fruit)"
+        ],
+        "selectedLabel": "Tribulus Extract (Tribulus terrestris) (whole herb/fruit)",
+        "matchedFields": [
+          "defaultAnchor.name",
+          "scientificBackground.selectedLabel",
+          "scienceBlock.ingredientRows.0.name",
+          "product.name"
+        ]
+      },
+      "scientificBackground": {
+        "pass": true,
+        "source": "fallback",
+        "mode": "research_mode",
+        "genericHits": [],
+        "containsFamilySignal": true,
+        "headings": [
+          "Primary use context",
+          "Extract and standardization context",
+          "Formula and label context"
+        ],
+        "selectedLabel": "Tribulus Extract (Tribulus terrestris) (whole herb/fruit)",
+        "sampleSummary": "Tribulus evidence is best used to explain why testosterone, libido, and performance labels need skepticism and exact extract disclosure rather than hype.",
+        "sampleEvidenceRead": "The systematic review directly challenges broad aphrodisiac and performance-enhancement assumptions, so evidenceRead should help users discount overconfident marketing. Hard boundary: do not say tribulus boosts testosterone, treats sexual dysfunction, improves fertility, treats prostate disease, or guarantees athletic performance.",
+        "sampleShopperMeaning": "When comparing tribulus products, check Tribulus terrestris extract, plant part, protodioscin or saponin standardization, dose, and whether the formula is making hormone-heavy claims."
+      },
+      "evidenceGrounding": {
+        "pass": true,
+        "expectedLiveGroundingStatus": "approved_reviewed_row",
+        "reviewedEvidenceFound": true,
+        "primaryLane": "primary_use_context",
+        "reviewedReferenceIds": [
+          "pmid:24559105",
+          "pmid:32408715",
+          "pmid:34046319"
+        ],
+        "routeEvidenceSignalFound": true,
+        "routeEvidenceSignals": [
+          "Tribulus evidence is best used to explain why testosterone, libido, and performance labels",
+          "The systematic review directly challenges broad aphrodisiac and performance-enhancement as",
+          "When comparing tribulus products, check Tribulus terrestris extract, plant part, protodios",
+          "Hard boundary: do not say tribulus boosts testosterone, treats sexual dysfunction, improve"
+        ],
+        "sourceAcceptedAsApiGrounded": false
+      },
+      "safetyClaimGate": {
+        "pass": true,
+        "unsafeSentences": []
+      }
+    },
+    {
+      "family": "chaga_mushroom",
+      "productId": "117779",
+      "barcode": "087614113852",
+      "title": "Swanson, Full Spectrum® Chaga Mushroom, 400 mg, 60 Capsules",
+      "route": {
+        "pass": true,
+        "status": 200,
+        "attempts": 4,
+        "finalSource": "fallback",
+        "finalBackgroundRefreshPending": true,
+        "elapsedMsTotal": 7468,
+        "error": null
+      },
+      "routeProduct": {
+        "productId": "117779",
+        "barcode": "00087614113852",
+        "name": "Swanson, Full Spectrum® Chaga Mushroom, 400 mg, 60 Capsules",
+        "brand": "Swanson",
+        "factsStatus": "full"
+      },
+      "familyInference": {
+        "pass": true,
+        "defaultAnchorName": "Chaga Mushroom (Inonotus obliquus)(mycelium)",
+        "scienceRowNames": [
+          "Chaga Mushroom (Inonotus obliquus)(mycelium)"
+        ],
+        "selectedLabel": "Chaga Mushroom (Inonotus obliquus)(mycelium)",
+        "matchedFields": [
+          "defaultAnchor.name",
+          "scientificBackground.selectedLabel",
+          "scienceBlock.ingredientRows.0.name",
+          "product.name"
+        ]
+      },
+      "scientificBackground": {
+        "pass": true,
+        "source": "fallback",
+        "mode": "research_mode",
+        "genericHits": [],
+        "containsFamilySignal": true,
+        "headings": [
+          "Primary use context",
+          "Safety and boundary context",
+          "Form, source, and label context"
+        ],
+        "selectedLabel": "Chaga Mushroom (Inonotus obliquus)(mycelium)",
+        "sampleSummary": "The useful way to read Chaga Mushroom in this formula depends on its role as a lead active, not just on the broad category it belongs to.",
+        "sampleEvidenceRead": "This is a formula-aware orientation section, not a universal claim about the ingredient in every product.",
+        "sampleShopperMeaning": "Use Chaga Mushroom as one part of the formula map, then compare how clearly the label separates the lead active from companion or structural lines."
+      },
+      "evidenceGrounding": {
+        "pass": true,
+        "expectedLiveGroundingStatus": "blocked_no_reviewed_row",
+        "reviewedEvidenceFound": false,
+        "primaryLane": "primary_use_context",
+        "reviewedReferenceIds": [],
+        "routeEvidenceSignalFound": false,
+        "routeEvidenceSignals": [],
+        "sourceAcceptedAsApiGrounded": false
+      },
+      "safetyClaimGate": {
+        "pass": true,
+        "unsafeSentences": []
+      }
+    },
+    {
+      "family": "nadh",
+      "productId": "155861",
+      "barcode": "076280595499",
+      "title": "Solaray, NADH, 10 mg, 30 VegCaps",
+      "route": {
+        "pass": true,
+        "status": 200,
+        "attempts": 4,
+        "finalSource": "fallback",
+        "finalBackgroundRefreshPending": true,
+        "elapsedMsTotal": 7474,
+        "error": null
+      },
+      "routeProduct": {
+        "productId": "155861",
+        "barcode": "00076280595499",
+        "name": "Solaray, NADH, 10 mg, 30 VegCaps",
+        "brand": "Solaray",
+        "factsStatus": "full"
+      },
+      "familyInference": {
+        "pass": true,
+        "defaultAnchorName": "NADH (PANMOL NADH)",
+        "scienceRowNames": [
+          "NADH (PANMOL NADH)"
+        ],
+        "selectedLabel": "NADH (PANMOL NADH)",
+        "matchedFields": [
+          "defaultAnchor.name",
+          "scientificBackground.selectedLabel",
+          "scienceBlock.ingredientRows.0.name",
+          "product.name"
+        ]
+      },
+      "scientificBackground": {
+        "pass": true,
+        "source": "fallback",
+        "mode": "research_mode",
+        "genericHits": [],
+        "containsFamilySignal": true,
+        "headings": [
+          "Primary use context",
+          "Safety and boundary context",
+          "Form, source, and label context"
+        ],
+        "selectedLabel": "NADH (PANMOL NADH)",
+        "sampleSummary": "The useful way to read NADH in this formula depends on its role as a lead active, not just on the broad category it belongs to.",
+        "sampleEvidenceRead": "This is a formula-aware orientation section, not a universal claim about the ingredient in every product.",
+        "sampleShopperMeaning": "Use NADH as one part of the formula map, then compare how clearly the label separates the lead active from companion or structural lines."
+      },
+      "evidenceGrounding": {
+        "pass": true,
+        "expectedLiveGroundingStatus": "blocked_no_reviewed_row",
+        "reviewedEvidenceFound": false,
+        "primaryLane": "primary_use_context",
+        "reviewedReferenceIds": [],
+        "routeEvidenceSignalFound": false,
+        "routeEvidenceSignals": [],
+        "sourceAcceptedAsApiGrounded": false
+      },
+      "safetyClaimGate": {
+        "pass": true,
+        "unsafeSentences": []
+      }
+    }
+  ]
+}

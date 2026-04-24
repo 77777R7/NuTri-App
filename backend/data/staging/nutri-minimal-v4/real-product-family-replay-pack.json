@@ -1,6 +1,6 @@
 {
   "version": "nutri_minimal_v4_real_product_family_replay.v1",
-  "generated_at": "2026-04-24T00:31:47.086Z",
+  "generated_at": "2026-04-24T04:18:39.563Z",
   "source_files": [
     "backend/data/personalization/goal_navigator_candidate_bundle.v1.json",
     "data/validation/stable-gate-baseline.v1.json",
@@ -66,15 +66,15 @@
       "category": "other",
       "replay_product": {
         "source_file": "output/rapidapi_yield_first_apply_candidate_1776541800000_retry1600/raw_brand_fetches.json",
-        "product_id": "77809",
-        "barcode": "898220011773",
-        "url": "https://www.iherb.com/pr/california-gold-nutrition-same-butanedisulfonate-400-mg-60-enteric-coated-tablets/77809",
+        "product_id": "96277",
+        "barcode": "898220016518",
+        "url": "https://www.iherb.com/pr/california-gold-nutrition-same-disulfate-tosylate-400-mg-60-enteric-coated-tablets/96277",
         "brand": "California Gold Nutrition",
-        "title": "California Gold Nutrition, SAMe, Butanedisulfonate, 400 mg, 60 Enteric Coated Tablets",
+        "title": "California Gold Nutrition, SAMe, Disulfate Tosylate, 400 mg, 60 Enteric Coated Tablets",
         "facts_quality": "structured_ingredients",
         "ingredient_rows": [
           {
-            "name": "SAMe (S-Adenosyl Methionine)(from 800 mg of Ademetionine 1,4-Butanedisulfonate)",
+            "name": "SAME (S-Adenosyl L-Methionine)(from S-Adenosyl-L-Methionine Disulfate Tosylate)",
             "amountText": "400 mg"
           }
         ]
@@ -85,7 +85,7 @@
         "context_family": "same",
         "anchor_family": "same",
         "selected_descriptor_family": "same",
-        "selected_descriptor_name": "SAMe",
+        "selected_descriptor_name": "SAME (S-Adenosyl L-Methionine)(from S-Adenosyl-L-Methionine Disulfate Tosylate)",
         "descriptor_families": [
           "same"
         ]
@@ -139,16 +139,16 @@
       "category": "lipid",
       "replay_product": {
         "source_file": "output/rapidapi_yield_first_apply_candidate_1776541800000_retry1600/raw_brand_fetches.json",
-        "product_id": "118151",
-        "barcode": "087614025261",
-        "url": "https://www.iherb.com/pr/swanson-tocotrienols-from-annatto-50-mg-60-softgels/118151",
+        "product_id": "118598",
+        "barcode": "087614026800",
+        "url": "https://www.iherb.com/pr/swanson-tocotrienols-100-mg-60-liquid-caps/118598",
         "brand": "Swanson",
-        "title": "Swanson, Tocotrienols From Annatto, 50 mg, 60 Softgels",
+        "title": "Swanson, Tocotrienols, 100 mg, 60 Liquid Caps",
         "facts_quality": "structured_ingredients",
         "ingredient_rows": [
           {
-            "name": "Tocotrienols (from DeltaGold® Tocotrienols from annatto) delta-Tocotrienols minimum 81% gamma-Tocotrienols minimum 8%",
-            "amountText": "50 mg"
+            "name": "Tocotrienols(from DeltaGold® tocotrienols)delta-Tocotrienols minimum 84%gamma-Tocotrienols minimum 8%",
+            "amountText": "100 mg"
           }
         ]
       },
@@ -158,7 +158,7 @@
         "context_family": "tocotrienols",
         "anchor_family": "tocotrienols",
         "selected_descriptor_family": "tocotrienols",
-        "selected_descriptor_name": "Tocotrienols From Annatto",
+        "selected_descriptor_name": "Tocotrienols(from DeltaGold® tocotrienols)delta-Tocotrienols minimum 84%gamma-Tocotrienols minimum 8%",
         "descriptor_families": [
           "tocotrienols"
         ]
@@ -212,24 +212,16 @@
       "category": "botanical",
       "replay_product": {
         "source_file": "output/rapidapi_yield_first_apply_candidate_1776541800000_retry1600/raw_brand_fetches.json",
-        "product_id": "541",
-        "barcode": "733739046505",
-        "url": "https://www.iherb.com/pr/now-foods-devil-s-claw-100-veg-capsules-83-mg-per-capsule/541",
-        "brand": "NOW Foods",
-        "title": "NOW Foods, Devil's Claw, 100 Veg Capsules (83 mg per Capsule)",
+        "product_id": "118464",
+        "barcode": "087614019598",
+        "url": "https://www.iherb.com/pr/swanson-full-spectrum-devil-s-claw-500-mg-100-capsules/118464",
+        "brand": "Swanson",
+        "title": "Swanson, Full Spectrum® Devil's Claw, 500 mg, 100 Capsules",
         "facts_quality": "structured_ingredients",
         "ingredient_rows": [
           {
-            "name": "Calories",
-            "amountText": "5"
-          },
-          {
-            "name": "Total Carbohydrate",
-            "amountText": "<1 g"
-          },
-          {
-            "name": "Devil's Claw Root Extract(Harpagophytum procumbens and/or Harpagophytum zeyheri)",
-            "amountText": "166 mg"
+            "name": "Devil’s Claw (Harpagophytum spp.) (root)",
+            "amountText": "1 g"
           }
         ]
       },
@@ -239,7 +231,7 @@
         "context_family": "devil_s_claw",
         "anchor_family": "devil_s_claw",
         "selected_descriptor_family": "devil_s_claw",
-        "selected_descriptor_name": "Devil's Claw",
+        "selected_descriptor_name": "Devil’s Claw (Harpagophytum spp.) (root)",
         "descriptor_families": [
           "devil_s_claw"
         ]
@@ -385,7 +377,7 @@
         "context_family": "red_yeast_rice",
         "anchor_family": "red_yeast_rice",
         "selected_descriptor_family": "red_yeast_rice",
-        "selected_descriptor_name": "Red Yeast Rice",
+        "selected_descriptor_name": "Red Yeast Rice Powder (Monascus purpureus)",
         "descriptor_families": [
           "red_yeast_rice"
         ]
@@ -439,33 +431,17 @@
       "safety_boundary_tier": "high",
       "category": "botanical",
       "replay_product": {
-        "source_file": "backend/data/personalization/goal_navigator_candidate_bundle.v1.json",
-        "product_id": "147585",
-        "barcode": "00810078474555",
-        "url": "https://www.iherb.com/pr/vitamatic-saw-palmetto-nettle-leaf-pumpkin-pygeum-180-veg-capsules/147585",
-        "brand": "Vitamatic",
-        "title": "Vitamatic, Saw Palmetto + Nettle Leaf/Pumpkin/Pygeum, 180 Veg Capsules",
+        "source_file": "output/onboarding_second20_rapidapi_wave_1776562000000/raw_brand_fetches.json",
+        "product_id": "70044",
+        "barcode": "076280037609",
+        "url": "https://www.iherb.com/pr/solaray-vital-extracts-pygeum-50-mg-60-vegcaps/70044",
+        "brand": "Solaray",
+        "title": "Solaray, Vital Extracts, Pygeum, 50 mg, 60 VegCaps",
         "facts_quality": "structured_ingredients",
         "ingredient_rows": [
           {
-            "name": "Saw Palmetto Extract 10:1 (Serenoa repens) (berry)",
-            "amountText": "350 mg"
-          },
-          {
-            "name": "Saw Palmetto Extract (Serenoa repens) (berry) (45% fatty Acid)",
-            "amountText": "150 mg"
-          },
-          {
-            "name": "Nettle Leaf Powder (Urtica spp)",
-            "amountText": "300 mg"
-          },
-          {
-            "name": "Pumpkin Seed Extract (Cucurbita pepo)",
-            "amountText": "150 mg"
-          },
-          {
-            "name": "Pygeum Extract (Bark) (Pygeum africanum)",
-            "amountText": "100 mg"
+            "name": "Pygeum (Pygeum africanum) (bark extract) (Guaranteed to contain 6.5 mg [13%] total Plant Sterols)",
+            "amountText": "50 mg"
           }
         ]
       },
@@ -475,7 +451,7 @@
         "context_family": "pygeum",
         "anchor_family": "pygeum",
         "selected_descriptor_family": "pygeum",
-        "selected_descriptor_name": "Saw Palmetto + Nettle Leaf/Pumpkin/Pygeum",
+        "selected_descriptor_name": "Pygeum (Pygeum africanum) (bark extract) (Guaranteed to contain 6.5 mg [13%] total Plant Sterols)",
         "descriptor_families": [
           "pygeum"
         ]
@@ -529,21 +505,17 @@
       "safety_boundary_tier": "high",
       "category": "botanical",
       "replay_product": {
-        "source_file": "backend/data/personalization/goal_navigator_candidate_bundle.v1.json",
-        "product_id": "147581",
-        "barcode": "00810078474814",
-        "url": "https://www.iherb.com/pr/vitamatic-milk-thistle-dandelion-root-180-vegetarian-capsules/147581",
-        "brand": "Vitamatic",
-        "title": "Vitamatic, Milk Thistle + Dandelion Root, 180 Vegetarian Capsules",
+        "source_file": "output/rapidapi_yield_first_apply_candidate_1776541800000_retry1600/raw_brand_fetches.json",
+        "product_id": "70955",
+        "barcode": "898220010974",
+        "url": "https://www.iherb.com/pr/california-gold-nutrition-euroherbs-milk-thistle-extract-euromed-quality-175-mg-60-veggie-capsules/70955",
+        "brand": "California Gold Nutrition",
+        "title": "California Gold Nutrition, EuroHerbs, Milk Thistle Extract, Euromed Quality, 175 mg, 60 Veggie Capsules",
         "facts_quality": "structured_ingredients",
         "ingredient_rows": [
           {
-            "name": "Milk Thistle Extract 50:1(Silybum marianum) (seed)(Equivalent to 25, 000 mg of Milk Thistle)",
-            "amountText": "500 mg"
-          },
-          {
-            "name": "Dandelion Root Extract 50:1(Taraxacum officinale)(Equivalent to 5000 mg of Dandelion Root)",
-            "amountText": "100 mg"
+            "name": "Milk Thistle Extract(Silybum marianum) (seed)(Standardized to 80% Silymarin via UV-VIS)",
+            "amountText": "175 mg"
           }
         ]
       },
@@ -553,7 +525,7 @@
         "context_family": "milk_thistle",
         "anchor_family": "milk_thistle",
         "selected_descriptor_family": "milk_thistle",
-        "selected_descriptor_name": "Milk Thistle + Dandelion Root",
+        "selected_descriptor_name": "Milk Thistle Extract",
         "descriptor_families": [
           "milk_thistle"
         ]
@@ -608,32 +580,16 @@
       "category": "botanical",
       "replay_product": {
         "source_file": "output/rapidapi_yield_first_apply_candidate_1776541800000_retry1600/raw_brand_fetches.json",
-        "product_id": "61852",
-        "barcode": "733739022738",
-        "url": "https://www.iherb.com/pr/now-foods-sports-tribulus-extreme-men-s-health-90-veg-capsules/61852",
-        "brand": "NOW Foods",
-        "title": "NOW Foods, Sports, Tribulus Extreme, Men's Health, 90 Veg Capsules",
+        "product_id": "48458",
+        "barcode": "898220006632",
+        "url": "https://www.iherb.com/pr/california-gold-nutrition-sport-tribulus-1-000-mg-60-tablets/48458",
+        "brand": "California Gold Nutrition",
+        "title": "California Gold Nutrition, Sport, Tribulus, 1,000 mg, 60 Tablets",
         "facts_quality": "structured_ingredients",
         "ingredient_rows": [
           {
-            "name": "Tribulus Extract (Tribulus terrestris) (Fruit/Aerial Parts)",
-            "amountText": "1 g (1,000 mg)"
-          },
-          {
-            "name": "Organic Raw Maca Root (Lepidium meyenii) (6:1 Concentrate)",
-            "amountText": "400 mg"
-          },
-          {
-            "name": "Epimedium Extract Complex (Horny Goat Weed) (Aerial Parts)",
-            "amountText": "20 mg"
-          },
-          {
-            "name": "Green Tea Extract (Camellia sinensis (Leaf)",
-            "amountText": "30 mg"
-          },
-          {
-            "name": "Damiana (Turnera diffusa) (Leaf)",
-            "amountText": "30 mg"
+            "name": "Tribulus Extract (Tribulus terrestris) (whole herb/fruit) (std. to 45% Saponins)",
+            "amountText": "1,000 mg"
           }
         ]
       },
@@ -643,7 +599,7 @@
         "context_family": "tribulus_terrestris",
         "anchor_family": "tribulus_terrestris",
         "selected_descriptor_family": "tribulus_terrestris",
-        "selected_descriptor_name": "Tribulus Extreme",
+        "selected_descriptor_name": "Tribulus Extract (Tribulus terrestris) (whole herb/fruit) (std. to 45% Saponins)",
         "descriptor_families": [
           "tribulus_terrestris"
         ]
@@ -717,7 +673,7 @@
         "context_family": "chaga_mushroom",
         "anchor_family": "chaga_mushroom",
         "selected_descriptor_family": "chaga_mushroom",
-        "selected_descriptor_name": "Full Spectrum Chaga Mushroom",
+        "selected_descriptor_name": "Chaga Mushroom (Inonotus obliquus)(mycelium)",
         "descriptor_families": [
           "chaga_mushroom"
         ]
@@ -863,30 +819,28 @@
         "context_family": "artichoke_extract",
         "anchor_family": "artichoke_extract",
         "selected_descriptor_family": "artichoke_extract",
-        "selected_descriptor_name": "Artichoke Extract",
+        "selected_descriptor_name": "Artichoke Extract Blend[Artichoke Extract (Cynara scolymus) (Leaf), Maltodextrin] (min. 5% Caffeoylquinic Acid as Cynarin)",
         "descriptor_families": [
           "artichoke_extract"
         ]
       },
       "scientific_background": {
         "pass": true,
-        "mode": "research_mode",
+        "mode": "label_context_mode",
         "family": "artichoke_extract",
         "headings": [
-          "Primary use context",
-          "Safety and boundary context",
-          "Form, source, and label context"
+          "What this line means on the label",
+          "Why it matters for comparison"
         ],
         "heading_ids": [
-          "primary_use_context",
-          "safety_and_boundary_context",
-          "form_source_and_label_context"
+          "what_this_line_means",
+          "why_it_matters_for_comparison"
         ],
         "generic_hits": [],
         "contains_family_label": true,
-        "sample_summary": "Artichoke extract is most useful here as a comparison lens around extract/source identity, marker wording, and formula role, not as a broad front-label promise.",
-        "sample_evidence_read": "The reviewed PubMed set includes \"Functional and Therapeutic Potential of Cynara scolymus in Health Benefits.\", so this lane should be read as bounded human or review-level context rather than a universal product claim. Hard boundary: do not present Artichoke Extract as treating, preventing, or curing disease, replacing medication, or guaranteeing outcomes; keep comparison on disclosed identity, amount, form/source, and safety cautions.",
-        "sample_shopper_meaning": "When comparing Artichoke extract products, check identity, amount, source/form disclosure, and safety cautions before treating two labels as equivalent."
+        "sample_summary": "This blend line is better interpreted as a label-structure line for this product than as a stand-alone research claim.",
+        "sample_evidence_read": "This is a label-meaning section rather than a traditional research summary.",
+        "sample_shopper_meaning": "Use This blend line as context first, then rank comparison weight using the clearer ingredient rows around it."
       },
       "evidence_grounding": {
         "pass": true,
@@ -990,16 +944,16 @@
       "category": "botanical",
       "replay_product": {
         "source_file": "output/rapidapi_yield_first_apply_candidate_1776541800000_retry1600/raw_brand_fetches.json",
-        "product_id": "97396",
-        "barcode": "898220016938",
-        "url": "https://www.iherb.com/pr/california-gold-nutrition-bee-propolis-1-000-mg-90-capsules/97396",
+        "product_id": "61839",
+        "barcode": "898220009459",
+        "url": "https://www.iherb.com/pr/california-gold-nutrition-bee-propolis-2x-concentrated-extract-500-mg-90-veggie-caps/61839",
         "brand": "California Gold Nutrition",
-        "title": "California Gold Nutrition, Bee Propolis, 1,000 mg, 90 Capsules",
+        "title": "California Gold Nutrition, Bee Propolis 2X, Concentrated Extract, 500 mg, 90 Veggie Caps",
         "facts_quality": "structured_ingredients",
         "ingredient_rows": [
           {
-            "name": "Bee Propolis Extract Powder (5:1)",
-            "amountText": "200 mg"
+            "name": "Bee Propolis Resin Extract Powder (2:1)",
+            "amountText": "500 mg"
           }
         ]
       },
@@ -1009,7 +963,7 @@
         "context_family": "bee_propolis",
         "anchor_family": "bee_propolis",
         "selected_descriptor_family": "bee_propolis",
-        "selected_descriptor_name": "Bee Propolis",
+        "selected_descriptor_name": "Bee Propolis Resin Extract Powder (2:1)",
         "descriptor_families": [
           "bee_propolis"
         ]
@@ -1063,20 +1017,16 @@
       "category": "other",
       "replay_product": {
         "source_file": "output/rapidapi_yield_first_apply_candidate_1776541800000_retry1600/raw_brand_fetches.json",
-        "product_id": "9082",
-        "barcode": "743715008977",
-        "url": "https://www.iherb.com/pr/bluebonnet-nutrition-betaine-hcl-pepsin-180-vegetable-capsules/9082",
-        "brand": "Bluebonnet Nutrition",
-        "title": "Bluebonnet Nutrition, Betaine HCl & Pepsin, 180 Vegetable Capsules",
+        "product_id": "24201",
+        "barcode": "097467043701",
+        "url": "https://www.iherb.com/pr/naturesplus-betaine-hydrochloride-600-mg-90-tablets/24201",
+        "brand": "NaturesPlus",
+        "title": "NaturesPlus, Betaine Hydrochloride, 600 mg, 90 Tablets",
         "facts_quality": "structured_ingredients",
         "ingredient_rows": [
           {
-            "name": "Betaine HCl (betaine hydrochloride)",
-            "amountText": "650 mg"
-          },
-          {
-            "name": "Pepsin (1:10,000)",
-            "amountText": "130 mg"
+            "name": "Betaine HCl",
+            "amountText": "600 mg"
           }
         ]
       },
@@ -1086,7 +1036,7 @@
         "context_family": "betaine",
         "anchor_family": "betaine",
         "selected_descriptor_family": "betaine",
-        "selected_descriptor_name": "Betaine HCl & Pepsin",
+        "selected_descriptor_name": "Betaine HCl",
         "descriptor_families": [
           "betaine"
         ]
@@ -1140,20 +1090,16 @@
       "category": "botanical",
       "replay_product": {
         "source_file": "output/rapidapi_yield_first_apply_candidate_1776541800000_retry1600/raw_brand_fetches.json",
-        "product_id": "144172",
-        "barcode": "021078024828",
-        "url": "https://www.iherb.com/pr/source-naturals-bitter-melon-120-capsules/144172",
-        "brand": "Source Naturals",
-        "title": "Source Naturals, Bitter Melon, 120 Capsules",
+        "product_id": "116257",
+        "barcode": "087614111612",
+        "url": "https://www.iherb.com/pr/swanson-full-spectrum-bitter-melon-500-mg-60-vegan-capsules/116257",
+        "brand": "Swanson",
+        "title": "Swanson, Full Spectrum® Bitter Melon, 500 mg, 60 Vegan Capsules",
         "facts_quality": "structured_ingredients",
         "ingredient_rows": [
           {
-            "name": "Calcium(as dibasic calcium phosphate)",
-            "amountText": "44 mg"
-          },
-          {
-            "name": "Bitter Melon Fruit Extract",
-            "amountText": "1 g"
+            "name": "Bitter Melon (Momordica charantia)(fruit)",
+            "amountText": "500 mg"
           }
         ]
       },
@@ -1163,7 +1109,7 @@
         "context_family": "bitter_melon",
         "anchor_family": "bitter_melon",
         "selected_descriptor_family": "bitter_melon",
-        "selected_descriptor_name": "Bitter Melon",
+        "selected_descriptor_name": "Bitter Melon (Momordica charantia)(fruit)",
         "descriptor_families": [
           "bitter_melon"
         ]
@@ -1217,24 +1163,16 @@
       "category": "botanical",
       "replay_product": {
         "source_file": "output/rapidapi_yield_first_apply_candidate_1776541800000_retry1600/raw_brand_fetches.json",
-        "product_id": "433",
-        "barcode": "733739046079",
-        "url": "https://www.iherb.com/pr/now-foods-black-cohosh-root-80-mg-90-veg-capsules/433",
-        "brand": "NOW Foods",
-        "title": "NOW Foods, Black Cohosh Root, 80 mg, 90 Veg Capsules",
+        "product_id": "118261",
+        "barcode": "087614113449",
+        "url": "https://www.iherb.com/pr/swanson-full-spectrum-black-cohosh-540-mg-60-capsules/118261",
+        "brand": "Swanson",
+        "title": "Swanson, Full Spectrum® Black Cohosh, 540 mg, 60 Capsules",
         "facts_quality": "structured_ingredients",
         "ingredient_rows": [
           {
-            "name": "Black Cohosh Extract (Actaea racemosa) (Root) [Standardized to 2.5% total Triterpene Glycosides, calculated as 27-Deoxyactein (2 mg)]",
-            "amountText": "80 mg"
-          },
-          {
-            "name": "Licorice (Glycyrrhiza glabra) (Root)",
-            "amountText": "125 mg"
-          },
-          {
-            "name": "Dong Quai (Angelica sinensis) (Rhizome/Root)",
-            "amountText": "125 mg"
+            "name": "Black Cohosh(Cimicifuga racemosa)(root and rhizome)",
+            "amountText": "540 mg"
           }
         ]
       },
@@ -1244,7 +1182,7 @@
         "context_family": "black_cohosh",
         "anchor_family": "black_cohosh",
         "selected_descriptor_family": "black_cohosh",
-        "selected_descriptor_name": "Black Cohosh Root",
+        "selected_descriptor_name": "Black Cohosh(Cimicifuga racemosa)(root and rhizome)",
         "descriptor_families": [
           "black_cohosh"
         ]
@@ -1298,24 +1236,16 @@
       "category": "lipid",
       "replay_product": {
         "source_file": "output/rapidapi_yield_first_apply_candidate_1776541800000_retry1600/raw_brand_fetches.json",
-        "product_id": "75398",
-        "barcode": "021078027577",
-        "url": "https://www.iherb.com/pr/source-naturals-black-seed-oil-120-softgels-500-mg-per-softgel/75398",
-        "brand": "Source Naturals",
-        "title": "Source Naturals, Black Seed Oil, 120 Softgels (500 mg per Softgel)",
+        "product_id": "117675",
+        "barcode": "087614113616",
+        "url": "https://www.iherb.com/pr/swanson-black-cumin-seed-full-spectrum-400-mg-60-capsules/117675",
+        "brand": "Swanson",
+        "title": "Swanson, Black Cumin Seed, Full Spectrum, 400 mg, 60 Capsules",
         "facts_quality": "structured_ingredients",
         "ingredient_rows": [
           {
-            "name": "Calories",
-            "amountText": "10"
-          },
-          {
-            "name": "Total Fat",
-            "amountText": "1 g"
-          },
-          {
-            "name": "Black Cumin Seed Oil (Nigella sativa)",
-            "amountText": "1 g"
+            "name": "Black Cumin (Nigella sativa) (seed)",
+            "amountText": "400 mg"
           }
         ]
       },
@@ -1325,7 +1255,7 @@
         "context_family": "black_seed_oil",
         "anchor_family": "black_seed_oil",
         "selected_descriptor_family": "black_seed_oil",
-        "selected_descriptor_name": "Black Seed Oil",
+        "selected_descriptor_name": "Black Cumin (Nigella sativa) (seed)",
         "descriptor_families": [
           "black_seed_oil"
         ]
@@ -1451,29 +1381,17 @@
       "safety_boundary_tier": "high",
       "category": "other",
       "replay_product": {
-        "source_file": "output/rapidapi_yield_first_apply_candidate_1776541800000_retry1600/raw_brand_fetches.json",
-        "product_id": "83281",
-        "barcode": "898220012411",
-        "url": "https://www.iherb.com/pr/california-gold-nutrition-theanineup-l-theanine-caffeine-plus-cocoa-and-matcha-60-veggie-capsules/83281",
-        "brand": "California Gold Nutrition",
-        "title": "California Gold Nutrition, TheanineUP™, L-Theanine & Caffeine Plus Cocoa and Matcha, 60 Veggie Capsules",
+        "source_file": "output/onboarding_remaining28_rapidapi_wave_retry_1776571000000/raw_brand_fetches.json",
+        "product_id": "147595",
+        "barcode": "810078474418",
+        "url": "https://www.iherb.com/pr/vitamatic-caffeine-200-mg-250-tablets/147595",
+        "brand": "Vitamatic",
+        "title": "Vitamatic, Caffeine, 200 mg, 250 Tablets",
         "facts_quality": "structured_ingredients",
         "ingredient_rows": [
           {
-            "name": "L-Theanine",
-            "amountText": "100 mg"
-          },
-          {
-            "name": "Caffeine(from Organic Coffee Extract [Coffea arabica] [fruit])",
-            "amountText": "100 mg"
-          },
-          {
-            "name": "Organic Cocoa Powder (Theobroma cacao) (seed)",
-            "amountText": "100 mg"
-          },
-          {
-            "name": "Matcha Green Tea Powder (Camellia sinensis) (whole plant)",
-            "amountText": "100 mg"
+            "name": "Caffeine (as Caffeine Anhydrous)",
+            "amountText": "200 mg"
           }
         ]
       },
@@ -1483,7 +1401,7 @@
         "context_family": "caffeine",
         "anchor_family": "caffeine",
         "selected_descriptor_family": "caffeine",
-        "selected_descriptor_name": "L-Theanine & Caffeine Plus Cocoa and Matcha",
+        "selected_descriptor_name": "Caffeine",
         "descriptor_families": [
           "caffeine"
         ]
@@ -1560,7 +1478,7 @@
         "context_family": "calcium_d_glucarate",
         "anchor_family": "calcium_d_glucarate",
         "selected_descriptor_family": "calcium_d_glucarate",
-        "selected_descriptor_name": "Calcium D-Glucarate",
+        "selected_descriptor_name": "Calcium D-Glucarate (Tetrahydrate Form)",
         "descriptor_families": [
           "calcium_d_glucarate"
         ]
@@ -1614,32 +1532,42 @@
       "category": "botanical",
       "replay_product": {
         "source_file": "output/rapidapi_yield_first_apply_candidate_1776541800000_retry1600/raw_brand_fetches.json",
-        "product_id": "118023",
-        "barcode": "087614060200",
-        "url": "https://www.iherb.com/pr/swanson-vegetarian-chlorophyll-300-veggie-capsules/118023",
-        "brand": "Swanson",
-        "title": "Swanson, Vegetarian Chlorophyll, 300 Veggie Capsules",
+        "product_id": "7474",
+        "barcode": "097467010802",
+        "url": "https://www.iherb.com/pr/naturesplus-chlorophyll-complex-90-capsules/7474",
+        "brand": "NaturesPlus",
+        "title": "NaturesPlus, Chlorophyll Complex, 90 Capsules",
         "facts_quality": "structured_ingredients",
         "ingredient_rows": [
           {
-            "name": "Alfalfa Powder (Medicago sativa)",
-            "amountText": "410 mg"
+            "name": "Chlorophyll Complex",
+            "amountText": "600 mg"
           },
           {
-            "name": "Copper Chlorophyllin [from 60 mg sodium copper chlorophyllin (from mulberry leaf)]",
-            "amountText": "60 mg"
+            "name": "Chlorophyllin (from Mulberry-leaf-derived Sodium Copper Chlorophyllin)",
+            "amountText": "50 mg"
+          },
+          {
+            "name": "Certified Organic Alfalfa Grass (Medicago sativa leaf)",
+            "amountText": "400 mg"
+          },
+          {
+            "name": "Alfalfa Herb (aerial parts)",
+            "amountText": "150 mg"
           }
         ]
       },
       "inference": {
         "pass": true,
         "expected_family": "chlorophyll",
-        "context_family": "chlorophyll",
+        "context_family": "copper",
         "anchor_family": "chlorophyll",
         "selected_descriptor_family": "chlorophyll",
-        "selected_descriptor_name": "Vegetarian Chlorophyll",
+        "selected_descriptor_name": "Chlorophyll Complex",
         "descriptor_families": [
-          "chlorophyll"
+          "chlorophyll",
+          "generic",
+          "copper"
         ]
       },
       "scientific_background": {
@@ -1710,7 +1638,7 @@
         "context_family": "cordyceps_mushroom",
         "anchor_family": "cordyceps_mushroom",
         "selected_descriptor_family": "cordyceps_mushroom",
-        "selected_descriptor_name": "Cordyceps",
+        "selected_descriptor_name": "Organic Cordyceps(Cordyceps sinensis) (Mycelium)",
         "descriptor_families": [
           "cordyceps_mushroom"
         ]
@@ -1764,32 +1692,16 @@
       "category": "botanical",
       "replay_product": {
         "source_file": "output/rapidapi_yield_first_apply_candidate_1776541800000_retry1600/raw_brand_fetches.json",
-        "product_id": "140018",
-        "barcode": "898220025039",
-        "url": "https://www.iherb.com/pr/california-gold-nutrition-probiotic-uti-support-with-fructooligosaccharides-cranberry-extract-three-leaf-caper-extract-and-proprietary-digestive-blend-60-veggie-capsules/140018",
-        "brand": "California Gold Nutrition",
-        "title": "California Gold Nutrition, Probiotic UTI Support with Fructooligosaccharides, Cranberry Extract, Three-Leaf Caper Extract, and Proprietary Digestive Blend, 60 Veggie Capsules",
+        "product_id": "154995",
+        "barcode": "087614119595",
+        "url": "https://www.iherb.com/pr/swanson-urinary-bladder-support-500-mg-30-vegan-capsules/154995",
+        "brand": "Swanson",
+        "title": "Swanson, Urinary & Bladder Support, 500 mg , 30 Vegan Capsules",
         "facts_quality": "structured_ingredients",
         "ingredient_rows": [
           {
-            "name": "Fructooligosaccharides (FOS from Inulin)",
-            "amountText": "200 mg"
-          },
-          {
-            "name": "Cranberry Extract (Vaccinium macrocarpon) (fruit)",
-            "amountText": "120 mg"
-          },
-          {
-            "name": "Three-Leaf Caper Extract (Crateva nurvala) (bark)",
-            "amountText": "100 mg"
-          },
-          {
-            "name": "Proprietary Digestive BlendEnzyme Blend (Amylase, Protease, Lipase, Cellulase, Lactase), Ginger Extract (Zingiber officinale) (root), Black Pepper Extract Piper nigrum) (fruit), Black Pepper (Piper nigrum) (seed), Ginger Zingiber officinale) (root), Long Pepper (Piper longum) (fruit)",
-            "amountText": "20 mg"
-          },
-          {
-            "name": "Heyndrickxia coagulansTotal Cultures 200 Million CFU",
-            "amountText": "13.4 mg"
+            "name": "Flowens® Full Spectrum Cranberry (Vaccinium macrocarpon) (fruit)",
+            "amountText": "500 mg"
           }
         ]
       },
@@ -1797,13 +1709,11 @@
         "pass": true,
         "expected_family": "cranberry_extract",
         "context_family": "cranberry_extract",
-        "anchor_family": "probiotic_or_blend",
+        "anchor_family": "cranberry_extract",
         "selected_descriptor_family": "cranberry_extract",
-        "selected_descriptor_name": "Cranberry Extract",
+        "selected_descriptor_name": "Flowens® Full Spectrum Cranberry (Vaccinium macrocarpon) (fruit)",
         "descriptor_families": [
-          "probiotic_or_blend",
-          "cranberry_extract",
-          "generic"
+          "cranberry_extract"
         ]
       },
       "scientific_background": {
@@ -1855,28 +1765,16 @@
       "category": "other",
       "replay_product": {
         "source_file": "output/rapidapi_yield_first_apply_candidate_1776541800000_retry1600/raw_brand_fetches.json",
-        "product_id": "13910",
-        "barcode": "021078021995",
-        "url": "https://www.iherb.com/pr/source-naturals-d-mannose-500-mg-120-capsules/13910",
-        "brand": "Source Naturals",
-        "title": "Source Naturals, D-Mannose, 500 mg, 120 Capsules",
+        "product_id": "116254",
+        "barcode": "087614111858",
+        "url": "https://www.iherb.com/pr/swanson-d-mannose-700-mg-60-vegan-capsules/116254",
+        "brand": "Swanson",
+        "title": "Swanson, D-Mannose, 700 mg, 60 Vegan Capsules",
         "facts_quality": "structured_ingredients",
         "ingredient_rows": [
           {
-            "name": "Total Carbohydrate",
-            "amountText": "1 g"
-          },
-          {
-            "name": "Total Sugars",
-            "amountText": "1 g"
-          },
-          {
-            "name": "Includes 1 g Added Sugars",
-            "amountText": null
-          },
-          {
             "name": "D-Mannose",
-            "amountText": "500 mg"
+            "amountText": "700 mg"
           }
         ]
       },
@@ -1959,7 +1857,7 @@
         "context_family": "dandelion_root",
         "anchor_family": "dandelion_root",
         "selected_descriptor_family": "dandelion_root",
-        "selected_descriptor_name": "Dandelion Root",
+        "selected_descriptor_name": "Organic Dandelion Root (Taraxacum officinale)",
         "descriptor_families": [
           "dandelion_root"
         ]
@@ -2013,27 +1911,23 @@
       "category": "other",
       "replay_product": {
         "source_file": "output/rapidapi_yield_first_apply_candidate_1776541800000_retry1600/raw_brand_fetches.json",
-        "product_id": "64686",
-        "barcode": "021078025894",
-        "url": "https://www.iherb.com/pr/source-naturals-dim-60-tablets/64686",
-        "brand": "Source Naturals",
-        "title": "Source Naturals, DIM, 60 Tablets",
+        "product_id": "125830",
+        "barcode": "097467487321",
+        "url": "https://www.iherb.com/pr/naturesplus-pro-dim-200-60-capsules/125830",
+        "brand": "NaturesPlus",
+        "title": "NaturesPlus, Pro Dim 200, 60 Capsules",
         "facts_quality": "structured_ingredients",
         "ingredient_rows": [
-          {
-            "name": "Vitamin E (from d-alpha tocopheryl succinate)",
-            "amountText": "33 mg (50 IU)"
-          },
           {
             "name": "Diindolylmethane (DIM)",
             "amountText": "200 mg"
           },
           {
-            "name": "Lecithin (from soybeans)",
-            "amountText": "200 mg"
+            "name": "Lecithin (from sunflower)",
+            "amountText": "50 mg"
           },
           {
-            "name": "Black Pepper Fruit Ext. (BioPerine®)",
+            "name": "Bioperine® (from Piper nigrum fruit extract) (standardized 95% [4.75 mg] piperine)",
             "amountText": "5 mg"
           }
         ]
@@ -2044,9 +1938,10 @@
         "context_family": "dim",
         "anchor_family": "dim",
         "selected_descriptor_family": "dim",
-        "selected_descriptor_name": "DIM",
+        "selected_descriptor_name": "Diindolylmethane (DIM)",
         "descriptor_families": [
-          "dim"
+          "dim",
+          "generic"
         ]
       },
       "scientific_background": {

@@ -357,6 +357,11 @@ const CITRULLINE_MALATE_PATTERN =
   /\bcitrulline\s+malate\b|\bl[-\s]*citrulline\s+malate\b/i;
 const D_RIBOSE_PATTERN = /\bd[-\s]*ribose\b|\bribose\b/i;
 const L_METHIONINE_PATTERN = /\bl[-\s]*methionine\b|\bmethionine\b/i;
+const isSameFamilyText = (text: string): boolean =>
+  /\bSAMe\b|\bSAM-e\b/.test(text) ||
+  /\bs[\s_-]*adenosyl[\s_-]*(?:l[\s_-]*)?methionine\b|\bademetionine\b|\bbutanedisulfonate\b/i.test(
+    text,
+  );
 const L_VALINE_PATTERN = /\bl[-\s]*valine\b|\bvaline\b/i;
 const BETA_ALANINE_PATTERN =
   /\bbeta[-\s]*alanine\b|\bcarno\s*syn\b|\bcarnosyn\b/i;
@@ -447,7 +452,9 @@ const LAVENDER_PATTERN =
   /\blavender\b|\blavandula\s+angustifolia\b|\bsilexan\b/i;
 const LEMON_BALM_PATTERN = /\blemon\s+balm\b|\bmelissa\s+officinalis\b/i;
 const NUTRI_MINIMAL_FULL_FAMILY_PATTERN_ROWS =
-  NUTRI_MINIMAL_FULL_FAMILY_DEFINITIONS.map((definition) => ({
+  NUTRI_MINIMAL_FULL_FAMILY_DEFINITIONS.filter(
+    (definition) => definition.canonicalFamily !== "same",
+  ).map((definition) => ({
     family: definition.canonicalFamily as IngredientScienceIngredientFamily,
     pattern: definition.pattern,
   }));
@@ -772,6 +779,7 @@ const inferFamilyFromText = (
   if (L_ARGININE_PATTERN.test(combined)) return "l_arginine";
   if (CITRULLINE_MALATE_PATTERN.test(combined)) return "citrulline_malate";
   if (D_RIBOSE_PATTERN.test(combined)) return "d_ribose";
+  if (isSameFamilyText(combined)) return "same";
   if (L_METHIONINE_PATTERN.test(combined)) return "l_methionine";
   if (L_VALINE_PATTERN.test(combined)) return "l_valine";
   if (BETA_ALANINE_PATTERN.test(combined)) return "beta_alanine";
@@ -887,7 +895,7 @@ const inferRowIngredientFamily = (params: {
   rowName: string | null;
   productName?: string | null | undefined;
 }): IngredientScienceIngredientFamily => {
-  const rowText = normalizeText(params.rowName).toLowerCase();
+  const rowText = normalizeText(params.rowName);
   if (!rowText) return "generic";
 
   const productText = normalizeText(params.productName);

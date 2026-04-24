@@ -178,6 +178,10 @@ const REQUIRED_FAMILIES: IngredientScienceIngredientFamily[] = [
   "nadh",
 ];
 
+const PREFERRED_REQUIRED_REPLAY_PRODUCT_IDS: Record<string, string> = {
+  pygeum: "70044",
+};
+
 const EXTRA_HIGH_RISK_SAMPLE_LIMIT = 16;
 
 const readJson = async <T>(filePath: string): Promise<T | null> => {
@@ -564,12 +568,26 @@ const findCandidatesForTarget = (
 
 const scoreCandidate = (target: ReplayTarget, candidate: ProductCandidate): number => {
   let score = 0;
+  if (candidate.productId === PREFERRED_REQUIRED_REPLAY_PRODUCT_IDS[target.family]) {
+    score += 500;
+  }
   const titleText = candidate.title;
   const allText = candidateTextForTarget(candidate);
   if (targetMatchesText(target, titleText)) score += 50;
-  if (candidate.ingredientRows.some((row) => targetMatchesText(target, row.name))) {
+  const firstIngredientMatches =
+    candidate.ingredientRows.length > 0 &&
+    targetMatchesText(target, candidate.ingredientRows[0]?.name ?? "");
+  const matchingIngredientRows = candidate.ingredientRows.filter((row) =>
+    targetMatchesText(target, row.name),
+  );
+  if (matchingIngredientRows.length > 0) {
     score += 35;
   }
+  if (firstIngredientMatches) score += 15;
+  if (candidate.ingredientRows.length === 1 && matchingIngredientRows.length === 1) {
+    score += 30;
+  }
+  if (candidate.ingredientRows.length > 2 && !firstIngredientMatches) score -= 20;
   if (candidate.ingredientRows.length > 0) score += 20;
   if (candidate.description) score += 8;
   if (candidate.warnings) score += 5;
@@ -618,7 +636,7 @@ const buildDigest = (target: ReplayTarget, product: ProductCandidate): FactsDige
         ];
 
   return {
-    sourceType: "web",
+    sourceType: product.ingredientRows.length > 0 ? "dsld" : "web",
     identity: {
       type: product.barcode ? "gtin14" : "webCanonicalId",
       value: product.barcode ?? product.productId ?? product.url ?? `${target.family}-replay`,
@@ -771,6 +789,13 @@ const splitSentences = (text: string): string[] =>
 const findUnsafeSentences = (text: string): string[] =>
   splitSentences(text).filter((sentence) => {
     if (/\btreating\s+(?:two\s+)?(?:labels?|products?)\s+as\s+equivalent\b/i.test(sentence)) {
+      return false;
+    }
+    if (
+      /^treat\s+.+\s+as\s+(?:a\s+)?(?:confidence|context|comparison|label|formula|disclosure)\b/i.test(
+        sentence,
+      )
+    ) {
       return false;
     }
     if (sentenceHasBoundary(sentence)) return false;
