@@ -68,7 +68,7 @@ test("bundle-only terminal guard guarantees rev1/done closure", async () => {
   const source = await readFile(SERVER_PATH, "utf8");
   assert.match(
     source,
-    /const ENRICH_STREAM_BUNDLE_ONLY_TERMINAL_GUARD_MS =\s*ENRICH_STREAM_RUNTIME_CONFIG\.bundleOnlyTerminalGuardMs;/,
+    /const ENRICH_STREAM_BUNDLE_ONLY_TERMINAL_GUARD_MS =\s*\n\s*ENRICH_STREAM_RUNTIME_CONFIG\.bundleOnlyTerminalGuardMs;/,
   );
 
   const guardStart = source.indexOf("if (streamAnalysisBundleOnly && !bundleOnlyTerminalGuardTimer)");
@@ -84,7 +84,7 @@ test("full-lane pre-rev1 terminal guard emits stable timeout reason and finalize
   const source = await readFile(SERVER_PATH, "utf8");
   assert.match(
     source,
-    /const ENRICH_STREAM_FULL_PRE_REV1_TERMINAL_GUARD_MS =\s*ENRICH_STREAM_RUNTIME_CONFIG\.fullPreRev1TerminalGuardMs;/,
+    /const ENRICH_STREAM_FULL_PRE_REV1_TERMINAL_GUARD_MS =\s*\n\s*ENRICH_STREAM_RUNTIME_CONFIG\.fullPreRev1TerminalGuardMs;/,
   );
 
   const guardStart = source.indexOf("if (!streamAnalysisBundleOnly && !fullPreRev1TerminalGuardTimer)");
