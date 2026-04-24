@@ -14,12 +14,16 @@ test("scheduleBundleOnlyFinalize applies rev1 watchdog to full lane with stable 
   assert.ok(start >= 0, "missing scheduleBundleOnlyFinalize helper");
   const slice = source.slice(start, start + 2200);
 
-  assert.match(slice, /if \(streamAnalysisBundleOnly\)/);
-  assert.match(slice, /finalizeStream\("analysis_bundle_only_rev1_complete"\)/);
+  assert.match(slice, /resolveScanStreamRev1DonePolicy\(\{/);
+  assert.match(slice, /analysisBundleOnly:\s*streamAnalysisBundleOnly/);
+  assert.match(slice, /bundleOnlyDoneDelayMs:\s*ENRICH_STREAM_BUNDLE_ONLY_DONE_DELAY_MS/);
+  assert.match(slice, /fullRev1DoneDelayMs:\s*ENRICH_STREAM_WEB_REV1_DONE_DELAY_MS/);
+  assert.match(slice, /if \(!rev1DonePolicy\) return;/);
+  assert.match(slice, /rev1DonePolicy\.timerKind === "bundle_only_done"/);
+  assert.match(slice, /rev1DonePolicy\.timerKind === "full_rev1_watchdog"/);
 
-  assert.match(slice, /if \(ENRICH_STREAM_WEB_REV1_DONE_DELAY_MS <= 0\) return;/);
   assert.doesNotMatch(slice, /latestSourceType !== "web"/);
-  assert.match(slice, /finalizeStream\("full_rev1_watchdog_complete"\)/);
+  assert.match(slice, /finalizeStream\(rev1DonePolicy\.finalizeReason\)/);
 });
 
 test("full pre-rev1 watchdog uses fixed timeout reason for killer gating", async () => {

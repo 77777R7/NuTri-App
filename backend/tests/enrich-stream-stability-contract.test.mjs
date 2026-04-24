@@ -158,14 +158,14 @@ test("authoritative stage0 deterministic rev1 toggle defaults to enabled", async
   );
 });
 
-test("overload guard rejects early when inFlight or lag threshold is exceeded", async () => {
+test("overload guard rejects early when inFlight threshold is exceeded", async () => {
   const source = await readServerSource();
   const guardStart = source.indexOf("const inFlightCount = barcodeEnrichInFlight.size;");
   assert.ok(guardStart >= 0, "missing overload guard");
-  const guardSlice = source.slice(guardStart, guardStart + 260);
+  const guardSlice = source.slice(guardStart, guardStart + 420);
 
-  assert.match(guardSlice, /inFlightCount > ENRICH_STREAM_OVERLOAD_INFLIGHT_THRESHOLD/);
-  assert.match(guardSlice, /isEventLoopLagOverThreshold\(\)/);
+  assert.match(guardSlice, /shouldRejectEnrichStreamForServerOverload\(\{/);
+  assert.match(guardSlice, /inFlightCount,\s*overloadInflightThreshold:\s*ENRICH_STREAM_OVERLOAD_INFLIGHT_THRESHOLD/);
   assert.match(guardSlice, /emitStreamBusyAndFinalize\("SERVER_OVERLOAD"\)/);
 });
 
@@ -221,7 +221,7 @@ test("safety signal pack is attached in skeleton, provisional, and rev1 safety s
 
   const mergeFastStart = source.indexOf("const mergeFastAnalysisBundle =");
   assert.ok(mergeFastStart >= 0, "missing mergeFastAnalysisBundle helper");
-  const mergeFastSlice = source.slice(mergeFastStart, mergeFastStart + 15000);
+  const mergeFastSlice = source.slice(mergeFastStart, mergeFastStart + 26000);
   assert.match(mergeFastSlice, /const safetySignalsFinal = buildBaseSafetySignalPack\(/);
   assert.match(mergeFastSlice, /signals:\s*safetySignalsFinal/);
 });

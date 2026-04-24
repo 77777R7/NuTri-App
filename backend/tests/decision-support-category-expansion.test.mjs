@@ -1270,13 +1270,17 @@ test("decision support exposes personalized result lane v1 shell with safety-fir
     "dosage_context",
     "product_standing",
   ]);
-  assert.equal(payload.personalizedResultLane.goalFit.status, "pending");
+  assert.equal(payload.personalizedResultLane.goalFit.status, "unavailable");
+  assert.equal(payload.personalizedResultLane.goalFit.reasonCode, "USER_GOAL_CONTEXT_NOT_ATTACHED");
   assert.ok(
     payload.personalizedResultLane.goalFit.candidateGoalKeys.includes("sleep"),
     "expected melatonin preview to surface sleep support",
   );
-  assert.equal(payload.personalizedResultLane.personalInsight.status, "pending");
-  assert.equal(payload.personalizedResultLane.allergyInsight.status, "pending");
+  assert.equal(payload.personalizedResultLane.personalInsight.status, "unavailable");
+  assert.equal(payload.personalizedResultLane.personalInsight.reasonCode, "SAVED_SUPPLEMENTS_NOT_ATTACHED");
+  assert.equal(payload.personalizedResultLane.allergyInsight.status, "unavailable");
+  assert.equal(payload.personalizedResultLane.allergyInsight.reasonCode, "ALLERGY_PROFILE_NOT_ATTACHED");
   assert.ok(["pending", "unavailable"].includes(payload.personalizedResultLane.dosageContext.status));
-  assert.equal(payload.personalizedResultLane.productStanding.status, "pending");
+  assert.equal(payload.personalizedResultLane.productStanding.status, "unavailable");
+  assert.equal(payload.personalizedResultLane.productStanding.reasonCode, "PRODUCT_BENCHMARK_NOT_ATTACHED");
 });
