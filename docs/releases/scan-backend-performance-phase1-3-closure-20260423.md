@@ -100,15 +100,23 @@ Local rerun note:
 
 Report:
 
-- `/Users/howard07/NuTriApp/nutri-app/output/mobile-scan-smoke-mini/mobile-scan-smoke-mini-1776989532809.json`
-- `/Users/howard07/NuTriApp/nutri-app/output/mobile-scan-smoke-mini/mobile-scan-smoke-mini-1776989532809.md`
+- `/Users/howard07/NuTriApp/nutri-app/output/mobile-scan-smoke-mini/mobile-scan-smoke-mini-1776990200421.json`
+- `/Users/howard07/NuTriApp/nutri-app/output/mobile-scan-smoke-mini/mobile-scan-smoke-mini-1776990200421.md`
 
 Result:
 
-- Pass: 10
-- Fail: 1
+- Pass: 11
+- Fail: 0
 
-The only failing gate was `device_preflight_missing`, requiring `nutri://`. Backend scan gates passed:
+Device preflight is now closed:
+
+- `device_preflight=pass`
+- `preflightTargetUdid=7849BDF1-4677-424B-A26B-DC0CBF2B7EB2`
+- `preflightAppUrl=nutri://`
+- `popupBlocked=false`
+- `popupSignals=none`
+
+Backend scan gates passed:
 
 - `done_seen_rate=100%`
 - `score_visible_rate=100%`
@@ -122,8 +130,8 @@ Phase 1, Phase 2, and Phase 3 are closed for backend/staging performance work on
 
 The previous large unresolved block, Render Regression, is closed by the passing GitHub Actions run above.
 
-Remaining release caveat:
+Release caveats:
 
-- Device preflight still needs a real app/device pass before a full mobile release signoff.
+- Device preflight is closed by the 11/11 mobile smoke report above.
 - Express 5 remains isolated on its dedicated Phase 5 branch and is not mixed into this performance release.
 - Expo camera remains gated on real UPC/EAN/QR/code128 device evidence and was not changed in this backend-only closure.
