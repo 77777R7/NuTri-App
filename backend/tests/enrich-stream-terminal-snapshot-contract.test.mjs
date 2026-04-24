@@ -7,9 +7,13 @@ import { fileURLToPath } from "node:url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const SERVER_PATH = path.resolve(__dirname, "../src/server.ts");
+const ROUTE_PATH = path.resolve(__dirname, "../src/routes/enrichStreamRoute.ts");
+
+const readEnrichStreamSource = async () =>
+  `${await readFile(SERVER_PATH, "utf8")}\n${await readFile(ROUTE_PATH, "utf8")}`;
 
 test("emitTerminalErrorAndFinalize builds a terminalSnapshot object", async () => {
-  const source = await readFile(SERVER_PATH, "utf8");
+  const source = await readEnrichStreamSource();
   const helperStart = source.indexOf("const emitTerminalErrorAndFinalize = (params:");
   assert.ok(helperStart >= 0, "missing emitTerminalErrorAndFinalize helper");
   const helperSlice = source.slice(helperStart, helperStart + 2600);
@@ -27,7 +31,7 @@ test("emitTerminalErrorAndFinalize builds a terminalSnapshot object", async () =
 });
 
 test("emitTerminalErrorAndFinalize attaches terminalSnapshot to error payload", async () => {
-  const source = await readFile(SERVER_PATH, "utf8");
+  const source = await readEnrichStreamSource();
   const helperStart = source.indexOf("const emitTerminalErrorAndFinalize = (params:");
   assert.ok(helperStart >= 0, "missing emitTerminalErrorAndFinalize helper");
   const helperSlice = source.slice(helperStart, helperStart + 3000);

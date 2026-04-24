@@ -7,9 +7,13 @@ import { fileURLToPath } from "node:url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const SERVER_PATH = path.resolve(__dirname, "../src/server.ts");
+const ROUTE_PATH = path.resolve(__dirname, "../src/routes/enrichStreamRoute.ts");
+
+const readEnrichStreamSource = async () =>
+  `${await readFile(SERVER_PATH, "utf8")}\n${await readFile(ROUTE_PATH, "utf8")}`;
 
 test("fast watchdog degrades without forcing fallback finalize", async () => {
-  const source = await readFile(SERVER_PATH, "utf8");
+  const source = await readEnrichStreamSource();
   const fastStart = source.indexOf("fastWatchdog = setTimeout");
   assert.ok(fastStart >= 0, "missing fast watchdog block");
   const fastSlice = source.slice(fastStart, fastStart + 900);
@@ -29,7 +33,7 @@ test("fast watchdog degrades without forcing fallback finalize", async () => {
 });
 
 test("global watchdog emits STREAM_TIMEOUT for rev0-only and finalizes", async () => {
-  const source = await readFile(SERVER_PATH, "utf8");
+  const source = await readEnrichStreamSource();
   const globalStart = source.indexOf("globalWatchdog = setTimeout");
   assert.ok(globalStart >= 0, "missing global watchdog block");
   const globalSlice = source.slice(globalStart, globalStart + 1600);
@@ -45,7 +49,7 @@ test("global watchdog emits STREAM_TIMEOUT for rev0-only and finalizes", async (
 });
 
 test("full-lane rev1 watchdog finalizes stream for all source types when post-rev1 tail drifts", async () => {
-  const source = await readFile(SERVER_PATH, "utf8");
+  const source = await readEnrichStreamSource();
   assert.match(
     source,
     /const ENRICH_STREAM_WEB_REV1_DONE_DELAY_MS = ENRICH_STREAM_RUNTIME_CONFIG\.fullRev1DoneDelayMs;/,
@@ -65,7 +69,7 @@ test("full-lane rev1 watchdog finalizes stream for all source types when post-re
 });
 
 test("bundle-only terminal guard guarantees rev1/done closure", async () => {
-  const source = await readFile(SERVER_PATH, "utf8");
+  const source = await readEnrichStreamSource();
   assert.match(
     source,
     /const ENRICH_STREAM_BUNDLE_ONLY_TERMINAL_GUARD_MS =\s*\n\s*ENRICH_STREAM_RUNTIME_CONFIG\.bundleOnlyTerminalGuardMs;/,
@@ -81,7 +85,7 @@ test("bundle-only terminal guard guarantees rev1/done closure", async () => {
 });
 
 test("full-lane pre-rev1 terminal guard emits stable timeout reason and finalizes", async () => {
-  const source = await readFile(SERVER_PATH, "utf8");
+  const source = await readEnrichStreamSource();
   assert.match(
     source,
     /const ENRICH_STREAM_FULL_PRE_REV1_TERMINAL_GUARD_MS =\s*\n\s*ENRICH_STREAM_RUNTIME_CONFIG\.fullPreRev1TerminalGuardMs;/,
@@ -109,7 +113,7 @@ test("full-lane pre-rev1 terminal guard emits stable timeout reason and finalize
 });
 
 test("terminal error payload includes terminalSnapshot fields", async () => {
-  const source = await readFile(SERVER_PATH, "utf8");
+  const source = await readEnrichStreamSource();
   const fnStart = source.indexOf("const emitTerminalErrorAndFinalize = (params:");
   assert.ok(fnStart >= 0, "missing emitTerminalErrorAndFinalize helper");
   const fnSlice = source.slice(fnStart, fnStart + 2200);
@@ -128,7 +132,7 @@ test("terminal error payload includes terminalSnapshot fields", async () => {
 });
 
 test("legacy watchdog fallback helper is removed", async () => {
-  const source = await readFile(SERVER_PATH, "utf8");
+  const source = await readEnrichStreamSource();
   assert.equal(
     source.includes("const emitWatchdogFallbackRev1"),
     false,

@@ -7,6 +7,10 @@ import { fileURLToPath } from "node:url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const SERVER_PATH = path.resolve(__dirname, "../src/server.ts");
+const ROUTE_PATH = path.resolve(__dirname, "../src/routes/enrichStreamRoute.ts");
+
+const readEnrichStreamSource = async () =>
+  `${await readFile(SERVER_PATH, "utf8")}\n${await readFile(ROUTE_PATH, "utf8")}`;
 
 const ALLOWED_REASONS = new Set([
   "negative_cache_blocked",
@@ -18,7 +22,7 @@ const ALLOWED_REASONS = new Set([
 ]);
 
 test("authority failure reason type uses controlled reason code set", async () => {
-  const source = await readFile(SERVER_PATH, "utf8");
+  const source = await readEnrichStreamSource();
   const typeStart = source.indexOf("type AuthorityFailureReason =");
   assert.ok(typeStart >= 0, "missing AuthorityFailureReason type");
   const typeSlice = source.slice(typeStart, typeStart + 600);
@@ -29,7 +33,7 @@ test("authority failure reason type uses controlled reason code set", async () =
 });
 
 test("authority failure reason writes only controlled values", async () => {
-  const source = await readFile(SERVER_PATH, "utf8");
+  const source = await readEnrichStreamSource();
   const matches = [...source.matchAll(/authorityFailureReason\s*=\s*"([^"]+)"/g)];
   assert.ok(matches.length > 0, "expected authorityFailureReason assignments");
 
@@ -40,7 +44,7 @@ test("authority failure reason writes only controlled values", async () => {
 });
 
 test("authority diagnostics fields are exposed in scan metadata", async () => {
-  const source = await readFile(SERVER_PATH, "utf8");
+  const source = await readEnrichStreamSource();
   const metaStart = source.indexOf("const buildAuthorityMeta =");
   assert.ok(metaStart >= 0, "missing buildAuthorityMeta");
   const metaSlice = source.slice(metaStart, metaStart + 2200);

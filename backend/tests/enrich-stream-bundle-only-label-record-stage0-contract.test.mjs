@@ -7,9 +7,13 @@ import { fileURLToPath } from "node:url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const SERVER_PATH = path.resolve(__dirname, "../src/server.ts");
+const ROUTE_PATH = path.resolve(__dirname, "../src/routes/enrichStreamRoute.ts");
+
+const readEnrichStreamSource = async () =>
+  `${await readFile(SERVER_PATH, "utf8")}\n${await readFile(ROUTE_PATH, "utf8")}`;
 
 test("bundle_only label_record Stage0 toggle defaults to enabled", async () => {
-  const source = await readFile(SERVER_PATH, "utf8");
+  const source = await readEnrichStreamSource();
   assert.match(
     source,
     /const BUNDLE_ONLY_ALLOW_LABEL_RECORD_STAGE0 = parseBooleanEnv\(\s*process\.env\.BUNDLE_ONLY_ALLOW_LABEL_RECORD_STAGE0,\s*true,\s*\);/,
@@ -17,7 +21,7 @@ test("bundle_only label_record Stage0 toggle defaults to enabled", async () => {
 });
 
 test("stage0 coordinator allows label_record winner in bundle_only when toggle is enabled", async () => {
-  const source = await readFile(SERVER_PATH, "utf8");
+  const source = await readEnrichStreamSource();
   const startIdx = source.indexOf("const startStage0Bundle = (");
   assert.ok(startIdx >= 0, "missing startStage0Bundle helper");
   const slice = source.slice(startIdx, startIdx + 2200);
@@ -33,7 +37,7 @@ test("stage0 coordinator allows label_record winner in bundle_only when toggle i
 });
 
 test("cached snapshot bundle_only short-circuits use authoritative fast path including label_record", async () => {
-  const source = await readFile(SERVER_PATH, "utf8");
+  const source = await readEnrichStreamSource();
   const fastPathIdx = source.indexOf("if (cachedFast && !bypassCachedFastPathForAuthority)");
   assert.ok(fastPathIdx >= 0, "missing cachedFast branch");
   const slice = source.slice(fastPathIdx, fastPathIdx + 1800);

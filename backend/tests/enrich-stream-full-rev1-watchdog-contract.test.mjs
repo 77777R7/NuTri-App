@@ -7,9 +7,13 @@ import { fileURLToPath } from "node:url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const SERVER_PATH = path.resolve(__dirname, "../src/server.ts");
+const ROUTE_PATH = path.resolve(__dirname, "../src/routes/enrichStreamRoute.ts");
+
+const readEnrichStreamSource = async () =>
+  `${await readFile(SERVER_PATH, "utf8")}\n${await readFile(ROUTE_PATH, "utf8")}`;
 
 test("scheduleBundleOnlyFinalize applies rev1 watchdog to full lane with stable reason code", async () => {
-  const source = await readFile(SERVER_PATH, "utf8");
+  const source = await readEnrichStreamSource();
   const start = source.indexOf("const scheduleBundleOnlyFinalize = () => {");
   assert.ok(start >= 0, "missing scheduleBundleOnlyFinalize helper");
   const slice = source.slice(start, start + 2200);
@@ -27,7 +31,7 @@ test("scheduleBundleOnlyFinalize applies rev1 watchdog to full lane with stable 
 });
 
 test("full pre-rev1 watchdog uses fixed timeout reason for killer gating", async () => {
-  const source = await readFile(SERVER_PATH, "utf8");
+  const source = await readEnrichStreamSource();
   const start = source.indexOf("if (!streamAnalysisBundleOnly && !fullPreRev1TerminalGuardTimer)");
   assert.ok(start >= 0, "missing full pre-rev1 guard block");
   const slice = source.slice(start, start + 4200);

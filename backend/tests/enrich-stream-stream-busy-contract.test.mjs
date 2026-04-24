@@ -7,9 +7,13 @@ import { fileURLToPath } from "node:url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const SERVER_PATH = path.resolve(__dirname, "../src/server.ts");
+const ROUTE_PATH = path.resolve(__dirname, "../src/routes/enrichStreamRoute.ts");
+
+const readEnrichStreamSource = async () =>
+  `${await readFile(SERVER_PATH, "utf8")}\n${await readFile(ROUTE_PATH, "utf8")}`;
 
 test("enrich-stream STREAM_BUSY helper emits stable payload fields", async () => {
-  const source = await readFile(SERVER_PATH, "utf8");
+  const source = await readEnrichStreamSource();
   const helperStart = source.indexOf("const emitStreamBusyAndFinalize =");
   assert.ok(helperStart >= 0, "missing emitStreamBusyAndFinalize helper");
   const helperSlice = source.slice(helperStart, helperStart + 1200);
@@ -26,7 +30,7 @@ test("enrich-stream STREAM_BUSY helper emits stable payload fields", async () =>
 });
 
 test("admission rejects map to STREAM_BUSY terminal path", async () => {
-  const source = await readFile(SERVER_PATH, "utf8");
+  const source = await readEnrichStreamSource();
   const tryStart = source.indexOf("const admissionWaitMs =");
   assert.ok(tryStart >= 0, "missing admission gate block");
   const trySlice = source.slice(tryStart, tryStart + 2200);

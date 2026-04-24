@@ -7,9 +7,13 @@ import { fileURLToPath } from "node:url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const SERVER_PATH = path.resolve(__dirname, "../src/server.ts");
+const ROUTE_PATH = path.resolve(__dirname, "../src/routes/enrichStreamRoute.ts");
+
+const readEnrichStreamSource = async () =>
+  `${await readFile(SERVER_PATH, "utf8")}\n${await readFile(ROUTE_PATH, "utf8")}`;
 
 test("LNHPD second-chance timeout constant and helper are defined", async () => {
-  const source = await readFile(SERVER_PATH, "utf8");
+  const source = await readEnrichStreamSource();
   assert.match(
     source,
     /const RESILIENCE_LNHPD_SECOND_CHANCE_TIMEOUT_MS = Number\(/,
@@ -26,7 +30,7 @@ test("LNHPD second-chance timeout constant and helper are defined", async () => 
 });
 
 test("stage0 authority candidate path uses LNHPD second-chance helper", async () => {
-  const source = await readFile(SERVER_PATH, "utf8");
+  const source = await readEnrichStreamSource();
   assert.match(
     source,
     /fetchLnhpdFactsWithSecondChance\(candidate\.npn,\s*requestSignal,\s*\{[\s\S]*secondTimeoutMs:\s*RESILIENCE_LNHPD_SECOND_CHANCE_TIMEOUT_MS[\s\S]*\}\)/,
@@ -36,7 +40,7 @@ test("stage0 authority candidate path uses LNHPD second-chance helper", async ()
 });
 
 test("stage1 web npn path uses LNHPD second-chance helper", async () => {
-  const source = await readFile(SERVER_PATH, "utf8");
+  const source = await readEnrichStreamSource();
   assert.match(
     source,
     /fetchLnhpdFactsWithSecondChance\(npnCandidate,\s*requestSignal,\s*\{[\s\S]*secondTimeoutMs:\s*RESILIENCE_LNHPD_SECOND_CHANCE_TIMEOUT_MS[\s\S]*\}\)/,

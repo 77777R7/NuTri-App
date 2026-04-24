@@ -7,11 +7,15 @@ import { fileURLToPath } from "node:url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const SERVER_PATH = path.resolve(__dirname, "../src/server.ts");
+const ROUTE_PATH = path.resolve(__dirname, "../src/routes/enrichStreamRoute.ts");
+
+const readEnrichStreamSource = async () =>
+  `${await readFile(SERVER_PATH, "utf8")}\n${await readFile(ROUTE_PATH, "utf8")}`;
 const RUNTIME_CONFIG_PATH = path.resolve(__dirname, "../src/scanStreamRuntimeConfig.ts");
 const ADMISSION_POLICY_PATH = path.resolve(__dirname, "../src/scanStreamAdmissionPolicy.ts");
 
 test("admission gate runtime config exists with expected names", async () => {
-  const source = await readFile(SERVER_PATH, "utf8");
+  const source = await readEnrichStreamSource();
   const configSource = await readFile(RUNTIME_CONFIG_PATH, "utf8");
   const admissionPolicySource = await readFile(ADMISSION_POLICY_PATH, "utf8");
 
@@ -34,7 +38,7 @@ test("admission gate runtime config exists with expected names", async () => {
 });
 
 test("admission gate runs after SSE init and before main pipeline work", async () => {
-  const source = await readFile(SERVER_PATH, "utf8");
+  const source = await readEnrichStreamSource();
   const routeStart = source.indexOf('app.post("/api/enrich-stream"');
   assert.ok(routeStart >= 0, "missing enrich-stream route");
 
@@ -56,7 +60,7 @@ test("admission gate runs after SSE init and before main pipeline work", async (
 });
 
 test("admitted full-lane streams can immediately fall back when admission remains pressured", async () => {
-  const source = await readFile(SERVER_PATH, "utf8");
+  const source = await readEnrichStreamSource();
   const routeStart = source.indexOf('app.post("/api/enrich-stream"');
   assert.ok(routeStart >= 0, "missing enrich-stream route");
 
@@ -75,7 +79,7 @@ test("admitted full-lane streams can immediately fall back when admission remain
 });
 
 test("pressure fallback only uses active pressure for non-regression requests", async () => {
-  const source = await readFile(SERVER_PATH, "utf8");
+  const source = await readEnrichStreamSource();
   const timerStart = source.indexOf("if (!streamAnalysisBundleOnly && !fullPressureCoreFallbackTimer)");
   assert.ok(timerStart >= 0, "missing pressure fallback timer");
   const timerSlice = source.slice(timerStart, timerStart + 900);
@@ -87,7 +91,7 @@ test("pressure fallback only uses active pressure for non-regression requests", 
 });
 
 test("admission core fallback enforces an outer quick-digest budget", async () => {
-  const source = await readFile(SERVER_PATH, "utf8");
+  const source = await readEnrichStreamSource();
   const helperStart = source.indexOf("const withAdmissionCoreFallbackBudget =");
   assert.ok(helperStart >= 0, "missing admission fallback budget helper");
   const helperSlice = source.slice(helperStart, helperStart + 900);
@@ -104,7 +108,7 @@ test("admission core fallback enforces an outer quick-digest budget", async () =
 });
 
 test("full pre-rev1 terminal guard prefers core fallback over timeout", async () => {
-  const source = await readFile(SERVER_PATH, "utf8");
+  const source = await readEnrichStreamSource();
   const guardStart = source.indexOf("if (!streamAnalysisBundleOnly && !fullPreRev1TerminalGuardTimer)");
   assert.ok(guardStart >= 0, "missing full pre-rev1 guard");
   const guardSlice = source.slice(guardStart, guardStart + 2200);
@@ -119,7 +123,7 @@ test("full pre-rev1 terminal guard prefers core fallback over timeout", async ()
 });
 
 test("global watchdog uses request-level deadline", async () => {
-  const source = await readFile(SERVER_PATH, "utf8");
+  const source = await readEnrichStreamSource();
   const watchdogStart = source.indexOf("if (!globalWatchdog)");
   assert.ok(watchdogStart >= 0, "missing global watchdog block");
   const watchdogSlice = source.slice(watchdogStart, watchdogStart + 1400);
