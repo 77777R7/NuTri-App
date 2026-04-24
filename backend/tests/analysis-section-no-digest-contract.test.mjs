@@ -6,10 +6,10 @@ import { fileURLToPath } from "node:url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const SERVER_PATH = path.resolve(__dirname, "../src/server.ts");
+const ROUTE_PATH = path.resolve(__dirname, "../src/routes/analysisSectionRoute.ts");
 
 test("analysis-section returns terminal ingredients detail for web identities when digest is missing", async () => {
-  const source = await readFile(SERVER_PATH, "utf8");
+  const source = await readFile(ROUTE_PATH, "utf8");
   const missingDigestStart = source.indexOf("if (!digestRow) {");
   assert.ok(missingDigestStart >= 0, "missing digest fallback block");
   const block = source.slice(missingDigestStart, source.indexOf("const resolvedDigestRow", missingDigestStart));
