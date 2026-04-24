@@ -1511,6 +1511,12 @@ function emitScanUxMetric(event: string, payload: Record<string, unknown> = {}) 
     });
 }
 
+function lowerFirst(value: string | null | undefined): string {
+    const normalized = normalizeText(value);
+    if (!normalized) return '';
+    return normalized.charAt(0).toLowerCase() + normalized.slice(1);
+}
+
 function resolveSimpleTaxonomyLabel(label: string, fallback: string = 'Official record') {
     const normalizedLabel = normalizeText(label);
     const normalizedFallback = normalizeText(fallback) || 'Official record';
@@ -4070,6 +4076,7 @@ const AnalysisBundleDashboard: React.FC<{
     const detailLoadingRef = useRef(false);
     const detailInFlightKeyRef = useRef<string | null>(null);
     const decisionSupportFetchKeyRef = useRef<string | null>(null);
+    const decisionSupportNetworkScopeRef = useRef<string | null>(null);
     const decisionSupportRequestSeqRef = useRef(0);
     const decisionSupportFetchCountRef = useRef(0);
     const scanUxTimingRef = useRef({
@@ -4450,6 +4457,7 @@ const AnalysisBundleDashboard: React.FC<{
         detailLoadingRef.current = false;
         detailInFlightKeyRef.current = null;
         decisionSupportFetchKeyRef.current = null;
+        decisionSupportNetworkScopeRef.current = null;
         decisionSupportFetchCountRef.current = 0;
         scanUxTimingRef.current = {
             startedAt: Date.now(),
@@ -4707,19 +4715,6 @@ const AnalysisBundleDashboard: React.FC<{
         const shouldBypassStaleDecisionHints = shouldUseLocalDecisionSupport;
         const initialDecisionDigestHint = shouldBypassStaleDecisionHints ? null : digestHint;
         const initialDecisionInputsHashHint = shouldBypassStaleDecisionHints ? null : decisionInputsHashHint;
-        const fetchKey = `${normalizedSessionId}|${decisionCacheKey}`;
-        if (decisionSupportFetchKeyRef.current === fetchKey) return;
-        decisionSupportFetchKeyRef.current = fetchKey;
-        const requestSeq = ++decisionSupportRequestSeqRef.current;
-        decisionSupportFetchCountRef.current += 1;
-        emitScanUxMetric('decision_support_fetch', {
-            scanSessionId: normalizedSessionIdRaw,
-            barcode: resolvedBarcode,
-            count: decisionSupportFetchCountRef.current,
-            digestHint,
-            decisionInputsHashHint,
-        });
-
         let cancelled = false;
         let autoRetryUsed = false;
         const cachedPayload = decisionSupportCacheRef.current.get(decisionCacheKey) ?? null;
@@ -4777,10 +4772,37 @@ const AnalysisBundleDashboard: React.FC<{
                 error: null,
                 autoRetryUsed: prev.autoRetryUsed,
             }));
-            // Keep fetching authoritative decision-support even during a transient
-            // web skeleton phase so release builds do not get stuck on placeholders
-            // when rev1 never upgrades the stream in time.
+            return;
         }
+        if (
+            seededPayload
+            && !shouldUseLocalDecisionSupport
+            && sourceTypeFinal
+            && hasRenderableDecisionTemplate(seededPayload)
+        ) {
+            decisionSupportFetchKeyRef.current = `${normalizedSessionId}|inline|${decisionCacheKey}`;
+            return;
+        }
+        const fetchKey = `${normalizedSessionId}|${decisionCacheKey}`;
+        if (decisionSupportFetchKeyRef.current === fetchKey) return;
+        const networkScopeKey = [
+            normalizedSessionId,
+            resolvedBarcode,
+            localDecisionSupportCacheScope,
+        ].join('|');
+        if (decisionSupportNetworkScopeRef.current === networkScopeKey) return;
+        decisionSupportFetchKeyRef.current = fetchKey;
+        decisionSupportNetworkScopeRef.current = networkScopeKey;
+        const requestSeq = ++decisionSupportRequestSeqRef.current;
+        decisionSupportFetchCountRef.current += 1;
+        emitScanUxMetric('decision_support_fetch', {
+            scanSessionId: normalizedSessionIdRaw,
+            barcode: resolvedBarcode,
+            count: decisionSupportFetchCountRef.current,
+            digestHint,
+            decisionInputsHashHint,
+        });
+
         const run = async (
             digestParam: string | null,
             decisionInputsHashParam: string | null,
@@ -8151,8 +8173,6 @@ const AnalysisBundleDashboard: React.FC<{
         shouldPrimeScienceSidecars,
         decisionBarcodeForScience,
         decisionDigestForScience,
-        ingredientOverviewState?.status,
-        ingredientOverviewState?.source,
         ingredientOverviewRequestKey,
         localDecisionSupportHeader,
         scienceDecisionInputsHash,
@@ -8410,10 +8430,6 @@ const AnalysisBundleDashboard: React.FC<{
         scienceDecisionInputsHash,
         sciencePersonalizationScopeHash,
         scientificBackgroundRetryTick,
-        scientificBackgroundState?.status,
-        scientificBackgroundState?.source,
-        scientificBackgroundState?.backgroundRefreshPending,
-        scientificBackgroundState?.recommendedRetryAfterMs,
         scientificBackgroundRequestKey,
         scienceSourceFinalKey,
         setScientificBackgroundSidecarState,
