@@ -2683,7 +2683,25 @@ export const registerEnrichStreamRoute = (
 
       const skipCachedFastForBundleOnlyDeterministic =
         streamAnalysisBundleOnly && params.digest.sourceType !== "web" && params.allowAi === false;
-      let cachedFast = skipCachedFastForBundleOnlyDeterministic
+      const skipCachedFastForFullDsldDeterministic =
+        !streamAnalysisBundleOnly &&
+        params.digest.sourceType === "dsld" &&
+        params.allowAi === false;
+      const skipCachedFastForDeterministicStage0 =
+        skipCachedFastForBundleOnlyDeterministic || skipCachedFastForFullDsldDeterministic;
+      if (skipCachedFastForFullDsldDeterministic) {
+        console.info(
+          "[analysis_bundle] dsld deterministic stage0 skipping cached fast",
+          {
+            requestId: requestId || null,
+            identityType: params.identityType,
+            identityValue: params.identityValue,
+            factsDigestHash,
+            sourceType: params.digest.sourceType,
+          },
+        );
+      }
+      let cachedFast = skipCachedFastForDeterministicStage0
         ? null
         : await getAnalysisIdentityCache(
           {
