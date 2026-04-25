@@ -19,3 +19,17 @@ test('full-stream DSLD deterministic Stage0 bypasses cached fast before cover co
   assert.ok(block.includes('params.allowAi === false'));
   assert.ok(block.includes('dsld deterministic stage0 skipping cached fast'));
 });
+
+test('full-stream DSLD deterministic Stage0 has a bounded no-AI rev1 path', () => {
+  const source = fs.readFileSync(ROUTE_FILE, 'utf8');
+  const blockMatch = source.match(
+    /const deterministicNoAiFastPath =[\s\S]*?const emittedRev1 = emitRev1Once\([\s\S]*?deterministicFallbackReason,[\s\S]*?\);/,
+  );
+
+  assert.ok(blockMatch, 'full-stream DSLD must not fall through to the generic fast merge path');
+  const block = blockMatch[0];
+  assert.ok(block.includes('streamAnalysisBundleOnly || skipCachedFastForFullDsldDeterministic'));
+  assert.ok(block.includes('dsld_full_stream_no_ai_fast_path'));
+  assert.ok(block.includes('[analysis_bundle] cover_contract'));
+  assert.ok(block.includes('emitRev1Once'));
+});

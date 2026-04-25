@@ -2816,7 +2816,30 @@ export const registerEnrichStreamRoute = (
       const context = `FACTS_DIGEST_JSON: ${JSON.stringify(params.digest)}`;
       const skipAiForBundleOnlyWeb = streamAnalysisBundleOnly && params.digest.sourceType === "web";
       const canUseAi = params.allowAi && Boolean(params.apiKey) && !skipAiForBundleOnlyWeb;
-      if (streamAnalysisBundleOnly && !canUseAi && params.digest.sourceType !== "web" && canWrite()) {
+      const deterministicNoAiFastPath =
+        (streamAnalysisBundleOnly || skipCachedFastForFullDsldDeterministic) &&
+        !canUseAi &&
+        params.digest.sourceType !== "web";
+      if (deterministicNoAiFastPath && canWrite()) {
+        const deterministicFallbackReason = skipCachedFastForFullDsldDeterministic
+          ? "dsld_full_stream_no_ai_fast_path"
+          : "bundle_only_no_ai_fast_path";
+        const deterministicModeCopy = skipCachedFastForFullDsldDeterministic
+          ? {
+            detailSummary:
+              "This verified label record is summarized deterministically so the scan can finish without waiting on optional AI expansion.",
+            modeBullet:
+              "Deterministic label mode keeps the scan responsive while preserving trusted identity.",
+            timingRationale:
+              "Deterministic label mode prioritizes stable guidance before optional deeper expansion.",
+          }
+          : {
+            detailSummary: `${getDegradedReasonCopy("BUNDLE_ONLY_NO_AUTHORITATIVE_MATCH")} We will keep refining this record.`,
+            modeBullet:
+              "Limited mode keeps the scan responsive while preserving trusted identity.",
+            timingRationale:
+              "Bundle-only mode prioritizes fast, stable guidance before deeper expansion.",
+          };
         const productLabel = params.digest.product.name?.trim() || "This product";
         const activeCoverItems: NonNullable<
           AnalysisBundle["sections"]["ingredients"]["cover"]
@@ -2890,10 +2913,10 @@ export const registerEnrichStreamRoute = (
                 ],
               },
               detail: {
-                summary: `${getDegradedReasonCopy("BUNDLE_ONLY_NO_AUTHORITATIVE_MATCH")} We will keep refining this record.`,
+                summary: deterministicModeCopy.detailSummary,
                 bullets: [
                   buildSectionBullet(
-                    "Limited mode keeps the scan responsive while preserving trusted identity.",
+                    deterministicModeCopy.modeBullet,
                     ["general_advice"],
                   ),
                   buildSectionBullet(
@@ -2950,7 +2973,7 @@ export const registerEnrichStreamRoute = (
               },
               detail: {
                 timingRationale: {
-                  text: "Bundle-only mode prioritizes fast, stable guidance before deeper expansion.",
+                  text: deterministicModeCopy.timingRationale,
                   basisTags: ["general_advice"],
                 },
                 withFoodRationale: {
@@ -2996,10 +3019,25 @@ export const registerEnrichStreamRoute = (
           },
         };
         const limitedBundle = withAuthorityDiagnostics(deterministicLimitedBundle);
+        console.info("[analysis_bundle] cover_contract", {
+          source: params.digest.sourceType,
+          overviewHasSummary: Boolean(deterministicLimitedBundle.sections.overview.cover?.summary),
+          overviewBulletCount: deterministicLimitedBundle.sections.overview.cover?.bullets?.length ?? 0,
+          ingredientsCount: params.digest.actives.length,
+          usageHasDosage: Boolean(dosageText),
+          usageHasBestTime: Boolean(deterministicLimitedBundle.sections.usage.cover?.bestTimeToTake?.text),
+          usageBulletCount: deterministicLimitedBundle.sections.usage.cover?.bullets?.length ?? 0,
+          safetyBulletCount: deterministicLimitedBundle.sections.safety.cover?.bullets?.length ?? 0,
+          safetyVerdictPresent: Boolean(deterministicLimitedBundle.sections.safety.cover?.verdict),
+          fastFailed: true,
+          placeholderishModelHit: false,
+          deterministicFallbackUsed: true,
+          deterministicFallbackReason,
+        });
         const emittedRev1 = emitRev1Once(
           limitedBundle,
           "fallback",
-          "bundle_only_no_ai_fast_path",
+          deterministicFallbackReason,
         );
         if (emittedRev1) {
           await commitPersistedAfterRev1(limitedBundle);
