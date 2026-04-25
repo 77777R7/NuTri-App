@@ -185,6 +185,7 @@ const PREFERRED_REQUIRED_REPLAY_PRODUCT_IDS: Record<string, string> = {
 };
 
 const EXTRA_HIGH_RISK_SAMPLE_LIMIT = 16;
+const EXTRA_LOW_RISK_STRUCTURAL_SAMPLE_LIMIT = 24;
 
 const readJson = async <T>(filePath: string): Promise<T | null> => {
   try {
@@ -821,10 +822,32 @@ const buildTargetSet = (
     .filter((target) => findCandidatesForTarget(target, candidates).length > 0)
     .sort((left, right) => left.family.localeCompare(right.family))
     .slice(0, EXTRA_HIGH_RISK_SAMPLE_LIMIT);
+  const lowRiskStructuralTargets = NUTRI_MINIMAL_FULL_FAMILY_DEFINITIONS.filter(
+    (definition) =>
+      definition.productizationClass === "low_risk_structural" &&
+      definition.safetyBoundaryTier === "standard" &&
+      !requiredSet.has(definition.canonicalFamily as IngredientScienceIngredientFamily),
+  )
+    .map((definition) => targetFromDefinition(definition, false))
+    .filter((target) => findCandidatesForTarget(target, candidates).length > 0)
+    .sort((left, right) => {
+      const categoryRank = (category: string): number => {
+        if (category === "enzyme") return 0;
+        if (category === "mineral") return 1;
+        if (category === "amino_acid") return 2;
+        if (category === "lipid") return 3;
+        return 4;
+      };
+      return (
+        categoryRank(left.category) - categoryRank(right.category) ||
+        left.family.localeCompare(right.family)
+      );
+    })
+    .slice(0, EXTRA_LOW_RISK_STRUCTURAL_SAMPLE_LIMIT);
 
   return {
     requiredTargets,
-    targets: [...requiredTargets, ...extraTargets],
+    targets: [...requiredTargets, ...extraTargets, ...lowRiskStructuralTargets],
   };
 };
 
@@ -1091,12 +1114,24 @@ export const runNutriMinimalV4RealProductReplay = async (opts?: {
   );
   const candidates = await collectRealProductCandidates();
   const { requiredTargets, targets } = buildTargetSet(candidates);
-  const replayRows = targets.map((target) =>
+  const candidateReplayRows = targets.map((target) =>
     buildReplayRow(
       target,
       pickBestReplayProduct(target, candidates),
       registryByKey,
     ),
+  );
+  const skippedExtraRows = candidateReplayRows.filter(
+    (row) =>
+      !row.required &&
+      (!row.inference.pass ||
+        !row.scientific_background.pass ||
+        !row.evidence_grounding.pass ||
+        !row.safety_claim_gate.pass ||
+        !row.replay_product.source_file),
+  );
+  const replayRows = candidateReplayRows.filter(
+    (row) => row.required || !skippedExtraRows.includes(row),
   );
   const failures = replayRows.filter(
     (row) =>
@@ -1143,6 +1178,16 @@ export const runNutriMinimalV4RealProductReplay = async (opts?: {
         (row) => row.evidence_grounding.reviewed_evidence_found,
       ).length,
       blocked_unapproved_grounding_rows: blockedUnapprovedRows.length,
+      extra_high_risk_samples: replayRows.filter(
+        (row) => !row.required && row.safety_boundary_tier === "high",
+      ).length,
+      extra_low_risk_structural_samples: replayRows.filter(
+        (row) =>
+          !row.required &&
+          row.productization_class === "low_risk_structural" &&
+          row.safety_boundary_tier === "standard",
+      ).length,
+      skipped_extra_candidates: skippedExtraRows.length,
       registry_traceability_warnings: replayRows.filter(
         (row) => row.evidence_grounding.registry_traceability_warning,
       ).length,

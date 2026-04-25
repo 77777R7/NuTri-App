@@ -1,6 +1,6 @@
 {
   "version": "nutri_minimal_v4_real_product_family_replay.v1",
-  "generated_at": "2026-04-24T21:06:38.268Z",
+  "generated_at": "2026-04-25T17:10:20.307Z",
   "source_files": [
     "backend/data/staging/nutri-minimal-v4/real-product-replay-source-fixtures.json",
     "backend/data/personalization/goal_navigator_candidate_bundle.v1.json",
@@ -29,17 +29,20 @@
   ],
   "summary": {
     "source_product_candidates": 190,
-    "sampled_families": 26,
+    "sampled_families": 33,
     "required_priority_families": 10,
     "required_real_product_coverage": 10,
-    "structured_ingredient_samples": 26,
+    "structured_ingredient_samples": 33,
     "title_or_description_only_samples": 0,
-    "family_inference_pass": 26,
-    "scientific_background_specific_pass": 26,
-    "evidence_grounding_gate_pass": 26,
-    "safety_claim_gate_pass": 26,
-    "approved_reviewed_grounding_rows": 23,
-    "blocked_unapproved_grounding_rows": 3,
+    "family_inference_pass": 33,
+    "scientific_background_specific_pass": 33,
+    "evidence_grounding_gate_pass": 33,
+    "safety_claim_gate_pass": 33,
+    "approved_reviewed_grounding_rows": 28,
+    "blocked_unapproved_grounding_rows": 5,
+    "extra_high_risk_samples": 16,
+    "extra_low_risk_structural_samples": 7,
+    "skipped_extra_candidates": 3,
     "registry_traceability_warnings": 0,
     "failures": 0
   },
@@ -2288,6 +2291,751 @@
         "live_grounding_status": "approved_reviewed_row",
         "expected_blocked_from_registry": false,
         "first_reference_id": "pmid:34411377",
+        "reference_count": 5,
+        "registry_traceability_warning": false
+      },
+      "safety_claim_gate": {
+        "pass": true,
+        "unsafe_sentences": []
+      }
+    },
+    {
+      "family": "boron",
+      "source_ingredient_id": "boron",
+      "display_name": "Boron",
+      "required": false,
+      "productization_class": "low_risk_structural",
+      "safety_boundary_tier": "standard",
+      "category": "mineral",
+      "replay_product": {
+        "source_file": "backend/data/personalization/goal_navigator_candidate_bundle.v1.json",
+        "product_id": "120192",
+        "barcode": "00848998081713",
+        "url": "https://www.iherb.com/pr/zahler-prostaid-prostate-support-formula-60-capsules/120192",
+        "brand": "Zahler",
+        "title": "Zahler, ProstAid+™, Prostate Support Formula, 60 Capsules",
+        "facts_quality": "structured_ingredients",
+        "ingredient_rows": [
+          {
+            "name": "Vitamin A (as Beta-Carotene)",
+            "amountText": "450 mcg"
+          },
+          {
+            "name": "Vitamin B6 (from Pyridoxal 5-Phosphate)",
+            "amountText": "2 mg"
+          },
+          {
+            "name": "Zinc (from Zinc Arginate Chelate)",
+            "amountText": "15 mg"
+          },
+          {
+            "name": "Selenium (from Selenium Yeast)",
+            "amountText": "200 mcg"
+          },
+          {
+            "name": "Total Sterols (from PhytoPin Plant Sterols)",
+            "amountText": "100 mg"
+          },
+          {
+            "name": "Saw Palmetto Fruit Extract",
+            "amountText": "10 mg"
+          },
+          {
+            "name": "Lycopene",
+            "amountText": "5 mg"
+          },
+          {
+            "name": "Boron (as Bororganic Glycine)",
+            "amountText": "1 mg"
+          }
+        ]
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "boron",
+        "context_family": "beta_carotene",
+        "anchor_family": "beta_carotene",
+        "selected_descriptor_family": "boron",
+        "selected_descriptor_name": "Boron (as Bororganic Glycine)",
+        "descriptor_families": [
+          "beta_carotene",
+          "saw_palmetto",
+          "lycopene",
+          "boron",
+          "generic",
+          "zinc",
+          "b6"
+        ]
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "boron",
+        "headings": [
+          "Intake and status context",
+          "Form and absorption context",
+          "Comparison and cofactor context"
+        ],
+        "heading_ids": [
+          "intake_and_status_context",
+          "form_and_absorption_context",
+          "comparison_and_cofactor_context"
+        ],
+        "generic_hits": [],
+        "contains_family_label": true,
+        "sample_summary": "Boron is most useful here as a comparison lens around intake context, amount, and named form, not as a broad front-label promise.",
+        "sample_evidence_read": "The reviewed PubMed set includes \"Nothing Boring About Boron.\", so this lane should be read as bounded human or review-level context rather than a universal product claim. Do not turn Boron context into disease-treatment, guaranteed-outcome, universal best-form, or superiority language.",
+        "sample_shopper_meaning": "When comparing Boron products, check dose, form/source disclosure, and formula role before treating two labels as equivalent."
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "primary_lane": "intake_and_status_context",
+        "registry_review_status": "approved",
+        "registry_review_reasons": [
+          "approved_with_verified_pmids"
+        ],
+        "reviewed_evidence_found": true,
+        "live_grounding_status": "approved_reviewed_row",
+        "expected_blocked_from_registry": false,
+        "first_reference_id": "pmid:26770156",
+        "reference_count": 5,
+        "registry_traceability_warning": false
+      },
+      "safety_claim_gate": {
+        "pass": true,
+        "unsafe_sentences": []
+      }
+    },
+    {
+      "family": "l_alanine",
+      "source_ingredient_id": "l_alanine",
+      "display_name": "L-Alanine",
+      "required": false,
+      "productization_class": "low_risk_structural",
+      "safety_boundary_tier": "standard",
+      "category": "amino_acid",
+      "replay_product": {
+        "source_file": "backend/data/personalization/goal_navigator_candidate_bundle.v1.json",
+        "product_id": "9625",
+        "barcode": "00088395046414",
+        "url": "https://www.iherb.com/pr/carlson-nutra-support-prostate-120-soft-gels/9625",
+        "brand": "Carlson",
+        "title": "Carlson, Nutra-Support® Prostate, 120 Soft Gels",
+        "facts_quality": "structured_ingredients",
+        "ingredient_rows": [
+          {
+            "name": "Zinc (from zinc glycinate chelate)",
+            "amountText": "30 mg"
+          },
+          {
+            "name": "Selenium (from L-Selenomethionine)",
+            "amountText": "200 mcg"
+          },
+          {
+            "name": "Saw Palmetto Extract Serenoa repens (berries)",
+            "amountText": "320 mg"
+          },
+          {
+            "name": "Lycopene",
+            "amountText": "10 mg"
+          },
+          {
+            "name": "Gamma Tocopherol",
+            "amountText": "50 mg"
+          },
+          {
+            "name": "Boron (from boron amino acid chelate)",
+            "amountText": "3 mg"
+          },
+          {
+            "name": "Glycine",
+            "amountText": "100 mg"
+          },
+          {
+            "name": "L-Alanine",
+            "amountText": "100 mg"
+          }
+        ]
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "l_alanine",
+        "context_family": "boron",
+        "anchor_family": "saw_palmetto",
+        "selected_descriptor_family": "l_alanine",
+        "selected_descriptor_name": "L-Alanine",
+        "descriptor_families": [
+          "saw_palmetto",
+          "glycine",
+          "l_alanine",
+          "l_glutamine",
+          "lycopene",
+          "boron",
+          "pygeum",
+          "generic",
+          "zinc"
+        ]
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "l_alanine",
+        "headings": [
+          "Primary context",
+          "Form and disclosure context",
+          "Formula context"
+        ],
+        "heading_ids": [
+          "primary_context",
+          "form_and_disclosure_context",
+          "formula_context"
+        ],
+        "generic_hits": [],
+        "contains_family_label": true,
+        "sample_summary": "L-Alanine is most useful here as a comparison lens around the disclosed ingredient line and formula context, not as a broad front-label promise.",
+        "sample_evidence_read": "The reviewed PubMed set includes \"How does the neurotoxin β-N-methylamino-L-alanine exist in biological matrices and cause toxicity?\", so this lane should be read as bounded human or review-level context rather than a universal product claim. Do not turn L Alanine context into disease-treatment, guaranteed-outcome, universal best-form, or superiority language.",
+        "sample_shopper_meaning": "When comparing L-Alanine products, check dose, form/source disclosure, and formula role before treating two labels as equivalent."
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "primary_lane": "primary_context",
+        "registry_review_status": "approved",
+        "registry_review_reasons": [
+          "approved_with_verified_pmids"
+        ],
+        "reviewed_evidence_found": true,
+        "live_grounding_status": "approved_reviewed_row",
+        "expected_blocked_from_registry": false,
+        "first_reference_id": "pmid:38417517",
+        "reference_count": 1,
+        "registry_traceability_warning": false
+      },
+      "safety_claim_gate": {
+        "pass": true,
+        "unsafe_sentences": []
+      }
+    },
+    {
+      "family": "l_glutamine",
+      "source_ingredient_id": "l_glutamine",
+      "display_name": "L-Glutamine",
+      "required": false,
+      "productization_class": "low_risk_structural",
+      "safety_boundary_tier": "standard",
+      "category": "amino_acid",
+      "replay_product": {
+        "source_file": "backend/data/personalization/goal_navigator_candidate_bundle.v1.json",
+        "product_id": "9625",
+        "barcode": "00088395046414",
+        "url": "https://www.iherb.com/pr/carlson-nutra-support-prostate-120-soft-gels/9625",
+        "brand": "Carlson",
+        "title": "Carlson, Nutra-Support® Prostate, 120 Soft Gels",
+        "facts_quality": "structured_ingredients",
+        "ingredient_rows": [
+          {
+            "name": "Zinc (from zinc glycinate chelate)",
+            "amountText": "30 mg"
+          },
+          {
+            "name": "Selenium (from L-Selenomethionine)",
+            "amountText": "200 mcg"
+          },
+          {
+            "name": "Saw Palmetto Extract Serenoa repens (berries)",
+            "amountText": "320 mg"
+          },
+          {
+            "name": "Lycopene",
+            "amountText": "10 mg"
+          },
+          {
+            "name": "Gamma Tocopherol",
+            "amountText": "50 mg"
+          },
+          {
+            "name": "Boron (from boron amino acid chelate)",
+            "amountText": "3 mg"
+          },
+          {
+            "name": "Glycine",
+            "amountText": "100 mg"
+          },
+          {
+            "name": "L-Alanine",
+            "amountText": "100 mg"
+          }
+        ]
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "l_glutamine",
+        "context_family": "boron",
+        "anchor_family": "saw_palmetto",
+        "selected_descriptor_family": "l_glutamine",
+        "selected_descriptor_name": "L-Glutamine",
+        "descriptor_families": [
+          "saw_palmetto",
+          "glycine",
+          "l_alanine",
+          "l_glutamine",
+          "lycopene",
+          "boron",
+          "pygeum",
+          "generic",
+          "zinc"
+        ]
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "l_glutamine",
+        "headings": [
+          "Primary context",
+          "Form and disclosure context",
+          "Formula context"
+        ],
+        "heading_ids": [
+          "primary_context",
+          "form_and_disclosure_context",
+          "formula_context"
+        ],
+        "generic_hits": [],
+        "contains_family_label": true,
+        "sample_summary": "L-Glutamine is most useful here as a comparison lens around the disclosed ingredient line and formula context, not as a broad front-label promise.",
+        "sample_evidence_read": "The reviewed PubMed set includes \"A Phase 3 Trial of l-Glutamine in Sickle Cell Disease.\", so this lane should be read as bounded human or review-level context rather than a universal product claim. Do not turn L Glutamine context into disease-treatment, guaranteed-outcome, universal best-form, or superiority language.",
+        "sample_shopper_meaning": "When comparing L-Glutamine products, check dose, form/source disclosure, and formula role before treating two labels as equivalent."
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "primary_lane": "primary_context",
+        "registry_review_status": "approved",
+        "registry_review_reasons": [
+          "approved_with_verified_pmids"
+        ],
+        "reviewed_evidence_found": true,
+        "live_grounding_status": "approved_reviewed_row",
+        "expected_blocked_from_registry": false,
+        "first_reference_id": "pmid:30021096",
+        "reference_count": 3,
+        "registry_traceability_warning": false
+      },
+      "safety_claim_gate": {
+        "pass": true,
+        "unsafe_sentences": []
+      }
+    },
+    {
+      "family": "l_tyrosine",
+      "source_ingredient_id": "l_tyrosine",
+      "display_name": "L-Tyrosine",
+      "required": false,
+      "productization_class": "low_risk_structural",
+      "safety_boundary_tier": "standard",
+      "category": "amino_acid",
+      "replay_product": {
+        "source_file": "backend/data/personalization/goal_navigator_candidate_bundle.v1.json",
+        "product_id": "120197",
+        "barcode": "00848998081706",
+        "url": "https://www.iherb.com/pr/zahler-thyraid-thyroid-support-formula-60-capsules/120197",
+        "brand": "Zahler",
+        "title": "Zahler, Thyraid™, Thyroid Support Formula, 60 Capsules",
+        "facts_quality": "structured_ingredients",
+        "ingredient_rows": [
+          {
+            "name": "lodine (from Kelp)",
+            "amountText": "100 mcg"
+          },
+          {
+            "name": "Zinc (as Zinc Gluconate)",
+            "amountText": "10 mg"
+          },
+          {
+            "name": "Copper (as Copper Gluconate)",
+            "amountText": "0.1 mg"
+          },
+          {
+            "name": "Manganese (as Manganese Citrate)",
+            "amountText": "0.25 mg"
+          },
+          {
+            "name": "L-Tyrosine",
+            "amountText": "500 mg"
+          },
+          {
+            "name": "Ashwagandha Root and Leaf Extract (Sensoril)",
+            "amountText": "125 mg"
+          },
+          {
+            "name": "Guggul Oleo Gum Resin Extract",
+            "amountText": "100 mg"
+          },
+          {
+            "name": "Forskohlii Root Extract",
+            "amountText": "100 mg"
+          }
+        ]
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "l_tyrosine",
+        "context_family": "ashwagandha",
+        "anchor_family": "l_tyrosine",
+        "selected_descriptor_family": "l_tyrosine",
+        "selected_descriptor_name": "L-Tyrosine",
+        "descriptor_families": [
+          "l_tyrosine",
+          "ashwagandha",
+          "generic",
+          "zinc"
+        ]
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "l_tyrosine",
+        "headings": [
+          "Primary context",
+          "Form and disclosure context",
+          "Formula context"
+        ],
+        "heading_ids": [
+          "primary_context",
+          "form_and_disclosure_context",
+          "formula_context"
+        ],
+        "generic_hits": [],
+        "contains_family_label": true,
+        "sample_summary": "The useful way to read L-Tyrosine in this formula depends on its role as a lead active, not just on the broad category it belongs to.",
+        "sample_evidence_read": "This is a formula-aware orientation section, not a universal claim about the ingredient in every product.",
+        "sample_shopper_meaning": "Use L-Tyrosine as one part of the formula map, then compare how clearly the label separates the lead active from companion or structural lines."
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "primary_lane": "primary_context",
+        "registry_review_status": "rejected",
+        "registry_review_reasons": [
+          "only_search_url_without_resolved_source"
+        ],
+        "reviewed_evidence_found": false,
+        "live_grounding_status": "blocked_no_reviewed_row",
+        "expected_blocked_from_registry": true,
+        "first_reference_id": null,
+        "reference_count": 0,
+        "registry_traceability_warning": false
+      },
+      "safety_claim_gate": {
+        "pass": true,
+        "unsafe_sentences": []
+      }
+    },
+    {
+      "family": "gamma_linolenic_acid",
+      "source_ingredient_id": "gamma_linolenic_acid",
+      "display_name": "Gamma-Linolenic Acid",
+      "required": false,
+      "productization_class": "low_risk_structural",
+      "safety_boundary_tier": "standard",
+      "category": "lipid",
+      "replay_product": {
+        "source_file": "backend/data/personalization/goal_navigator_candidate_bundle.v1.json",
+        "product_id": "125465",
+        "barcode": "00088395183003",
+        "url": "https://www.iherb.com/pr/carlson-omega-3-enriched-salmon-oil-complete-60-soft-gels/125465",
+        "brand": "Carlson",
+        "title": "Carlson, Omega-3 Enriched Salmon Oil Complete, 60 Soft Gels",
+        "facts_quality": "structured_ingredients",
+        "ingredient_rows": [
+          {
+            "name": "Vitamin E (as d-alpha tocopherol)",
+            "amountText": "13.4 mg"
+          },
+          {
+            "name": "Norwegian Salmon Oil",
+            "amountText": "2.5 g"
+          },
+          {
+            "name": "Total Omega-3 Fatty Acids☆",
+            "amountText": "700 mg"
+          },
+          {
+            "name": "EPA (Eicosapentaenoic Acid)☆",
+            "amountText": "250 mg"
+          },
+          {
+            "name": "DHA (Docosahexaenoic Acid)☆",
+            "amountText": "230 mg"
+          },
+          {
+            "name": "Omega-6 Fatty Acids (Linoleic Acid, Eicosadienic Acid, Gamma-linolenic Acid, Dihomo-gamma-linolenic Acid)☆",
+            "amountText": "200 mg"
+          },
+          {
+            "name": "Omega-7 Fatty Acids (Palmitoleic Acid)☆",
+            "amountText": "40 mg"
+          },
+          {
+            "name": "Omega-9 Fatty Acids (Oleic Acid, Eicosenoic Acid, Nervonic Acid)☆",
+            "amountText": "600 mg"
+          }
+        ]
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "gamma_linolenic_acid",
+        "context_family": "astaxanthin_carotenoid",
+        "anchor_family": "omega_3",
+        "selected_descriptor_family": "gamma_linolenic_acid",
+        "selected_descriptor_name": "Omega-6 Fatty Acids (Linoleic Acid, Eicosadienic Acid, Gamma-linolenic Acid, Dihomo-gamma-linolenic Acid)☆",
+        "descriptor_families": [
+          "omega_3",
+          "gamma_linolenic_acid",
+          "generic",
+          "astaxanthin_carotenoid"
+        ]
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "gamma_linolenic_acid",
+        "headings": [
+          "Primary context",
+          "Form and disclosure context",
+          "Formula context"
+        ],
+        "heading_ids": [
+          "primary_context",
+          "form_and_disclosure_context",
+          "formula_context"
+        ],
+        "generic_hits": [],
+        "contains_family_label": true,
+        "sample_summary": "The useful way to read Gamma-Linolenic Acid in this formula depends on its role as a supporting formula line around Total Omega-3 Fatty Acids☆, not just on the broad category it belongs to.",
+        "sample_evidence_read": "This is a formula-aware orientation section, not a universal claim about the ingredient in every product.",
+        "sample_shopper_meaning": "Use Gamma-Linolenic Acid as one part of the formula map, then compare how clearly the label separates the lead active from companion or structural lines."
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "primary_lane": "primary_context",
+        "registry_review_status": "rejected",
+        "registry_review_reasons": [
+          "only_search_url_without_resolved_source"
+        ],
+        "reviewed_evidence_found": false,
+        "live_grounding_status": "blocked_no_reviewed_row",
+        "expected_blocked_from_registry": true,
+        "first_reference_id": null,
+        "reference_count": 0,
+        "registry_traceability_warning": false
+      },
+      "safety_claim_gate": {
+        "pass": true,
+        "unsafe_sentences": []
+      }
+    },
+    {
+      "family": "hyaluronic_acid",
+      "source_ingredient_id": "hyaluronic_acid",
+      "display_name": "Hyaluronic acid",
+      "required": false,
+      "productization_class": "low_risk_structural",
+      "safety_boundary_tier": "standard",
+      "category": "other",
+      "replay_product": {
+        "source_file": "backend/data/personalization/goal_navigator_candidate_bundle.v1.json",
+        "product_id": "147922",
+        "barcode": "00848998025243",
+        "url": "https://www.iherb.com/pr/zahler-shine-60-capsules/147922",
+        "brand": "Zahler",
+        "title": "Zahler, Shine™, 60 Capsules",
+        "facts_quality": "structured_ingredients",
+        "ingredient_rows": [
+          {
+            "name": "Vitamin C (Ascorbic Acid)",
+            "amountText": "90 mg"
+          },
+          {
+            "name": "Folate (as L-5 Methyltetrahydrofolate Calcium)",
+            "amountText": "400 mcg"
+          },
+          {
+            "name": "Biotin",
+            "amountText": "300 mcg"
+          },
+          {
+            "name": "lodine (as Potassium lodide)",
+            "amountText": "150 mcg"
+          },
+          {
+            "name": "Zinc (as Zinc Bisglycinate Chelate)",
+            "amountText": "5.5 mg"
+          },
+          {
+            "name": "Selenium (as Selenium Yeast)",
+            "amountText": "55 mcg"
+          },
+          {
+            "name": "Chromium (as Chromium Picolinate)",
+            "amountText": "70 mcg"
+          },
+          {
+            "name": "Hydrolyzed Keratin",
+            "amountText": "500 mg"
+          }
+        ]
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "hyaluronic_acid",
+        "context_family": "hyaluronic_acid",
+        "anchor_family": "lutein",
+        "selected_descriptor_family": "hyaluronic_acid",
+        "selected_descriptor_name": "Hyaluronic Acid (as Sodium Hyaluronate)",
+        "descriptor_families": [
+          "lutein",
+          "generic",
+          "vitamin_c",
+          "hyaluronic_acid",
+          "folate",
+          "zinc"
+        ]
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "hyaluronic_acid",
+        "headings": [
+          "Primary context",
+          "Form and disclosure context",
+          "Formula context"
+        ],
+        "heading_ids": [
+          "primary_context",
+          "form_and_disclosure_context",
+          "formula_context"
+        ],
+        "generic_hits": [],
+        "contains_family_label": true,
+        "sample_summary": "Hyaluronic acid is most useful here as a comparison lens around the disclosed ingredient line and formula context, not as a broad front-label promise.",
+        "sample_evidence_read": "The reviewed PubMed set includes \"Hyaluronic Acid: Redefining Its Role.\", so this lane should be read as bounded human or review-level context rather than a universal product claim. Do not turn Hyaluronic Acid context into disease-treatment, guaranteed-outcome, universal best-form, or superiority language.",
+        "sample_shopper_meaning": "When comparing Hyaluronic acid products, check dose, form/source disclosure, and formula role before treating two labels as equivalent."
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "primary_lane": "primary_context",
+        "registry_review_status": "approved",
+        "registry_review_reasons": [
+          "approved_with_verified_pmids"
+        ],
+        "reviewed_evidence_found": true,
+        "live_grounding_status": "approved_reviewed_row",
+        "expected_blocked_from_registry": false,
+        "first_reference_id": "pmid:32708202",
+        "reference_count": 5,
+        "registry_traceability_warning": false
+      },
+      "safety_claim_gate": {
+        "pass": true,
+        "unsafe_sentences": []
+      }
+    },
+    {
+      "family": "lutein",
+      "source_ingredient_id": "lutein",
+      "display_name": "Lutein",
+      "required": false,
+      "productization_class": "low_risk_structural",
+      "safety_boundary_tier": "standard",
+      "category": "other",
+      "replay_product": {
+        "source_file": "backend/data/personalization/goal_navigator_candidate_bundle.v1.json",
+        "product_id": "147922",
+        "barcode": "00848998025243",
+        "url": "https://www.iherb.com/pr/zahler-shine-60-capsules/147922",
+        "brand": "Zahler",
+        "title": "Zahler, Shine™, 60 Capsules",
+        "facts_quality": "structured_ingredients",
+        "ingredient_rows": [
+          {
+            "name": "Vitamin C (Ascorbic Acid)",
+            "amountText": "90 mg"
+          },
+          {
+            "name": "Folate (as L-5 Methyltetrahydrofolate Calcium)",
+            "amountText": "400 mcg"
+          },
+          {
+            "name": "Biotin",
+            "amountText": "300 mcg"
+          },
+          {
+            "name": "lodine (as Potassium lodide)",
+            "amountText": "150 mcg"
+          },
+          {
+            "name": "Zinc (as Zinc Bisglycinate Chelate)",
+            "amountText": "5.5 mg"
+          },
+          {
+            "name": "Selenium (as Selenium Yeast)",
+            "amountText": "55 mcg"
+          },
+          {
+            "name": "Chromium (as Chromium Picolinate)",
+            "amountText": "70 mcg"
+          },
+          {
+            "name": "Hydrolyzed Keratin",
+            "amountText": "500 mg"
+          }
+        ]
+      },
+      "inference": {
+        "pass": true,
+        "expected_family": "lutein",
+        "context_family": "hyaluronic_acid",
+        "anchor_family": "lutein",
+        "selected_descriptor_family": "lutein",
+        "selected_descriptor_name": "Lutein (from Lutemax 2020 Aztec Marigold Flower Extract)",
+        "descriptor_families": [
+          "lutein",
+          "generic",
+          "vitamin_c",
+          "hyaluronic_acid",
+          "folate",
+          "zinc"
+        ]
+      },
+      "scientific_background": {
+        "pass": true,
+        "mode": "research_mode",
+        "family": "lutein",
+        "headings": [
+          "Primary context",
+          "Form and disclosure context",
+          "Formula context"
+        ],
+        "heading_ids": [
+          "primary_context",
+          "form_and_disclosure_context",
+          "formula_context"
+        ],
+        "generic_hits": [],
+        "contains_family_label": true,
+        "sample_summary": "Lutein is most useful here as a comparison lens around the disclosed ingredient line and formula context, not as a broad front-label promise.",
+        "sample_evidence_read": "The reviewed PubMed set includes \"Lutein Supplementation for Eye Diseases.\", so this lane should be read as bounded human or review-level context rather than a universal product claim. Do not turn Lutein context into disease-treatment, guaranteed-outcome, universal best-form, or superiority language.",
+        "sample_shopper_meaning": "When comparing Lutein products, check dose, form/source disclosure, and formula role before treating two labels as equivalent."
+      },
+      "evidence_grounding": {
+        "pass": true,
+        "primary_lane": "primary_context",
+        "registry_review_status": "approved",
+        "registry_review_reasons": [
+          "approved_with_verified_pmids"
+        ],
+        "reviewed_evidence_found": true,
+        "live_grounding_status": "approved_reviewed_row",
+        "expected_blocked_from_registry": false,
+        "first_reference_id": "pmid:32526861",
         "reference_count": 5,
         "registry_traceability_warning": false
       },

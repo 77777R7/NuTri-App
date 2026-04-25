@@ -54,12 +54,15 @@ const readRouteReplayArtifact = (): RouteReplayArtifact =>
 test("search/detail route replay keeps priority families anchored and evidence-gated", () => {
   const artifact = readRouteReplayArtifact();
 
-  assert.equal(artifact.summary.total, 10);
-  assert.equal(artifact.summary.route_ok, 10);
-  assert.equal(artifact.summary.family_inference_pass, 10);
-  assert.equal(artifact.summary.scientific_background_specific_pass, 10);
-  assert.equal(artifact.summary.evidence_grounding_gate_pass, 10);
-  assert.equal(artifact.summary.safety_claim_gate_pass, 10);
+  assert.ok(artifact.summary.total >= 10);
+  assert.equal(artifact.summary.route_ok, artifact.summary.total);
+  assert.equal(artifact.summary.family_inference_pass, artifact.summary.total);
+  assert.equal(
+    artifact.summary.scientific_background_specific_pass,
+    artifact.summary.total,
+  );
+  assert.equal(artifact.summary.evidence_grounding_gate_pass, artifact.summary.total);
+  assert.equal(artifact.summary.safety_claim_gate_pass, artifact.summary.total);
   assert.equal(artifact.summary.failures, 0);
   assert.equal(artifact.failures.length, 0);
 

@@ -1,16 +1,16 @@
 {
   "version": "nutri_minimal_v4_search_detail_route_replay.v1",
-  "generatedAt": "2026-04-24T21:08:31.082Z",
-  "apiBaseUrl": "http://127.0.0.1:3019",
+  "generatedAt": "2026-04-25T17:24:07.842Z",
+  "apiBaseUrl": "https://nutri-app-qn0u.onrender.com",
   "summary": {
-    "total": 10,
-    "route_ok": 10,
-    "family_inference_pass": 10,
-    "scientific_background_specific_pass": 10,
-    "evidence_grounding_gate_pass": 10,
-    "safety_claim_gate_pass": 10,
-    "approved_grounding_rows": 8,
-    "blocked_grounding_rows": 2,
+    "total": 16,
+    "route_ok": 16,
+    "family_inference_pass": 16,
+    "scientific_background_specific_pass": 16,
+    "evidence_grounding_gate_pass": 16,
+    "safety_claim_gate_pass": 16,
+    "approved_grounding_rows": 13,
+    "blocked_grounding_rows": 3,
     "failures": 0
   },
   "failures": [],
@@ -26,7 +26,7 @@
         "attempts": 4,
         "finalSource": "fallback",
         "finalBackgroundRefreshPending": true,
-        "elapsedMsTotal": 8099,
+        "elapsedMsTotal": 7808,
         "error": null
       },
       "routeProduct": {
@@ -101,7 +101,7 @@
         "attempts": 4,
         "finalSource": "fallback",
         "finalBackgroundRefreshPending": true,
-        "elapsedMsTotal": 7523,
+        "elapsedMsTotal": 7606,
         "error": null
       },
       "routeProduct": {
@@ -177,7 +177,7 @@
         "attempts": 4,
         "finalSource": "fallback",
         "finalBackgroundRefreshPending": true,
-        "elapsedMsTotal": 7437,
+        "elapsedMsTotal": 7464,
         "error": null
       },
       "routeProduct": {
@@ -252,7 +252,7 @@
         "attempts": 4,
         "finalSource": "fallback",
         "finalBackgroundRefreshPending": true,
-        "elapsedMsTotal": 7457,
+        "elapsedMsTotal": 7469,
         "error": null
       },
       "routeProduct": {
@@ -328,7 +328,7 @@
         "attempts": 4,
         "finalSource": "fallback",
         "finalBackgroundRefreshPending": true,
-        "elapsedMsTotal": 7412,
+        "elapsedMsTotal": 7477,
         "error": null
       },
       "routeProduct": {
@@ -402,7 +402,7 @@
         "attempts": 4,
         "finalSource": "fallback",
         "finalBackgroundRefreshPending": true,
-        "elapsedMsTotal": 7438,
+        "elapsedMsTotal": 7464,
         "error": null
       },
       "routeProduct": {
@@ -477,7 +477,7 @@
         "attempts": 4,
         "finalSource": "fallback",
         "finalBackgroundRefreshPending": true,
-        "elapsedMsTotal": 7439,
+        "elapsedMsTotal": 7488,
         "error": null
       },
       "routeProduct": {
@@ -552,7 +552,7 @@
         "attempts": 4,
         "finalSource": "fallback",
         "finalBackgroundRefreshPending": true,
-        "elapsedMsTotal": 7410,
+        "elapsedMsTotal": 7479,
         "error": null
       },
       "routeProduct": {
@@ -627,7 +627,7 @@
         "attempts": 4,
         "finalSource": "fallback",
         "finalBackgroundRefreshPending": true,
-        "elapsedMsTotal": 7502,
+        "elapsedMsTotal": 7493,
         "error": null
       },
       "routeProduct": {
@@ -693,7 +693,7 @@
         "attempts": 4,
         "finalSource": "fallback",
         "finalBackgroundRefreshPending": true,
-        "elapsedMsTotal": 7503,
+        "elapsedMsTotal": 7457,
         "error": null
       },
       "routeProduct": {
@@ -741,6 +741,478 @@
         "reviewedReferenceIds": [],
         "routeEvidenceSignalFound": false,
         "routeEvidenceSignals": [],
+        "sourceAcceptedAsApiGrounded": false
+      },
+      "safetyClaimGate": {
+        "pass": true,
+        "unsafeSentences": []
+      }
+    },
+    {
+      "family": "betaine",
+      "productId": "147573",
+      "barcode": "00810078474128",
+      "title": "Vitamatic, TMG, 1,000 mg, 120 Tablets",
+      "route": {
+        "pass": true,
+        "status": 200,
+        "attempts": 4,
+        "finalSource": "fallback",
+        "finalBackgroundRefreshPending": true,
+        "elapsedMsTotal": 7465,
+        "error": null
+      },
+      "routeProduct": {
+        "productId": "147573",
+        "barcode": "00810078474128",
+        "name": "Vitamatic, TMG, 1,000 mg, 120 Tablets",
+        "brand": "Vitamatic",
+        "factsStatus": "full"
+      },
+      "familyInference": {
+        "pass": true,
+        "defaultAnchorName": "Trimethylglycine (TMG)(Betaine Anhydrous)",
+        "scienceRowNames": [
+          "Trimethylglycine (TMG)(Betaine Anhydrous)"
+        ],
+        "selectedLabel": "Trimethylglycine (TMG)(Betaine Anhydrous)",
+        "matchedFields": [
+          "defaultAnchor.name",
+          "scientificBackground.selectedLabel",
+          "scienceBlock.ingredientRows.0.name"
+        ]
+      },
+      "scientificBackground": {
+        "pass": true,
+        "source": "fallback",
+        "mode": "research_mode",
+        "genericHits": [],
+        "containsFamilySignal": true,
+        "headings": [
+          "Primary use context",
+          "Safety and boundary context",
+          "Form, source, and label context"
+        ],
+        "selectedLabel": "Trimethylglycine (TMG)(Betaine Anhydrous)",
+        "sampleSummary": "Betaine is most useful here as a comparison lens around the disclosed ingredient line and formula context, not as a broad front-label promise.",
+        "sampleEvidenceRead": "The reviewed PubMed set includes \"Betaine in Inflammation: Mechanistic Aspects and Applications.\", so this lane should be read as bounded human or review-level context rather than a universal product claim. Hard boundary: do not present Betaine as treating, preventing, or curing disease, replacing medication, or guaranteeing outcomes; keep comparison on disclosed identity, amount, form/source, and safety cautions.",
+        "sampleShopperMeaning": "When comparing Betaine products, check identity, amount, source/form disclosure, and safety cautions before treating two labels as equivalent."
+      },
+      "evidenceGrounding": {
+        "pass": true,
+        "expectedLiveGroundingStatus": "approved_reviewed_row",
+        "reviewedEvidenceFound": true,
+        "primaryLane": "primary_use_context",
+        "reviewedReferenceIds": [
+          "pmid:29881379",
+          "pmid:34067313",
+          "pmid:39647584"
+        ],
+        "routeEvidenceSignalFound": true,
+        "routeEvidenceSignals": [
+          "Betaine is most useful here as a comparison lens around the disclosed ingredient line and ",
+          "The reviewed PubMed set includes \"Betaine in Inflammation: Mechanistic Aspects and Applica",
+          "When comparing Betaine products, check identity, amount, source/form disclosure, and safet",
+          "Hard boundary: do not present Betaine as treating, preventing, or curing disease, replacin"
+        ],
+        "sourceAcceptedAsApiGrounded": false
+      },
+      "safetyClaimGate": {
+        "pass": true,
+        "unsafeSentences": []
+      }
+    },
+    {
+      "family": "d_mannose",
+      "productId": "76630",
+      "barcode": "00848998080730",
+      "title": "Zahler, Revolution, Complete Urinary Tract Formula, 60 Capsules",
+      "route": {
+        "pass": true,
+        "status": 200,
+        "attempts": 4,
+        "finalSource": "fallback",
+        "finalBackgroundRefreshPending": true,
+        "elapsedMsTotal": 7585,
+        "error": null
+      },
+      "routeProduct": {
+        "productId": "76630",
+        "barcode": "00848998080730",
+        "name": "Zahler, Revolution, Complete Urinary Tract Formula, 60 Capsules",
+        "brand": "Zahler",
+        "factsStatus": "full"
+      },
+      "familyInference": {
+        "pass": true,
+        "defaultAnchorName": "D-Mannose",
+        "scienceRowNames": [
+          "D-Mannose",
+          "Dandelion Root Extract",
+          "Cran-Max Cranberry Fruit Concentrate",
+          "Lactobacillus acidophilus **",
+          "Pumpkin Seed Extract (Cucurbita moschata)",
+          "NutraFlora Fructooligosaccharides",
+          "Probiotics",
+          "Camu Camu Fruit Extract",
+          "Acerola Fruit Extract",
+          "Vitamin C (as Ascorbic Acid)",
+          "Proprietary Blend"
+        ],
+        "selectedLabel": "D-Mannose",
+        "matchedFields": [
+          "defaultAnchor.name",
+          "scientificBackground.selectedLabel",
+          "scienceBlock.ingredientRows.0.name"
+        ]
+      },
+      "scientificBackground": {
+        "pass": true,
+        "source": "fallback",
+        "mode": "research_mode",
+        "genericHits": [],
+        "containsFamilySignal": true,
+        "headings": [
+          "Primary use context",
+          "Safety and boundary context",
+          "Form, source, and label context"
+        ],
+        "selectedLabel": "D-Mannose",
+        "sampleSummary": "D-Mannose is most useful here as a comparison lens around the disclosed ingredient line and formula context, not as a broad front-label promise.",
+        "sampleEvidenceRead": "The reviewed PubMed set includes \"D-mannose for preventing and treating urinary tract infections.\", so this lane should be read as bounded human or review-level context rather than a universal product claim. Hard boundary: do not present D-mannose as treating, preventing, or curing disease, replacing medication, or guaranteeing outcomes; keep comparison on disclosed identity, amount, form/source, and safety cautions.",
+        "sampleShopperMeaning": "When comparing D-Mannose products, check identity, amount, source/form disclosure, and safety cautions before treating two labels as equivalent."
+      },
+      "evidenceGrounding": {
+        "pass": true,
+        "expectedLiveGroundingStatus": "approved_reviewed_row",
+        "reviewedEvidenceFound": true,
+        "primaryLane": "primary_use_context",
+        "reviewedReferenceIds": [
+          "pmid:36041061",
+          "pmid:35005631",
+          "pmid:33762956",
+          "pmid:33915821"
+        ],
+        "routeEvidenceSignalFound": true,
+        "routeEvidenceSignals": [
+          "D-Mannose is most useful here as a comparison lens around the disclosed ingredient line an",
+          "The reviewed PubMed set includes \"D-mannose for preventing and treating urinary tract infe",
+          "When comparing D-Mannose products, check identity, amount, source/form disclosure, and saf",
+          "Hard boundary: do not present D-mannose as treating, preventing, or curing disease, replac"
+        ],
+        "sourceAcceptedAsApiGrounded": false
+      },
+      "safetyClaimGate": {
+        "pass": true,
+        "unsafeSentences": []
+      }
+    },
+    {
+      "family": "lion_s_mane_mushroom",
+      "productId": "149563",
+      "barcode": "00088395864001",
+      "title": "Carlson, Lion's Mane, 60 Vegetarian Capsules",
+      "route": {
+        "pass": true,
+        "status": 200,
+        "attempts": 4,
+        "finalSource": "fallback",
+        "finalBackgroundRefreshPending": true,
+        "elapsedMsTotal": 7470,
+        "error": null
+      },
+      "routeProduct": {
+        "productId": "149563",
+        "barcode": "00088395864001",
+        "name": "Carlson, Lion's Mane, 60 Vegetarian Capsules",
+        "brand": "Carlson",
+        "factsStatus": "full"
+      },
+      "familyInference": {
+        "pass": true,
+        "defaultAnchorName": "Hericium erinaceusMushroom (Fruiting Body) Extract (Organic)",
+        "scienceRowNames": [
+          "Hericium erinaceusMushroom (Fruiting Body) Extract (Organic)",
+          "Beta-(1, 3) (1, 6)-glucans"
+        ],
+        "selectedLabel": "Hericium erinaceusMushroom (Fruiting Body) Extract (Organic)",
+        "matchedFields": [
+          "defaultAnchor.name",
+          "scientificBackground.selectedLabel",
+          "scienceBlock.ingredientRows.0.name",
+          "product.name"
+        ]
+      },
+      "scientificBackground": {
+        "pass": true,
+        "source": "fallback",
+        "mode": "research_mode",
+        "genericHits": [],
+        "containsFamilySignal": true,
+        "headings": [
+          "Primary use context",
+          "Safety and boundary context",
+          "Form, source, and label context"
+        ],
+        "selectedLabel": "Hericium erinaceusMushroom (Fruiting Body) Extract (Organic)",
+        "sampleSummary": "Lion's Mane Mushroom is most useful here as a comparison lens around extract/source identity, marker wording, and formula role, not as a broad front-label promise.",
+        "sampleEvidenceRead": "The reviewed PubMed set includes \"The Acute and Chronic Effects of Lion's Mane Mushroom Supplementation on Cognitive Function, Stress and Mood in Young Adults: A Double-Blind, Parallel Groups, Pilot Study.\", so this lane should be read as bounded human or review-level context rather than a universal product claim. Hard boundary: do not present Lion S Mane Mushroom as treating, preventing, or curing disease, replacing medication, or guaranteeing outcomes; keep comparison on disclosed identity, amount, form/source, and safety cautions.",
+        "sampleShopperMeaning": "When comparing Lion's Mane Mushroom products, check identity, amount, source/form disclosure, and safety cautions before treating two labels as equivalent."
+      },
+      "evidenceGrounding": {
+        "pass": true,
+        "expectedLiveGroundingStatus": "approved_reviewed_row",
+        "reviewedEvidenceFound": true,
+        "primaryLane": "primary_use_context",
+        "reviewedReferenceIds": [
+          "pmid:38004235",
+          "pmid:31413233",
+          "pmid:18844328",
+          "pmid:26244378",
+          "pmid:37907145"
+        ],
+        "routeEvidenceSignalFound": true,
+        "routeEvidenceSignals": [
+          "Lion's Mane Mushroom is most useful here as a comparison lens around extract/source identi",
+          "The reviewed PubMed set includes \"The Acute and Chronic Effects of Lion's Mane Mushroom Su",
+          "When comparing Lion's Mane Mushroom products, check identity, amount, source/form disclosu",
+          "Hard boundary: do not present Lion S Mane Mushroom as treating, preventing, or curing dise"
+        ],
+        "sourceAcceptedAsApiGrounded": false
+      },
+      "safetyClaimGate": {
+        "pass": true,
+        "unsafeSentences": []
+      }
+    },
+    {
+      "family": "nattokinase",
+      "productId": "147592",
+      "barcode": "00810078473930",
+      "title": "Vitamatic, Nattokinase, 120 DRcaps® (100 mg per Capsule)",
+      "route": {
+        "pass": true,
+        "status": 200,
+        "attempts": 4,
+        "finalSource": "fallback",
+        "finalBackgroundRefreshPending": true,
+        "elapsedMsTotal": 7510,
+        "error": null
+      },
+      "routeProduct": {
+        "productId": "147592",
+        "barcode": "00810078473930",
+        "name": "Vitamatic, Nattokinase, 120 DRcaps® (100 mg per Capsule)",
+        "brand": "Vitamatic",
+        "factsStatus": "full"
+      },
+      "familyInference": {
+        "pass": true,
+        "defaultAnchorName": "Nattokinase 4000 FU(enzyme from Natto Extract) (Non-GMO soy derived)",
+        "scienceRowNames": [
+          "Nattokinase 4000 FU(enzyme from Natto Extract) (Non-GMO soy derived)"
+        ],
+        "selectedLabel": "Nattokinase 4000 FU(enzyme from Natto Extract) (Non-GMO soy derived)",
+        "matchedFields": [
+          "defaultAnchor.name",
+          "scientificBackground.selectedLabel",
+          "scienceBlock.ingredientRows.0.name",
+          "product.name"
+        ]
+      },
+      "scientificBackground": {
+        "pass": true,
+        "source": "fallback",
+        "mode": "research_mode",
+        "genericHits": [],
+        "containsFamilySignal": true,
+        "headings": [
+          "Primary use context",
+          "Safety and boundary context",
+          "Form, source, and label context"
+        ],
+        "selectedLabel": "Nattokinase 4000 FU(enzyme from Natto Extract) (Non-GMO soy derived)",
+        "sampleSummary": "Nattokinase is most useful here as a comparison lens around enzyme identity, activity detail, and blend role, not as a broad front-label promise.",
+        "sampleEvidenceRead": "The reviewed PubMed set includes \"Nattokinase Supplementation and Cardiovascular Risk Factors: A Systematic Review and Meta-Analysis of Randomized Controlled Trials.\", so this lane should be read as bounded human or review-level context rather than a universal product claim. Hard boundary: do not present Nattokinase as treating, preventing, or curing disease, replacing medication, or guaranteeing outcomes; keep comparison on disclosed identity, amount, form/source, and safety cautions.",
+        "sampleShopperMeaning": "When comparing Nattokinase products, check identity, amount, source/form disclosure, and safety cautions before treating two labels as equivalent."
+      },
+      "evidenceGrounding": {
+        "pass": true,
+        "expectedLiveGroundingStatus": "approved_reviewed_row",
+        "reviewedEvidenceFound": true,
+        "primaryLane": "primary_use_context",
+        "reviewedReferenceIds": [
+          "pmid:39076715",
+          "pmid:33843667",
+          "pmid:28264497",
+          "pmid:35883536",
+          "pmid:39199344"
+        ],
+        "routeEvidenceSignalFound": true,
+        "routeEvidenceSignals": [
+          "Nattokinase is most useful here as a comparison lens around enzyme identity, activity deta",
+          "The reviewed PubMed set includes \"Nattokinase Supplementation and Cardiovascular Risk Fact",
+          "When comparing Nattokinase products, check identity, amount, source/form disclosure, and s",
+          "Hard boundary: do not present Nattokinase as treating, preventing, or curing disease, repl"
+        ],
+        "sourceAcceptedAsApiGrounded": false
+      },
+      "safetyClaimGate": {
+        "pass": true,
+        "unsafeSentences": []
+      }
+    },
+    {
+      "family": "l_tyrosine",
+      "productId": "120197",
+      "barcode": "00848998081706",
+      "title": "Zahler, Thyraid™, Thyroid Support Formula, 60 Capsules",
+      "route": {
+        "pass": true,
+        "status": 200,
+        "attempts": 4,
+        "finalSource": "fallback",
+        "finalBackgroundRefreshPending": true,
+        "elapsedMsTotal": 7564,
+        "error": null
+      },
+      "routeProduct": {
+        "productId": "120197",
+        "barcode": "00848998081706",
+        "name": "Zahler, Thyraid™, Thyroid Support Formula, 60 Capsules",
+        "brand": "Zahler",
+        "factsStatus": "full"
+      },
+      "familyInference": {
+        "pass": true,
+        "defaultAnchorName": "L-Tyrosine",
+        "scienceRowNames": [
+          "L-Tyrosine",
+          "Ashwagandha Root and Leaf Extract (Sensoril)",
+          "Guggul Oleo Gum Resin Extract",
+          "Forskohlii Root Extract",
+          "lodine (from Kelp)",
+          "Manganese (as Manganese Citrate)",
+          "Copper (as Copper Gluconate)",
+          "Zinc (as Zinc Gluconate)"
+        ],
+        "selectedLabel": "L-Tyrosine",
+        "matchedFields": [
+          "defaultAnchor.name",
+          "scientificBackground.selectedLabel",
+          "scienceBlock.ingredientRows.0.name"
+        ]
+      },
+      "scientificBackground": {
+        "pass": true,
+        "source": "fallback",
+        "mode": "research_mode",
+        "genericHits": [],
+        "containsFamilySignal": true,
+        "headings": [
+          "Primary context",
+          "Form and disclosure context",
+          "Formula context"
+        ],
+        "selectedLabel": "L-Tyrosine",
+        "sampleSummary": "The useful way to read L-Tyrosine in this formula depends on its role as a lead active, not just on the broad category it belongs to.",
+        "sampleEvidenceRead": "This is a formula-aware orientation section, not a universal claim about the ingredient in every product.",
+        "sampleShopperMeaning": "Use L-Tyrosine as one part of the formula map, then compare how clearly the label separates the lead active from companion or structural lines."
+      },
+      "evidenceGrounding": {
+        "pass": true,
+        "expectedLiveGroundingStatus": "blocked_no_reviewed_row",
+        "reviewedEvidenceFound": false,
+        "primaryLane": "primary_context",
+        "reviewedReferenceIds": [],
+        "routeEvidenceSignalFound": false,
+        "routeEvidenceSignals": [],
+        "sourceAcceptedAsApiGrounded": false
+      },
+      "safetyClaimGate": {
+        "pass": true,
+        "unsafeSentences": []
+      }
+    },
+    {
+      "family": "lutein",
+      "productId": "147922",
+      "barcode": "00848998025243",
+      "title": "Zahler, Shine™, 60 Capsules",
+      "route": {
+        "pass": true,
+        "status": 200,
+        "attempts": 4,
+        "finalSource": "fallback",
+        "finalBackgroundRefreshPending": true,
+        "elapsedMsTotal": 7636,
+        "error": null
+      },
+      "routeProduct": {
+        "productId": "147922",
+        "barcode": "00848998025243",
+        "name": "Zahler, Shine™, 60 Capsules",
+        "brand": "Zahler",
+        "factsStatus": "full"
+      },
+      "familyInference": {
+        "pass": true,
+        "defaultAnchorName": "Lutein (from Lutemax 2020 Aztec Marigold Flower Extract)",
+        "scienceRowNames": [
+          "Lutein (from Lutemax 2020 Aztec Marigold Flower Extract)",
+          "Hydrolyzed Keratin",
+          "Biotin",
+          "lodine (as Potassium lodide)",
+          "Zeaxanthin (from Lutemax 2020 Aztec Marigold Flower Extract)",
+          "Selenium (as Selenium Yeast)",
+          "Chromium (as Chromium Picolinate)",
+          "Vitamin C (Ascorbic Acid)",
+          "Hyaluronic Acid (as Sodium Hyaluronate)",
+          "Folate (as L-5 Methyltetrahydrofolate Calcium)",
+          "Zinc (as Zinc Bisglycinate Chelate)"
+        ],
+        "selectedLabel": "Lutein (from Lutemax 2020 Aztec Marigold Flower Extract)",
+        "matchedFields": [
+          "defaultAnchor.name",
+          "scientificBackground.selectedLabel",
+          "scienceBlock.ingredientRows.0.name"
+        ]
+      },
+      "scientificBackground": {
+        "pass": true,
+        "source": "fallback",
+        "mode": "research_mode",
+        "genericHits": [],
+        "containsFamilySignal": true,
+        "headings": [
+          "Primary context",
+          "Form and disclosure context",
+          "Formula context"
+        ],
+        "selectedLabel": "Lutein (from Lutemax 2020 Aztec Marigold Flower Extract)",
+        "sampleSummary": "Lutein is most useful here as a comparison lens around the disclosed ingredient line and formula context, not as a broad front-label promise.",
+        "sampleEvidenceRead": "The reviewed PubMed set includes \"Lutein Supplementation for Eye Diseases.\", so this lane should be read as bounded human or review-level context rather than a universal product claim. Do not turn Lutein context into disease-treatment, guaranteed-outcome, universal best-form, or superiority language.",
+        "sampleShopperMeaning": "When comparing Lutein products, check dose, form/source disclosure, and formula role before treating two labels as equivalent."
+      },
+      "evidenceGrounding": {
+        "pass": true,
+        "expectedLiveGroundingStatus": "approved_reviewed_row",
+        "reviewedEvidenceFound": true,
+        "primaryLane": "primary_context",
+        "reviewedReferenceIds": [
+          "pmid:32526861",
+          "pmid:35215476",
+          "pmid:33114699",
+          "pmid:39025435",
+          "pmid:23644932"
+        ],
+        "routeEvidenceSignalFound": true,
+        "routeEvidenceSignals": [
+          "Lutein is most useful here as a comparison lens around the disclosed ingredient line and f",
+          "The reviewed PubMed set includes \"Lutein Supplementation for Eye Diseases.\", so this lane ",
+          "When comparing Lutein products, check dose, form/source disclosure, and formula role befor",
+          "Do not turn Lutein context into disease-treatment, guaranteed-outcome, universal best-form"
+        ],
         "sourceAcceptedAsApiGrounded": false
       },
       "safetyClaimGate": {
