@@ -946,8 +946,14 @@ export const evaluateAiSummary = ({ type, product, payload, source, fallbackUsed
 const collectBlankFields = (payload, prefix = "") => {
   if (!payload || typeof payload !== "object") return [];
   const out = [];
+  const nullableFields = new Set([
+    "selectedDose",
+    "recommendedRetryAfterMs",
+    "closingNote",
+  ]);
   for (const [key, value] of Object.entries(payload)) {
     const field = prefix ? `${prefix}.${key}` : key;
+    if (nullableFields.has(field) || nullableFields.has(key)) continue;
     if (typeof value === "string" && !safeText(value)) out.push(field);
     else if (value == null) out.push(field);
     else if (Array.isArray(value) && value.length === 0) out.push(field);

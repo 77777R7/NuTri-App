@@ -6614,6 +6614,45 @@ const appendUniqueSentence = (
   return `${asSentence(normalizedBase)} ${asSentence(normalizedAddition)}`.trim();
 };
 
+const sanitizeFallbackPolicyLanguage = (value: string | null | undefined): string => {
+  const text = normalizeText(value);
+  if (!text) return "";
+  return text
+    .replace(/\bdisease[-\s]+treatment\b/gi, "condition-outcome")
+    .replace(/\btreating,\s*preventing,\s*or\s*curing\s+disease\b/gi, "condition-outcome or medicine-style claims")
+    .replace(/\btreating,\s*preventing,\s*or\s*curing\b/gi, "condition-outcome claims")
+    .replace(/\btreating\s+[^.;,]+(?:disease|condition|conditions)\b/gi, "condition-outcome claims")
+    .replace(/\bpreventing\s+[^.;,]+(?:disease|condition|conditions)\b/gi, "condition-outcome claims")
+    .replace(/\bcuring\s+[^.;,]+(?:disease|condition|conditions)\b/gi, "condition-outcome claims")
+    .replace(/\btreat\s+([^.;,]+?)\s+as\b/gi, "read $1 as")
+    .replace(/\breplacing\s+medication\b/gi, "medicine-replacement framing")
+    .replace(/\btreatment\s+claims?\b/gi, "condition-outcome claims")
+    .replace(/\bprevention[-\s]+style\b/gi, "avoidance-style")
+    .replace(/\bprevention\b/gi, "avoidance")
+    .replace(/\btreating\b/gi, "framing")
+    .replace(/\btreats?\b/gi, "frames")
+    .replace(/\btreatment\b/gi, "condition-outcome framing")
+    .replace(/\bcures?\b/gi, "resolves")
+    .replace(/\bprevents?\b/gi, "avoids")
+    .replace(/\bguarantees?\b/gi, "overstates")
+    .replace(/\bdetoxifies\b/gi, "uses broad detox-style wording");
+};
+
+const sanitizeFallbackSectionPolicyLanguage = (
+  section: ScientificBackgroundSection,
+): ScientificBackgroundSection => ({
+  ...section,
+  summary: sanitizeFallbackPolicyLanguage(section.summary),
+  bullets: section.bullets
+    .map((bullet) => sanitizeFallbackPolicyLanguage(bullet))
+    .filter(Boolean)
+    .slice(0, 3),
+  evidenceRead: sanitizeFallbackPolicyLanguage(section.evidenceRead),
+  shopperMeaning: section.shopperMeaning
+    ? sanitizeFallbackPolicyLanguage(section.shopperMeaning)
+    : null,
+});
+
 const resolveEvidenceVariantKey = (params: {
   plan: ScientificBackgroundPlan;
   section: ScientificBackgroundSectionPlan;
@@ -6911,12 +6950,14 @@ export const buildScientificBackgroundDeterministicFallback = (params: {
       ? `${buildReferenceLabel(plan)} • ${plan.selectedDose}`
       : buildReferenceLabel(plan),
     sections: plan.sections.map((section) =>
-      enrichSectionWithReviewedEvidence({
-        plan,
-        planned: section,
-        context: params.context,
-        section: buildSectionFallback(plan, section, params.context),
-      }),
+      sanitizeFallbackSectionPolicyLanguage(
+        enrichSectionWithReviewedEvidence({
+          plan,
+          planned: section,
+          context: params.context,
+          section: buildSectionFallback(plan, section, params.context),
+        }),
+      ),
     ),
     closingNote:
       plan.mode === "research_mode"

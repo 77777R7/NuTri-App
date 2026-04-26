@@ -1062,6 +1062,12 @@ const pickPrimaryActiveRowIndex = (
       family === "omega_3" && (OMEGA3_TOTAL_PATTERN.test(row.name) || OMEGA3_BREAKDOWN_PATTERN.test(row.name))
         ? 140
         : 0;
+    const titleMatchedBlendFamilyBoost =
+      isBlendLike(row.name, family) &&
+      family !== "generic" &&
+      hasTitleFamily(family, productName)
+        ? 340
+        : 0;
     const supportingPenalty =
       hasStrongLeadActive && SUPPORTING_MICRONUTRIENT_FAMILIES.has(family) ? 96 : 0;
     const vitaminDInMineralStackPenalty =
@@ -1097,6 +1103,7 @@ const pickPrimaryActiveRowIndex = (
       elderberryTitleBoost +
       carnitineClaMatrixBoost +
       omega3BreakdownBoost +
+      titleMatchedBlendFamilyBoost +
       (STRONG_LEAD_ACTIVE_FAMILIES.has(family) ? 86 : 0) +
       (PRIMARY_ACTIVE_FAMILIES.has(family) ? 24 : 0) +
       Math.min(parseDoseMagnitude(row.dose), 1200) / 24 +
@@ -1353,6 +1360,12 @@ const scoreIngredientDescriptorForDisplay = (params: {
     && (OMEGA3_TOTAL_PATTERN.test(row.name) || OMEGA3_BREAKDOWN_PATTERN.test(row.name))
       ? 130
       : 0;
+  const titleMatchedBlendFamilyBoost =
+    isBlendLike(row.name, descriptor.ingredientFamily) &&
+    descriptor.ingredientFamily !== "generic" &&
+    hasTitleFamily(descriptor.ingredientFamily, productName)
+      ? 360
+      : 0;
   const genericFormulaPenalty = GENERIC_FORMULA_LINE_PATTERN.test(row.name) ? 180 : 0;
   const enzymeSupportPenalty = ENZYME_SUPPORT_LINE_PATTERN.test(row.name) ? 170 : 0;
   const supportingPenalty =
@@ -1402,6 +1415,7 @@ const scoreIngredientDescriptorForDisplay = (params: {
     elderberryTitleBoost +
     carnitineClaMatrixBoost +
     omega3BreakdownBoost +
+    titleMatchedBlendFamilyBoost +
     (STRONG_LEAD_ACTIVE_FAMILIES.has(descriptor.ingredientFamily) ? 68 : 0) +
     (PRIMARY_ACTIVE_FAMILIES.has(descriptor.ingredientFamily) ? 34 : 0) +
     (row.dose ? 16 : 0) +

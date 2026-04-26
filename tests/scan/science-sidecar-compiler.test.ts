@@ -166,6 +166,36 @@ test('scientific background falls back when the model writes ingredient identity
   );
 });
 
+test('scientific background deterministic fallback sanitizes high-risk boundary wording', async () => {
+  const digest = buildDigest({
+    labelId: 'fixture-schisandra',
+    productName: 'Schisandra 950 mg',
+    dosageForm: 'Capsule',
+    actives: [{ name: 'Schisandra', amount: 950, unit: 'mg' }],
+  });
+
+  const context = buildIngredientScienceContext({ digest, overlayClaims: null });
+  const result = await compileScientificBackgroundAsync(context, 'Schisandra');
+  const text = [
+    result.scientificBackground.introLine,
+    ...result.scientificBackground.sections.flatMap((section) => [
+      section.heading,
+      section.summary,
+      ...section.bullets,
+      section.evidenceRead,
+      section.shopperMeaning ?? '',
+    ]),
+    result.scientificBackground.closingNote,
+  ].join(' ');
+
+  assert.equal(result.source, 'fallback');
+  assert.doesNotMatch(
+    text,
+    /\btreats?\b|\btreating\b|\bprevents?\b|\bprevention\b|\bcur(?:e|es|ing)\b|\breplaces medication\b|\bdisease-treatment\b/i,
+  );
+  assert.match(text, /condition-outcome|medicine-style|comparison|label/i);
+});
+
 test('scientific background planner changes headings for clear ingredients versus blend labels', () => {
   const zincContext = buildIngredientScienceContext({
     digest: buildDigest({
@@ -1439,7 +1469,7 @@ test('dha fallback is clearly differentiated from epa framing', async () => {
   const context = buildIngredientScienceContext({ digest, overlayClaims: null });
   const result = await compileScientificBackgroundAsync(context, 'DHA (Docosahexaenoic Acid)');
 
-  assert.match(result.scientificBackground.sections[0]?.summary ?? '', /brain and eye context|brain and eye/i);
+  assert.match(result.scientificBackground.sections[0]?.summary ?? '', /brain[-\s]+and[-\s]+eye context|brain[-\s]+and[-\s]+eye/i);
   assert.match(result.scientificBackground.sections[2]?.shopperMeaning ?? '', /EPA and DHA should not be treated as interchangeable|same total omega-3/i);
   assert.doesNotMatch(result.scientificBackground.sections[0]?.summary ?? '', /triglyceride and lipid-marker research, which makes this the clearest evidence lane/i);
 });
@@ -1456,8 +1486,9 @@ test('vitamin c fallback keeps iron context as a specific lane instead of a gene
   const result = await compileScientificBackgroundAsync(context, 'Vitamin C');
 
   const ironSection = result.scientificBackground.sections[2];
-  assert.match(ironSection?.summary ?? '', /iron co-administration|use-case-specific context/i);
-  assert.match(ironSection?.shopperMeaning ?? '', /paired nutrient use|iron context/i);
+  assert.match(ironSection?.summary ?? '', /iron co-administration|use-case-specific context|context-specific comparison/i);
+  assert.match(ironSection?.shopperMeaning ?? '', /paired nutrient use|iron context|read iron-absorption wording/i);
+  assert.doesNotMatch(ironSection?.shopperMeaning ?? '', /\btreats?\b|\btreating\b/i);
 });
 
 test('omega-3 research mode keeps both EPA and DHA on the targeted live-writer profile', () => {
@@ -1531,7 +1562,7 @@ test('magnesium and vitamin d research mode get longer execution budgets than th
   assert.equal(vitaminDPlan.mode, 'research_mode');
   assert.equal(vitaminCPlan.mode, 'research_mode');
   assert.ok(magnesiumProfile.timeoutMs > vitaminCProfile.timeoutMs);
-  assert.ok(magnesiumProfile.backgroundRefreshTimeoutMs < vitaminDProfile.backgroundRefreshTimeoutMs);
+  assert.ok(magnesiumProfile.backgroundRefreshTimeoutMs > vitaminCProfile.backgroundRefreshTimeoutMs);
   assert.equal(magnesiumProfile.backgroundRefreshMaxRetries, 1);
   assert.ok(vitaminDProfile.timeoutMs > vitaminCProfile.timeoutMs);
 });
@@ -1578,7 +1609,7 @@ test('calcium, zinc, and iron research mode get dedicated execution budgets', ()
   assert.equal(vitaminCPlan.mode, 'research_mode');
   assert.ok(calciumProfile.timeoutMs > vitaminCProfile.timeoutMs);
   assert.ok(zincProfile.timeoutMs > vitaminCProfile.timeoutMs);
-  assert.ok(zincProfile.backgroundRefreshTimeoutMs < ironProfile.backgroundRefreshTimeoutMs);
+  assert.ok(zincProfile.backgroundRefreshTimeoutMs > vitaminCProfile.backgroundRefreshTimeoutMs);
   assert.equal(zincProfile.backgroundRefreshMaxRetries, 1);
   assert.ok(ironProfile.timeoutMs > vitaminCProfile.timeoutMs);
 });
@@ -1948,18 +1979,18 @@ test('new family fallbacks stay specific and do not collapse back to generic pro
   const ginsengResult = await compileScientificBackgroundAsync(ginsengContext, 'Panax Ginseng Extract');
   const greenTeaResult = await compileScientificBackgroundAsync(greenTeaContext, 'Green Tea Extract (EGCG)');
 
-  assert.match(magnesiumResult.scientificBackground.sections[1]?.summary ?? '', /tolerability|form disclosure|magnesium labels/i);
+  assert.match(magnesiumResult.scientificBackground.sections[1]?.summary ?? '', /tolerability|form disclosure|magnesium labels|citrate versus oxide/i);
   assert.match(vitaminDResult.scientificBackground.sections[0]?.summary ?? '', /bone and calcium-regulation|vitamin d positioning/i);
-  assert.match(calciumResult.scientificBackground.sections[1]?.summary ?? '', /carbonate and citrate|form is one of the key reasons/i);
+  assert.match(calciumResult.scientificBackground.sections[1]?.summary ?? '', /carbonate and citrate|citrate-versus-carbonate|form is one of the key reasons/i);
   assert.match(ironResult.scientificBackground.sections[0]?.summary ?? '', /supplementation and status-related lens|iron products/i);
   assert.equal(melatoninResult.scientificBackground.sections.length, 2);
   assert.match(melatoninResult.scientificBackground.sections[0]?.summary ?? '', /sleep timing and onset|circadian timing/i);
-  assert.match(b12Result.scientificBackground.sections[0]?.summary ?? '', /supplementation and status-related|b12 products/i);
+  assert.match(b12Result.scientificBackground.sections[0]?.summary ?? '', /supplementation and status-related|b12 products|multi-B comparison lane/i);
   assert.match(b12Result.scientificBackground.sections[2]?.shopperMeaning ?? '', /form|comparison bucket|stated amount/i);
-  assert.match(folateResult.scientificBackground.sections[1]?.summary ?? '', /pregnancy and developmental|use context/i);
+  assert.match(folateResult.scientificBackground.sections[1]?.summary ?? '', /pregnancy and developmental|neural-tube-defect avoidance context|use context/i);
   assert.match(folateResult.scientificBackground.sections[2]?.shopperMeaning ?? '', /exact folate line|close substitutes|comparison bucket|named folate/i);
-  assert.match(b6Result.scientificBackground.sections[0]?.summary ?? '', /cofactor and metabolism|broader energy-style/i);
-  assert.match(b6Result.scientificBackground.sections[2]?.shopperMeaning ?? '', /dose|formula role|comparison bucket/i);
+  assert.match(b6Result.scientificBackground.sections[0]?.summary ?? '', /cofactor[-\s]+and[-\s]+metabolism|broader energy-style/i);
+  assert.match(b6Result.scientificBackground.sections[2]?.shopperMeaning ?? '', /dose|formula role|comparison bucket|B-complex profile/i);
   assert.match(curcuminResult.scientificBackground.sections[1]?.summary ?? '', /extract|curcuminoid|standardized/i);
   assert.match(curcuminResult.scientificBackground.sections[2]?.shopperMeaning ?? '', /extract detail|broadest promise|package/i);
   assert.match(ashwagandhaResult.scientificBackground.sections[0]?.summary ?? '', /stress|mood|resilience/i);

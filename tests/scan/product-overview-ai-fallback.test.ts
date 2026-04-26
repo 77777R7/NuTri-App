@@ -43,3 +43,20 @@ test("product overview fallback keeps single-ingredient astaxanthin readable", (
   assert.match(result.whatItIs, /microalgae/i);
   assert.match(result.whyPeopleTakeIt, /compare/i);
 });
+
+test("product overview fallback avoids policy-trigger words in formula weighting copy", () => {
+  const result = buildProductOverviewWhatIsItFallback({
+    productName: "Magnesium Glycinate Complex",
+    productTypeHint: "magnesium",
+    primaryIngredient: "Magnesium Glycinate",
+    keyIngredients: [{ name: "Magnesium Glycinate" }],
+    sourceContextHint: null,
+    chemicalFormHint: null,
+    allIngredientRows: [{ name: "Magnesium Glycinate" }],
+    isLikelySingleIngredient: false,
+  });
+  const text = [result.lead, result.whatItIs, result.whyPeopleTakeIt].join(" ");
+
+  assert.doesNotMatch(text, /\btreats?\b|\btreating\b|\bprevents?\b|\bcur(?:e|ing)\b/i);
+  assert.match(text, /comparison weight|compare/i);
+});

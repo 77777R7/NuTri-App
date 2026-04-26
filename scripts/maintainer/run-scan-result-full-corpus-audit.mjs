@@ -11,6 +11,7 @@ import {
   evaluateContentValue,
   extractCoreScoreSnapshot,
   flattenText,
+  inferFamily,
   isServer5xxStatus,
   isRetryableStreamTerminationAttempt,
   latencyStats,
@@ -429,6 +430,74 @@ const summarizeDecisionSupportPayload = (response) => {
   };
 };
 
+const FAMILY_ALIASES = new Map([
+  ["tribulus", "tribulus_terrestris"],
+  ["garlic", "garlic_extract"],
+  ["ginger", "ginger_root"],
+  ["zeaxanthin", "lutein_zeaxanthin"],
+]);
+
+const canonicalFamily = (value) => {
+  const normalized = safeText(value).toLowerCase();
+  return FAMILY_ALIASES.get(normalized) ?? normalized;
+};
+
+const inferRowFamilyForAudit = (row, product) =>
+  canonicalFamily(
+    inferFamily({
+      productName: safeText(row?.name),
+      brand: product.brand,
+      category: product.category,
+      categories: product.categories ?? [],
+      ingredientRows: [{ name: safeText(row?.name), form: null }],
+      activeIngredientNames: [safeText(row?.name)].filter(Boolean),
+      otherIngredients: null,
+    }).family,
+  );
+
+const selectFamilyAlignedIngredientRow = (product, rows) => {
+  const normalizedRows = (Array.isArray(rows) ? rows : [])
+    .map((row) => ({
+      name: safeText(row?.name),
+      dose: safeText(row?.dose) || null,
+      row,
+    }))
+    .filter((row) => row.name);
+  if (normalizedRows.length === 0) return null;
+
+  const productFamily = canonicalFamily(product.family);
+  const familyMatch = normalizedRows.find(
+    (row) => inferRowFamilyForAudit(row, product) === productFamily,
+  );
+  if (familyMatch) return familyMatch.row;
+
+  const activeNames = new Set(
+    (product.activeIngredientNames ?? [])
+      .map((name) => safeText(name).toLowerCase())
+      .filter((name) => name.length >= 4),
+  );
+  const activeMatch = normalizedRows.find((row) => {
+    const rowName = row.name.toLowerCase();
+    return [...activeNames].some(
+      (name) => rowName.includes(name) || name.includes(rowName),
+    );
+  });
+  if (activeMatch) return activeMatch.row;
+
+  const firstRow = normalizedRows[0];
+  const firstFamily = inferRowFamilyForAudit(firstRow, product);
+  const firstLooksLikeSupportMineral =
+    ["calcium", "magnesium", "zinc", "iron", "sodium", "potassium", "electrolyte_hydration", "vitamin_d", "vitamin_c"].includes(firstFamily)
+    && productFamily
+    && productFamily !== firstFamily;
+  const blendRow = normalizedRows.find((row) =>
+    /\b(?:blend|complex|matrix|formula|proprietary)\b/i.test(row.name),
+  );
+  if (firstLooksLikeSupportMineral && blendRow) return blendRow.row;
+
+  return firstRow.row;
+};
+
 const runSidecarsForProduct = async ({ product, args }) => {
   const rows = [];
   const aiRows = [];
@@ -487,11 +556,14 @@ const runSidecarsForProduct = async ({ product, args }) => {
   rows.push(buildSidecarRow({ product, route: "ingredient_overview", response: ingredientResponse, payload: ingredientResponse.json?.ingredientOverview, source: ingredientResponse.json?.source, fallbackUsed: ingredientResponse.json?.fallbackUsed, fallbackReason: ingredientResponse.json?.fallbackReason, backgroundRefreshPending: ingredientResponse.json?.backgroundRefreshPending, recommendedRetryAfterMs: ingredientResponse.json?.recommendedRetryAfterMs }));
   aiRows.push({ ...evaluateAiSummary({ type: "ingredient_overview", product, payload: ingredientResponse.json?.ingredientOverview, source: ingredientResponse.json?.source, fallbackUsed: ingredientResponse.json?.fallbackUsed, fallbackReason: ingredientResponse.json?.fallbackReason, backgroundRefreshPending: ingredientResponse.json?.backgroundRefreshPending, recommendedRetryAfterMs: ingredientResponse.json?.recommendedRetryAfterMs }), productKey: productKeyValue, productId: product.productId, barcode: product.barcode, family: product.family, productName: product.productName, brand: product.brand });
 
-  if (ds.selectedIngredientName) {
+  const selectedScientificRow = selectFamilyAlignedIngredientRow(product, ds.payload?.scienceBlock?.ingredientRows);
+  const selectedScientificIngredientName =
+    safeText(selectedScientificRow?.name) || ds.selectedIngredientName;
+  if (selectedScientificIngredientName) {
     const scientificResponse = await fetchJson(`${args.stagingUrl}/api/scientific-background/v1`, {
       method: "POST",
       headers: buildHeaders(),
-      body: JSON.stringify({ ...commonBody, selectedIngredientName: ds.selectedIngredientName }),
+      body: JSON.stringify({ ...commonBody, selectedIngredientName: selectedScientificIngredientName }),
     }, args.timeoutMs);
     const sciPayload = scientificResponse.json?.scientificBackground;
     rows.push(buildSidecarRow({ product, route: "scientific_background", response: scientificResponse, payload: sciPayload, source: scientificResponse.json?.source, fallbackUsed: scientificResponse.json?.fallbackUsed, fallbackReason: scientificResponse.json?.fallbackReason, backgroundRefreshPending: scientificResponse.json?.backgroundRefreshPending, recommendedRetryAfterMs: scientificResponse.json?.recommendedRetryAfterMs, mode: sciPayload?.mode, selectedLabel: sciPayload?.selectedLabel }));
@@ -522,13 +594,18 @@ const buildScanFactsUrl = ({ args, product, decisionSupport }) => {
 
 const buildProductOverviewAiBody = ({ product, decisionSupport }) => {
   const ingredientRows = Array.isArray(decisionSupport?.scienceBlock?.ingredientRows) ? decisionSupport.scienceBlock.ingredientRows : [];
+  const selectedPrimaryRow = selectFamilyAlignedIngredientRow(product, ingredientRows);
   const keyIngredients = ingredientRows.slice(0, 6).map((row) => ({ name: safeText(row.name) || "Ingredient", dose: safeText(row.dose) || null }));
   return {
     digest: safeText(decisionSupport?.digest) || `${productKey(product)}-audit`,
     productName: product.productName || "Supplement product",
     brandName: product.brand ?? null,
     productTypeHint: product.category ?? product.family ?? null,
-    primaryIngredient: keyIngredients[0]?.name ?? product.activeIngredientNames?.[0] ?? null,
+    primaryIngredient:
+      safeText(selectedPrimaryRow?.name) ||
+      keyIngredients[0]?.name ||
+      product.activeIngredientNames?.[0] ||
+      null,
     keyIngredients: keyIngredients.length ? keyIngredients : (product.activeIngredients ?? []).slice(0, 6).map((row) => ({ name: row.name, dose: [row.amount, row.unit].filter(Boolean).join(" ") || null })),
     sourceContextHint: product.sourceTier ?? null,
     chemicalFormHint: product.activeIngredients?.find((row) => row.form)?.form ?? null,

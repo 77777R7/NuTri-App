@@ -100,6 +100,34 @@ test("AI summary audit flags visible unavailable as P0 and generic fallback as P
   assert.equal(generic.severity, "P1");
 });
 
+test("AI summary audit does not count nullable selectedDose as a blank field", () => {
+  const product = { family: "coq10", productName: "CoQ10", brand: "Brand", activeIngredientNames: ["CoQ10"] };
+  const result = evaluateAiSummary({
+    type: "scientific_background",
+    product,
+    payload: {
+      mode: "research_mode",
+      selectedLabel: "CoQ10",
+      selectedDose: null,
+      introLine: "CoQ10",
+      sections: [
+        {
+          heading: "Primary context",
+          summary: "CoQ10 research context depends on exact label identity and formula setting.",
+          bullets: ["Compare the ingredient line and formula context."],
+          evidenceRead: "This is bounded research context, not a broad promise.",
+          shopperMeaning: "Compare the label line before ranking products.",
+        },
+      ],
+    },
+    source: "fallback",
+    fallbackUsed: true,
+    fallbackReason: "cache_only_miss",
+  });
+
+  assert.deepEqual(result.blankFields, []);
+});
+
 test("content value scoring produces weighted 0-100 overall score", () => {
   const product = {
     family: "vitamin_c",
