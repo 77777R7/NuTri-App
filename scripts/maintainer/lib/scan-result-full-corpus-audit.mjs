@@ -22,6 +22,15 @@ const MACRO_NUTRIENT_PATTERN = /^(?:calories?|energy|total\s+fat|saturated\s+fat
 
 export const isMacroNutrientName = (value) => MACRO_NUTRIENT_PATTERN.test(safeText(value));
 
+const SUPPLEMENT_CONTEXT_PATTERN = /\b(?:supplements?|vitamins?|minerals?|capsules?|tablets?|softgels?|gummies?|powders?|extract|standardized|cfu|iu|mcg|mg|amino acid|probiotic|enzymes?|omega|sports nutrition)\b/i;
+const ORAL_SUPPLEMENT_FORM_PATTERN = /\b(?:capsules?|tablets?|softgels?|gummies?|powders?|lozenges?|veg(?:gie)?\s*caps?|v-?caps?|phyto-caps?|stickpacks?|drops?)\b/i;
+const ORAL_SUPPLEMENT_NON_POWDER_FORM_PATTERN = /\b(?:capsules?|tablets?|softgels?|gummies?|lozenges?|veg(?:gie)?\s*caps?|v-?caps?|phyto-caps?|stickpacks?|drops?)\b/i;
+const SUPPLEMENT_CATEGORY_PATTERN = /\b(?:supplements?|vitamins?|minerals?|sports nutrition|herbal supplements?|amino acids?|probiotics?|enzymes?)\b/i;
+const PROTEIN_POWDER_CONTEXT_PATTERN = /\b(?:whey protein|protein powder|plant-based (?:performance )?protein|complete protein|protein isolate|protein concentrate)\b/i;
+const TOPICAL_CONTEXT_PATTERN = /\b(?:lotion|cream|serum|soap|shampoo|conditioner|balm|ointment|salve|body wash|body oil|skin care|skincare|sunscreen|deodorant|toothpaste|lip balm|mask|cleanser|toner)\b/i;
+const STRONG_FOOD_CONTEXT_PATTERN = /\b(?:rice|soup|broth|ghee|butter|seasoning|spices?|spice blends?|garlic powder|sea salt|tea bags?|loose leaf tea|herbal tea|packaged & prepared foods|oils? & vinegar)\b/i;
+const FOOD_CONTEXT_PATTERN = /\b(?:grocery|food|snacks?|cookies?|cand(?:y|ies)|chocolate|chips?|crackers?|beverages?|drinks?|soda|juice|coffee|tea bags?|loose leaf tea|herbal tea|soup|broth|sauce|seasoning|spices?|sea salt|rice|pasta|noodles?|ghee|butter|oil for cooking|cereal|granola|bar\b)\b/i;
+
 const FAMILY_CANONICAL_ALIASES = new Map([
   ["garlic", "garlic_extract"],
   ["ginger", "ginger_root"],
@@ -35,6 +44,7 @@ export const canonicalAuditFamily = (value) => {
 };
 
 const FAMILY_PATTERNS = [
+  ["black_seed_oil", /\b(?:black seed oil|nigella sativa)\b/i],
   ["omega_3", /\b(?:omega[\s-]*3|fish oil|epa|dha|docosahexaenoic|eicosapentaenoic)\b/i],
   ["magnesium", /\bmagnesium\b/i],
   ["iron", /\biron\b|ferrous|ferric/i],
@@ -105,6 +115,7 @@ export const parseArgs = (argv = process.argv.slice(2), defaults = {}) => {
     resume: false,
     limit: defaults.limit ?? null,
     family: null,
+    eligibility: null,
     barcode: null,
     productId: null,
     concurrency: defaults.concurrency ?? 2,
@@ -130,6 +141,7 @@ export const parseArgs = (argv = process.argv.slice(2), defaults = {}) => {
     else if (arg === "--resume") out.resume = true;
     else if (arg === "--limit" && next) { out.limit = Number(next); index += 1; }
     else if (arg === "--family" && next) { out.family = next; index += 1; }
+    else if (arg === "--eligibility" && next) { out.eligibility = next; index += 1; }
     else if (arg === "--barcode" && next) { out.barcode = normalizeBarcode(next); index += 1; }
     else if (arg === "--product-id" && next) { out.productId = String(next); index += 1; }
     else if (arg === "--concurrency" && next) { out.concurrency = Number(next); index += 1; }
@@ -714,7 +726,7 @@ export const extractFactRows = (supplementFacts) => {
 };
 
 export const extractIngredientRows = (row) => {
-  const factRows = extractFactRows(row?.supplement_facts ?? row?.supplementFacts);
+  const factRows = extractFactRows(row?.supplement_facts ?? row?.supplementFacts ?? row?.activeIngredients);
   return factRows.map((fact) => {
     const name = safeText(fact.substancy ?? fact.substance ?? fact.substance_name ?? fact.name ?? fact.ingredient ?? fact.ingredientName);
     const amount = safeText(fact.amountPerServing ?? fact.amount_per_serving ?? fact.amount ?? fact.value);
@@ -740,15 +752,15 @@ export const normalizeOverlayProduct = (row, familyCatalog = null) => {
   const productId = safeText(row?.product_id ?? row?.productId) || null;
   const barcode = normalizeBarcode(row?.barcode_gtin14 ?? row?.barcodeGtin14 ?? row?.upc_code ?? row?.upcCode);
   const upcCode = safeText(row?.upc_code ?? row?.upcCode) || null;
-  const productName = safeText(row?.title ?? row?.name ?? row?.product_name) || null;
+  const productName = safeText(row?.title ?? row?.name ?? row?.product_name ?? row?.productName) || null;
   const brand = safeText(row?.brand_name ?? row?.brandName ?? row?.brand) || null;
   const categories = Array.isArray(row?.categories) ? row.categories.map(safeText).filter(Boolean) : [];
   const category = categories[0] ?? safeText(row?.category) ?? null;
   const ingredientRows = extractIngredientRows(row);
   const descriptionSections = row?.description_sections ?? row?.descriptionSections ?? {};
-  const labelDirections = readDescriptionText(descriptionSections, ["Suggested Use", "Suggested use", "Directions", "Suggested usage"]);
-  const warnings = readDescriptionText(descriptionSections, ["Warnings", "Warning", "Caution"]);
-  const otherIngredients = readDescriptionText(descriptionSections, ["Other Ingredients", "Other ingredients"]);
+  const labelDirections = readDescriptionText(descriptionSections, ["Suggested Use", "Suggested use", "Directions", "Suggested usage"]) ?? safeText(row?.labelDirections) ?? null;
+  const warnings = readDescriptionText(descriptionSections, ["Warnings", "Warning", "Caution"]) ?? safeText(row?.warnings) ?? null;
+  const otherIngredients = readDescriptionText(descriptionSections, ["Other Ingredients", "Other ingredients"]) ?? safeText(row?.otherIngredients) ?? null;
   const activeNames = ingredientRows.map((item) => item.name);
   const hasDose = ingredientRows.some((item) => safeText(item.amount) || DOSAGE_PATTERN.test(item.rawText));
   const hasForm = ingredientRows.some((item) => safeText(item.form) || /\b(?:citrate|glycinate|oxide|chelate|extract|standardized|softgel|capsule|tablet|powder|oil|isolate|hydrolysate)\b/i.test(item.rawText));
@@ -762,7 +774,11 @@ export const normalizeOverlayProduct = (row, familyCatalog = null) => {
     !warnings ? "warnings" : null,
     !labelDirections ? "usage_directions" : null,
   ].filter(Boolean);
-  const familyInfo = inferFamily({ productName, brand, category, categories, ingredientRows, otherIngredients }, familyCatalog);
+  const preliminaryEligibility = inferSupplementEligibility({ productName, category, categories, ingredientRows });
+  const familyInfo = inferFamily({ productName, brand, category, categories, ingredientRows, otherIngredients, supplementEligibility: preliminaryEligibility }, familyCatalog);
+  const supplementEligibility = preliminaryEligibility === "supplement_like" && familyInfo.family === "unclassified"
+    ? "unclassified_needs_mapping"
+    : preliminaryEligibility;
   return {
     productId,
     barcode,
@@ -782,7 +798,9 @@ export const normalizeOverlayProduct = (row, familyCatalog = null) => {
     factsStatus,
     coverageStatus: factsStatus === "full" ? "coverage_ready" : factsStatus === "partial" ? "partial_facts" : "missing_facts",
     missingCriticalFields,
-    likelySupplement: inferLikelySupplement({ productName, category, categories, ingredientRows }),
+    supplementEligibility,
+    auditEligible: supplementEligibility === "supplement_like" || supplementEligibility === "unclassified_needs_mapping",
+    likelySupplement: supplementEligibility === "supplement_like" || supplementEligibility === "unclassified_needs_mapping",
     family: familyInfo.family,
     familyMatchSource: familyInfo.source,
     familyMatchText: familyInfo.matchedText,
@@ -792,6 +810,8 @@ export const normalizeOverlayProduct = (row, familyCatalog = null) => {
 };
 
 export const inferSourceTier = (row) => {
+  const explicit = safeText(row?.sourceTier ?? row?.source_tier);
+  if (explicit) return explicit;
   const zip = safeText(row?.source_zip_path ?? row?.sourceZipPath).toLowerCase();
   const link = safeText(row?.link).toLowerCase();
   if (/official|manufacturer|brand/.test(zip) || /official|manufacturer|brand/.test(link)) return "official_or_brand";
@@ -818,14 +838,39 @@ export const pickImageUrl = (row) => {
   return null;
 };
 
-export const inferLikelySupplement = ({ productName, category, categories, ingredientRows }) => {
-  const text = [productName, category, ...(categories ?? []), ...ingredientRows.map((item) => item.name)].filter(Boolean).join(" ");
-  if (/\b(?:supplement|vitamin|mineral|capsule|tablet|softgel|extract|probiotic|protein|amino acid|herb|omega|enzyme)\b/i.test(text)) return true;
-  if (/\b(?:snack|cookie|candy|tea bags?|beverage|food|grocery)\b/i.test(text) && ingredientRows.length < 2) return false;
-  return ingredientRows.length > 0;
+export const inferSupplementEligibility = ({ productName, category, categories, ingredientRows }) => {
+  const contextText = [productName, category, ...(categories ?? [])].filter(Boolean).join(" ");
+  const ingredientText = ingredientRows.map((item) => item.name).filter(Boolean).join(" ");
+  const text = [contextText, ingredientText].filter(Boolean).join(" ");
+  const hasExplicitSupplementContext = SUPPLEMENT_CONTEXT_PATTERN.test(contextText);
+  const hasDoseContext = ingredientRows.some((item) => DOSAGE_PATTERN.test(item.rawText));
+  const hasSupplementContext = hasExplicitSupplementContext || hasDoseContext;
+  const hasTopicalContext = TOPICAL_CONTEXT_PATTERN.test(contextText);
+  const hasFoodContext = FOOD_CONTEXT_PATTERN.test(contextText);
+  const hasStrongFoodContext = STRONG_FOOD_CONTEXT_PATTERN.test(contextText);
+  const hasOralSupplementForm = ORAL_SUPPLEMENT_FORM_PATTERN.test(contextText);
+  const hasOralNonPowderSupplementForm = ORAL_SUPPLEMENT_NON_POWDER_FORM_PATTERN.test(contextText);
+  const hasSupplementCategory = SUPPLEMENT_CATEGORY_PATTERN.test(contextText);
+  const hasProteinPowderContext = PROTEIN_POWDER_CONTEXT_PATTERN.test(contextText) && !/\bprotein bars?\b/i.test(contextText);
+  const ingredientCount = ingredientRows.filter((item) => safeText(item.name)).length;
+
+  if (hasTopicalContext && !hasOralSupplementForm) return "topical_external";
+  if (hasStrongFoodContext && !hasOralNonPowderSupplementForm && !hasSupplementCategory && !hasProteinPowderContext) return "food_like";
+  if (hasFoodContext && !hasOralSupplementForm && !hasSupplementCategory && !hasProteinPowderContext) return "food_like";
+  if (hasSupplementContext) return "supplement_like";
+  if (ingredientCount > 0) return "ambiguous";
+  return "ambiguous";
 };
 
-export const inferFamily = ({ productName, brand, category, categories, ingredientRows, otherIngredients }, familyCatalog = null) => {
+export const inferLikelySupplement = (input) => {
+  const eligibility = inferSupplementEligibility(input);
+  return eligibility === "supplement_like" || eligibility === "unclassified_needs_mapping";
+};
+
+export const inferFamily = ({ productName, brand, category, categories, ingredientRows, otherIngredients, supplementEligibility = null }, familyCatalog = null) => {
+  if (supplementEligibility === "food_like" || supplementEligibility === "topical_external") {
+    return { family: "unclassified", source: `${supplementEligibility}_anchor_blocked`, matchedText: null };
+  }
   // Inactive/excipient text often contains high-collision tokens like magnesium stearate.
   // Keep it out of the primary family pass so the audit does not overstate coverage.
   const familyIngredientRows = ingredientRows.filter((item) => !isMacroNutrientName(item.name));
@@ -843,8 +888,9 @@ export const inferFamily = ({ productName, brand, category, categories, ingredie
   }
   const firstIngredient = familyIngredientRows.find((item) => safeText(item.name))?.name ?? null;
   const derived = lowercaseKey(firstIngredient);
-  if (derived && familyCatalog?.families?.some((entry) => entry.family === derived)) {
-    return { family: derived, source: "runtime_catalog_exact", matchedText: firstIngredient };
+  const canonicalDerived = canonicalAuditFamily(derived);
+  if (canonicalDerived && familyCatalog?.families?.some((entry) => canonicalAuditFamily(entry.family) === canonicalDerived)) {
+    return { family: canonicalDerived, source: "runtime_catalog_exact", matchedText: firstIngredient };
   }
   if (!derived && otherIngredients) {
     const inactiveMatch = FAMILY_PATTERNS.find(([, pattern]) => pattern.test(otherIngredients));
@@ -868,7 +914,9 @@ export const buildCensus = (products) => {
     missingWarningsCount: products.filter((row) => row.missingCriticalFields.includes("warnings")).length,
     missingUsageDirectionsCount: products.filter((row) => row.missingCriticalFields.includes("usage_directions")).length,
     likelySupplementCount: products.filter((row) => row.likelySupplement).length,
+    auditEligibleCount: products.filter((row) => row.auditEligible).length,
     foodLikeOrAmbiguousCount: products.filter((row) => !row.likelySupplement).length,
+    bySupplementEligibility: countBy(products, "supplementEligibility"),
     byFamily: countBy(products, "family"),
     byCategory: countBy(products, (row) => row.category ?? "unknown"),
     bySourceTier: countBy(products, "sourceTier"),
@@ -944,8 +992,12 @@ export const renderCensusMarkdown = ({ generatedAt, census }) => [
   `- missing form: ${census.missingFormCount}`,
   `- missing warnings: ${census.missingWarningsCount}`,
   `- missing usage/directions: ${census.missingUsageDirectionsCount}`,
+  `- audit eligible: ${census.auditEligibleCount}`,
   `- proposed full-run size: ${census.proposedFullRunSize}`,
   `- proposed stratified deep-quality sample size: ${census.proposedStratifiedDeepQualitySampleSize}`,
+  "",
+  "## Supplement Eligibility",
+  ...Object.entries(census.bySupplementEligibility ?? {}).map(([key, count]) => `- ${key}: ${count}`),
   "",
   "## Top Families",
   ...Object.entries(census.byFamily).slice(0, 40).map(([key, count]) => `- ${key}: ${count}`),
@@ -961,6 +1013,7 @@ export const renderCensusMarkdown = ({ generatedAt, census }) => [
 export const selectProducts = (products, args) => {
   let selected = products;
   if (args.family) selected = selected.filter((row) => row.family === args.family);
+  if (args.eligibility) selected = selected.filter((row) => row.supplementEligibility === args.eligibility);
   if (args.barcode) selected = selected.filter((row) => row.barcode === args.barcode);
   if (args.productId) selected = selected.filter((row) => String(row.productId) === String(args.productId));
   if (args.limit) selected = selected.slice(0, args.limit);
@@ -1162,6 +1215,12 @@ export const buildFamilyCoverageRows = ({ products, coreRows = [], sidecarRows =
     return {
       family,
       product_count: familyProducts.length,
+      audit_eligible_product_count: familyProducts.filter((row) => row.auditEligible).length,
+      supplement_like_count: familyProducts.filter((row) => row.supplementEligibility === "supplement_like").length,
+      food_like_count: familyProducts.filter((row) => row.supplementEligibility === "food_like").length,
+      topical_external_count: familyProducts.filter((row) => row.supplementEligibility === "topical_external").length,
+      ambiguous_count: familyProducts.filter((row) => row.supplementEligibility === "ambiguous").length,
+      unclassified_needs_mapping_count: familyProducts.filter((row) => row.supplementEligibility === "unclassified_needs_mapping").length,
       scanned_count: familyCore.length,
       research_mode_count: scientific.filter((row) => row.mode === "research_mode").length,
       label_context_mode_count: scientific.filter((row) => row.mode === "label_context_mode").length,
@@ -1190,7 +1249,7 @@ export const renderFamilyCoverageSummary = (rows) => [
   `- families with reviewed evidence signal: ${rows.filter((row) => row.reviewed_evidence_exists).length}`,
   "",
   "## Top Product Families",
-  ...rows.filter((row) => row.product_count > 0).sort((a, b) => b.product_count - a.product_count).slice(0, 40).map((row) => `- ${row.family}: products=${row.product_count} scanned=${row.scanned_count} genericFallback=${row.generic_fallback_count} avgValue=${row.average_content_value_score ?? "n/a"}`),
+  ...rows.filter((row) => row.product_count > 0).sort((a, b) => b.product_count - a.product_count).slice(0, 40).map((row) => `- ${row.family}: products=${row.product_count} auditEligible=${row.audit_eligible_product_count} scanned=${row.scanned_count} genericFallback=${row.generic_fallback_count} avgValue=${row.average_content_value_score ?? "n/a"}`),
   "",
 ].join("\n");
 
@@ -1198,10 +1257,10 @@ export const renderFamilyGapPriorityList = (rows) => [
   "# Family Gap Priority List",
   "",
   ...rows
-    .filter((row) => row.product_count > 0 && (!row.dedicated_plan_exists || !row.reviewed_evidence_exists))
+    .filter((row) => row.audit_eligible_product_count > 0 && (!row.dedicated_plan_exists || !row.reviewed_evidence_exists))
     .sort((a, b) => (b.generic_fallback_count - a.generic_fallback_count) || (b.product_count - a.product_count))
     .slice(0, 80)
-    .map((row) => `- ${row.family}: products=${row.product_count}, plan=${row.dedicated_plan_exists}, evidence=${row.reviewed_evidence_exists}, unavailable=${row.unavailable_count}, topMissing=${row.top_missing_data_reason ?? "none"}`),
+    .map((row) => `- ${row.family}: products=${row.product_count}, auditEligible=${row.audit_eligible_product_count}, plan=${row.dedicated_plan_exists}, evidence=${row.reviewed_evidence_exists}, unavailable=${row.unavailable_count}, topMissing=${row.top_missing_data_reason ?? "none"}`),
   "",
 ].join("\n");
 

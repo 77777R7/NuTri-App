@@ -21117,6 +21117,774 @@
           "url": "https://pubmed.ncbi.nlm.nih.gov/26323969/"
         }
       ]
+    },
+    {
+      "ingredient_family": "coq10",
+      "section_key": "energy_metabolism_context",
+      "variant_key": "primary_reviewed_seed",
+      "variant_label": "Primary reviewed seed evidence",
+      "evidence_grade": "B",
+      "overall_confidence": 0.7,
+      "display_text": "CoQ10 has a recognizable energy-metabolism lane, but recent reviews also show that performance or vitality outcomes should be read as context-dependent rather than guaranteed.",
+      "segments": {
+        "summary_support": {
+          "en": [
+            {
+              "text": "CoQ10 is easiest to interpret through an energy-metabolism lane, not through broad vitality marketing.",
+              "sentence_id": "coq10_energy_metabolism_context_summary_001",
+              "evidence_snippet_id": "coq10_energy_metabolism_context_excerpt_001",
+              "evidence_reference_id": "pmid:41457257",
+              "evidence_grade": "B",
+              "source": "life-science-research:ncbi-entrez-skill"
+            }
+          ]
+        },
+        "evidence_read_support": {
+          "en": [
+            {
+              "text": "Systematic reviews support a biologically plausible CoQ10 lane, while exercise-performance findings remain limited and inconsistent.",
+              "sentence_id": "coq10_energy_metabolism_context_evidence_001",
+              "evidence_snippet_id": "coq10_energy_metabolism_context_excerpt_001",
+              "evidence_reference_id": "pmid:41457257",
+              "evidence_grade": "B",
+              "source": "life-science-research:ncbi-entrez-skill"
+            }
+          ]
+        },
+        "shopper_meaning_support": {
+          "en": [
+            {
+              "text": "Compare CoQ10 products by disclosed form, amount, and whether the label stays specific instead of leaning on vague energy claims.",
+              "sentence_id": "coq10_energy_metabolism_context_shopper_001",
+              "evidence_snippet_id": "coq10_energy_metabolism_context_excerpt_001",
+              "evidence_reference_id": "pmid:41457257",
+              "evidence_grade": "B",
+              "source": "life-science-research:ncbi-entrez-skill"
+            }
+          ]
+        },
+        "caveats": {
+          "en": [
+            {
+              "text": "Do not read CoQ10 energy wording as a guaranteed performance, fatigue, or heart-health outcome.",
+              "sentence_id": "coq10_energy_metabolism_context_caveat_001",
+              "evidence_snippet_id": "coq10_energy_metabolism_context_excerpt_001",
+              "evidence_reference_id": "pmid:41657017",
+              "evidence_grade": "B",
+              "source": "life-science-research:ncbi-entrez-skill"
+            }
+          ]
+        }
+      },
+      "supporting_references": [
+        {
+          "id": "pmid:41457257",
+          "source": "pubmed",
+          "title": "Coenzyme Q10 supplementation increases blood concentrations but shows limited and inconsistent effects on exercise performance: a systematic review and meta-analysis.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/41457257/"
+        },
+        {
+          "id": "pmid:41657017",
+          "source": "pubmed",
+          "title": "Effects of coenzyme Q10 analogs on oxidative stress, muscle, and metabolism after exercise: A meta-analysis and systematic review.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/41657017/"
+        }
+      ],
+      "review_meta": {
+        "source": "life-science-research:ncbi-entrez-skill",
+        "reviewed_at": "2026-04-26",
+        "review_status": "approved",
+        "selection_notes": [
+          "Promoted from high-frequency cached-first evidence gap after PubMed verification.",
+          "Comparison-safe seed row only; do not use as disease-treatment, prevention, cure, guaranteed-outcome, or superiority wording."
+        ]
+      }
+    },
+    {
+      "ingredient_family": "creatine",
+      "section_key": "strength_and_power_context",
+      "variant_key": "primary_reviewed_seed",
+      "variant_label": "Primary reviewed seed evidence",
+      "evidence_grade": "B",
+      "overall_confidence": 0.82,
+      "display_text": "Creatine has one of the cleaner sports-supplement evidence lanes around strength, power, and resistance-training context, but label comparison still depends on dose and formula simplicity.",
+      "segments": {
+        "summary_support": {
+          "en": [
+            {
+              "text": "Creatine has a clear strength-and-power lane when the product discloses a straightforward creatine line.",
+              "sentence_id": "creatine_strength_and_power_context_summary_001",
+              "evidence_snippet_id": "creatine_strength_and_power_context_excerpt_001",
+              "evidence_reference_id": "pmid:40944139",
+              "evidence_grade": "B",
+              "source": "life-science-research:ncbi-entrez-skill"
+            }
+          ]
+        },
+        "evidence_read_support": {
+          "en": [
+            {
+              "text": "Meta-analytic evidence is stronger for strength, power, and resistance-training contexts than for broad athletic hype.",
+              "sentence_id": "creatine_strength_and_power_context_evidence_001",
+              "evidence_snippet_id": "creatine_strength_and_power_context_excerpt_001",
+              "evidence_reference_id": "pmid:40944139",
+              "evidence_grade": "B",
+              "source": "life-science-research:ncbi-entrez-skill"
+            }
+          ]
+        },
+        "shopper_meaning_support": {
+          "en": [
+            {
+              "text": "Compare creatine labels by grams per serving, monohydrate disclosure, and whether the formula is simple or heavily blended.",
+              "sentence_id": "creatine_strength_and_power_context_shopper_001",
+              "evidence_snippet_id": "creatine_strength_and_power_context_excerpt_001",
+              "evidence_reference_id": "pmid:40944139",
+              "evidence_grade": "B",
+              "source": "life-science-research:ncbi-entrez-skill"
+            }
+          ]
+        },
+        "caveats": {
+          "en": [
+            {
+              "text": "Do not treat every creatine-containing blend as equivalent to a simple, well-dosed creatine product.",
+              "sentence_id": "creatine_strength_and_power_context_caveat_001",
+              "evidence_snippet_id": "creatine_strength_and_power_context_excerpt_001",
+              "evidence_reference_id": "pmid:41433021",
+              "evidence_grade": "B",
+              "source": "life-science-research:ncbi-entrez-skill"
+            }
+          ]
+        }
+      },
+      "supporting_references": [
+        {
+          "id": "pmid:40944139",
+          "source": "pubmed",
+          "title": "The Effects of Creatine Supplementation on Upper- and Lower-Body Strength and Power: A Systematic Review and Meta-Analysis.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/40944139/"
+        },
+        {
+          "id": "pmid:41433021",
+          "source": "pubmed",
+          "title": "Creatine supplementation and resistance training: a comparison between novice and experienced lifters - a systematic review and dose-response meta-analysis.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/41433021/"
+        }
+      ],
+      "review_meta": {
+        "source": "life-science-research:ncbi-entrez-skill",
+        "reviewed_at": "2026-04-26",
+        "review_status": "approved",
+        "selection_notes": [
+          "Promoted from high-frequency cached-first evidence gap after PubMed verification.",
+          "Comparison-safe seed row only; do not use as disease-treatment, prevention, cure, guaranteed-outcome, or superiority wording."
+        ]
+      }
+    },
+    {
+      "ingredient_family": "collagen",
+      "section_key": "skin_and_connective_tissue_context",
+      "variant_key": "primary_reviewed_seed",
+      "variant_label": "Primary reviewed seed evidence",
+      "evidence_grade": "B",
+      "overall_confidence": 0.74,
+      "display_text": "Collagen evidence is most shopper-useful when it stays tied to oral collagen or hydrolyzed-collagen skin/connective-tissue studies rather than generic beauty copy.",
+      "segments": {
+        "summary_support": {
+          "en": [
+            {
+              "text": "Collagen is most interpretable through oral collagen and hydrolyzed-collagen skin or connective-tissue context.",
+              "sentence_id": "collagen_skin_and_connective_tissue_context_summary_001",
+              "evidence_snippet_id": "collagen_skin_and_connective_tissue_context_excerpt_001",
+              "evidence_reference_id": "pmid:38192916",
+              "evidence_grade": "B",
+              "source": "life-science-research:ncbi-entrez-skill"
+            }
+          ]
+        },
+        "evidence_read_support": {
+          "en": [
+            {
+              "text": "Reviews of oral or hydrolyzed collagen focus on skin-aging and related biophysical outcomes, but products vary by source, peptide type, and dose.",
+              "sentence_id": "collagen_skin_and_connective_tissue_context_evidence_001",
+              "evidence_snippet_id": "collagen_skin_and_connective_tissue_context_excerpt_001",
+              "evidence_reference_id": "pmid:38192916",
+              "evidence_grade": "B",
+              "source": "life-science-research:ncbi-entrez-skill"
+            }
+          ]
+        },
+        "shopper_meaning_support": {
+          "en": [
+            {
+              "text": "Compare collagen products by source, hydrolyzed or peptide disclosure, type detail, and grams per serving before trusting beauty-positioning alone.",
+              "sentence_id": "collagen_skin_and_connective_tissue_context_shopper_001",
+              "evidence_snippet_id": "collagen_skin_and_connective_tissue_context_excerpt_001",
+              "evidence_reference_id": "pmid:38192916",
+              "evidence_grade": "B",
+              "source": "life-science-research:ncbi-entrez-skill"
+            }
+          ]
+        },
+        "caveats": {
+          "en": [
+            {
+              "text": "Do not turn collagen source or peptide wording into a universal best-source or anti-aging promise.",
+              "sentence_id": "collagen_skin_and_connective_tissue_context_caveat_001",
+              "evidence_snippet_id": "collagen_skin_and_connective_tissue_context_excerpt_001",
+              "evidence_reference_id": "pmid:33742704",
+              "evidence_grade": "B",
+              "source": "life-science-research:ncbi-entrez-skill"
+            }
+          ]
+        }
+      },
+      "supporting_references": [
+        {
+          "id": "pmid:38192916",
+          "source": "pubmed",
+          "title": "Exploring the Impact of Hydrolyzed Collagen Oral Supplementation on Skin Rejuvenation: A Systematic Review and Meta-Analysis.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/38192916/"
+        },
+        {
+          "id": "pmid:37432180",
+          "source": "pubmed",
+          "title": "Effects of Oral Collagen for Skin Anti-Aging: A Systematic Review and Meta-Analysis.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/37432180/"
+        },
+        {
+          "id": "pmid:33742704",
+          "source": "pubmed",
+          "title": "Effects of hydrolyzed collagen supplementation on skin aging: a systematic review and meta-analysis.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/33742704/"
+        }
+      ],
+      "review_meta": {
+        "source": "life-science-research:ncbi-entrez-skill",
+        "reviewed_at": "2026-04-26",
+        "review_status": "approved",
+        "selection_notes": [
+          "Promoted from high-frequency cached-first evidence gap after PubMed verification.",
+          "Comparison-safe seed row only; do not use as disease-treatment, prevention, cure, guaranteed-outcome, or superiority wording."
+        ]
+      }
+    },
+    {
+      "ingredient_family": "probiotic_or_blend",
+      "section_key": "digestive_and_microbiome_research",
+      "variant_key": "primary_reviewed_seed",
+      "variant_label": "Primary reviewed seed evidence",
+      "evidence_grade": "B",
+      "overall_confidence": 0.7,
+      "display_text": "Probiotic research is most useful for shoppers when it is strain- and context-specific; broad probiotic category language is weaker for product comparison.",
+      "segments": {
+        "summary_support": {
+          "en": [
+            {
+              "text": "The clearest probiotic lane is digestive or microbiome context, but only when the strain and formula details are visible enough.",
+              "sentence_id": "probiotic_or_blend_digestive_and_microbiome_research_summary_001",
+              "evidence_snippet_id": "probiotic_or_blend_digestive_and_microbiome_research_excerpt_001",
+              "evidence_reference_id": "pmid:37541528",
+              "evidence_grade": "B",
+              "source": "life-science-research:ncbi-entrez-skill"
+            }
+          ]
+        },
+        "evidence_read_support": {
+          "en": [
+            {
+              "text": "Systematic reviews support probiotic research as context-dependent, with applicability limited by strain, population, dose, and endpoint.",
+              "sentence_id": "probiotic_or_blend_digestive_and_microbiome_research_evidence_001",
+              "evidence_snippet_id": "probiotic_or_blend_digestive_and_microbiome_research_excerpt_001",
+              "evidence_reference_id": "pmid:37541528",
+              "evidence_grade": "B",
+              "source": "life-science-research:ncbi-entrez-skill"
+            }
+          ]
+        },
+        "shopper_meaning_support": {
+          "en": [
+            {
+              "text": "Compare probiotic labels by named strains, CFU at time of use, and blend transparency rather than the word probiotic alone.",
+              "sentence_id": "probiotic_or_blend_digestive_and_microbiome_research_shopper_001",
+              "evidence_snippet_id": "probiotic_or_blend_digestive_and_microbiome_research_excerpt_001",
+              "evidence_reference_id": "pmid:37541528",
+              "evidence_grade": "B",
+              "source": "life-science-research:ncbi-entrez-skill"
+            }
+          ]
+        },
+        "caveats": {
+          "en": [
+            {
+              "text": "Do not treat broad probiotic wording as proof that a product matches any specific trial or digestive outcome.",
+              "sentence_id": "probiotic_or_blend_digestive_and_microbiome_research_caveat_001",
+              "evidence_snippet_id": "probiotic_or_blend_digestive_and_microbiome_research_excerpt_001",
+              "evidence_reference_id": "pmid:30294792",
+              "evidence_grade": "B",
+              "source": "life-science-research:ncbi-entrez-skill"
+            }
+          ]
+        }
+      },
+      "supporting_references": [
+        {
+          "id": "pmid:37541528",
+          "source": "pubmed",
+          "title": "Efficacy of Probiotics in Irritable Bowel Syndrome: Systematic Review and Meta-analysis.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/37541528/"
+        },
+        {
+          "id": "pmid:34205818",
+          "source": "pubmed",
+          "title": "The Effect of Probiotics on Health Outcomes in the Elderly: A Systematic Review of Randomized, Placebo-Controlled Studies.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/34205818/"
+        },
+        {
+          "id": "pmid:30294792",
+          "source": "pubmed",
+          "title": "Systematic review with meta-analysis: the efficacy of prebiotics, probiotics, synbiotics and antibiotics in irritable bowel syndrome.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/30294792/"
+        }
+      ],
+      "review_meta": {
+        "source": "life-science-research:ncbi-entrez-skill",
+        "reviewed_at": "2026-04-26",
+        "review_status": "approved",
+        "selection_notes": [
+          "Promoted from high-frequency cached-first evidence gap after PubMed verification.",
+          "Comparison-safe seed row only; do not use as disease-treatment, prevention, cure, guaranteed-outcome, or superiority wording."
+        ]
+      }
+    },
+    {
+      "ingredient_family": "ashwagandha",
+      "section_key": "stress_and_mood_related_research",
+      "variant_key": "primary_reviewed_seed",
+      "variant_label": "Primary reviewed seed evidence",
+      "evidence_grade": "B",
+      "overall_confidence": 0.68,
+      "display_text": "Ashwagandha has a recognizable stress, sleep, and mood-adjacent research lane, but extract identity and study context matter a lot.",
+      "segments": {
+        "summary_support": {
+          "en": [
+            {
+              "text": "Ashwagandha is most defensible as a stress or sleep-adjacent research lane, not as a universal calm or mood promise.",
+              "sentence_id": "ashwagandha_stress_and_mood_related_research_summary_001",
+              "evidence_snippet_id": "ashwagandha_stress_and_mood_related_research_excerpt_001",
+              "evidence_reference_id": "pmid:39083548",
+              "evidence_grade": "B",
+              "source": "life-science-research:ncbi-entrez-skill"
+            }
+          ]
+        },
+        "evidence_read_support": {
+          "en": [
+            {
+              "text": "Systematic reviews are relevant but still depend on extract type, population, dose, and measured outcome.",
+              "sentence_id": "ashwagandha_stress_and_mood_related_research_evidence_001",
+              "evidence_snippet_id": "ashwagandha_stress_and_mood_related_research_excerpt_001",
+              "evidence_reference_id": "pmid:39083548",
+              "evidence_grade": "B",
+              "source": "life-science-research:ncbi-entrez-skill"
+            }
+          ]
+        },
+        "shopper_meaning_support": {
+          "en": [
+            {
+              "text": "Compare ashwagandha products by extract identity, withanolide disclosure, dose, and whether the formula adds other sleep or stress ingredients.",
+              "sentence_id": "ashwagandha_stress_and_mood_related_research_shopper_001",
+              "evidence_snippet_id": "ashwagandha_stress_and_mood_related_research_excerpt_001",
+              "evidence_reference_id": "pmid:39083548",
+              "evidence_grade": "B",
+              "source": "life-science-research:ncbi-entrez-skill"
+            }
+          ]
+        },
+        "caveats": {
+          "en": [
+            {
+              "text": "Do not present ashwagandha as treating anxiety, insomnia, depression, or other medical conditions.",
+              "sentence_id": "ashwagandha_stress_and_mood_related_research_caveat_001",
+              "evidence_snippet_id": "ashwagandha_stress_and_mood_related_research_excerpt_001",
+              "evidence_reference_id": "pmid:41140145",
+              "evidence_grade": "B",
+              "source": "life-science-research:ncbi-entrez-skill"
+            }
+          ]
+        }
+      },
+      "supporting_references": [
+        {
+          "id": "pmid:39083548",
+          "source": "pubmed",
+          "title": "Safety and efficacy of Withania somnifera for anxiety and insomnia: Systematic review and meta-analysis.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/39083548/"
+        },
+        {
+          "id": "pmid:41140145",
+          "source": "pubmed",
+          "title": "The effect of Withania somnifera (Ashwagandha) on mental health symptoms in individuals with mental disorders: systematic review and meta-analysis.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/41140145/"
+        }
+      ],
+      "review_meta": {
+        "source": "life-science-research:ncbi-entrez-skill",
+        "reviewed_at": "2026-04-26",
+        "review_status": "approved",
+        "selection_notes": [
+          "Promoted from high-frequency cached-first evidence gap after PubMed verification.",
+          "Comparison-safe seed row only; do not use as disease-treatment, prevention, cure, guaranteed-outcome, or superiority wording."
+        ]
+      }
+    },
+    {
+      "ingredient_family": "turmeric",
+      "section_key": "extract_and_curcuminoid_detail",
+      "variant_key": "primary_reviewed_seed",
+      "variant_label": "Primary reviewed seed evidence",
+      "evidence_grade": "B",
+      "overall_confidence": 0.7,
+      "display_text": "Turmeric comparison gets stronger when the label discloses extract, curcuminoid, or bioavailability details; plain turmeric root should not be read as automatically equivalent.",
+      "segments": {
+        "summary_support": {
+          "en": [
+            {
+              "text": "Turmeric labels become more comparable when they disclose curcuminoid or extract detail instead of relying on broad turmeric wording.",
+              "sentence_id": "turmeric_extract_and_curcuminoid_detail_summary_001",
+              "evidence_snippet_id": "turmeric_extract_and_curcuminoid_detail_excerpt_001",
+              "evidence_reference_id": "pmid:41517125",
+              "evidence_grade": "B",
+              "source": "life-science-research:ncbi-entrez-skill"
+            }
+          ]
+        },
+        "evidence_read_support": {
+          "en": [
+            {
+              "text": "Systematic reviews often study curcumin or specific Curcuma longa preparations, so whole-root turmeric and enhanced-bioavailability extracts should not be flattened together.",
+              "sentence_id": "turmeric_extract_and_curcuminoid_detail_evidence_001",
+              "evidence_snippet_id": "turmeric_extract_and_curcuminoid_detail_excerpt_001",
+              "evidence_reference_id": "pmid:41517125",
+              "evidence_grade": "B",
+              "source": "life-science-research:ncbi-entrez-skill"
+            }
+          ]
+        },
+        "shopper_meaning_support": {
+          "en": [
+            {
+              "text": "Check whether the label names turmeric root, extract, curcuminoids, piperine, or another delivery detail before comparing products.",
+              "sentence_id": "turmeric_extract_and_curcuminoid_detail_shopper_001",
+              "evidence_snippet_id": "turmeric_extract_and_curcuminoid_detail_excerpt_001",
+              "evidence_reference_id": "pmid:41517125",
+              "evidence_grade": "B",
+              "source": "life-science-research:ncbi-entrez-skill"
+            }
+          ]
+        },
+        "caveats": {
+          "en": [
+            {
+              "text": "Do not convert curcumin or turmeric research into broad anti-inflammatory, metabolic-treatment, or best-absorption claims.",
+              "sentence_id": "turmeric_extract_and_curcuminoid_detail_caveat_001",
+              "evidence_snippet_id": "turmeric_extract_and_curcuminoid_detail_excerpt_001",
+              "evidence_reference_id": "pmid:40252824",
+              "evidence_grade": "B",
+              "source": "life-science-research:ncbi-entrez-skill"
+            }
+          ]
+        }
+      },
+      "supporting_references": [
+        {
+          "id": "pmid:41517125",
+          "source": "pubmed",
+          "title": "Clinical Potential of Curcuma longa Linn. as Nutraceutical/Dietary Supplement for Metabolic Syndrome: Systematic Review and Meta-Analysis of Randomized Controlled Trials.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/41517125/"
+        },
+        {
+          "id": "pmid:40044446",
+          "source": "pubmed",
+          "title": "An Umbrella Review of Systematic Reviews and Meta-analyses of Randomized Controlled Trials Investigating the Effect of Curcumin Supplementation on Lipid Profiles.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/40044446/"
+        },
+        {
+          "id": "pmid:40252824",
+          "source": "pubmed",
+          "title": "The effect of highly bioavailable forms of curcumin on lipoprotein(a) plasma levels: A systematic review and meta-analysis of randomized clinical studies.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/40252824/"
+        }
+      ],
+      "review_meta": {
+        "source": "life-science-research:ncbi-entrez-skill",
+        "reviewed_at": "2026-04-26",
+        "review_status": "approved",
+        "selection_notes": [
+          "Promoted from high-frequency cached-first evidence gap after PubMed verification.",
+          "Comparison-safe seed row only; do not use as disease-treatment, prevention, cure, guaranteed-outcome, or superiority wording."
+        ]
+      }
+    },
+    {
+      "ingredient_family": "berberine",
+      "section_key": "glucose_metabolic_context",
+      "variant_key": "primary_reviewed_seed",
+      "variant_label": "Primary reviewed seed evidence",
+      "evidence_grade": "B",
+      "overall_confidence": 0.7,
+      "display_text": "Berberine has a recognizable glucose- and lipid-metabolic evidence lane, but the shopper-facing version must stay bounded and non-treatment oriented.",
+      "segments": {
+        "summary_support": {
+          "en": [
+            {
+              "text": "Berberine is easiest to interpret through a glucose- and metabolic-context lane, not broad metabolism marketing.",
+              "sentence_id": "berberine_glucose_metabolic_context_summary_001",
+              "evidence_snippet_id": "berberine_glucose_metabolic_context_excerpt_001",
+              "evidence_reference_id": "pmid:40740996",
+              "evidence_grade": "B",
+              "source": "life-science-research:ncbi-entrez-skill"
+            }
+          ]
+        },
+        "evidence_read_support": {
+          "en": [
+            {
+              "text": "Reviews and meta-analyses support metabolic research context, while endpoints, populations, doses, and formula combinations vary.",
+              "sentence_id": "berberine_glucose_metabolic_context_evidence_001",
+              "evidence_snippet_id": "berberine_glucose_metabolic_context_excerpt_001",
+              "evidence_reference_id": "pmid:40740996",
+              "evidence_grade": "B",
+              "source": "life-science-research:ncbi-entrez-skill"
+            }
+          ]
+        },
+        "shopper_meaning_support": {
+          "en": [
+            {
+              "text": "Compare berberine products by form, milligrams per serving, serving frequency, and whether berberine is the lead line or part of a blend.",
+              "sentence_id": "berberine_glucose_metabolic_context_shopper_001",
+              "evidence_snippet_id": "berberine_glucose_metabolic_context_excerpt_001",
+              "evidence_reference_id": "pmid:40740996",
+              "evidence_grade": "B",
+              "source": "life-science-research:ncbi-entrez-skill"
+            }
+          ]
+        },
+        "caveats": {
+          "en": [
+            {
+              "text": "Do not present berberine as treating diabetes, replacing medication, or guaranteeing glucose or lipid changes.",
+              "sentence_id": "berberine_glucose_metabolic_context_caveat_001",
+              "evidence_snippet_id": "berberine_glucose_metabolic_context_excerpt_001",
+              "evidence_reference_id": "pmid:36999891",
+              "evidence_grade": "B",
+              "source": "life-science-research:ncbi-entrez-skill"
+            }
+          ]
+        }
+      },
+      "supporting_references": [
+        {
+          "id": "pmid:40740996",
+          "source": "pubmed",
+          "title": "Efficacy and safety of berberine on the components of metabolic syndrome: a systematic review and meta-analysis of randomized placebo-controlled trials.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/40740996/"
+        },
+        {
+          "id": "pmid:36313096",
+          "source": "pubmed",
+          "title": "The effects of berberine supplementation on cardiovascular risk factors in adults: A systematic review and dose-response meta-analysis.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/36313096/"
+        },
+        {
+          "id": "pmid:36999891",
+          "source": "pubmed",
+          "title": "Berberine and health outcomes: An umbrella review.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/36999891/"
+        }
+      ],
+      "review_meta": {
+        "source": "life-science-research:ncbi-entrez-skill",
+        "reviewed_at": "2026-04-26",
+        "review_status": "approved",
+        "selection_notes": [
+          "Promoted from high-frequency cached-first evidence gap after PubMed verification.",
+          "Comparison-safe seed row only; do not use as disease-treatment, prevention, cure, guaranteed-outcome, or superiority wording."
+        ]
+      }
+    },
+    {
+      "ingredient_family": "green_tea_extract",
+      "section_key": "catechin_and_antioxidant_context",
+      "variant_key": "primary_reviewed_seed",
+      "variant_label": "Primary reviewed seed evidence",
+      "evidence_grade": "B",
+      "overall_confidence": 0.66,
+      "display_text": "Green tea extract comparison should focus on catechin or EGCG disclosure and safety context rather than generic tea or antioxidant language.",
+      "segments": {
+        "summary_support": {
+          "en": [
+            {
+              "text": "Green tea extract is most useful to compare through catechin or EGCG detail, not generic green-tea wellness wording.",
+              "sentence_id": "green_tea_extract_catechin_and_antioxidant_context_summary_001",
+              "evidence_snippet_id": "green_tea_extract_catechin_and_antioxidant_context_excerpt_001",
+              "evidence_reference_id": "pmid:22027055",
+              "evidence_grade": "B",
+              "source": "life-science-research:ncbi-entrez-skill"
+            }
+          ]
+        },
+        "evidence_read_support": {
+          "en": [
+            {
+              "text": "Meta-analyses and safety reviews make concentration, endpoint, and liver-safety context important for interpretation.",
+              "sentence_id": "green_tea_extract_catechin_and_antioxidant_context_evidence_001",
+              "evidence_snippet_id": "green_tea_extract_catechin_and_antioxidant_context_excerpt_001",
+              "evidence_reference_id": "pmid:22027055",
+              "evidence_grade": "B",
+              "source": "life-science-research:ncbi-entrez-skill"
+            }
+          ]
+        },
+        "shopper_meaning_support": {
+          "en": [
+            {
+              "text": "Compare labels by EGCG or catechin amount, extract concentration, caffeine disclosure, and safety warnings before trusting broad antioxidant copy.",
+              "sentence_id": "green_tea_extract_catechin_and_antioxidant_context_shopper_001",
+              "evidence_snippet_id": "green_tea_extract_catechin_and_antioxidant_context_excerpt_001",
+              "evidence_reference_id": "pmid:22027055",
+              "evidence_grade": "B",
+              "source": "life-science-research:ncbi-entrez-skill"
+            }
+          ]
+        },
+        "caveats": {
+          "en": [
+            {
+              "text": "Do not turn green tea extract into a weight-loss, detox, liver, or broad antioxidant promise.",
+              "sentence_id": "green_tea_extract_catechin_and_antioxidant_context_caveat_001",
+              "evidence_snippet_id": "green_tea_extract_catechin_and_antioxidant_context_excerpt_001",
+              "evidence_reference_id": "pmid:32140423",
+              "evidence_grade": "B",
+              "source": "life-science-research:ncbi-entrez-skill"
+            }
+          ]
+        }
+      },
+      "supporting_references": [
+        {
+          "id": "pmid:22027055",
+          "source": "pubmed",
+          "title": "Green tea catechins decrease total and low-density lipoprotein cholesterol: a systematic review and meta-analysis.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/22027055/"
+        },
+        {
+          "id": "pmid:21715508",
+          "source": "pubmed",
+          "title": "Green tea intake lowers fasting serum total and LDL cholesterol in adults: a meta-analysis of 14 randomized controlled trials.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/21715508/"
+        },
+        {
+          "id": "pmid:32140423",
+          "source": "pubmed",
+          "title": "United States Pharmacopeia (USP) comprehensive review of the hepatotoxicity of green tea extracts.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/32140423/"
+        }
+      ],
+      "review_meta": {
+        "source": "life-science-research:ncbi-entrez-skill",
+        "reviewed_at": "2026-04-26",
+        "review_status": "approved",
+        "selection_notes": [
+          "Promoted from high-frequency cached-first evidence gap after PubMed verification.",
+          "Comparison-safe seed row only; do not use as disease-treatment, prevention, cure, guaranteed-outcome, or superiority wording."
+        ]
+      }
+    },
+    {
+      "ingredient_family": "nac",
+      "section_key": "glutathione_precursor_context",
+      "variant_key": "primary_reviewed_seed",
+      "variant_label": "Primary reviewed seed evidence",
+      "evidence_grade": "B",
+      "overall_confidence": 0.68,
+      "display_text": "NAC is best read as a glutathione-precursor and oxidative-stress-context ingredient, with careful boundaries around respiratory or detox-style claims.",
+      "segments": {
+        "summary_support": {
+          "en": [
+            {
+              "text": "NAC has a clearer precursor and oxidative-stress-context lane than broad detox marketing.",
+              "sentence_id": "nac_glutathione_precursor_context_summary_001",
+              "evidence_snippet_id": "nac_glutathione_precursor_context_excerpt_001",
+              "evidence_reference_id": "pmid:26262996",
+              "evidence_grade": "B",
+              "source": "life-science-research:ncbi-entrez-skill"
+            }
+          ]
+        },
+        "evidence_read_support": {
+          "en": [
+            {
+              "text": "Human controlled-trial and review evidence is relevant to biomarkers and context, but claims depend on population, endpoint, and dose.",
+              "sentence_id": "nac_glutathione_precursor_context_evidence_001",
+              "evidence_snippet_id": "nac_glutathione_precursor_context_excerpt_001",
+              "evidence_reference_id": "pmid:26262996",
+              "evidence_grade": "B",
+              "source": "life-science-research:ncbi-entrez-skill"
+            }
+          ]
+        },
+        "shopper_meaning_support": {
+          "en": [
+            {
+              "text": "Compare NAC products by exact NAC amount, whether it is single-ingredient or blended, and whether the label avoids vague detox-style positioning.",
+              "sentence_id": "nac_glutathione_precursor_context_shopper_001",
+              "evidence_snippet_id": "nac_glutathione_precursor_context_excerpt_001",
+              "evidence_reference_id": "pmid:26262996",
+              "evidence_grade": "B",
+              "source": "life-science-research:ncbi-entrez-skill"
+            }
+          ]
+        },
+        "caveats": {
+          "en": [
+            {
+              "text": "Do not present NAC as treating respiratory disease, detoxifying the body, or replacing medical care.",
+              "sentence_id": "nac_glutathione_precursor_context_caveat_001",
+              "evidence_snippet_id": "nac_glutathione_precursor_context_excerpt_001",
+              "evidence_reference_id": "pmid:37299425",
+              "evidence_grade": "B",
+              "source": "life-science-research:ncbi-entrez-skill"
+            }
+          ]
+        }
+      },
+      "supporting_references": [
+        {
+          "id": "pmid:26262996",
+          "source": "pubmed",
+          "title": "Effects of N-acetylcysteine, oral glutathione (GSH) and a novel sublingual form of GSH on oxidative stress markers: A comparative crossover study.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/26262996/"
+        },
+        {
+          "id": "pmid:37299425",
+          "source": "pubmed",
+          "title": "Influence of N-Acetylcysteine Supplementation on Physical Performance and Laboratory Biomarkers in Adult Males: A Systematic Review of Controlled Trials.",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/37299425/"
+        }
+      ],
+      "review_meta": {
+        "source": "life-science-research:ncbi-entrez-skill",
+        "reviewed_at": "2026-04-26",
+        "review_status": "approved",
+        "selection_notes": [
+          "Promoted from high-frequency cached-first evidence gap after PubMed verification.",
+          "Comparison-safe seed row only; do not use as disease-treatment, prevention, cure, guaranteed-outcome, or superiority wording."
+        ]
+      }
     }
   ],
   "candidate_pubmed_searches": [

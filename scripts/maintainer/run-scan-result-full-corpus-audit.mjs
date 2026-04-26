@@ -883,7 +883,7 @@ const renderFamilyCoverageSummary = (rows) => [
   `- families with reviewed evidence signal: ${rows.filter((row) => row.reviewed_evidence_exists).length}`,
   "",
   "## Top Product Families",
-  ...rows.filter((row) => row.product_count > 0).sort((a, b) => b.product_count - a.product_count).slice(0, 40).map((row) => `- ${row.family}: products=${row.product_count} scanned=${row.scanned_count} genericFallback=${row.generic_fallback_count} avgValue=${row.average_content_value_score ?? "n/a"}`),
+  ...rows.filter((row) => row.product_count > 0).sort((a, b) => b.product_count - a.product_count).slice(0, 40).map((row) => `- ${row.family}: products=${row.product_count} auditEligible=${row.audit_eligible_product_count} scanned=${row.scanned_count} genericFallback=${row.generic_fallback_count} avgValue=${row.average_content_value_score ?? "n/a"}`),
   "",
 ].join("\n");
 
@@ -891,10 +891,10 @@ const renderFamilyGapPriorityList = (rows) => [
   "# Family Gap Priority List",
   "",
   ...rows
-    .filter((row) => row.product_count > 0 && (!row.dedicated_plan_exists || !row.reviewed_evidence_exists))
+    .filter((row) => row.audit_eligible_product_count > 0 && (!row.dedicated_plan_exists || !row.reviewed_evidence_exists))
     .sort((a, b) => (b.generic_fallback_count - a.generic_fallback_count) || (b.product_count - a.product_count))
     .slice(0, 80)
-    .map((row) => `- ${row.family}: products=${row.product_count}, plan=${row.dedicated_plan_exists}, evidence=${row.reviewed_evidence_exists}, unavailable=${row.unavailable_count}, topMissing=${row.top_missing_data_reason ?? "none"}`),
+    .map((row) => `- ${row.family}: products=${row.product_count}, auditEligible=${row.audit_eligible_product_count}, plan=${row.dedicated_plan_exists}, evidence=${row.reviewed_evidence_exists}, unavailable=${row.unavailable_count}, topMissing=${row.top_missing_data_reason ?? "none"}`),
   "",
 ].join("\n");
 

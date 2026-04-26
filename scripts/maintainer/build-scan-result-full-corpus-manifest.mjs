@@ -67,6 +67,8 @@ const buildFamilyCensusRows = (products) => Object.entries(countBy(products, "fa
       product_id_only_count: rows.filter((row) => !row.barcode && row.productId).length,
       source_tiers: Object.entries(countBy(rows, "sourceTier")).map(([key, count]) => `${key}:${count}`).join("|"),
       facts_statuses: Object.entries(countBy(rows, "factsStatus")).map(([key, count]) => `${key}:${count}`).join("|"),
+      supplement_eligibility: Object.entries(countBy(rows, "supplementEligibility")).map(([key, count]) => `${key}:${count}`).join("|"),
+      audit_eligible_count: rows.filter((row) => row.auditEligible).length,
       top_category: Object.entries(countBy(rows, (row) => row.category ?? "unknown"))[0]?.[0] ?? null,
     };
   });
@@ -83,6 +85,8 @@ const buildManifestCsvRows = (products) => products.map((row) => ({
   sourceTier: row.sourceTier,
   factsStatus: row.factsStatus,
   coverageStatus: row.coverageStatus,
+  supplementEligibility: row.supplementEligibility,
+  auditEligible: row.auditEligible,
   activeIngredientCount: row.activeIngredients.length,
   activeIngredientNames: row.activeIngredientNames.join(" | "),
   missingCriticalFields: row.missingCriticalFields.join(" | "),

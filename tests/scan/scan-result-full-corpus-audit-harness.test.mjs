@@ -246,6 +246,75 @@ test("family inference skips macro nutrition rows before choosing a family", () 
   assert.notEqual(row.family, "calories");
 });
 
+test("supplement eligibility blocks food and topical false family anchors", () => {
+  const gingerRice = normalizeOverlayProduct({
+    product_id: "p-ginger-rice",
+    title: "Coconut Ginger Rice",
+    categories: ["Grocery", "Food"],
+    supplement_facts: [{ substancy: "Calories", amountPerServing: "180" }],
+  });
+  const vitaminLotion = normalizeOverlayProduct({
+    product_id: "p-vitamin-e-lotion",
+    title: "Vitamin E Skin Care Lotion",
+    categories: ["Bath & Personal Care", "Skin Care"],
+    supplement_facts: [{ substancy: "Vitamin E", amountPerServing: "0", unit: "mg" }],
+  });
+  const greenTeaBags = normalizeOverlayProduct({
+    product_id: "p-tea-bags",
+    title: "Organic Green Tea Bags",
+    categories: ["Grocery", "Tea"],
+    supplement_facts: [],
+  });
+  const greenTeaExtract = normalizeOverlayProduct({
+    product_id: "p-green-tea-extract",
+    title: "Green Tea Extract Capsules",
+    categories: ["Supplements"],
+    supplement_facts: [{ substancy: "Green Tea Extract", amountPerServing: "500", unit: "mg" }],
+  });
+  const garlicGhee = normalizeOverlayProduct({
+    product_id: "p-garlic-ghee",
+    title: "Ghee Clarified Butter, Grass-Fed, Garlic",
+    categories: ["Ghee", "Oils & Vinegar"],
+    supplement_facts: [{ substancy: "Vitamin D", amountPerServing: "0", unit: "mcg" }],
+  });
+  const proteinPowder = normalizeOverlayProduct({
+    product_id: "p-whey-protein",
+    title: "Whey Protein, Fruity Cereal",
+    categories: ["Whey Protein Blends", "Protein"],
+    supplement_facts: [{ substancy: "Whey Protein Isolate", amountPerServing: "25", unit: "g" }],
+  });
+  const garlicPowder = normalizeOverlayProduct({
+    product_id: "p-garlic-powder",
+    title: "Organic Garlic & Herb",
+    categories: ["Garlic Powder & Seasoning", "Spice Blends", "Herbs & Spices"],
+    supplement_facts: [{ substancy: "Calories", amountPerServing: "0" }],
+  });
+  const blackSeedOil = normalizeOverlayProduct({
+    product_id: "p-black-seed-oil",
+    title: "Organic Black Seed Oil, Unflavored",
+    categories: ["Black Seed", "Omegas & Fish Oils (EPA DHA)", "Herbs"],
+    supplement_facts: [],
+  });
+
+  assert.equal(gingerRice.supplementEligibility, "food_like");
+  assert.equal(gingerRice.family, "unclassified");
+  assert.equal(gingerRice.familyMatchSource, "food_like_anchor_blocked");
+  assert.equal(vitaminLotion.supplementEligibility, "topical_external");
+  assert.equal(vitaminLotion.family, "unclassified");
+  assert.equal(greenTeaBags.supplementEligibility, "food_like");
+  assert.equal(greenTeaBags.family, "unclassified");
+  assert.equal(garlicGhee.supplementEligibility, "food_like");
+  assert.equal(garlicGhee.family, "unclassified");
+  assert.equal(garlicPowder.supplementEligibility, "food_like");
+  assert.equal(garlicPowder.family, "unclassified");
+  assert.equal(proteinPowder.supplementEligibility, "supplement_like");
+  assert.equal(proteinPowder.family, "protein");
+  assert.equal(greenTeaExtract.supplementEligibility, "supplement_like");
+  assert.equal(greenTeaExtract.family, "green_tea_extract");
+  assert.equal(blackSeedOil.family, "black_seed_oil");
+  assert.notEqual(blackSeedOil.family, "omega_3");
+});
+
 test("unmapped first active text does not become a fake runtime family", () => {
   const row = normalizeOverlayProduct({
     product_id: "p-noisy",
@@ -257,6 +326,7 @@ test("unmapped first active text does not become a fake runtime family", () => {
 
   assert.equal(row.family, "unclassified");
   assert.equal(row.familyMatchSource, "first_active_candidate_unmapped");
+  assert.equal(row.supplementEligibility, "unclassified_needs_mapping");
 });
 
 test("P0 analyzer detects contiguous 5xx service windows over manifest order", () => {
