@@ -160,7 +160,14 @@
     "gates:f-igen-brand-expansion-wave": "node scripts/maintainer/build-igen-brand-expansion-wave.mjs",
     "gates:f-igen-ready-master-seed": "node scripts/maintainer/build-igen-ready-master-seed.mjs",
     "gates:e-ux-closure2": "node scripts/maintainer/evaluate-stage-e-ux-closure2.mjs",
-    "gates:new-top100-plus-closeout": "node scripts/maintainer/finalize-nightly-plus-closeout.mjs"
+    "gates:new-top100-plus-closeout": "node scripts/maintainer/finalize-nightly-plus-closeout.mjs",
+    "gates:scan-result-corpus-manifest": "node scripts/maintainer/build-scan-result-full-corpus-manifest.mjs",
+    "gates:scan-result-full-corpus-audit": "node scripts/maintainer/run-scan-result-full-corpus-audit.mjs",
+    "gates:scan-result-p0-core-root-cause": "node scripts/maintainer/analyze-scan-result-p0-core-failures.mjs",
+    "gates:scan-result-p0-trigger-replay": "node scripts/maintainer/replay-scan-result-p0-triggers.mjs",
+    "gates:scan-result-score-extraction-contract": "node scripts/maintainer/check-scan-result-score-extraction-contract.mjs",
+    "gates:scan-result-content-value": "node scripts/maintainer/evaluate-scan-result-content-value.mjs",
+    "gates:scan-result-full-corpus-finalize": "node scripts/maintainer/finalize-scan-result-full-corpus-audit.mjs"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.2",

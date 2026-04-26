@@ -9,6 +9,10 @@ import {
 import { lookupSafeScienceSignals } from "../kbRuntime.js";
 import { buildProductOverviewWhatIsItFallback } from "../insights/productOverviewWhatIsItFallback.js";
 import {
+  DEEPSEEK_NON_THINKING_MODE,
+  resolveDeepSeekModel,
+} from "../deepseekConfig.js";
+import {
   compileSafetySummaryAsync,
   compileUsageSummaryAsync,
   safetySummaryPacketSchema,
@@ -250,6 +254,7 @@ const buildDeepseekJsonLlmFn = (params: {
             { role: "user", content: prompt },
           ],
           temperature: 0.1,
+          thinking: DEEPSEEK_NON_THINKING_MODE,
           stream: false,
           max_tokens: params.maxTokens,
           response_format: { type: "json_object" },
@@ -335,7 +340,7 @@ export const registerScanSidecarRoutes = (
     if (!parsedBody) return;
 
     const deepseekKey = env.DEEPSEEK_API_KEY?.trim();
-    const deepseekModel = env.DEEPSEEK_MODEL?.trim() || "deepseek-chat";
+    const deepseekModel = resolveDeepSeekModel(env.DEEPSEEK_MODEL);
 
     const fallbackOverviewAi = buildProductOverviewWhatIsItFallback({
       productName: parsedBody.productName,
@@ -448,7 +453,7 @@ export const registerScanSidecarRoutes = (
 
     const llmFn = buildDeepseekJsonLlmFn({
       deepseekKey: env.DEEPSEEK_API_KEY?.trim(),
-      deepseekModel: env.DEEPSEEK_MODEL?.trim() || "deepseek-chat",
+      deepseekModel: resolveDeepSeekModel(env.DEEPSEEK_MODEL),
       timeoutMs: 9_000,
       maxTokens: 450,
     });
@@ -505,7 +510,7 @@ export const registerScanSidecarRoutes = (
 
     const llmFn = buildDeepseekJsonLlmFn({
       deepseekKey: env.DEEPSEEK_API_KEY?.trim(),
-      deepseekModel: env.DEEPSEEK_MODEL?.trim() || "deepseek-chat",
+      deepseekModel: resolveDeepSeekModel(env.DEEPSEEK_MODEL),
       timeoutMs: 9_000,
       maxTokens: 260,
     });
@@ -526,7 +531,7 @@ export const registerScanSidecarRoutes = (
     const startedAt = now();
     const llmFn = buildDeepseekJsonLlmFn({
       deepseekKey: env.DEEPSEEK_API_KEY?.trim(),
-      deepseekModel: env.DEEPSEEK_MODEL?.trim() || "deepseek-chat",
+      deepseekModel: resolveDeepSeekModel(env.DEEPSEEK_MODEL),
       timeoutMs: 3_900,
       maxTokens: 260,
     });

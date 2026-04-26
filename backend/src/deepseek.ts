@@ -12,6 +12,7 @@ import {
   isRetryableStatus,
   withRetry,
 } from "./resilience.js";
+import { DEEPSEEK_NON_THINKING_MODE } from "./deepseekConfig.js";
 import type { CircuitBreaker, DeadlineBudget, RetryOptions, Semaphore } from "./resilience.js";
 import type { SearchItem } from "./types.js";
 
@@ -602,6 +603,7 @@ export async function fetchMySupplementOverviewV2(
               { role: "user", content: context },
             ],
             temperature: 0.1,
+            thinking: DEEPSEEK_NON_THINKING_MODE,
             stream: false,
             max_tokens: options.maxTokens ?? 900,
             response_format: { type: "json_object" },
@@ -729,6 +731,7 @@ export async function fetchProductOverviewWhatIsIt(
               { role: "user", content: context },
             ],
             temperature: 0.1,
+            thinking: DEEPSEEK_NON_THINKING_MODE,
             stream: false,
             max_tokens: options.maxTokens ?? 900,
             response_format: { type: "json_object" },
@@ -846,6 +849,7 @@ export async function fetchAnalysisBundle(
               { role: "user", content: context },
             ],
             temperature: 0.0,
+            thinking: DEEPSEEK_NON_THINKING_MODE,
             stream: false,
             max_tokens: options.maxTokens ?? 2000,
             response_format: { type: "json_object" },
@@ -917,6 +921,7 @@ Return a SINGLE valid JSON object.
               { role: "user", content: `Fix this to valid json:\n${content}` },
             ],
             temperature: 0.0,
+            thinking: DEEPSEEK_NON_THINKING_MODE,
             stream: false,
             max_tokens: 1200,
             response_format: { type: "json_object" },
@@ -1174,6 +1179,7 @@ export async function fetchAnalysisBundleFastV3(
               { role: "user", content: context },
             ],
             temperature: 0.2,
+            thinking: DEEPSEEK_NON_THINKING_MODE,
             stream: false,
             max_tokens: options.maxTokens ?? 900,
             response_format: { type: "json_object" },
@@ -1315,6 +1321,7 @@ export async function fetchIngredientsDetailV3(
               { role: "user", content: context },
             ],
             temperature: 0.2,
+            thinking: DEEPSEEK_NON_THINKING_MODE,
             stream: false,
             max_tokens: options.maxTokens ?? 1200,
             response_format: { type: "json_object" },
