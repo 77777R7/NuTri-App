@@ -2177,6 +2177,79 @@ export const registerEnrichStreamRoute = (
       }
       return overlayClaimsForBarcodePromise;
     };
+    const normalizeOverlayDigestText = (value: unknown): string | null => {
+      const text = String(value ?? "").replace(/\s+/g, " ").trim();
+      return text.length > 0 ? text : null;
+    };
+    const buildOverlayIngredientText = (overlayClaims: DecisionSupportOverlayClaims): string | null => {
+      const factLines = (Array.isArray(overlayClaims?.nutritionalFacts) ? overlayClaims.nutritionalFacts : [])
+        .map((fact: Record<string, unknown>) =>
+          [
+            normalizeOverlayDigestText(fact?.substancy),
+            normalizeOverlayDigestText(fact?.amountPerServing),
+          ]
+            .filter(Boolean)
+            .join(" "),
+        )
+        .map((line: string) => normalizeOverlayDigestText(line))
+        .filter((line: string | null): line is string => Boolean(line));
+      if (factLines.length > 0) return factLines.join("\n");
+      return normalizeOverlayDigestText(overlayClaims?.otherIngredients);
+    };
+    const buildIherbOverlayFactsDigest = (
+      overlayClaims: DecisionSupportOverlayClaims | null,
+    ): FactsDigest | null => {
+      if (!overlayClaims) return null;
+      const ingredientText = buildOverlayIngredientText(overlayClaims);
+      const title = normalizeOverlayDigestText(overlayClaims.title);
+      const brandName = normalizeOverlayDigestText(overlayClaims.brandName);
+      const suggestedUse = normalizeOverlayDigestText(overlayClaims.suggestedUse);
+      const warnings = normalizeOverlayDigestText(overlayClaims.warnings);
+      const servingSize = normalizeOverlayDigestText(overlayClaims.servingSize);
+      const hasUsableOverlayFacts = Boolean(
+        title ||
+        brandName ||
+        ingredientText ||
+        suggestedUse ||
+        warnings ||
+        servingSize,
+      );
+      if (!hasUsableOverlayFacts) return null;
+
+      const canonicalDomain = (() => {
+        const link = normalizeOverlayDigestText(overlayClaims.link);
+        if (!link) return null;
+        try {
+          return new URL(link).hostname;
+        } catch {
+          return null;
+        }
+      })();
+
+      return buildFactsDigestFromWeb({
+        facts: {
+          barcode: overlayClaims.barcodeGtin14 ?? barcodeGtin14,
+          canonical: {
+            name: title,
+            brand: brandName,
+            url: normalizeOverlayDigestText(overlayClaims.link),
+            domain: canonicalDomain,
+          },
+          identifiers: { npn: null },
+          textFacts: {
+            ingredientsText: ingredientText,
+            directionsText: suggestedUse,
+            warningsText: warnings,
+            servingSizeText: servingSize,
+          },
+          coverageScore: 100,
+          missingFields: [],
+        },
+        identityType: "gtin14",
+        identityValue: barcodeGtin14,
+        regionTags: ["us"],
+      });
+    };
     const authorityRegressionScenarioActive =
       isRegressionLikeRequest &&
       barcodeGtin14 === AUTHORITY_REGRESSION_SAMPLE_BARCODE;
@@ -3679,7 +3752,7 @@ export const registerEnrichStreamRoute = (
     const forceStage1Raw = process.env.FORCE_STAGE1 === "1" || process.env.FORCE_STAGE1 === "true";
     const forceStage1 = process.env.NODE_ENV !== "production" && forceStage1Raw;
     const allowNeedsJs = process.env.ALLOW_NEEDS_JS === "1" || process.env.ALLOW_NEEDS_JS === "true";
-    type Stage0Source = "none" | "snapshot" | "catalog" | "lnhpd" | "dsld";
+    type Stage0Source = "none" | "snapshot" | "catalog" | "lnhpd" | "dsld" | "overlay";
     let stage0Delivered = false;
     let stage0Source: Stage0Source = "none";
     const maybeRunNpnCandidateBackfill = async (): Promise<void> => {
@@ -5942,6 +6015,37 @@ export const registerEnrichStreamRoute = (
     const clearNegative = (context = "resolution_success"): void => {
       clearNegativeCacheAllVariants(barcodeGtin14, rawBarcode, { context });
     };
+    const maybeRunIherbOverlayStage0 = async (context: string): Promise<boolean> => {
+      if (stage0Delivered || stage0BundlePromise || requestSignal.aborted) return false;
+      const overlayClaims = await getOverlayClaimsForBarcode();
+      const overlayDigest = buildIherbOverlayFactsDigest(overlayClaims);
+      if (!overlayClaims || !overlayDigest) return false;
+
+      const factsDigestHash = computeFactsDigestHash(overlayDigest);
+      const factsSourceVersion = `iherb_overlay:${overlayClaims.productId ?? barcodeGtin14}`;
+      const started = startStage0Bundle({
+        digest: overlayDigest,
+        identityType: "gtin14",
+        identityValue: barcodeGtin14,
+        factsSourceVersion,
+        stage0Winner: "web_hint_unverified",
+        allowAi: false,
+        apiKey: null,
+      });
+      if (!started) return false;
+
+      stage0Delivered = true;
+      stage0Source = "overlay";
+      clearNegative("iherb_overlay_stage0_bridge");
+      console.info("[ResolutionV2] using iHerb overlay Stage0 bridge", {
+        requestId: requestId || null,
+        barcode: barcodeGtin14,
+        productId: overlayClaims.productId ?? null,
+        factsDigestHash,
+        context,
+      });
+      return true;
+    };
 
     const trainingWriteResilience = {
       breaker: supabaseReadBreaker,
@@ -5971,6 +6075,16 @@ export const registerEnrichStreamRoute = (
       client_version: clientVersion,
       feature_flags: featureFlags,
     };
+
+    const overlayBridgeRecovered = await maybeRunIherbOverlayStage0("pre_stage1");
+    if (overlayBridgeRecovered && stage0BundlePromise) {
+      await awaitStage0Bundle();
+      if (!streamState.doneSent && !streamState.ended && !res.writableEnded) {
+        finalizeStream("iherb_overlay_stage0_complete");
+      }
+      releaseInFlightOnce();
+      return;
+    }
 
     const insertTrainingRow = (params: {
       outcome: string;
