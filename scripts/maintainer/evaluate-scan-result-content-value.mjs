@@ -6,10 +6,13 @@ import {
   buildFamilyCoverageRows,
   ensureDir,
   evaluateContentValue,
+  loadRuntimeFamilyCatalog,
   parseArgs,
   productKey,
   readJson,
   readJsonl,
+  renderFamilyCoverageSummary,
+  renderFamilyGapPriorityList,
   selectProducts,
   writeCsv,
   writeJson,
@@ -62,6 +65,8 @@ const main = async () => {
   const args = parseArgs(process.argv.slice(2), { mode: "content", concurrency: 1 });
   await ensureDir(args.runDir);
   const manifest = await readJson(args.manifestPath);
+  const runtimeFamilyCatalog = await loadRuntimeFamilyCatalog();
+  const familyCatalog = runtimeFamilyCatalog;
   const products = selectProducts(manifest.products ?? [], args);
   const coreRows = await readJsonl(path.join(args.runDir, "core-results.jsonl"));
   const sidecarRows = await readJsonl(path.join(args.runDir, "sidecar-results.jsonl"));
@@ -87,9 +92,11 @@ const main = async () => {
   await writeJson(path.join(args.runDir, "content-value-scores.json"), { reportType: "content_value_scores", generatedAt: new Date().toISOString(), rows: contentRows });
   await writeText(path.join(args.runDir, "content-value-summary.md"), renderContentValueSummary(contentRows));
   await writeText(path.join(args.runDir, "low-value-products.md"), renderLowValueProducts(contentRows));
-  const familyRows = buildFamilyCoverageRows({ products: manifest.products ?? [], coreRows, sidecarRows, contentRows, catalog: manifest.familyCatalog });
+  const familyRows = buildFamilyCoverageRows({ products: manifest.products ?? [], coreRows, sidecarRows, contentRows, catalog: familyCatalog });
   await writeCsv(path.join(args.runDir, "family-coverage-matrix.csv"), familyRows);
   await writeJson(path.join(args.runDir, "family-coverage-matrix.json"), { reportType: "family_coverage_matrix", generatedAt: new Date().toISOString(), rows: familyRows });
+  await writeText(path.join(args.runDir, "family-coverage-summary.md"), renderFamilyCoverageSummary(familyRows));
+  await writeText(path.join(args.runDir, "family-gap-priority-list.md"), renderFamilyGapPriorityList(familyRows));
   console.log(`[scan-result-content-value] complete runId=${args.runId} rows=${contentRows.length}`);
 };
 

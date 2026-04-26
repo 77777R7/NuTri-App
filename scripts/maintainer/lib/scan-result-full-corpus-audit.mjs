@@ -22,6 +22,18 @@ const MACRO_NUTRIENT_PATTERN = /^(?:calories?|energy|total\s+fat|saturated\s+fat
 
 export const isMacroNutrientName = (value) => MACRO_NUTRIENT_PATTERN.test(safeText(value));
 
+const FAMILY_CANONICAL_ALIASES = new Map([
+  ["garlic", "garlic_extract"],
+  ["ginger", "ginger_root"],
+  ["tribulus", "tribulus_terrestris"],
+  ["lutein_zeaxanthin", "zeaxanthin"],
+]);
+
+export const canonicalAuditFamily = (value) => {
+  const normalized = lowercaseKey(value);
+  return FAMILY_CANONICAL_ALIASES.get(normalized) ?? normalized;
+};
+
 const FAMILY_PATTERNS = [
   ["omega_3", /\b(?:omega[\s-]*3|fish oil|epa|dha|docosahexaenoic|eicosapentaenoic)\b/i],
   ["magnesium", /\bmagnesium\b/i],
@@ -57,7 +69,8 @@ const FAMILY_PATTERNS = [
   ["inositol", /\binositol\b/i],
   ["probiotic_or_blend", /\b(?:probiotic|lactobacillus|bifidobacterium|saccharomyces|cfu)\b/i],
   ["quercetin", /\bquercetin\b/i],
-  ["vitamin_e", /\b(?:vitamin\s*e|tocopherol|tocotrienol)\b/i],
+  ["tocotrienols", /\btocotrienol/i],
+  ["vitamin_e", /\b(?:vitamin\s*e|tocopherol)\b/i],
   ["vitamin_k2", /\b(?:vitamin\s*k\s*2|mk-7|menaquinone)\b/i],
   ["vitamin_k1", /\b(?:vitamin\s*k\s*1|phylloquinone)\b/i],
   ["chromium", /\bchromium\b/i],
@@ -68,21 +81,21 @@ const FAMILY_PATTERNS = [
   ["riboflavin", /\b(?:riboflavin|vitamin\s*b\s*2|b\s*2)\b/i],
   ["aloe_vera", /\baloe\b/i],
   ["same", /\b(?:sam-?e|s-adenosyl(?:\s|-)?methionine)\b/i],
-  ["tocotrienols", /\btocotrienol/i],
   ["devil_s_claw", /\bdevil'?s claw\b|harpagophytum/i],
   ["schisandra_chinensis", /\bschisandra\b/i],
   ["red_yeast_rice", /\bred yeast rice\b|monacolin/i],
   ["pygeum", /\bpygeum\b/i],
   ["milk_thistle", /\bmilk thistle\b|silymarin/i],
-  ["tribulus", /\btribulus\b/i],
+  ["tribulus_terrestris", /\btribulus\b/i],
   ["chaga_mushroom", /\bchaga\b/i],
   ["nadh", /\bnadh\b/i],
-  ["garlic", /\bgarlic\b/i],
-  ["ginger", /\bginger\b/i],
+  ["garlic_extract", /\bgarlic\b/i],
+  ["ginger_root", /\bginger\b/i],
   ["resveratrol", /\bresveratrol\b/i],
   ["gaba", /\bgaba\b|gamma aminobutyric/i],
   ["msm", /\bmsm\b|methylsulfonylmethane/i],
-  ["lutein_zeaxanthin", /\b(?:lutein|zeaxanthin)\b/i],
+  ["lutein", /\blutein\b/i],
+  ["zeaxanthin", /\bzeaxanthin\b/i],
   ["glucosamine", /\bglucosamine\b/i],
 ];
 
@@ -561,6 +574,71 @@ const extractMcpAuthStatus = (output, name) => {
   return parts.at(-1) ?? null;
 };
 
+const addCatalogFamily = (familyMap, family, sourceKind) => {
+  const normalized = canonicalAuditFamily(family);
+  if (!normalized || normalized.length < 2 || normalized.length > 64) return;
+  if (!/^[a-z0-9]+(?:_[a-z0-9]+)*$/.test(normalized)) return;
+  if (/^(reason_code|section_key|prompt_version|source_version|package_version|summary_support|evidence_read_support|shopper_meaning_support)$/.test(normalized)) return;
+  const entry = familyMap.get(normalized) ?? { family: normalized, sources: [] };
+  if (!entry.sources.includes(sourceKind)) entry.sources.push(sourceKind);
+  familyMap.set(normalized, entry);
+};
+
+const extractQuotedFamilyValues = (text, pattern) => {
+  const values = [];
+  for (const match of text.matchAll(pattern)) {
+    const value = match[1] ?? match[2] ?? match[3];
+    if (value) values.push(value);
+  }
+  return values;
+};
+
+const extractIngredientScienceFamilies = (text) => {
+  const families = [];
+  const unionMatch = text.match(/export\s+type\s+IngredientScienceIngredientFamily\s*=\s*([\s\S]*?);/);
+  if (unionMatch) {
+    families.push(...extractQuotedFamilyValues(unionMatch[1], /["'`]([a-z0-9_]+)["'`]/g));
+  }
+  families.push(...extractQuotedFamilyValues(text, /return\s+["'`]([a-z0-9_]+)["'`]\s+as\s+IngredientScienceIngredientFamily/g));
+  families.push(...extractQuotedFamilyValues(text, /family:\s*["'`]([a-z0-9_]+)["'`]/g));
+  return families;
+};
+
+const extractNutriMinimalRuntimeFamilies = (text) =>
+  extractQuotedFamilyValues(text, /canonicalFamily:\s*["'`]([a-z0-9_]+)["'`]/g);
+
+const extractScientificPlanFamilies = (text) => [
+  ...extractQuotedFamilyValues(text, /descriptor\.ingredientFamily\s*===\s*["'`]([a-z0-9_]+)["'`]/g),
+  ...extractQuotedFamilyValues(text, /params\.plan\.family\s*===\s*["'`]([a-z0-9_]+)["'`]/g),
+];
+
+const collectReviewedEvidenceFamilies = (json) => {
+  const rows = Array.isArray(json?.scientific_background_evidence)
+    ? json.scientific_background_evidence
+    : [];
+  return rows.map((row) => row?.ingredient_family ?? row?.family).filter(Boolean);
+};
+
+const collectTestMentionedFamilies = (text) =>
+  extractQuotedFamilyValues(text, /["'`]([a-z0-9]+(?:_[a-z0-9]+)*|[57]?[a-z]*\d[a-z0-9_]*)["'`]/g);
+
+export const mergeFamilyCatalogs = (...catalogs) => {
+  const familyMap = new Map();
+  for (const catalog of catalogs) {
+    for (const entry of catalog?.families ?? []) {
+      for (const sourceKind of entry?.sources ?? []) {
+        addCatalogFamily(familyMap, entry.family, sourceKind);
+      }
+      if (!entry?.sources?.length) addCatalogFamily(familyMap, entry?.family, "catalog");
+    }
+  }
+  return {
+    generatedAt: new Date().toISOString(),
+    families: [...familyMap.values()].sort((a, b) => a.family.localeCompare(b.family)),
+    sourceFiles: catalogs.flatMap((catalog) => catalog?.sourceFiles ?? []),
+  };
+};
+
 export const loadRuntimeFamilyCatalog = async () => {
   const sources = [];
   const addSource = async (rel, kind) => {
@@ -572,19 +650,43 @@ export const loadRuntimeFamilyCatalog = async () => {
     }
   };
   await addSource("backend/src/ingredientScienceContext.ts", "runtime_inference");
+  await addSource("backend/src/nutriMinimalFullFamilyProductization.ts", "runtime_inference");
   await addSource("backend/src/insights/scientificBackgroundCompiler.ts", "section_plan");
   await addSource("backend/data/reviewed/scientific-background-evidence.v1.json", "reviewed_evidence");
+  try {
+    const testFiles = await fs.readdir(path.join(ROOT_DIR, "tests", "scan"));
+    for (const file of testFiles.filter((item) => /\.(?:test\.)?(?:mjs|ts|tsx|js)$/.test(item))) {
+      await addSource(path.join("tests", "scan", file), "tests");
+    }
+  } catch (error) {
+    if (error?.code !== "ENOENT") throw error;
+  }
   const familyMap = new Map();
-  for (const [family] of FAMILY_PATTERNS) familyMap.set(family, { family, sources: ["pattern_dictionary"] });
+  for (const [family] of FAMILY_PATTERNS) addCatalogFamily(familyMap, family, "pattern_dictionary");
   for (const source of sources) {
-    const matches = source.text.match(/["'`]([a-z][a-z0-9]+(?:_[a-z0-9]+)+)["'`]/g) ?? [];
-    for (const raw of matches) {
-      const family = raw.slice(1, -1);
-      if (family.length < 3 || family.length > 64) continue;
-      if (!/[a-z]/.test(family) || /^(reason_code|section_key|prompt_version)$/.test(family)) continue;
-      const entry = familyMap.get(family) ?? { family, sources: [] };
-      if (!entry.sources.includes(source.kind)) entry.sources.push(source.kind);
-      familyMap.set(family, entry);
+    let families = [];
+    if (source.kind === "runtime_inference" && source.rel.endsWith("ingredientScienceContext.ts")) {
+      families = extractIngredientScienceFamilies(source.text);
+    } else if (source.kind === "runtime_inference" && source.rel.endsWith("nutriMinimalFullFamilyProductization.ts")) {
+      families = extractNutriMinimalRuntimeFamilies(source.text);
+      for (const family of families) addCatalogFamily(familyMap, family, "section_plan");
+    } else if (source.kind === "section_plan") {
+      families = extractScientificPlanFamilies(source.text);
+    } else if (source.kind === "reviewed_evidence") {
+      try {
+        families = collectReviewedEvidenceFamilies(JSON.parse(source.text));
+      } catch {
+        families = [];
+      }
+    } else if (source.kind === "tests") {
+      families = collectTestMentionedFamilies(source.text);
+      for (const family of families) {
+        if (familyMap.has(canonicalAuditFamily(family))) addCatalogFamily(familyMap, family, source.kind);
+      }
+      continue;
+    }
+    for (const family of families) {
+      addCatalogFamily(familyMap, family, source.kind);
     }
   }
   return {
@@ -1044,17 +1146,19 @@ const scoreUsage = (value) => scoreFromText(value, { needsDose: true });
 const scoreSafety = (value, product) => scoreFromText(value, { product });
 
 export const buildFamilyCoverageRows = ({ products, coreRows = [], sidecarRows = [], contentRows = [], catalog = null }) => {
-  const coreByProduct = new Map(coreRows.map((row) => [row.productKey, row]));
   const contentByProduct = new Map(contentRows.map((row) => [row.productKey, row]));
-  const families = new Set([...products.map((row) => row.family), ...(catalog?.families ?? []).map((row) => row.family)]);
+  const families = new Set([
+    ...products.map((row) => canonicalAuditFamily(row.family)),
+    ...(catalog?.families ?? []).map((row) => canonicalAuditFamily(row.family)),
+  ]);
   return [...families].filter(Boolean).sort().map((family) => {
-    const familyProducts = products.filter((row) => row.family === family);
+    const familyProducts = products.filter((row) => canonicalAuditFamily(row.family) === family);
     const productKeys = new Set(familyProducts.map(productKey));
     const familyCore = coreRows.filter((row) => productKeys.has(row.productKey));
     const familySidecars = sidecarRows.filter((row) => productKeys.has(row.productKey));
     const scientific = familySidecars.filter((row) => row.route === "scientific_background");
     const content = familyProducts.map((row) => contentByProduct.get(productKey(row))).filter(Boolean);
-    const catalogEntry = catalog?.families?.find((row) => row.family === family);
+    const catalogEntry = catalog?.families?.find((row) => canonicalAuditFamily(row.family) === family);
     return {
       family,
       product_count: familyProducts.length,
@@ -1076,5 +1180,29 @@ export const buildFamilyCoverageRows = ({ products, coreRows = [], sidecarRows =
     };
   });
 };
+
+export const renderFamilyCoverageSummary = (rows) => [
+  "# Family Coverage Summary",
+  "",
+  `- families: ${rows.length}`,
+  `- families with products: ${rows.filter((row) => row.product_count > 0).length}`,
+  `- families with dedicated plan signal: ${rows.filter((row) => row.dedicated_plan_exists).length}`,
+  `- families with reviewed evidence signal: ${rows.filter((row) => row.reviewed_evidence_exists).length}`,
+  "",
+  "## Top Product Families",
+  ...rows.filter((row) => row.product_count > 0).sort((a, b) => b.product_count - a.product_count).slice(0, 40).map((row) => `- ${row.family}: products=${row.product_count} scanned=${row.scanned_count} genericFallback=${row.generic_fallback_count} avgValue=${row.average_content_value_score ?? "n/a"}`),
+  "",
+].join("\n");
+
+export const renderFamilyGapPriorityList = (rows) => [
+  "# Family Gap Priority List",
+  "",
+  ...rows
+    .filter((row) => row.product_count > 0 && (!row.dedicated_plan_exists || !row.reviewed_evidence_exists))
+    .sort((a, b) => (b.generic_fallback_count - a.generic_fallback_count) || (b.product_count - a.product_count))
+    .slice(0, 80)
+    .map((row) => `- ${row.family}: products=${row.product_count}, plan=${row.dedicated_plan_exists}, evidence=${row.reviewed_evidence_exists}, unavailable=${row.unavailable_count}, topMissing=${row.top_missing_data_reason ?? "none"}`),
+  "",
+].join("\n");
 
 export const productKey = (product) => product?.barcode ? `barcode:${product.barcode}` : product?.productId ? `product:${product.productId}` : `unknown:${safeText(product?.productName)}`;

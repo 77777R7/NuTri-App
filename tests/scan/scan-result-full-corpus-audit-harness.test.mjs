@@ -3,7 +3,9 @@ import test from "node:test";
 
 import {
   attachRunOrder,
+  buildFamilyCoverageRows,
   classifyRetryOutcome,
+  canonicalAuditFamily,
   createServiceWindowTracker,
   extractCoreScoreSnapshot,
   findServer5xxWindows,
@@ -14,6 +16,7 @@ import {
   inferFamily,
   isRetryableStreamTerminationAttempt,
   linkClientTimeoutTriggers,
+  loadRuntimeFamilyCatalog,
   normalizeOverlayProduct,
   parseArgs,
   productKey,
@@ -61,6 +64,48 @@ test("family inference prefers product and ingredient pattern signals", () => {
   });
   assert.equal(family.family, "same");
   assert.equal(family.source, "pattern_dictionary");
+});
+
+test("family audit catalog detects single-token runtime plans, reviewed evidence, and tests", async () => {
+  const catalog = await loadRuntimeFamilyCatalog();
+  const byFamily = new Map(catalog.families.map((row) => [row.family, row.sources]));
+
+  for (const family of ["magnesium", "iron", "omega_3", "b12", "vitamin_c"]) {
+    assert.ok(byFamily.get(family)?.includes("section_plan"), `${family} should have section_plan source`);
+    assert.ok(byFamily.get(family)?.includes("reviewed_evidence"), `${family} should have reviewed_evidence source`);
+  }
+  assert.ok(byFamily.get("magnesium")?.includes("tests"), "magnesium should have test source");
+});
+
+test("family coverage matrix normalizes legacy audit aliases to runtime canonical families", () => {
+  assert.equal(canonicalAuditFamily("garlic"), "garlic_extract");
+  assert.equal(canonicalAuditFamily("ginger"), "ginger_root");
+  assert.equal(canonicalAuditFamily("tribulus"), "tribulus_terrestris");
+
+  const rows = buildFamilyCoverageRows({
+    products: [
+      { productId: "p1", family: "garlic", missingCriticalFields: [] },
+      { productId: "p2", family: "lutein_zeaxanthin", missingCriticalFields: [] },
+    ],
+    sidecarRows: [],
+    contentRows: [],
+    catalog: {
+      families: [
+        { family: "garlic_extract", sources: ["section_plan", "reviewed_evidence", "tests"] },
+        { family: "zeaxanthin", sources: ["section_plan", "reviewed_evidence"] },
+      ],
+    },
+  });
+  const garlic = rows.find((row) => row.family === "garlic_extract");
+  const zeaxanthin = rows.find((row) => row.family === "zeaxanthin");
+  assert.equal(garlic?.product_count, 1);
+  assert.equal(garlic?.dedicated_plan_exists, true);
+  assert.equal(garlic?.reviewed_evidence_exists, true);
+  assert.equal(garlic?.tests_exist, true);
+  assert.equal(zeaxanthin?.product_count, 1);
+  assert.equal(zeaxanthin?.dedicated_plan_exists, true);
+  assert.equal(rows.some((row) => row.family === "garlic"), false);
+  assert.equal(rows.some((row) => row.family === "lutein_zeaxanthin"), false);
 });
 
 test("census captures barcode, productId-only, and missing critical data buckets", () => {

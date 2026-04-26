@@ -15,6 +15,7 @@ import {
   isServer5xxStatus,
   isRetryableStreamTerminationAttempt,
   latencyStats,
+  loadRuntimeFamilyCatalog,
   mapWithConcurrency,
   parseArgs,
   productKey,
@@ -588,6 +589,7 @@ const runSidecarsForProduct = async ({ product, args }) => {
 const buildScanFactsUrl = ({ args, product, decisionSupport }) => {
   const source = decisionSupport.sourceType === "web" || !decisionSupport.sourceType ? "web" : decisionSupport.sourceType;
   const sourceId = product.productId;
+  if (source === "dsld" && !/^\d+$/.test(safeText(sourceId))) return null;
   if (!source || !sourceId) return null;
   return `${args.stagingUrl}/api/scan-facts/v1/${encodeURIComponent(source)}/${encodeURIComponent(sourceId)}`;
 };
@@ -622,7 +624,11 @@ const buildProductOverviewAiBody = ({ product, decisionSupport }) => {
 
 const buildSidecarRow = ({ product, route, response, payload, source = null, fallbackUsed = false, fallbackReason = null, backgroundRefreshPending = false, recommendedRetryAfterMs = null, mode = null, selectedLabel = null }) => {
   const text = flattenText(payload ?? response?.json).join(" ");
-  const visibleUnavailableText = /\b(?:unavailable|not available|undefined|null|\[object Object\])\b/i.test(text) || (!text && route !== "scan_facts");
+  const visibleUnavailableText = route === "decision_support"
+    ? Boolean(response?.ok && payload == null)
+    : route === "scan_facts"
+      ? false
+      : /\b(?:unavailable|not available|undefined|null|\[object Object\])\b/i.test(text) || !text;
   const status = response?.ok ? (payload == null && route !== "decision_support" && route !== "scan_facts" ? "unavailable" : "ready") : "error";
   return {
     phase: "sidecar",
@@ -763,6 +769,8 @@ const main = async () => {
   const args = parseArgs(process.argv.slice(2), { mode: "full", concurrency: 2 });
   await ensureDir(args.runDir);
   const manifest = await readJson(args.manifestPath);
+  const runtimeFamilyCatalog = await loadRuntimeFamilyCatalog();
+  const familyCatalog = runtimeFamilyCatalog;
   const products = selectProducts(manifest.products ?? [], args);
   const manifestOrder = new Map();
   (manifest.products ?? []).forEach((product, index) => {
@@ -846,7 +854,7 @@ const main = async () => {
     }));
     await writeCsv(path.join(args.runDir, "content-value-scores.csv"), contentRows);
     await writeJson(path.join(args.runDir, "content-value-scores.json"), { reportType: "content_value_scores", generatedAt: new Date().toISOString(), rows: contentRows });
-    const familyRows = buildFamilyCoverageRows({ products: manifest.products ?? [], coreRows, sidecarRows, contentRows, catalog: manifest.familyCatalog });
+    const familyRows = buildFamilyCoverageRows({ products: manifest.products ?? [], coreRows, sidecarRows, contentRows, catalog: familyCatalog });
     await writeCsv(path.join(args.runDir, "family-coverage-matrix.csv"), familyRows);
     await writeJson(path.join(args.runDir, "family-coverage-matrix.json"), { reportType: "family_coverage_matrix", generatedAt: new Date().toISOString(), rows: familyRows });
     await writeText(path.join(args.runDir, "family-coverage-summary.md"), renderFamilyCoverageSummary(familyRows));
@@ -883,7 +891,7 @@ const renderFamilyGapPriorityList = (rows) => [
   "# Family Gap Priority List",
   "",
   ...rows
-    .filter((row) => row.product_count > 0)
+    .filter((row) => row.product_count > 0 && (!row.dedicated_plan_exists || !row.reviewed_evidence_exists))
     .sort((a, b) => (b.generic_fallback_count - a.generic_fallback_count) || (b.product_count - a.product_count))
     .slice(0, 80)
     .map((row) => `- ${row.family}: products=${row.product_count}, plan=${row.dedicated_plan_exists}, evidence=${row.reviewed_evidence_exists}, unavailable=${row.unavailable_count}, topMissing=${row.top_missing_data_reason ?? "none"}`),
@@ -892,6 +900,7 @@ const renderFamilyGapPriorityList = (rows) => [
 
 const buildUxIssues = ({ coreRows, sidecarRows, aiRows, contentRows }) => {
   const issues = [];
+  const hasCoreRows = coreRows.length > 0;
   for (const row of coreRows) {
     if (!row.productIdentityPresent) issues.push({ severity: "P0", productKey: row.productKey, family: row.family, issue: "blank_product_identity" });
     if (!row.scoreAvailable && !row.limitedDataReason) issues.push({ severity: "P0", productKey: row.productKey, family: row.family, issue: "blank_score_without_limited_data_reason" });
@@ -905,7 +914,7 @@ const buildUxIssues = ({ coreRows, sidecarRows, aiRows, contentRows }) => {
     if (row.severity === "P0" || row.severity === "P1") issues.push({ severity: row.severity, productKey: row.productKey, family: row.family, issue: `${row.type}_${row.severity.toLowerCase()}_quality`, preview: row.preview });
   }
   for (const row of contentRows) {
-    if (Number(row.overall_scan_result_value_score) < 45) issues.push({ severity: "P1", productKey: row.productKey, family: row.family, issue: "low_overall_content_value", score: row.overall_scan_result_value_score });
+    if (hasCoreRows && Number(row.overall_scan_result_value_score) < 45) issues.push({ severity: "P1", productKey: row.productKey, family: row.family, issue: "low_overall_content_value", score: row.overall_scan_result_value_score });
   }
   return issues;
 };
