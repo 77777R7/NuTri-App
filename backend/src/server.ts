@@ -56,6 +56,10 @@ import {
   prepareContextSources
 } from "./deepseek.js";
 import {
+  DEEPSEEK_NON_THINKING_MODE,
+  resolveDeepSeekModel,
+} from "./deepseekConfig.js";
+import {
   shouldRejectEnrichStreamForServerOverload,
 } from "./scanStreamAdmissionPolicy.js";
 import {
@@ -9386,7 +9390,7 @@ const ensurePublicOverview = async (params: {
     })();
 
     const deepseekKey = process.env.DEEPSEEK_API_KEY ?? null;
-    const model = process.env.DEEPSEEK_MODEL || "deepseek-chat";
+    const model = resolveDeepSeekModel(process.env.DEEPSEEK_MODEL);
 
     const maybeGateRow = deepseekKey
       ? await getAnalysisIdentityCache(
@@ -9613,6 +9617,7 @@ const buildDeepseekJsonLlmFn = (params: {
               { role: "user", content: prompt },
             ],
             temperature: 0.1,
+            thinking: DEEPSEEK_NON_THINKING_MODE,
             stream: false,
             max_tokens: params.maxTokens,
             response_format: { type: "json_object" },
@@ -9943,7 +9948,7 @@ app.get("/api/search/product-detail", async (req: Request, res: Response) => {
         ? Math.max(1, SEARCH_DETAIL_SCIENTIFIC_BACKGROUND_MAX_PROMPT_SECTIONS)
         : 1;
     const deepseekKey = process.env.DEEPSEEK_API_KEY?.trim() || null;
-    const deepseekModel = process.env.DEEPSEEK_MODEL?.trim() || "deepseek-chat";
+    const deepseekModel = resolveDeepSeekModel(process.env.DEEPSEEK_MODEL);
     const searchDetailIngredientBackgroundMaxRetries = Math.max(
       0,
       SEARCH_DETAIL_INGREDIENT_BACKGROUND_MAX_RETRIES,

@@ -6,6 +6,7 @@ import {
   compileIngredientOverviewAsync,
   INGREDIENT_OVERVIEW_PROMPT_VERSION,
   resolveIngredientOverviewExecutionProfile,
+  type IngredientOverviewExecutionProfile,
 } from "../insights/ingredientOverviewCompiler.js";
 import {
   compileScientificBackgroundAsync,
@@ -22,6 +23,10 @@ import {
   buildScanSidecarCacheKey,
   getScanSidecarPolicy,
 } from "../scanSidecarPolicy.js";
+import {
+  DEEPSEEK_NON_THINKING_MODE,
+  resolveDeepSeekModel,
+} from "../deepseekConfig.js";
 import { recordScanSidecarCacheStatus } from "../scanSidecarRouteMetrics.js";
 import type { ErrorResponse } from "../types.js";
 
@@ -79,6 +84,10 @@ const scientificBackgroundBodySchema = z.object({
 const SCIENCE_SIDECAR_MAX_RETRIES = 0;
 const INGREDIENT_OVERVIEW_RESULT_CACHE_LIMIT = 120;
 const INGREDIENT_OVERVIEW_FALLBACK_CACHE_TTL_MS = 90_000;
+const INGREDIENT_OVERVIEW_REFRESH_RETRY_AFTER_MS = 2_500;
+const INGREDIENT_OVERVIEW_REFRESH_FAILURE_COOLDOWN_MS = 45_000;
+const INGREDIENT_OVERVIEW_REFRESH_FAILURE_RETRY_LIMIT = 3;
+const INGREDIENT_OVERVIEW_REFRESH_MAX_CONCURRENCY = 2;
 const SCIENTIFIC_BACKGROUND_RESULT_CACHE_LIMIT = 120;
 const SCIENTIFIC_BACKGROUND_RESEARCH_FALLBACK_CACHE_TTL_MS = 90_000;
 const SCIENTIFIC_BACKGROUND_REFRESH_RETRY_AFTER_MS = 2_500;
@@ -111,6 +120,8 @@ type IngredientOverviewSidecarResponse = {
   fallbackUsed: boolean;
   fallbackReason?: string;
   promptVersion: string;
+  backgroundRefreshPending: boolean;
+  recommendedRetryAfterMs: number | null;
 };
 
 type IngredientOverviewSidecarCacheEntry = {
@@ -120,10 +131,15 @@ type IngredientOverviewSidecarCacheEntry = {
 
 const ingredientOverviewSidecarCache = new Map<string, IngredientOverviewSidecarCacheEntry>();
 const scientificBackgroundSidecarCache = new Map<string, ScientificBackgroundSidecarCacheEntry>();
+const ingredientOverviewSidecarBackgroundRefresh = new Map<string, Promise<void>>();
+const ingredientOverviewSidecarBackgroundRefreshCooldownUntil = new Map<string, number>();
+const ingredientOverviewSidecarBackgroundRefreshFailureCount = new Map<string, number>();
 const scientificBackgroundSidecarInflight = new Map<string, Promise<ScientificBackgroundSidecarResponse>>();
 const scientificBackgroundSidecarBackgroundRefresh = new Map<string, Promise<void>>();
 const scientificBackgroundSidecarBackgroundRefreshCooldownUntil = new Map<string, number>();
 const scientificBackgroundSidecarBackgroundRefreshFailureCount = new Map<string, number>();
+let activeIngredientOverviewRefreshCount = 0;
+const queuedIngredientOverviewRefreshTasks: Array<() => void> = [];
 let activeScientificBackgroundRefreshCount = 0;
 const queuedScientificBackgroundRefreshTasks: Array<() => void> = [];
 
@@ -163,11 +179,11 @@ const readIngredientOverviewSidecarCache = (
 const writeIngredientOverviewSidecarCache = (
   cacheKey: string,
   payload: IngredientOverviewSidecarResponse,
+  ttlMs: number,
   now: number,
 ): void => {
   ingredientOverviewSidecarCache.set(cacheKey, {
-    expiresAt: now
-      + (getScanSidecarPolicy("ingredient_overview").defaultTtlMs || INGREDIENT_OVERVIEW_FALLBACK_CACHE_TTL_MS),
+    expiresAt: now + ttlMs,
     payload,
   });
   recordScanSidecarCacheStatus("ingredient_overview", "write");
@@ -176,6 +192,90 @@ const writeIngredientOverviewSidecarCache = (
   if (typeof oldestKey === "string") {
     ingredientOverviewSidecarCache.delete(oldestKey);
   }
+};
+
+const resolveIngredientOverviewCacheTtlMs = (
+  payload: IngredientOverviewSidecarResponse,
+  executionProfile: IngredientOverviewExecutionProfile,
+): number => {
+  const policyTtlMs = getScanSidecarPolicy("ingredient_overview").defaultTtlMs;
+  if (payload.source === "api") return executionProfile.cacheTtlMs || policyTtlMs;
+  return INGREDIENT_OVERVIEW_FALLBACK_CACHE_TTL_MS;
+};
+
+const withIngredientOverviewRefreshHint = (
+  payload: IngredientOverviewSidecarResponse,
+  backgroundRefreshPending: boolean,
+): IngredientOverviewSidecarResponse =>
+  ({
+    ...payload,
+    backgroundRefreshPending: backgroundRefreshPending && payload.source === "fallback",
+    recommendedRetryAfterMs:
+      backgroundRefreshPending && payload.source === "fallback"
+        ? INGREDIENT_OVERVIEW_REFRESH_RETRY_AFTER_MS
+        : null,
+  });
+
+const runNextIngredientOverviewRefreshTask = (): void => {
+  const next = queuedIngredientOverviewRefreshTasks.shift();
+  if (!next) return;
+  next();
+};
+
+const runWithIngredientOverviewRefreshSlot = async <T>(
+  task: () => Promise<T>,
+): Promise<T> =>
+  new Promise<T>((resolve, reject) => {
+    const run = () => {
+      activeIngredientOverviewRefreshCount += 1;
+      task()
+        .then(resolve, reject)
+        .finally(() => {
+          activeIngredientOverviewRefreshCount = Math.max(0, activeIngredientOverviewRefreshCount - 1);
+          runNextIngredientOverviewRefreshTask();
+        });
+    };
+
+    if (activeIngredientOverviewRefreshCount < INGREDIENT_OVERVIEW_REFRESH_MAX_CONCURRENCY) {
+      run();
+      return;
+    }
+
+    queuedIngredientOverviewRefreshTasks.push(run);
+  });
+
+const isIngredientOverviewBackgroundRefreshCoolingDown = (cacheKey: string, now: number): boolean => {
+  const cooldownUntil = ingredientOverviewSidecarBackgroundRefreshCooldownUntil.get(cacheKey);
+  if (!cooldownUntil) return false;
+  if (cooldownUntil <= now) {
+    ingredientOverviewSidecarBackgroundRefreshCooldownUntil.delete(cacheKey);
+    return false;
+  }
+  return true;
+};
+
+const markIngredientOverviewBackgroundRefreshCooldown = (cacheKey: string, now: number): void => {
+  ingredientOverviewSidecarBackgroundRefreshCooldownUntil.set(
+    cacheKey,
+    now + INGREDIENT_OVERVIEW_REFRESH_FAILURE_COOLDOWN_MS,
+  );
+  if (ingredientOverviewSidecarBackgroundRefreshCooldownUntil.size <= INGREDIENT_OVERVIEW_RESULT_CACHE_LIMIT) return;
+  const oldestKey = ingredientOverviewSidecarBackgroundRefreshCooldownUntil.keys().next().value;
+  if (typeof oldestKey === "string") {
+    ingredientOverviewSidecarBackgroundRefreshCooldownUntil.delete(oldestKey);
+  }
+};
+
+const shouldCoolDownIngredientOverviewBackgroundRefresh = (cacheKey: string): boolean => {
+  const nextFailureCount = (ingredientOverviewSidecarBackgroundRefreshFailureCount.get(cacheKey) ?? 0) + 1;
+  ingredientOverviewSidecarBackgroundRefreshFailureCount.set(cacheKey, nextFailureCount);
+  if (ingredientOverviewSidecarBackgroundRefreshFailureCount.size > INGREDIENT_OVERVIEW_RESULT_CACHE_LIMIT) {
+    const oldestKey = ingredientOverviewSidecarBackgroundRefreshFailureCount.keys().next().value;
+    if (typeof oldestKey === "string") {
+      ingredientOverviewSidecarBackgroundRefreshFailureCount.delete(oldestKey);
+    }
+  }
+  return nextFailureCount >= INGREDIENT_OVERVIEW_REFRESH_FAILURE_RETRY_LIMIT;
 };
 
 const runNextScientificBackgroundRefreshTask = (): void => {
@@ -383,6 +483,7 @@ const buildDeepseekJsonLlmFn = (params: {
             { role: "user", content: prompt },
           ],
           temperature: 0.1,
+          thinking: DEEPSEEK_NON_THINKING_MODE,
           stream: false,
           max_tokens: params.maxTokens,
           response_format: { type: "json_object" },
@@ -495,7 +596,12 @@ export const registerScienceSidecarRoutes = (
         });
         const fastCached = readIngredientOverviewSidecarCache(fastCacheKey, now());
         if (fastCached) {
-          return res.json(fastCached);
+          return res.json(
+            withIngredientOverviewRefreshHint(
+              fastCached,
+              ingredientOverviewSidecarBackgroundRefresh.has(fastCacheKey),
+            ),
+          );
         }
       }
 
@@ -514,64 +620,132 @@ export const registerScienceSidecarRoutes = (
         decisionInputsHash: authority.decisionSupport.decisionInputsHash,
         personalizationScopeHash: authority.personalizationScopeHash,
       });
-      const cached = readIngredientOverviewSidecarCache(cacheKey, now());
-      if (cached) {
-        return res.json(cached);
-      }
-
       const executionProfile = resolveIngredientOverviewExecutionProfile(authority.ingredientScienceContext);
-      if (parsedBody.cacheOnly === true) {
+      const deepseekKey = env.DEEPSEEK_API_KEY?.trim() || null;
+      const deepseekModel = resolveDeepSeekModel(env.DEEPSEEK_MODEL);
+      const shouldUseLiveWriter =
+        authority.ingredientScienceContext.productArchetype !== "functional_food_like"
+        && authority.ingredientScienceContext.ingredientFamily !== "green_tea_extract";
+      const ensureIngredientOverviewBackgroundRefresh = (): boolean => {
+        if (!shouldUseLiveWriter || !deepseekKey) return false;
+        if (ingredientOverviewSidecarBackgroundRefresh.has(cacheKey)) return true;
+        if (isIngredientOverviewBackgroundRefreshCoolingDown(cacheKey, now())) return false;
+
+        const backgroundRefresh = runWithIngredientOverviewRefreshSlot(async (): Promise<void> => {
+          const backgroundLlmFn = buildDeepseekJsonLlmFn({
+            deepseekKey,
+            deepseekModel,
+            timeoutMs: executionProfile.backgroundRefreshTimeoutMs,
+            maxTokens: executionProfile.maxTokens,
+          });
+          if (!backgroundLlmFn) return;
+
+          const refreshed = await compileIngredientOverviewAsync(
+            authority.ingredientScienceContext,
+            {
+              llmFn: backgroundLlmFn,
+              timeoutMs: executionProfile.backgroundRefreshTimeoutMs,
+              maxRetries: executionProfile.backgroundRefreshMaxRetries ?? SCIENCE_SIDECAR_MAX_RETRIES,
+            },
+          );
+
+          const refreshedPayload: IngredientOverviewSidecarResponse = {
+            status: "ok",
+            digest: authority.decisionSupport.digest,
+            ingredientOverview: refreshed.ingredientOverview,
+            source: refreshed.source,
+            fallbackUsed: refreshed.fallbackUsed,
+            fallbackReason: refreshed.diagnostics.fallbackReason ?? undefined,
+            promptVersion: refreshed.promptVersion,
+            backgroundRefreshPending: false,
+            recommendedRetryAfterMs: null,
+          };
+
+          if (refreshed.source !== "api") {
+            if (shouldCoolDownIngredientOverviewBackgroundRefresh(cacheKey)) {
+              markIngredientOverviewBackgroundRefreshCooldown(cacheKey, now());
+            }
+          } else {
+            ingredientOverviewSidecarBackgroundRefreshCooldownUntil.delete(cacheKey);
+            ingredientOverviewSidecarBackgroundRefreshFailureCount.delete(cacheKey);
+          }
+
+          writeIngredientOverviewSidecarCache(
+            cacheKey,
+            refreshedPayload,
+            resolveIngredientOverviewCacheTtlMs(refreshedPayload, executionProfile),
+            now(),
+          );
+        })
+          .catch((error) => {
+            deps.captureException(error, {
+              route: "/api/ingredient-overview/v1",
+              phase: "background_refresh",
+              cacheKey,
+            });
+          })
+          .finally(() => {
+            ingredientOverviewSidecarBackgroundRefresh.delete(cacheKey);
+          });
+
+        ingredientOverviewSidecarBackgroundRefresh.set(cacheKey, backgroundRefresh);
+        return true;
+      };
+      const buildIngredientOverviewFastFallbackResponse = async (
+        fallbackReason: string,
+        allowBackgroundRefresh: boolean,
+      ): Promise<IngredientOverviewSidecarResponse> => {
         const compiled = await compileIngredientOverviewAsync(authority.ingredientScienceContext, {
           llmFn: undefined,
           timeoutMs: executionProfile.timeoutMs,
           maxRetries: 0,
         });
-        return res.json({
+        const payload: IngredientOverviewSidecarResponse = {
           status: "ok",
           digest: authority.decisionSupport.digest,
           ingredientOverview: compiled.ingredientOverview,
           source: "fallback",
           fallbackUsed: true,
-          fallbackReason: "cache_only_miss",
+          fallbackReason,
           promptVersion: compiled.promptVersion,
-        } satisfies IngredientOverviewSidecarResponse);
+          backgroundRefreshPending: false,
+          recommendedRetryAfterMs: null,
+        };
+        writeIngredientOverviewSidecarCache(
+          cacheKey,
+          payload,
+          resolveIngredientOverviewCacheTtlMs(payload, executionProfile),
+          now(),
+        );
+        return withIngredientOverviewRefreshHint(
+          payload,
+          allowBackgroundRefresh ? ensureIngredientOverviewBackgroundRefresh() : false,
+        );
+      };
+
+      const cached = readIngredientOverviewSidecarCache(cacheKey, now());
+      const shouldBypassFallbackCache =
+        parsedBody.revalidateFallback === true && cached?.source === "fallback";
+      if (cached && !shouldBypassFallbackCache) {
+        return res.json(
+          withIngredientOverviewRefreshHint(
+            cached,
+            ingredientOverviewSidecarBackgroundRefresh.has(cacheKey),
+          ),
+        );
+      }
+      if (shouldBypassFallbackCache) {
+        const backgroundRefreshPending = ensureIngredientOverviewBackgroundRefresh();
+        if (cached) {
+          return res.json(withIngredientOverviewRefreshHint(cached, backgroundRefreshPending));
+        }
       }
 
-      const deepseekKey = env.DEEPSEEK_API_KEY?.trim() || null;
-      const deepseekModel = env.DEEPSEEK_MODEL?.trim() || "deepseek-chat";
-      const shouldUseLiveWriter =
-        parsedBody.revalidateFallback !== true
-        && authority.ingredientScienceContext.productArchetype !== "functional_food_like"
-        && authority.ingredientScienceContext.ingredientFamily !== "green_tea_extract";
-      const llmFn = shouldUseLiveWriter
-        ? buildDeepseekJsonLlmFn({
-          deepseekKey,
-          deepseekModel,
-          timeoutMs: executionProfile.timeoutMs,
-          maxTokens: executionProfile.maxTokens,
-        })
-        : undefined;
-      const compiled = await compileIngredientOverviewAsync(authority.ingredientScienceContext, {
-        llmFn,
-        timeoutMs: executionProfile.timeoutMs,
-        maxRetries: executionProfile.maxRetries ?? SCIENCE_SIDECAR_MAX_RETRIES,
-      });
+      if (parsedBody.cacheOnly === true) {
+        return res.json(await buildIngredientOverviewFastFallbackResponse("cache_only_miss", false));
+      }
 
-      const payload: IngredientOverviewSidecarResponse = {
-        status: "ok",
-        digest: authority.decisionSupport.digest,
-        ingredientOverview: compiled.ingredientOverview,
-        source: compiled.source,
-        fallbackUsed: compiled.fallbackUsed,
-        promptVersion: compiled.promptVersion,
-      };
-      writeIngredientOverviewSidecarCache(
-        cacheKey,
-        payload,
-        now(),
-      );
-
-      return res.json(payload);
+      return res.json(await buildIngredientOverviewFastFallbackResponse("background_refresh_scheduled", true));
     } catch (error) {
       deps.captureException(error, { route: "/api/ingredient-overview/v1" });
       const detail = error instanceof Error ? `${error.name}: ${error.message}` : String(error);
@@ -650,7 +824,7 @@ export const registerScienceSidecarRoutes = (
         promptVersion: `${plan.mode}:${SCIENTIFIC_BACKGROUND_PROMPT_VERSION}`,
       });
       const deepseekKey = env.DEEPSEEK_API_KEY?.trim() || null;
-      const deepseekModel = env.DEEPSEEK_MODEL?.trim() || "deepseek-chat";
+      const deepseekModel = resolveDeepSeekModel(env.DEEPSEEK_MODEL);
       const ensureScientificBackgroundBackgroundRefresh = (): boolean => {
         if (!executionProfile.preferLiveWriter || !deepseekKey) return false;
         if (scientificBackgroundSidecarBackgroundRefresh.has(cacheKey)) return true;

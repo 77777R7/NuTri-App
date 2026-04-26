@@ -2,6 +2,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { performance } from "node:perf_hooks";
 import type { Express, Request, RequestHandler, Response } from "express";
 import { z } from "zod";
+import { resolveDeepSeekModel } from "../deepseekConfig.js";
 
 type AnalysisBundle = any;
 type AuthorityFailureReason =
@@ -407,7 +408,7 @@ export const registerEnrichStreamRoute = (
     ? Math.max(ENRICH_STREAM_QUEUE_WAIT_MS, ENRICH_STREAM_QUEUE_WAIT_MS_BUNDLE_ONLY)
     : ENRICH_STREAM_QUEUE_WAIT_MS;
   const normalized = normalizeBarcodeInput(rawBarcode);
-  const model = process.env.DEEPSEEK_MODEL || "deepseek-chat";
+  const model = resolveDeepSeekModel(process.env.DEEPSEEK_MODEL);
   const acceptLanguageHeader =
     typeof req.headers["accept-language"] === "string" ? req.headers["accept-language"] : null;
   const locale = resolveLocale(acceptLanguageHeader);

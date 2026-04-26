@@ -7,6 +7,10 @@ import {
   personalizationAiInternals,
   type PersonalizationExplainer,
 } from "../ai.js";
+import {
+  DEEPSEEK_NON_THINKING_MODE,
+  resolveDeepSeekModel,
+} from "../../deepseekConfig.js";
 
 type DeepSeekChatMessage = {
   role: "system" | "user";
@@ -126,6 +130,7 @@ const defaultTransport: DeepSeekTransport = async ({ apiKey, model, messages, ti
     body: JSON.stringify({
       model,
       temperature: 0.2,
+      thinking: DEEPSEEK_NON_THINKING_MODE,
       response_format: { type: "json_object" },
       messages,
     }),
@@ -147,7 +152,7 @@ export const createDeepSeekPersonalizationExplainer = (
   options: CreateDeepSeekExplainerOptions = {},
 ): PersonalizationExplainer => {
   const apiKey = options.apiKey ?? process.env.DEEPSEEK_API_KEY ?? null;
-  const model = options.model ?? process.env.DEEPSEEK_MODEL ?? "deepseek-chat";
+  const model = options.model ?? resolveDeepSeekModel(process.env.DEEPSEEK_MODEL);
   const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
   const transport = options.transport ?? defaultTransport;
 

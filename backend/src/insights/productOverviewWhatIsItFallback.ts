@@ -166,7 +166,7 @@ const buildLeadActiveMultiIngredientFallback = (
       );
     }
     return toSentence(
-      `The formula is organized around ${leadActive} as the lead active instead of giving every disclosed line the same comparison weight`
+      `The formula is organized around ${leadActive} as the lead active rather than reading every disclosed line as equally central`
     );
   })();
 

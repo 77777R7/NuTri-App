@@ -11,6 +11,7 @@ import {
   type IngredientsDetail,
 } from "../analysisBundle.js";
 import type { FactsDigest } from "../factsDigest.js";
+import { resolveDeepSeekModel } from "../deepseekConfig.js";
 import type { ErrorResponse } from "../types.js";
 
 type ParseRequestBody = <T>(schema: z.ZodType<T>, req: Request, res: Response) => T | null;
@@ -811,7 +812,7 @@ export const registerAnalysisSectionRoute = (
         digest,
         requestedLimit,
         cursor,
-        model: process.env.DEEPSEEK_MODEL || "deepseek-chat",
+        model: resolveDeepSeekModel(process.env.DEEPSEEK_MODEL),
         deepseekKey,
       });
     }
@@ -1102,7 +1103,7 @@ export const registerAnalysisSectionRoute = (
     return;
   }
 
-  const model = process.env.DEEPSEEK_MODEL || "deepseek-chat";
+  const model = resolveDeepSeekModel(process.env.DEEPSEEK_MODEL);
   const sliceStart = Math.min(cursor, totalActives);
   const sliceEnd = Math.min(sliceStart + requestedLimit, totalActives);
   const detailDigest: FactsDigest = {
