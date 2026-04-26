@@ -90,3 +90,18 @@ test('admission pressure fallback uses iHerb overlay facts before provisional co
     'overlay facts must be attempted before the quickDigest/provisional admission fallback',
   );
 });
+
+test('iHerb overlay Stage0 has a deterministic no-AI rev1 path for full streams', () => {
+  const source = fs.readFileSync(ROUTE_FILE, 'utf8');
+  const blockMatch = source.match(
+    /const overlayNoAiFullStreamFastPath =[\s\S]*?const deterministicNoAiFastPath =[\s\S]*?if \(deterministicNoAiFastPath && canWrite\(\)\)/,
+  );
+
+  assert.ok(blockMatch, 'overlay no-AI full streams must enter deterministic rev1 gating');
+  const block = blockMatch[0];
+  assert.ok(block.includes('params.digest.sourceType === "web"'));
+  assert.ok(block.includes('Boolean(overlayClaimsByBarcode)'));
+  assert.ok(block.includes('overlayNoAiFullStreamFastPath'));
+  assert.ok(source.includes('iherb_overlay_full_stream_no_ai_fast_path'));
+  assert.ok(source.includes('fallbackReason: deterministicFallbackReason'));
+});

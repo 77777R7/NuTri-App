@@ -2959,13 +2959,20 @@ export const registerEnrichStreamRoute = (
       const context = `FACTS_DIGEST_JSON: ${JSON.stringify(params.digest)}`;
       const skipAiForBundleOnlyWeb = streamAnalysisBundleOnly && params.digest.sourceType === "web";
       const canUseAi = params.allowAi && Boolean(params.apiKey) && !skipAiForBundleOnlyWeb;
-      const deterministicNoAiFastPath =
-        (streamAnalysisBundleOnly || skipCachedFastForFullDsldDeterministic) &&
+      const overlayNoAiFullStreamFastPath =
+        !streamAnalysisBundleOnly &&
         !canUseAi &&
-        params.digest.sourceType !== "web";
+        params.digest.sourceType === "web" &&
+        Boolean(overlayClaimsByBarcode);
+      const deterministicNoAiFastPath =
+        (streamAnalysisBundleOnly || skipCachedFastForFullDsldDeterministic || overlayNoAiFullStreamFastPath) &&
+        !canUseAi &&
+        (params.digest.sourceType !== "web" || overlayNoAiFullStreamFastPath);
       if (deterministicNoAiFastPath && canWrite()) {
         const deterministicFallbackReason = skipCachedFastForFullDsldDeterministic
           ? "dsld_full_stream_no_ai_fast_path"
+          : overlayNoAiFullStreamFastPath
+            ? "iherb_overlay_full_stream_no_ai_fast_path"
           : "bundle_only_no_ai_fast_path";
         const deterministicModeCopy = skipCachedFastForFullDsldDeterministic
           ? {
@@ -2976,6 +2983,15 @@ export const registerEnrichStreamRoute = (
             timingRationale:
               "Deterministic label mode prioritizes stable guidance before optional deeper expansion.",
           }
+          : overlayNoAiFullStreamFastPath
+            ? {
+              detailSummary:
+                "This label-backed product record is summarized deterministically so the scan can finish without waiting on optional web expansion.",
+              modeBullet:
+                "Label-backed deterministic mode keeps the scan responsive while preserving product-specific facts.",
+              timingRationale:
+                "Label-backed deterministic mode prioritizes stable directions and safety context before optional deeper expansion.",
+            }
           : {
             detailSummary: `${getDegradedReasonCopy("BUNDLE_ONLY_NO_AUTHORITATIVE_MATCH")} We will keep refining this record.`,
             modeBullet:
@@ -3031,7 +3047,7 @@ export const registerEnrichStreamRoute = (
           ...skeleton,
           meta: {
             ...skeleton.meta,
-            fallbackReason: "bundle_only_no_ai_fast_path",
+            fallbackReason: deterministicFallbackReason,
             sourceTypeFinal: true,
             detailReady: true,
             deterministicSignals: summarizeDeterministicSignals(deterministicSignals),
