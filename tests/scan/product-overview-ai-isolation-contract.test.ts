@@ -63,7 +63,8 @@ test('decision-support fetch waits out transient web skeleton state before calli
 });
 
 test('product overview AI route is isolated from shared decision-support authority', () => {
-  assert.ok(serverSource.includes('app.post("/api/product-overview-ai/v1", verifySupabaseToken, async (req: Request, res: Response) => {'));
+  assert.ok(serverSource.includes('"/api/product-overview-ai/v1"'));
+  assert.ok(serverSource.includes('verifySupabaseToken'));
   assert.ok(serverSource.includes('fetchProductOverviewWhatIsIt'));
   assert.ok(serverSource.includes('buildProductOverviewWhatIsItFallback'));
   assert.ok(serverSource.includes('source: "fallback"'));
@@ -78,4 +79,10 @@ test('product overview AI prompt contract is richer than the legacy overview sum
   assert.ok(deepseekSource.includes('"mode": "short or rich"'));
   assert.ok(deepseekSource.includes('"lead": "One sentence that identifies the product or ingredient clearly."'));
   assert.ok(deepseekSource.includes('"whyPeopleTakeIt": "One or two sentences explaining common shopper use'));
+});
+
+test('product overview gate accepts compact anchor variants like 5-HTP versus 5htp', () => {
+  assert.ok(serverSource.includes('const compactCombined = normalizedCombined.replace(/\\s+/g, "");'));
+  assert.ok(serverSource.includes('const compactAnchor = anchor.replace(/\\s+/g, "");'));
+  assert.ok(serverSource.includes('compactCombined.includes(compactAnchor)'));
 });

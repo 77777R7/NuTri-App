@@ -43,3 +43,20 @@ test("product overview fallback keeps single-ingredient astaxanthin readable", (
   assert.match(result.whatItIs, /microalgae/i);
   assert.match(result.whyPeopleTakeIt, /compare/i);
 });
+
+test("product overview fallback avoids treatment-shaped comparison wording", () => {
+  const result = buildProductOverviewWhatIsItFallback({
+    productName: "NADH Cellular Formula",
+    productTypeHint: "NADH",
+    primaryIngredient: "NADH",
+    keyIngredients: [{ name: "NADH" }],
+    sourceContextHint: null,
+    chemicalFormHint: null,
+    allIngredientRows: [{ name: "NADH" }],
+    isLikelySingleIngredient: false,
+  });
+  const text = `${result.lead} ${result.whatItIs} ${result.whyPeopleTakeIt}`;
+
+  assert.match(text, /lead active/i);
+  assert.doesNotMatch(text, /\btreat(?:s|ing)?\b/i);
+});

@@ -1998,6 +1998,34 @@ test("scientific background repairs near-miss writer output into an api result",
   );
 });
 
+test("scientific background deterministic fallback sanitizes reviewed evidence medical phrasing", async () => {
+  const context = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: "fixture-b12-folate-safe-evidence",
+      productName: "B12 Folate Complex",
+      dosageForm: "Tablet",
+      actives: [
+        { name: "Vitamin B12 (Methylcobalamin)", amount: 500, unit: "mcg" },
+        { name: "Folate B9 (L-5-methyltetrahydrofolate)", amount: 400, unit: "mcg" },
+      ],
+    }),
+    overlayClaims: null,
+  });
+
+  const result = await compileScientificBackgroundAsync(
+    context,
+    "Vitamin B12 (Methylcobalamin)",
+  );
+  const shopperText = JSON.stringify(result.scientificBackground);
+
+  assert.equal(result.source, "fallback");
+  assert.doesNotMatch(
+    shopperText,
+    /\b(?:treats?|treating|prevention|replaces medication|guarantees?|clinically proven)\b/i,
+  );
+  assert.match(shopperText, /comparison|label|bounded|context/i);
+});
+
 test("scientific background can salvage safe heading mismatches by planned section order", async () => {
   const digest = buildDigest({
     labelId: "fixture-epa-heading-mismatch-safe",

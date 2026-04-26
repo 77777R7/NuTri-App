@@ -158,6 +158,42 @@ test("authoritative stage0 deterministic rev1 toggle defaults to enabled", async
   );
 });
 
+test("full-stream DSLD deterministic rev1 canary defaults to disabled", async () => {
+  const source = await readServerSource();
+  assert.match(
+    source,
+    /const STAGE0_DSLD_FULL_STREAM_DETERMINISTIC_REV1_ENABLED = parseBooleanEnv\(\s*process\.env\.STAGE0_DSLD_FULL_STREAM_DETERMINISTIC_REV1_ENABLED,\s*false,\s*\)/,
+  );
+  assert.match(
+    source,
+    /const STAGE0_DSLD_FULL_STREAM_DETERMINISTIC_REV1_CANARY_BARCODES\s*=\s*parseCsvTokenSet\(/,
+  );
+  assert.match(
+    source,
+    /const STAGE0_DSLD_FULL_STREAM_DETERMINISTIC_REV1_ALLOW_ALL = parseBooleanEnv\(\s*process\.env\.STAGE0_DSLD_FULL_STREAM_DETERMINISTIC_REV1_ALLOW_ALL,\s*false,\s*\)/,
+  );
+  assert.match(
+    source,
+    /return STAGE0_DSLD_FULL_STREAM_DETERMINISTIC_REV1_ALLOW_ALL;/,
+  );
+  assert.match(
+    source,
+    /isStage0DsldFullStreamDeterministicRev1EnabledForBarcode\(\s*barcodeGtin14,\s*rawBarcode,\s*\)/,
+  );
+});
+
+test("process runtime diagnostics log fatal and lifecycle breadcrumbs", async () => {
+  const source = await readServerSource();
+  assert.match(source, /const buildProcessRuntimeDiagnostics = \(\) =>/);
+  assert.match(source, /memoryUsage\(\)/);
+  assert.match(source, /\[PROCESS_\$\{event\}\]/);
+  assert.match(source, /logProcessRuntimeEvent\("UNHANDLED_REJECTION"/);
+  assert.match(source, /logProcessRuntimeEvent\("UNCAUGHT_EXCEPTION"/);
+  assert.match(source, /logProcessRuntimeEvent\("BEFORE_EXIT"/);
+  assert.match(source, /logProcessRuntimeEvent\("EXIT"/);
+  assert.match(source, /\[PROCESS_BOOT\]/);
+});
+
 test("overload guard rejects early when inFlight or lag threshold is exceeded", async () => {
   const source = await readServerSource();
   const guardStart = source.indexOf("const inFlightCount = barcodeEnrichInFlight.size;");

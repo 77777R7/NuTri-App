@@ -6596,7 +6596,35 @@ const firstEvidenceSentence = (
     | undefined,
 ): string | null => {
   const text = normalizeText(bucket?.[0]?.text);
-  return text ? asSentence(text) : null;
+  return text ? asSentence(sanitizeShopperEvidenceSentence(text)) : null;
+};
+
+const sanitizeShopperEvidenceSentence = (value: string): string => {
+  let text = normalizeText(value);
+  if (!text) return text;
+
+  if (/reviewed pubmed (?:support|set) includes/i.test(text)) {
+    return "Reviewed human or review-level evidence is available for this lane, but shopper-facing wording should stay tied to study context and evidence limits.";
+  }
+
+  text = text
+    .replace(/\bsupport treating\b/gi, "support reading")
+    .replace(/\bsupports treating\b/gi, "supports reading")
+    .replace(/\btreating ([^.,;]+?) as\b/gi, "reading $1 as")
+    .replace(/\bbefore treating\b/gi, "before reading")
+    .replace(/\btreat it like\b/gi, "read it as")
+    .replace(/\btreat that as\b/gi, "read that as")
+    .replace(/\btreat them as\b/gi, "read them as")
+    .replace(/\btreat every\b/gi, "read every")
+    .replace(/\btreats? ([^.,;]+?) as\b/gi, "reads $1 as")
+    .replace(/\bneural-tube-defect prevention context\b/gi, "pregnancy and developmental public-health context")
+    .replace(/\bprevention context\b/gi, "public-health context")
+    .replace(/\bdisease-treatment\b/gi, "disease-related")
+    .replace(/\bnausea-treatment\b/gi, "nausea-related")
+    .replace(/\banti-inflammatory guarantee\b/gi, "overconfident anti-inflammatory promise")
+    .replace(/\bguaranteeing outcomes\b/gi, "promising outcomes");
+
+  return normalizeText(text);
 };
 
 const appendUniqueSentence = (
