@@ -58,7 +58,7 @@ test('iHerb overlay rows bridge to deterministic Stage0 before web negative-cach
   );
 
   const digestHelperMatch = source.match(
-    /const buildIherbOverlayFactsDigest =[\s\S]*?regionTags: \["us"\],[\s\S]*?}\);/,
+    /const buildIherbOverlayFactsDigestForBarcode =[\s\S]*?regionTags: \["us"\],[\s\S]*?}\);/,
   );
   assert.ok(digestHelperMatch, 'overlay bridge must build a bounded FactsDigest');
   const digestHelper = digestHelperMatch[0];
@@ -69,5 +69,24 @@ test('iHerb overlay rows bridge to deterministic Stage0 before web negative-cach
   assert.ok(
     source.includes('Array.isArray(overlayClaims?.nutritionalFacts)'),
     'overlay bridge must preserve Supplement Facts rows as the ingredient source',
+  );
+});
+
+test('admission pressure fallback uses iHerb overlay facts before provisional core fallback', () => {
+  const source = fs.readFileSync(ROUTE_FILE, 'utf8');
+  const fallbackMatch = source.match(
+    /const emitAdmissionCoreFallbackAndFinalize =[\s\S]*?const quickDigest = await withAdmissionCoreFallbackBudget/,
+  );
+
+  assert.ok(fallbackMatch, 'admission fallback block must be present');
+  const block = fallbackMatch[0];
+  assert.ok(block.includes('fetchIherbOverlayClaimsByBarcode(barcodeGtin14)'));
+  assert.ok(block.includes('buildIherbOverlayFactsDigestForBarcode(overlayClaims, barcodeGtin14)'));
+  assert.ok(block.includes('factsSourceVersion: `iherb_overlay:${overlayClaims?.productId ?? barcodeGtin14}`'));
+  assert.ok(block.includes('buildAnalysisBundleSkeleton'));
+  assert.ok(block.includes('source: "iherb_overlay"'));
+  assert.ok(
+    block.indexOf('buildIherbOverlayFactsDigestForBarcode') < block.indexOf('const quickDigest = await withAdmissionCoreFallbackBudget'),
+    'overlay facts must be attempted before the quickDigest/provisional admission fallback',
   );
 });

@@ -1966,6 +1966,80 @@ export const registerEnrichStreamRoute = (
       (timer as { unref?: () => void }).unref?.();
       promise.then(resolve, reject).finally(() => clearTimeout(timer));
     });
+  const normalizeOverlayDigestText = (value: unknown): string | null => {
+    const text = String(value ?? "").replace(/\s+/g, " ").trim();
+    return text.length > 0 ? text : null;
+  };
+  const buildOverlayIngredientText = (overlayClaims: DecisionSupportOverlayClaims): string | null => {
+    const factLines = (Array.isArray(overlayClaims?.nutritionalFacts) ? overlayClaims.nutritionalFacts : [])
+      .map((fact: Record<string, unknown>) =>
+        [
+          normalizeOverlayDigestText(fact?.substancy),
+          normalizeOverlayDigestText(fact?.amountPerServing),
+        ]
+          .filter(Boolean)
+          .join(" "),
+      )
+      .map((line: string) => normalizeOverlayDigestText(line))
+      .filter((line: string | null): line is string => Boolean(line));
+    if (factLines.length > 0) return factLines.join("\n");
+    return normalizeOverlayDigestText(overlayClaims?.otherIngredients);
+  };
+  const buildIherbOverlayFactsDigestForBarcode = (
+    overlayClaims: DecisionSupportOverlayClaims | null,
+    barcodeGtin14: string,
+  ): FactsDigest | null => {
+    if (!overlayClaims) return null;
+    const ingredientText = buildOverlayIngredientText(overlayClaims);
+    const title = normalizeOverlayDigestText(overlayClaims.title);
+    const brandName = normalizeOverlayDigestText(overlayClaims.brandName);
+    const suggestedUse = normalizeOverlayDigestText(overlayClaims.suggestedUse);
+    const warnings = normalizeOverlayDigestText(overlayClaims.warnings);
+    const servingSize = normalizeOverlayDigestText(overlayClaims.servingSize);
+    const hasUsableOverlayFacts = Boolean(
+      title ||
+      brandName ||
+      ingredientText ||
+      suggestedUse ||
+      warnings ||
+      servingSize,
+    );
+    if (!hasUsableOverlayFacts) return null;
+
+    const canonicalDomain = (() => {
+      const link = normalizeOverlayDigestText(overlayClaims.link);
+      if (!link) return null;
+      try {
+        return new URL(link).hostname;
+      } catch {
+        return null;
+      }
+    })();
+
+    return buildFactsDigestFromWeb({
+      facts: {
+        barcode: overlayClaims.barcodeGtin14 ?? barcodeGtin14,
+        canonical: {
+          name: title,
+          brand: brandName,
+          url: normalizeOverlayDigestText(overlayClaims.link),
+          domain: canonicalDomain,
+        },
+        identifiers: { npn: null },
+        textFacts: {
+          ingredientsText: ingredientText,
+          directionsText: suggestedUse,
+          warningsText: warnings,
+          servingSizeText: servingSize,
+        },
+        coverageScore: 100,
+        missingFields: [],
+      },
+      identityType: "gtin14",
+      identityValue: barcodeGtin14,
+      regionTags: ["us"],
+    });
+  };
   const emitAdmissionCoreFallbackAndFinalize = async (
     reasonCode: "QUEUE_FULL" | "QUEUE_WAIT_TIMEOUT" | "PRE_REV1_PRESSURE_GUARD" | "PRE_REV1_TERMINAL_GUARD",
   ): Promise<boolean> => {
@@ -1979,6 +2053,72 @@ export const registerEnrichStreamRoute = (
     terminalReason = fallbackCode;
 
     try {
+      const overlayClaims = await withAdmissionCoreFallbackBudget(
+        fetchIherbOverlayClaimsByBarcode(barcodeGtin14),
+        ENRICH_STREAM_ADMISSION_CORE_FALLBACK_BUDGET_MS,
+      ).catch(() => null);
+      const overlayDigest = buildIherbOverlayFactsDigestForBarcode(overlayClaims, barcodeGtin14);
+      if (overlayDigest) {
+        const identityType: FactsIdentityType = "gtin14";
+        const identityValue = barcodeGtin14;
+        const factsDigestHash = computeFactsDigestHash(overlayDigest);
+        const deterministicSignals = DETERMINISTIC_SIGNALS_PRIMARY
+          ? extractDeterministicSignalPack({
+            sourceRole: overlayDigest.sourceType,
+            digest: overlayDigest,
+          })
+          : null;
+        const productIdentity = buildProductIdentityFromDigest({
+          digest: overlayDigest,
+          identityType,
+          identityValue,
+          sourceTypeFinal: false,
+        });
+        rememberStreamProductIdentity(productIdentity);
+        const fallbackBundle = buildAnalysisBundleSkeleton({
+          digest: overlayDigest,
+          deterministicSignals,
+          bundleId,
+          revision: 1,
+          phase: "fast_ai",
+          locale: streamLocale,
+          factsDigestHash,
+          factsSourceVersion: `iherb_overlay:${overlayClaims?.productId ?? barcodeGtin14}`,
+          identityType,
+          identityValue,
+          dataStatus: {
+            overview: "limited",
+            usage: "limited",
+            safety: "limited",
+          },
+          overlayClaims,
+          includeDecisionDebug: debugDecisionRequested && (authDisabled || isRegressionRequest),
+        });
+        emitRev1Once(
+          {
+            ...fallbackBundle,
+            meta: {
+              ...fallbackBundle.meta,
+              productIdentity: productIdentity ?? fallbackBundle.meta.productIdentity,
+              sourceTypeFinal: false,
+              detailReady: overlayDigest.actives.length > 0,
+              fallback: { code: fallbackCode },
+              fallbackReason: fallbackCode,
+              admissionFallback: {
+                reasonCode,
+                budgetMs: ENRICH_STREAM_ADMISSION_CORE_FALLBACK_BUDGET_MS,
+                source: "iherb_overlay",
+              },
+            },
+          },
+          "fallback",
+          fallbackCode,
+        );
+        if (!streamState.rev1Sent) return false;
+        finalizeStream(fallbackCode);
+        return true;
+      }
+
       const quickDigest = await withAdmissionCoreFallbackBudget(
         buildMySupplementDigestQuick({
           supplementId: barcodeGtin14,
@@ -2177,79 +2317,9 @@ export const registerEnrichStreamRoute = (
       }
       return overlayClaimsForBarcodePromise;
     };
-    const normalizeOverlayDigestText = (value: unknown): string | null => {
-      const text = String(value ?? "").replace(/\s+/g, " ").trim();
-      return text.length > 0 ? text : null;
-    };
-    const buildOverlayIngredientText = (overlayClaims: DecisionSupportOverlayClaims): string | null => {
-      const factLines = (Array.isArray(overlayClaims?.nutritionalFacts) ? overlayClaims.nutritionalFacts : [])
-        .map((fact: Record<string, unknown>) =>
-          [
-            normalizeOverlayDigestText(fact?.substancy),
-            normalizeOverlayDigestText(fact?.amountPerServing),
-          ]
-            .filter(Boolean)
-            .join(" "),
-        )
-        .map((line: string) => normalizeOverlayDigestText(line))
-        .filter((line: string | null): line is string => Boolean(line));
-      if (factLines.length > 0) return factLines.join("\n");
-      return normalizeOverlayDigestText(overlayClaims?.otherIngredients);
-    };
     const buildIherbOverlayFactsDigest = (
       overlayClaims: DecisionSupportOverlayClaims | null,
-    ): FactsDigest | null => {
-      if (!overlayClaims) return null;
-      const ingredientText = buildOverlayIngredientText(overlayClaims);
-      const title = normalizeOverlayDigestText(overlayClaims.title);
-      const brandName = normalizeOverlayDigestText(overlayClaims.brandName);
-      const suggestedUse = normalizeOverlayDigestText(overlayClaims.suggestedUse);
-      const warnings = normalizeOverlayDigestText(overlayClaims.warnings);
-      const servingSize = normalizeOverlayDigestText(overlayClaims.servingSize);
-      const hasUsableOverlayFacts = Boolean(
-        title ||
-        brandName ||
-        ingredientText ||
-        suggestedUse ||
-        warnings ||
-        servingSize,
-      );
-      if (!hasUsableOverlayFacts) return null;
-
-      const canonicalDomain = (() => {
-        const link = normalizeOverlayDigestText(overlayClaims.link);
-        if (!link) return null;
-        try {
-          return new URL(link).hostname;
-        } catch {
-          return null;
-        }
-      })();
-
-      return buildFactsDigestFromWeb({
-        facts: {
-          barcode: overlayClaims.barcodeGtin14 ?? barcodeGtin14,
-          canonical: {
-            name: title,
-            brand: brandName,
-            url: normalizeOverlayDigestText(overlayClaims.link),
-            domain: canonicalDomain,
-          },
-          identifiers: { npn: null },
-          textFacts: {
-            ingredientsText: ingredientText,
-            directionsText: suggestedUse,
-            warningsText: warnings,
-            servingSizeText: servingSize,
-          },
-          coverageScore: 100,
-          missingFields: [],
-        },
-        identityType: "gtin14",
-        identityValue: barcodeGtin14,
-        regionTags: ["us"],
-      });
-    };
+    ): FactsDigest | null => buildIherbOverlayFactsDigestForBarcode(overlayClaims, barcodeGtin14);
     const authorityRegressionScenarioActive =
       isRegressionLikeRequest &&
       barcodeGtin14 === AUTHORITY_REGRESSION_SAMPLE_BARCODE;
