@@ -285,6 +285,13 @@ const parseBooleanEnv = (value: string | undefined, fallback: boolean): boolean 
   if (normalized === "0" || normalized === "false" || normalized === "no") return false;
   return fallback;
 };
+const parseCsvTokenSet = (value: string | undefined): Set<string> =>
+  new Set(
+    String(value ?? "")
+      .split(",")
+      .map((entry) => entry.trim())
+      .filter(Boolean),
+  );
 const PRODUCT_SEARCH_WARM_ON_STARTUP = parseBooleanEnv(process.env.PRODUCT_SEARCH_WARM_ON_STARTUP, false);
 const PRODUCT_SEARCH_STARTUP_WARM_DELAY_MS = Math.max(
   0,
@@ -451,6 +458,18 @@ const STAGE0_DSLD_BARCODE_FALLBACK_FULL_ENABLED = parseBooleanEnv(
   process.env.STAGE0_DSLD_BARCODE_FALLBACK_FULL_ENABLED,
   true,
 );
+const STAGE0_DSLD_FULL_STREAM_DETERMINISTIC_REV1_ENABLED = parseBooleanEnv(
+  process.env.STAGE0_DSLD_FULL_STREAM_DETERMINISTIC_REV1_ENABLED,
+  false,
+);
+const STAGE0_DSLD_FULL_STREAM_DETERMINISTIC_REV1_ALLOW_ALL = parseBooleanEnv(
+  process.env.STAGE0_DSLD_FULL_STREAM_DETERMINISTIC_REV1_ALLOW_ALL,
+  false,
+);
+const STAGE0_DSLD_FULL_STREAM_DETERMINISTIC_REV1_CANARY_BARCODES =
+  parseCsvTokenSet(
+    process.env.STAGE0_DSLD_FULL_STREAM_DETERMINISTIC_REV1_CANARY_BARCODES,
+  );
 const parseSeededDsldLabelMap = (value: string | undefined): Map<string, number> => {
   const map = new Map<string, number>();
   const raw = String(value ?? "").trim();
@@ -562,6 +581,14 @@ const collectDecisionSupportFlagsSnapshot = (): Record<string, unknown> => ({
   STAGE0_PROTOCOL_UNIFIED: process.env.STAGE0_PROTOCOL_UNIFIED ?? null,
   STAGE0_AUTHORITATIVE_DETERMINISTIC_REV1:
     process.env.STAGE0_AUTHORITATIVE_DETERMINISTIC_REV1 ?? null,
+  STAGE0_DSLD_FULL_STREAM_DETERMINISTIC_REV1_ENABLED:
+    process.env.STAGE0_DSLD_FULL_STREAM_DETERMINISTIC_REV1_ENABLED ?? null,
+  STAGE0_DSLD_FULL_STREAM_DETERMINISTIC_REV1_ALLOW_ALL:
+    process.env.STAGE0_DSLD_FULL_STREAM_DETERMINISTIC_REV1_ALLOW_ALL ?? null,
+  STAGE0_DSLD_FULL_STREAM_DETERMINISTIC_REV1_CANARY_BARCODES:
+    process.env.STAGE0_DSLD_FULL_STREAM_DETERMINISTIC_REV1_CANARY_BARCODES
+      ? "[configured]"
+      : null,
   DETERMINISTIC_SIGNALS_PRIMARY: process.env.DETERMINISTIC_SIGNALS_PRIMARY ?? null,
 });
 const HTTP_ACCESS_LOG_ENABLED = parseBooleanEnv(process.env.HTTP_ACCESS_LOG_ENABLED, true);
@@ -11927,6 +11954,9 @@ registerEnrichStreamRoute(app, {
   STAGE0_DSLD_BARCODE_FALLBACK_ENABLED,
   STAGE0_DSLD_BARCODE_FALLBACK_FETCH_TIMEOUT_MS,
   STAGE0_DSLD_BARCODE_FALLBACK_FULL_ENABLED,
+  STAGE0_DSLD_FULL_STREAM_DETERMINISTIC_REV1_ALLOW_ALL,
+  STAGE0_DSLD_FULL_STREAM_DETERMINISTIC_REV1_CANARY_BARCODES,
+  STAGE0_DSLD_FULL_STREAM_DETERMINISTIC_REV1_ENABLED,
   STAGE0_DSLD_SEEDED_FETCH_TIMEOUT_MS,
   STAGE0_PROTOCOL_UNIFIED,
   STAGE0_WEB_DIGIT_SCAN_MAX_CHARS,
@@ -12739,19 +12769,92 @@ app.use((error: unknown, req: Request, res: Response, _next: NextFunction) => {
   res.status(500).json({ error: "internal_error" });
 });
 
+const buildProcessRuntimeDiagnostics = () => {
+  const memory = process.memoryUsage();
+  return {
+    pid: process.pid,
+    node: process.version,
+    platform: process.platform,
+    uptimeSec: Math.round(process.uptime()),
+    memory: {
+      rssMb: Math.round(memory.rss / 1024 / 1024),
+      heapUsedMb: Math.round(memory.heapUsed / 1024 / 1024),
+      heapTotalMb: Math.round(memory.heapTotal / 1024 / 1024),
+      externalMb: Math.round(memory.external / 1024 / 1024),
+      arrayBuffersMb: Math.round(memory.arrayBuffers / 1024 / 1024),
+    },
+  };
+};
+
+const logProcessRuntimeEvent = (
+  event: string,
+  details?: Record<string, unknown>,
+) => {
+  console.error(`[PROCESS_${event}]`, {
+    ...buildProcessRuntimeDiagnostics(),
+    ...(details ?? {}),
+  });
+};
+
 process.on("unhandledRejection", (reason) => {
   captureException(reason, { type: "unhandledRejection" });
-  console.error("[UNHANDLED_REJECTION]", reason);
+  logProcessRuntimeEvent("UNHANDLED_REJECTION", {
+    reason:
+      reason instanceof Error
+        ? { message: reason.message, stack: reason.stack }
+        : String(reason),
+  });
 });
 
 process.on("uncaughtException", (err) => {
   captureException(err, { type: "uncaughtException" });
-  console.error("[UNCAUGHT_EXCEPTION]", err);
+  logProcessRuntimeEvent("UNCAUGHT_EXCEPTION", {
+    error: { message: err.message, stack: err.stack },
+  });
   process.exit(1);
+});
+
+process.on("warning", (warning) => {
+  logProcessRuntimeEvent("WARNING", {
+    warning: {
+      name: warning.name,
+      message: warning.message,
+      stack: warning.stack,
+    },
+  });
+});
+
+process.once("beforeExit", (code) => {
+  logProcessRuntimeEvent("BEFORE_EXIT", { code });
+});
+
+process.once("exit", (code) => {
+  logProcessRuntimeEvent("EXIT", { code });
+});
+
+process.once("SIGTERM", () => {
+  logProcessRuntimeEvent("SIGTERM");
+  process.exit(0);
+});
+
+process.once("SIGINT", () => {
+  logProcessRuntimeEvent("SIGINT");
+  process.exit(0);
 });
 
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`Search backend listening on http://0.0.0.0:${PORT}`);
+  console.info("[PROCESS_BOOT]", {
+    ...buildProcessRuntimeDiagnostics(),
+    flags: {
+      STAGE0_AUTHORITATIVE_DETERMINISTIC_REV1,
+      STAGE0_DSLD_BARCODE_FALLBACK_FULL_ENABLED,
+      STAGE0_DSLD_FULL_STREAM_DETERMINISTIC_REV1_ALLOW_ALL,
+      STAGE0_DSLD_FULL_STREAM_DETERMINISTIC_REV1_ENABLED,
+      stage0DsldFullStreamCanaryBarcodeCount:
+        STAGE0_DSLD_FULL_STREAM_DETERMINISTIC_REV1_CANARY_BARCODES.size,
+    },
+  });
   if (PRODUCT_SEARCH_WARM_ON_STARTUP) {
     const timer = setTimeout(() => {
       warmProductSearchIndex();

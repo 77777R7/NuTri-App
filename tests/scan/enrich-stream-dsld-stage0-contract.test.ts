@@ -14,10 +14,32 @@ test('full-stream DSLD deterministic Stage0 bypasses cached fast before cover co
   assert.ok(blockMatch, 'cached-fast lookup must use deterministic Stage0 skip flag');
   const block = blockMatch[0];
   assert.ok(block.includes('const skipCachedFastForFullDsldDeterministic ='));
+  assert.ok(block.includes('STAGE0_DSLD_FULL_STREAM_DETERMINISTIC_REV1_ENABLED'));
   assert.ok(block.includes('!streamAnalysisBundleOnly'));
   assert.ok(block.includes('params.digest.sourceType === "dsld"'));
   assert.ok(block.includes('params.allowAi === false'));
   assert.ok(block.includes('dsld deterministic stage0 skipping cached fast'));
+});
+
+test('full-stream DSLD deterministic Stage0 is barcode-canary gated', () => {
+  const source = fs.readFileSync(ROUTE_FILE, 'utf8');
+
+  assert.ok(
+    source.includes('STAGE0_DSLD_FULL_STREAM_DETERMINISTIC_REV1_CANARY_BARCODES'),
+    'route must receive the barcode canary allowlist',
+  );
+  assert.ok(
+    source.includes('STAGE0_DSLD_FULL_STREAM_DETERMINISTIC_REV1_ALLOW_ALL'),
+    'route must require an explicit allow-all override for full rollout',
+  );
+  assert.ok(
+    source.includes('return Boolean(STAGE0_DSLD_FULL_STREAM_DETERMINISTIC_REV1_ALLOW_ALL);'),
+    'empty canary allowlist must not imply full rollout',
+  );
+  assert.ok(
+    source.includes('isStage0DsldFullStreamDeterministicRev1EnabledForBarcode('),
+    'full-stream fallback must call the barcode gate before starting deterministic rev1',
+  );
 });
 
 test('full-stream DSLD deterministic Stage0 has a bounded no-AI rev1 path', () => {
@@ -89,4 +111,19 @@ test('admission pressure fallback uses iHerb overlay facts before provisional co
     block.indexOf('buildIherbOverlayFactsDigestForBarcode') < block.indexOf('const quickDigest = await withAdmissionCoreFallbackBudget'),
     'overlay facts must be attempted before the quickDigest/provisional admission fallback',
   );
+});
+
+test('iHerb overlay Stage0 has a deterministic no-AI rev1 path for full streams', () => {
+  const source = fs.readFileSync(ROUTE_FILE, 'utf8');
+  const blockMatch = source.match(
+    /const overlayNoAiFullStreamFastPath =[\s\S]*?const deterministicNoAiFastPath =[\s\S]*?if \(deterministicNoAiFastPath && canWrite\(\)\)/,
+  );
+
+  assert.ok(blockMatch, 'overlay no-AI full streams must enter deterministic rev1 gating');
+  const block = blockMatch[0];
+  assert.ok(block.includes('params.digest.sourceType === "web"'));
+  assert.ok(block.includes('Boolean(overlayClaimsByBarcode)'));
+  assert.ok(block.includes('overlayNoAiFullStreamFastPath'));
+  assert.ok(source.includes('iherb_overlay_full_stream_no_ai_fast_path'));
+  assert.ok(source.includes('fallbackReason: deterministicFallbackReason'));
 });

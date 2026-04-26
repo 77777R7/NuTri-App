@@ -165,6 +165,9 @@ export const registerEnrichStreamRoute = (
     STAGE0_DSLD_BARCODE_FALLBACK_ENABLED,
     STAGE0_DSLD_BARCODE_FALLBACK_FETCH_TIMEOUT_MS,
     STAGE0_DSLD_BARCODE_FALLBACK_FULL_ENABLED,
+    STAGE0_DSLD_FULL_STREAM_DETERMINISTIC_REV1_ALLOW_ALL,
+    STAGE0_DSLD_FULL_STREAM_DETERMINISTIC_REV1_CANARY_BARCODES,
+    STAGE0_DSLD_FULL_STREAM_DETERMINISTIC_REV1_ENABLED,
     STAGE0_DSLD_SEEDED_FETCH_TIMEOUT_MS,
     STAGE0_PROTOCOL_UNIFIED,
     STAGE0_WEB_DIGIT_SCAN_MAX_CHARS,
@@ -352,6 +355,39 @@ export const registerEnrichStreamRoute = (
     validateSnapshotOrFallback,
     withTimeoutPromise,
   } = deps as Record<string, any>;
+
+  const normalizeBarcodeTokenForGate = (value: string | null | undefined) =>
+    String(value ?? "").replace(/\D/g, "");
+  const isStage0DsldFullStreamDeterministicRev1EnabledForBarcode = (
+    ...barcodes: Array<string | null | undefined>
+  ): boolean => {
+    if (!STAGE0_DSLD_FULL_STREAM_DETERMINISTIC_REV1_ENABLED) return false;
+    const canaryBarcodes =
+      STAGE0_DSLD_FULL_STREAM_DETERMINISTIC_REV1_CANARY_BARCODES instanceof Set
+        ? STAGE0_DSLD_FULL_STREAM_DETERMINISTIC_REV1_CANARY_BARCODES
+        : new Set<string>();
+    if (canaryBarcodes.size === 0) {
+      return Boolean(STAGE0_DSLD_FULL_STREAM_DETERMINISTIC_REV1_ALLOW_ALL);
+    }
+    const candidates = new Set<string>();
+    for (const barcode of barcodes) {
+      const normalized = normalizeBarcodeTokenForGate(barcode);
+      if (!normalized) continue;
+      candidates.add(normalized);
+      const withoutLeadingZeros = normalized.replace(/^0+/, "");
+      if (withoutLeadingZeros) candidates.add(withoutLeadingZeros);
+    }
+    for (const configured of canaryBarcodes) {
+      const normalizedConfigured = normalizeBarcodeTokenForGate(configured);
+      if (!normalizedConfigured) continue;
+      if (candidates.has(normalizedConfigured)) return true;
+      const configuredWithoutLeadingZeros = normalizedConfigured.replace(/^0+/, "");
+      if (configuredWithoutLeadingZeros && candidates.has(configuredWithoutLeadingZeros)) {
+        return true;
+      }
+    }
+    return false;
+  };
 
   app.post("/api/enrich-stream", deps.verifySupabaseToken, async (req: Request, res: Response) => {
   const parsedBody = parseRequestBody(enrichStreamBodySchema, req, res);
@@ -2827,6 +2863,7 @@ export const registerEnrichStreamRoute = (
       const skipCachedFastForBundleOnlyDeterministic =
         streamAnalysisBundleOnly && params.digest.sourceType !== "web" && params.allowAi === false;
       const skipCachedFastForFullDsldDeterministic =
+        STAGE0_DSLD_FULL_STREAM_DETERMINISTIC_REV1_ENABLED &&
         !streamAnalysisBundleOnly &&
         params.digest.sourceType === "dsld" &&
         params.allowAi === false;
@@ -2959,13 +2996,20 @@ export const registerEnrichStreamRoute = (
       const context = `FACTS_DIGEST_JSON: ${JSON.stringify(params.digest)}`;
       const skipAiForBundleOnlyWeb = streamAnalysisBundleOnly && params.digest.sourceType === "web";
       const canUseAi = params.allowAi && Boolean(params.apiKey) && !skipAiForBundleOnlyWeb;
-      const deterministicNoAiFastPath =
-        (streamAnalysisBundleOnly || skipCachedFastForFullDsldDeterministic) &&
+      const overlayNoAiFullStreamFastPath =
+        !streamAnalysisBundleOnly &&
         !canUseAi &&
-        params.digest.sourceType !== "web";
+        params.digest.sourceType === "web" &&
+        Boolean(overlayClaimsByBarcode);
+      const deterministicNoAiFastPath =
+        (streamAnalysisBundleOnly || skipCachedFastForFullDsldDeterministic || overlayNoAiFullStreamFastPath) &&
+        !canUseAi &&
+        (params.digest.sourceType !== "web" || overlayNoAiFullStreamFastPath);
       if (deterministicNoAiFastPath && canWrite()) {
         const deterministicFallbackReason = skipCachedFastForFullDsldDeterministic
           ? "dsld_full_stream_no_ai_fast_path"
+          : overlayNoAiFullStreamFastPath
+            ? "iherb_overlay_full_stream_no_ai_fast_path"
           : "bundle_only_no_ai_fast_path";
         const deterministicModeCopy = skipCachedFastForFullDsldDeterministic
           ? {
@@ -2976,6 +3020,15 @@ export const registerEnrichStreamRoute = (
             timingRationale:
               "Deterministic label mode prioritizes stable guidance before optional deeper expansion.",
           }
+          : overlayNoAiFullStreamFastPath
+            ? {
+              detailSummary:
+                "This label-backed product record is summarized deterministically so the scan can finish without waiting on optional web expansion.",
+              modeBullet:
+                "Label-backed deterministic mode keeps the scan responsive while preserving product-specific facts.",
+              timingRationale:
+                "Label-backed deterministic mode prioritizes stable directions and safety context before optional deeper expansion.",
+            }
           : {
             detailSummary: `${getDegradedReasonCopy("BUNDLE_ONLY_NO_AUTHORITATIVE_MATCH")} We will keep refining this record.`,
             modeBullet:
@@ -3031,7 +3084,7 @@ export const registerEnrichStreamRoute = (
           ...skeleton,
           meta: {
             ...skeleton.meta,
-            fallbackReason: "bundle_only_no_ai_fast_path",
+            fallbackReason: deterministicFallbackReason,
             sourceTypeFinal: true,
             detailReady: true,
             deterministicSignals: summarizeDeterministicSignals(deterministicSignals),
@@ -5652,7 +5705,15 @@ export const registerEnrichStreamRoute = (
       return true;
     }
 
-    if (!streamAnalysisBundleOnly && !stage0Delivered && !requestSignal.aborted) {
+    if (
+      !streamAnalysisBundleOnly &&
+      !stage0Delivered &&
+      !requestSignal.aborted &&
+      isStage0DsldFullStreamDeterministicRev1EnabledForBarcode(
+        barcodeGtin14,
+        rawBarcode,
+      )
+    ) {
       const dsldRecoveredFullStream = await maybeRunDsldDirectFallbackStage0({ allowForFullStream: true });
       if (dsldRecoveredFullStream && stage0BundlePromise) {
         await awaitAnalysisBundle();
