@@ -61,6 +61,7 @@ const ingredientOverviewBodySchema = z.object({
   authoritativeIdentityType: z.string().trim().min(1).nullable().optional(),
   authoritativeIdentityValue: z.string().trim().min(1).nullable().optional(),
   revalidateFallback: z.boolean().optional(),
+  cacheOnly: z.boolean().optional(),
 }).strict();
 
 const scientificBackgroundBodySchema = z.object({
@@ -72,6 +73,7 @@ const scientificBackgroundBodySchema = z.object({
   authoritativeIdentityValue: z.string().trim().min(1).nullable().optional(),
   selectedIngredientName: z.string().trim().min(1),
   revalidateFallback: z.boolean().optional(),
+  cacheOnly: z.boolean().optional(),
 }).strict();
 
 const SCIENCE_SIDECAR_MAX_RETRIES = 0;
@@ -90,6 +92,7 @@ type ScientificBackgroundSidecarResponse = {
   scientificBackground: Awaited<ReturnType<typeof compileScientificBackgroundAsync>>["scientificBackground"];
   source: Awaited<ReturnType<typeof compileScientificBackgroundAsync>>["source"];
   fallbackUsed: boolean;
+  fallbackReason?: string;
   promptVersion: string;
   backgroundRefreshPending: boolean;
   recommendedRetryAfterMs: number | null;
@@ -106,6 +109,7 @@ type IngredientOverviewSidecarResponse = {
   ingredientOverview: Awaited<ReturnType<typeof compileIngredientOverviewAsync>>["ingredientOverview"];
   source: Awaited<ReturnType<typeof compileIngredientOverviewAsync>>["source"];
   fallbackUsed: boolean;
+  fallbackReason?: string;
   promptVersion: string;
 };
 
@@ -515,9 +519,26 @@ export const registerScienceSidecarRoutes = (
         return res.json(cached);
       }
 
+      const executionProfile = resolveIngredientOverviewExecutionProfile(authority.ingredientScienceContext);
+      if (parsedBody.cacheOnly === true) {
+        const compiled = await compileIngredientOverviewAsync(authority.ingredientScienceContext, {
+          llmFn: undefined,
+          timeoutMs: executionProfile.timeoutMs,
+          maxRetries: 0,
+        });
+        return res.json({
+          status: "ok",
+          digest: authority.decisionSupport.digest,
+          ingredientOverview: compiled.ingredientOverview,
+          source: "fallback",
+          fallbackUsed: true,
+          fallbackReason: "cache_only_miss",
+          promptVersion: compiled.promptVersion,
+        } satisfies IngredientOverviewSidecarResponse);
+      }
+
       const deepseekKey = env.DEEPSEEK_API_KEY?.trim() || null;
       const deepseekModel = env.DEEPSEEK_MODEL?.trim() || "deepseek-chat";
-      const executionProfile = resolveIngredientOverviewExecutionProfile(authority.ingredientScienceContext);
       const shouldUseLiveWriter =
         parsedBody.revalidateFallback !== true
         && authority.ingredientScienceContext.productArchetype !== "functional_food_like"
@@ -757,6 +778,29 @@ export const registerScienceSidecarRoutes = (
           const backgroundRefreshPending = ensureScientificBackgroundBackgroundRefresh();
           return res.json(withScientificBackgroundRefreshHint(cached, backgroundRefreshPending));
         }
+      }
+
+      if (parsedBody.cacheOnly === true) {
+        const compiled = await compileScientificBackgroundAsync(
+          authority.ingredientScienceContext,
+          selectedDescriptor.name,
+          {
+            llmFn: undefined,
+            timeoutMs: executionProfile.timeoutMs,
+            maxRetries: 0,
+          },
+        );
+        return res.json({
+          status: "ok",
+          digest: authority.decisionSupport.digest,
+          scientificBackground: compiled.scientificBackground,
+          source: "fallback",
+          fallbackUsed: true,
+          fallbackReason: "cache_only_miss",
+          promptVersion: compiled.promptVersion,
+          backgroundRefreshPending: false,
+          recommendedRetryAfterMs: null,
+        } satisfies ScientificBackgroundSidecarResponse);
       }
 
       const existingInflight = scientificBackgroundSidecarInflight.get(cacheKey);

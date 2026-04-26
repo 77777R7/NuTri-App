@@ -65,6 +65,7 @@ const productOverviewAiBodySchema = z.object({
   form: z.string().nullable().optional(),
   count: z.string().nullable().optional(),
   isLikelySingleIngredient: z.boolean().optional(),
+  cacheOnly: z.boolean().optional(),
 });
 
 type ProductOverviewAiBody = z.infer<typeof productOverviewAiBodySchema>;
@@ -357,6 +358,18 @@ export const registerScanSidecarRoutes = (
     const cached = readProductOverviewAiSidecarCache(cacheKey, now());
     if (cached) {
       return res.json(cached);
+    }
+
+    if (parsedBody.cacheOnly === true) {
+      return res.json({
+        status: "ok",
+        digest: parsedBody.digest,
+        source: "fallback",
+        promptVersion: `${PRODUCT_OVERVIEW_WHAT_IS_IT_PROMPT_VERSION}:cache-only-fallback`,
+        fallbackUsed: true,
+        fallbackReason: "cache_only_miss",
+        overviewAi: fallbackOverviewAi,
+      } satisfies ProductOverviewAiSidecarResponse);
     }
 
     const respondWithOverviewFallback = (reason: string) => {
