@@ -7,6 +7,10 @@ import {
   type ProductOverviewWhatIsIt,
 } from "../deepseek.js";
 import { lookupSafeScienceSignals } from "../kbRuntime.js";
+import {
+  passesProductOverviewWhatIsItGate,
+  repairProductOverviewWhatIsItForGate,
+} from "../insights/productOverviewAiGate.js";
 import { buildProductOverviewWhatIsItFallback } from "../insights/productOverviewWhatIsItFallback.js";
 import {
   DEEPSEEK_NON_THINKING_MODE,
@@ -89,12 +93,6 @@ const productOverviewAiSidecarCache = new Map<string, {
   payload: ProductOverviewAiSidecarResponse;
 }>();
 
-const safeTrim = (value?: string | null): string | null => {
-  if (typeof value !== "string") return null;
-  const trimmed = value.trim();
-  return trimmed.length > 0 ? trimmed : null;
-};
-
 const stableStringifyScopeValue = (value: unknown): string => {
   if (value == null) return "null";
   if (typeof value === "number" || typeof value === "boolean") return JSON.stringify(value);
@@ -160,69 +158,6 @@ const writeProductOverviewAiSidecarCache = (
   if (typeof oldestKey === "string") {
     productOverviewAiSidecarCache.delete(oldestKey);
   }
-};
-
-const normalizeOverviewAiToken = (value?: string | null): string =>
-  safeTrim(value)?.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim() ?? "";
-
-const hasOverviewAiForbiddenContent = (value: string): boolean => {
-  const normalized = normalizeOverviewAiToken(value);
-  if (!normalized) return true;
-  return /\b(treat|treats|treating|cure|cures|curing|prevent|prevents|prevention|diagnos|therapy|heal|heals|healing|doctor|clinician|physician|pharmacist|with food|empty stomach|best form|superior bioavailability|high absorption|clinically proven)\b/i.test(
-    normalized,
-  );
-};
-
-const countSentenceLikeClauses = (value: string): number =>
-  String(value)
-    .split(/(?<=[.!?])\s+/)
-    .map((part) => safeTrim(part) ?? "")
-    .filter(Boolean).length;
-
-const passesProductOverviewWhatIsItGate = (params: {
-  lead: string;
-  whatItIs: string;
-  whyPeopleTakeIt: string;
-  primaryIngredient: string | null;
-  productTypeHint: string | null;
-  keyIngredients: Array<{ name: string; dose?: string | null }>;
-  allIngredientRows?: Array<{ name: string; dose?: string | null }>;
-  servingStrength: string | null;
-  form: string | null;
-  count: string | null;
-}): boolean => {
-  const combined = [params.lead, params.whatItIs, params.whyPeopleTakeIt].join(" ");
-  if ((safeTrim(combined) ?? "").length < 90) return false;
-  if ([params.lead, params.whatItIs, params.whyPeopleTakeIt].some((part) => hasOverviewAiForbiddenContent(part))) {
-    return false;
-  }
-
-  const normalizedCombined = normalizeOverviewAiToken(combined);
-  const anchorCandidates = [
-    params.primaryIngredient,
-    params.productTypeHint,
-    ...params.keyIngredients.map((item) => item.name),
-    ...(params.allIngredientRows ?? []).map((item) => item.name),
-  ]
-    .map((value) => normalizeOverviewAiToken(value))
-    .filter((value) => value.length >= 4);
-
-  if (anchorCandidates.length > 0 && !anchorCandidates.some((anchor) => normalizedCombined.includes(anchor))) {
-    return false;
-  }
-
-  const forbiddenFactEchoes = [params.servingStrength, params.count, params.form]
-    .map((value) => normalizeOverviewAiToken(value))
-    .filter((value) => value.length >= 4);
-  if (forbiddenFactEchoes.some((fact) => normalizedCombined.includes(fact))) {
-    return false;
-  }
-
-  if (countSentenceLikeClauses(params.whyPeopleTakeIt) > 2) {
-    return false;
-  }
-
-  return true;
 };
 
 const buildDeepseekJsonLlmFn = (params: {
@@ -413,20 +348,17 @@ export const registerScanSidecarRoutes = (
         return respondWithOverviewFallback("empty_or_failed");
       }
 
-      if (
-        !passesProductOverviewWhatIsItGate({
-          lead: ai.lead,
-          whatItIs: ai.whatItIs,
-          whyPeopleTakeIt: ai.whyPeopleTakeIt,
-          primaryIngredient: parsedBody.primaryIngredient ?? null,
-          productTypeHint: parsedBody.productTypeHint ?? null,
-          keyIngredients: parsedBody.keyIngredients,
-          allIngredientRows: parsedBody.allIngredientRows ?? [],
-          servingStrength: parsedBody.servingStrength ?? null,
-          form: parsedBody.form ?? null,
-          count: parsedBody.count ?? null,
-        })
-      ) {
+      const gateInputs = {
+        primaryIngredient: parsedBody.primaryIngredient ?? null,
+        productTypeHint: parsedBody.productTypeHint ?? null,
+        keyIngredients: parsedBody.keyIngredients,
+        allIngredientRows: parsedBody.allIngredientRows ?? [],
+        servingStrength: parsedBody.servingStrength ?? null,
+        form: parsedBody.form ?? null,
+        count: parsedBody.count ?? null,
+      };
+      const repairedAi = repairProductOverviewWhatIsItForGate(ai, gateInputs);
+      if (!repairedAi) {
         return respondWithOverviewFallback("gate_rejected");
       }
 
@@ -434,9 +366,11 @@ export const registerScanSidecarRoutes = (
         status: "ok",
         digest: parsedBody.digest,
         source: "api",
-        promptVersion: PRODUCT_OVERVIEW_WHAT_IS_IT_PROMPT_VERSION,
+        promptVersion: passesProductOverviewWhatIsItGate({ ...gateInputs, ...ai })
+          ? PRODUCT_OVERVIEW_WHAT_IS_IT_PROMPT_VERSION
+          : `${PRODUCT_OVERVIEW_WHAT_IS_IT_PROMPT_VERSION}:safe-repair`,
         fallbackUsed: false,
-        overviewAi: ai,
+        overviewAi: repairedAi,
       };
       writeProductOverviewAiSidecarCache(cacheKey, payload, now());
       return res.json(payload);
