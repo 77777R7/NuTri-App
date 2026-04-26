@@ -196,6 +196,36 @@ test('scientific background deterministic fallback sanitizes high-risk boundary 
   assert.match(text, /condition-outcome|medicine-style|comparison|label/i);
 });
 
+test('scientific background fallback sanitizes medication-adjacent SAMe boundary wording', async () => {
+  const digest = buildDigest({
+    labelId: 'fixture-same',
+    productName: 'SAM-e 200 mg',
+    dosageForm: 'Tablet',
+    actives: [{ name: 'S-Adenosyl Methionine', amount: 200, unit: 'mg' }],
+  });
+
+  const context = buildIngredientScienceContext({ digest, overlayClaims: null });
+  const result = await compileScientificBackgroundAsync(context, 'S-Adenosyl Methionine');
+  const text = [
+    result.scientificBackground.introLine,
+    ...result.scientificBackground.sections.flatMap((section) => [
+      section.heading,
+      section.summary,
+      ...section.bullets,
+      section.evidenceRead,
+      section.shopperMeaning ?? '',
+    ]),
+    result.scientificBackground.closingNote,
+  ].join(' ');
+
+  assert.equal(result.source, 'fallback');
+  assert.doesNotMatch(
+    text,
+    /\btreats?\b|\btreating\b|\bprevents?\b|\bprevention\b|\bcur(?:e|es|ing)\b|\breplaces medication\b|\bclinically proven\b/i,
+  );
+  assert.match(text, /safety-sensitive|condition-outcome|medicine-replacement/i);
+});
+
 test('scientific background planner changes headings for clear ingredients versus blend labels', () => {
   const zincContext = buildIngredientScienceContext({
     digest: buildDigest({

@@ -6618,14 +6618,17 @@ const sanitizeFallbackPolicyLanguage = (value: string | null | undefined): strin
   const text = normalizeText(value);
   if (!text) return "";
   return text
+    .replace(/\bmedical[-\s]+adjacent\b/gi, "safety-sensitive")
     .replace(/\bdisease[-\s]+treatment\b/gi, "condition-outcome")
     .replace(/\btreating,\s*preventing,\s*or\s*curing\s+disease\b/gi, "condition-outcome or medicine-style claims")
     .replace(/\btreating,\s*preventing,\s*or\s*curing\b/gi, "condition-outcome claims")
     .replace(/\btreating\s+[^.;,]+(?:disease|condition|conditions)\b/gi, "condition-outcome claims")
     .replace(/\bpreventing\s+[^.;,]+(?:disease|condition|conditions)\b/gi, "condition-outcome claims")
     .replace(/\bcuring\s+[^.;,]+(?:disease|condition|conditions)\b/gi, "condition-outcome claims")
+    .replace(/\bframing\s+(?:depression|osteoarthritis|liver disease)\b/gi, "a condition-outcome shortcut")
+    .replace(/\bdo not imply it replaces medication or clinician guidance\b/gi, "keep it out of medicine-replacement guidance")
     .replace(/\btreat\s+([^.;,]+?)\s+as\b/gi, "read $1 as")
-    .replace(/\breplacing\s+medication\b/gi, "medicine-replacement framing")
+    .replace(/\breplac(?:e|es|ing)\s+medication\b/gi, "medicine-replacement framing")
     .replace(/\btreatment\s+claims?\b/gi, "condition-outcome claims")
     .replace(/\bprevention[-\s]+style\b/gi, "avoidance-style")
     .replace(/\bprevention\b/gi, "avoidance")
