@@ -472,13 +472,6 @@ const runSidecarsForProduct = async ({ product, args }) => {
     rows.push(buildSkippedSidecarRow(product, "scan_facts", "source_id_unavailable"));
   }
 
-  if (!args.confirmLiveAi) {
-    for (const route of ["ingredient_overview", "scientific_background", "product_overview_ai", "summary_safety"]) {
-      rows.push(buildSkippedSidecarRow(product, route, "live_ai_not_confirmed"));
-    }
-    return { rows, aiRows, decisionSupport: ds.payload, productDetail: null };
-  }
-
   const commonBody = {
     barcode: product.barcode,
     decisionDigest: ds.digest,
