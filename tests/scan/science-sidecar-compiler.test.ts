@@ -408,6 +408,108 @@ test('hydration blend fallbacks act like an electrolyte comparison guide instead
   assert.doesNotMatch(`${overviewText} ${scienceText}`, /probiotic blend line|strain-level|CFU|\btreats?\b|\bprevents?\b|\bcures?\b|\bguarantees?\b/i);
 });
 
+test('botanical extract fallbacks shorten long extract labels without losing the comparison anchor', async () => {
+  const ashwagandhaContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-long-ashwagandha-extract',
+      productName: 'Adrenal Chill - Men',
+      dosageForm: 'Capsule',
+      actives: [
+        {
+          name: 'KSM-66 Ashwagandha (root, Withania somnifera ) 12:1 extract equivalent to 3600mg of dry root, standardized to 5.0% withanolides*',
+          amount: 300,
+          unit: 'mg',
+        },
+        { name: 'L-Theanine', amount: 100, unit: 'mg' },
+      ],
+    }),
+    overlayClaims: null,
+  });
+
+  const overview = await compileIngredientOverviewAsync(ashwagandhaContext);
+  const science = await compileScientificBackgroundAsync(
+    ashwagandhaContext,
+    ashwagandhaContext.anchorIngredient?.name ?? 'Ashwagandha',
+  );
+  const overviewText = [
+    overview.ingredientOverview.titleLine,
+    overview.ingredientOverview.paragraph1,
+    overview.ingredientOverview.paragraph2,
+    overview.ingredientOverview.compareHint,
+  ].join(' ');
+
+  assert.equal(overview.source, 'fallback');
+  assert.equal(overview.ingredientOverview.titleLine, 'KSM-66 Ashwagandha extract');
+  assert.match(overviewText, /KSM-66 Ashwagandha extract|L-Theanine/i);
+  assert.doesNotMatch(overviewText, /equivalent to|standardized to|3600mg|withanolides\*/i);
+  assert.equal(science.scientificBackground.selectedLabel, 'Ashwagandha');
+  assert.match(science.scientificBackground.introLine ?? '', /Ashwagandha|300 mg/i);
+});
+
+test('clear active anchors inside blend-containing formulas avoid generic grouped-blend copy', async () => {
+  const zincContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-aces-zinc-copper',
+      productName: 'ACES + Zinc & Copper',
+      dosageForm: 'Capsule',
+      actives: [
+        { name: 'Vitamin C (PureWay-C ascorbic acid)*', amount: 275, unit: 'mg' },
+        { name: 'Mixed tocopherol concentrate (seed, Brassica napus )', amount: 50, unit: 'mg' },
+        { name: 'Zinc (Albion zinc bis-glycinate chelate)**', amount: 10, unit: 'mg' },
+        { name: 'Copper (Albion copper bis-glycinate chelate)**', amount: 1000, unit: 'mcg' },
+        { name: 'Selenium (Albion selenium glycinate complex)**', amount: 70, unit: 'mcg' },
+      ],
+    }),
+    overlayClaims: null,
+  });
+  const glucosamineContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-glucosamine-blend',
+      productName: '21st Century, Arthri-Flex Advantage + Vitamin D3',
+      dosageForm: 'Tablet',
+      actives: [
+        { name: 'Vitamin D3 (as Cholecalciferol)', amount: 50, unit: 'mcg' },
+        { name: 'Magnesium (as Magnesium Glycinate)', amount: 200, unit: 'mg' },
+        { name: 'Zinc (as Zinc Glycinate)', amount: 15, unit: 'mg' },
+        { name: 'Glucosamine Sulfate • 2KCI', amount: 1500, unit: 'mg' },
+        { name: 'MSM (Methylsulfonylmethane)', amount: 1500, unit: 'mg' },
+        {
+          name: 'Proprietary BlendPremium Chicken Sternum Type II Collagen (naturally occurring Chondroitin Sulfate), Hyaluronic Acid (as Sodium Hyaluronate), Boron Glycinate, Boswellia serrata Extract',
+          amount: 1045,
+          unit: 'mg',
+        },
+      ],
+    }),
+    overlayClaims: null,
+  });
+
+  const zincOverview = await compileIngredientOverviewAsync(zincContext);
+  const glucosamineOverview = await compileIngredientOverviewAsync(glucosamineContext);
+  const zincText = [
+    zincOverview.ingredientOverview.titleLine,
+    zincOverview.ingredientOverview.paragraph1,
+    zincOverview.ingredientOverview.paragraph2,
+    zincOverview.ingredientOverview.compareHint,
+  ].join(' ');
+  const glucosamineText = [
+    glucosamineOverview.ingredientOverview.titleLine,
+    glucosamineOverview.ingredientOverview.paragraph1,
+    glucosamineOverview.ingredientOverview.paragraph2,
+    glucosamineOverview.ingredientOverview.compareHint,
+  ].join(' ');
+
+  assert.equal(zincOverview.source, 'fallback');
+  assert.equal(zincOverview.ingredientOverview.titleLine, 'Zinc');
+  assert.doesNotMatch(zincText, /grouped formula line|fully itemized ingredient list|broad total for the blend/i);
+  assert.doesNotMatch(zincText, /built around vitamin C as the primary disclosed active/i);
+  assert.match(zincText, /Zinc stays as the main named active|amount|form/i);
+
+  assert.equal(glucosamineOverview.source, 'fallback');
+  assert.match(glucosamineOverview.ingredientOverview.titleLine ?? '', /Glucosamine Sulfate/i);
+  assert.match(glucosamineText, /clearest lead active|blend-containing formula|proprietary blend totals/i);
+  assert.doesNotMatch(glucosamineText, /Vitamin D3 .*grouped formula line|fully itemized ingredient list/i);
+});
+
 test('scientific background repairs template-style research prose into family-specific copy', async () => {
   const digest = buildDigest({
     labelId: 'fixture-epa',

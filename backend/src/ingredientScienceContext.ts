@@ -125,6 +125,8 @@ export type IngredientScienceContext = {
 
 const HARD_BLEND_LIKE_PATTERN = /\b(proprietary|blend|matrix|formula)\b/i;
 const SOFT_BLEND_LIKE_PATTERN = /\bcomplex\b/i;
+const MINERAL_FORM_COMPLEX_PATTERN =
+  /\b(?:magnesium|calcium|zinc|iron|copper|selenium|chromium|manganese|molybdenum|boron|potassium)\b.*\b(?:glycinate|bis[\s-]?glycinate|chelate|citrate|malate|oxide|selenite|selenomethionine|chloride)\b.*\bcomplex\b/i;
 const OMEGA3_TOTAL_PATTERN = /\btotal\b.*\bomega\s*-?\s*3\b|\bomega\s*-?\s*3\b.*\btotal\b/i;
 const OMEGA3_SOURCE_PATTERN = /\bfish\s*oil\b|\bkrill\s*oil\b|\balgal\s*oil\b|\boil\s*concentrate\b/i;
 const OMEGA3_BREAKDOWN_PATTERN = /\bepa\b|\bdha\b|eicosapentaenoic|docosahexaenoic/i;
@@ -394,6 +396,7 @@ const isBlendLike = (
   if (!normalized) return false;
   if (HARD_BLEND_LIKE_PATTERN.test(normalized)) return true;
   if (!SOFT_BLEND_LIKE_PATTERN.test(normalized)) return false;
+  if (MINERAL_FORM_COMPLEX_PATTERN.test(normalized)) return false;
   return !isBotanicalExtractFamily(family ?? null);
 };
 
@@ -904,6 +907,10 @@ const pickPrimaryActiveRowIndex = (
   if (titleStartsWithFamily("carnitine", productName)) {
     const carnitineIndex = families.findIndex((family) => family === "carnitine");
     if (carnitineIndex >= 0) return carnitineIndex;
+  }
+  if (titleStartsWithFamily("vitamin_c", productName)) {
+    const vitaminCIndex = families.findIndex((family) => family === "vitamin_c");
+    if (vitaminCIndex >= 0) return vitaminCIndex;
   }
   let bestIndex = 0;
   let bestScore = Number.NEGATIVE_INFINITY;
