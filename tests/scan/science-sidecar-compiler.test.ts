@@ -88,6 +88,7 @@ test('ingredient overview falls back when the model drifts into shopper-purpose 
   assert.equal(result.diagnostics.liveWriterAttempted, true);
   assert.equal(result.diagnostics.liveWriterHit, false);
   assert.equal(result.diagnostics.fallbackReason, 'quality_gate_rejected');
+  assert.ok(result.diagnostics.gateRejectReasons.includes('compare_hint_too_generic'));
   assert.equal(result.ingredientOverview.mode, 'multi_anchor');
   assert.match(result.ingredientOverview.paragraph1, /vitamin c/i);
   assert.ok(result.ingredientOverview.compareHint);

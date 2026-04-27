@@ -31,6 +31,7 @@ export type IngredientOverviewCompileDiagnostics = {
   maxRetries: number;
   fallbackReason: string | null;
   lastError: string | null;
+  gateRejectReasons: string[];
   parseFailureCount: number;
   gateRejectCount: number;
   timeoutCount: number;
@@ -53,6 +54,18 @@ export type IngredientOverviewExecutionProfile = {
 };
 
 export const INGREDIENT_OVERVIEW_PROMPT_VERSION = "ingredient_overview_v8";
+
+type IngredientOverviewGateRejectReason =
+  | "mode_missing"
+  | "paragraph1_missing"
+  | "compare_hint_missing"
+  | "anchor_reference_missing"
+  | "formula_meaning_missing"
+  | "compare_hint_too_generic"
+  | "banned_pattern_hit"
+  | "factual_echo_raw"
+  | "dose_echo_raw"
+  | "sentence_count_out_of_range";
 
 const LLM_TIMEOUT_MS = 9_000;
 const LLM_MAX_RETRIES = 1;
@@ -824,26 +837,30 @@ const repairBlock = (
   return repaired;
 };
 
-const gateBlock = (context: IngredientScienceContext, block: IngredientOverviewBlock): boolean => {
-  if (!block.mode) return false;
-  if (!block.paragraph1) return false;
-  if (!block.compareHint) return false;
-  if (!hasAnchorReference(context, block)) return false;
-  if (!addsFormulaMeaning(block)) return false;
-  if (!hasSpecificCompareHint(block.compareHint)) return false;
+const collectIngredientOverviewGateRejectReasons = (
+  context: IngredientScienceContext,
+  block: IngredientOverviewBlock,
+): IngredientOverviewGateRejectReason[] => {
+  const reasons: IngredientOverviewGateRejectReason[] = [];
+  if (!block.mode) reasons.push("mode_missing");
+  if (!block.paragraph1) reasons.push("paragraph1_missing");
+  if (!block.compareHint) reasons.push("compare_hint_missing");
+  if (!hasAnchorReference(context, block)) reasons.push("anchor_reference_missing");
+  if (!addsFormulaMeaning(block)) reasons.push("formula_meaning_missing");
+  if (!hasSpecificCompareHint(block.compareHint)) reasons.push("compare_hint_too_generic");
 
   const allText = [block.titleLine, block.paragraph1, block.paragraph2, block.compareHint].filter(Boolean).join(" ");
-  if (BANNED_PATTERNS.some((pattern) => pattern.test(allText))) return false;
-  if (looksLikeFactualEcho(context, block)) return false;
-  if (countDoseMentions(context, allText) > 0) return false;
+  if (BANNED_PATTERNS.some((pattern) => pattern.test(allText))) reasons.push("banned_pattern_hit");
+  if (looksLikeFactualEcho(context, block)) reasons.push("factual_echo_raw");
+  if (countDoseMentions(context, allText) > 0) reasons.push("dose_echo_raw");
 
   const sentenceCount =
     splitSentences(block.paragraph1).length +
     splitSentences(block.paragraph2 ?? "").length +
     splitSentences(block.compareHint ?? "").length;
-  if (sentenceCount < 2 || sentenceCount > 5) return false;
+  if (sentenceCount < 2 || sentenceCount > 5) reasons.push("sentence_count_out_of_range");
 
-  return true;
+  return [...new Set(reasons)];
 };
 
 const withTimeout = async <T>(promise: Promise<T>, timeoutMs: number): Promise<T> => {
@@ -925,6 +942,7 @@ export const compileIngredientOverviewAsync = async (
     maxRetries,
     fallbackReason: null,
     lastError: null,
+    gateRejectReasons: [],
     parseFailureCount: 0,
     gateRejectCount: 0,
     timeoutCount: 0,
@@ -965,9 +983,14 @@ export const compileIngredientOverviewAsync = async (
         compareHint: parsed.compareHint ? asSentence(parsed.compareHint) : null,
       };
       const repairedCandidate = repairBlock(context, candidate, fallbackBlock);
-      if (!gateBlock(context, repairedCandidate)) {
+      const gateRejectReasons = collectIngredientOverviewGateRejectReasons(context, repairedCandidate);
+      if (gateRejectReasons.length > 0) {
         diagnostics.gateRejectCount += 1;
         diagnostics.fallbackReason = "quality_gate_rejected";
+        diagnostics.gateRejectReasons = [
+          ...new Set([...diagnostics.gateRejectReasons, ...gateRejectReasons]),
+        ];
+        diagnostics.lastError = `gate:${gateRejectReasons.join(",")}`;
         continue;
       }
       return {
