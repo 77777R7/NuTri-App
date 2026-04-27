@@ -113,11 +113,40 @@ const HYDRATION_CARBOHYDRATE_CONTEXT_PATTERN =
   /\b(?:carbohydrate|carbion|dextrose|maltodextrin|glucose|sugar|calories?)\b/i;
 const HYDRATION_STIMULANT_CONTEXT_PATTERN =
   /\b(?:caffeine|green\s+tea|guarana|yerba\s+mate|stimulant)\b/i;
+const ASHWAGANDHA_DISPLAY_PATTERN = /\bashwagandha\b|\bwithania\s+somnifera\b|\bksm-?66\b|\bsensoril\b/i;
 
 const normalizeText = (value: string | null | undefined): string =>
   String(value ?? "")
     .replace(/\s+/g, " ")
     .trim();
+
+const cleanIngredientOverviewDisplayName = (value: string | null | undefined): string | null => {
+  const normalized = normalizeText(value)
+    .replace(/\s+\)/g, ")")
+    .replace(/\*+/g, "");
+  if (!normalized) return null;
+  const ashwagandhaBrand = normalized.match(/\bKSM-?66\b/i)?.[0] ?? null;
+  if (ASHWAGANDHA_DISPLAY_PATTERN.test(normalized)) {
+    if (ashwagandhaBrand) return `${ashwagandhaBrand.toUpperCase().replace("KSM66", "KSM-66")} Ashwagandha extract`;
+    if (/\bextract\b/i.test(normalized)) return "Ashwagandha extract";
+    return "Ashwagandha";
+  }
+  if (/^zinc\b/i.test(normalized)) return "Zinc";
+  if (/^magnesium\b/i.test(normalized)) return "Magnesium";
+  if (/^calcium\b/i.test(normalized)) return "Calcium";
+  if (/^iron\b/i.test(normalized)) return "Iron";
+  const cleaned = normalized
+    .replace(/\s+equivalent to\b.*$/i, "")
+    .replace(/\s+standardized to\b.*$/i, "")
+    .replace(/\s*\([^)]{1,140}\)/g, "")
+    .replace(/[()]/g, "")
+    .replace(/\b\d+\s*:\s*\d+\s+extract\b/gi, "extract")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+  if (!cleaned) return normalized.length <= 72 ? normalized : `${normalized.slice(0, 68).replace(/\s+\S*$/, "").trim()}...`;
+  if (cleaned.length <= 72) return cleaned;
+  return `${cleaned.slice(0, 68).replace(/\s+\S*$/, "").trim()}...`;
+};
 
 const normalizeDiagnosticReason = (value: string | null | undefined): string | null => {
   const normalized = normalizeText(value)
@@ -408,10 +437,10 @@ const isSpecificBlendAnchorName = (value: string | null | undefined): boolean =>
 
 const buildTitleLineFallback = (context: IngredientScienceContext): string | null => {
   if (context.formulaMode === "single_ingredient") {
-    return context.anchorIngredient?.name ?? "Single-ingredient formula";
+    return cleanIngredientOverviewDisplayName(context.anchorIngredient?.name) ?? "Single-ingredient formula";
   }
   if (hasAnchorFamilyDrift(context) && context.anchorIngredient?.name) {
-    return context.anchorIngredient.name;
+    return cleanIngredientOverviewDisplayName(context.anchorIngredient.name) ?? context.anchorIngredient.name;
   }
   if (context.ingredientFamily === "omega_3") {
     return resolveOmega3SourceCopy(context)?.titleLine ?? "Omega-3 formula";
@@ -429,15 +458,17 @@ const buildTitleLineFallback = (context: IngredientScienceContext): string | nul
       return "Fiber blend";
     }
     return isSpecificBlendAnchorName(anchorName) && anchorName
-      ? anchorName
+      ? (cleanIngredientOverviewDisplayName(anchorName) ?? anchorName)
       : "Formula blend";
   }
-  if (context.anchorIngredient?.name) return context.anchorIngredient.name;
+  if (context.anchorIngredient?.name) {
+    return cleanIngredientOverviewDisplayName(context.anchorIngredient.name) ?? context.anchorIngredient.name;
+  }
   return "Supplement formula";
 };
 
 const buildSingleAnchorFallback = (context: IngredientScienceContext): IngredientOverviewBlock => {
-  const anchorName = context.anchorIngredient?.name ?? "This ingredient";
+  const anchorName = cleanIngredientOverviewDisplayName(context.anchorIngredient?.name) ?? context.anchorIngredient?.name ?? "This ingredient";
   switch (getFallbackLeadFamily(context)) {
     case "astaxanthin_carotenoid":
       return {
@@ -505,7 +536,7 @@ const buildMultiAnchorFallback = (context: IngredientScienceContext): Ingredient
     };
   }
 
-  if (context.ingredientFamily === "vitamin_c") {
+  if (context.ingredientFamily === "vitamin_c" && getFallbackLeadFamily(context) === "vitamin_c") {
     return {
       mode: "multi_anchor",
       titleLine: buildTitleLineFallback(context),
@@ -516,17 +547,17 @@ const buildMultiAnchorFallback = (context: IngredientScienceContext): Ingredient
   }
 
   if (context.anchorIngredient?.name) {
-    const anchorName = context.anchorIngredient.name;
+    const anchorName = cleanIngredientOverviewDisplayName(context.anchorIngredient.name) ?? context.anchorIngredient.name;
     const companionNames = context.coIngredients
       .filter((row) => row.lineRole === "companion_nutrient" || row.lineRole === "generic_line")
-      .map((row) => row.name)
+      .map((row) => cleanIngredientOverviewDisplayName(row.name) ?? row.name)
       .slice(0, 3);
     const structuralNames = context.coIngredients
       .filter((row) => row.lineRole !== "companion_nutrient" && row.lineRole !== "generic_line")
-      .map((row) => `${row.name} as a ${lineRoleLabel(row.lineRole)}`)
+      .map((row) => `${cleanIngredientOverviewDisplayName(row.name) ?? row.name} as a ${lineRoleLabel(row.lineRole)}`)
       .slice(0, 2);
     const companionSummary = companionNames.length
-      ? `${joinNames(companionNames)} appear as supporting formula lines around that lead active.`
+      ? `${joinNames(companionNames)} ${companionNames.length === 1 ? "appears as a supporting formula line" : "appear as supporting formula lines"} around that lead active.`
       : "The surrounding rows work more as supporting formula lines than as equal co-headliners.";
     const structureSummary = structuralNames.length
       ? `The label also uses ${joinNames(structuralNames)}, which changes how the formula should be compared.`
@@ -537,7 +568,7 @@ const buildMultiAnchorFallback = (context: IngredientScienceContext): Ingredient
       titleLine: buildTitleLineFallback(context),
       paragraph1: `${anchorName} stays as the main named active in this multi-part formula rather than reading like one ingredient among equals.`,
       paragraph2: `${companionSummary} ${structureSummary}`,
-      compareHint: "When comparing products, start with the lead active line and then check whether the companion and structural rows are disclosed clearly enough to show what role they actually play.",
+      compareHint: `When comparing products, start with the ${anchorName} amount and form, then check whether the companion and structural rows are disclosed clearly enough to show what role they actually play.`,
     };
   }
 
@@ -556,6 +587,23 @@ const buildBlendAnchorFallback = (context: IngredientScienceContext): Ingredient
     titleLine === "Formula blend" ? "This formula blend" : `The ${titleLine} line`;
   const disclosureDetails = buildBlendDisclosureDetails(context);
   const usesProbioticCopy = disclosureDetails.isProbioticLike;
+  const anchorFamily = context.anchorIngredient?.ingredientFamily ?? context.ingredientFamily;
+  const hasClearActiveAnchor =
+    Boolean(context.anchorIngredient?.name) &&
+    anchorFamily !== "probiotic_or_blend" &&
+    !disclosureDetails.isHydrationLike &&
+    !disclosureDetails.isProbioticLike &&
+    !disclosureDetails.isFiberLike;
+
+  if (hasClearActiveAnchor) {
+    return {
+      mode: "blend_anchor",
+      titleLine,
+      paragraph1: `${titleLine} is the clearest lead active in this blend-containing formula, not just another generic blend row.`,
+      paragraph2: "The broader blend or complex lines add formula context, but they should not replace the named active when the shopper compares products side by side.",
+      compareHint: `When comparing products, start with the ${titleLine} amount and form, then check which supporting actives or proprietary blend totals are disclosed separately.`,
+    };
+  }
 
   if (disclosureDetails.isHydrationLike) {
     const hydrationLeadLine =

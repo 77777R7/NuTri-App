@@ -517,6 +517,17 @@ const buildReferenceLabel = (plan: ScientificBackgroundPlan): string => {
   return plan.selectedLabel;
 };
 
+const buildFallbackSelectedLabel = (plan: ScientificBackgroundPlan): string => {
+  const referenceLabel = buildReferenceLabel(plan);
+  const selected = normalizeText(plan.selectedLabel);
+  if (!selected) return referenceLabel;
+  const shouldCompact =
+    selected.length > 72 ||
+    /\*|\([^)]{20,}\)|\bequivalent to\b|\bstandardized to\b/i.test(selected);
+  if (shouldCompact && referenceLabel && referenceLabel.length <= 40) return referenceLabel;
+  return selected;
+};
+
 const buildNarrativeLabel = (plan: ScientificBackgroundPlan): string => {
   if (
     plan.mode === "label_context_mode" &&
@@ -7089,7 +7100,7 @@ export const buildScientificBackgroundDeterministicFallback = (params: {
 
   return {
     mode: plan.mode,
-    selectedLabel: plan.selectedLabel,
+    selectedLabel: buildFallbackSelectedLabel(plan),
     selectedDose: plan.selectedDose,
     introLine: plan.selectedDose
       ? `${buildReferenceLabel(plan)} • ${plan.selectedDose}`
