@@ -137,6 +137,37 @@ test("product overview fallback uses named probiotic strains when the label prov
   assert.doesNotMatch(text, /\btreats?\b|\bprevents?\b|\bcures?\b|\bguarantees?\b/i);
 });
 
+test("product overview fallback extracts probiotic strain names from concatenated blend lines", () => {
+  const result = buildProductOverviewWhatIsItFallback({
+    productName: "Acidophilus Probiotic Blend",
+    brandName: "21st Century",
+    productTypeHint: "Probiotics",
+    primaryIngredient: "Proprietary Blend",
+    keyIngredients: [
+      {
+        name:
+          "Proprietary BlendContaining 1 billion live cultures†Lactobacillus acidophilusLactobacillus acidophilus",
+        dose: "175 mg",
+      },
+    ],
+    sourceContextHint: "iherb",
+    chemicalFormHint: null,
+    allIngredientRows: [
+      {
+        name:
+          "Proprietary BlendContaining 1 billion live cultures†Lactobacillus acidophilusLactobacillus acidophilus",
+        dose: "175 mg",
+      },
+    ],
+    isLikelySingleIngredient: true,
+  });
+  const text = [result.lead, result.whatItIs, result.whyPeopleTakeIt].join(" ");
+
+  assert.match(text, /Lactobacillus acidophilus/i);
+  assert.doesNotMatch(text, /Proprietary BlendContaining/i);
+  assert.doesNotMatch(text, /live cultures†/i);
+});
+
 test("product overview fallback does not let supporting fish oil steal non-omega formula identity", () => {
   const result = buildProductOverviewWhatIsItFallback({
     productName: "Adrenal Chill - Men",

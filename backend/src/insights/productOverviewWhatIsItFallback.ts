@@ -77,6 +77,18 @@ const cleanOverviewDisplayName = (value?: string | null): string | null => {
   return `${cleaned.slice(0, 92).replace(/\s+\S*$/, "").trim()}...`;
 };
 
+const extractProbioticStrainNames = (value?: string | null): string[] => {
+  const normalized = normalizeText(value);
+  if (!normalized) return [];
+  const strainReadable = normalized
+    .replace(/([a-z])(?=(?:Lactobacillus|Bifidobacterium|Saccharomyces|Streptococcus|Lactococcus)\b)/gi, "$1 ")
+    .replace(/\s{2,}/g, " ");
+  const matches = strainReadable.match(
+    /\b(?:Lactobacillus|Bifidobacterium|Saccharomyces|Bacillus|Streptococcus|Lactococcus)\s+[a-z][a-z-]+(?:\s+[A-Z0-9-]+)?/gi,
+  ) ?? [];
+  return dedupeStrings(matches.map((match) => cleanOverviewDisplayName(match)));
+};
+
 const stripSupportClaims = (value?: string | null): string | null => {
   const normalized = normalizeText(value);
   if (!normalized) return null;
@@ -188,11 +200,13 @@ const buildProbioticFallback = (params: ProductOverviewFallbackInput): ProductOv
     ...params.keyIngredients.map((item) => item.name),
     ...(params.allIngredientRows ?? []).map((item) => item.name),
   ]);
-  const namedStrains = names
+  const extractedStrains = dedupeStrings(names.flatMap((name) => extractProbioticStrainNames(name)));
+  const fallbackStrainNames = names
     .filter((name) => PRODUCT_OVERVIEW_PROBIOTIC_STRAIN_PATTERN.test(name))
+    .filter((name) => !PRODUCT_OVERVIEW_OPAQUE_PROBIOTIC_BLEND_PATTERN.test(name))
     .map((name) => cleanOverviewDisplayName(name))
-    .filter(Boolean)
-    .slice(0, 3) as string[];
+    .filter((name): name is string => Boolean(name && name.length <= 72));
+  const namedStrains = dedupeStrings([...extractedStrains, ...fallbackStrainNames]).slice(0, 3);
   const hasOpaqueBlendLine = names.some((name) => PRODUCT_OVERVIEW_OPAQUE_PROBIOTIC_BLEND_PATTERN.test(name));
   const labelText = [
     params.productName,
