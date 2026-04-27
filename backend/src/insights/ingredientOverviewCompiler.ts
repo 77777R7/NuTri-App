@@ -114,6 +114,7 @@ const HYDRATION_CARBOHYDRATE_CONTEXT_PATTERN =
 const HYDRATION_STIMULANT_CONTEXT_PATTERN =
   /\b(?:caffeine|green\s+tea|guarana|yerba\s+mate|stimulant)\b/i;
 const ASHWAGANDHA_DISPLAY_PATTERN = /\bashwagandha\b|\bwithania\s+somnifera\b|\bksm-?66\b|\bsensoril\b/i;
+const MILK_THISTLE_DISPLAY_PATTERN = /\bmilk\s+thistle\b|\bsilybum\s+marianum\b|\bsilymarin\b/i;
 
 const normalizeText = (value: string | null | undefined): string =>
   String(value ?? "")
@@ -130,6 +131,11 @@ const cleanIngredientOverviewDisplayName = (value: string | null | undefined): s
     if (ashwagandhaBrand) return `${ashwagandhaBrand.toUpperCase().replace("KSM66", "KSM-66")} Ashwagandha extract`;
     if (/\bextract\b/i.test(normalized)) return "Ashwagandha extract";
     return "Ashwagandha";
+  }
+  if (MILK_THISTLE_DISPLAY_PATTERN.test(normalized)) {
+    if (/\bseed\b/i.test(normalized) && /\bextract\b/i.test(normalized)) return "Milk thistle seed extract";
+    if (/\bextract\b/i.test(normalized)) return "Milk thistle extract";
+    return "Milk thistle";
   }
   if (/^zinc\b/i.test(normalized)) return "Zinc";
   if (/^magnesium\b/i.test(normalized)) return "Magnesium";

@@ -157,6 +157,8 @@ const TRIBULUS_TERRESTRIS_PATTERN =
   /\btribulus(?:\s+terrestris)?\b|\bpuncturevine\b|\bprotodioscin\b/i;
 const MILK_THISTLE_PATTERN =
   /\bmilk\s+thistle\b|\bsilybum\s+marianum\b|\bsilymarin\b/i;
+const LIVER_FOCUSED_BOTANICAL_TITLE_PATTERN =
+  /\b(?:liver|hepatic|cleanse|detox)\b/i;
 const PQQ_PATTERN =
   /\bpqq\b|\bnutripqq\b|\bpyrroloquinoline\s+quinone\b/i;
 const NUTRI_MINIMAL_FULL_FAMILY_PATTERN_ROWS =
@@ -272,6 +274,9 @@ const inferFamilyFromText = (combined: string): IngredientScienceIngredientFamil
   if (CLA_PATTERN.test(combined)) return "cla";
   if (CARNITINE_PATTERN.test(combined)) return "carnitine";
   if (isSameFamilyText(combined)) return "same";
+  if (MILK_THISTLE_PATTERN.test(combined) && LIVER_FOCUSED_BOTANICAL_TITLE_PATTERN.test(combined)) {
+    return "milk_thistle" as IngredientScienceIngredientFamily;
+  }
   const nutriMinimalMatch = NUTRI_MINIMAL_FULL_FAMILY_PATTERN_ROWS.find((row) =>
     row.pattern.test(combined),
   );
@@ -315,11 +320,17 @@ const inferRowIngredientFamily = (params: {
 }): IngredientScienceIngredientFamily => {
   const rowText = normalizeText(params.rowName);
   if (!rowText) return "generic";
+  const productText = normalizeText(params.productName);
+  if (
+    MILK_THISTLE_PATTERN.test(rowText) &&
+    (MILK_THISTLE_PATTERN.test(productText) || LIVER_FOCUSED_BOTANICAL_TITLE_PATTERN.test(productText))
+  ) {
+    return "milk_thistle" as IngredientScienceIngredientFamily;
+  }
 
   const rowFamily = inferFamilyFromText(rowText);
   if (rowFamily !== "generic") return rowFamily;
 
-  const productText = normalizeText(params.productName);
   if (!productText) return "generic";
 
   // Only use product-level hints when the selected row is too generic to classify on its own.
@@ -409,6 +420,11 @@ const inferFormContext = (
 ): string | null => {
   const normalized = normalizeText(name);
   if (!normalized) return null;
+  if (family === "milk_thistle" && MILK_THISTLE_PATTERN.test(normalized)) {
+    if (/\bseed\b/i.test(normalized) && /\bextract\b/i.test(normalized)) return "milk thistle seed extract";
+    if (/\bextract\b/i.test(normalized)) return "milk thistle extract";
+    return "milk thistle line";
+  }
 
   const parenthetical = normalized.match(/\(([^)]+)\)/)?.[1]?.trim() ?? null;
   if (parenthetical) return parenthetical;
