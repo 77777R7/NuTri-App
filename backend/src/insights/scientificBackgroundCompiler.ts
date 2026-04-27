@@ -4199,6 +4199,12 @@ const SCIENCE_PROBIOTIC_STRAIN_NAME_PATTERN =
   /\b(?:Lactobacillus|Bifidobacterium|Saccharomyces|Bacillus|Streptococcus|Lactococcus)\s+[a-z][a-z-]+(?:\s+(?=[A-Z0-9-]*[0-9-])[A-Z0-9-]{2,})?/gi;
 const SCIENCE_FIBER_BLEND_CONTEXT_PATTERN =
   /\b(?:fiber|fibre|psyllium|inulin|prebiotic|colon|regularity|soluble\s+fiber|dietary\s+fiber)\b/i;
+const SCIENCE_HYDRATION_BLEND_CONTEXT_PATTERN =
+  /\b(?:electrolyte|electrolytes|hydration|hydrate|carbion|sports?\s+drink|sweat\s+loss|rehydration)\b/i;
+const SCIENCE_HYDRATION_CARBOHYDRATE_CONTEXT_PATTERN =
+  /\b(?:carbohydrate|carbion|dextrose|maltodextrin|glucose|sugar|calories?)\b/i;
+const SCIENCE_HYDRATION_STIMULANT_CONTEXT_PATTERN =
+  /\b(?:caffeine|green\s+tea|guarana|yerba\s+mate|stimulant)\b/i;
 
 const extractScientificProbioticStrainNames = (value: string | null | undefined): string[] => {
   const normalized = normalizeText(value);
@@ -4212,6 +4218,10 @@ const extractScientificProbioticStrainNames = (value: string | null | undefined)
 const buildScientificBlendDisclosureDetails = (context?: IngredientScienceContext): {
   isProbioticLike: boolean;
   isFiberLike: boolean;
+  isHydrationLike: boolean;
+  hydrationElectrolytes: string[];
+  hasCarbContext: boolean;
+  hasStimulantContext: boolean;
   namedStrains: string[];
   hasCfuHint: boolean;
 } => {
@@ -4225,9 +4235,18 @@ const buildScientificBlendDisclosureDetails = (context?: IngredientScienceContex
     ...(context?.coIngredients ?? []).flatMap((row) => [row.name, row.dose]),
   ].map((value) => normalizeText(value));
   const haystack = sources.join(" ");
+  const hydrationElectrolytes = [
+    /\bsodium\b/i.test(haystack) ? "sodium" : null,
+    /\bpotassium\b/i.test(haystack) ? "potassium" : null,
+    /\bmagnesium\b/i.test(haystack) ? "magnesium" : null,
+  ].filter(Boolean) as string[];
   return {
     isProbioticLike: SCIENCE_PROBIOTIC_CONTEXT_PATTERN.test(haystack),
     isFiberLike: SCIENCE_FIBER_BLEND_CONTEXT_PATTERN.test(haystack),
+    isHydrationLike: SCIENCE_HYDRATION_BLEND_CONTEXT_PATTERN.test(haystack),
+    hydrationElectrolytes,
+    hasCarbContext: SCIENCE_HYDRATION_CARBOHYDRATE_CONTEXT_PATTERN.test(haystack),
+    hasStimulantContext: SCIENCE_HYDRATION_STIMULANT_CONTEXT_PATTERN.test(haystack),
     namedStrains: dedupe(sources.flatMap((value) => extractScientificProbioticStrainNames(value))).slice(0, 3),
     hasCfuHint: /\bCFU\b|colony\s+forming|live cultures?/i.test(haystack),
   };
@@ -6552,6 +6571,30 @@ const buildSectionFallback = (
             "It helps the shopper understand why a broad phage blend line is useful as context but weaker for precise comparison.",
         };
       }
+      if (blendDisclosureDetails.isHydrationLike) {
+        const electrolytePhrase = blendDisclosureDetails.hydrationElectrolytes.length
+          ? `${joinReadableList(blendDisclosureDetails.hydrationElectrolytes)} balance`
+          : "the disclosed electrolyte balance";
+        const carbBullet = blendDisclosureDetails.hasCarbContext
+          ? "Carbohydrate or sugar context changes whether the product reads more like everyday hydration, workout fuel, or a mixed-use formula."
+          : "Check whether carbohydrate or sugar context is disclosed before treating the hydration blend as interchangeable with another product.";
+        const stimulantBullet = blendDisclosureDetails.hasStimulantContext
+          ? "Caffeine or stimulant lines should be read separately from hydration positioning."
+          : "Blend totals can also hide flavor systems, absorption blends, or other add-ons that do not carry the hydration comparison alone.";
+        return {
+          heading: section.heading,
+          summary: `${narrativeLabel} gives hydration-formula context, but interpretation depends on ${electrolytePhrase}, serving size, carbohydrate context, and add-on lines rather than the blend headline alone.`,
+          bullets: [
+            "Sodium, potassium, and magnesium disclosure is more comparison-useful than a broad hydration blend name by itself.",
+            carbBullet,
+            stimulantBullet,
+          ],
+          evidenceRead:
+            "This is a label-transparency and comparison section rather than a stand-alone efficacy claim for the whole blend.",
+          shopperMeaning:
+            "Compare hydration products by electrolyte balance, serving size, carbohydrate or sugar context, caffeine or stimulant lines if present, and whether broad blends hide exact amounts.",
+        };
+      }
       if (blendDisclosureDetails.isProbioticLike) {
         const strainPhrase = blendDisclosureDetails.namedStrains.length
           ? ` The useful research-matching cues are the named strains, including ${joinReadableList(blendDisclosureDetails.namedStrains)}, not the broad blend name by itself.`
@@ -6615,6 +6658,21 @@ const buildSectionFallback = (
             "This is about research fit and transparency, not about claiming that the phage blend is ineffective.",
           shopperMeaning:
             "It helps the shopper understand why a more itemized phage label is usually easier to compare than a broad blend line by itself.",
+        };
+      }
+      if (blendDisclosureDetails.isHydrationLike) {
+        return {
+          heading: section.heading,
+          summary: "Hydration comparison becomes more reliable when the label moves beyond the blend headline and itemizes the electrolyte setup, serving size, carbohydrate system, and any stimulant-style add-ons.",
+          bullets: [
+            "Itemized sodium, potassium, and magnesium lines make side-by-side hydration comparison clearer.",
+            "Serving size and carbohydrate or sugar context can change the practical use case of the product.",
+            "Caffeine, stimulant, absorption, or flavor-system blends should not be treated as the same thing as electrolyte balance.",
+          ],
+          evidenceRead:
+            "This is about disclosure quality and comparison fit, not proof that one hydration blend is better than another.",
+          shopperMeaning:
+            "Favor labels that let you compare the electrolyte balance and supporting formula details without relying on one broad blend total.",
         };
       }
       return {

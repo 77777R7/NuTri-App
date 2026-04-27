@@ -368,6 +368,46 @@ test('fiber proprietary blend fallbacks point shoppers to fiber source and itemi
   assert.doesNotMatch(`${overviewText} ${scienceText}`, /\btreats?\b|\bprevents?\b|\bcures?\b|\bguarantees?\b/i);
 });
 
+test('hydration blend fallbacks act like an electrolyte comparison guide instead of generic blend copy', async () => {
+  const hydrationContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-hydration-blend',
+      productName: 'ALLMAX, CARBION+ With Electrolytes, Blue Ice',
+      dosageForm: 'Powder',
+      actives: [
+        { name: 'Phased-Delivery Energy Blend', amount: 1000, unit: 'mg' },
+        { name: 'Electrolyte and Hydration blend', amount: 200, unit: 'mg' },
+        { name: 'Absorption Blend', amount: 50, unit: 'mg' },
+        { name: 'Total Carbohydrate', amount: 25, unit: 'g' },
+      ],
+    }),
+    overlayClaims: null,
+  });
+
+  const overview = await compileIngredientOverviewAsync(hydrationContext);
+  const science = await compileScientificBackgroundAsync(
+    hydrationContext,
+    hydrationContext.anchorIngredient?.name ?? 'Phased-Delivery Energy Blend',
+  );
+  const overviewText = [
+    overview.ingredientOverview.titleLine,
+    overview.ingredientOverview.paragraph1,
+    overview.ingredientOverview.paragraph2,
+    overview.ingredientOverview.compareHint,
+  ].join(' ');
+  const scienceText = science.scientificBackground.sections
+    .flatMap((section) => [section.summary, ...section.bullets, section.evidenceRead, section.shopperMeaning ?? ''])
+    .join(' ');
+
+  assert.equal(overview.source, 'fallback');
+  assert.equal(science.source, 'fallback');
+  assert.match(overview.ingredientOverview.titleLine ?? '', /Hydration formula blend/i);
+  assert.match(overviewText, /hydration-formula disclosure line/i);
+  assert.match(overviewText, /sodium|potassium|magnesium|serving size|carbohydrate|caffeine|stimulant|exact amounts/i);
+  assert.match(scienceText, /hydration-formula context|electrolyte balance|serving size|carbohydrate|caffeine|stimulant|exact amounts/i);
+  assert.doesNotMatch(`${overviewText} ${scienceText}`, /probiotic blend line|strain-level|CFU|\btreats?\b|\bprevents?\b|\bcures?\b|\bguarantees?\b/i);
+});
+
 test('scientific background repairs template-style research prose into family-specific copy', async () => {
   const digest = buildDigest({
     labelId: 'fixture-epa',
