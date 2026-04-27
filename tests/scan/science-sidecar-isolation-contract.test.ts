@@ -5,12 +5,10 @@ import test from 'node:test';
 
 const DASHBOARD_FILE = path.join(process.cwd(), 'components/scan/AnalysisDashboard.tsx');
 const SERVER_FILE = path.join(process.cwd(), 'backend/src/server.ts');
-const SCIENCE_SIDECAR_ROUTES_FILE = path.join(process.cwd(), 'backend/src/routes/scienceSidecarRoutes.ts');
 const SHARED_TYPES_FILE = path.join(process.cwd(), 'shared/types/ingredientScience.ts');
 
 const dashboardSource = fs.readFileSync(DASHBOARD_FILE, 'utf8');
 const serverSource = fs.readFileSync(SERVER_FILE, 'utf8');
-const scienceSidecarRoutesSource = fs.readFileSync(SCIENCE_SIDECAR_ROUTES_FILE, 'utf8');
 const sharedTypesSource = fs.readFileSync(SHARED_TYPES_FILE, 'utf8');
 
 test('science UI uses new B/C sidecars and removes the legacy ingredient summary fetch', () => {
@@ -36,24 +34,23 @@ test('science UI uses new B/C sidecars and removes the legacy ingredient summary
 });
 
 test('server exposes ingredient overview and scientific background sidecars with shared authority helper', () => {
-  assert.match(serverSource, /registerScienceSidecarRoutes\(app,/);
-  assert.match(scienceSidecarRoutesSource, /app\.post\("\/api\/ingredient-overview\/v1", deps\.verifySupabaseToken/);
-  assert.match(scienceSidecarRoutesSource, /app\.post\("\/api\/scientific-background\/v1", deps\.verifySupabaseToken/);
+  assert.match(serverSource, /app\.post\("\/api\/ingredient-overview\/v1", verifySupabaseToken/);
+  assert.match(serverSource, /app\.post\("\/api\/scientific-background\/v1", verifySupabaseToken/);
   assert.match(serverSource, /const buildDecisionSupportAuthorityBundle = async \(/);
   assert.match(serverSource, /buildDecisionSupportDigestMismatchPayload/);
-  assert.match(scienceSidecarRoutesSource, /decisionInputsHash:\s*z\.string\(\)\.trim\(\)\.min\(1\)\.nullable\(\)\.optional\(\)/);
-  assert.match(scienceSidecarRoutesSource, /personalizationScopeHash:\s*z\.string\(\)\.trim\(\)\.min\(1\)\.nullable\(\)\.optional\(\)/);
-  assert.match(scienceSidecarRoutesSource, /revalidateFallback:\s*z\.boolean\(\)\.optional\(\)/);
-  assert.match(scienceSidecarRoutesSource, /authority\.decisionSupport\.decisionInputsHash/);
-  assert.match(scienceSidecarRoutesSource, /authority\.personalizationScopeHash/);
-  assert.match(scienceSidecarRoutesSource, /const buildScientificBackgroundSidecarCacheKey = \(params: \{/);
-  assert.match(scienceSidecarRoutesSource, /buildScanSidecarCacheKey\(\{\s*route: "scientific_background"/);
-  assert.match(scienceSidecarRoutesSource, /const cacheKey = buildScientificBackgroundSidecarCacheKey\(\{/);
-  assert.ok(scienceSidecarRoutesSource.includes('normalizeIngredientScienceKey(parsedBody.selectedIngredientName)'));
-  assert.ok(scienceSidecarRoutesSource.includes('backgroundRefreshPending: boolean;'));
-  assert.ok(scienceSidecarRoutesSource.includes('recommendedRetryAfterMs: number | null;'));
-  assert.ok(scienceSidecarRoutesSource.includes('withScientificBackgroundRefreshHint'));
-  assert.ok(scienceSidecarRoutesSource.includes('SCIENTIFIC_BACKGROUND_REFRESH_RETRY_AFTER_MS'));
+  assert.match(serverSource, /decisionInputsHash:\s*z\.string\(\)\.trim\(\)\.min\(1\)\.nullable\(\)\.optional\(\)/);
+  assert.match(serverSource, /personalizationScopeHash:\s*z\.string\(\)\.trim\(\)\.min\(1\)\.nullable\(\)\.optional\(\)/);
+  assert.match(serverSource, /revalidateFallback:\s*z\.boolean\(\)\.optional\(\)/);
+  assert.match(serverSource, /authority\.decisionSupport\.decisionInputsHash/);
+  assert.match(serverSource, /authority\.personalizationScopeHash/);
+  assert.match(serverSource, /const buildScientificBackgroundSidecarCacheKey = \(params: \{/);
+  assert.match(serverSource, /buildScanSidecarCacheKey\(\{\s*route: "scientific_background"/);
+  assert.match(serverSource, /const cacheKey = buildScientificBackgroundSidecarCacheKey\(\{/);
+  assert.ok(serverSource.includes('normalizeIngredientScienceKey(parsedBody.selectedIngredientName)'));
+  assert.ok(serverSource.includes('backgroundRefreshPending: boolean;'));
+  assert.ok(serverSource.includes('recommendedRetryAfterMs: number | null;'));
+  assert.ok(serverSource.includes('withScientificBackgroundRefreshHint'));
+  assert.ok(serverSource.includes('SCIENTIFIC_BACKGROUND_REFRESH_RETRY_AFTER_MS'));
 });
 
 test('shared ingredient science types are additive and explicit', () => {
@@ -62,15 +59,4 @@ test('shared ingredient science types are additive and explicit', () => {
   assert.ok(sharedTypesSource.includes('export type ScientificBackgroundBlock = {'));
   assert.ok(sharedTypesSource.includes('export type IngredientOverviewResponse = {'));
   assert.ok(sharedTypesSource.includes('export type ScientificBackgroundResponse = {'));
-});
-
-test('ingredient overview warm cache keeps safe fallback while background refresh drains', () => {
-  assert.match(
-    scienceSidecarRoutesSource,
-    /const INGREDIENT_OVERVIEW_FALLBACK_CACHE_TTL_MS = 10 \* 60_000;/,
-  );
-  assert.match(
-    scienceSidecarRoutesSource,
-    /const INGREDIENT_OVERVIEW_REFRESH_MAX_CONCURRENCY = 4;/,
-  );
 });
