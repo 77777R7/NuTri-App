@@ -86,6 +86,57 @@ test("product overview fallback does not call every blend probiotic-style", () =
   assert.match(text, /electrolyte hydration|structured label|named components/i);
 });
 
+test("product overview fallback explains opaque probiotic blends instead of treating proprietary blend as an ingredient", () => {
+  const result = buildProductOverviewWhatIsItFallback({
+    productName: "Probiotic 40 Billion CFU",
+    brandName: "Example Brand",
+    productTypeHint: "Probiotics",
+    primaryIngredient: "Proprietary Blend",
+    keyIngredients: [
+      { name: "Proprietary Blend", dose: "120 mg" },
+    ],
+    sourceContextHint: "iherb",
+    chemicalFormHint: null,
+    allIngredientRows: [
+      { name: "Proprietary Blend", dose: "120 mg" },
+    ],
+    isLikelySingleIngredient: true,
+  });
+  const text = [result.lead, result.whatItIs, result.whyPeopleTakeIt].join(" ");
+
+  assert.match(result.lead, /probiotic supplement/i);
+  assert.doesNotMatch(text, /Proprietary Blend is a supplement ingredient/i);
+  assert.doesNotMatch(text, /probiotic-style/i);
+  assert.match(text, /strain-level|strain names/i);
+  assert.match(text, /CFU|storage|blend hides/i);
+});
+
+test("product overview fallback uses named probiotic strains when the label provides them", () => {
+  const result = buildProductOverviewWhatIsItFallback({
+    productName: "Daily Probiotic",
+    brandName: "Example Brand",
+    productTypeHint: "Probiotic supplement",
+    primaryIngredient: "Lactobacillus acidophilus",
+    keyIngredients: [
+      { name: "Lactobacillus acidophilus", dose: "5 billion CFU" },
+      { name: "Bifidobacterium lactis", dose: "5 billion CFU" },
+    ],
+    sourceContextHint: "iherb",
+    chemicalFormHint: null,
+    allIngredientRows: [
+      { name: "Lactobacillus acidophilus", dose: "5 billion CFU" },
+      { name: "Bifidobacterium lactis", dose: "5 billion CFU" },
+    ],
+    isLikelySingleIngredient: true,
+  });
+  const text = [result.lead, result.whatItIs, result.whyPeopleTakeIt].join(" ");
+
+  assert.match(text, /Lactobacillus acidophilus/i);
+  assert.match(text, /Bifidobacterium lactis/i);
+  assert.match(text, /CFU/i);
+  assert.doesNotMatch(text, /\btreats?\b|\bprevents?\b|\bcures?\b|\bguarantees?\b/i);
+});
+
 test("product overview fallback does not let supporting fish oil steal non-omega formula identity", () => {
   const result = buildProductOverviewWhatIsItFallback({
     productName: "Adrenal Chill - Men",
