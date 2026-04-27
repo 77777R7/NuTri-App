@@ -538,7 +538,7 @@ const buildNarrativeLabel = (plan: ScientificBackgroundPlan): string => {
   if (
     plan.mode === "label_context_mode" &&
     plan.family === "probiotic_or_blend" &&
-    /\b(?:blend|probiotic|acidophilus|lactobacill\w*|bifidobacter\w*|cfu|live cultures?)\b/i.test(plan.selectedLabel)
+    /\b(?:probiotic|acidophilus|lactobacill\w*|bifidobacter\w*|cfu|live cultures?)\b/i.test(plan.selectedLabel)
   ) {
     return "This probiotic blend line";
   }

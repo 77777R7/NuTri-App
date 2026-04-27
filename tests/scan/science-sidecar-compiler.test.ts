@@ -364,6 +364,7 @@ test('fiber proprietary blend fallbacks point shoppers to fiber source and itemi
   assert.match(overview.ingredientOverview.titleLine ?? '', /Fiber blend/i);
   assert.match(overviewText, /fiber source|dietary fiber amount|serving size/i);
   assert.match(scienceText, /fiber-formula context|named fiber source|proprietary total/i);
+  assert.doesNotMatch(scienceText, /probiotic blend line/i);
   assert.doesNotMatch(`${overviewText} ${scienceText}`, /\btreats?\b|\bprevents?\b|\bcures?\b|\bguarantees?\b/i);
 });
 
