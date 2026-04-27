@@ -59,6 +59,10 @@ const PRODUCT_OVERVIEW_OPAQUE_PROBIOTIC_BLEND_PATTERN =
 const PRODUCT_OVERVIEW_VITAMIN_C_PATTERN = /\b(vitamin\s*c|ascorbic acid|ascorbate|ester-?c)\b/i;
 const PRODUCT_OVERVIEW_HYDRATION_PATTERN =
   /\b(electrolyte|hydration|hydrate|carbion|sports?\s+drink|sweat\s+loss|rehydration)\b/i;
+const PRODUCT_OVERVIEW_NON_OMEGA_ANCHOR_PATTERN =
+  /\b(coq10|co-?q10|coenzyme\s+q10|prenatal|folate|folic acid|iron|multivitamin|multi\s+vitamin|b-?complex|vitamin\s+b|glucosamine|ashwagandha|milk\s+thistle|zinc|magnesium|calcium|berberine|curcumin|turmeric|creatine|collagen)\b/i;
+const PRODUCT_OVERVIEW_NON_VITAMIN_C_ANCHOR_PATTERN =
+  /\b(iron|zinc|magnesium|calcium|prenatal|folate|folic acid|multivitamin|multi\s+vitamin|b-?complex|coq10|co-?q10|coenzyme\s+q10|glucosamine|ashwagandha|milk\s+thistle)\b/i;
 const PRODUCT_OVERVIEW_CARBOHYDRATE_PATTERN =
   /\b(carbohydrate|carbion|dextrose|maltodextrin|glucose|sugar|calories?)\b/i;
 const PRODUCT_OVERVIEW_STIMULANT_PATTERN = /\b(caffeine|green\s+tea|guarana|yerba\s+mate|stimulant)\b/i;
@@ -152,13 +156,10 @@ const buildSingleIngredientFallback = (params: ProductOverviewFallbackInput): Pr
     ?? cleanOverviewDisplayName(params.keyIngredients[0]?.name)
     ?? cleanOverviewDisplayName(params.productName)
     ?? "This product";
-  const productTypeHint = normalizeProductTypeHint(params, "single-ingredient supplement");
   const sourceContextHint = normalizeText(params.sourceContextHint);
   const chemicalFormHint = normalizeText(params.chemicalFormHint);
 
-  const lead = toSentence(
-    `${primaryIngredient} is a supplement ingredient used in ${productTypeHint.toLowerCase()} products`,
-  );
+  const lead = toSentence(`${primaryIngredient} is the main named ingredient in this product`);
   const backgroundContext = sourceContextHint
     ? `It is presented here with source context from ${sourceContextHint}`
     : chemicalFormHint
@@ -391,6 +392,13 @@ export const buildProductOverviewWhatIsItFallback = (
   const productName = lower(params.productName);
   const productTypeHint = lower(params.productTypeHint);
   const primaryIngredient = lower(params.primaryIngredient);
+  const primaryLooksLikeSpecificNonOmega =
+    Boolean(primaryIngredient)
+    && primaryIngredient !== "multi-ingredient formula"
+    && !PRODUCT_OVERVIEW_BLEND_PATTERN.test(primaryIngredient)
+    && !PRODUCT_OVERVIEW_OMEGA_PATTERN.test(primaryIngredient);
+  const textHasNonOmegaAnchor = PRODUCT_OVERVIEW_NON_OMEGA_ANCHOR_PATTERN.test(`${productName} ${productTypeHint}`);
+  const textHasNonVitaminCAnchor = PRODUCT_OVERVIEW_NON_VITAMIN_C_ANCHOR_PATTERN.test(`${productName} ${productTypeHint}`);
   const ingredientTokens = dedupeStrings([
     params.primaryIngredient,
     ...params.keyIngredients.map((item) => item.name),
@@ -400,6 +408,9 @@ export const buildProductOverviewWhatIsItFallback = (
     PRODUCT_OVERVIEW_OMEGA_PATTERN.test(productName)
     || PRODUCT_OVERVIEW_OMEGA_PATTERN.test(productTypeHint)
     || PRODUCT_OVERVIEW_OMEGA_PATTERN.test(primaryIngredient);
+  const omegaSignalShouldYield =
+    (PRODUCT_OVERVIEW_OMEGA_PATTERN.test(primaryIngredient) && !textHasNonOmegaAnchor)
+    || (!primaryLooksLikeSpecificNonOmega && !textHasNonOmegaAnchor);
   const strongProbioticSignal =
     PRODUCT_OVERVIEW_PROBIOTIC_PATTERN.test(productName)
     || PRODUCT_OVERVIEW_PROBIOTIC_PATTERN.test(productTypeHint)
@@ -432,14 +443,18 @@ export const buildProductOverviewWhatIsItFallback = (
       return buildProbioticFallback(params);
     }
 
-    if (ingredientTokens.some((token) => PRODUCT_OVERVIEW_VITAMIN_C_PATTERN.test(token)) || strongVitaminCSignal) {
+    if (
+      (PRODUCT_OVERVIEW_VITAMIN_C_PATTERN.test(primaryIngredient) && !textHasNonVitaminCAnchor)
+      || (!textHasNonVitaminCAnchor && ingredientTokens.some((token) => PRODUCT_OVERVIEW_VITAMIN_C_PATTERN.test(token)))
+      || (!textHasNonVitaminCAnchor && strongVitaminCSignal)
+    ) {
       return buildVitaminCFallback();
     }
 
     return buildSingleIngredientFallback(params);
   }
 
-  if (strongOmegaSignal) {
+  if (strongOmegaSignal && omegaSignalShouldYield) {
     return buildOmegaFallback(params);
   }
 

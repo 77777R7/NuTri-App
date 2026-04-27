@@ -28,8 +28,9 @@ const ORAL_SUPPLEMENT_NON_POWDER_FORM_PATTERN = /\b(?:capsules?|tablets?|softgel
 const SUPPLEMENT_CATEGORY_PATTERN = /\b(?:supplements?|vitamins?|minerals?|sports nutrition|herbal supplements?|amino acids?|probiotics?|enzymes?)\b/i;
 const PROTEIN_POWDER_CONTEXT_PATTERN = /\b(?:whey protein|protein powder|plant-based (?:performance )?protein|complete protein|protein isolate|protein concentrate)\b/i;
 const TOPICAL_CONTEXT_PATTERN = /\b(?:lotion|cream|serum|soap|shampoo|conditioner|balm|ointment|salve|body wash|body oil|skin care|skincare|sunscreen|deodorant|toothpaste|lip balm|mask|cleanser|toner)\b/i;
-const STRONG_FOOD_CONTEXT_PATTERN = /\b(?:rice|soup|broth|ghee|butter|seasoning|spices?|spice blends?|garlic powder|sea salt|tea bags?|loose leaf tea|herbal tea|packaged & prepared foods|oils? & vinegar)\b/i;
-const FOOD_CONTEXT_PATTERN = /\b(?:grocery|food|snacks?|cookies?|cand(?:y|ies)|chocolate|chips?|crackers?|beverages?|drinks?|soda|juice|coffee|tea bags?|loose leaf tea|herbal tea|soup|broth|sauce|seasoning|spices?|sea salt|rice|pasta|noodles?|ghee|butter|oil for cooking|cereal|granola|bar\b)\b/i;
+const STRONG_FOOD_CONTEXT_PATTERN = /\b(?:rice|soup|broth|ghee|butter|seasoning|spices?|spice blends?|garlic powder|sea salt|tea bags?|loose leaf tea|herbal tea|packaged & prepared foods|oils? & vinegar|pouches?|purees?|meals?|baby foods?|marinades?|condiments?|coconut flour|honey drops?)\b/i;
+const FOOD_CONTEXT_PATTERN = /\b(?:grocery|food|snacks?|cookies?|cand(?:y|ies)|chocolate|chips?|crackers?|beverages?|drinks?|soda|juice|coffee|tea bags?|loose leaf tea|herbal tea|soup|broth|sauce|seasoning|spices?|sea salt|rice|pasta|noodles?|ghee|butter|oil for cooking|cereal|granola|bar\b|pouches?|purees?|meals?|baby foods?|marinades?|condiments?|honey drops?|cough lozenges?|sore throat lozenges?)\b/i;
+const NON_SUPPLEMENT_LOZENGE_CONTEXT_PATTERN = /\b(?:honey drops?|cough lozenges?|sore throat (?:& )?cough lozenges?)\b/i;
 
 const FAMILY_CANONICAL_ALIASES = new Map([
   ["garlic", "garlic_extract"],
@@ -852,9 +853,13 @@ export const inferSupplementEligibility = ({ productName, category, categories, 
   const hasOralNonPowderSupplementForm = ORAL_SUPPLEMENT_NON_POWDER_FORM_PATTERN.test(contextText);
   const hasSupplementCategory = SUPPLEMENT_CATEGORY_PATTERN.test(contextText);
   const hasProteinPowderContext = PROTEIN_POWDER_CONTEXT_PATTERN.test(contextText) && !/\bprotein bars?\b/i.test(contextText);
+  const hasNonSupplementLozengeContext =
+    NON_SUPPLEMENT_LOZENGE_CONTEXT_PATTERN.test(contextText)
+    && !/\b(?:zinc|vitamin|mineral|supplement)\b/i.test(contextText);
   const ingredientCount = ingredientRows.filter((item) => safeText(item.name)).length;
 
   if (hasTopicalContext && !hasOralSupplementForm) return "topical_external";
+  if (hasNonSupplementLozengeContext) return "food_like";
   if (hasStrongFoodContext && !hasOralNonPowderSupplementForm && !hasSupplementCategory && !hasProteinPowderContext) return "food_like";
   if (hasFoodContext && !hasOralSupplementForm && !hasSupplementCategory && !hasProteinPowderContext) return "food_like";
   if (hasSupplementContext) return "supplement_like";

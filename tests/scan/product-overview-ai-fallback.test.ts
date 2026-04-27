@@ -204,6 +204,76 @@ test("product overview fallback does not let supporting fish oil steal non-omega
   assert.match(text, /Ashwagandha Extract-led/i);
 });
 
+test("product overview fallback does not let omega wording steal a CoQ10-led formula", () => {
+  const result = buildProductOverviewWhatIsItFallback({
+    productName: "CoQ10 with Omega-3",
+    brandName: "Jamieson",
+    productTypeHint: "Omega-3 supplement",
+    primaryIngredient: "CoQ10",
+    keyIngredients: [
+      { name: "CoQ10" },
+      { name: "Fish Oil" },
+      { name: "Omega-3 fatty acids" },
+    ],
+    sourceContextHint: "official_or_brand",
+    chemicalFormHint: null,
+    allIngredientRows: [
+      { name: "CoQ10" },
+      { name: "Fish Oil" },
+      { name: "Omega-3 fatty acids" },
+    ],
+    isLikelySingleIngredient: false,
+  });
+  const text = [result.lead, result.whatItIs, result.whyPeopleTakeIt].join(" ");
+
+  assert.doesNotMatch(text, /This is an omega-3 supplement/i);
+  assert.match(text, /CoQ10-led/i);
+});
+
+test("product overview fallback keeps prenatal multi formulas from becoming omega-only copy", () => {
+  const result = buildProductOverviewWhatIsItFallback({
+    productName: "Prenatal 1 with Folic Acid, DHA & Iron",
+    brandName: "One-A-Day",
+    productTypeHint: "Omega-3 supplement",
+    primaryIngredient: "Omega-3 DHA",
+    keyIngredients: [
+      { name: "Omega-3 DHA" },
+      { name: "Folic Acid" },
+      { name: "Iron" },
+    ],
+    sourceContextHint: "iherb",
+    chemicalFormHint: null,
+    allIngredientRows: [
+      { name: "Omega-3 DHA" },
+      { name: "Folic Acid" },
+      { name: "Iron" },
+    ],
+    isLikelySingleIngredient: false,
+  });
+  const text = [result.lead, result.whatItIs, result.whyPeopleTakeIt].join(" ");
+
+  assert.doesNotMatch(text, /This is an omega-3 supplement/i);
+  assert.match(text, /Omega-3 DHA-led|more than one disclosed ingredient/i);
+});
+
+test("single-ingredient fallback avoids broad category claims that do not match the ingredient", () => {
+  const result = buildProductOverviewWhatIsItFallback({
+    productName: "Milk Thistle 150 mg 60% Silymarin",
+    brandName: "Webber Naturals",
+    productTypeHint: "Probiotics & Digestion",
+    primaryIngredient: "Milk thistle",
+    keyIngredients: [{ name: "Milk thistle" }],
+    sourceContextHint: "official_or_brand",
+    chemicalFormHint: null,
+    allIngredientRows: [{ name: "Milk thistle" }],
+    isLikelySingleIngredient: true,
+  });
+  const text = [result.lead, result.whatItIs, result.whyPeopleTakeIt].join(" ");
+
+  assert.match(result.lead, /Milk thistle is the main named ingredient/i);
+  assert.doesNotMatch(text, /used in probiotics/i);
+});
+
 test("product overview fallback does not let companion vitamin C override a zinc-led formula", () => {
   const result = buildProductOverviewWhatIsItFallback({
     productName: "ACES + Zinc & Copper",
