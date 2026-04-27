@@ -316,6 +316,7 @@ test("product overview fallback does not let companion vitamin C override an iro
 
   assert.doesNotMatch(text, /vitamin C supplement built around/i);
   assert.match(text, /Iron with Vitamin C-led iron formula/i);
+  assert.doesNotMatch(text, /\ba Iron\b/i);
 });
 
 test("product overview fallback ignores broad digestion categories for liver-focused milk thistle formulas", () => {

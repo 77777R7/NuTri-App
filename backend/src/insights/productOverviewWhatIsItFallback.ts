@@ -46,6 +46,17 @@ const listToEnglish = (rows: string[]): string => {
   return `${rows.slice(0, -1).join(", ")}, and ${rows[rows.length - 1]}`;
 };
 
+const articleForLeadPhrase = (value: string): "a" | "an" => {
+  const normalized = normalizeText(value) ?? "";
+  if (/^(?:iron|ashwagandha|alpha|electrolyte|olive|omega|inositol|iodine|astaxanthin)\b/i.test(normalized)) {
+    return "an";
+  }
+  if (/^(?:NAC|NADH|NMN|MSM|MCT|L-|R-)/.test(normalized)) {
+    return "an";
+  }
+  return "a";
+};
+
 const lower = (value?: string | null): string => normalizeText(value)?.toLowerCase() ?? "";
 const PRODUCT_OVERVIEW_BLEND_PATTERN = /\b(blend|complex|matrix|formula|proprietary)\b/i;
 const PRODUCT_OVERVIEW_OMEGA_PATTERN =
@@ -383,7 +394,7 @@ const buildLeadActiveMultiIngredientFallback = (
 
   return {
     mode: "rich",
-    lead: toSentence(`This is a ${leadActive}-led ${productTypeHint}`),
+    lead: toSentence(`This is ${articleForLeadPhrase(leadActive)} ${leadActive}-led ${productTypeHint}`),
     whatItIs,
     whyPeopleTakeIt: toSentence(
       `People usually choose products like this to compare whether ${leadActive} stays clearly disclosed as the main active and how the supporting lines are arranged around it`
