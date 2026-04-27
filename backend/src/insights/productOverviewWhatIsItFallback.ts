@@ -84,7 +84,7 @@ const extractProbioticStrainNames = (value?: string | null): string[] => {
     .replace(/([a-z])(?=(?:Lactobacillus|Bifidobacterium|Saccharomyces|Streptococcus|Lactococcus)\b)/gi, "$1 ")
     .replace(/\s{2,}/g, " ");
   const matches = strainReadable.match(
-    /\b(?:Lactobacillus|Bifidobacterium|Saccharomyces|Bacillus|Streptococcus|Lactococcus)\s+[a-z][a-z-]+(?:\s+[A-Z0-9-]+)?/gi,
+    /\b(?:Lactobacillus|Bifidobacterium|Saccharomyces|Bacillus|Streptococcus|Lactococcus)\s+[a-z][a-z-]+(?:\s+(?=[A-Z0-9-]*[0-9-])[A-Z0-9-]{2,})?/gi,
   ) ?? [];
   return dedupeStrings(matches.map((match) => cleanOverviewDisplayName(match)));
 };
