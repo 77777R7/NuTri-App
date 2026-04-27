@@ -289,6 +289,30 @@ test("supplement eligibility blocks food and topical false family anchors", () =
     categories: ["Garlic Powder & Seasoning", "Spice Blends", "Herbs & Spices"],
     supplement_facts: [{ substancy: "Calories", amountPerServing: "0" }],
   });
+  const babyFood = normalizeOverlayProduct({
+    product_id: "p-baby-food",
+    title: "Gerber, 1st Foods, Supported Sitter, Sweet Potato",
+    categories: ["Pouches, Purees & Meals", "Baby & Kids Feeding"],
+    supplement_facts: [
+      { substancy: "Calories", amountPerServing: "80" },
+      { substancy: "Calcium", amountPerServing: "20", unit: "mg" },
+    ],
+  });
+  const honeyDrops = normalizeOverlayProduct({
+    product_id: "p-honey-drops",
+    title: "Honey Menthol Eucalyptus Drops",
+    categories: ["Sore Throat & Cough Lozenges", "Medicine Cabinet"],
+    supplement_facts: [
+      { substancy: "Calories", amountPerServing: "60" },
+      { substancy: "Vitamin D", amountPerServing: "0", unit: "mcg" },
+    ],
+  });
+  const garlicMarinade = normalizeOverlayProduct({
+    product_id: "p-garlic-marinade",
+    title: "Signature Steakhouse Marinade With Garlic",
+    categories: ["Condiments", "Sauces & Marinades"],
+    supplement_facts: [{ substancy: "Calories", amountPerServing: "10" }],
+  });
   const blackSeedOil = normalizeOverlayProduct({
     product_id: "p-black-seed-oil",
     title: "Organic Black Seed Oil, Unflavored",
@@ -307,6 +331,12 @@ test("supplement eligibility blocks food and topical false family anchors", () =
   assert.equal(garlicGhee.family, "unclassified");
   assert.equal(garlicPowder.supplementEligibility, "food_like");
   assert.equal(garlicPowder.family, "unclassified");
+  assert.equal(babyFood.supplementEligibility, "food_like");
+  assert.equal(babyFood.family, "unclassified");
+  assert.equal(honeyDrops.supplementEligibility, "food_like");
+  assert.equal(honeyDrops.family, "unclassified");
+  assert.equal(garlicMarinade.supplementEligibility, "food_like");
+  assert.equal(garlicMarinade.family, "unclassified");
   assert.equal(proteinPowder.supplementEligibility, "supplement_like");
   assert.equal(proteinPowder.family, "protein");
   assert.equal(greenTeaExtract.supplementEligibility, "supplement_like");
