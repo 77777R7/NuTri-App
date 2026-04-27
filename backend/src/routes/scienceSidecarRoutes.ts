@@ -1,5 +1,4 @@
 import type { Express, Request, RequestHandler, Response } from "express";
-import { createHash } from "node:crypto";
 import { z } from "zod";
 
 import { normalizeBarcodeInput, type NormalizedBarcode } from "../barcode.js";
@@ -143,44 +142,6 @@ let activeIngredientOverviewRefreshCount = 0;
 const queuedIngredientOverviewRefreshTasks: Array<() => void> = [];
 let activeScientificBackgroundRefreshCount = 0;
 const queuedScientificBackgroundRefreshTasks: Array<() => void> = [];
-
-const hashForLog = (value: string | null | undefined): string | null => {
-  const normalized = String(value ?? "").trim();
-  if (!normalized) return null;
-  return createHash("sha256").update(normalized).digest("hex").slice(0, 12);
-};
-
-const logScienceSidecarEvent = (
-  event: string,
-  details: Record<string, unknown>,
-): void => {
-  console.info(`[SCIENCE_SIDECAR_${event}]`, {
-    at: new Date().toISOString(),
-    ...details,
-  });
-};
-
-const buildIngredientOverviewRefreshLogContext = (params: {
-  barcode: string;
-  cacheKey: string;
-  authority: ScienceSidecarAuthorityBundle;
-  executionProfile: IngredientOverviewExecutionProfile;
-}): Record<string, unknown> => ({
-  route: "/api/ingredient-overview/v1",
-  barcode: params.barcode,
-  cacheKeyHash: hashForLog(params.cacheKey),
-  digestHash: hashForLog(params.authority.decisionSupport.digest),
-  decisionInputsHash: hashForLog(params.authority.decisionSupport.decisionInputsHash),
-  personalizationScopeHash: hashForLog(params.authority.personalizationScopeHash),
-  family: params.authority.ingredientScienceContext.ingredientFamily,
-  archetype: params.authority.ingredientScienceContext.productArchetype,
-  formulaMode: params.authority.ingredientScienceContext.formulaMode,
-  sourceType: params.authority.ingredientScienceContext.sourceType,
-  ingredientSourceTier: params.authority.ingredientScienceContext.ingredientSourceTier,
-  timeoutMs: params.executionProfile.backgroundRefreshTimeoutMs,
-  maxRetries: params.executionProfile.backgroundRefreshMaxRetries,
-  maxTokens: params.executionProfile.maxTokens,
-});
 
 const buildIngredientOverviewSidecarCacheKey = (params: {
   barcode?: string;
@@ -558,28 +519,12 @@ const validateDecisionSupportDigestContract = (
     authority: ScienceSidecarAuthorityBundle;
     res: Response;
     buildMismatchPayload: ScienceSidecarRoutesDependencies["buildDecisionSupportDigestMismatchPayload"];
-    route: string;
-    barcode: string;
   },
 ): boolean => {
-  const logDigestMismatch = (field: string, requested: string, actual: string): void => {
-    logScienceSidecarEvent("CACHE_KEY_MISMATCH", {
-      route: params.route,
-      barcode: params.barcode,
-      field,
-      requestedHash: hashForLog(requested),
-      actualHash: hashForLog(actual),
-    });
-  };
   if (
     params.parsedBody.decisionDigest
     && params.parsedBody.decisionDigest !== params.authority.decisionSupport.digest
   ) {
-    logDigestMismatch(
-      "decisionDigest",
-      params.parsedBody.decisionDigest,
-      params.authority.decisionSupport.digest,
-    );
     params.res.status(409).json(
       params.buildMismatchPayload(
         params.authority.decisionSupport.digest,
@@ -593,11 +538,6 @@ const validateDecisionSupportDigestContract = (
     params.parsedBody.decisionInputsHash
     && params.parsedBody.decisionInputsHash !== params.authority.decisionSupport.decisionInputsHash
   ) {
-    logDigestMismatch(
-      "decisionInputsHash",
-      params.parsedBody.decisionInputsHash,
-      params.authority.decisionSupport.decisionInputsHash,
-    );
     params.res.status(409).json(
       params.buildMismatchPayload(
         params.authority.decisionSupport.digest,
@@ -611,11 +551,6 @@ const validateDecisionSupportDigestContract = (
     params.parsedBody.personalizationScopeHash
     && params.parsedBody.personalizationScopeHash !== params.authority.personalizationScopeHash
   ) {
-    logDigestMismatch(
-      "personalizationScopeHash",
-      params.parsedBody.personalizationScopeHash,
-      params.authority.personalizationScopeHash,
-    );
     params.res.status(409).json(
       params.buildMismatchPayload(
         params.authority.decisionSupport.digest,
@@ -634,12 +569,6 @@ export const registerScienceSidecarRoutes = (
 ): void => {
   const env = deps.env ?? process.env;
   const now = deps.now ?? Date.now;
-  logScienceSidecarEvent("ROUTES_REGISTERED", {
-    ingredientOverviewFallbackTtlMs: INGREDIENT_OVERVIEW_FALLBACK_CACHE_TTL_MS,
-    ingredientOverviewRefreshMaxConcurrency: INGREDIENT_OVERVIEW_REFRESH_MAX_CONCURRENCY,
-    scientificBackgroundResearchFallbackTtlMs: SCIENTIFIC_BACKGROUND_RESEARCH_FALLBACK_CACHE_TTL_MS,
-    scientificBackgroundRefreshMaxConcurrency: SCIENTIFIC_BACKGROUND_REFRESH_MAX_CONCURRENCY,
-  });
 
   app.post("/api/ingredient-overview/v1", deps.verifySupabaseToken, async (req: Request, res: Response) => {
     const parsedBody = deps.parseRequestBody(ingredientOverviewBodySchema, req, res);
@@ -682,8 +611,6 @@ export const registerScienceSidecarRoutes = (
         authority,
         res,
         buildMismatchPayload: deps.buildDecisionSupportDigestMismatchPayload,
-        route: "/api/ingredient-overview/v1",
-        barcode: normalizedBarcode.code,
       });
       if (!digestContractOk) return;
 
@@ -699,66 +626,12 @@ export const registerScienceSidecarRoutes = (
       const shouldUseLiveWriter =
         authority.ingredientScienceContext.productArchetype !== "functional_food_like"
         && authority.ingredientScienceContext.ingredientFamily !== "green_tea_extract";
-      const ingredientOverviewRefreshLogContext = buildIngredientOverviewRefreshLogContext({
-        barcode: normalizedBarcode.code,
-        cacheKey,
-        authority,
-        executionProfile,
-      });
-      const ensureIngredientOverviewBackgroundRefresh = (trigger: string): boolean => {
-        if (!shouldUseLiveWriter || !deepseekKey) {
-          logScienceSidecarEvent("INGREDIENT_REFRESH_SKIPPED", {
-            ...ingredientOverviewRefreshLogContext,
-            trigger,
-            reason: !shouldUseLiveWriter ? "live_writer_disabled_for_context" : "llm_unconfigured",
-          });
-          return false;
-        }
-        if (ingredientOverviewSidecarBackgroundRefresh.has(cacheKey)) {
-          logScienceSidecarEvent("INGREDIENT_REFRESH_DEDUPED", {
-            ...ingredientOverviewRefreshLogContext,
-            trigger,
-            activeRefreshCount: activeIngredientOverviewRefreshCount,
-            queuedRefreshCount: queuedIngredientOverviewRefreshTasks.length,
-          });
-          return true;
-        }
-        if (isIngredientOverviewBackgroundRefreshCoolingDown(cacheKey, now())) {
-          logScienceSidecarEvent("INGREDIENT_REFRESH_SKIPPED", {
-            ...ingredientOverviewRefreshLogContext,
-            trigger,
-            reason: "cooldown",
-            failureCount: ingredientOverviewSidecarBackgroundRefreshFailureCount.get(cacheKey) ?? 0,
-            cooldownUntilMs: ingredientOverviewSidecarBackgroundRefreshCooldownUntil.get(cacheKey) ?? null,
-          });
-          return false;
-        }
+      const ensureIngredientOverviewBackgroundRefresh = (): boolean => {
+        if (!shouldUseLiveWriter || !deepseekKey) return false;
+        if (ingredientOverviewSidecarBackgroundRefresh.has(cacheKey)) return true;
+        if (isIngredientOverviewBackgroundRefreshCoolingDown(cacheKey, now())) return false;
 
-        const scheduledAtMs = now();
-        const queueDepthAtSchedule = queuedIngredientOverviewRefreshTasks.length;
-        logScienceSidecarEvent("INGREDIENT_REFRESH_SCHEDULED", {
-          ...ingredientOverviewRefreshLogContext,
-          trigger,
-          activeRefreshCount: activeIngredientOverviewRefreshCount,
-          queuedRefreshCount: queueDepthAtSchedule,
-        });
         const backgroundRefresh = runWithIngredientOverviewRefreshSlot(async (): Promise<void> => {
-          const startedAtMs = now();
-          const queueWaitMs = Math.max(0, startedAtMs - scheduledAtMs);
-          const queuedTooLong =
-            queueWaitMs > Math.max(
-              executionProfile.backgroundRefreshTimeoutMs,
-              INGREDIENT_OVERVIEW_FALLBACK_CACHE_TTL_MS,
-            );
-          logScienceSidecarEvent("INGREDIENT_REFRESH_START", {
-            ...ingredientOverviewRefreshLogContext,
-            trigger,
-            queueWaitMs,
-            queuedTooLong,
-            queueDepthAtSchedule,
-            activeRefreshCount: activeIngredientOverviewRefreshCount,
-            queuedRefreshCount: queuedIngredientOverviewRefreshTasks.length,
-          });
           const backgroundLlmFn = buildDeepseekJsonLlmFn({
             deepseekKey,
             deepseekModel,
@@ -776,7 +649,6 @@ export const registerScienceSidecarRoutes = (
             },
           );
 
-          const durationMs = Math.max(0, now() - startedAtMs);
           const refreshedPayload: IngredientOverviewSidecarResponse = {
             status: "ok",
             digest: authority.decisionSupport.digest,
@@ -790,79 +662,30 @@ export const registerScienceSidecarRoutes = (
           };
 
           if (refreshed.source !== "api") {
-            const shouldEnterCooldown = shouldCoolDownIngredientOverviewBackgroundRefresh(cacheKey);
-            if (shouldEnterCooldown) {
+            if (shouldCoolDownIngredientOverviewBackgroundRefresh(cacheKey)) {
               markIngredientOverviewBackgroundRefreshCooldown(cacheKey, now());
             }
-            logScienceSidecarEvent("INGREDIENT_REFRESH_FALLBACK", {
-              ...ingredientOverviewRefreshLogContext,
-              trigger,
-              durationMs,
-              source: refreshed.source,
-              fallbackReason: refreshed.diagnostics.fallbackReason,
-              lastError: refreshed.diagnostics.lastError,
-              attemptCount: refreshed.diagnostics.attemptCount,
-              parseFailureCount: refreshed.diagnostics.parseFailureCount,
-              gateRejectCount: refreshed.diagnostics.gateRejectCount,
-              timeoutCount: refreshed.diagnostics.timeoutCount,
-              errorCount: refreshed.diagnostics.errorCount,
-              cooldownApplied: shouldEnterCooldown,
-              failureCount: ingredientOverviewSidecarBackgroundRefreshFailureCount.get(cacheKey) ?? 0,
-            });
           } else {
             ingredientOverviewSidecarBackgroundRefreshCooldownUntil.delete(cacheKey);
             ingredientOverviewSidecarBackgroundRefreshFailureCount.delete(cacheKey);
-            logScienceSidecarEvent("INGREDIENT_REFRESH_SUCCESS", {
-              ...ingredientOverviewRefreshLogContext,
-              trigger,
-              durationMs,
-              source: refreshed.source,
-              attemptCount: refreshed.diagnostics.attemptCount,
-              parseFailureCount: refreshed.diagnostics.parseFailureCount,
-              gateRejectCount: refreshed.diagnostics.gateRejectCount,
-              timeoutCount: refreshed.diagnostics.timeoutCount,
-              errorCount: refreshed.diagnostics.errorCount,
-            });
           }
 
-          const ttlMs = resolveIngredientOverviewCacheTtlMs(refreshedPayload, executionProfile);
           writeIngredientOverviewSidecarCache(
             cacheKey,
             refreshedPayload,
-            ttlMs,
+            resolveIngredientOverviewCacheTtlMs(refreshedPayload, executionProfile),
             now(),
           );
-          logScienceSidecarEvent("INGREDIENT_REFRESH_CACHE_WRITE", {
-            ...ingredientOverviewRefreshLogContext,
-            trigger,
-            source: refreshedPayload.source,
-            fallbackReason: refreshedPayload.fallbackReason ?? null,
-            ttlMs,
-          });
         })
           .catch((error) => {
-            logScienceSidecarEvent("INGREDIENT_REFRESH_ERROR", {
-              ...ingredientOverviewRefreshLogContext,
-              trigger,
-              errorName: error instanceof Error ? error.name : "unknown",
-              errorMessage: error instanceof Error ? error.message : String(error),
-              activeRefreshCount: activeIngredientOverviewRefreshCount,
-              queuedRefreshCount: queuedIngredientOverviewRefreshTasks.length,
-            });
             deps.captureException(error, {
               route: "/api/ingredient-overview/v1",
               phase: "background_refresh",
-              cacheKeyHash: hashForLog(cacheKey),
+              cacheKey,
             });
           })
           .finally(() => {
             ingredientOverviewSidecarBackgroundRefresh.delete(cacheKey);
-            logScienceSidecarEvent("INGREDIENT_REFRESH_FINISH", {
-              ...ingredientOverviewRefreshLogContext,
-              trigger,
-              activeRefreshCount: activeIngredientOverviewRefreshCount,
-              queuedRefreshCount: queuedIngredientOverviewRefreshTasks.length,
-            });
           });
 
         ingredientOverviewSidecarBackgroundRefresh.set(cacheKey, backgroundRefresh);
@@ -896,9 +719,7 @@ export const registerScienceSidecarRoutes = (
         );
         return withIngredientOverviewRefreshHint(
           payload,
-          allowBackgroundRefresh
-            ? ensureIngredientOverviewBackgroundRefresh(fallbackReason)
-            : false,
+          allowBackgroundRefresh ? ensureIngredientOverviewBackgroundRefresh() : false,
         );
       };
 
@@ -914,7 +735,7 @@ export const registerScienceSidecarRoutes = (
         );
       }
       if (shouldBypassFallbackCache) {
-        const backgroundRefreshPending = ensureIngredientOverviewBackgroundRefresh("revalidate_fallback");
+        const backgroundRefreshPending = ensureIngredientOverviewBackgroundRefresh();
         if (cached) {
           return res.json(withIngredientOverviewRefreshHint(cached, backgroundRefreshPending));
         }
@@ -974,8 +795,6 @@ export const registerScienceSidecarRoutes = (
         authority,
         res,
         buildMismatchPayload: deps.buildDecisionSupportDigestMismatchPayload,
-        route: "/api/scientific-background/v1",
-        barcode: normalizedBarcode.code,
       });
       if (!digestContractOk) return;
 
