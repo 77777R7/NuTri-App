@@ -146,7 +146,7 @@ test("product overview fallback extracts probiotic strain names from concatenate
     keyIngredients: [
       {
         name:
-          "Proprietary BlendContaining 1 billion live cultures†Lactobacillus acidophilusLactobacillus acidophilus",
+          "Proprietary BlendContaining 1 billion live cultures†Lactobacillus acidophilusLactobacillus acidophilusBifidobacterium bifidumStreptococcus thermophilus",
         dose: "175 mg",
       },
     ],
@@ -155,7 +155,7 @@ test("product overview fallback extracts probiotic strain names from concatenate
     allIngredientRows: [
       {
         name:
-          "Proprietary BlendContaining 1 billion live cultures†Lactobacillus acidophilusLactobacillus acidophilus",
+          "Proprietary BlendContaining 1 billion live cultures†Lactobacillus acidophilusLactobacillus acidophilusBifidobacterium bifidumStreptococcus thermophilus",
         dose: "175 mg",
       },
     ],
@@ -164,8 +164,10 @@ test("product overview fallback extracts probiotic strain names from concatenate
   const text = [result.lead, result.whatItIs, result.whyPeopleTakeIt].join(" ");
 
   assert.match(text, /Lactobacillus acidophilus/i);
+  assert.match(text, /Bifidobacterium bifidum/i);
   assert.doesNotMatch(text, /Proprietary BlendContaining/i);
   assert.doesNotMatch(text, /live cultures†/i);
+  assert.doesNotMatch(text, /acidophilus Lactobacillus|bifidum Streptococcus/i);
 });
 
 test("product overview fallback does not let supporting fish oil steal non-omega formula identity", () => {
