@@ -47,6 +47,11 @@ const listToEnglish = (rows: string[]): string => {
 
 const lower = (value?: string | null): string => normalizeText(value)?.toLowerCase() ?? "";
 const PRODUCT_OVERVIEW_BLEND_PATTERN = /\b(blend|complex|matrix|formula|proprietary)\b/i;
+const PRODUCT_OVERVIEW_OMEGA_PATTERN =
+  /\b(omega(?:\s|-)?3|fish oil|krill oil|cod liver oil|algae dha|algal dha|\bepa\b|\bdha\b)\b/i;
+const PRODUCT_OVERVIEW_PROBIOTIC_PATTERN =
+  /\b(probiotic|acidophilus|bifidobacter|bifidus|lactobacill|saccharomyces|spore\s+based|sbo probiotic|\bcfu\b)\b/i;
+const PRODUCT_OVERVIEW_VITAMIN_C_PATTERN = /\b(vitamin\s*c|ascorbic acid|ascorbate|ester-?c)\b/i;
 const PRODUCT_OVERVIEW_COMPANION_PATTERN =
   /\b(vitamin\s*b(?:3|6|12)\b|\bb(?:3|6|12)\b|niacin(?:amide)?\b|nicotinamide\b|pyridoxine\b|pyridoxal(?:\s|-)?5(?:\s|-)?phosphate\b|p-?5-?p\b|folate\b|folic acid\b|methylfolate\b|zinc\b|magnesium\b|calcium\b|selenium\b|copper\b|chromium\b|iodine\b)\b/i;
 
@@ -96,10 +101,21 @@ const buildOmegaFallback = (params: ProductOverviewFallbackInput): ProductOvervi
   const hasEpa = names.some((name) => /\bepa\b/i.test(name));
   const hasDha = names.some((name) => /\bdha\b/i.test(name));
   const namedBreakdown = [hasEpa ? "EPA" : null, hasDha ? "DHA" : null].filter(Boolean) as string[];
+  const sourceText = [
+    params.productName,
+    params.primaryIngredient,
+    ...params.keyIngredients.map((item) => item.name),
+  ].join(" ");
+  const sourceLine = (() => {
+    if (/\b(algae|algal)\b/i.test(sourceText)) return "algae-derived omega-3 fatty acids";
+    if (/\bkrill\b/i.test(sourceText)) return "krill-oil-derived omega-3 fatty acids";
+    if (/\b(fish|pollock|salmon|cod)\b/i.test(sourceText)) return "fish-oil-derived omega-3 fatty acids";
+    return "disclosed omega-3 fatty acid lines";
+  })();
 
   return {
     mode: "short",
-    lead: "This is an omega-3 supplement built around fish-oil-derived fatty acids.",
+    lead: `This is an omega-3 supplement built around ${sourceLine}.`,
     whatItIs: toSentence(
       namedBreakdown.length > 0
         ? `The label separates the source oil from specific omega-3 components such as ${listToEnglish(namedBreakdown)}, which are the lines shoppers usually compare most closely`
@@ -204,11 +220,24 @@ export const buildProductOverviewWhatIsItFallback = (
 ): ProductOverviewWhatIsIt => {
   const productName = lower(params.productName);
   const productTypeHint = lower(params.productTypeHint);
+  const primaryIngredient = lower(params.primaryIngredient);
   const ingredientTokens = dedupeStrings([
     params.primaryIngredient,
     ...params.keyIngredients.map((item) => item.name),
     ...(params.allIngredientRows ?? []).map((item) => item.name),
   ]).map((value) => value.toLowerCase());
+  const strongOmegaSignal =
+    PRODUCT_OVERVIEW_OMEGA_PATTERN.test(productName)
+    || PRODUCT_OVERVIEW_OMEGA_PATTERN.test(productTypeHint)
+    || PRODUCT_OVERVIEW_OMEGA_PATTERN.test(primaryIngredient);
+  const strongProbioticSignal =
+    PRODUCT_OVERVIEW_PROBIOTIC_PATTERN.test(productName)
+    || PRODUCT_OVERVIEW_PROBIOTIC_PATTERN.test(productTypeHint)
+    || PRODUCT_OVERVIEW_PROBIOTIC_PATTERN.test(primaryIngredient);
+  const strongVitaminCSignal =
+    PRODUCT_OVERVIEW_VITAMIN_C_PATTERN.test(productName)
+    || PRODUCT_OVERVIEW_VITAMIN_C_PATTERN.test(productTypeHint)
+    || PRODUCT_OVERVIEW_VITAMIN_C_PATTERN.test(primaryIngredient);
 
   if (params.isLikelySingleIngredient) {
     if (ingredientTokens.some((token) => token.includes("astaxanthin"))) {
@@ -225,30 +254,22 @@ export const buildProductOverviewWhatIsItFallback = (
       };
     }
 
-    if (ingredientTokens.some((token) => token.includes("vitamin c")) || productTypeHint.includes("vitamin c")) {
+    if (ingredientTokens.some((token) => PRODUCT_OVERVIEW_VITAMIN_C_PATTERN.test(token)) || strongVitaminCSignal) {
       return buildVitaminCFallback();
     }
 
     return buildSingleIngredientFallback(params);
   }
 
-  if (
-    productTypeHint.includes("omega-3")
-    || productName.includes("omega-3")
-    || ingredientTokens.some((token) => token.includes("epa") || token.includes("dha") || token.includes("fish oil"))
-  ) {
+  if (strongOmegaSignal) {
     return buildOmegaFallback(params);
   }
 
-  if (
-    productTypeHint.includes("probiotic")
-    || productName.includes("probiotic")
-    || ingredientTokens.some((token) => token.includes("probiotic") || token.includes("phage") || token.includes("blend"))
-  ) {
+  if (strongProbioticSignal) {
     return buildProbioticFallback();
   }
 
-  if (ingredientTokens.some((token) => token.includes("vitamin c")) || productTypeHint.includes("vitamin c")) {
+  if (strongVitaminCSignal && PRODUCT_OVERVIEW_VITAMIN_C_PATTERN.test(primaryIngredient)) {
     return buildVitaminCFallback();
   }
 
