@@ -57,6 +57,11 @@ const PRODUCT_OVERVIEW_PROBIOTIC_STRAIN_PATTERN =
 const PRODUCT_OVERVIEW_OPAQUE_PROBIOTIC_BLEND_PATTERN =
   /\b(proprietary\s+blend|probiotic\s+blend|probiotics?\s+blend|microflora\s+blend|blend|complex|matrix|formula)\b/i;
 const PRODUCT_OVERVIEW_VITAMIN_C_PATTERN = /\b(vitamin\s*c|ascorbic acid|ascorbate|ester-?c)\b/i;
+const PRODUCT_OVERVIEW_HYDRATION_PATTERN =
+  /\b(electrolyte|hydration|hydrate|carbion|sports?\s+drink|sweat\s+loss|rehydration)\b/i;
+const PRODUCT_OVERVIEW_CARBOHYDRATE_PATTERN =
+  /\b(carbohydrate|carbion|dextrose|maltodextrin|glucose|sugar|calories?)\b/i;
+const PRODUCT_OVERVIEW_STIMULANT_PATTERN = /\b(caffeine|green\s+tea|guarana|yerba\s+mate|stimulant)\b/i;
 const PRODUCT_OVERVIEW_COMPANION_PATTERN =
   /\b(vitamin\s*b(?:3|6|12)\b|\bb(?:3|6|12)\b|niacin(?:amide)?\b|nicotinamide\b|pyridoxine\b|pyridoxal(?:\s|-)?5(?:\s|-)?phosphate\b|p-?5-?p\b|folate\b|folic acid\b|methylfolate\b|zinc\b|magnesium\b|calcium\b|selenium\b|copper\b|chromium\b|iodine\b)\b/i;
 
@@ -250,6 +255,41 @@ const buildVitaminCFallback = (): ProductOverviewWhatIsIt => ({
     "People usually choose products like this for direct vitamin C supplementation and to compare the named ingredient, label clarity, and any supporting nutrients included in the formula.",
 });
 
+const buildHydrationFallback = (params: ProductOverviewFallbackInput): ProductOverviewWhatIsIt => {
+  const labelText = [
+    params.productName,
+    params.productTypeHint,
+    params.primaryIngredient,
+    ...params.keyIngredients.map((item) => `${item.name} ${item.dose ?? ""}`),
+    ...(params.allIngredientRows ?? []).map((item) => `${item.name} ${item.dose ?? ""}`),
+  ].join(" ");
+  const electrolyteNames = [
+    /\bsodium\b/i.test(labelText) ? "sodium" : null,
+    /\bpotassium\b/i.test(labelText) ? "potassium" : null,
+    /\bmagnesium\b/i.test(labelText) ? "magnesium" : null,
+  ].filter(Boolean) as string[];
+  const electrolytePhrase = electrolyteNames.length
+    ? `${listToEnglish(electrolyteNames)} balance`
+    : "the disclosed electrolyte balance";
+  const carbPhrase = PRODUCT_OVERVIEW_CARBOHYDRATE_PATTERN.test(labelText)
+    ? "with carbohydrate context on the label"
+    : "with any carbohydrate or sugar context checked separately";
+  const stimulantPhrase = PRODUCT_OVERVIEW_STIMULANT_PATTERN.test(labelText)
+    ? " and any stimulant or caffeine line"
+    : "";
+
+  return {
+    mode: "short",
+    lead: "This is a hydration and electrolyte formula rather than a single-ingredient supplement.",
+    whatItIs: toSentence(
+      `The useful comparison starts with ${electrolytePhrase}, serving size, and blend disclosure, ${carbPhrase}`
+    ),
+    whyPeopleTakeIt: toSentence(
+      `People usually compare products like this by sodium, potassium, magnesium, carbohydrate amount${stimulantPhrase}, and whether broad blends hide the exact formula split`
+    ),
+  };
+};
+
 const isCompanionOverviewIngredient = (value?: string | null): boolean =>
   PRODUCT_OVERVIEW_COMPANION_PATTERN.test(normalizeText(value) ?? "");
 
@@ -361,6 +401,10 @@ export const buildProductOverviewWhatIsItFallback = (
     PRODUCT_OVERVIEW_VITAMIN_C_PATTERN.test(productName)
     || PRODUCT_OVERVIEW_VITAMIN_C_PATTERN.test(productTypeHint)
     || PRODUCT_OVERVIEW_VITAMIN_C_PATTERN.test(primaryIngredient);
+  const strongHydrationSignal =
+    PRODUCT_OVERVIEW_HYDRATION_PATTERN.test(productName)
+    || PRODUCT_OVERVIEW_HYDRATION_PATTERN.test(productTypeHint)
+    || PRODUCT_OVERVIEW_HYDRATION_PATTERN.test(primaryIngredient);
 
   if (params.isLikelySingleIngredient) {
     if (ingredientTokens.some((token) => token.includes("astaxanthin"))) {
@@ -398,6 +442,10 @@ export const buildProductOverviewWhatIsItFallback = (
 
   if (strongVitaminCSignal && PRODUCT_OVERVIEW_VITAMIN_C_PATTERN.test(primaryIngredient)) {
     return buildVitaminCFallback();
+  }
+
+  if (strongHydrationSignal) {
+    return buildHydrationFallback(params);
   }
 
   const leadActiveMultiFallback = buildLeadActiveMultiIngredientFallback(params);

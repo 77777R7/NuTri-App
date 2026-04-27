@@ -70,6 +70,9 @@ test("product overview fallback does not call every blend probiotic-style", () =
       { name: "Phased-Delivery Energy Blend" },
       { name: "Sodium" },
       { name: "Potassium" },
+      { name: "Magnesium" },
+      { name: "Total Carbohydrate" },
+      { name: "Caffeine" },
     ],
     sourceContextHint: "iherb",
     chemicalFormHint: null,
@@ -77,13 +80,18 @@ test("product overview fallback does not call every blend probiotic-style", () =
       { name: "Phased-Delivery Energy Blend" },
       { name: "Sodium" },
       { name: "Potassium" },
+      { name: "Magnesium" },
+      { name: "Total Carbohydrate" },
+      { name: "Caffeine" },
     ],
     isLikelySingleIngredient: false,
   });
   const text = [result.lead, result.whatItIs, result.whyPeopleTakeIt].join(" ");
 
   assert.doesNotMatch(text, /probiotic-style/i);
-  assert.match(text, /electrolyte hydration|structured label|named components/i);
+  assert.match(text, /hydration and electrolyte formula/i);
+  assert.match(text, /sodium, potassium, and magnesium balance/i);
+  assert.match(text, /serving size|carbohydrate|caffeine|stimulant|blend disclosure/i);
 });
 
 test("product overview fallback explains opaque probiotic blends instead of treating proprietary blend as an ingredient", () => {

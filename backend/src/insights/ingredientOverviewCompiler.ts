@@ -93,7 +93,7 @@ const FACTUAL_RESTATEMENT_PATTERNS = [
   /\bit includes\b.{0,120}\bmg\b/i,
 ];
 const SPECIFIC_COMPARE_HINT_PATTERN =
-  /\b(per serving|stated amount|disclosed amount|breakdown|epa|dha|source|form|delivery|strain|cfu|blend total|item[- ]level|disclosure|label)\b/i;
+  /\b(per serving|serving size|stated amount|disclosed amount|breakdown|epa|dha|source|form|delivery|strain|cfu|blend total|item[- ]level|disclosure|label|sodium|potassium|magnesium|electrolyte|carbohydrate|caffeine|stimulant)\b/i;
 const ALGAL_OMEGA_SOURCE_PATTERN =
   /\balgal(?:\b|\s+oil)\b|\balgae\b|\bschizochytrium\b|\bplant\s+based\s+omega\s*-?\s*3\b/i;
 const FLAX_OMEGA_SOURCE_PATTERN =
@@ -107,6 +107,12 @@ const PROBIOTIC_STRAIN_NAME_PATTERN =
   /\b(?:Lactobacillus|Bifidobacterium|Saccharomyces|Bacillus|Streptococcus|Lactococcus)\s+[a-z][a-z-]+(?:\s+(?=[A-Z0-9-]*[0-9-])[A-Z0-9-]{2,})?/gi;
 const FIBER_BLEND_CONTEXT_PATTERN =
   /\b(?:fiber|fibre|psyllium|inulin|prebiotic|colon|regularity|soluble\s+fiber|dietary\s+fiber)\b/i;
+const HYDRATION_BLEND_CONTEXT_PATTERN =
+  /\b(?:electrolyte|electrolytes|hydration|hydrate|carbion|sports?\s+drink|sweat\s+loss|rehydration)\b/i;
+const HYDRATION_CARBOHYDRATE_CONTEXT_PATTERN =
+  /\b(?:carbohydrate|carbion|dextrose|maltodextrin|glucose|sugar|calories?)\b/i;
+const HYDRATION_STIMULANT_CONTEXT_PATTERN =
+  /\b(?:caffeine|green\s+tea|guarana|yerba\s+mate|stimulant)\b/i;
 
 const normalizeText = (value: string | null | undefined): string =>
   String(value ?? "")
@@ -191,6 +197,10 @@ const extractProbioticStrainNames = (value: string | null | undefined): string[]
 const buildBlendDisclosureDetails = (context: IngredientScienceContext): {
   isProbioticLike: boolean;
   isFiberLike: boolean;
+  isHydrationLike: boolean;
+  hydrationElectrolytes: string[];
+  hasCarbContext: boolean;
+  hasStimulantContext: boolean;
   namedStrains: string[];
   hasCfuHint: boolean;
 } => {
@@ -204,9 +214,18 @@ const buildBlendDisclosureDetails = (context: IngredientScienceContext): {
     ...context.coIngredients.flatMap((row) => [row.name, row.dose]),
   ].map((value) => normalizeText(value));
   const haystack = sources.join(" ");
+  const hydrationElectrolytes = [
+    /\bsodium\b/i.test(haystack) ? "sodium" : null,
+    /\bpotassium\b/i.test(haystack) ? "potassium" : null,
+    /\bmagnesium\b/i.test(haystack) ? "magnesium" : null,
+  ].filter(Boolean) as string[];
   return {
     isProbioticLike: PROBIOTIC_CONTEXT_PATTERN.test(haystack),
     isFiberLike: FIBER_BLEND_CONTEXT_PATTERN.test(haystack),
+    isHydrationLike: HYDRATION_BLEND_CONTEXT_PATTERN.test(haystack),
+    hydrationElectrolytes,
+    hasCarbContext: HYDRATION_CARBOHYDRATE_CONTEXT_PATTERN.test(haystack),
+    hasStimulantContext: HYDRATION_STIMULANT_CONTEXT_PATTERN.test(haystack),
     namedStrains: dedupeNames(sources.flatMap((value) => extractProbioticStrainNames(value))).slice(0, 3),
     hasCfuHint: /\bCFU\b|colony\s+forming|live cultures?/i.test(haystack),
   };
@@ -400,6 +419,9 @@ const buildTitleLineFallback = (context: IngredientScienceContext): string | nul
   if (context.ingredientFamily === "probiotic_or_blend") {
     const anchorName = normalizeText(context.anchorIngredient?.name);
     const titleContext = `${anchorName} ${context.productName}`;
+    if (HYDRATION_BLEND_CONTEXT_PATTERN.test(titleContext)) {
+      return "Hydration formula blend";
+    }
     if (PROBIOTIC_CONTEXT_PATTERN.test(titleContext) && /proprietary\s+blend|blendcontaining|live cultures?/i.test(anchorName)) {
       return "Probiotic blend";
     }
@@ -534,6 +556,27 @@ const buildBlendAnchorFallback = (context: IngredientScienceContext): Ingredient
     titleLine === "Formula blend" ? "This formula blend" : `The ${titleLine} line`;
   const disclosureDetails = buildBlendDisclosureDetails(context);
   const usesProbioticCopy = disclosureDetails.isProbioticLike;
+
+  if (disclosureDetails.isHydrationLike) {
+    const hydrationLeadLine =
+      titleLine === "Hydration formula blend" ? "This hydration formula blend" : leadLine;
+    const electrolytePhrase = disclosureDetails.hydrationElectrolytes.length
+      ? `${joinNames(disclosureDetails.hydrationElectrolytes)} balance`
+      : "the disclosed electrolyte balance";
+    const carbPhrase = disclosureDetails.hasCarbContext
+      ? "carbohydrate or sugar context"
+      : "whether carbohydrate or sugar context is disclosed";
+    const stimulantPhrase = disclosureDetails.hasStimulantContext
+      ? "the caffeine or stimulant line"
+      : "whether any caffeine or stimulant line is present";
+    return {
+      mode: "blend_anchor",
+      titleLine,
+      paragraph1: `${hydrationLeadLine} is best read as a hydration-formula disclosure line, not as one stand-alone active.`,
+      paragraph2: `For hydration products, ${electrolytePhrase}, serving size, and ${carbPhrase} are more useful than the blend headline alone.`,
+      compareHint: `When comparing hydration products, check sodium, potassium, magnesium, serving size, carbohydrate or sugar context, ${stimulantPhrase}, and whether broad blends hide exact amounts.`,
+    };
+  }
 
   if (context.ingredientFamily === "probiotic_or_blend") {
     if (usesProbioticCopy) {
