@@ -60,8 +60,10 @@ const cleanOverviewDisplayName = (value?: string | null): string | null => {
   const normalized = normalizeText(value);
   if (!normalized) return null;
   const cleaned = normalized
+    .replace(/^Regenerative Organic Certified\s+/i, "")
     .replace(/\*+/g, "")
     .replace(/\s*\([^)]{1,120}\)/g, "")
+    .replace(/[()]/g, "")
     .replace(/\b\d+\s*:\s*\d+\s+extract\b/gi, "extract")
     .replace(/\s+equivalent to\b.*$/i, "")
     .replace(/\s+standardized to\b.*$/i, "")
@@ -217,11 +219,15 @@ const buildLeadActiveMultiIngredientFallback = (
   const supportingActives = otherIngredients
     .filter((name) => !isCompanionOverviewIngredient(name))
     .map((name) => cleanOverviewDisplayName(name))
+    .filter((name) => name?.toLowerCase() !== leadActive.toLowerCase())
+    .filter((name, index, rows) => rows.findIndex((row) => row?.toLowerCase() === name?.toLowerCase()) === index)
     .filter(Boolean)
     .slice(0, 3) as string[];
   const companionNutrients = otherIngredients
     .filter((name) => isCompanionOverviewIngredient(name))
     .map((name) => cleanOverviewDisplayName(name))
+    .filter((name) => name?.toLowerCase() !== leadActive.toLowerCase())
+    .filter((name, index, rows) => rows.findIndex((row) => row?.toLowerCase() === name?.toLowerCase()) === index)
     .filter(Boolean)
     .slice(0, 2) as string[];
 
