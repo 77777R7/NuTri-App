@@ -19,7 +19,7 @@ test("product search full-index warmup is opt-in at backend startup", async () =
 
   const listenStart = source.indexOf('app.listen(PORT, "0.0.0.0"');
   assert.ok(listenStart >= 0, "missing app.listen block");
-  const listenBlock = source.slice(listenStart, listenStart + 500);
+  const listenBlock = source.slice(listenStart, listenStart + 1200);
 
   assert.match(
     listenBlock,

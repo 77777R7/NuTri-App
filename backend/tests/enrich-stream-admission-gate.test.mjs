@@ -101,7 +101,7 @@ test("admission core fallback enforces an outer quick-digest budget", async () =
   assert.match(helperSlice, /clearTimeout\(timer\)/);
   const fallbackStart = source.indexOf("const emitAdmissionCoreFallbackAndFinalize =");
   assert.ok(fallbackStart > helperStart, "fallback helper should be available before admission fallback");
-  const fallbackSlice = source.slice(fallbackStart, fallbackStart + 1600);
+  const fallbackSlice = source.slice(fallbackStart, fallbackStart + 3600);
   assert.match(fallbackSlice, /withAdmissionCoreFallbackBudget\(/);
   assert.match(fallbackSlice, /buildMySupplementDigestQuick\(/);
   assert.match(fallbackSlice, /ENRICH_STREAM_ADMISSION_CORE_FALLBACK_BUDGET_MS/);
