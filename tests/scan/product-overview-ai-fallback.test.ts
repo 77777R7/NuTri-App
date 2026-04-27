@@ -300,6 +300,52 @@ test("product overview fallback does not let companion vitamin C override a zinc
   assert.match(text, /Zinc-led/i);
 });
 
+test("product overview fallback does not let companion vitamin C override an iron-led formula", () => {
+  const result = buildProductOverviewWhatIsItFallback({
+    productName: "Iron with Vitamin C, Thiamin, and Copper",
+    brandName: "Bariatric Advantage",
+    productTypeHint: "Iron",
+    primaryIngredient: "Iron with Vitamin C",
+    keyIngredients: [{ name: "Iron with Vitamin C" }],
+    sourceContextHint: "iherb",
+    chemicalFormHint: null,
+    allIngredientRows: [{ name: "Iron with Vitamin C" }],
+    isLikelySingleIngredient: false,
+  });
+  const text = [result.lead, result.whatItIs, result.whyPeopleTakeIt].join(" ");
+
+  assert.doesNotMatch(text, /vitamin C supplement built around/i);
+  assert.match(text, /Iron with Vitamin C-led iron formula/i);
+});
+
+test("product overview fallback ignores broad digestion categories for liver-focused milk thistle formulas", () => {
+  const result = buildProductOverviewWhatIsItFallback({
+    productName: "Liver Health with Milk Thistle, Turmeric",
+    brandName: "Webber Naturals",
+    productTypeHint: "Probiotics & Digestion",
+    primaryIngredient: "Milk Thistle Extract (Silybum marianum) (seed) (60% silymarin)",
+    keyIngredients: [
+      { name: "Milk Thistle Extract (Silybum marianum) (seed) (60% silymarin)" },
+      { name: "Curcuminoids (Curcuma longa) (rhizome)" },
+      { name: "Schisandra Powder (Schisandra chinensis) (fruit)" },
+      { name: "Alpha-Lipoic Acid" },
+    ],
+    sourceContextHint: "official_or_brand",
+    chemicalFormHint: null,
+    allIngredientRows: [
+      { name: "Milk Thistle Extract (Silybum marianum) (seed) (60% silymarin)" },
+      { name: "Curcuminoids (Curcuma longa) (rhizome)" },
+      { name: "Schisandra Powder (Schisandra chinensis) (fruit)" },
+      { name: "Alpha-Lipoic Acid" },
+    ],
+    isLikelySingleIngredient: false,
+  });
+  const text = [result.lead, result.whatItIs, result.whyPeopleTakeIt].join(" ");
+
+  assert.match(result.lead, /Milk thistle seed extract-led liver-focused formula/i);
+  assert.doesNotMatch(text, /probiotics? & digestion/i);
+});
+
 test("product overview fallback avoids brand-like product type hints and long extract tails", () => {
   const result = buildProductOverviewWhatIsItFallback({
     productName: "Adrenal Chill - Men",

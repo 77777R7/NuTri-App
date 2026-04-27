@@ -66,6 +66,10 @@ const PRODUCT_OVERVIEW_NON_VITAMIN_C_ANCHOR_PATTERN =
 const PRODUCT_OVERVIEW_CARBOHYDRATE_PATTERN =
   /\b(carbohydrate|carbion|dextrose|maltodextrin|glucose|sugar|calories?)\b/i;
 const PRODUCT_OVERVIEW_STIMULANT_PATTERN = /\b(caffeine|green\s+tea|guarana|yerba\s+mate|stimulant)\b/i;
+const PRODUCT_OVERVIEW_DIGESTION_CATEGORY_PATTERN =
+  /\b(probiotics?\s*&\s*digestion|probiotics?|digestion|digestive)\b/i;
+const PRODUCT_OVERVIEW_DIGESTIVE_ACTIVE_PATTERN =
+  /\b(probiotic|acidophilus|bifidobacter|lactobacill|saccharomyces|\bcfu\b|enzyme|digestive|papaya|papain|bromelain|amylase|lipase|protease)\b/i;
 const PRODUCT_OVERVIEW_COMPANION_PATTERN =
   /\b(vitamin\s*b(?:3|6|12)\b|\bb(?:3|6|12)\b|niacin(?:amide)?\b|nicotinamide\b|pyridoxine\b|pyridoxal(?:\s|-)?5(?:\s|-)?phosphate\b|p-?5-?p\b|folate\b|folic acid\b|methylfolate\b|zinc\b|magnesium\b|calcium\b|selenium\b|copper\b|chromium\b|iodine\b)\b/i;
 const PRODUCT_OVERVIEW_MILK_THISTLE_PATTERN =
@@ -149,6 +153,29 @@ const normalizeFormulaTypeHint = (
   if (/\bformula\b$/.test(hint)) return hint;
   if (/\bsupplement\b$/.test(hint)) return hint;
   return `${hint} formula`;
+};
+
+const normalizeLeadActiveFormulaTypeHint = (
+  params: ProductOverviewFallbackInput,
+  leadActive: string,
+): string => {
+  const contextText = [
+    params.productName,
+    params.productTypeHint,
+    leadActive,
+    ...params.keyIngredients.map((item) => item.name),
+  ].join(" ");
+  if (/\bliver\b/i.test(params.productName) || PRODUCT_OVERVIEW_MILK_THISTLE_PATTERN.test(contextText)) {
+    return "liver-focused formula";
+  }
+  const hint = normalizeFormulaTypeHint(params);
+  if (
+    PRODUCT_OVERVIEW_DIGESTION_CATEGORY_PATTERN.test(hint)
+    && !PRODUCT_OVERVIEW_DIGESTIVE_ACTIVE_PATTERN.test(contextText)
+  ) {
+    return "multi-ingredient formula";
+  }
+  return hint;
 };
 
 const buildSingleIngredientFallback = (params: ProductOverviewFallbackInput): ProductOverviewWhatIsIt => {
@@ -310,7 +337,7 @@ const buildLeadActiveMultiIngredientFallback = (
     return null;
   }
 
-  const productTypeHint = normalizeFormulaTypeHint(params);
+  const productTypeHint = normalizeLeadActiveFormulaTypeHint(params, leadActive);
   const allNamedIngredients = dedupeStrings([
     ...params.keyIngredients.map((item) => item.name),
     ...(params.allIngredientRows ?? []).map((item) => item.name),
@@ -462,7 +489,7 @@ export const buildProductOverviewWhatIsItFallback = (
     return buildProbioticFallback(params);
   }
 
-  if (strongVitaminCSignal && PRODUCT_OVERVIEW_VITAMIN_C_PATTERN.test(primaryIngredient)) {
+  if (strongVitaminCSignal && PRODUCT_OVERVIEW_VITAMIN_C_PATTERN.test(primaryIngredient) && !textHasNonVitaminCAnchor) {
     return buildVitaminCFallback();
   }
 
