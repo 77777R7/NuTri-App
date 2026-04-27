@@ -169,6 +169,7 @@ test("product overview fallback avoids brand-like product type hints and long ex
   assert.doesNotMatch(text, /equivalent to 3600mg|standardized to 5\.0%/i);
   assert.match(result.lead, /Ashwagandha/i);
   assert.match(result.lead, /multi-ingredient formula/i);
+  assert.doesNotMatch(result.whatItIs, /such as[^.]*KSM-66 Ashwagandha extract/i);
 });
 
 test("product overview fallback avoids marketing detox and duplicate formula wording", () => {
@@ -198,4 +199,30 @@ test("product overview fallback avoids marketing detox and duplicate formula wor
   assert.match(liver.lead, /liver-focused formula/i);
   assert.doesNotMatch(glucosamine.lead, /formula formula/i);
   assert.match(glucosamine.lead, /glucosamine chondroitin formula/i);
+});
+
+test("product overview fallback removes dangling parentheses from cleaned active names", () => {
+  const result = buildProductOverviewWhatIsItFallback({
+    productName: "Active Multi Drink Mix",
+    brandName: "CanPrev",
+    productTypeHint: "CanPrev",
+    primaryIngredient: "Choline (as Choline L(+) Bitartrate) (VitaCholine)****",
+    keyIngredients: [
+      { name: "Choline (as Choline L(+) Bitartrate) (VitaCholine)****" },
+      { name: "Inositol (inositol hexanicotinate)" },
+      { name: "Magnesium" },
+    ],
+    sourceContextHint: "official_or_brand",
+    chemicalFormHint: null,
+    allIngredientRows: [
+      { name: "Choline (as Choline L(+) Bitartrate) (VitaCholine)****" },
+      { name: "Inositol (inositol hexanicotinate)" },
+      { name: "Magnesium" },
+    ],
+    isLikelySingleIngredient: false,
+  });
+  const text = [result.lead, result.whatItIs, result.whyPeopleTakeIt].join(" ");
+
+  assert.match(result.lead, /Choline Bitartrate-led multi-ingredient formula/i);
+  assert.doesNotMatch(text, /Bitartrate\)|\(\)/i);
 });
