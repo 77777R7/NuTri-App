@@ -127,6 +127,8 @@ const HARD_BLEND_LIKE_PATTERN = /\b(proprietary|blend|matrix|formula)\b/i;
 const SOFT_BLEND_LIKE_PATTERN = /\bcomplex\b/i;
 const MINERAL_FORM_COMPLEX_PATTERN =
   /\b(?:magnesium|calcium|zinc|iron|copper|selenium|chromium|manganese|molybdenum|boron|potassium)\b.*\b(?:glycinate|bis[\s-]?glycinate|chelate|citrate|malate|oxide|selenite|selenomethionine|chloride)\b.*\bcomplex\b/i;
+const GLUCOSAMINE_JOINT_FORMULA_TITLE_PATTERN =
+  /\b(?:glucosamine|chondroitin|cartilage|joint|arthri[\s-]*flex|arthri)\b/i;
 const OMEGA3_TOTAL_PATTERN = /\btotal\b.*\bomega\s*-?\s*3\b|\bomega\s*-?\s*3\b.*\btotal\b/i;
 const OMEGA3_SOURCE_PATTERN = /\bfish\s*oil\b|\bkrill\s*oil\b|\balgal\s*oil\b|\boil\s*concentrate\b/i;
 const OMEGA3_BREAKDOWN_PATTERN = /\bepa\b|\bdha\b|eicosapentaenoic|docosahexaenoic/i;
@@ -899,6 +901,9 @@ const pickPrimaryActiveRowIndex = (
   const hasCalMagZincStackTitle = hasCalciumMagnesiumZincStackTitle(productName);
   const hasExplicitMagnesiumRow = hasExplicitFamilyRow(rows, families, "magnesium");
   const hasZincRow = families.some((family) => family === "zinc");
+  const hasGlucosamineJointLead =
+    families.some((family) => family === "glucosamine") &&
+    GLUCOSAMINE_JOINT_FORMULA_TITLE_PATTERN.test(productName);
   const hasOmega3BreakdownOrAggregate = hasOmega3BreakdownOrAggregateRow(rows);
   if (titleStartsWithFamily("cla", productName)) {
     const claIndex = families.findIndex((family) => family === "cla");
@@ -911,6 +916,10 @@ const pickPrimaryActiveRowIndex = (
   if (titleStartsWithFamily("vitamin_c", productName)) {
     const vitaminCIndex = families.findIndex((family) => family === "vitamin_c");
     if (vitaminCIndex >= 0) return vitaminCIndex;
+  }
+  if (hasGlucosamineJointLead) {
+    const glucosamineIndex = families.findIndex((family) => family === "glucosamine");
+    if (glucosamineIndex >= 0) return glucosamineIndex;
   }
   let bestIndex = 0;
   let bestScore = Number.NEGATIVE_INFINITY;

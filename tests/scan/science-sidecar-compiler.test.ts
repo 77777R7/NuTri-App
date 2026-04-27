@@ -465,14 +465,21 @@ test('clear active anchors inside blend-containing formulas avoid generic groupe
   const glucosamineContext = buildIngredientScienceContext({
     digest: buildDigest({
       labelId: 'fixture-glucosamine-blend',
-      productName: '21st Century, Arthri-Flex Advantage + Vitamin D3',
+      productName: '21st Century, Arthri-Flex Advantage® + Vitamin D3',
       dosageForm: 'Tablet',
       actives: [
+        { name: 'Total Carbohydrate', amount: 1, unit: 'g' },
+        { name: 'Vitamin C (as Calcium Ascorbate)', amount: 100, unit: 'mg' },
         { name: 'Vitamin D3 (as Cholecalciferol)', amount: 50, unit: 'mcg' },
         { name: 'Magnesium (as Magnesium Glycinate)', amount: 200, unit: 'mg' },
         { name: 'Zinc (as Zinc Glycinate)', amount: 15, unit: 'mg' },
+        { name: 'Copper (as Copper Glycinate)', amount: 0.5, unit: 'mg' },
+        { name: 'Manganese (as Manganese Glycinate)', amount: 5, unit: 'mg' },
+        { name: 'Molybdenum (as Molybdenum Glycinate)', amount: 220, unit: 'mcg' },
+        { name: 'Potassium (as Potassium Chloride)', amount: 195, unit: 'mg' },
         { name: 'Glucosamine Sulfate • 2KCI', amount: 1500, unit: 'mg' },
         { name: 'MSM (Methylsulfonylmethane)', amount: 1500, unit: 'mg' },
+        { name: 'Hyaluronic Acid (as Sodium Hyaluronate)', amount: 80, unit: 'mg' },
         {
           name: 'Proprietary BlendPremium Chicken Sternum Type II Collagen (naturally occurring Chondroitin Sulfate), Hyaluronic Acid (as Sodium Hyaluronate), Boron Glycinate, Boswellia serrata Extract',
           amount: 1045,
@@ -505,9 +512,10 @@ test('clear active anchors inside blend-containing formulas avoid generic groupe
   assert.match(zincText, /Zinc stays as the main named active|amount|form/i);
 
   assert.equal(glucosamineOverview.source, 'fallback');
+  assert.match(glucosamineContext.anchorIngredient?.name ?? '', /Glucosamine Sulfate/i);
   assert.match(glucosamineOverview.ingredientOverview.titleLine ?? '', /Glucosamine Sulfate/i);
   assert.match(glucosamineText, /clearest lead active|blend-containing formula|proprietary blend totals/i);
-  assert.doesNotMatch(glucosamineText, /Vitamin D3 .*grouped formula line|fully itemized ingredient list/i);
+  assert.doesNotMatch(glucosamineText, /Vitamin D3 stays as the main named active|Vitamin D3 .*grouped formula line|fully itemized ingredient list/i);
 });
 
 test('scientific background repairs template-style research prose into family-specific copy', async () => {
