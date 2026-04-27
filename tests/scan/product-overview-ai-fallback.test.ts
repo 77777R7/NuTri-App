@@ -60,3 +60,78 @@ test("product overview fallback avoids policy-trigger words in formula weighting
   assert.doesNotMatch(text, /\btreats?\b|\btreating\b|\bprevents?\b|\bcur(?:e|ing)\b/i);
   assert.match(text, /equally central|compare/i);
 });
+
+test("product overview fallback does not call every blend probiotic-style", () => {
+  const result = buildProductOverviewWhatIsItFallback({
+    productName: "CARBION+ With Electrolytes",
+    productTypeHint: "electrolyte hydration",
+    primaryIngredient: "Phased-Delivery Energy Blend",
+    keyIngredients: [
+      { name: "Phased-Delivery Energy Blend" },
+      { name: "Sodium" },
+      { name: "Potassium" },
+    ],
+    sourceContextHint: "iherb",
+    chemicalFormHint: null,
+    allIngredientRows: [
+      { name: "Phased-Delivery Energy Blend" },
+      { name: "Sodium" },
+      { name: "Potassium" },
+    ],
+    isLikelySingleIngredient: false,
+  });
+  const text = [result.lead, result.whatItIs, result.whyPeopleTakeIt].join(" ");
+
+  assert.doesNotMatch(text, /probiotic-style/i);
+  assert.match(text, /electrolyte hydration|structured label|named components/i);
+});
+
+test("product overview fallback does not let supporting fish oil steal non-omega formula identity", () => {
+  const result = buildProductOverviewWhatIsItFallback({
+    productName: "Adrenal Chill - Men",
+    productTypeHint: "ashwagandha blend",
+    primaryIngredient: "Ashwagandha Extract",
+    keyIngredients: [
+      { name: "Ashwagandha Extract" },
+      { name: "Fish Oil" },
+      { name: "Magnesium" },
+    ],
+    sourceContextHint: "official_or_brand",
+    chemicalFormHint: null,
+    allIngredientRows: [
+      { name: "Ashwagandha Extract" },
+      { name: "Fish Oil" },
+      { name: "Magnesium" },
+    ],
+    isLikelySingleIngredient: false,
+  });
+  const text = [result.lead, result.whatItIs, result.whyPeopleTakeIt].join(" ");
+
+  assert.doesNotMatch(text, /omega-3 supplement/i);
+  assert.match(text, /Ashwagandha Extract-led/i);
+});
+
+test("product overview fallback does not let companion vitamin C override a zinc-led formula", () => {
+  const result = buildProductOverviewWhatIsItFallback({
+    productName: "ACES + Zinc & Copper",
+    productTypeHint: "zinc and antioxidant formula",
+    primaryIngredient: "Zinc",
+    keyIngredients: [
+      { name: "Zinc" },
+      { name: "Vitamin C" },
+      { name: "Copper" },
+    ],
+    sourceContextHint: "official_or_brand",
+    chemicalFormHint: null,
+    allIngredientRows: [
+      { name: "Zinc" },
+      { name: "Vitamin C" },
+      { name: "Copper" },
+    ],
+    isLikelySingleIngredient: false,
+  });
+  const text = [result.lead, result.whatItIs, result.whyPeopleTakeIt].join(" ");
+
+  assert.doesNotMatch(text, /vitamin C supplement built around/i);
+  assert.match(text, /Zinc-led/i);
+});
