@@ -101,6 +101,12 @@ const FLAX_OMEGA_SOURCE_PATTERN =
 const KRILL_OMEGA_SOURCE_PATTERN = /\bkrill\s+oil\b/i;
 const SALMON_OMEGA_SOURCE_PATTERN = /\bsalmon\s+oil\b/i;
 const FISH_OMEGA_SOURCE_PATTERN = /\bfish\s+oil\b|\bsalmon\s+oil\b|\boil\s+concentrate\b/i;
+const PROBIOTIC_CONTEXT_PATTERN =
+  /\b(?:probiotic|probiotics|acidophilus|lactobacill\w*|bifidobacter\w*|saccharomyces|bacillus|cfu|live cultures?|flora|microbiome|biotic)\b/i;
+const PROBIOTIC_STRAIN_NAME_PATTERN =
+  /\b(?:Lactobacillus|Bifidobacterium|Saccharomyces|Bacillus|Streptococcus|Lactococcus)\s+[a-z][a-z-]+(?:\s+(?=[A-Z0-9-]*[0-9-])[A-Z0-9-]{2,})?/gi;
+const FIBER_BLEND_CONTEXT_PATTERN =
+  /\b(?:fiber|fibre|psyllium|inulin|prebiotic|colon|regularity|soluble\s+fiber|dietary\s+fiber)\b/i;
 
 const normalizeText = (value: string | null | undefined): string =>
   String(value ?? "")
@@ -157,6 +163,53 @@ const joinNames = (values: string[]): string => {
   if (values.length <= 1) return values[0] ?? "";
   if (values.length === 2) return `${values[0]} and ${values[1]}`;
   return `${values.slice(0, -1).join(", ")}, and ${values[values.length - 1]}`;
+};
+
+const dedupeNames = (values: string[]): string[] => {
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const value of values) {
+    const normalized = normalizeText(value);
+    if (!normalized) continue;
+    const key = normalized.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(normalized);
+  }
+  return out;
+};
+
+const extractProbioticStrainNames = (value: string | null | undefined): string[] => {
+  const normalized = normalizeText(value);
+  if (!normalized) return [];
+  const strainReadable = normalized
+    .replace(/([a-z])(?=(?:Lactobacillus|Bifidobacterium|Saccharomyces|Streptococcus|Lactococcus)\b)/gi, "$1 ")
+    .replace(/\s{2,}/g, " ");
+  return dedupeNames(strainReadable.match(PROBIOTIC_STRAIN_NAME_PATTERN) ?? []);
+};
+
+const buildBlendDisclosureDetails = (context: IngredientScienceContext): {
+  isProbioticLike: boolean;
+  isFiberLike: boolean;
+  namedStrains: string[];
+  hasCfuHint: boolean;
+} => {
+  const sources = [
+    context.productName,
+    context.anchorIngredient?.name,
+    context.anchorIngredient?.dose,
+    ...context.ingredientRows.flatMap((row) => [row.name, row.dose]),
+    ...context.ingredientSnapshotNames,
+    ...context.ingredientDescriptors.flatMap((descriptor) => [descriptor.name, descriptor.dose]),
+    ...context.coIngredients.flatMap((row) => [row.name, row.dose]),
+  ].map((value) => normalizeText(value));
+  const haystack = sources.join(" ");
+  return {
+    isProbioticLike: PROBIOTIC_CONTEXT_PATTERN.test(haystack),
+    isFiberLike: FIBER_BLEND_CONTEXT_PATTERN.test(haystack),
+    namedStrains: dedupeNames(sources.flatMap((value) => extractProbioticStrainNames(value))).slice(0, 3),
+    hasCfuHint: /\bCFU\b|colony\s+forming|live cultures?/i.test(haystack),
+  };
 };
 
 const buildFormulaRoleSummary = (context: IngredientScienceContext): string | null => {
@@ -345,8 +398,16 @@ const buildTitleLineFallback = (context: IngredientScienceContext): string | nul
     return resolveOmega3SourceCopy(context)?.titleLine ?? "Omega-3 formula";
   }
   if (context.ingredientFamily === "probiotic_or_blend") {
-    return isSpecificBlendAnchorName(context.anchorIngredient?.name) && context.anchorIngredient?.name
-      ? context.anchorIngredient.name
+    const anchorName = normalizeText(context.anchorIngredient?.name);
+    const titleContext = `${anchorName} ${context.productName}`;
+    if (PROBIOTIC_CONTEXT_PATTERN.test(titleContext) && /proprietary\s+blend|blendcontaining|live cultures?/i.test(anchorName)) {
+      return "Probiotic blend";
+    }
+    if (FIBER_BLEND_CONTEXT_PATTERN.test(titleContext) && /proprietary\s+blend|blendcontaining/i.test(anchorName)) {
+      return "Fiber blend";
+    }
+    return isSpecificBlendAnchorName(anchorName) && anchorName
+      ? anchorName
       : "Formula blend";
   }
   if (context.anchorIngredient?.name) return context.anchorIngredient.name;
@@ -471,21 +532,42 @@ const buildBlendAnchorFallback = (context: IngredientScienceContext): Ingredient
   const titleLine = buildTitleLineFallback(context) ?? "Formula blend";
   const leadLine =
     titleLine === "Formula blend" ? "This formula blend" : `The ${titleLine} line`;
-  const usesProbioticCopy =
-    /\b(?:probiotic|probiotics|acidophilus|lactobacillus|bifidobacterium|bacillus|cfu|flora|biotic)\b/i
-      .test(`${titleLine} ${context.productName}`);
+  const disclosureDetails = buildBlendDisclosureDetails(context);
+  const usesProbioticCopy = disclosureDetails.isProbioticLike;
 
   if (context.ingredientFamily === "probiotic_or_blend") {
+    if (usesProbioticCopy) {
+      const strainPhrase = disclosureDetails.namedStrains.length
+        ? ` This label points to named strains such as ${joinNames(disclosureDetails.namedStrains)}, which are more useful than the blend name alone.`
+        : "";
+      const cfuPhrase = disclosureDetails.hasCfuHint
+        ? "whether CFU is stated clearly per serving"
+        : "whether CFU per serving is disclosed";
+      return {
+        mode: "blend_anchor",
+        titleLine,
+        paragraph1: `${leadLine} is best read as a probiotic disclosure line, not as one fully itemized ingredient.`,
+        paragraph2: `The key comparison issue is whether the label names the strains and shows enough detail to connect the blend to a real formula structure.${strainPhrase}`,
+        compareHint: `When comparing probiotic products, check strain names, ${cfuPhrase}, serving size, storage notes, and whether the blend total hides the amount of each component.`,
+      };
+    }
+
+    if (disclosureDetails.isFiberLike) {
+      return {
+        mode: "blend_anchor",
+        titleLine,
+        paragraph1: `${leadLine} is best read as a fiber-formula disclosure line, not as one fully itemized active.`,
+        paragraph2: "A single proprietary blend total can show the formula category while still hiding which fiber or botanical components carry most of the label detail.",
+        compareHint: "When comparing fiber blends, check the named fiber source, dietary fiber amount, serving size, and whether each component has its own amount instead of only one blend total.",
+      };
+    }
+
     return {
       mode: "blend_anchor",
       titleLine,
       paragraph1: `${leadLine} is organized as a grouped formula line rather than a fully itemized ingredient list.`,
-      paragraph2: usesProbioticCopy
-        ? "That can describe the probiotic formula category at a glance, but it gives less precision about which strains or components are doing the work and in what amounts."
-        : "That can describe the formula category at a glance, but it gives less precision about which components are doing the work and in what amounts.",
-      compareHint: usesProbioticCopy
-        ? "When comparing products, look for strain names, item-level disclosure, and whether the label gives more than a single blend total."
-        : "When comparing products, look for item-level disclosure and whether the label gives more than a single blend total.",
+      paragraph2: "That can describe the formula category at a glance, but it gives less precision about which components are doing the work and in what amounts.",
+      compareHint: "When comparing products, look for item-level disclosure and whether the label gives more than a single blend total.",
     };
   }
 
