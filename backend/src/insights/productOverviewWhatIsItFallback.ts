@@ -52,6 +52,10 @@ const PRODUCT_OVERVIEW_OMEGA_PATTERN =
   /\b(omega(?:\s|-)?3|fish oil|krill oil|cod liver oil|algae dha|algal dha|\bepa\b|\bdha\b)\b/i;
 const PRODUCT_OVERVIEW_PROBIOTIC_PATTERN =
   /\b(probiotic|acidophilus|bifidobacter|bifidus|lactobacill|saccharomyces|spore\s+based|sbo probiotic|\bcfu\b)\b/i;
+const PRODUCT_OVERVIEW_PROBIOTIC_STRAIN_PATTERN =
+  /\b(lactobacill\w*|bifidobacter\w*|saccharomyces|bacillus|streptococcus|lactococcus|acidophilus|rhamnosus|plantarum|reuteri|casei|longum|breve|coagulans|bulgaricus|thermophilus|boulardii)\b/i;
+const PRODUCT_OVERVIEW_OPAQUE_PROBIOTIC_BLEND_PATTERN =
+  /\b(proprietary\s+blend|probiotic\s+blend|probiotics?\s+blend|microflora\s+blend|blend|complex|matrix|formula)\b/i;
 const PRODUCT_OVERVIEW_VITAMIN_C_PATTERN = /\b(vitamin\s*c|ascorbic acid|ascorbate|ester-?c)\b/i;
 const PRODUCT_OVERVIEW_COMPANION_PATTERN =
   /\b(vitamin\s*b(?:3|6|12)\b|\bb(?:3|6|12)\b|niacin(?:amide)?\b|nicotinamide\b|pyridoxine\b|pyridoxal(?:\s|-)?5(?:\s|-)?phosphate\b|p-?5-?p\b|folate\b|folic acid\b|methylfolate\b|zinc\b|magnesium\b|calcium\b|selenium\b|copper\b|chromium\b|iodine\b)\b/i;
@@ -178,14 +182,50 @@ const buildOmegaFallback = (params: ProductOverviewFallbackInput): ProductOvervi
   };
 };
 
-const buildProbioticFallback = (): ProductOverviewWhatIsIt => ({
-  mode: "short",
-  lead: "This is a probiotic-style supplement organized around a blend-based formula.",
-  whatItIs:
-    "The label combines named blend lines rather than a fully itemized ingredient list, so the product is best understood as a formula with partially disclosed components.",
-  whyPeopleTakeIt:
-    "People usually choose products like this to compare how clearly the blend is described and whether the label gives enough detail to judge what is inside.",
-});
+const buildProbioticFallback = (params: ProductOverviewFallbackInput): ProductOverviewWhatIsIt => {
+  const names = dedupeStrings([
+    params.primaryIngredient,
+    ...params.keyIngredients.map((item) => item.name),
+    ...(params.allIngredientRows ?? []).map((item) => item.name),
+  ]);
+  const namedStrains = names
+    .filter((name) => PRODUCT_OVERVIEW_PROBIOTIC_STRAIN_PATTERN.test(name))
+    .map((name) => cleanOverviewDisplayName(name))
+    .filter(Boolean)
+    .slice(0, 3) as string[];
+  const hasOpaqueBlendLine = names.some((name) => PRODUCT_OVERVIEW_OPAQUE_PROBIOTIC_BLEND_PATTERN.test(name));
+  const labelText = [
+    params.productName,
+    params.productTypeHint,
+    params.primaryIngredient,
+    ...params.keyIngredients.map((item) => `${item.name} ${item.dose ?? ""}`),
+    ...(params.allIngredientRows ?? []).map((item) => `${item.name} ${item.dose ?? ""}`),
+  ].join(" ");
+  const hasCfuHint = /\bCFU\b|colony\s+forming/i.test(labelText);
+
+  const lead = namedStrains.length > 0
+    ? "This is a probiotic supplement where the named strain line is the main comparison point."
+    : "This is a probiotic supplement where the label transparency matters more than a broad blend name.";
+  const whatItIs = namedStrains.length > 0
+    ? toSentence(
+        `The label names probiotic components such as ${listToEnglish(namedStrains)}, which is more useful for comparison than a generic blend-only line`
+      )
+    : hasOpaqueBlendLine
+      ? "The label uses a broad or proprietary blend line, so it identifies the probiotic category but gives less strain-level detail than a fully itemized formula."
+      : "The label points to the probiotic category, so the useful comparison is whether it names the strains clearly rather than only describing the product in broad terms.";
+  const cfuPhrase = hasCfuHint
+    ? "whether CFU is stated clearly per serving"
+    : "whether CFU per serving is disclosed";
+
+  return {
+    mode: "short",
+    lead,
+    whatItIs,
+    whyPeopleTakeIt: toSentence(
+      `People usually compare probiotic products by strain names, ${cfuPhrase}, serving size, storage notes, and whether a blend hides the amount of each component`
+    ),
+  };
+};
 
 const buildVitaminCFallback = (): ProductOverviewWhatIsIt => ({
   mode: "rich",
@@ -323,6 +363,10 @@ export const buildProductOverviewWhatIsItFallback = (
       };
     }
 
+    if (strongProbioticSignal) {
+      return buildProbioticFallback(params);
+    }
+
     if (ingredientTokens.some((token) => PRODUCT_OVERVIEW_VITAMIN_C_PATTERN.test(token)) || strongVitaminCSignal) {
       return buildVitaminCFallback();
     }
@@ -335,7 +379,7 @@ export const buildProductOverviewWhatIsItFallback = (
   }
 
   if (strongProbioticSignal) {
-    return buildProbioticFallback();
+    return buildProbioticFallback(params);
   }
 
   if (strongVitaminCSignal && PRODUCT_OVERVIEW_VITAMIN_C_PATTERN.test(primaryIngredient)) {
