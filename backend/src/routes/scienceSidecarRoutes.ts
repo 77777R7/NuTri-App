@@ -94,6 +94,48 @@ const SCIENTIFIC_BACKGROUND_REFRESH_RETRY_AFTER_MS = 2_500;
 const SCIENTIFIC_BACKGROUND_REFRESH_FAILURE_COOLDOWN_MS = 45_000;
 const SCIENTIFIC_BACKGROUND_REFRESH_FAILURE_RETRY_LIMIT = 3;
 const SCIENTIFIC_BACKGROUND_REFRESH_MAX_CONCURRENCY = 2;
+const SCIENCE_SIDECAR_REFRESH_QUEUE_TOO_LONG_MS = 3_000;
+
+type ScienceSidecarRuntimeDiagnostics = {
+  fallbackReason?: string | null;
+  lastError?: string | null;
+  attemptCount?: number;
+  parseFailureCount?: number;
+  gateRejectCount?: number;
+  timeoutCount?: number;
+  errorCount?: number;
+  gateRejectReasons?: string[];
+};
+
+const buildLogHash = (value: string | null | undefined): string | null => {
+  if (!value) return null;
+  let hash = 2166136261;
+  for (let index = 0; index < value.length; index += 1) {
+    hash ^= value.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  return (hash >>> 0).toString(16).padStart(8, "0");
+};
+
+const logScienceSidecarRuntimeEvent = (
+  event: string,
+  details: Record<string, unknown>,
+): void => {
+  console.info(`[SCIENCE_SIDECAR_${event}]`, details);
+};
+
+const buildRefreshDiagnosticsLog = (
+  diagnostics: ScienceSidecarRuntimeDiagnostics,
+): Record<string, unknown> => ({
+  fallbackReason: diagnostics.fallbackReason ?? null,
+  lastError: diagnostics.lastError ?? null,
+  attemptCount: diagnostics.attemptCount ?? 0,
+  parseFailureCount: diagnostics.parseFailureCount ?? 0,
+  gateRejectCount: diagnostics.gateRejectCount ?? 0,
+  timeoutCount: diagnostics.timeoutCount ?? 0,
+  errorCount: diagnostics.errorCount ?? 0,
+  gateRejectReasons: diagnostics.gateRejectReasons ?? [],
+});
 
 type ScientificBackgroundSidecarResponse = {
   status: "ok";
@@ -511,6 +553,8 @@ const buildDeepseekJsonLlmFn = (params: {
 
 const validateDecisionSupportDigestContract = (
   params: {
+    route: "ingredient_overview" | "scientific_background";
+    barcode: string;
     parsedBody: {
       decisionDigest?: string | null;
       decisionInputsHash?: string | null;
@@ -525,6 +569,13 @@ const validateDecisionSupportDigestContract = (
     params.parsedBody.decisionDigest
     && params.parsedBody.decisionDigest !== params.authority.decisionSupport.digest
   ) {
+    logScienceSidecarRuntimeEvent("CACHE_KEY_MISMATCH", {
+      route: params.route,
+      barcode: params.barcode,
+      field: "decisionDigest",
+      requestedHash: buildLogHash(params.parsedBody.decisionDigest),
+      actualHash: buildLogHash(params.authority.decisionSupport.digest),
+    });
     params.res.status(409).json(
       params.buildMismatchPayload(
         params.authority.decisionSupport.digest,
@@ -538,6 +589,13 @@ const validateDecisionSupportDigestContract = (
     params.parsedBody.decisionInputsHash
     && params.parsedBody.decisionInputsHash !== params.authority.decisionSupport.decisionInputsHash
   ) {
+    logScienceSidecarRuntimeEvent("CACHE_KEY_MISMATCH", {
+      route: params.route,
+      barcode: params.barcode,
+      field: "decisionInputsHash",
+      requestedHash: buildLogHash(params.parsedBody.decisionInputsHash),
+      actualHash: buildLogHash(params.authority.decisionSupport.decisionInputsHash),
+    });
     params.res.status(409).json(
       params.buildMismatchPayload(
         params.authority.decisionSupport.digest,
@@ -551,6 +609,13 @@ const validateDecisionSupportDigestContract = (
     params.parsedBody.personalizationScopeHash
     && params.parsedBody.personalizationScopeHash !== params.authority.personalizationScopeHash
   ) {
+    logScienceSidecarRuntimeEvent("CACHE_KEY_MISMATCH", {
+      route: params.route,
+      barcode: params.barcode,
+      field: "personalizationScopeHash",
+      requestedHash: buildLogHash(params.parsedBody.personalizationScopeHash),
+      actualHash: buildLogHash(params.authority.personalizationScopeHash),
+    });
     params.res.status(409).json(
       params.buildMismatchPayload(
         params.authority.decisionSupport.digest,
@@ -607,6 +672,8 @@ export const registerScienceSidecarRoutes = (
 
       const authority = await deps.buildDecisionSupportAuthorityBundle(normalizedBarcode, { req });
       const digestContractOk = validateDecisionSupportDigestContract({
+        route: "ingredient_overview",
+        barcode: normalizedBarcode.code,
         parsedBody,
         authority,
         res,
@@ -628,10 +695,50 @@ export const registerScienceSidecarRoutes = (
         && authority.ingredientScienceContext.ingredientFamily !== "green_tea_extract";
       const ensureIngredientOverviewBackgroundRefresh = (): boolean => {
         if (!shouldUseLiveWriter || !deepseekKey) return false;
-        if (ingredientOverviewSidecarBackgroundRefresh.has(cacheKey)) return true;
-        if (isIngredientOverviewBackgroundRefreshCoolingDown(cacheKey, now())) return false;
+        const refreshLogContext = {
+          route: "ingredient_overview",
+          barcode: normalizedBarcode.code,
+          family: authority.ingredientScienceContext.ingredientFamily,
+          formulaMode: authority.ingredientScienceContext.formulaMode,
+          productArchetype: authority.ingredientScienceContext.productArchetype,
+          sourceType: authority.ingredientScienceContext.sourceType,
+          sourceTier: authority.ingredientScienceContext.ingredientSourceTier,
+          cacheKeyHash: buildLogHash(cacheKey),
+          timeoutMs: executionProfile.backgroundRefreshTimeoutMs,
+          maxRetries: executionProfile.backgroundRefreshMaxRetries ?? SCIENCE_SIDECAR_MAX_RETRIES,
+          maxTokens: executionProfile.maxTokens,
+        };
+        if (ingredientOverviewSidecarBackgroundRefresh.has(cacheKey)) {
+          logScienceSidecarRuntimeEvent("BACKGROUND_REFRESH_DEDUPED", {
+            ...refreshLogContext,
+            activeRefreshCount: activeIngredientOverviewRefreshCount,
+            queuedRefreshCount: queuedIngredientOverviewRefreshTasks.length,
+          });
+          return true;
+        }
+        if (isIngredientOverviewBackgroundRefreshCoolingDown(cacheKey, now())) {
+          logScienceSidecarRuntimeEvent("BACKGROUND_REFRESH_SKIPPED", {
+            ...refreshLogContext,
+            reason: "cooldown",
+          });
+          return false;
+        }
 
+        const queuedAt = now();
+        logScienceSidecarRuntimeEvent("BACKGROUND_REFRESH_SCHEDULED", {
+          ...refreshLogContext,
+          activeRefreshCount: activeIngredientOverviewRefreshCount,
+          queuedRefreshCount: queuedIngredientOverviewRefreshTasks.length,
+        });
         const backgroundRefresh = runWithIngredientOverviewRefreshSlot(async (): Promise<void> => {
+          const queueWaitMs = Math.max(0, now() - queuedAt);
+          logScienceSidecarRuntimeEvent("BACKGROUND_REFRESH_START", {
+            ...refreshLogContext,
+            queueWaitMs,
+            queuedTooLong: queueWaitMs >= SCIENCE_SIDECAR_REFRESH_QUEUE_TOO_LONG_MS,
+            activeRefreshCount: activeIngredientOverviewRefreshCount,
+            queuedRefreshCount: queuedIngredientOverviewRefreshTasks.length,
+          });
           const backgroundLlmFn = buildDeepseekJsonLlmFn({
             deepseekKey,
             deepseekModel,
@@ -662,10 +769,18 @@ export const registerScienceSidecarRoutes = (
           };
 
           if (refreshed.source !== "api") {
+            logScienceSidecarRuntimeEvent("BACKGROUND_REFRESH_FALLBACK", {
+              ...refreshLogContext,
+              ...buildRefreshDiagnosticsLog(refreshed.diagnostics),
+            });
             if (shouldCoolDownIngredientOverviewBackgroundRefresh(cacheKey)) {
               markIngredientOverviewBackgroundRefreshCooldown(cacheKey, now());
             }
           } else {
+            logScienceSidecarRuntimeEvent("BACKGROUND_REFRESH_SUCCESS", {
+              ...refreshLogContext,
+              ...buildRefreshDiagnosticsLog(refreshed.diagnostics),
+            });
             ingredientOverviewSidecarBackgroundRefreshCooldownUntil.delete(cacheKey);
             ingredientOverviewSidecarBackgroundRefreshFailureCount.delete(cacheKey);
           }
@@ -681,11 +796,16 @@ export const registerScienceSidecarRoutes = (
             deps.captureException(error, {
               route: "/api/ingredient-overview/v1",
               phase: "background_refresh",
-              cacheKey,
+              cacheKeyHash: buildLogHash(cacheKey),
+            });
+            logScienceSidecarRuntimeEvent("BACKGROUND_REFRESH_ERROR", {
+              ...refreshLogContext,
+              error: error instanceof Error ? error.message : String(error),
             });
           })
           .finally(() => {
             ingredientOverviewSidecarBackgroundRefresh.delete(cacheKey);
+            logScienceSidecarRuntimeEvent("BACKGROUND_REFRESH_FINISH", refreshLogContext);
           });
 
         ingredientOverviewSidecarBackgroundRefresh.set(cacheKey, backgroundRefresh);
@@ -791,6 +911,8 @@ export const registerScienceSidecarRoutes = (
 
       const authority = await deps.buildDecisionSupportAuthorityBundle(normalizedBarcode, { req });
       const digestContractOk = validateDecisionSupportDigestContract({
+        route: "scientific_background",
+        barcode: normalizedBarcode.code,
         parsedBody,
         authority,
         res,
@@ -827,10 +949,52 @@ export const registerScienceSidecarRoutes = (
       const deepseekModel = resolveDeepSeekModel(env.DEEPSEEK_MODEL);
       const ensureScientificBackgroundBackgroundRefresh = (): boolean => {
         if (!executionProfile.preferLiveWriter || !deepseekKey) return false;
-        if (scientificBackgroundSidecarBackgroundRefresh.has(cacheKey)) return true;
-        if (isScientificBackgroundBackgroundRefreshCoolingDown(cacheKey, now())) return false;
+        const refreshLogContext = {
+          route: "scientific_background",
+          barcode: normalizedBarcode.code,
+          family: plan.family,
+          mode: plan.mode,
+          selectedIngredientKey: selectedDescriptor.key,
+          formulaMode: authority.ingredientScienceContext.formulaMode,
+          productArchetype: authority.ingredientScienceContext.productArchetype,
+          sourceType: authority.ingredientScienceContext.sourceType,
+          sourceTier: authority.ingredientScienceContext.ingredientSourceTier,
+          cacheKeyHash: buildLogHash(cacheKey),
+          timeoutMs: executionProfile.backgroundRefreshTimeoutMs,
+          maxRetries: executionProfile.backgroundRefreshMaxRetries ?? SCIENCE_SIDECAR_MAX_RETRIES,
+          maxTokens: executionProfile.maxTokens,
+        };
+        if (scientificBackgroundSidecarBackgroundRefresh.has(cacheKey)) {
+          logScienceSidecarRuntimeEvent("BACKGROUND_REFRESH_DEDUPED", {
+            ...refreshLogContext,
+            activeRefreshCount: activeScientificBackgroundRefreshCount,
+            queuedRefreshCount: queuedScientificBackgroundRefreshTasks.length,
+          });
+          return true;
+        }
+        if (isScientificBackgroundBackgroundRefreshCoolingDown(cacheKey, now())) {
+          logScienceSidecarRuntimeEvent("BACKGROUND_REFRESH_SKIPPED", {
+            ...refreshLogContext,
+            reason: "cooldown",
+          });
+          return false;
+        }
 
+        const queuedAt = now();
+        logScienceSidecarRuntimeEvent("BACKGROUND_REFRESH_SCHEDULED", {
+          ...refreshLogContext,
+          activeRefreshCount: activeScientificBackgroundRefreshCount,
+          queuedRefreshCount: queuedScientificBackgroundRefreshTasks.length,
+        });
         const backgroundRefresh = runWithScientificBackgroundRefreshSlot(async (): Promise<void> => {
+          const queueWaitMs = Math.max(0, now() - queuedAt);
+          logScienceSidecarRuntimeEvent("BACKGROUND_REFRESH_START", {
+            ...refreshLogContext,
+            queueWaitMs,
+            queuedTooLong: queueWaitMs >= SCIENCE_SIDECAR_REFRESH_QUEUE_TOO_LONG_MS,
+            activeRefreshCount: activeScientificBackgroundRefreshCount,
+            queuedRefreshCount: queuedScientificBackgroundRefreshTasks.length,
+          });
           const backgroundLlmFn = buildDeepseekJsonLlmFn({
             deepseekKey,
             deepseekModel,
@@ -861,6 +1025,10 @@ export const registerScienceSidecarRoutes = (
           };
 
           if (refreshed.source !== "api") {
+            logScienceSidecarRuntimeEvent("BACKGROUND_REFRESH_FALLBACK", {
+              ...refreshLogContext,
+              ...buildRefreshDiagnosticsLog(refreshed.diagnostics),
+            });
             const refreshFailureRetryLimit =
               plan.family === "magnesium"
                 || plan.family === "zinc"
@@ -885,6 +1053,10 @@ export const registerScienceSidecarRoutes = (
 
           scientificBackgroundSidecarBackgroundRefreshCooldownUntil.delete(cacheKey);
           scientificBackgroundSidecarBackgroundRefreshFailureCount.delete(cacheKey);
+          logScienceSidecarRuntimeEvent("BACKGROUND_REFRESH_SUCCESS", {
+            ...refreshLogContext,
+            ...buildRefreshDiagnosticsLog(refreshed.diagnostics),
+          });
           writeScientificBackgroundSidecarCache(
             cacheKey,
             refreshedPayload,
@@ -896,11 +1068,16 @@ export const registerScienceSidecarRoutes = (
             deps.captureException(error, {
               route: "/api/scientific-background/v1",
               phase: "background_refresh",
-              cacheKey,
+              cacheKeyHash: buildLogHash(cacheKey),
+            });
+            logScienceSidecarRuntimeEvent("BACKGROUND_REFRESH_ERROR", {
+              ...refreshLogContext,
+              error: error instanceof Error ? error.message : String(error),
             });
           })
           .finally(() => {
             scientificBackgroundSidecarBackgroundRefresh.delete(cacheKey);
+            logScienceSidecarRuntimeEvent("BACKGROUND_REFRESH_FINISH", refreshLogContext);
           });
 
         scientificBackgroundSidecarBackgroundRefresh.set(cacheKey, backgroundRefresh);
