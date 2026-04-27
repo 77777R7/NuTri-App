@@ -279,6 +279,7 @@ export const registerScanSidecarRoutes = (
 
     const fallbackOverviewAi = buildProductOverviewWhatIsItFallback({
       productName: parsedBody.productName,
+      brandName: parsedBody.brandName ?? null,
       productTypeHint: parsedBody.productTypeHint ?? null,
       primaryIngredient: parsedBody.primaryIngredient ?? null,
       keyIngredients: parsedBody.keyIngredients,

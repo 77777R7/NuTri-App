@@ -89,6 +89,7 @@ test("product overview fallback does not call every blend probiotic-style", () =
 test("product overview fallback does not let supporting fish oil steal non-omega formula identity", () => {
   const result = buildProductOverviewWhatIsItFallback({
     productName: "Adrenal Chill - Men",
+    brandName: "CanPrev",
     productTypeHint: "ashwagandha blend",
     primaryIngredient: "Ashwagandha Extract",
     keyIngredients: [
@@ -114,6 +115,7 @@ test("product overview fallback does not let supporting fish oil steal non-omega
 test("product overview fallback does not let companion vitamin C override a zinc-led formula", () => {
   const result = buildProductOverviewWhatIsItFallback({
     productName: "ACES + Zinc & Copper",
+    brandName: "CanPrev",
     productTypeHint: "zinc and antioxidant formula",
     primaryIngredient: "Zinc",
     keyIngredients: [
@@ -134,4 +136,66 @@ test("product overview fallback does not let companion vitamin C override a zinc
 
   assert.doesNotMatch(text, /vitamin C supplement built around/i);
   assert.match(text, /Zinc-led/i);
+});
+
+test("product overview fallback avoids brand-like product type hints and long extract tails", () => {
+  const result = buildProductOverviewWhatIsItFallback({
+    productName: "Adrenal Chill - Men",
+    brandName: "CanPrev",
+    productTypeHint: "CanPrev",
+    primaryIngredient:
+      "KSM-66 Ashwagandha (root, Withania somnifera) 12:1 extract equivalent to 3600mg of dry root, standardized to 5.0% withanolides*",
+    keyIngredients: [
+      {
+        name:
+          "KSM-66 Ashwagandha (root, Withania somnifera) 12:1 extract equivalent to 3600mg of dry root, standardized to 5.0% withanolides*",
+      },
+      { name: "Magnesium" },
+    ],
+    sourceContextHint: "official_or_brand",
+    chemicalFormHint: null,
+    allIngredientRows: [
+      {
+        name:
+          "KSM-66 Ashwagandha (root, Withania somnifera) 12:1 extract equivalent to 3600mg of dry root, standardized to 5.0% withanolides*",
+      },
+      { name: "Magnesium" },
+    ],
+    isLikelySingleIngredient: false,
+  });
+  const text = [result.lead, result.whatItIs, result.whyPeopleTakeIt].join(" ");
+
+  assert.doesNotMatch(text, /canprev formula/i);
+  assert.doesNotMatch(text, /equivalent to 3600mg|standardized to 5\.0%/i);
+  assert.match(result.lead, /Ashwagandha/i);
+  assert.match(result.lead, /multi-ingredient formula/i);
+});
+
+test("product overview fallback avoids marketing detox and duplicate formula wording", () => {
+  const liver = buildProductOverviewWhatIsItFallback({
+    productName: "Liver Cleanse",
+    brandName: "Ancient Nutrition",
+    productTypeHint: "Liver Detox",
+    primaryIngredient: "Milk Thistle Seed Extract",
+    keyIngredients: [{ name: "Milk Thistle Seed Extract" }, { name: "Reishi Mushroom" }],
+    sourceContextHint: "iherb",
+    chemicalFormHint: null,
+    allIngredientRows: [{ name: "Milk Thistle Seed Extract" }, { name: "Reishi Mushroom" }],
+    isLikelySingleIngredient: false,
+  });
+  const glucosamine = buildProductOverviewWhatIsItFallback({
+    productName: "Glucosamine Chondroitin Formula",
+    productTypeHint: "Glucosamine Chondroitin Formulas",
+    primaryIngredient: "Glucosamine Sulfate",
+    keyIngredients: [{ name: "Glucosamine Sulfate" }, { name: "Chondroitin Sulfate" }],
+    sourceContextHint: "iherb",
+    chemicalFormHint: null,
+    allIngredientRows: [{ name: "Glucosamine Sulfate" }, { name: "Chondroitin Sulfate" }],
+    isLikelySingleIngredient: false,
+  });
+
+  assert.doesNotMatch([liver.lead, liver.whatItIs, liver.whyPeopleTakeIt].join(" "), /\bdetox\b/i);
+  assert.match(liver.lead, /liver-focused formula/i);
+  assert.doesNotMatch(glucosamine.lead, /formula formula/i);
+  assert.match(glucosamine.lead, /glucosamine chondroitin formula/i);
 });

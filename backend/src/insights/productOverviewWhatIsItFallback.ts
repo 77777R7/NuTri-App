@@ -2,6 +2,7 @@ import type { ProductOverviewWhatIsIt } from "../deepseek.js";
 
 type ProductOverviewFallbackInput = {
   productName: string;
+  brandName?: string | null;
   productTypeHint: string | null;
   primaryIngredient: string | null;
   keyIngredients: Array<{ name: string; dose?: string | null }>;
@@ -55,6 +56,21 @@ const PRODUCT_OVERVIEW_VITAMIN_C_PATTERN = /\b(vitamin\s*c|ascorbic acid|ascorba
 const PRODUCT_OVERVIEW_COMPANION_PATTERN =
   /\b(vitamin\s*b(?:3|6|12)\b|\bb(?:3|6|12)\b|niacin(?:amide)?\b|nicotinamide\b|pyridoxine\b|pyridoxal(?:\s|-)?5(?:\s|-)?phosphate\b|p-?5-?p\b|folate\b|folic acid\b|methylfolate\b|zinc\b|magnesium\b|calcium\b|selenium\b|copper\b|chromium\b|iodine\b)\b/i;
 
+const cleanOverviewDisplayName = (value?: string | null): string | null => {
+  const normalized = normalizeText(value);
+  if (!normalized) return null;
+  const cleaned = normalized
+    .replace(/\*+/g, "")
+    .replace(/\s*\([^)]{1,120}\)/g, "")
+    .replace(/\b\d+\s*:\s*\d+\s+extract\b/gi, "extract")
+    .replace(/\s+equivalent to\b.*$/i, "")
+    .replace(/\s+standardized to\b.*$/i, "")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+  if (cleaned.length <= 96) return cleaned;
+  return `${cleaned.slice(0, 92).replace(/\s+\S*$/, "").trim()}...`;
+};
+
 const stripSupportClaims = (value?: string | null): string | null => {
   const normalized = normalizeText(value);
   if (!normalized) return null;
@@ -62,16 +78,51 @@ const stripSupportClaims = (value?: string | null): string | null => {
     .replace(/\bsupport supplement\b/i, "supplement")
     .replace(/\bsupplement supplement\b/i, "supplement")
     .replace(/\bfor support\b/i, "")
+    .replace(/\bliver\s+detox\b/i, "liver-focused")
+    .replace(/\bdetox\b/i, "focused")
+    .replace(/\bcleanse\b/i, "formula")
     .trim();
 };
 
+const normalizeProductTypeHint = (
+  params: ProductOverviewFallbackInput,
+  fallback: string,
+): string => {
+  let normalized = stripSupportClaims(params.productTypeHint);
+  const brand = normalizeText(params.brandName);
+  if (normalized && brand && normalized.toLowerCase() === brand.toLowerCase()) {
+    normalized = null;
+  }
+  if (!normalized) return fallback;
+  normalized = normalized
+    .replace(/\bpowders\b/i, "powder")
+    .replace(/\bformulas\b/i, "formula")
+    .replace(/\bproducts\b/i, "product")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+  const lowerNormalized = normalized.toLowerCase();
+  if (["product", "products", "supplement", "supplements"].includes(lowerNormalized)) {
+    return fallback;
+  }
+  return normalized;
+};
+
+const normalizeFormulaTypeHint = (
+  params: ProductOverviewFallbackInput,
+  fallback = "multi-ingredient formula",
+): string => {
+  const hint = normalizeProductTypeHint(params, fallback).toLowerCase();
+  if (/\bformula\b$/.test(hint)) return hint;
+  if (/\bsupplement\b$/.test(hint)) return hint;
+  return `${hint} formula`;
+};
+
 const buildSingleIngredientFallback = (params: ProductOverviewFallbackInput): ProductOverviewWhatIsIt => {
-  const primaryIngredient = normalizeText(params.primaryIngredient)
-    ?? normalizeText(params.keyIngredients[0]?.name)
-    ?? normalizeText(params.productName)
+  const primaryIngredient = cleanOverviewDisplayName(params.primaryIngredient)
+    ?? cleanOverviewDisplayName(params.keyIngredients[0]?.name)
+    ?? cleanOverviewDisplayName(params.productName)
     ?? "This product";
-  const productTypeHint = stripSupportClaims(params.productTypeHint)
-    ?? "single-ingredient supplement";
+  const productTypeHint = normalizeProductTypeHint(params, "single-ingredient supplement");
   const sourceContextHint = normalizeText(params.sourceContextHint);
   const chemicalFormHint = normalizeText(params.chemicalFormHint);
 
@@ -149,21 +200,30 @@ const isCompanionOverviewIngredient = (value?: string | null): boolean =>
 const buildLeadActiveMultiIngredientFallback = (
   params: ProductOverviewFallbackInput,
 ): ProductOverviewWhatIsIt | null => {
-  const leadActive = normalizeText(params.primaryIngredient);
+  const rawLeadActive = normalizeText(params.primaryIngredient);
+  const leadActive = cleanOverviewDisplayName(params.primaryIngredient);
   if (!leadActive || leadActive === "Multi-ingredient formula" || PRODUCT_OVERVIEW_BLEND_PATTERN.test(leadActive)) {
     return null;
   }
 
-  const productTypeHint = stripSupportClaims(params.productTypeHint) ?? "multi-ingredient supplement";
+  const productTypeHint = normalizeFormulaTypeHint(params);
   const allNamedIngredients = dedupeStrings([
     ...params.keyIngredients.map((item) => item.name),
     ...(params.allIngredientRows ?? []).map((item) => item.name),
   ]);
   const otherIngredients = allNamedIngredients.filter(
-    (name) => name.toLowerCase() !== leadActive.toLowerCase(),
+    (name) => name.toLowerCase() !== (rawLeadActive ?? leadActive).toLowerCase(),
   );
-  const supportingActives = otherIngredients.filter((name) => !isCompanionOverviewIngredient(name)).slice(0, 3);
-  const companionNutrients = otherIngredients.filter((name) => isCompanionOverviewIngredient(name)).slice(0, 2);
+  const supportingActives = otherIngredients
+    .filter((name) => !isCompanionOverviewIngredient(name))
+    .map((name) => cleanOverviewDisplayName(name))
+    .filter(Boolean)
+    .slice(0, 3) as string[];
+  const companionNutrients = otherIngredients
+    .filter((name) => isCompanionOverviewIngredient(name))
+    .map((name) => cleanOverviewDisplayName(name))
+    .filter(Boolean)
+    .slice(0, 2) as string[];
 
   const whatItIs = (() => {
     if (supportingActives.length > 0 && companionNutrients.length > 0) {
@@ -188,7 +248,7 @@ const buildLeadActiveMultiIngredientFallback = (
 
   return {
     mode: "rich",
-    lead: toSentence(`This is a ${leadActive}-led ${productTypeHint.toLowerCase()} formula`),
+    lead: toSentence(`This is a ${leadActive}-led ${productTypeHint}`),
     whatItIs,
     whyPeopleTakeIt: toSentence(
       `People usually choose products like this to compare whether ${leadActive} stays clearly disclosed as the main active and how the supporting lines are arranged around it`
@@ -197,11 +257,14 @@ const buildLeadActiveMultiIngredientFallback = (
 };
 
 const buildGenericMultiIngredientFallback = (params: ProductOverviewFallbackInput): ProductOverviewWhatIsIt => {
-  const productTypeHint = stripSupportClaims(params.productTypeHint) ?? "multi-ingredient supplement";
+  const productTypeHint = normalizeProductTypeHint(params, "multi-ingredient supplement");
   const names = dedupeStrings([
     ...params.keyIngredients.map((item) => item.name),
     ...(params.allIngredientRows ?? []).map((item) => item.name),
-  ]).slice(0, 3);
+  ])
+    .map((name) => cleanOverviewDisplayName(name))
+    .filter(Boolean)
+    .slice(0, 3) as string[];
   const namedContext = names.length > 0 ? ` with named components such as ${listToEnglish(names)}` : "";
 
   return {
