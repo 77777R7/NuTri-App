@@ -290,6 +290,83 @@ test('scientific background uses phage-specific label-context fallback for phage
   assert.doesNotMatch(result.scientificBackground.sections[0]?.summary ?? '', /strain/i);
 });
 
+test('probiotic proprietary blend fallbacks expose strain and CFU comparison cues without raw blend text', async () => {
+  const probioticContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-probiotic-raw-blend',
+      productName: '21st Century, Acidophilus Probiotic Blend, 100 Capsules',
+      dosageForm: 'Capsule',
+      actives: [
+        {
+          name:
+            'Proprietary BlendContaining 1 billion live cultures†Lactobacillus acidophilusLactobacillus acidophilusBifidobacterium bifidumStreptococcus thermophilus',
+          amount: 175,
+          unit: 'mg',
+        },
+      ],
+    }),
+    overlayClaims: null,
+  });
+
+  const overview = await compileIngredientOverviewAsync(probioticContext);
+  const science = await compileScientificBackgroundAsync(
+    probioticContext,
+    probioticContext.anchorIngredient?.name ?? 'Proprietary Blend',
+  );
+  const overviewText = [
+    overview.ingredientOverview.titleLine,
+    overview.ingredientOverview.paragraph1,
+    overview.ingredientOverview.paragraph2,
+    overview.ingredientOverview.compareHint,
+  ].join(' ');
+  const scienceText = science.scientificBackground.sections
+    .flatMap((section) => [section.summary, ...section.bullets, section.evidenceRead, section.shopperMeaning ?? ''])
+    .join(' ');
+
+  assert.equal(overview.source, 'fallback');
+  assert.match(overview.ingredientOverview.titleLine ?? '', /Probiotic blend/i);
+  assert.match(overviewText, /Lactobacillus acidophilus/i);
+  assert.match(overviewText, /CFU|storage notes|blend total/i);
+  assert.match(scienceText, /strain-level|strain names|CFU per serving/i);
+  assert.match(scienceText, /Lactobacillus acidophilus/i);
+  assert.doesNotMatch(`${overviewText} ${scienceText}`, /Proprietary BlendContaining|live cultures†|acidophilus Lactobacillus|bifidum Streptococcus/i);
+});
+
+test('fiber proprietary blend fallbacks point shoppers to fiber source and itemized amounts', async () => {
+  const fiberContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-fiber-proprietary-blend',
+      productName: '21st Century, Colon Cleanse Fiber Blend, 120 Vegetarian Capsules',
+      dosageForm: 'Capsule',
+      actives: [
+        { name: 'Proprietary Blend', amount: 2000, unit: 'mg' },
+      ],
+    }),
+    overlayClaims: null,
+  });
+
+  const overview = await compileIngredientOverviewAsync(fiberContext);
+  const science = await compileScientificBackgroundAsync(
+    fiberContext,
+    fiberContext.anchorIngredient?.name ?? 'Proprietary Blend',
+  );
+  const overviewText = [
+    overview.ingredientOverview.titleLine,
+    overview.ingredientOverview.paragraph1,
+    overview.ingredientOverview.paragraph2,
+    overview.ingredientOverview.compareHint,
+  ].join(' ');
+  const scienceText = science.scientificBackground.sections
+    .flatMap((section) => [section.summary, ...section.bullets, section.evidenceRead, section.shopperMeaning ?? ''])
+    .join(' ');
+
+  assert.equal(overview.source, 'fallback');
+  assert.match(overview.ingredientOverview.titleLine ?? '', /Fiber blend/i);
+  assert.match(overviewText, /fiber source|dietary fiber amount|serving size/i);
+  assert.match(scienceText, /fiber-formula context|named fiber source|proprietary total/i);
+  assert.doesNotMatch(`${overviewText} ${scienceText}`, /\btreats?\b|\bprevents?\b|\bcures?\b|\bguarantees?\b/i);
+});
+
 test('scientific background repairs template-style research prose into family-specific copy', async () => {
   const digest = buildDigest({
     labelId: 'fixture-epa',

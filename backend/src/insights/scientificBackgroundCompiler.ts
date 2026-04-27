@@ -537,6 +537,13 @@ const buildNarrativeLabel = (plan: ScientificBackgroundPlan): string => {
   }
   if (
     plan.mode === "label_context_mode" &&
+    plan.family === "probiotic_or_blend" &&
+    /\b(?:blend|probiotic|acidophilus|lactobacill\w*|bifidobacter\w*|cfu|live cultures?)\b/i.test(plan.selectedLabel)
+  ) {
+    return "This probiotic blend line";
+  }
+  if (
+    plan.mode === "label_context_mode" &&
     /\bblend\b/i.test(plan.selectedLabel)
   ) {
     return "This blend line";
@@ -4186,6 +4193,46 @@ const joinReadableList = (values: string[]): string => {
   return `${values.slice(0, -1).join(", ")}, and ${values[values.length - 1]}`;
 };
 
+const SCIENCE_PROBIOTIC_CONTEXT_PATTERN =
+  /\b(?:probiotic|probiotics|acidophilus|lactobacill\w*|bifidobacter\w*|saccharomyces|bacillus|cfu|live cultures?|flora|microbiome|biotic)\b/i;
+const SCIENCE_PROBIOTIC_STRAIN_NAME_PATTERN =
+  /\b(?:Lactobacillus|Bifidobacterium|Saccharomyces|Bacillus|Streptococcus|Lactococcus)\s+[a-z][a-z-]+(?:\s+(?=[A-Z0-9-]*[0-9-])[A-Z0-9-]{2,})?/gi;
+const SCIENCE_FIBER_BLEND_CONTEXT_PATTERN =
+  /\b(?:fiber|fibre|psyllium|inulin|prebiotic|colon|regularity|soluble\s+fiber|dietary\s+fiber)\b/i;
+
+const extractScientificProbioticStrainNames = (value: string | null | undefined): string[] => {
+  const normalized = normalizeText(value);
+  if (!normalized) return [];
+  const strainReadable = normalized
+    .replace(/([a-z])(?=(?:Lactobacillus|Bifidobacterium|Saccharomyces|Streptococcus|Lactococcus)\b)/gi, "$1 ")
+    .replace(/\s{2,}/g, " ");
+  return dedupe(strainReadable.match(SCIENCE_PROBIOTIC_STRAIN_NAME_PATTERN) ?? []);
+};
+
+const buildScientificBlendDisclosureDetails = (context?: IngredientScienceContext): {
+  isProbioticLike: boolean;
+  isFiberLike: boolean;
+  namedStrains: string[];
+  hasCfuHint: boolean;
+} => {
+  const sources = [
+    context?.productName,
+    context?.anchorIngredient?.name,
+    context?.anchorIngredient?.dose,
+    ...(context?.ingredientRows ?? []).flatMap((row) => [row.name, row.dose]),
+    ...(context?.ingredientSnapshotNames ?? []),
+    ...(context?.ingredientDescriptors ?? []).flatMap((descriptor) => [descriptor.name, descriptor.dose]),
+    ...(context?.coIngredients ?? []).flatMap((row) => [row.name, row.dose]),
+  ].map((value) => normalizeText(value));
+  const haystack = sources.join(" ");
+  return {
+    isProbioticLike: SCIENCE_PROBIOTIC_CONTEXT_PATTERN.test(haystack),
+    isFiberLike: SCIENCE_FIBER_BLEND_CONTEXT_PATTERN.test(haystack),
+    namedStrains: dedupe(sources.flatMap((value) => extractScientificProbioticStrainNames(value))).slice(0, 3),
+    hasCfuHint: /\bCFU\b|colony\s+forming|live cultures?/i.test(haystack),
+  };
+};
+
 const normalizeWriterField = (value: unknown): string =>
   normalizeText(typeof value === "string" ? value : "");
 
@@ -4977,6 +5024,7 @@ const buildSectionFallback = (
       .slice(0, 2) ?? [];
   const relationshipStatement =
     context?.relationshipCandidates[0]?.safeStatement ?? null;
+  const blendDisclosureDetails = buildScientificBlendDisclosureDetails(context);
   switch (section.headingId) {
     case "antioxidant_activity":
       return {
@@ -6502,6 +6550,42 @@ const buildSectionFallback = (
             "This is primarily a disclosure and interpretation section rather than a stand-alone evidence summary.",
           shopperMeaning:
             "It helps the shopper understand why a broad phage blend line is useful as context but weaker for precise comparison.",
+        };
+      }
+      if (blendDisclosureDetails.isProbioticLike) {
+        const strainPhrase = blendDisclosureDetails.namedStrains.length
+          ? ` The useful research-matching cues are the named strains, including ${joinReadableList(blendDisclosureDetails.namedStrains)}, not the broad blend name by itself.`
+          : " The useful research-matching cue is whether the label names exact strains instead of stopping at a broad probiotic blend name.";
+        const cfuPhrase = blendDisclosureDetails.hasCfuHint
+          ? "CFU is stated clearly per serving"
+          : "CFU per serving is disclosed";
+        return {
+          heading: section.heading,
+          summary: `${narrativeLabel} gives probiotic category context, but research interpretation depends on whether the label gives strain-level and serving-level detail.${strainPhrase}`,
+          bullets: [
+            "Probiotic evidence is much easier to map when exact strain names are visible.",
+            `Check whether ${cfuPhrase}; category naming alone does not show how much meaningful probiotic material is present.`,
+            "A single blend amount can still hide how much of each strain or component is included.",
+          ],
+          evidenceRead:
+            "This is a strain-specificity and disclosure section, not a broad claim that every probiotic blend maps to the same evidence.",
+          shopperMeaning:
+            "Compare the strain list, CFU per serving, serving size, storage notes, and whether the blend total hides component-level amounts.",
+        };
+      }
+      if (blendDisclosureDetails.isFiberLike) {
+        return {
+          heading: section.heading,
+          summary: `${narrativeLabel} gives fiber-formula context, but a broad proprietary blend does not fully explain which fiber source or botanical component is carrying the comparison value.`,
+          bullets: [
+            "A blend line can show the formula category without naming which component matters most.",
+            "Dietary fiber amount, serving size, and named fiber source are more comparison-useful than the blend name alone.",
+            "A single blend total can make two labels look similar even when the component breakdown differs.",
+          ],
+          evidenceRead:
+            "This is a label-transparency section rather than evidence that the whole blend has one clean research identity.",
+          shopperMeaning:
+            "Compare the named fiber source, fiber amount per serving, serving size, and whether the blend is itemized beyond one proprietary total.",
         };
       }
       return {
