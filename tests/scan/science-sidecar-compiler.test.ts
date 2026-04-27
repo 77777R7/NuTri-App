@@ -146,7 +146,7 @@ test('scientific background falls back when the model writes ingredient identity
             summary: 'It has also been explored in exercise-related research.',
             bullets: ['Exercise performance research', 'Recovery-related research'],
             evidenceRead: 'Results are mixed.',
-            shopperMeaning: 'Treat this as a strong differentiator.',
+            shopperMeaning: 'Read this as a strong differentiator.',
           },
         ],
         closingNote: 'Use this as proof of broad performance benefits.',
@@ -677,7 +677,9 @@ test('scientific background removes broad physiological writer claims before ret
           evidenceRead:
             'This is comparison context, not proof that the product produces a blanket outcome.',
           shopperMeaning:
-            'When comparing CoQ10 products, use the form, amount, and label role before ranking broad benefit language.',
+            index === 0
+              ? 'If the label leans on broad wording, treat that as a narrow comparison lane.'
+              : 'When comparing CoQ10 products, use the form, amount, and label role before ranking broad benefit language.',
         })),
         closingNote:
           'This clinically proven antioxidant protection story is the main reason to choose the product.',
@@ -699,7 +701,7 @@ test('scientific background removes broad physiological writer claims before ret
   assert.equal(result.fallbackUsed, false);
   assert.doesNotMatch(
     text,
-    /\b(?:plays?\s+a\s+key\s+role|essential\s+for|antioxidant protection|clinically proven|treating|prevention|guaranteed outcome)\b/i,
+    /\b(?:plays?\s+a\s+key\s+role|essential\s+for|antioxidant protection|clinically proven|treat|treating|prevention|guaranteed outcome)\b/i,
   );
   assert.match(text, /compare|comparison|label|amount/i);
 });
@@ -879,7 +881,7 @@ test('scientific background accepts astaxanthin live-style output when shopper m
             evidenceRead:
               'This area shows the most inconsistent findings, with positive results often limited to specific exercise types or recovery markers.',
             shopperMeaning:
-              'Treat exercise positioning as a cautious secondary angle, not as the main reason to rank one astaxanthin product over another.',
+              'Read exercise positioning as a cautious secondary angle, not as the main reason to rank one astaxanthin product over another.',
           },
         ],
         closingNote:
@@ -1640,7 +1642,7 @@ test('scientific background accepts ashwagandha live-style output when stress co
             evidenceRead:
               'This is a secondary lane that is easier to overread than the main stress-related context.',
             shopperMeaning:
-              'Treat sleep or recovery framing as supporting context after you have already compared the main stress-oriented positioning and the exact extract line.',
+              'Read sleep or recovery framing as supporting context after you have already compared the main stress-oriented positioning and the exact extract line.',
           },
           {
             headingId: 'why_extract_identity_matters',
@@ -1784,7 +1786,7 @@ test('scientific background accepts green tea extract live-style output when cat
             evidenceRead:
               'This is a real but more interpretation-sensitive lane, so it should be read more cautiously than the tighter catechin-focused context.',
             shopperMeaning:
-              'Treat weight- or metabolism-oriented wording as a secondary layer after comparing the exact extract and catechin details on the label.',
+              'Read weight- or metabolism-oriented wording as a secondary layer after comparing the exact extract and catechin details on the label.',
           },
           {
             headingId: 'why_extract_concentration_matters',

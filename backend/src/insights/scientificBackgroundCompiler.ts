@@ -311,6 +311,7 @@ const SOFT_CLAIM_REPAIR_PATTERNS = [
   /\beasier on the stomach\b/i,
   /\bmaster antioxidant\b/i,
   /\bwell-known antioxidant\b/i,
+  /\btreat\b/i,
   /\bproof\b/i,
 ];
 
@@ -3732,7 +3733,7 @@ const buildPrompt = (params: {
       isOmega3Total(params.plan.selectedLabel)
     ) {
       return [
-        "Treat the selected item as a total-line explanation, not as a stand-alone fatty acid with its own full research card.",
+        "Read the selected item as a total-line explanation, not as a stand-alone fatty acid with its own full research card.",
         "Explain why shoppers should read the EPA and DHA rows after the total line.",
       ];
     }
@@ -3742,7 +3743,7 @@ const buildPrompt = (params: {
       isOmega3Source(params.plan.selectedLabel)
     ) {
       return [
-        "Treat the selected item as a source-line explanation, not as a substitute for the EPA and DHA breakdown.",
+        "Read the selected item as a source-line explanation, not as a substitute for the EPA and DHA breakdown.",
         "Explain that source identity and active breakdown play different roles on the label.",
       ];
     }
@@ -3823,7 +3824,7 @@ const buildPrompt = (params: {
     if (params.plan.family === "creatine") {
       return [
         "Keep creatine anchored to strength and high-intensity performance first, with recovery as a secondary lane.",
-        "Do not flatten every creatine label into generic gym-performance hype or treat every form as a universal upgrade over monohydrate.",
+        "Do not flatten every creatine label into generic gym-performance hype or read every form as a universal upgrade over monohydrate.",
         "Make comparison meaning practical by tying it to disclosed grams, exact form, and whether the formula stays simple or gets heavily blended.",
       ];
     }
@@ -3892,7 +3893,7 @@ const buildPrompt = (params: {
     if (params.plan.family === "electrolyte_hydration") {
       return [
         "Keep electrolyte products grounded in hydration context first, with exercise or sweat-loss framing as a narrower secondary lane.",
-        "Do not flatten every hydration label into sports-performance hype or treat the broad hydration headline as the whole product story.",
+        "Do not flatten every hydration label into sports-performance hype or read the broad hydration headline as the whole product story.",
         "Make shopper meaning practical by tying comparison to disclosed sodium, potassium, magnesium, sugar or carbohydrate context, and the rest of the label detail.",
       ];
     }
@@ -3934,7 +3935,7 @@ const buildPrompt = (params: {
     if (params.plan.family === "5htp") {
       return [
         "Keep 5-HTP anchored to serotonin-precursor and formula-positioning context rather than generic mood or sleep promises.",
-        "Treat glycine, taurine, inositol, or B-vitamin lines as context that can change formula interpretation without replacing 5-HTP as the main active.",
+        "Read glycine, taurine, inositol, or B-vitamin lines as context that can change formula interpretation without replacing 5-HTP as the main active.",
         "Use shopper-facing language that explains why the main active line and the disclosed amount still do most of the comparison work.",
       ];
     }
@@ -3960,7 +3961,7 @@ const buildPrompt = (params: {
     if (params.plan.family === "vitamin_a") {
       return [
         "Keep vitamin A grounded in intake, status, form, and dose-aware interpretation rather than broad vision, immune, or skin filler.",
-        "Do not treat retinol, retinyl ester, and beta-carotene labels as interchangeable or universally superior.",
+        "Do not read retinol, retinyl ester, and beta-carotene labels as interchangeable or universally superior.",
         "Make shopper meaning practical by tying comparison to exact form disclosure, amount, and whether the formula is simple or heavily paired.",
       ];
     }
@@ -4011,7 +4012,7 @@ const buildPrompt = (params: {
     if (params.plan.family === "vitamin_d") {
       return [
         "Keep bone and calcium-regulation context as the clearest lane for vitamin D.",
-        "Treat broader immune or whole-health language as wider and less tidy than the core evidence lane.",
+        "Read broader immune or whole-health language as wider and less tidy than the core evidence lane.",
         "Use shopper-facing language that explains why broad packaging can outrun the cleanest comparison signal.",
         "Make dose, ingredient line, and formula setting feel like the practical comparison anchor rather than like a generic disclaimer.",
       ];
@@ -4026,7 +4027,7 @@ const buildPrompt = (params: {
     if (params.plan.family === "folate") {
       return [
         "Keep folate grounded in supplementation and developmental context without drifting into medical advice.",
-        "Do not treat methylfolate or folic acid labeling as a simplistic better-versus-worse story.",
+        "Do not read methylfolate or folic acid labeling as a simplistic better-versus-worse story.",
         "Explain why the exact folate line changes comparison value and formula interpretation.",
       ];
     }
@@ -4097,7 +4098,7 @@ const buildPrompt = (params: {
     }
     if (params.plan.family === "calcium") {
       return [
-        "Keep bone/intake context as the clearest lane and treat form comparisons carefully.",
+        "Keep bone/intake context as the clearest lane and read form comparisons carefully.",
         "Do not turn carbonate-vs-citrate discussion into a universal best-form claim.",
         "Use shopper-facing language that explains why form disclosure and formula role change comparison value.",
         "Let co-formulation meaning sound practical instead of generic or encyclopedic.",
@@ -4139,7 +4140,7 @@ const buildPrompt = (params: {
     if (params.plan.family === "omega_3") {
       return [
         "Keep lipid endpoints as the primary comparison lane for combined omega-3 discussion.",
-        "Treat broader cardiovascular and secondary contexts as wider and less tidy than the core lipid lane.",
+        "Read broader cardiovascular and secondary contexts as wider and less tidy than the core lipid lane.",
       ];
     }
     if (params.plan.family === "probiotic_or_blend") {
@@ -5129,7 +5130,7 @@ const buildSectionFallback = (
         evidenceRead:
           "This is the most mixed and interpretation-sensitive lane for astaxanthin.",
         shopperMeaning:
-          "Treat exercise positioning as a cautious secondary angle, not as the main reason to rank one astaxanthin product over another.",
+          "Read exercise positioning as a cautious secondary angle, not as the main reason to rank one astaxanthin product over another.",
       };
     case "antioxidant_and_immune_research":
       return {
@@ -5199,7 +5200,7 @@ const buildSectionFallback = (
         evidenceRead:
           "This is a real but wider and less tidy lane than bone and calcium-regulation context.",
         shopperMeaning:
-          "Treat broader vitamin D packaging language more cautiously than the bone-focused context that is easiest to compare across products.",
+          "Read broader vitamin D packaging language more cautiously than the bone-focused context that is easiest to compare across products.",
       };
     case "what_interpretation_depends_on":
       return {
@@ -6084,7 +6085,7 @@ const buildSectionFallback = (
         evidenceRead:
           "This is the strongest and most shopper-useful ashwagandha lane, but it should still stay narrower than broad mood or resilience marketing.",
         shopperMeaning:
-          "Treat stress- and mood-related context as the main reason to compare ashwagandha labels, rather than assuming every broad calm claim means the same thing.",
+          "Read stress- and mood-related context as the main reason to compare ashwagandha labels, rather than assuming every broad calm claim means the same thing.",
       };
     case "sleep_and_recovery_context":
       return {
@@ -6182,7 +6183,7 @@ const buildSectionFallback = (
         evidenceRead:
           "This is a real but more interpretation-sensitive lane, so it should be read more cautiously than the tighter catechin-focused context.",
         shopperMeaning:
-          "Treat weight- or metabolism-oriented wording as a secondary layer after comparing the exact extract and concentration details on the label.",
+          "Read weight- or metabolism-oriented wording as a secondary layer after comparing the exact extract and concentration details on the label.",
       };
     case "why_extract_concentration_matters":
       return {
@@ -6406,7 +6407,7 @@ const buildSectionFallback = (
         evidenceRead:
           "This is a useful secondary lane, but it is not as clean for comparison as the main omega-3 endpoints.",
         shopperMeaning:
-          "Treat this as a secondary reading layer after you understand the core omega-3 breakdown and the more decision-useful label details.",
+          "Read this as a secondary reading layer after you understand the core omega-3 breakdown and the more decision-useful label details.",
       };
     case "digestive_and_microbiome_research":
       return {
@@ -6536,7 +6537,7 @@ const buildSectionFallback = (
         bullets: [
           "Read the total omega-3 line next.",
           "Read the EPA and DHA lines after that.",
-          "Treat the source line as context, not as the whole comparison answer.",
+          "Read the source line as context, not as the whole comparison answer.",
         ],
         evidenceRead:
           "This section is purely about better label interpretation and product comparison.",
@@ -6569,7 +6570,7 @@ const buildSectionFallback = (
         evidenceRead:
           "This is a disclosure and comparison section rather than a broad efficacy claim.",
         shopperMeaning:
-          "Treat the hydration line as a starting point, then compare the disclosed balance and supporting formula details before judging the product.",
+          "Read the hydration line as a starting point, then compare the disclosed balance and supporting formula details before judging the product.",
       };
     case "what_this_line_means":
       return {
@@ -6597,7 +6598,7 @@ const buildSectionFallback = (
         ],
         evidenceRead:
           "This is about comparability and disclosure quality, not about claiming a direct effect.",
-        shopperMeaning: `Treat ${narrativeLabel} as a confidence signal for disclosure quality, then compare products through the better-explained rows.`,
+        shopperMeaning: `Read ${narrativeLabel} as a confidence signal for disclosure quality, then compare products through the better-explained rows.`,
       };
     case "what_this_blend_line_shows":
       if (isPhageBlend(plan.selectedLabel)) {
