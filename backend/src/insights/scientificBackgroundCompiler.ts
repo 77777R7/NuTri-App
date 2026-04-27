@@ -225,15 +225,34 @@ const MEDICAL_BANNED_PATTERNS = [
   /\b(?:this|it|research|evidence|study|studies)\s+proves?\b/i,
   /\bproof of\b/i,
   /\btreats\b/i,
+  /\btreating\b/i,
   /\bused to treat\b/i,
   /\btreatment of\b/i,
   /\bprevents?\b/i,
+  /\bprevention\b/i,
   /\bcures?\b/i,
   /\bdiagnoses?\b/i,
+  /\bguarantees?\b/i,
+  /\bdetoxif(?:y|ies|ying)\b/i,
+  /\bclinically proven\b/i,
+  /\bsafe for everyone\b/i,
+  /\bno side effects\b/i,
+  /\breplaces medication\b/i,
   /\bbest for\b/i,
   /\bboosts?\b/i,
   /strongly improves/i,
   /\btreating\s+(?:symptoms?|conditions?|disease|illness|insomnia|infection|anxiety|depression|deficiency)\b/i,
+];
+
+const BROAD_PHYSIOLOGICAL_WRITER_PATTERNS = [
+  /\b(?:plays?|has)\s+(?:a\s+)?(?:key|central|important|essential)\s+role\s+in\b/i,
+  /\bessential\s+for\s+(?:cellular|energy|antioxidant|immune|metabolic|sleep|mood|skin|joint|heart|cardiovascular|respiratory)\b/i,
+  /\bknown\s+for\s+(?:its\s+)?role\s+in\b/i,
+  /\b(?:improves?|improving)\s+(?:skin|sleep|mood|energy|performance|recovery|immune|metabolic|joint|heart|cardiovascular|respiratory|digestion|gut)\b/i,
+  /\bprecursor\s+to\s+glutathione\b/i,
+  /\bkey\s+antioxidant\b/i,
+  /\bantioxidant\s+(?:defen[cs]e|protection)\b/i,
+  /\b(?:metabolic|calming)\s+(?:aid|botanical)\b/i,
 ];
 
 const GENERIC_IDENTITY_PATTERNS = [
@@ -717,7 +736,7 @@ const buildNutriMinimalFullFamilyPlan = (
         [
           "Activity units can matter more than capsule count",
           "Delivery detail matters only when the label discloses it clearly",
-          "Avoid treating all enzyme labels as interchangeable",
+          "Avoid reading all enzyme labels as interchangeable",
         ],
         "Keep this section focused on disclosed label details.",
         "Point shoppers to units, delivery, and formula role before generic digestive claims.",
@@ -1174,7 +1193,7 @@ const buildResearchPlan = (
       buildSectionPlan(
         "turmeric_traditional_and_modern_context",
         "Turmeric traditional and modern context",
-        "Explain the broader traditional and modern supplement context for turmeric without treating every turmeric label like a concentrated curcumin product.",
+        "Explain the broader traditional and modern supplement context for turmeric without reading every turmeric label like a concentrated curcumin product.",
         [
           "Turmeric can appear as whole-root powder, extract, or curcuminoid-adjacent ingredient",
           "This lane is broader than tightly standardized curcumin positioning",
@@ -1205,7 +1224,7 @@ const buildResearchPlan = (
           "Do not infer concentrated actives when the line stays broad",
         ],
         "Set a clear boundary between broad turmeric positioning and more specific curcuminoid comparison.",
-        "Help the shopper avoid treating turmeric products as interchangeable with concentrated curcumin extracts.",
+        "Help the shopper avoid reading turmeric products as interchangeable with concentrated curcumin extracts.",
       ),
     ];
   }
@@ -1942,7 +1961,7 @@ const buildResearchPlan = (
           "Do not turn this into a universal superiority claim",
         ],
         "Keep this section label-aware and comparison-focused.",
-        "Tell the shopper why the source line matters before treating two CLA formulas as close substitutes.",
+        "Tell the shopper why the source line matters before reading two CLA formulas as close substitutes.",
       ),
     ];
   }
@@ -3254,7 +3273,7 @@ const buildLabelContextPlan = (
     buildSectionPlan(
       "what_this_line_means",
       "What this line means on the label",
-      "Explain what role this selected line plays in the formula instead of treating it like a stand-alone research ingredient.",
+      "Explain what role this selected line plays in the formula instead of reading it like a stand-alone research ingredient.",
       [
         "This line is part of the label structure",
         "It is not always the most direct research target",
@@ -3979,7 +3998,7 @@ const buildPrompt = (params: {
     if (params.plan.family === "inositol") {
       return [
         "Keep inositol grounded in signaling and formula-context interpretation rather than broad hormone or mood promises.",
-        "Do not treat every inositol line as the same when the exact type and formula setting may differ.",
+        "Do not read every inositol line as the same when the exact type and formula setting may differ.",
         "Use shopper-facing language that explains why the disclosed amount and co-formulation still matter.",
       ];
     }
@@ -4792,6 +4811,9 @@ const introLineLooksWeak = (value: string | null | undefined): boolean => {
     GENERIC_IDENTITY_PATTERNS.some((pattern) => pattern.test(normalized)) ||
     TEMPLATE_SUMMARY_PATTERNS.some((pattern) => pattern.test(normalized)) ||
     MEDICAL_BANNED_PATTERNS.some((pattern) => pattern.test(normalized)) ||
+    BROAD_PHYSIOLOGICAL_WRITER_PATTERNS.some((pattern) =>
+      pattern.test(normalized),
+    ) ||
     SOFT_CLAIM_REPAIR_PATTERNS.some((pattern) => pattern.test(normalized))
   );
 };
@@ -4801,6 +4823,9 @@ const closingNoteLooksWeak = (value: string | null | undefined): boolean => {
   if (!normalized) return true;
   return (
     MEDICAL_BANNED_PATTERNS.some((pattern) => pattern.test(normalized)) ||
+    BROAD_PHYSIOLOGICAL_WRITER_PATTERNS.some((pattern) =>
+      pattern.test(normalized),
+    ) ||
     SOFT_CLAIM_REPAIR_PATTERNS.some((pattern) => pattern.test(normalized)) ||
     WEAK_SHOPPER_MEANING_PATTERNS.some((pattern) => pattern.test(normalized)) ||
     /\bproof\b|\bguarantee\b|\bdefinitive\b/i.test(normalized)
@@ -4819,6 +4844,9 @@ const hasRepairUnsafePattern = (value: string | null | undefined): boolean => {
   return (
     MEDICAL_BANNED_PATTERNS.some((pattern) => pattern.test(normalized)) ||
     GENERIC_IDENTITY_PATTERNS.some((pattern) => pattern.test(normalized)) ||
+    BROAD_PHYSIOLOGICAL_WRITER_PATTERNS.some((pattern) =>
+      pattern.test(normalized),
+    ) ||
     SOFT_CLAIM_REPAIR_PATTERNS.some((pattern) => pattern.test(normalized))
   );
 };
@@ -4828,7 +4856,9 @@ const repairSectionFromFallback = (params: {
   planned: ScientificBackgroundSectionPlan;
   section: ScientificBackgroundWriterSection;
 }): ScientificBackgroundSection => {
-  const fallback = buildSectionFallback(params.plan, params.planned);
+  const fallback = sanitizeFallbackSectionPolicyLanguage(
+    buildSectionFallback(params.plan, params.planned),
+  );
   const summary = normalizeText(params.section.summary);
   const bullets = normalizeBullets(params.section.bullets);
   const evidenceRead = normalizeText(params.section.evidenceRead);
@@ -4877,6 +4907,9 @@ const writerSectionLooksOrderRepairable = (
   if (
     MEDICAL_BANNED_PATTERNS.some((pattern) => pattern.test(joined)) ||
     GENERIC_IDENTITY_PATTERNS.some((pattern) => pattern.test(joined)) ||
+    BROAD_PHYSIOLOGICAL_WRITER_PATTERNS.some((pattern) =>
+      pattern.test(joined),
+    ) ||
     SOFT_CLAIM_REPAIR_PATTERNS.some((pattern) => pattern.test(joined))
   )
     return false;
@@ -5516,7 +5549,7 @@ const buildSectionFallback = (
         evidenceRead:
           "This section sets a boundary between broad turmeric positioning and concentrated curcuminoid comparison.",
         shopperMeaning:
-          "Use it to avoid treating turmeric products as interchangeable with more extract-specific curcumin formulas.",
+          "Use it to avoid reading turmeric products as interchangeable with more extract-specific curcumin formulas.",
       };
     case "energy_metabolism_context":
       return {
@@ -6205,7 +6238,7 @@ const buildSectionFallback = (
         evidenceRead:
           "This is the cleanest CLA lane, but it should stay narrower and more label-aware than generic slimming claims.",
         shopperMeaning:
-          "Compare CLA products through the exact row and amount before treating broad body-composition wording as the whole story.",
+          "Compare CLA products through the exact row and amount before reading broad body-composition wording as the whole story.",
       };
     case "source_oil_and_isomer_detail":
       return {
@@ -6233,7 +6266,7 @@ const buildSectionFallback = (
         evidenceRead:
           "This is the clearest carnitine lane, but it should stay narrower and more product-aware than broad performance copy.",
         shopperMeaning:
-          "Compare carnitine products through the named active and amount before treating broad performance wording as the main evidence lane.",
+          "Compare carnitine products through the named active and amount before reading broad performance wording as the main evidence lane.",
       };
     case "what_form_disclosure_changes_for_carnitine":
       return {
@@ -6429,7 +6462,7 @@ const buildSectionFallback = (
       }
       return {
         heading: section.heading,
-        summary: `${label} is easier to interpret when the shopper focuses on the exact ingredient role, amount, and label detail instead of treating every broad research direction as equally central.`,
+        summary: `${label} is easier to interpret when the shopper focuses on the exact ingredient role, amount, and label detail instead of reading every broad research direction as equally central.`,
         bullets: [
           "Research emphasis changes with the exact ingredient and formula setting.",
           "Not every broad claim is equally central to the evidence.",
@@ -6588,7 +6621,7 @@ const buildSectionFallback = (
           : "the disclosed electrolyte balance";
         const carbBullet = blendDisclosureDetails.hasCarbContext
           ? "Carbohydrate or sugar context changes whether the product reads more like everyday hydration, workout fuel, or a mixed-use formula."
-          : "Check whether carbohydrate or sugar context is disclosed before treating the hydration blend as interchangeable with another product.";
+          : "Check whether carbohydrate or sugar context is disclosed before reading the hydration blend as interchangeable with another product.";
         const stimulantBullet = blendDisclosureDetails.hasStimulantContext
           ? "Caffeine or stimulant lines should be read separately from hydration positioning."
           : "Blend totals can also hide flavor systems, absorption blends, or other add-ons that do not carry the hydration comparison alone.";

@@ -645,6 +645,65 @@ test('scientific background reports llm_timeout when the live writer misses the 
   assert.equal(result.diagnostics.timeoutCount, 1);
 });
 
+test('scientific background removes broad physiological writer claims before returning cacheable api copy', async () => {
+  const digest = buildDigest({
+    labelId: 'fixture-coq10-broad-writer-claims',
+    productName: 'CoQ10 100 mg',
+    dosageForm: 'Softgel',
+    actives: [{ name: 'Coenzyme Q10 (ubiquinone)', amount: 100, unit: 'mg' }],
+  });
+
+  const context = buildIngredientScienceContext({ digest, overlayClaims: null });
+  const plan = planScientificBackgroundSections({
+    context,
+    selectedIngredientName: 'Coenzyme Q10 (ubiquinone)',
+  });
+  const result = await compileScientificBackgroundAsync(context, 'Coenzyme Q10 (ubiquinone)', {
+    llmFn: async () =>
+      JSON.stringify({
+        introLine:
+          'Coenzyme Q10 plays a key role in cellular energy production and antioxidant protection.',
+        sections: plan.sections.map((section, index) => ({
+          headingId: section.headingId,
+          heading: section.heading,
+          summary:
+            index === 0
+              ? 'Coenzyme Q10 is essential for cellular energy production and antioxidant protection.'
+              : `${section.heading} should be read through the exact ingredient line, amount, and formula context.`,
+          bullets: [
+            'The useful comparison starts with the disclosed CoQ10 form and amount.',
+            'The surrounding formula can change how central this line is to the product.',
+          ],
+          evidenceRead:
+            'This is comparison context, not proof that the product produces a blanket outcome.',
+          shopperMeaning:
+            'When comparing CoQ10 products, use the form, amount, and label role before ranking broad benefit language.',
+        })),
+        closingNote:
+          'This clinically proven antioxidant protection story is the main reason to choose the product.',
+      }),
+  });
+
+  const text = [
+    result.scientificBackground.introLine,
+    result.scientificBackground.closingNote,
+    ...result.scientificBackground.sections.flatMap((section) => [
+      section.summary,
+      ...section.bullets,
+      section.evidenceRead,
+      section.shopperMeaning ?? '',
+    ]),
+  ].join(' ');
+
+  assert.equal(result.source, 'api');
+  assert.equal(result.fallbackUsed, false);
+  assert.doesNotMatch(
+    text,
+    /\b(?:plays?\s+a\s+key\s+role|essential\s+for|antioxidant protection|clinically proven|treating|prevention|guaranteed outcome)\b/i,
+  );
+  assert.match(text, /compare|comparison|label|amount/i);
+});
+
 test('scientific background repairs near-miss writer output into an api result', async () => {
   const digest = buildDigest({
     labelId: 'fixture-epa-repair',
@@ -933,7 +992,7 @@ test('scientific background accepts magnesium live-style output when form and co
             evidenceRead:
               'Magnesium is versatile, but the research map still needs to be read through the exact context instead of through broad wellness phrasing.',
             shopperMeaning:
-              'This helps shoppers avoid treating every magnesium product as interchangeable just because the front of the label sounds similar.',
+              'This helps shoppers avoid reading every magnesium product as interchangeable just because the front of the label sounds similar.',
           },
           {
             headingId: 'form_and_tolerability_context',
@@ -1020,7 +1079,7 @@ test('scientific background accepts vitamin D live-style output when bone contex
             evidenceRead:
               'This is a real but broader lane, so it should be read with more caution than bone and calcium-regulation context.',
             shopperMeaning:
-              'This helps shoppers keep broad immune-style wording in proportion instead of treating it as the main reason to rank one vitamin D product above another.',
+              'This helps shoppers keep broad immune-style wording in proportion instead of reading it as the main reason to rank one vitamin D product above another.',
           },
           {
             headingId: 'what_interpretation_depends_on',
@@ -1494,7 +1553,7 @@ test('scientific background accepts curcumin live-style output when extract deta
             evidenceRead:
               'This is the clearest curcumin lane, but it is still narrower than the broadest marketing language often suggests.',
             shopperMeaning:
-              'Use the main curcumin outcome lane to compare products more realistically instead of treating every broad anti-inflammatory promise as equally grounded.',
+              'Use the main curcumin outcome lane to compare products more realistically instead of reading every broad anti-inflammatory promise as equally grounded.',
           },
           {
             headingId: 'why_extract_detail_matters',
