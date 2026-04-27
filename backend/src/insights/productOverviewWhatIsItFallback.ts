@@ -64,10 +64,17 @@ const PRODUCT_OVERVIEW_CARBOHYDRATE_PATTERN =
 const PRODUCT_OVERVIEW_STIMULANT_PATTERN = /\b(caffeine|green\s+tea|guarana|yerba\s+mate|stimulant)\b/i;
 const PRODUCT_OVERVIEW_COMPANION_PATTERN =
   /\b(vitamin\s*b(?:3|6|12)\b|\bb(?:3|6|12)\b|niacin(?:amide)?\b|nicotinamide\b|pyridoxine\b|pyridoxal(?:\s|-)?5(?:\s|-)?phosphate\b|p-?5-?p\b|folate\b|folic acid\b|methylfolate\b|zinc\b|magnesium\b|calcium\b|selenium\b|copper\b|chromium\b|iodine\b)\b/i;
+const PRODUCT_OVERVIEW_MILK_THISTLE_PATTERN =
+  /\bmilk\s+thistle\b|\bsilybum\s+marianum\b|\bsilymarin\b/i;
 
 const cleanOverviewDisplayName = (value?: string | null): string | null => {
   const normalized = normalizeText(value);
   if (!normalized) return null;
+  if (PRODUCT_OVERVIEW_MILK_THISTLE_PATTERN.test(normalized)) {
+    if (/\bseed\b/i.test(normalized) && /\bextract\b/i.test(normalized)) return "Milk thistle seed extract";
+    if (/\bextract\b/i.test(normalized)) return "Milk thistle extract";
+    return "Milk thistle";
+  }
   const cleaned = normalized
     .replace(/^Regenerative Organic Certified\s+/i, "")
     .replace(/\*+/g, "")

@@ -293,6 +293,39 @@ test("product overview fallback avoids marketing detox and duplicate formula wor
   assert.match(glucosamine.lead, /glucosamine chondroitin formula/i);
 });
 
+test("product overview fallback cleans mixed milk thistle botanical blend anchors", () => {
+  const result = buildProductOverviewWhatIsItFallback({
+    productName: "Ancient Nutrition, Liver Cleanse, 90 Capsules",
+    brandName: "Ancient Nutrition",
+    productTypeHint: "Liver Cleanse",
+    primaryIngredient:
+      "Superfood BlendRegenerative Organic Certified® Reishi (Ganoderma lucidum) Mushroom Myceliated Milk Thistle Seed Extract, Organic Fermented Burdock Root, Organic Fermented Bupleurum Root.",
+    keyIngredients: [
+      {
+        name:
+          "Superfood BlendRegenerative Organic Certified® Reishi (Ganoderma lucidum) Mushroom Myceliated Milk Thistle Seed Extract, Organic Fermented Burdock Root, Organic Fermented Bupleurum Root.",
+      },
+      { name: "Bacillus subtilis AB22" },
+    ],
+    sourceContextHint: "iherb",
+    chemicalFormHint: null,
+    allIngredientRows: [
+      {
+        name:
+          "Superfood BlendRegenerative Organic Certified® Reishi (Ganoderma lucidum) Mushroom Myceliated Milk Thistle Seed Extract, Organic Fermented Burdock Root, Organic Fermented Bupleurum Root.",
+      },
+      { name: "Bacillus subtilis AB22" },
+    ],
+    isLikelySingleIngredient: false,
+  });
+  const text = [result.lead, result.whatItIs, result.whyPeopleTakeIt].join(" ");
+
+  assert.match(result.lead, /Milk thistle seed extract-led liver(?:-focused)? formula/i);
+  assert.match(text, /Bacillus subtilis/i);
+  assert.doesNotMatch(text, /Reishi Mushroom Myceliated Milk Thistle Seed Extract-led/i);
+  assert.doesNotMatch(text, /Regenerative Organic Certified|Superfood Blend/i);
+});
+
 test("product overview fallback removes dangling parentheses from cleaned active names", () => {
   const result = buildProductOverviewWhatIsItFallback({
     productName: "Active Multi Drink Mix",

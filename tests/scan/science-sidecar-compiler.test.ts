@@ -446,6 +446,47 @@ test('botanical extract fallbacks shorten long extract labels without losing the
   assert.match(science.scientificBackground.introLine ?? '', /Ashwagandha|300 mg/i);
 });
 
+test('milk thistle liver blends do not let reishi wording steal the botanical anchor', async () => {
+  const milkThistleContext = buildIngredientScienceContext({
+    digest: buildDigest({
+      labelId: 'fixture-milk-thistle-reishi-liver-blend',
+      productName: 'Ancient Nutrition, Liver Cleanse, 90 Capsules',
+      dosageForm: 'Capsule',
+      actives: [
+        {
+          name: 'Superfood BlendRegenerative Organic Certified® Reishi (Ganoderma lucidum) Mushroom Myceliated Milk Thistle Seed Extract, Organic Fermented Burdock Root, Organic Fermented Bupleurum Root.',
+          amount: 2.4,
+          unit: 'g',
+        },
+        { name: 'Bacillus subtilis AB22', amount: 1, unit: 'mg' },
+      ],
+    }),
+    overlayClaims: null,
+  });
+
+  const overview = await compileIngredientOverviewAsync(milkThistleContext);
+  const science = await compileScientificBackgroundAsync(
+    milkThistleContext,
+    milkThistleContext.anchorIngredient?.name ?? 'Milk thistle',
+  );
+  const overviewText = [
+    overview.ingredientOverview.titleLine,
+    overview.ingredientOverview.paragraph1,
+    overview.ingredientOverview.paragraph2,
+    overview.ingredientOverview.compareHint,
+  ].join(' ');
+
+  assert.equal(milkThistleContext.ingredientFamily, 'milk_thistle');
+  assert.equal(milkThistleContext.anchorIngredient?.ingredientFamily, 'milk_thistle');
+  assert.equal(milkThistleContext.anchorIngredient?.formContext, 'milk thistle seed extract');
+  assert.equal(overview.source, 'fallback');
+  assert.equal(overview.ingredientOverview.titleLine, 'Milk thistle seed extract');
+  assert.match(overviewText, /Milk thistle seed extract|Bacillus subtilis/i);
+  assert.doesNotMatch(overviewText, /Reishi Mushroom Myceliated Milk Thistle Seed Extract-led|Regenerative Organic Certified/i);
+  assert.equal(science.scientificBackground.selectedLabel, 'Milk thistle');
+  assert.match(science.scientificBackground.introLine ?? '', /Milk thistle|2\.4 g/i);
+});
+
 test('clear active anchors inside blend-containing formulas avoid generic grouped-blend copy', async () => {
   const zincContext = buildIngredientScienceContext({
     digest: buildDigest({
