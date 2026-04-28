@@ -130,7 +130,7 @@ test('ingredient overview compacts verbose but safe live-writer output before ga
         paragraph2:
           'That structure keeps the formula simple for comparison. The label role is direct and ingredient-led. Extra notes should stay secondary.',
         compareHint:
-          'When comparing products, focus on the disclosed amount per serving, the named form, and whether the label explains the delivery format. Also check whether any companion lines are itemized clearly.',
+          'When comparing products, focus on the disclosed amount per serving, the named form, and whether the label explains micronized vs. non-micronized delivery. Also check whether any companion lines are itemized clearly.',
       }),
   });
 
@@ -140,6 +140,7 @@ test('ingredient overview compacts verbose but safe live-writer output before ga
   assert.equal(result.diagnostics.fallbackReason, null);
   assert.doesNotMatch(result.ingredientOverview.paragraph1, /capsule format is not the main comparison point/i);
   assert.doesNotMatch(result.ingredientOverview.paragraph2 ?? '', /extra notes should stay secondary/i);
+  assert.match(result.ingredientOverview.compareHint ?? '', /micronized vs\. non-micronized delivery/i);
   assert.doesNotMatch(result.ingredientOverview.compareHint ?? '', /companion lines are itemized/i);
 });
 

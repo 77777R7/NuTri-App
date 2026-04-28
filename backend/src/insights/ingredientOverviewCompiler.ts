@@ -312,10 +312,18 @@ const asSentence = (value: string | null | undefined): string => {
   return /[.!?]$/.test(normalized) ? normalized : `${normalized}.`;
 };
 
+const protectSentenceAbbreviations = (value: string): string =>
+  value
+    .replace(/\bvs\./gi, (match) => match.replace(".", "<dot>"))
+    .replace(/\be\.g\./gi, (match) => match.replace(/\./g, "<dot>"))
+    .replace(/\bi\.e\./gi, (match) => match.replace(/\./g, "<dot>"));
+
+const restoreSentenceAbbreviations = (value: string): string => value.replace(/<dot>/g, ".");
+
 const splitSentences = (value: string): string[] =>
-  normalizeText(value)
+  protectSentenceAbbreviations(normalizeText(value))
     .split(/(?<=[.!?])\s+/)
-    .map((part) => normalizeText(part))
+    .map((part) => normalizeText(restoreSentenceAbbreviations(part)))
     .filter(Boolean);
 
 const takeSentences = (value: string | null | undefined, maxSentences: number): string =>
