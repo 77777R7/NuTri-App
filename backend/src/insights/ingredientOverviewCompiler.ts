@@ -190,13 +190,26 @@ const normalizeComparable = (value: string | null | undefined): string =>
 
 const escapeRegExp = (value: string): string => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
+const EXACT_DOSE_MENTION_PATTERN =
+  /\b\d+(?:\.\d+)?\s*(?:mg|mcg|µg|g|iu|i\.u\.|cfu|(?:million|billion)\s+cfu)\b/gi;
+
+const collectExactDoseEchoTokens = (context: IngredientScienceContext): string[] => {
+  const tokens = [
+    ...context.ingredientDescriptors.map((descriptor) => descriptor.dose),
+    context.anchorIngredient?.dose ?? null,
+    ...context.coIngredients.map((ingredient) => ingredient.dose),
+    ...(context.productName.match(EXACT_DOSE_MENTION_PATTERN) ?? []),
+  ]
+    .map((value) => normalizeText(value))
+    .filter(Boolean);
+  return [...new Set(tokens)];
+};
+
 const stripExactDoseMentions = (context: IngredientScienceContext, value: string | null | undefined): string => {
   let stripped = normalizeText(value);
   if (!stripped) return "";
 
-  for (const descriptor of context.ingredientDescriptors) {
-    const dose = normalizeText(descriptor.dose);
-    if (!dose) continue;
+  for (const dose of collectExactDoseEchoTokens(context)) {
     const flexibleDose = escapeRegExp(dose).replace(/\s+/g, "\\s*");
     stripped = stripped.replace(new RegExp(`\\s*\\(?\\b${flexibleDose}\\b\\)?\\s*`, "gi"), " ");
   }
@@ -356,7 +369,8 @@ const removeWeakOrUnsafeSentences = (
   context: IngredientScienceContext,
   value: string | null | undefined,
 ): string => {
-  const kept = splitSentences(String(value ?? "")).filter((sentence) => {
+  const kept = splitSentences(String(value ?? "")).map((sentence) => stripExactDoseMentions(context, sentence)).filter((sentence) => {
+    if (!sentence) return false;
     if (BANNED_PATTERNS.some((pattern) => pattern.test(sentence))) return false;
     if (FACTUAL_RESTATEMENT_PATTERNS.some((pattern) => pattern.test(sentence))) return false;
     if (countDoseMentions(context, sentence) > 0) return false;

@@ -145,6 +145,49 @@ test('ingredient overview compacts verbose but safe live-writer output before ga
   assert.doesNotMatch(result.ingredientOverview.compareHint ?? '', /companion lines are itemized/i);
 });
 
+test('ingredient overview removes exact dose echoes from title and retained formula sentences', async () => {
+  const digest = buildDigest({
+    labelId: 'fixture-ashwagandha',
+    productName: 'Full Spectrum Ashwagandha 570 mg',
+    dosageForm: 'Tablet',
+    actives: [
+      { name: 'Calcium (as dibasic calcium phosphate)', amount: 56, unit: 'mg' },
+      { name: 'Ashwagandha Root', amount: 500, unit: 'mg' },
+      { name: 'Ashwagandha Root Extract', amount: 70, unit: 'mg' },
+    ],
+  });
+
+  const context = buildIngredientScienceContext({ digest, overlayClaims: null });
+  const result = await compileIngredientOverviewAsync(context, {
+    llmFn: async () =>
+      JSON.stringify({
+        mode: 'multi_anchor',
+        titleLine: 'Full Spectrum Ashwagandha 570 mg',
+        paragraph1:
+          'Ashwagandha Root 500 mg is the main named active in this formula. The label also lists Ashwagandha Root Extract 70 mg as a supporting extract line.',
+        paragraph2:
+          'That structure makes the formula read like a root-plus-extract label rather than a broad proprietary blend.',
+        compareHint:
+          'When comparing ashwagandha products, check root versus extract disclosure and whether forms are itemized clearly.',
+      }),
+  });
+
+  const combined = [
+    result.ingredientOverview.titleLine,
+    result.ingredientOverview.paragraph1,
+    result.ingredientOverview.paragraph2,
+    result.ingredientOverview.compareHint,
+  ]
+    .filter(Boolean)
+    .join(' ');
+
+  assert.equal(result.source, 'api');
+  assert.equal(result.fallbackUsed, false);
+  assert.equal(result.diagnostics.fallbackReason, null);
+  assert.doesNotMatch(combined, /\b(?:570|500|70|56)\s*mg\b/i);
+  assert.match(result.ingredientOverview.paragraph1, /Ashwagandha Root is the main named active/i);
+});
+
 test('scientific background falls back when the model writes ingredient identity instead of research context', async () => {
   const digest = buildDigest({
     labelId: 'fixture-astaxanthin',
