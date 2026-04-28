@@ -124,7 +124,7 @@ test('ingredient overview compacts verbose but safe live-writer output before ga
     llmFn: async () =>
       JSON.stringify({
         mode: 'single_anchor',
-        titleLine: 'Creatine monohydrate',
+        titleLine: 'Creatine monohydrate (833 mg)',
         paragraph1:
           'Creatine monohydrate is the main named active in this formula. The label makes it easy to read because the formula does not bury the active inside a blend. The capsule format is not the main comparison point.',
         paragraph2:
@@ -138,6 +138,7 @@ test('ingredient overview compacts verbose but safe live-writer output before ga
   assert.equal(result.fallbackUsed, false);
   assert.equal(result.diagnostics.liveWriterHit, true);
   assert.equal(result.diagnostics.fallbackReason, null);
+  assert.doesNotMatch(result.ingredientOverview.titleLine ?? '', /833\s*mg/i);
   assert.doesNotMatch(result.ingredientOverview.paragraph1, /capsule format is not the main comparison point/i);
   assert.doesNotMatch(result.ingredientOverview.paragraph2 ?? '', /extra notes should stay secondary/i);
   assert.match(result.ingredientOverview.compareHint ?? '', /micronized vs\. non-micronized delivery/i);

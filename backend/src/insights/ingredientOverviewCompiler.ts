@@ -188,6 +188,27 @@ const normalizeComparable = (value: string | null | undefined): string =>
     .replace(/[^a-z0-9]+/g, " ")
     .trim();
 
+const escapeRegExp = (value: string): string => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+const stripExactDoseMentions = (context: IngredientScienceContext, value: string | null | undefined): string => {
+  let stripped = normalizeText(value);
+  if (!stripped) return "";
+
+  for (const descriptor of context.ingredientDescriptors) {
+    const dose = normalizeText(descriptor.dose);
+    if (!dose) continue;
+    const flexibleDose = escapeRegExp(dose).replace(/\s+/g, "\\s*");
+    stripped = stripped.replace(new RegExp(`\\s*\\(?\\b${flexibleDose}\\b\\)?\\s*`, "gi"), " ");
+  }
+
+  return stripped
+    .replace(/\(\s*\)/g, "")
+    .replace(/\s+([,;:])/g, "$1")
+    .replace(/[,;:]\s*$/g, "")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+};
+
 const lowerFirst = (value: string | null | undefined): string => {
   const normalized = normalizeText(value);
   if (!normalized) return "";
@@ -822,7 +843,7 @@ const compactOverviewSentenceBudget = (block: IngredientOverviewBlock): Ingredie
 });
 
 const normalizeTitleLine = (context: IngredientScienceContext, titleLine: string | null): string | null => {
-  const normalized = normalizeText(titleLine);
+  const normalized = stripExactDoseMentions(context, titleLine);
   if (!normalized) return buildTitleLineFallback(context);
   if (normalized.length > 72 || isSentenceLikeTitle(normalized)) return buildTitleLineFallback(context);
   return normalized;
