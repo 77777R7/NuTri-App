@@ -111,6 +111,38 @@ test('ingredient overview reports llm_unconfigured when no live writer is availa
   assert.equal(result.diagnostics.fallbackReason, 'llm_unconfigured');
 });
 
+test('ingredient overview compacts verbose but safe live-writer output before gating', async () => {
+  const digest = buildDigest({
+    labelId: 'fixture-creatine',
+    productName: 'Creatine Monohydrate Capsules',
+    dosageForm: 'Capsule',
+    actives: [{ name: 'Creatine Monohydrate', amount: 833, unit: 'mg' }],
+  });
+
+  const context = buildIngredientScienceContext({ digest, overlayClaims: null });
+  const result = await compileIngredientOverviewAsync(context, {
+    llmFn: async () =>
+      JSON.stringify({
+        mode: 'single_anchor',
+        titleLine: 'Creatine monohydrate',
+        paragraph1:
+          'Creatine monohydrate is the main named active in this formula. The label makes it easy to read because the formula does not bury the active inside a blend. The capsule format is not the main comparison point.',
+        paragraph2:
+          'That structure keeps the formula simple for comparison. The label role is direct and ingredient-led. Extra notes should stay secondary.',
+        compareHint:
+          'When comparing products, focus on the disclosed amount per serving, the named form, and whether the label explains the delivery format. Also check whether any companion lines are itemized clearly.',
+      }),
+  });
+
+  assert.equal(result.source, 'api');
+  assert.equal(result.fallbackUsed, false);
+  assert.equal(result.diagnostics.liveWriterHit, true);
+  assert.equal(result.diagnostics.fallbackReason, null);
+  assert.doesNotMatch(result.ingredientOverview.paragraph1, /capsule format is not the main comparison point/i);
+  assert.doesNotMatch(result.ingredientOverview.paragraph2 ?? '', /extra notes should stay secondary/i);
+  assert.doesNotMatch(result.ingredientOverview.compareHint ?? '', /companion lines are itemized/i);
+});
+
 test('scientific background falls back when the model writes ingredient identity instead of research context', async () => {
   const digest = buildDigest({
     labelId: 'fixture-astaxanthin',

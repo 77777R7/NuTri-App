@@ -318,6 +318,11 @@ const splitSentences = (value: string): string[] =>
     .map((part) => normalizeText(part))
     .filter(Boolean);
 
+const takeSentences = (value: string | null | undefined, maxSentences: number): string =>
+  splitSentences(String(value ?? ""))
+    .slice(0, maxSentences)
+    .join(" ");
+
 const removeWeakOrUnsafeSentences = (
   context: IngredientScienceContext,
   value: string | null | undefined,
@@ -796,6 +801,18 @@ const looksLikeFactualEcho = (context: IngredientScienceContext, block: Ingredie
 const hasSpecificCompareHint = (compareHint: string | null): boolean =>
   SPECIFIC_COMPARE_HINT_PATTERN.test(normalizeText(compareHint));
 
+const countOverviewSentences = (block: IngredientOverviewBlock): number =>
+  splitSentences(block.paragraph1).length +
+  splitSentences(block.paragraph2 ?? "").length +
+  splitSentences(block.compareHint ?? "").length;
+
+const compactOverviewSentenceBudget = (block: IngredientOverviewBlock): IngredientOverviewBlock => ({
+  ...block,
+  paragraph1: asSentence(takeSentences(block.paragraph1, 2)),
+  paragraph2: block.paragraph2 ? asSentence(takeSentences(block.paragraph2, 1)) : null,
+  compareHint: block.compareHint ? asSentence(takeSentences(block.compareHint, 1)) : null,
+});
+
 const normalizeTitleLine = (context: IngredientScienceContext, titleLine: string | null): string | null => {
   const normalized = normalizeText(titleLine);
   if (!normalized) return buildTitleLineFallback(context);
@@ -834,7 +851,7 @@ const repairBlock = (
     repaired.paragraph2 = fallbackBlock.paragraph2;
   }
 
-  return repaired;
+  return countOverviewSentences(repaired) > 5 ? compactOverviewSentenceBudget(repaired) : repaired;
 };
 
 const collectIngredientOverviewGateRejectReasons = (
@@ -854,11 +871,7 @@ const collectIngredientOverviewGateRejectReasons = (
   if (looksLikeFactualEcho(context, block)) reasons.push("factual_echo_raw");
   if (countDoseMentions(context, allText) > 0) reasons.push("dose_echo_raw");
 
-  const sentenceCount =
-    splitSentences(block.paragraph1).length +
-    splitSentences(block.paragraph2 ?? "").length +
-    splitSentences(block.compareHint ?? "").length;
-  if (sentenceCount < 2 || sentenceCount > 5) reasons.push("sentence_count_out_of_range");
+  if (countOverviewSentences(block) < 2 || countOverviewSentences(block) > 5) reasons.push("sentence_count_out_of_range");
 
   return [...new Set(reasons)];
 };
