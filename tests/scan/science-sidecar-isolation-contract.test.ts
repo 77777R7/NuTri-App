@@ -61,6 +61,9 @@ test('science sidecar background refresh emits bounded runtime diagnostics', () 
   assert.ok(scienceSidecarRoutesSource.includes('BACKGROUND_REFRESH_START'));
   assert.ok(scienceSidecarRoutesSource.includes('BACKGROUND_REFRESH_FALLBACK'));
   assert.ok(scienceSidecarRoutesSource.includes('BACKGROUND_REFRESH_SUCCESS'));
+  assert.ok(scienceSidecarRoutesSource.includes('BACKGROUND_REFRESH_SKIPPED'));
+  assert.ok(scienceSidecarRoutesSource.includes('live_writer_disabled_for_family'));
+  assert.ok(scienceSidecarRoutesSource.includes('background_refresh_cooldown'));
   assert.ok(scienceSidecarRoutesSource.includes('queuedTooLong'));
   assert.ok(scienceSidecarRoutesSource.includes('CACHE_KEY_MISMATCH'));
   assert.ok(scienceSidecarRoutesSource.includes('buildRefreshDiagnosticsLog(refreshed.diagnostics)'));

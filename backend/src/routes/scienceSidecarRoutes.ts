@@ -693,8 +693,13 @@ export const registerScienceSidecarRoutes = (
       const shouldUseLiveWriter =
         authority.ingredientScienceContext.productArchetype !== "functional_food_like"
         && authority.ingredientScienceContext.ingredientFamily !== "green_tea_extract";
+      const resolveIngredientOverviewRefreshUnavailableReason = (): string | null => {
+        if (!deepseekKey) return "llm_unconfigured";
+        if (!shouldUseLiveWriter) return "live_writer_disabled_for_family";
+        if (isIngredientOverviewBackgroundRefreshCoolingDown(cacheKey, now())) return "background_refresh_cooldown";
+        return null;
+      };
       const ensureIngredientOverviewBackgroundRefresh = (): boolean => {
-        if (!shouldUseLiveWriter || !deepseekKey) return false;
         const refreshLogContext = {
           route: "ingredient_overview",
           barcode: normalizedBarcode.code,
@@ -708,6 +713,14 @@ export const registerScienceSidecarRoutes = (
           maxRetries: executionProfile.backgroundRefreshMaxRetries ?? SCIENCE_SIDECAR_MAX_RETRIES,
           maxTokens: executionProfile.maxTokens,
         };
+        const unavailableReason = resolveIngredientOverviewRefreshUnavailableReason();
+        if (unavailableReason) {
+          logScienceSidecarRuntimeEvent("BACKGROUND_REFRESH_SKIPPED", {
+            ...refreshLogContext,
+            reason: unavailableReason,
+          });
+          return false;
+        }
         if (ingredientOverviewSidecarBackgroundRefresh.has(cacheKey)) {
           logScienceSidecarRuntimeEvent("BACKGROUND_REFRESH_DEDUPED", {
             ...refreshLogContext,
@@ -715,13 +728,6 @@ export const registerScienceSidecarRoutes = (
             queuedRefreshCount: queuedIngredientOverviewRefreshTasks.length,
           });
           return true;
-        }
-        if (isIngredientOverviewBackgroundRefreshCoolingDown(cacheKey, now())) {
-          logScienceSidecarRuntimeEvent("BACKGROUND_REFRESH_SKIPPED", {
-            ...refreshLogContext,
-            reason: "cooldown",
-          });
-          return false;
         }
 
         const queuedAt = now();
@@ -826,7 +832,10 @@ export const registerScienceSidecarRoutes = (
           ingredientOverview: compiled.ingredientOverview,
           source: "fallback",
           fallbackUsed: true,
-          fallbackReason,
+          fallbackReason:
+            fallbackReason === "background_refresh_scheduled"
+              ? (resolveIngredientOverviewRefreshUnavailableReason() ?? fallbackReason)
+              : fallbackReason,
           promptVersion: compiled.promptVersion,
           backgroundRefreshPending: false,
           recommendedRetryAfterMs: null,
