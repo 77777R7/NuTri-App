@@ -53,6 +53,11 @@ test('server exposes ingredient overview and scientific background sidecars with
   assert.ok(scienceSidecarRoutesSource.includes('recommendedRetryAfterMs: number | null;'));
   assert.ok(scienceSidecarRoutesSource.includes('withScientificBackgroundRefreshHint'));
   assert.ok(scienceSidecarRoutesSource.includes('SCIENTIFIC_BACKGROUND_REFRESH_RETRY_AFTER_MS'));
+  assert.ok(scienceSidecarRoutesSource.includes('live_writer_disabled_for_label_context'));
+  assert.ok(scienceSidecarRoutesSource.includes('label_context_mode_deterministic'));
+  assert.ok(scienceSidecarRoutesSource.includes('gateRejectReasons?: string[]'));
+  assert.ok(scienceSidecarRoutesSource.includes('fallbackDetail?: string | null'));
+  assert.ok(scienceSidecarRoutesSource.includes('cached && !executionProfile.preferLiveWriter'));
 });
 
 test('science sidecar background refresh emits bounded runtime diagnostics', () => {

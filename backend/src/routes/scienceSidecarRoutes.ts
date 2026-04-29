@@ -158,12 +158,21 @@ type ScientificBackgroundSidecarCacheEntry = {
 
 const buildScientificBackgroundDiagnosticResponseFields = (
   diagnostics: ScienceSidecarRuntimeDiagnostics,
+  executionProfile?: ScientificBackgroundExecutionProfile,
 ): Pick<
   ScientificBackgroundSidecarResponse,
   "fallbackReason" | "fallbackDetail" | "gateRejectReasons"
 > => ({
-  fallbackReason: diagnostics.fallbackReason ?? undefined,
-  fallbackDetail: diagnostics.lastError ?? null,
+  fallbackReason:
+    diagnostics.fallbackReason === "llm_unconfigured" &&
+    executionProfile?.preferLiveWriter === false
+      ? "live_writer_disabled_for_label_context"
+      : diagnostics.fallbackReason ?? undefined,
+  fallbackDetail:
+    diagnostics.fallbackReason === "llm_unconfigured" &&
+    executionProfile?.preferLiveWriter === false
+      ? "label_context_mode_deterministic"
+      : diagnostics.lastError ?? null,
   gateRejectReasons: diagnostics.gateRejectReasons ?? [],
 });
 
@@ -1041,7 +1050,10 @@ export const registerScienceSidecarRoutes = (
             scientificBackground: refreshed.scientificBackground,
             source: refreshed.source,
             fallbackUsed: refreshed.fallbackUsed,
-            ...buildScientificBackgroundDiagnosticResponseFields(refreshed.diagnostics),
+            ...buildScientificBackgroundDiagnosticResponseFields(
+              refreshed.diagnostics,
+              executionProfile,
+            ),
             promptVersion: refreshed.promptVersion,
             backgroundRefreshPending: false,
             recommendedRetryAfterMs: null,
@@ -1123,7 +1135,10 @@ export const registerScienceSidecarRoutes = (
           scientificBackground: compiled.scientificBackground,
           source: "fallback",
           fallbackUsed: true,
-          ...buildScientificBackgroundDiagnosticResponseFields(compiled.diagnostics),
+          ...buildScientificBackgroundDiagnosticResponseFields(
+            compiled.diagnostics,
+            executionProfile,
+          ),
           promptVersion: compiled.promptVersion,
           backgroundRefreshPending: false,
           recommendedRetryAfterMs: null,
@@ -1148,6 +1163,9 @@ export const registerScienceSidecarRoutes = (
         const refreshedCached = readScientificBackgroundSidecarCache(cacheKey, now());
         if (refreshedCached && refreshedCached.source === "api") {
           return res.json(refreshedCached);
+        }
+        if (cached && !executionProfile.preferLiveWriter) {
+          return res.json(await buildScientificBackgroundFastFallbackResponse());
         }
         if (cached) {
           const backgroundRefreshPending = ensureScientificBackgroundBackgroundRefresh();
@@ -1216,7 +1234,10 @@ export const registerScienceSidecarRoutes = (
           scientificBackground: compiled.scientificBackground,
           source: compiled.source,
           fallbackUsed: compiled.fallbackUsed,
-          ...buildScientificBackgroundDiagnosticResponseFields(compiled.diagnostics),
+          ...buildScientificBackgroundDiagnosticResponseFields(
+            compiled.diagnostics,
+            executionProfile,
+          ),
           promptVersion: compiled.promptVersion,
           backgroundRefreshPending: false,
           recommendedRetryAfterMs: null,
