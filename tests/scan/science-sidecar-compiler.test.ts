@@ -328,6 +328,86 @@ test('scientific background uses targeted writer budget for safety-sensitive bot
   }
 });
 
+test('scientific background repairs safety-sensitive botanical template output into api-safe fallback sections', async () => {
+  const fixtures = [
+    {
+      labelId: 'fixture-milk-thistle-template-repair',
+      productName: 'Milk Thistle 150 mg 60% Silymarin',
+      selectedIngredientName: 'Milk Thistle',
+      active: { name: 'Milk Thistle (Silybum marianum) seed', amount: 150, unit: 'mg' },
+      expectedFamily: 'milk_thistle',
+    },
+    {
+      labelId: 'fixture-red-yeast-rice-template-repair',
+      productName: 'Red Yeast Rice with CoQ10',
+      selectedIngredientName: 'Red Yeast Rice',
+      active: { name: 'Red Yeast Rice Powder (Monascus purpureus)', amount: 1200, unit: 'mg' },
+      expectedFamily: 'red_yeast_rice',
+    },
+    {
+      labelId: 'fixture-schisandra-template-repair',
+      productName: 'Organic Schisandra',
+      selectedIngredientName: 'Schisandra',
+      active: { name: 'Schisandra Fruit Extract', amount: 250, unit: 'mg' },
+      expectedFamily: 'schisandra_chinensis',
+    },
+  ];
+
+  for (const fixture of fixtures) {
+    const context = buildIngredientScienceContext({
+      digest: buildDigest({
+        labelId: fixture.labelId,
+        productName: fixture.productName,
+        dosageForm: 'Capsule',
+        actives: [fixture.active],
+      }),
+      overlayClaims: null,
+    });
+    const plan = planScientificBackgroundSections({
+      context,
+      selectedIngredientName: fixture.selectedIngredientName,
+    });
+    const result = await compileScientificBackgroundAsync(
+      context,
+      fixture.selectedIngredientName,
+      {
+        llmFn: async () =>
+          JSON.stringify({
+            introLine: `${fixture.selectedIngredientName} is commonly used for broad support.`,
+            sections: plan.sections.map((section) => ({
+              headingId: section.headingId,
+              heading: section.heading,
+              summary: `${section.heading} is frequently studied for ${fixture.selectedIngredientName} support.`,
+              bullets: ['Common research areas', 'Evidence varies by product'],
+              evidenceRead: 'Evidence varies.',
+              shopperMeaning: 'Use this as supporting context.',
+            })),
+            closingNote: 'Use this as proof of broad support.',
+          }),
+      },
+    );
+
+    const text = [
+      result.scientificBackground.introLine,
+      result.scientificBackground.closingNote,
+      ...result.scientificBackground.sections.flatMap((section) => [
+        section.summary,
+        ...section.bullets,
+        section.evidenceRead,
+        section.shopperMeaning ?? '',
+      ]),
+    ].join(' ');
+
+    assert.equal(plan.family, fixture.expectedFamily);
+    assert.equal(result.source, 'api');
+    assert.equal(result.fallbackUsed, false);
+    assert.equal(result.diagnostics.fallbackReason, null);
+    assert.doesNotMatch(text, /\bformula-aware orientation section\b|\bbroad orientation section\b|\bnot a universal claim\b/i);
+    assert.doesNotMatch(text, /\btreats?\b|\btreating\b|\bprevents?\b|\bprevention\b|\bcures?\b|\breplaces medication\b|\bproof of\b/i);
+    assert.match(text, /compare|comparison|label|disclosure/i);
+  }
+});
+
 test('scientific background fallback sanitizes medication-adjacent SAMe boundary wording', async () => {
   const digest = buildDigest({
     labelId: 'fixture-same',

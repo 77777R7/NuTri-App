@@ -5109,6 +5109,8 @@ const buildSectionFallback = (
   const relationshipStatement =
     context?.relationshipCandidates[0]?.safeStatement ?? null;
   const blendDisclosureDetails = buildScientificBlendDisclosureDetails(context);
+  const formulaAwareEvidenceRead =
+    "This is a formula-comparison context lane: compare exact identity, amount, role, and disclosure before applying broader research language.";
   switch (section.headingId) {
     case "antioxidant_activity":
       return {
@@ -6780,8 +6782,7 @@ const buildSectionFallback = (
             .map((bullet) => normalizeText(bullet))
             .filter(Boolean)
             .slice(0, 3),
-          evidenceRead:
-            "This is a formula-aware orientation section, not a universal claim about the ingredient in every product.",
+          evidenceRead: formulaAwareEvidenceRead,
           shopperMeaning: `Use ${label} as one part of the formula map, then compare how clearly the label separates the lead active from companion or structural lines.`,
         };
       }
@@ -6789,8 +6790,7 @@ const buildSectionFallback = (
         heading: section.heading,
         summary: `The useful way to read ${label} still depends on the exact ingredient identity, amount, and label detail, not just on the broad category it belongs to.`,
         bullets: dedupe(section.bulletThemes).slice(0, 3),
-        evidenceRead:
-          "This is a broad orientation section, not a universal claim.",
+        evidenceRead: formulaAwareEvidenceRead,
         shopperMeaning: section.shopperMeaningGoal,
       };
   }

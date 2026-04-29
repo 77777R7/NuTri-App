@@ -570,8 +570,8 @@ const runSidecarsForProduct = async ({ product, args }) => {
       body: JSON.stringify({ ...deferredAiBody, selectedIngredientName: selectedScientificIngredientName }),
     }, args.timeoutMs);
     const sciPayload = scientificResponse.json?.scientificBackground;
-    rows.push(buildSidecarRow({ product, route: "scientific_background", response: scientificResponse, payload: sciPayload, source: scientificResponse.json?.source, fallbackUsed: scientificResponse.json?.fallbackUsed, fallbackReason: scientificResponse.json?.fallbackReason, backgroundRefreshPending: scientificResponse.json?.backgroundRefreshPending, recommendedRetryAfterMs: scientificResponse.json?.recommendedRetryAfterMs, mode: sciPayload?.mode, selectedLabel: sciPayload?.selectedLabel }));
-    aiRows.push({ ...evaluateAiSummary({ type: "scientific_background", product, payload: sciPayload, source: scientificResponse.json?.source, fallbackUsed: scientificResponse.json?.fallbackUsed, fallbackReason: scientificResponse.json?.fallbackReason, backgroundRefreshPending: scientificResponse.json?.backgroundRefreshPending, recommendedRetryAfterMs: scientificResponse.json?.recommendedRetryAfterMs }), productKey: productKeyValue, productId: product.productId, barcode: product.barcode, family: product.family, productName: product.productName, brand: product.brand });
+    rows.push(buildSidecarRow({ product, route: "scientific_background", response: scientificResponse, payload: sciPayload, source: scientificResponse.json?.source, fallbackUsed: scientificResponse.json?.fallbackUsed, fallbackReason: scientificResponse.json?.fallbackReason, fallbackDetail: scientificResponse.json?.fallbackDetail, gateRejectReasons: scientificResponse.json?.gateRejectReasons, backgroundRefreshPending: scientificResponse.json?.backgroundRefreshPending, recommendedRetryAfterMs: scientificResponse.json?.recommendedRetryAfterMs, mode: sciPayload?.mode, selectedLabel: sciPayload?.selectedLabel }));
+    aiRows.push({ ...evaluateAiSummary({ type: "scientific_background", product, payload: sciPayload, source: scientificResponse.json?.source, fallbackUsed: scientificResponse.json?.fallbackUsed, fallbackReason: scientificResponse.json?.fallbackReason, backgroundRefreshPending: scientificResponse.json?.backgroundRefreshPending, recommendedRetryAfterMs: scientificResponse.json?.recommendedRetryAfterMs }), productKey: productKeyValue, productId: product.productId, barcode: product.barcode, family: product.family, productName: product.productName, brand: product.brand, fallbackDetail: scientificResponse.json?.fallbackDetail ?? null, gateRejectReasons: Array.isArray(scientificResponse.json?.gateRejectReasons) ? scientificResponse.json.gateRejectReasons : [] });
   } else {
     rows.push(buildSkippedSidecarRow(product, "scientific_background", "selected_ingredient_missing"));
   }
@@ -625,7 +625,7 @@ const buildProductOverviewAiBody = ({ product, decisionSupport }) => {
   };
 };
 
-const buildSidecarRow = ({ product, route, response, payload, source = null, fallbackUsed = false, fallbackReason = null, backgroundRefreshPending = false, recommendedRetryAfterMs = null, mode = null, selectedLabel = null }) => {
+const buildSidecarRow = ({ product, route, response, payload, source = null, fallbackUsed = false, fallbackReason = null, fallbackDetail = null, gateRejectReasons = [], backgroundRefreshPending = false, recommendedRetryAfterMs = null, mode = null, selectedLabel = null }) => {
   const text = flattenText(payload ?? response?.json).join(" ");
   const visibleUnavailableText = route === "decision_support"
     ? Boolean(response?.ok && payload == null)
@@ -647,6 +647,8 @@ const buildSidecarRow = ({ product, route, response, payload, source = null, fal
     source: source ?? (response?.ok ? "api" : "missing"),
     fallbackUsed: Boolean(fallbackUsed),
     fallbackReason: fallbackReason ?? null,
+    fallbackDetail: fallbackDetail ?? null,
+    gateRejectReasons: Array.isArray(gateRejectReasons) ? gateRejectReasons : [],
     backgroundRefreshPending: Boolean(backgroundRefreshPending),
     recommendedRetryAfterMs: recommendedRetryAfterMs ?? null,
     latencyMs: response?.latencyMs ?? null,

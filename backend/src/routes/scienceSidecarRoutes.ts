@@ -144,6 +144,8 @@ type ScientificBackgroundSidecarResponse = {
   source: Awaited<ReturnType<typeof compileScientificBackgroundAsync>>["source"];
   fallbackUsed: boolean;
   fallbackReason?: string;
+  fallbackDetail?: string | null;
+  gateRejectReasons?: string[];
   promptVersion: string;
   backgroundRefreshPending: boolean;
   recommendedRetryAfterMs: number | null;
@@ -153,6 +155,17 @@ type ScientificBackgroundSidecarCacheEntry = {
   expiresAt: number;
   payload: ScientificBackgroundSidecarResponse;
 };
+
+const buildScientificBackgroundDiagnosticResponseFields = (
+  diagnostics: ScienceSidecarRuntimeDiagnostics,
+): Pick<
+  ScientificBackgroundSidecarResponse,
+  "fallbackReason" | "fallbackDetail" | "gateRejectReasons"
+> => ({
+  fallbackReason: diagnostics.fallbackReason ?? undefined,
+  fallbackDetail: diagnostics.lastError ?? null,
+  gateRejectReasons: diagnostics.gateRejectReasons ?? [],
+});
 
 type IngredientOverviewSidecarResponse = {
   status: "ok";
@@ -1028,7 +1041,7 @@ export const registerScienceSidecarRoutes = (
             scientificBackground: refreshed.scientificBackground,
             source: refreshed.source,
             fallbackUsed: refreshed.fallbackUsed,
-            fallbackReason: refreshed.diagnostics.fallbackReason ?? undefined,
+            ...buildScientificBackgroundDiagnosticResponseFields(refreshed.diagnostics),
             promptVersion: refreshed.promptVersion,
             backgroundRefreshPending: false,
             recommendedRetryAfterMs: null,
@@ -1110,7 +1123,7 @@ export const registerScienceSidecarRoutes = (
           scientificBackground: compiled.scientificBackground,
           source: "fallback",
           fallbackUsed: true,
-          fallbackReason: compiled.diagnostics.fallbackReason ?? undefined,
+          ...buildScientificBackgroundDiagnosticResponseFields(compiled.diagnostics),
           promptVersion: compiled.promptVersion,
           backgroundRefreshPending: false,
           recommendedRetryAfterMs: null,
@@ -1159,6 +1172,8 @@ export const registerScienceSidecarRoutes = (
           source: "fallback",
           fallbackUsed: true,
           fallbackReason: "cache_only_miss",
+          fallbackDetail: null,
+          gateRejectReasons: [],
           promptVersion: compiled.promptVersion,
           backgroundRefreshPending: false,
           recommendedRetryAfterMs: null,
@@ -1201,7 +1216,7 @@ export const registerScienceSidecarRoutes = (
           scientificBackground: compiled.scientificBackground,
           source: compiled.source,
           fallbackUsed: compiled.fallbackUsed,
-          fallbackReason: compiled.diagnostics.fallbackReason ?? undefined,
+          ...buildScientificBackgroundDiagnosticResponseFields(compiled.diagnostics),
           promptVersion: compiled.promptVersion,
           backgroundRefreshPending: false,
           recommendedRetryAfterMs: null,
