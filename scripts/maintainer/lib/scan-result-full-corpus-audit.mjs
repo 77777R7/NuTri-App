@@ -177,6 +177,12 @@ export const parseArgs = (argv = process.argv.slice(2), defaults = {}) => {
   return out;
 };
 
+export const buildDeferredAiSidecarRequestBody = (baseBody, { confirmLiveAi = false } = {}) => ({
+  ...baseBody,
+  cacheOnly: !confirmLiveAi,
+  ...(confirmLiveAi ? { revalidateFallback: true } : {}),
+});
+
 export const safeFileSegment = (value) => String(value ?? "run").replace(/[^a-zA-Z0-9._-]+/g, "-").replace(/^-+|-+$/g, "") || "run";
 
 export const loadDotenv = () => {

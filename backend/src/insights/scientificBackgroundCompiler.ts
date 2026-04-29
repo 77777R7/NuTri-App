@@ -196,6 +196,13 @@ const PROMPT_COMPACT_FAMILIES = new Set<IngredientScienceIngredientFamily>([
   "b6",
 ]);
 
+const SAFETY_SENSITIVE_BOTANICAL_RESEARCH_FAMILIES =
+  new Set<IngredientScienceIngredientFamily>([
+    "milk_thistle",
+    "red_yeast_rice",
+    "schisandra_chinensis",
+  ]);
+
 const shouldUseCompactScientificPromptBudget = (
   plan: ScientificBackgroundPlan,
 ): boolean =>
@@ -3614,6 +3621,19 @@ export const resolveScientificBackgroundExecutionProfile = (
       maxRetries: LLM_MAX_RETRIES,
       backgroundRefreshMaxRetries: BACKGROUND_REFRESH_MAX_RETRIES,
       maxTokens: resolveResearchModeMaxTokens(plan),
+      cacheTtlMs: RESEARCH_MODE_CACHE_TTL_MS,
+    };
+  }
+
+  if (SAFETY_SENSITIVE_BOTANICAL_RESEARCH_FAMILIES.has(plan.family)) {
+    return {
+      preferLiveWriter: true,
+      timeoutMs: RESEARCH_MODE_TIMEOUT_MS,
+      backgroundRefreshTimeoutMs:
+        LONG_RESEARCH_MODE_BACKGROUND_REFRESH_TIMEOUT_MS,
+      maxRetries: TARGETED_RESEARCH_MODE_MAX_RETRIES,
+      backgroundRefreshMaxRetries: BACKGROUND_REFRESH_MAX_RETRIES,
+      maxTokens: resolveTargetedResearchModeMaxTokens(plan),
       cacheTtlMs: RESEARCH_MODE_CACHE_TTL_MS,
     };
   }

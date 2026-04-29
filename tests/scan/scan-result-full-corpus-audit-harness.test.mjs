@@ -3,6 +3,7 @@ import test from "node:test";
 
 import {
   attachRunOrder,
+  buildDeferredAiSidecarRequestBody,
   buildFamilyCoverageRows,
   classifyRetryOutcome,
   canonicalAuditFamily,
@@ -206,6 +207,25 @@ test("CLI args default to configured Render target and live AI stays opt-in", ()
   assert.equal(args.mode, "sidecar");
   assert.equal(args.confirmLiveAi, false);
   assert.match(args.stagingUrl, /^https:\/\/nutri-app-qn0u\.onrender\.com/);
+});
+
+test("confirm-live-ai revalidates deferred AI fallback cache instead of only bypassing cacheOnly", () => {
+  const base = {
+    barcode: "00123456789012",
+    decisionDigest: "digest-a",
+    decisionInputsHash: "inputs-a",
+    personalizationScopeHash: "scope-a",
+  };
+
+  assert.deepEqual(buildDeferredAiSidecarRequestBody(base, { confirmLiveAi: false }), {
+    ...base,
+    cacheOnly: true,
+  });
+  assert.deepEqual(buildDeferredAiSidecarRequestBody(base, { confirmLiveAi: true }), {
+    ...base,
+    cacheOnly: false,
+    revalidateFallback: true,
+  });
 });
 
 test("product keys are stable for barcode and productId-only rows", () => {

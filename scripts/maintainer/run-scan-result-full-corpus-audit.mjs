@@ -5,6 +5,7 @@ import path from "node:path";
 import {
   appendJsonl,
   buildFamilyCoverageRows,
+  buildDeferredAiSidecarRequestBody,
   classifyRetryOutcome,
   ensureDir,
   evaluateAiSummary,
@@ -547,12 +548,14 @@ const runSidecarsForProduct = async ({ product, args }) => {
     decisionDigest: ds.digest,
     decisionInputsHash: ds.decisionInputsHash,
     personalizationScopeHash: ds.personalizationScopeHash,
-    cacheOnly: !args.confirmLiveAi,
   };
+  const deferredAiBody = buildDeferredAiSidecarRequestBody(commonBody, {
+    confirmLiveAi: args.confirmLiveAi,
+  });
   const ingredientResponse = await fetchJson(`${args.stagingUrl}/api/ingredient-overview/v1`, {
     method: "POST",
     headers: buildHeaders(),
-    body: JSON.stringify(commonBody),
+    body: JSON.stringify(deferredAiBody),
   }, args.timeoutMs);
   rows.push(buildSidecarRow({ product, route: "ingredient_overview", response: ingredientResponse, payload: ingredientResponse.json?.ingredientOverview, source: ingredientResponse.json?.source, fallbackUsed: ingredientResponse.json?.fallbackUsed, fallbackReason: ingredientResponse.json?.fallbackReason, backgroundRefreshPending: ingredientResponse.json?.backgroundRefreshPending, recommendedRetryAfterMs: ingredientResponse.json?.recommendedRetryAfterMs }));
   aiRows.push({ ...evaluateAiSummary({ type: "ingredient_overview", product, payload: ingredientResponse.json?.ingredientOverview, source: ingredientResponse.json?.source, fallbackUsed: ingredientResponse.json?.fallbackUsed, fallbackReason: ingredientResponse.json?.fallbackReason, backgroundRefreshPending: ingredientResponse.json?.backgroundRefreshPending, recommendedRetryAfterMs: ingredientResponse.json?.recommendedRetryAfterMs }), productKey: productKeyValue, productId: product.productId, barcode: product.barcode, family: product.family, productName: product.productName, brand: product.brand });
@@ -564,7 +567,7 @@ const runSidecarsForProduct = async ({ product, args }) => {
     const scientificResponse = await fetchJson(`${args.stagingUrl}/api/scientific-background/v1`, {
       method: "POST",
       headers: buildHeaders(),
-      body: JSON.stringify({ ...commonBody, selectedIngredientName: selectedScientificIngredientName }),
+      body: JSON.stringify({ ...deferredAiBody, selectedIngredientName: selectedScientificIngredientName }),
     }, args.timeoutMs);
     const sciPayload = scientificResponse.json?.scientificBackground;
     rows.push(buildSidecarRow({ product, route: "scientific_background", response: scientificResponse, payload: sciPayload, source: scientificResponse.json?.source, fallbackUsed: scientificResponse.json?.fallbackUsed, fallbackReason: scientificResponse.json?.fallbackReason, backgroundRefreshPending: scientificResponse.json?.backgroundRefreshPending, recommendedRetryAfterMs: scientificResponse.json?.recommendedRetryAfterMs, mode: sciPayload?.mode, selectedLabel: sciPayload?.selectedLabel }));

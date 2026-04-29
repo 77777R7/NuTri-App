@@ -274,6 +274,60 @@ test('scientific background deterministic fallback sanitizes high-risk boundary 
   assert.match(text, /condition-outcome|medicine-style|comparison|label/i);
 });
 
+test('scientific background uses targeted writer budget for safety-sensitive botanicals', () => {
+  const fixtures = [
+    {
+      labelId: 'fixture-milk-thistle-profile',
+      productName: 'Milk Thistle 150 mg 60% Silymarin',
+      selectedIngredientName: 'Milk Thistle',
+      active: { name: 'Milk Thistle (Silybum marianum) seed', amount: 150, unit: 'mg' },
+      expectedFamily: 'milk_thistle',
+    },
+    {
+      labelId: 'fixture-red-yeast-rice-profile',
+      productName: 'Red Yeast Rice with CoQ10',
+      selectedIngredientName: 'Red Yeast Rice',
+      active: { name: 'Red Yeast Rice Powder (Monascus purpureus)', amount: 1200, unit: 'mg' },
+      expectedFamily: 'red_yeast_rice',
+    },
+    {
+      labelId: 'fixture-schisandra-profile',
+      productName: 'Organic Schisandra',
+      selectedIngredientName: 'Schisandra',
+      active: { name: 'Schisandra Fruit Extract', amount: 250, unit: 'mg' },
+      expectedFamily: 'schisandra_chinensis',
+    },
+  ];
+
+  for (const fixture of fixtures) {
+    const context = buildIngredientScienceContext({
+      digest: buildDigest({
+        labelId: fixture.labelId,
+        productName: fixture.productName,
+        dosageForm: 'Capsule',
+        actives: [fixture.active],
+      }),
+      overlayClaims: null,
+    });
+    const plan = planScientificBackgroundSections({
+      context,
+      selectedIngredientName: fixture.selectedIngredientName,
+    });
+    const profile = resolveScientificBackgroundExecutionProfile(plan);
+
+    assert.equal(plan.family, fixture.expectedFamily);
+    assert.equal(profile.preferLiveWriter, true);
+    assert.ok(
+      profile.backgroundRefreshTimeoutMs > 18_000,
+      `${fixture.expectedFamily} should get longer background refresh budget`,
+    );
+    assert.ok(
+      profile.maxTokens <= 650,
+      `${fixture.expectedFamily} should use a targeted token budget`,
+    );
+  }
+});
+
 test('scientific background fallback sanitizes medication-adjacent SAMe boundary wording', async () => {
   const digest = buildDigest({
     labelId: 'fixture-same',
