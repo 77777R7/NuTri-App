@@ -54,7 +54,6 @@ import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
 import { Config } from '@/constants/Config';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOnboarding } from '@/contexts/OnboardingContext';
-import { useSubscription } from '@/contexts/SubscriptionContext';
 import { withAuthHeaders } from '@/lib/auth-token';
 import { useTranslation } from '@/lib/i18n';
 import { lookupFoundationForIngredient, summarizeFoundationHits } from '@/lib/knowledge/foundationLookup';
@@ -859,6 +858,19 @@ const pickDominantGoalCoverageLabel = (
     return ranked[0]?.goalLabel ?? null;
 };
 
+const findGoalCoverageByLabel = <
+    T extends {
+        goalLabel: string;
+    },
+>(
+    coverage: T[],
+    goalLabel: string,
+): T | null => {
+    const normalizedGoalLabel = normalizeText(goalLabel).toLowerCase();
+    if (!normalizedGoalLabel) return null;
+    return coverage.find((entry) => normalizeText(entry.goalLabel).toLowerCase() === normalizedGoalLabel) ?? null;
+};
+
 const getV2ModulesFromPayload = (payload: Record<string, unknown> | null | undefined): Record<string, unknown>[] => {
     const card = payload?.nutriScoreCardV2;
     if (!card || typeof card !== 'object') return [];
@@ -1509,6 +1521,12 @@ function emitScanUxMetric(event: string, payload: Record<string, unknown> = {}) 
     }).catch(() => {
         // Metrics must never affect scan rendering.
     });
+}
+
+function lowerFirst(value: string | null | undefined): string {
+    const normalized = normalizeText(value);
+    if (!normalized) return '';
+    return normalized.charAt(0).toLowerCase() + normalized.slice(1);
 }
 
 function resolveSimpleTaxonomyLabel(label: string, fallback: string = 'Official record') {
@@ -2701,6 +2719,22 @@ type PaywallPlanCard = {
     selected: boolean;
 };
 
+const scanSubscriptionPreview = {
+    annualPackage: null,
+    monthlyPackage: null,
+    primaryPackage: null,
+    trialEligibility: 'unknown',
+    uiPreviewMode: true,
+    previewMode: true,
+    purchaseBusy: false,
+    restoreBusy: false,
+    loading: false,
+    error: null,
+    clearError: () => undefined,
+    purchasePrimaryPackage: async () => ({ ok: false, cancelled: true, message: 'Purchases are not configured in this build.' }),
+    restorePurchases: async () => ({ ok: false, cancelled: true, message: 'Purchases are not configured in this build.' }),
+} as const;
+
 const ScanPaywallModal: React.FC<{
     visible: boolean;
     source: PaywallSource | null;
@@ -3508,6 +3542,8 @@ const isBlendLikeName = (name: string): boolean =>
 const isOmega3TotalLineName = (name: string): boolean =>
     /\btotal\b.*\bomega\s*-?\s*3\b|\bomega\s*-?\s*3\b.*\btotal\b/i.test(name);
 
+const isOmega3AggregateLineName = isOmega3TotalLineName;
+
 const isOmega3SourceLineName = (name: string): boolean =>
     /\bfish\s*oil\b|\bkrill\s*oil\b|\balgal\s*oil\b|\boil\s*concentrate\b/i.test(name);
 
@@ -4031,7 +4067,7 @@ const AnalysisBundleDashboard: React.FC<{
     const { loading: authLoading, token: authToken, session, setPostAuthRedirect } = useAuth();
     const { draft: onboardingDraft, loading: onboardingLoading } = useOnboarding();
     const effectiveOnboardingDraft = onboardingDraftOverride ?? onboardingDraft;
-    const subscription = useSubscription();
+    const subscription = scanSubscriptionPreview;
     const isPreviewLocked = accessLevel === 'preview_locked';
     const [selectedTileType, setSelectedTileType] = useState<TileType | null>(null);
     const [paywallSource, setPaywallSource] = useState<PaywallSource | null>(null);

@@ -27,6 +27,7 @@ import type {
   TopSectionHeroPresentation,
   TopSectionInsightPresentation,
   TopSectionInsightTopic,
+  TopSectionSecondaryNotePresentation,
 } from '@/lib/scan/analysisTopSectionPresentation';
 import { sanitizeScanDisplayText } from '@/lib/scan/neverBlank';
 
@@ -38,10 +39,12 @@ type AnalysisTopSectionRedesignProps = {
   hero: TopSectionHeroPresentation;
   banner: TopSectionBannerPresentation | null;
   insights: TopSectionInsightPresentation[];
+  secondaryNote?: TopSectionSecondaryNotePresentation | null;
   productTitle: string;
   productSubtitle?: string | null;
   heroImageUri?: string | null;
   verifiedLabelText: string;
+  lockedPreview?: boolean;
 };
 
 type GoalCoverageRenderItem = {
@@ -103,6 +106,7 @@ export const AnalysisTopSectionRedesign: React.FC<AnalysisTopSectionRedesignProp
   hero,
   banner,
   insights,
+  secondaryNote = null,
   productTitle,
   productSubtitle,
   heroImageUri,
