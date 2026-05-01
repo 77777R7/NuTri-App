@@ -31,6 +31,11 @@ Not allowed in this release lane:
 
 ## 2. Current Release Evidence
 
+Release ops documents:
+
+- TestFlight runbook: `docs/releases/TESTFLIGHT_RELEASE_RUNBOOK_20260501.md`
+- 30-barcode device QA sheet: `docs/releases/RC_30_BARCODE_DEVICE_QA_20260501.md`
+
 Release branch / app build target:
 
 - Release branch HEAD confirmed: `e77ee51731d1b971521e7ff986ce88905d8abfd9`
