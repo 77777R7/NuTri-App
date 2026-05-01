@@ -35,6 +35,7 @@ Release ops documents:
 
 - TestFlight runbook: `docs/releases/TESTFLIGHT_RELEASE_RUNBOOK_20260501.md`
 - 30-barcode device QA sheet: `docs/releases/RC_30_BARCODE_DEVICE_QA_20260501.md`
+- Automation execution report: `docs/releases/RC_AUTOMATION_EXECUTION_20260501.md`
 
 Release branch / app build target:
 
@@ -251,7 +252,7 @@ Release decision labels:
 - `GO_WITH_WATCH`: acceptable small known issues, monitoring required.
 - `NO_GO`: P0/P1 blocker remains.
 
-Current RC decision: `GO_WITH_WATCH` for scan-result release readiness. The 30-product Render route QA has no scan-result crash or blank result, but the strict 30-product real-device manual pass remains unchecked unless the release owner accepts route QA plus the user-confirmed real-device smoke as sufficient. Full public launch still depends on release-ops confirmation for App Store metadata/privacy/subscription items.
+Current RC decision: `GO_WITH_WATCH` for scan-result release readiness, but TestFlight distribution is `NO_GO_UNTIL_SUBMIT_RESOLVED`. The 30-product Render route QA has no scan-result crash or blank result, and the same-commit internal iPhone build passed 30/30 deep-link launch smoke. The strict 30-product physical-camera manual pass remains unchecked unless the release owner accepts route QA plus internal-device deep-link QA plus the user-confirmed real-device scan smoke as sufficient. Full public launch still depends on App Store Connect submission, App Store metadata/privacy, and subscription release-ops confirmation.
 
 ## 7. Post-Launch Quality Wave Parking Lot
 

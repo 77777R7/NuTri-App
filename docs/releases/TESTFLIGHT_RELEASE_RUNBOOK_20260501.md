@@ -82,6 +82,7 @@ Recommended before broader beta:
 ## Existing Evidence To Keep Attached
 
 - `docs/releases/RELEASE_RC_CHECKLIST.md`
+- `docs/releases/RC_AUTOMATION_EXECUTION_20260501.md`
 - `output/scan-result-full-corpus-audit/scan-result-rc-cached-720-post-io-final-20260428/MVP_CLOSURE_VERDICT.md`
 - `output/scan-result-full-corpus-audit/scan-result-full-corpus-core-closure-20260426/core-contract-summary.md`
 - `output/scan-result-full-corpus-audit/rc-device-qa-30-render-20260430/RC_DEVICE_QA_REPORT.md`
