@@ -252,7 +252,13 @@ Release decision labels:
 - `GO_WITH_WATCH`: acceptable small known issues, monitoring required.
 - `NO_GO`: P0/P1 blocker remains.
 
-Current RC decision: `GO_WITH_WATCH` for scan-result release readiness, but TestFlight distribution is `NO_GO_UNTIL_SUBMIT_RESOLVED`. The 30-product Render route QA has no scan-result crash or blank result, and the same-commit internal iPhone build passed 30/30 deep-link launch smoke. The strict 30-product physical-camera manual pass remains unchecked unless the release owner accepts route QA plus internal-device deep-link QA plus the user-confirmed real-device scan smoke as sufficient. Full public launch still depends on App Store Connect submission, App Store metadata/privacy, and subscription release-ops confirmation.
+Current RC decision: `GO_WITH_WATCH` for scan-result release readiness, but TestFlight distribution is `NO_GO_UNTIL_APPLE_AGREEMENT_RESOLVED`. The 30-product Render route QA has no scan-result crash or blank result, and the same-commit internal iPhone build passed 30/30 deep-link launch smoke. The strict 30-product physical-camera manual pass remains unchecked unless the release owner accepts route QA plus internal-device deep-link QA plus the user-confirmed real-device scan smoke as sufficient. Full public launch still depends on App Store Connect agreement resolution, App Store metadata/privacy, and subscription release-ops confirmation.
+
+Latest distribution blocker:
+
+- Direct `xcrun altool --upload-app` against production build `73` reached Apple APIs but failed with `FORBIDDEN.REQUIRED_AGREEMENTS_MISSING_OR_EXPIRED`.
+- Temporary App Store Connect private-key material was deleted after the attempt and deletion was verified locally.
+- Next action is to sign or renew the required agreement in App Store Connect / Apple Business, then retry submission of the existing production build.
 
 ## 7. Post-Launch Quality Wave Parking Lot
 

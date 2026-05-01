@@ -12,13 +12,13 @@ Device identifiers observed: CoreDevice `175ED72E-1ECC-5607-BAFF-02EE2EA6AF70`, 
 Automated release execution is partially complete.
 
 - Production/TestFlight build: `FINISHED`
-- TestFlight/App Store Connect submit: `BLOCKED`
+- TestFlight/App Store Connect submit: `BLOCKED_BY_APPLE_AGREEMENT`
 - Production 30-barcode route QA: `PASS`
 - Internal same-commit iPhone install: `PASS`
 - Internal same-commit iPhone 30 deep-link launch smoke: `PASS`
 - Physical camera 30-scan automation: `NOT AUTOMATABLE BY CLI`
 
-The remaining blocker is not scan-result runtime quality. It is the App Store Connect upload step through EAS Submit.
+The remaining blocker is not scan-result runtime quality. It is an App Store Connect account agreement gate that blocks both EAS Submit and direct `altool` upload.
 
 ## Production Build
 
@@ -60,6 +60,28 @@ App Store Connect API key metadata checked:
 - Role: `ADMIN`
 
 Direct local `altool` upload was not performed because it would require exporting the App Store Connect private API key from EAS to a local file. That is intentionally not done without explicit secret-handling approval.
+
+After explicit approval, a short-lived local `altool` upload attempt was performed from `/private/tmp` using the existing App Store Connect API key metadata above.
+
+Result:
+
+- Upload command: `xcrun altool --upload-app`
+- IPA: production build `73`
+- Status: `BLOCKED`
+- Apple API status: `403`
+- Apple error code: `FORBIDDEN.REQUIRED_AGREEMENTS_MISSING_OR_EXPIRED`
+- Apple error title: `A required agreement is missing or has expired.`
+- Apple detail: `This request requires an in-effect agreement that has not been signed or has expired.`
+
+Interpretation:
+
+The production IPA is available and local upload reached Apple's App Store Connect APIs, but Apple refused the request before app upload because the account has a required agreement missing or expired. This is not an EAS-only issue and should be resolved in App Store Connect / Apple Business agreements before retrying submission.
+
+Secret handling:
+
+- The App Store Connect private key was written only to `/private/tmp/nutri-asc-private-keys/AuthKey_P683UA7THK.p8`.
+- The key directory was removed immediately after the failed upload attempt.
+- Deletion was verified locally: `/private/tmp/nutri-asc-private-keys` no longer exists.
 
 ## Production Route QA
 
@@ -151,14 +173,19 @@ The production build must be distributed through App Store Connect / TestFlight.
 
 Scan-result runtime readiness remains `GO_WITH_WATCH`.
 
-TestFlight distribution is currently `NO_GO_UNTIL_SUBMIT_RESOLVED` because the production build exists but has not successfully uploaded to App Store Connect through EAS Submit.
+TestFlight distribution is currently `NO_GO_UNTIL_APPLE_AGREEMENT_RESOLVED` because the production build exists, but App Store Connect rejects both EAS Submit and direct local `altool` upload until the missing or expired Apple agreement is signed.
 
 ## Next Required Action
 
-Resolve the App Store Connect submit step using one of these safe paths:
+Resolve the App Store Connect agreement gate first:
 
-1. Retry EAS Submit after checking Expo/EAS service status or from the Expo web dashboard submission page.
-2. Upload the production IPA with Apple Transporter using an App Store Connect key handled outside Codex.
-3. Explicitly authorize a local short-lived private-key handling flow, then use `xcrun altool` from `/private/tmp` and immediately delete the key material.
+1. Sign or renew the required agreement in App Store Connect / Apple Business.
+2. Retry submission of existing production build `73`; a new build is not required unless Apple processing later rejects the binary.
+
+Safe retry paths after the agreement is in effect:
+
+1. Retry EAS Submit from CLI or the Expo web dashboard.
+2. Upload the production IPA with Apple Transporter.
+3. Re-run the short-lived local `xcrun altool` upload flow from `/private/tmp`, then immediately delete the key material again.
 
 Do not start new AI-quality or scan-redesign work to unblock this release. The remaining blocker is distribution, not scan-result content.
