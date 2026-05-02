@@ -257,8 +257,10 @@ Current RC decision: `GO_WITH_WATCH` for scan-result release readiness, but Test
 Latest distribution blocker:
 
 - Direct `xcrun altool --upload-app` against production build `73` reached Apple APIs but failed with `FORBIDDEN.REQUIRED_AGREEMENTS_MISSING_OR_EXPIRED`.
+- A 2026-05-02 free-only verification confirmed the clean `release/rc-1` binary does not configure RevenueCat, does not carry StoreKit/IAP entitlement, and production EAS env has no `EXPO_PUBLIC_REVENUECAT_*` keys.
+- Retrying EAS Submit with the existing free-only build still errored as submission `43760736-f964-4a94-a160-9b33c6dc6902`, and direct `altool` still returned the same Apple agreement 403.
 - Temporary App Store Connect private-key material was deleted after the attempt and deletion was verified locally.
-- Next action is to sign or renew the required agreement in App Store Connect / Apple Business, then retry submission of the existing production build.
+- Next action is to sign or renew the required agreement in App Store Connect / Apple Business, then retry submission of the existing production build. This is now classified as a non-engineering release blocker.
 
 ## 7. Post-Launch Quality Wave Parking Lot
 

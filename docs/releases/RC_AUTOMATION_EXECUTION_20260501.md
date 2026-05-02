@@ -83,6 +83,38 @@ Secret handling:
 - The key directory was removed immediately after the failed upload attempt.
 - Deletion was verified locally: `/private/tmp/nutri-asc-private-keys` no longer exists.
 
+## Free-Only Submit Verification - 2026-05-02
+
+Follow-up check requested whether this could be bypassed by treating the release as free-only rather than paid/subscription-enabled.
+
+Engineering/config result:
+
+- The clean `release/rc-1` worktree does not configure RevenueCat in `app.config.ts`.
+- Production EAS environment does not include `EXPO_PUBLIC_REVENUECAT_*` keys.
+- iOS entitlements only include Sign in with Apple; no StoreKit / IAP entitlement is present in the release branch.
+- Existing production build `73` is therefore not blocked by a binary-level paid/subscription configuration.
+
+Free-only submission retry:
+
+- Submission id: `43760736-f964-4a94-a160-9b33c6dc6902`
+- Build id: `cf710dea-0940-492e-a7fb-a6908a962234`
+- EAS result: `ERRORED`
+- EAS error details: `error=null`, `logFiles=[]`
+
+Direct Apple verification retry:
+
+- IPA: existing production build `73`
+- Method: temporary-key `xcrun altool --upload-app`
+- Apple API status: `403`
+- Apple error code: `FORBIDDEN.REQUIRED_AGREEMENTS_MISSING_OR_EXPIRED`
+- Apple detail: `This request requires an in-effect agreement that has not been signed or has expired.`
+- Local key directory: `/private/tmp/nutri-asc-private-keys-free-only-check`
+- Key deletion verified: directory no longer exists after the retry
+
+Conclusion:
+
+The TestFlight blocker is not caused by the current app binary requiring Paid App Agreement or RevenueCat. Apple blocks the account before upload at the App Store Connect agreement gate. This is a non-engineering blocker until the required Apple agreement / business setup is completed in App Store Connect.
+
 ## Production Route QA
 
 Output directory:
@@ -173,7 +205,7 @@ The production build must be distributed through App Store Connect / TestFlight.
 
 Scan-result runtime readiness remains `GO_WITH_WATCH`.
 
-TestFlight distribution is currently `NO_GO_UNTIL_APPLE_AGREEMENT_RESOLVED` because the production build exists, but App Store Connect rejects both EAS Submit and direct local `altool` upload until the missing or expired Apple agreement is signed.
+TestFlight distribution is currently `NO_GO_UNTIL_APPLE_AGREEMENT_RESOLVED` because the production build exists, but App Store Connect rejects EAS Submit and direct local `altool` upload until the missing or expired Apple agreement is signed. A free-only retry on 2026-05-02 confirmed this is not caused by the release binary requiring paid/subscription configuration.
 
 ## Next Required Action
 
