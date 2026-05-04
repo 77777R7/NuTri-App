@@ -21,14 +21,8 @@ export type OnboardingSharedShellConfig = {
 };
 
 export const ONBOARDING_SHARED_SHELL_STEPS: readonly OnboardingFlowStep[] = [
-  'age-range',
-  'sex',
-  'experience',
   'goals',
-  'types',
   'allergy',
-  'blocker',
-  'setup',
   'plan-preview',
   'first-stack',
 ] as const;

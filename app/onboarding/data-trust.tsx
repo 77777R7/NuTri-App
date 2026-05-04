@@ -321,7 +321,7 @@ export default function DataTrustScreen() {
 
     setDirection('forward');
     await saveDraft({ onboardingVersion: 'v2' }, 2);
-    router.replace('/onboarding/age-range');
+    router.replace('/onboarding/goals');
   }, [router, saveDraft, setDirection]);
 
   return (

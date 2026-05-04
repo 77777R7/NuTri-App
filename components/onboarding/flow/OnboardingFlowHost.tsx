@@ -69,54 +69,21 @@ const buildFallbackShellConfig = ({
   goToStep: (step: OnboardingFlowStep, direction: OnboardingFlowDirection) => void;
 }): OnboardingSharedShellConfig | null => {
   switch (step) {
-    case 'age-range':
-      return {
-        backgroundVariant: 'qa',
-        progressFillWidth: getSharedShellProgressFillWidth('age-range'),
-        onBack: () => goToStep('data-trust', 'back'),
-        onContinue: async () => {},
-        onSkip: async () => {},
-        continueLabel: 'Continue',
-        continueDisabled: true,
-        footerReserveHeight: ONBOARDING_SHARED_SHELL_QA_FOOTER_SPACE,
-      };
-    case 'sex':
-      return {
-        backgroundVariant: 'qa',
-        progressFillWidth: getSharedShellProgressFillWidth('sex'),
-        onBack: () => goToStep('age-range', 'back'),
-        onContinue: async () => {},
-        onSkip: async () => {},
-        continueLabel: 'Continue',
-        continueDisabled: true,
-        footerReserveHeight: ONBOARDING_SHARED_SHELL_QA_FOOTER_SPACE,
-      };
-    case 'experience':
-      return {
-        backgroundVariant: 'qa',
-        progressFillWidth: getSharedShellProgressFillWidth('experience'),
-        onBack: () => goToStep('sex', 'back'),
-        onContinue: async () => {},
-        onSkip: async () => {},
-        continueLabel: 'Continue',
-        continueDisabled: true,
-        footerReserveHeight: ONBOARDING_SHARED_SHELL_QA_FOOTER_SPACE,
-      };
     case 'goals':
       return {
         backgroundVariant: 'qa',
         progressFillWidth: getSharedShellProgressFillWidth('goals'),
-        onBack: () => goToStep('experience', 'back'),
+        onBack: () => goToStep('data-trust', 'back'),
         onContinue: async () => {},
         onSkip: async () => {},
         continueLabel: 'Continue',
         continueDisabled: true,
         footerReserveHeight: ONBOARDING_SHARED_SHELL_QA_FOOTER_SPACE_WITH_HELPER,
       };
-    case 'types':
+    case 'allergy':
       return {
         backgroundVariant: 'qa',
-        progressFillWidth: getSharedShellProgressFillWidth('types'),
+        progressFillWidth: getSharedShellProgressFillWidth('allergy'),
         onBack: () => goToStep('goals', 'back'),
         onContinue: async () => {},
         onSkip: async () => {},
@@ -124,46 +91,13 @@ const buildFallbackShellConfig = ({
         continueDisabled: true,
         footerReserveHeight: ONBOARDING_SHARED_SHELL_QA_FOOTER_SPACE,
       };
-    case 'allergy':
-      return {
-        backgroundVariant: 'qa',
-        progressFillWidth: getSharedShellProgressFillWidth('allergy'),
-        onBack: () => goToStep('types', 'back'),
-        onContinue: async () => {},
-        onSkip: async () => {},
-        continueLabel: 'Continue',
-        continueDisabled: true,
-        footerReserveHeight: ONBOARDING_SHARED_SHELL_QA_FOOTER_SPACE,
-      };
-    case 'blocker':
-      return {
-        backgroundVariant: 'qa',
-        progressFillWidth: getSharedShellProgressFillWidth('blocker'),
-        onBack: () => goToStep('allergy', 'back'),
-        onContinue: async () => {},
-        onSkip: async () => {},
-        continueLabel: 'Continue',
-        continueDisabled: true,
-        footerReserveHeight: ONBOARDING_SHARED_SHELL_QA_FOOTER_SPACE,
-      };
-    case 'setup':
-      return {
-        backgroundVariant: 'qa',
-        progressFillWidth: getSharedShellProgressFillWidth('setup'),
-        onBack: () => goToStep('blocker', 'back'),
-        onContinue: async () => {},
-        onSkip: async () => {},
-        continueLabel: 'Preview my plan',
-        continueDisabled: true,
-        footerReserveHeight: ONBOARDING_SHARED_SHELL_QA_FOOTER_SPACE,
-      };
     case 'plan-preview':
       return {
         backgroundVariant: 'summary',
         progressFillWidth: getSharedShellProgressFillWidth('plan-preview'),
-        onBack: () => goToStep('setup', 'back'),
+        onBack: () => goToStep('allergy', 'back'),
         onContinue: async () => {},
-        continueLabel: 'Unlock My Plan',
+        continueLabel: 'See my first step',
         continueDisabled: true,
         footerReserveHeight: 120,
       };
@@ -173,7 +107,7 @@ const buildFallbackShellConfig = ({
         progressFillWidth: getSharedShellProgressFillWidth('first-stack'),
         onBack: () => goToStep('plan-preview', 'back'),
         onContinue: async () => {},
-        continueLabel: 'Finish setup',
+        continueLabel: 'Scan my first supplement',
         continueDisabled: true,
         footerReserveHeight: 120,
       };
@@ -239,7 +173,7 @@ export function OnboardingFlowHost({
     if (loading) return;
 
     const nextProgress = ONBOARDING_FLOW_PROGRESS[activeStep];
-    if (progress < nextProgress) {
+    if (typeof nextProgress === 'number' && progress < nextProgress) {
       commitProgress(nextProgress);
       void flushDraft();
     }

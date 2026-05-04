@@ -50,7 +50,7 @@ export default function OnboardingDoneScreen() {
       }
 
       if (destination === 'manual') {
-        router.replace({ pathname: '/scan/label', params: { mode: 'upload', source: 'onboarding' } });
+        router.replace('/search');
         return;
       }
 
