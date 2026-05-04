@@ -15,18 +15,13 @@ const layoutSource = readFileSync(
   'utf8',
 );
 
-const typesSource = readFileSync(
-  '/Users/howard07/NuTriApp/nutri-app/app/onboarding/types.tsx',
-  'utf8',
-);
-
 const allergySource = readFileSync(
   '/Users/howard07/NuTriApp/nutri-app/app/onboarding/allergy.tsx',
   'utf8',
 );
 
-const blockerSource = readFileSync(
-  '/Users/howard07/NuTriApp/nutri-app/app/onboarding/blocker.tsx',
+const goalsSource = readFileSync(
+  '/Users/howard07/NuTriApp/nutri-app/app/onboarding/goals.tsx',
   'utf8',
 );
 
@@ -52,17 +47,18 @@ test('allergy enums remain canonical and deduplicated', () => {
   assert.ok(INGREDIENT_RESTRICTION_OPTIONS.includes('gelatin_animal_based'));
 });
 
-test('onboarding flow inserts allergy between types and blocker', () => {
-  assert.match(layoutSource, /<Stack\.Screen name="types" \/>/);
+test('compact onboarding flow inserts allergy between goals and plan preview', () => {
+  assert.match(layoutSource, /<Stack\.Screen name="goals" \/>/);
   assert.match(layoutSource, /<Stack\.Screen name="allergy" \/>/);
-  assert.match(layoutSource, /<Stack\.Screen name="blocker" \/>/);
-  assert.match(typesSource, /router\.replace\('\/onboarding\/allergy'\)/);
-  assert.match(blockerSource, /router\.replace\('\/onboarding\/allergy'\)/);
+  assert.match(layoutSource, /<Stack\.Screen name="plan-preview" \/>/);
+  assert.match(goalsSource, /router\.replace\('\/onboarding\/allergy'\)/);
+  assert.doesNotMatch(layoutSource, /<Stack\.Screen name="types" \/>/);
+  assert.doesNotMatch(layoutSource, /<Stack\.Screen name="blocker" \/>/);
 });
 
 test('allergy QA hero screen preserves route flow', () => {
-  assert.match(allergySource, /router\.replace\('\/onboarding\/types'\)/);
-  assert.match(allergySource, /router\.replace\('\/onboarding\/blocker'\)/);
+  assert.match(allergySource, /router\.replace\('\/onboarding\/goals'\)/);
+  assert.match(allergySource, /router\.replace\('\/onboarding\/plan-preview'\)/);
 });
 
 test('allergy QA hero screen preserves saveDraft step and analytics contract', () => {
@@ -70,6 +66,7 @@ test('allergy QA hero screen preserves saveDraft step and analytics contract', (
   assert.match(allergySource, /avoidItems:\s*normalized\.avoidItems/);
   assert.match(allergySource, /allergyFlags:\s*normalized\.allergyFlags/);
   assert.match(allergySource, /ingredientRestrictions:\s*normalized\.ingredientRestrictions/);
+  assert.match(allergySource, /,\s*4,\s*\)/);
   assert.match(allergySource, /trackOnboardingEvent\('question_answered'/);
   assert.match(allergySource, /question:\s*'avoid_items'/);
   assert.match(allergySource, /answerCount:\s*selected\.length/);

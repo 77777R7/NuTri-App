@@ -409,7 +409,7 @@ export function PlanPreviewBodyContent({
       ]}
     >
       <Animated.View style={[styles.copyBlock, copyZoneStyle]}>
-        <Text style={styles.eyebrow}>Your first plan</Text>
+        <Text style={styles.eyebrow}>Your first path</Text>
         <Text
           style={[
             styles.title,
@@ -419,7 +419,7 @@ export function PlanPreviewBodyContent({
             },
           ]}
         >
-          Here is your plan
+          We found your easiest first step
         </Text>
         <Text
           style={[
@@ -430,7 +430,7 @@ export function PlanPreviewBodyContent({
             },
           ]}
         >
-          This is how NuTri will personalize your first experience based on your choices.
+          We used your goals, preferences, and routine to choose the easiest place to begin.
         </Text>
         <View
           style={[
@@ -919,7 +919,7 @@ export function PlanPreviewScreenContent({
           },
         ]}
       >
-        <QAContinueCTA title="Unlock My Plan" onPress={handleContinue} />
+        <QAContinueCTA title="See my first step" onPress={handleContinue} />
       </View>
     </View>
   );
@@ -973,8 +973,7 @@ export default function PlanPreviewScreen() {
 
   const handleBack = useCallback(async () => {
     setDirection('back');
-    // legacy route flow reference for contract parity: router.replace('/onboarding/setup')
-    router.replace({ pathname: '/onboarding', params: { step: 'setup' } });
+    router.replace('/onboarding/allergy');
   }, [router, setDirection]);
 
   const handleContinue = useCallback(async () => {
@@ -985,7 +984,7 @@ export default function PlanPreviewScreen() {
           preferredTypes: draft?.preferredTypes ?? [],
         }),
       },
-      11,
+      5,
     );
     setDirection('forward');
     router.replace('/onboarding/first-stack');

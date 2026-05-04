@@ -859,6 +859,15 @@ const pickDominantGoalCoverageLabel = (
     return ranked[0]?.goalLabel ?? null;
 };
 
+const findGoalCoverageByLabel = <T extends { goalLabel: string }>(
+    coverage: T[],
+    goalLabel: string,
+): T | null => {
+    const normalizedGoalLabel = normalizeText(goalLabel).toLowerCase();
+    if (!normalizedGoalLabel) return null;
+    return coverage.find((entry) => normalizeText(entry.goalLabel).toLowerCase() === normalizedGoalLabel) ?? null;
+};
+
 const getV2ModulesFromPayload = (payload: Record<string, unknown> | null | undefined): Record<string, unknown>[] => {
     const card = payload?.nutriScoreCardV2;
     if (!card || typeof card !== 'object') return [];
@@ -1253,6 +1262,12 @@ function computeCoverStatus(slotStates: boolean[]): CoverStatus {
 function normalizeText(value?: string | null) {
     return value?.replace(/\s+/g, ' ').trim() ?? '';
 }
+
+const lowerFirst = (value?: string | null) => {
+    const normalized = normalizeText(value);
+    if (!normalized) return '';
+    return normalized.charAt(0).toLowerCase() + normalized.slice(1);
+};
 
 const toTitleCaseWords = (value?: string | null): string => {
     const normalized = normalizeText(value);
@@ -3858,7 +3873,7 @@ const scoreScienceModalIngredientRow = (
     const doseMagnitude = parseOverviewDoseMagnitude(row.dose);
     const hasOmegaBreakdownPeers = rows.some((candidate) => isOmega3BreakdownLineName(candidate.name));
     const isOmegaSourceLine = isOmega3SourceLineName(displayName) && hasOmegaBreakdownPeers;
-    const isOmegaAggregateLine = isOmega3AggregateLineName(displayName);
+    const isOmegaAggregateLine = isOmega3TotalLineName(displayName);
     const isOmegaBreakdownLine = isOmega3BreakdownLineName(displayName);
 
     return (
@@ -6464,6 +6479,7 @@ const AnalysisBundleDashboard: React.FC<{
             },
             personalInsight: {
                 supportLabels: (personalInsight?.supports ?? []).map((signal) => signal.label),
+                hasSavedGoals: localDecisionSupportSignals.goalCount > 0,
                 preferSupportSignal,
                 resolvedSupportGoalLabel,
                 conflictSummary: firstConflict ?? null,
@@ -6518,6 +6534,7 @@ const AnalysisBundleDashboard: React.FC<{
         decisionPersonalizedResultLane?.dosageContext,
         decisionPersonalizedResultLane?.goalFit,
         decisionPersonalizedResultLane?.personalInsight,
+        localDecisionSupportSignals.goalCount,
         localDecisionSupportSignals.allergyCount,
         localDecisionSupportSignals.restrictionCount,
         safetyTipCoverText,
@@ -8199,8 +8216,6 @@ const AnalysisBundleDashboard: React.FC<{
         shouldPrimeScienceSidecars,
         decisionBarcodeForScience,
         decisionDigestForScience,
-        ingredientOverviewState?.status,
-        ingredientOverviewState?.source,
         ingredientOverviewRequestKey,
         localDecisionSupportHeader,
         scienceDecisionInputsHash,
@@ -8492,10 +8507,6 @@ const AnalysisBundleDashboard: React.FC<{
         scienceDecisionInputsHash,
         sciencePersonalizationScopeHash,
         scientificBackgroundRetryTick,
-        scientificBackgroundState?.status,
-        scientificBackgroundState?.source,
-        scientificBackgroundState?.backgroundRefreshPending,
-        scientificBackgroundState?.recommendedRetryAfterMs,
         scientificBackgroundRequestKey,
         scienceSourceFinalKey,
         setScientificBackgroundSidecarState,

@@ -200,12 +200,15 @@ export const AnalysisTopSectionRedesign: React.FC<
   const [expandedCoverageRows, setExpandedCoverageRows] = useState<
     Record<string, boolean>
   >({});
+  const [personalizationCoachDismissed, setPersonalizationCoachDismissed] =
+    useState(false);
 
   useEffect(() => {
     if (lastSyncKeyRef.current === derivedSyncKey) return;
     lastSyncKeyRef.current = derivedSyncKey;
     setExpandedKey(defaultExpandedKey);
     setExpandedCoverageRows({});
+    setPersonalizationCoachDismissed(false);
   }, [defaultExpandedKey, derivedSyncKey]);
 
   useEffect(() => {
@@ -215,6 +218,15 @@ export const AnalysisTopSectionRedesign: React.FC<
   }, [defaultExpandedKey, expandedKey, insights]);
 
   const heroChipColors = getHeroChipColors(hero.tone);
+  const hasGoalCoachSpot = insights.some((row) => row.coachSpot === "goal_fit");
+  const hasAllergyCoachSpot = insights.some(
+    (row) => row.coachSpot === "allergy_check",
+  );
+  const showPersonalizationCoach =
+    !lockedPreview &&
+    !personalizationCoachDismissed &&
+    hasGoalCoachSpot &&
+    hasAllergyCoachSpot;
 
   return (
     <View style={styles.wrapper}>
@@ -330,12 +342,45 @@ export const AnalysisTopSectionRedesign: React.FC<
       {insights.length > 0 ? (
         <Animated.View
           entering={FadeInUp.duration(260).delay(100)}
-          style={styles.insightsSection}
+          style={[
+            styles.insightsSection,
+            showPersonalizationCoach && styles.insightsSectionCoachActive,
+          ]}
         >
+          {showPersonalizationCoach ? (
+            <View pointerEvents="none" style={styles.personalizationCoachPageScrim} />
+          ) : null}
           <Text style={styles.insightsTitle}>Personalized Insights</Text>
-          <View style={styles.insightsCard}>
+          {showPersonalizationCoach ? (
+            <View pointerEvents="none" style={styles.personalizationCoachBubble}>
+              <Text style={styles.personalizationCoachBubbleText}>
+                {
+                  "After you choose a goal and allergies, these two spots become personalized: "
+                }
+                <Text style={styles.personalizationCoachBubbleEmphasis}>
+                  fit for your goal
+                </Text>
+                {", and "}
+                <Text style={styles.personalizationCoachBubbleEmphasis}>
+                  anything you should avoid.
+                </Text>
+              </Text>
+              <View style={styles.personalizationCoachBubbleTail} />
+            </View>
+          ) : null}
+          <View
+            style={[
+              styles.insightsCard,
+              showPersonalizationCoach && styles.insightsCardCoachActive,
+            ]}
+          >
             {insights.map((row, index) => {
-              const isExpanded = expandedKey === row.key;
+              const isCoachHighlighted =
+                showPersonalizationCoach &&
+                (row.coachSpot === "goal_fit" ||
+                  row.coachSpot === "allergy_check");
+              const isExpanded =
+                !showPersonalizationCoach && expandedKey === row.key;
               const { Icon, iconBg, iconColor } = resolveInsightIcon(
                 row.topic,
                 row.tone,
@@ -416,19 +461,24 @@ export const AnalysisTopSectionRedesign: React.FC<
               return (
                 <View
                   key={row.key}
-                  style={
+                  style={[
                     isExpanded
                       ? [
                           styles.rowBlockExpanded,
                           { minHeight: expandedFrameHeight },
                         ]
-                      : null
-                  }
+                      : null,
+                    isCoachHighlighted &&
+                      styles.personalizationCoachSpotBlock,
+                  ]}
                 >
                   <Pressable
                     onPress={handleToggle}
-                    style={styles.rowPressable}
-                    disabled={lockedPreview}
+                    style={[
+                      styles.rowPressable,
+                      isCoachHighlighted && styles.personalizationCoachSpotRow,
+                    ]}
+                    disabled={lockedPreview || showPersonalizationCoach}
                   >
                     <View
                       style={[styles.rowIconWrap, { backgroundColor: iconBg }]}
@@ -596,6 +646,9 @@ export const AnalysisTopSectionRedesign: React.FC<
                 </View>
               );
             })}
+            {showPersonalizationCoach ? (
+              <View pointerEvents="none" style={styles.personalizationCoachCardScrim} />
+            ) : null}
             {secondaryNote ? (
               <>
                 {insights.length > 0 ? (
@@ -645,6 +698,14 @@ export const AnalysisTopSectionRedesign: React.FC<
               </View>
             ) : null}
           </View>
+          {showPersonalizationCoach ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Dismiss personalized insights guide"
+              onPress={() => setPersonalizationCoachDismissed(true)}
+              style={styles.personalizationCoachTapLayer}
+            />
+          ) : null}
         </Animated.View>
       ) : null}
     </View>
@@ -830,6 +891,10 @@ const styles = StyleSheet.create({
   insightsSection: {
     gap: 16,
   },
+  insightsSectionCoachActive: {
+    zIndex: 30,
+    overflow: "visible",
+  },
   insightsTitle: {
     paddingHorizontal: 8,
     fontSize: 18,
@@ -850,6 +915,94 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     paddingHorizontal: 8,
     paddingVertical: 8,
+  },
+  insightsCardCoachActive: {
+    zIndex: 2,
+    overflow: "visible",
+    borderColor: "transparent",
+    backgroundColor: "transparent",
+    shadowOpacity: 0,
+  },
+  personalizationCoachPageScrim: {
+    position: "absolute",
+    top: -520,
+    right: -32,
+    bottom: -1000,
+    left: -32,
+    zIndex: 1,
+    backgroundColor: "rgba(0,0,0,0.58)",
+  },
+  personalizationCoachCardScrim: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 2,
+    borderRadius: 32,
+    backgroundColor: "rgba(0,0,0,0.18)",
+  },
+  personalizationCoachSpotBlock: {
+    zIndex: 3,
+    elevation: 12,
+    overflow: "visible",
+  },
+  personalizationCoachSpotRow: {
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1.3,
+    borderColor: "#BFDBFE",
+    shadowColor: "#60A5FA",
+    shadowOpacity: 0.82,
+    shadowRadius: 15,
+    shadowOffset: { width: 0, height: 0 },
+    elevation: 12,
+  },
+  personalizationCoachBubble: {
+    alignSelf: "flex-end",
+    marginTop: -2,
+    marginRight: 10,
+    marginBottom: 16,
+    zIndex: 4,
+    width: 248,
+    borderRadius: 21,
+    borderWidth: 1.2,
+    borderColor: "#60A5FA",
+    backgroundColor: "#FFFFFF",
+    paddingHorizontal: 16,
+    paddingVertical: 13,
+    shadowColor: "#2563EB",
+    shadowOpacity: 0.36,
+    shadowRadius: 13,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 14,
+  },
+  personalizationCoachBubbleText: {
+    fontSize: 12,
+    lineHeight: 17,
+    fontWeight: "700",
+    color: "#172033",
+    letterSpacing: -0.12,
+  },
+  personalizationCoachBubbleEmphasis: {
+    color: "#2563EB",
+    fontWeight: "800",
+  },
+  personalizationCoachBubbleTail: {
+    position: "absolute",
+    bottom: -7,
+    left: 56,
+    width: 14,
+    height: 14,
+    borderRightWidth: 1.2,
+    borderBottomWidth: 1.2,
+    borderColor: "#60A5FA",
+    backgroundColor: "#FFFFFF",
+    transform: [{ rotate: "45deg" }],
+  },
+  personalizationCoachTapLayer: {
+    position: "absolute",
+    top: -520,
+    right: -32,
+    bottom: -1000,
+    left: -32,
+    zIndex: 5,
+    backgroundColor: "transparent",
   },
   insightsLockedOverlay: {
     ...StyleSheet.absoluteFillObject,

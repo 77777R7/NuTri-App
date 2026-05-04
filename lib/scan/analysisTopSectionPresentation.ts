@@ -39,6 +39,7 @@ export type TopSectionHeroInput = {
 
 export type TopSectionPersonalInsightInput = {
   supportLabels: string[];
+  hasSavedGoals?: boolean;
   preferSupportSignal?: boolean;
   resolvedSupportGoalLabel?: string | null;
   conflictSummary?: string | null;
@@ -144,6 +145,7 @@ export type TopSectionInsightPresentation = {
   canExpandAll?: boolean;
   isExpandable: boolean;
   defaultExpanded?: boolean;
+  coachSpot?: 'goal_fit' | 'allergy_check';
 };
 
 export type TopSectionGoalCoveragePresentation = {
@@ -881,6 +883,22 @@ const buildSupportInsight = (
   ]
     .map((label) => normalizeText(label))
     .filter(Boolean)));
+
+  if (personalInsight.hasSavedGoals === false) {
+    return {
+      key: 'personal_support',
+      topic: 'support',
+      tone: 'neutral',
+      collapsedTitle: 'Goal fit',
+      subtitle: 'Add your goal to see how this supplement fits your needs.',
+      expandedBullets: uniqueLines([
+        'Choose a goal to compare this supplement against what you care about most.',
+      ]),
+      isExpandable: true,
+      coachSpot: 'goal_fit',
+    };
+  }
+
   if (!forceCoveragePrimary && supportLabels.length > 0) {
     const collapsedTitle =
       supportLabels.length === 1
@@ -939,6 +957,22 @@ const buildAllergyInsight = (
 ): TopSectionInsightPresentation | null => {
   const summary = normalizeText(allergy.summary);
   const reasonCode = normalizeText(allergy.reasonCode).toUpperCase();
+
+  if (allergy.hasSavedPreferences === false && allergy.matchedLabels.length === 0) {
+    return {
+      key: 'allergy_insight',
+      topic: 'allergy',
+      tone: 'neutral',
+      collapsedTitle: 'Allergy check',
+      subtitle: 'Add your allergies to see if any ingredients may not be right for you.',
+      expandedBullets: uniqueLines([
+        'Save your allergies or ingredient restrictions to compare products automatically.',
+        summary && !/no allergy-related flags detected/i.test(summary) ? summary : null,
+      ]),
+      isExpandable: true,
+      coachSpot: 'allergy_check',
+    };
+  }
 
   if (allergy.matchedLabels.length > 0) {
     const evidence = compactEvidenceTexts(allergy.evidenceTexts, allergy.matchedLabels);
