@@ -13,6 +13,8 @@ const scanSessionSource = readFileSync(path.join(root, 'lib/scan/session.ts'), '
 const barcodeSource = readFileSync(path.join(root, 'app/scan/barcode.tsx'), 'utf8');
 const streamSource = readFileSync(path.join(root, 'hooks/useStreamAnalysis.ts'), 'utf8');
 const resultSource = readFileSync(path.join(root, 'app/scan/result.tsx'), 'utf8');
+const dashboardSource = readFileSync(path.join(root, 'components/scan/AnalysisDashboard.tsx'), 'utf8');
+const serverSource = readFileSync(path.join(root, 'backend/src/server.ts'), 'utf8');
 const claimSource = readFileSync(path.join(root, 'app/guest-scan/claim.tsx'), 'utf8');
 const signupSource = readFileSync(path.join(root, 'app/(auth)/auth/signup.tsx'), 'utf8');
 const loginSource = readFileSync(path.join(root, 'app/(auth)/auth/login.tsx'), 'utf8');
@@ -54,6 +56,18 @@ test('guest scan metadata stays attached to scan session and stream headers', ()
   assert.match(streamSource, /X-Guest-Scan-Claim-Token/);
   assert.match(streamSource, /X-Scan-Session-Id/);
   assert.match(streamSource, /scanSessionId/);
+});
+
+test('guest scan result sidecars reuse guest scan auth instead of requiring a signed-in user', () => {
+  assert.match(serverSource, /\/api\/ingredient-overview\/v1"[\s\S]{0,120}verifySupabaseTokenOrGuestScanToken/);
+  assert.match(serverSource, /\/api\/scientific-background\/v1"[\s\S]{0,120}verifySupabaseTokenOrGuestScanToken/);
+  assert.match(resultSource, /guestScanSessionId=\{guestScanSessionId\}/);
+  assert.match(dashboardSource, /guestScanSessionId\?: string \| null/);
+  assert.match(dashboardSource, /getGuestScanSession/);
+  assert.match(dashboardSource, /X-Guest-Scan-Session-Id/);
+  assert.match(dashboardSource, /X-Guest-Scan-Claim-Token/);
+  assert.match(dashboardSource, /\/api\/ingredient-overview\/v1/);
+  assert.match(dashboardSource, /\/api\/scientific-background\/v1/);
 });
 
 test('guest scan result receives one full reveal and keep action routes through claim', () => {

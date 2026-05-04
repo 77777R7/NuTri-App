@@ -69,6 +69,7 @@ import { isNutritionLabelLikeIngredient } from '@/lib/scan/isNutritionLabelLikeI
 import { enforceNeverBlank, isPlaceholderText, sanitizeCoverBullets, sanitizeCoverLine } from '@/lib/scan/neverBlank';
 import { buildRecordFactsViewModel } from '@/lib/scan/recordFactsViewModel';
 import { mergeScienceIngredientCandidates } from '@/lib/scan/scienceIngredientSnapshot';
+import { getGuestScanSession } from '@/lib/scan/guestSession';
 import { buildSafetySignalPack } from '@/lib/scan/safetySignalPack';
 import { resolveTrustedDisplayIdentity } from '@/lib/scan/resolveTrustedDisplayIdentity';
 import { buildVerificationPresentation } from '@/lib/scan/verificationPresentation';
@@ -127,6 +128,24 @@ type FactsDtoState = {
     status: 'idle' | 'loading' | 'ready' | 'error';
     data: FactsDTO | null;
     error: string | null;
+};
+
+const withOptionalGuestScanHeaders = async (
+    headers: Record<string, string>,
+    guestScanSessionId?: string | null,
+): Promise<Record<string, string>> => {
+    const normalizedGuestScanSessionId =
+        typeof guestScanSessionId === 'string' ? guestScanSessionId.trim() : '';
+    if (!normalizedGuestScanSessionId) return headers;
+
+    const guestSession = await getGuestScanSession(normalizedGuestScanSessionId);
+    if (!guestSession?.claimToken) return headers;
+
+    return {
+        ...headers,
+        'X-Guest-Scan-Session-Id': guestSession.guestScanSessionId,
+        'X-Guest-Scan-Claim-Token': guestSession.claimToken,
+    };
 };
 
 type DecisionSupportState = {
@@ -4005,6 +4024,7 @@ const AnalysisBundleDashboard: React.FC<{
     scoreState?: ScoreState;
     sourceType?: SourceType;
     scanSessionId?: string | null;
+    guestScanSessionId?: string | null;
     externalScrollY?: SharedValue<number>;
     miniHeaderMode?: 'inline' | 'header';
     onMiniScoreMetaChange?: (meta: { overallScore: number; overallBand: string | null; muted: boolean }) => void;
@@ -4021,6 +4041,7 @@ const AnalysisBundleDashboard: React.FC<{
     scoreState = 'active',
     sourceType = 'barcode',
     scanSessionId = null,
+    guestScanSessionId = null,
     externalScrollY,
     miniHeaderMode = 'inline',
     onMiniScoreMetaChange,
@@ -8065,9 +8086,12 @@ const AnalysisBundleDashboard: React.FC<{
                     ingredientOverviewFallbackStartedAtRef.current[ingredientOverviewRequestKey] = Date.now();
                 }
                 const baseUrl = String(Config.searchApiBaseUrl).replace(/\/$/, '');
-                const headers = await withAuthHeaders({
-                    'Content-Type': 'application/json',
-                });
+                const headers = await withOptionalGuestScanHeaders(
+                    await withAuthHeaders({
+                        'Content-Type': 'application/json',
+                    }),
+                    guestScanSessionId,
+                );
                 if (localDecisionSupportHeader) {
                     headers['x-local-personalization'] = localDecisionSupportHeader;
                     headers['Cache-Control'] = 'no-cache, no-store';
@@ -8218,6 +8242,7 @@ const AnalysisBundleDashboard: React.FC<{
         decisionDigestForScience,
         ingredientOverviewRequestKey,
         localDecisionSupportHeader,
+        guestScanSessionId,
         scienceDecisionInputsHash,
         sciencePersonalizationScopeHash,
         ingredientOverviewRetryTick,
@@ -8342,9 +8367,12 @@ const AnalysisBundleDashboard: React.FC<{
                 ) {
                     scientificBackgroundFallbackStartedAtRef.current[requestKey] = Date.now();
                 }
-                const headers = await withAuthHeaders({
-                    'Content-Type': 'application/json',
-                });
+                const headers = await withOptionalGuestScanHeaders(
+                    await withAuthHeaders({
+                        'Content-Type': 'application/json',
+                    }),
+                    guestScanSessionId,
+                );
                 if (localDecisionSupportHeader) {
                     headers['x-local-personalization'] = localDecisionSupportHeader;
                     headers['Cache-Control'] = 'no-cache, no-store';
@@ -8502,6 +8530,7 @@ const AnalysisBundleDashboard: React.FC<{
         decisionBarcodeForScience,
         decisionDigestForScience,
         decisionScienceIngredientRows,
+        guestScanSessionId,
         localDecisionSupportHeader,
         selectedTileType,
         scienceDecisionInputsHash,
@@ -10447,6 +10476,7 @@ type AnalysisDashboardProps = {
     scoreState?: ScoreState;
     sourceType?: SourceType;
     scanSessionId?: string | null;
+    guestScanSessionId?: string | null;
     analysisBundle?: AnalysisBundle | null;
     externalScrollY?: SharedValue<number>;
     miniHeaderMode?: 'inline' | 'header';
@@ -10509,6 +10539,7 @@ export const AnalysisDashboard: React.FC<AnalysisDashboardProps> = ({
     scoreState,
     sourceType,
     scanSessionId = null,
+    guestScanSessionId = null,
     analysisBundle,
     externalScrollY,
     miniHeaderMode = 'inline',
@@ -10529,6 +10560,7 @@ export const AnalysisDashboard: React.FC<AnalysisDashboardProps> = ({
             scoreState={scoreState}
             sourceType={sourceType}
             scanSessionId={scanSessionId}
+            guestScanSessionId={guestScanSessionId}
             externalScrollY={externalScrollY}
             miniHeaderMode={miniHeaderMode}
             onMiniScoreMetaChange={onMiniScoreMetaChange}

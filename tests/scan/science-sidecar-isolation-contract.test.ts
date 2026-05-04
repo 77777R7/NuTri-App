@@ -46,8 +46,8 @@ test('science UI uses new B/C sidecars and removes the legacy ingredient summary
 });
 
 test('server exposes ingredient overview and scientific background sidecars with shared authority helper', () => {
-  assert.match(serverSource, /app\.post\("\/api\/ingredient-overview\/v1", verifySupabaseToken/);
-  assert.match(serverSource, /app\.post\("\/api\/scientific-background\/v1", verifySupabaseToken/);
+  assert.match(serverSource, /app\.post\(\s*"\/api\/ingredient-overview\/v1",\s*verifySupabaseTokenOrGuestScanToken/);
+  assert.match(serverSource, /app\.post\(\s*"\/api\/scientific-background\/v1",\s*verifySupabaseTokenOrGuestScanToken/);
   assert.match(serverSource, /const buildDecisionSupportAuthorityBundle = async \(/);
   assert.match(serverSource, /buildDecisionSupportDigestMismatchPayload/);
   assert.match(serverSource, /decisionInputsHash:\s*z\.string\(\)\.trim\(\)\.min\(1\)\.nullable\(\)\.optional\(\)/);
@@ -55,11 +55,11 @@ test('server exposes ingredient overview and scientific background sidecars with
   assert.match(serverSource, /revalidateFallback:\s*z\.boolean\(\)\.optional\(\)/);
   assert.match(serverSource, /authority\.decisionSupport\.decisionInputsHash/);
   assert.match(serverSource, /authority\.personalizationScopeHash/);
-  assert.match(
-    serverSource,
-    /const cacheKey = \[\s*authority\.decisionSupport\.digest,\s*authority\.decisionSupport\.decisionInputsHash,\s*authority\.personalizationScopeHash,/,
-  );
-  assert.ok(serverSource.includes('normalizeIngredientScienceKey(parsedBody.selectedIngredientName)'));
+  assert.match(serverSource, /const cacheKey = buildScanSidecarCacheKey\(\{/);
+  assert.match(serverSource, /decisionDigest:\s*authority\.decisionSupport\.digest/);
+  assert.match(serverSource, /decisionInputsHash:\s*authority\.decisionSupport\.decisionInputsHash/);
+  assert.match(serverSource, /personalizationScopeHash:\s*authority\.personalizationScopeHash/);
+  assert.match(serverSource, /normalizeIngredientScienceKey\(\s*parsedBody\.selectedIngredientName,\s*\)/);
   assert.ok(serverSource.includes('backgroundRefreshPending: boolean;'));
   assert.ok(serverSource.includes('recommendedRetryAfterMs: number | null;'));
   assert.ok(serverSource.includes('withIngredientOverviewRefreshHint'));

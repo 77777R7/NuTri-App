@@ -14498,7 +14498,7 @@ app.get(
 
 app.post(
   "/api/ingredient-overview/v1",
-  verifySupabaseToken,
+  verifySupabaseTokenOrGuestScanToken,
   async (req: Request, res: Response) => {
     const parsedBody = parseRequestBody(ingredientOverviewBodySchema, req, res);
     if (!parsedBody) return;
@@ -14936,7 +14936,7 @@ app.post(
 
 app.post(
   "/api/scientific-background/v1",
-  verifySupabaseToken,
+  verifySupabaseTokenOrGuestScanToken,
   async (req: Request, res: Response) => {
     const parsedBody = parseRequestBody(
       scientificBackgroundBodySchema,

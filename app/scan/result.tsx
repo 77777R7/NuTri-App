@@ -994,6 +994,7 @@ export default function ScanResultScreen() {
           }
           sourceType="barcode"
           scanSessionId={currentScanId}
+          guestScanSessionId={guestScanSessionId}
           analysisBundle={analysisBundle}
           onboardingDraftOverride={session?.onboardingDraftSnapshot ?? null}
           externalScrollY={analysisHeaderScrollY}
