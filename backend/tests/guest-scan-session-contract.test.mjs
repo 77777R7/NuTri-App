@@ -1,0 +1,44 @@
+import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
+import path from "node:path";
+import { test } from "node:test";
+import { fileURLToPath } from "node:url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const ROOT = path.resolve(__dirname, "../..");
+const HELPER_PATH = path.join(ROOT, "backend/src/guestScanSessions.ts");
+const SERVER_PATH = path.join(ROOT, "backend/src/server.ts");
+const MIGRATION_PATH = path.join(
+  ROOT,
+  "supabase/migrations/20260504130000_guest_scan_sessions.sql",
+);
+
+test("guest scan helper stores claim-token hashes instead of raw tokens", async () => {
+  const source = await readFile(HELPER_PATH, "utf8");
+  assert.match(source, /claim_token_hash/);
+  assert.match(source, /createHash\("sha256"\)/);
+  assert.match(source, /randomBytes\(32\)\.toString\("base64url"\)/);
+  assert.doesNotMatch(source, /claim_token(?!_hash)/);
+});
+
+test("guest scan server exposes create and claim routes without auth bypass", async () => {
+  const source = await readFile(SERVER_PATH, "utf8");
+  assert.match(source, /\/api\/guest-scan\/session/);
+  assert.match(source, /\/api\/guest-scan\/claim/);
+  assert.match(source, /verifySupabaseTokenOrGuestScanToken/);
+  assert.match(source, /"x-guest-scan-session-id"/);
+  assert.match(source, /"x-guest-scan-claim-token"/);
+  assert.match(source, /app\.post\(\s*"\/api\/enrich-stream",\s*verifySupabaseTokenOrGuestScanToken/s);
+  assert.doesNotMatch(source, /X-Auth-Disabled.*guest/i);
+});
+
+test("guest scan table is service-role only and time-bound", async () => {
+  const source = await readFile(MIGRATION_PATH, "utf8");
+  assert.match(source, /create table if not exists public\.guest_scan_sessions/);
+  assert.match(source, /claim_token_hash text not null/);
+  assert.match(source, /expires_at timestamptz not null/);
+  assert.match(source, /alter table if exists public\.guest_scan_sessions enable row level security/);
+  assert.match(source, /revoke all on table public\.guest_scan_sessions from anon, authenticated/);
+  assert.match(source, /grant all on table public\.guest_scan_sessions to service_role/);
+});

@@ -22,4 +22,5 @@ export const Config = {
     posthogApiKey: ENV.posthogApiKey,
   },
   scanTerminalLockEnabled: ENV.scanTerminalLockEnabled,
+  guestScanEnabled: ENV.guestScanEnabled,
 } as const;

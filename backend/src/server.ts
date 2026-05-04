@@ -71,6 +71,13 @@ import {
   type ScanSidecarRoute,
 } from "./scanSidecarPolicy.js";
 import {
+  claimGuestScanSession,
+  createGuestScanSession,
+  recordGuestScanSessionProgress,
+  validateGuestScanToken,
+  type GuestScanSessionRow,
+} from "./guestScanSessions.js";
+import {
   DEFAULT_BUNDLE_ONLY_DONE_DELAY_MS,
   DEFAULT_FULL_REV1_DONE_DELAY_MS,
   resolveScanStreamRev1DonePolicy,
@@ -8692,6 +8699,10 @@ type AuthenticatedRequest = Request & {
     id: string;
     email?: string | null;
   };
+  guestScan?: {
+    session: GuestScanSessionRow;
+    claimToken: string;
+  };
   // Set only when the request is authenticated via REGRESSION_AUTH_TOKEN.
   // Used to gate internal debug/audit fields from normal users.
   regressionAuth?: boolean;
@@ -8817,6 +8828,48 @@ const verifySupabaseToken = async (
       .status(503)
       .json({ error: "auth_unavailable" } satisfies ErrorResponse);
   }
+};
+
+const readFirstHeader = (value: string | string[] | undefined): string => {
+  const raw = Array.isArray(value) ? value[0] : value;
+  return typeof raw === "string" ? raw.trim() : "";
+};
+
+const verifySupabaseTokenOrGuestScanToken = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  if (req.headers.authorization) {
+    return verifySupabaseToken(req, res, next);
+  }
+
+  const guestScanSessionId = readFirstHeader(
+    req.headers["x-guest-scan-session-id"],
+  );
+  const guestScanClaimToken = readFirstHeader(
+    req.headers["x-guest-scan-claim-token"],
+  );
+
+  if (!guestScanSessionId && !guestScanClaimToken) {
+    return verifySupabaseToken(req, res, next);
+  }
+
+  const validation = await validateGuestScanToken({
+    guestScanSessionId,
+    claimToken: guestScanClaimToken,
+  });
+  if (!validation.ok) {
+    return res
+      .status(validation.status)
+      .json({ error: validation.error } satisfies ErrorResponse);
+  }
+
+  (req as AuthenticatedRequest).guestScan = {
+    session: validation.session,
+    claimToken: guestScanClaimToken,
+  };
+  return next();
 };
 
 const parseRequestBody = <T>(
@@ -9755,6 +9808,11 @@ const enrichStreamBodySchema = z
     deviceId: z.string().optional(),
   })
   .passthrough();
+
+const guestScanClaimBodySchema = z.object({
+  guestScanSessionId: z.string().min(1),
+  claimToken: z.string().min(1),
+});
 
 const analysisSectionBodySchema = z.object({
   identity: z.object({
@@ -11612,6 +11670,67 @@ app.get("/api/nutri-tips", async (_req: Request, res: Response) => {
       .json({ success: false, message: "Failed to load tips." });
   }
 });
+
+app.post("/api/guest-scan/session", async (_req: Request, res: Response) => {
+  try {
+    const session = await createGuestScanSession();
+    res.setHeader("Cache-Control", "no-store");
+    return res.json({
+      guestScanSessionId: session.guestScanSessionId,
+      claimToken: session.claimToken,
+      status: session.status,
+      expiresAt: session.expiresAt,
+    });
+  } catch (error) {
+    captureException(error, { route: "/api/guest-scan/session" });
+    console.error("/api/guest-scan/session unexpected error", error);
+    return res
+      .status(503)
+      .json({ error: "guest_scan_unavailable" } satisfies ErrorResponse);
+  }
+});
+
+app.post(
+  "/api/guest-scan/claim",
+  verifySupabaseToken,
+  async (req: Request, res: Response) => {
+    const parsedBody = parseRequestBody(guestScanClaimBodySchema, req, res);
+    if (!parsedBody) return;
+
+    const user = (req as AuthenticatedRequest).user;
+    if (!user?.id) {
+      return res
+        .status(401)
+        .json({ error: "unauthorized" } satisfies ErrorResponse);
+    }
+
+    try {
+      const result = await claimGuestScanSession({
+        guestScanSessionId: parsedBody.guestScanSessionId,
+        claimToken: parsedBody.claimToken,
+        userId: user.id,
+      });
+      if (!result.ok) {
+        return res
+          .status(result.status)
+          .json({ error: result.error } satisfies ErrorResponse);
+      }
+
+      return res.json({
+        ok: true,
+        guestScanSessionId: result.session.id,
+        status: result.session.status,
+        claimedAt: result.session.claimed_at,
+      });
+    } catch (error) {
+      captureException(error, { route: "/api/guest-scan/claim" });
+      console.error("/api/guest-scan/claim unexpected error", error);
+      return res
+        .status(503)
+        .json({ error: "guest_scan_unavailable" } satisfies ErrorResponse);
+    }
+  },
+);
 
 app.post(
   "/api/personalization/explain",
@@ -17960,7 +18079,7 @@ app.get(
  */
 app.post(
   "/api/enrich-stream",
-  verifySupabaseToken,
+  verifySupabaseTokenOrGuestScanToken,
   async (req: Request, res: Response) => {
     const parsedBody = parseRequestBody(enrichStreamBodySchema, req, res);
     if (!parsedBody) {
@@ -17986,6 +18105,21 @@ app.post(
         )
       : ENRICH_STREAM_QUEUE_WAIT_MS;
     const normalized = normalizeBarcodeInput(rawBarcode);
+    const guestScan = (req as AuthenticatedRequest).guestScan;
+    if (guestScan) {
+      const scanSessionIdRaw = (parsedBody as Record<string, unknown>)["scanSessionId"];
+      void recordGuestScanSessionProgress({
+        guestScanSessionId: guestScan.session.id,
+        claimToken: guestScan.claimToken,
+        scanSessionId:
+          typeof scanSessionIdRaw === "string" ? scanSessionIdRaw : null,
+        barcode: rawBarcode,
+        barcodeGtin14: normalized?.code ? normalized.code.padStart(14, "0") : null,
+        status: "result_started",
+      }).catch((error) => {
+        console.warn("[guest-scan] Failed to record scan progress", error);
+      });
+    }
     const model = resolveDeepSeekModel(process.env.DEEPSEEK_MODEL);
     const acceptLanguageHeader =
       typeof req.headers["accept-language"] === "string"
