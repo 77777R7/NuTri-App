@@ -50,6 +50,61 @@ const enrichStreamBodySchema = z
   })
   .passthrough();
 
+const IHERB_IMAGE_HOST_PATTERN = /(^|\.)images-iherb\.com$/i;
+const IHERB_CMS_BANNER_PATTERN = /\/images\/cms\//i;
+const INTERNAL_RENDER_IMAGE_PATTERN =
+  /\/overlay-label-assets\/(?:generated-fallback-cards|dsld-label-renders|manual-fallback-renders)\//i;
+const INTERNAL_RENDER_FILENAME_PATTERN =
+  /(?:^|[_-])render(?:s|ed)?(?:[_-]|\b)/i;
+
+const isInternalRenderImageUrl = (value: string): boolean =>
+  INTERNAL_RENDER_IMAGE_PATTERN.test(value) ||
+  (/supabase\.co/i.test(value) &&
+    INTERNAL_RENDER_FILENAME_PATTERN.test(value)) ||
+  /HAIR_GROWTH_RENDER/i.test(value);
+
+const scorePreferredProductImageUrl = (
+  value: string | null | undefined,
+): number => {
+  if (!value) return 0;
+  const trimmed = value.trim();
+  if (!trimmed) return 0;
+
+  let parsed: URL;
+  try {
+    parsed = new URL(trimmed);
+  } catch {
+    return 0;
+  }
+
+  if (IHERB_IMAGE_HOST_PATTERN.test(parsed.hostname)) {
+    if (IHERB_CMS_BANNER_PATTERN.test(parsed.pathname)) return 20;
+    return 100;
+  }
+
+  if (isInternalRenderImageUrl(trimmed)) return 0;
+
+  if (/^https?:$/i.test(parsed.protocol)) return 70;
+
+  return 30;
+};
+
+const pickPreferredProductImageUrl = (
+  ...candidates: Array<string | null | undefined>
+): string | null => {
+  const ranked = candidates
+    .map((candidate) => (typeof candidate === "string" ? candidate.trim() : ""))
+    .filter(Boolean)
+    .map((candidate) => ({
+      candidate,
+      score: scorePreferredProductImageUrl(candidate),
+    }))
+    .sort((left, right) => right.score - left.score);
+
+  const best = ranked[0];
+  return best && best.score >= 50 ? best.candidate : null;
+};
+
 export const registerEnrichStreamRoute = (
   app: Express,
   deps: EnrichStreamRouteDependencies,
@@ -3716,7 +3771,10 @@ export const registerEnrichStreamRoute = (
       snapshot: SupplementSnapshot;
       analysisPayload: SnapshotAnalysisPayload | null;
       expiresAt?: string | null;
-    }, catalog?: CatalogResolved | null, options?: { mode?: CachedSnapshotSseMode }) => {
+    }, catalog?: CatalogResolved | null, options?: {
+      mode?: CachedSnapshotSseMode;
+      overlayClaims?: DecisionSupportOverlayClaims | null;
+    }) => {
       const mode: CachedSnapshotSseMode = options?.mode ?? "full";
       if (STREAM_VERBOSE_LOG_ENABLED) {
         console.log(`[Stream] Cache hit for barcode: ${barcode}`);
@@ -3743,6 +3801,7 @@ export const registerEnrichStreamRoute = (
       }
 
       const catalogCategory = catalog?.category ?? catalog?.categoryRaw ?? null;
+      const overlayImageUrl = options?.overlayClaims?.imageUrl ?? null;
 
       const productInfo = {
         brand: resolveBrand(
@@ -3753,7 +3812,12 @@ export const registerEnrichStreamRoute = (
         ),
         name: pickText(catalog?.productName, workingAnalysisPayload?.productInfo?.name, snapshot.product.name),
         category: pickText(catalogCategory, workingAnalysisPayload?.productInfo?.category, snapshot.product.category),
-        image: pickText(catalog?.imageUrl, workingAnalysisPayload?.productInfo?.image, snapshot.product.imageUrl),
+        image: pickPreferredProductImageUrl(
+          overlayImageUrl,
+          catalog?.imageUrl,
+          workingAnalysisPayload?.productInfo?.image,
+          snapshot.product.imageUrl,
+        ),
       };
 
       if (workingAnalysisPayload) {
@@ -4278,7 +4342,10 @@ export const registerEnrichStreamRoute = (
       emitCachedSnapshot(
         cachedFast,
         catalogFast,
-        streamAnalysisBundleOnly ? { mode: "analysis_bundle_only" } : undefined,
+        {
+          ...(streamAnalysisBundleOnly ? { mode: "analysis_bundle_only" as const } : {}),
+          overlayClaims: cachedOverlayClaims,
+        },
       );
       stage0Delivered = true;
       stage0Source = "snapshot";
@@ -4568,6 +4635,7 @@ export const registerEnrichStreamRoute = (
                 dsldLabelId: snapshot.regulatory.dsldLabelId,
               };
               const catalogCategory = catalog.category ?? catalog.categoryRaw ?? null;
+              const overlayImageUrl = (await getOverlayClaimsForBarcode())?.imageUrl ?? null;
               const finalProductInfo = {
                 brand: resolveBrand(
                   analysisPayload?.brandExtraction,
@@ -4577,7 +4645,12 @@ export const registerEnrichStreamRoute = (
                 ),
                 name: pickText(catalog.productName, analysisPayload?.productInfo?.name, snapshot.product.name),
                 category: pickText(catalogCategory, analysisPayload?.productInfo?.category, snapshot.product.category),
-                image: pickText(catalog.imageUrl, analysisPayload?.productInfo?.image, snapshot.product.imageUrl),
+                image: pickPreferredProductImageUrl(
+                  overlayImageUrl,
+                  catalog.imageUrl,
+                  analysisPayload?.productInfo?.image,
+                  snapshot.product.imageUrl,
+                ),
               };
 
               snapshot.product.brand = finalProductInfo.brand;
@@ -4719,6 +4792,7 @@ export const registerEnrichStreamRoute = (
       let workingAnalysisPayload: SnapshotAnalysisPayload = cached?.analysisPayload ?? {};
 
       const catalogCategory = catalog.category ?? catalog.categoryRaw ?? null;
+      const overlayImageUrl = (await getOverlayClaimsForBarcode())?.imageUrl ?? null;
       let finalProductInfo = {
         brand: resolveBrand(
           workingAnalysisPayload.brandExtraction,
@@ -4728,7 +4802,12 @@ export const registerEnrichStreamRoute = (
         ),
         name: pickText(catalog.productName, workingAnalysisPayload.productInfo?.name, workingSnapshot.product.name),
         category: pickText(catalogCategory, workingAnalysisPayload.productInfo?.category, workingSnapshot.product.category),
-        image: pickText(catalog.imageUrl, workingAnalysisPayload.productInfo?.image, workingSnapshot.product.imageUrl),
+        image: pickPreferredProductImageUrl(
+          overlayImageUrl,
+          catalog.imageUrl,
+          workingAnalysisPayload.productInfo?.image,
+          workingSnapshot.product.imageUrl,
+        ),
       };
 
       workingSnapshot = {
@@ -4807,7 +4886,12 @@ export const registerEnrichStreamRoute = (
         ),
         name: pickText(workingSnapshot.product.name, catalog.productName, workingAnalysisPayload.productInfo?.name),
         category: pickText(catalogCategory, workingAnalysisPayload.productInfo?.category, workingSnapshot.product.category),
-        image: pickText(catalog.imageUrl, workingAnalysisPayload.productInfo?.image, workingSnapshot.product.imageUrl),
+        image: pickPreferredProductImageUrl(
+          overlayImageUrl,
+          catalog.imageUrl,
+          workingAnalysisPayload.productInfo?.image,
+          workingSnapshot.product.imageUrl,
+        ),
       };
 
       workingSnapshot = {
@@ -5979,7 +6063,10 @@ export const registerEnrichStreamRoute = (
           }
         }
 
-        emitCachedSnapshot(after, null, streamAnalysisBundleOnly ? { mode: "analysis_bundle_only" } : undefined);
+        emitCachedSnapshot(after, null, {
+          ...(streamAnalysisBundleOnly ? { mode: "analysis_bundle_only" as const } : {}),
+          overlayClaims: await getOverlayClaimsForBarcode(),
+        });
         await awaitAnalysisBundle();
         finalizeStream("wait_inflight_snapshot_complete");
         const timingTotalMs = Math.round(performance.now() - startedAt);
