@@ -2,6 +2,7 @@ import { Config } from '@/constants/Config';
 import { withAuthHeaders } from '@/lib/auth-token';
 import {
   createLocalGuestScanSession,
+  getGuestScanSession,
   getLastGuestScanSession,
   markGuestScanSessionClaimFailed,
   markGuestScanSessionClaimed,
@@ -84,9 +85,15 @@ export const createGuestScanSessionFromServer = async (): Promise<GuestScanSessi
   });
 };
 
-export const claimLastGuestScanSessionOnServer =
-  async (): Promise<ClaimGuestScanSessionResponse | null> => {
-    const localSession = await getLastGuestScanSession();
+export const claimGuestScanSessionOnServer =
+  async (guestScanSessionId?: string | null): Promise<ClaimGuestScanSessionResponse | null> => {
+    const normalizedGuestScanSessionId =
+      typeof guestScanSessionId === 'string' && guestScanSessionId.trim().length > 0
+        ? guestScanSessionId.trim()
+        : null;
+    const localSession = normalizedGuestScanSessionId
+      ? await getGuestScanSession(normalizedGuestScanSessionId)
+      : await getLastGuestScanSession();
     if (!localSession) return null;
 
     const headers = await withAuthHeaders({
@@ -121,3 +128,5 @@ export const claimLastGuestScanSessionOnServer =
       claimedAt: readString(result?.claimedAt),
     };
   };
+
+export const claimLastGuestScanSessionOnServer = claimGuestScanSessionOnServer;

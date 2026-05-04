@@ -5,6 +5,7 @@ import { Config } from '@/constants/Config';
 import { withAuthHeaders } from '@/lib/auth-token';
 import { AUTH_DISABLED } from '@/lib/auth-mode';
 import { resolveBrand } from '@/lib/brand/resolveBrand';
+import { getGuestScanSession } from '@/lib/scan/guestSession';
 import type { SearchResultSeed } from '@/lib/scan/session';
 import {
     resolveTrustedDisplayIdentity,
@@ -48,6 +49,8 @@ type ProductInfo = {
 type StreamLaunchOptions = {
     launchSource?: string | null;
     searchSeed?: SearchResultSeed | null;
+    scanSessionId?: string | null;
+    guestScanSessionId?: string | null;
 };
 
 // Ingredient analysis from enhanced efficacy
@@ -435,6 +438,13 @@ export function useStreamAnalysis(barcode: string, options?: StreamLaunchOptions
         ? options.launchSource.trim().toLowerCase()
         : '';
     const searchSeed = options?.searchSeed ?? null;
+    const scanSessionId = typeof options?.scanSessionId === 'string' && options.scanSessionId.trim().length > 0
+        ? options.scanSessionId.trim()
+        : null;
+    const guestScanSessionId =
+        typeof options?.guestScanSessionId === 'string' && options.guestScanSessionId.trim().length > 0
+            ? options.guestScanSessionId.trim()
+            : null;
     const searchSeedFingerprint = buildSearchSeedFingerprint(searchSeed);
     const [state, setState] = useState<AnalysisState>(() => buildInitialAnalysisState(searchSeed));
     const [serverSnapshot, setServerSnapshot] = useState<SupplementSnapshot | null>(null);
@@ -611,6 +621,16 @@ export function useStreamAnalysis(barcode: string, options?: StreamLaunchOptions
                 'Content-Type': 'application/json',
                 Accept: 'text/event-stream',
             });
+            if (scanSessionId) {
+                headers['X-Scan-Session-Id'] = scanSessionId;
+            }
+            if (guestScanSessionId) {
+                const guestSession = await getGuestScanSession(guestScanSessionId);
+                if (guestSession?.claimToken) {
+                    headers['X-Guest-Scan-Session-Id'] = guestSession.guestScanSessionId;
+                    headers['X-Guest-Scan-Claim-Token'] = guestSession.claimToken;
+                }
+            }
             if (!isActive) return;
 
             console.log('[SSE] Init:', {
@@ -624,6 +644,9 @@ export function useStreamAnalysis(barcode: string, options?: StreamLaunchOptions
                 : { barcode };
             if (normalizedLaunchSource) {
                 streamPayload.launchSource = normalizedLaunchSource;
+            }
+            if (scanSessionId) {
+                streamPayload.scanSessionId = scanSessionId;
             }
             if (searchSeed) {
                 streamPayload.searchContext = {
@@ -1198,7 +1221,7 @@ export function useStreamAnalysis(barcode: string, options?: StreamLaunchOptions
             clearTimeout(rev1Guard);
             closeStream();
         };
-    }, [barcode, normalizedLaunchSource, searchSeedFingerprint]);
+    }, [barcode, guestScanSessionId, normalizedLaunchSource, scanSessionId, searchSeed, searchSeedFingerprint]);
 
     const snapshot = useMemo(
         () => serverSnapshot ?? buildBarcodeSnapshot({ barcode, analysis: state }),

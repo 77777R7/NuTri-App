@@ -82,6 +82,7 @@ export default function LoginScreen() {
       return candidate;
     }
   }, [params.redirect, postAuthRedirect]);
+  const isGuestClaimRedirect = redirectTarget?.includes("/guest-scan/claim") === true;
 
   const finishLogin = useCallback(() => {
     const destination = redirectTarget ? getPostAuthDestination(redirectTarget) : "/";
@@ -219,7 +220,16 @@ export default function LoginScreen() {
           <Text style={styles.footerText}>
             Don’t have an account?{" "}
             <Text
-              onPress={() => router.push("/auth/signup")}
+              onPress={() => {
+                if (redirectTarget) {
+                  router.push({
+                    pathname: "/auth/signup",
+                    params: { redirect: redirectTarget },
+                  });
+                  return;
+                }
+                router.push("/auth/signup");
+              }}
               style={styles.footerLink}
             >
               Create one
@@ -234,6 +244,14 @@ export default function LoginScreen() {
       }
     >
       <Text style={styles.sectionTitle}>Member Access</Text>
+
+      {isGuestClaimRedirect ? (
+        <View style={styles.feedbackInfo}>
+          <Text style={styles.feedbackTextInfo}>
+            Sign in to save this scan and keep its personalized insights with your account.
+          </Text>
+        </View>
+      ) : null}
 
       {feedback ? (
         <View style={styles.feedback}>
@@ -407,10 +425,25 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     marginBottom: 16,
   },
+  feedbackInfo: {
+    borderRadius: 14,
+    backgroundColor: "#EFF6FF",
+    borderWidth: 1,
+    borderColor: "#BFDBFE",
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    marginBottom: 16,
+  },
   feedbackText: {
     color: "#991B1B",
     fontSize: 14,
     lineHeight: 20,
+  },
+  feedbackTextInfo: {
+    color: "#1E3A8A",
+    fontSize: 14,
+    lineHeight: 20,
+    fontWeight: "600",
   },
   inputGroup: {
     marginBottom: 12,

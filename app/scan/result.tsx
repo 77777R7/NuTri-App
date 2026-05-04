@@ -11,6 +11,7 @@ import { ResponsiveScreen } from '@/components/common/ResponsiveScreen';
 import { ScanResultHeaderChrome } from '@/components/scan/ScanResultHeaderChrome';
 import { OrganicSpinner } from '@/components/ui/OrganicSpinner';
 import { ShinyText } from '@/components/ui/ShinyText';
+import { useAuth } from '@/contexts/AuthContext';
 import { useScanHistory } from '@/contexts/ScanHistoryContext';
 import { useOnboarding } from '@/contexts/OnboardingContext';
 import { useResponsiveTokens } from '@/hooks/useResponsiveTokens';
@@ -166,6 +167,7 @@ export default function ScanResultScreen() {
   const appOwnership = Constants.appOwnership;
   const isExpoGo = appOwnership === 'expo' || appOwnership === 'guest';
   const { addScan } = useScanHistory();
+  const { session: authSession, setPostAuthRedirect } = useAuth();
   const { onbCompleted, loading: onboardingLoading } = useOnboarding();
   const { addSupplement, savedSupplements, updateSupplement } = useSavedSupplements();
   const premiumAccess = usePremiumAccess();
@@ -193,6 +195,11 @@ export default function ScanResultScreen() {
     typeof params.sessionId === 'string' && params.sessionId.trim().length > 0
       ? params.sessionId.trim()
       : session?.id ?? null;
+  const guestScanSessionId =
+    session?.source === 'guest_scan' && typeof session.guestScanSessionId === 'string'
+      ? session.guestScanSessionId.trim() || null
+      : null;
+  const isGuestScan = effectiveScanSource === 'guest_scan' && Boolean(guestScanSessionId);
   const [dashboardRuntimeError, setDashboardRuntimeError] = useState<string | null>(null);
   const dashboardRenderMode: 'full' = resolveDashboardRenderMode(isExpoGo);
   const analysisHeaderScrollY = useSharedValue(0);
@@ -252,6 +259,8 @@ export default function ScanResultScreen() {
   } = useStreamAnalysis(barcode, {
     launchSource: effectiveScanSource,
     searchSeed: searchResultSeed,
+    scanSessionId: currentScanId,
+    guestScanSessionId,
   });
   const barcodeQuality = useMemo(
     () => getBarcodeQuality({
@@ -504,6 +513,25 @@ export default function ScanResultScreen() {
       dosageText: dashboardSaveItem.dosageText,
     });
   }, [addSupplement, dashboardSaveItem]);
+
+  const handleKeepGuestResult = useCallback(() => {
+    if (!guestScanSessionId || !currentScanId) return;
+    const returnTo = `/scan/result?sessionId=${encodeURIComponent(currentScanId)}`;
+    const redirectTarget = `/guest-scan/claim?guestScanSessionId=${encodeURIComponent(guestScanSessionId)}&returnTo=${encodeURIComponent(returnTo)}`;
+
+    if (authSession?.user) {
+      router.push(redirectTarget as never);
+      return;
+    }
+
+    setPostAuthRedirect(redirectTarget);
+    router.push({
+      pathname: '/auth/signup',
+      params: {
+        redirect: redirectTarget,
+      },
+    });
+  }, [authSession?.user, currentScanId, guestScanSessionId, setPostAuthRedirect]);
 
   const handleOpenSaved = useCallback(() => {
     router.push({ pathname: '/main/Home-Page', params: { tab: 'saved' } });
@@ -923,12 +951,34 @@ export default function ScanResultScreen() {
         onBack={handleBack}
         title="Analysis"
         miniScore={headerMiniScore ? { ...headerMiniScore, scrollY: analysisHeaderScrollY } : null}
-        savePillState={dashboardSaveItem ? (isDashboardItemSaved ? 'saved' : 'save') : 'disabled'}
-        onSavePress={handleSaveFromDashboard}
+        savePillState={
+          isGuestScan
+            ? 'save'
+            : dashboardSaveItem
+              ? (isDashboardItemSaved ? 'saved' : 'save')
+              : 'disabled'
+        }
+        onSavePress={isGuestScan ? handleKeepGuestResult : handleSaveFromDashboard}
         onOpenSaved={handleOpenSaved}
         miniScoreThresholdStart={headerMiniScoreTrigger.start}
         miniScoreThresholdRange={headerMiniScoreTrigger.range}
       />
+
+      {isGuestScan ? (
+        <View style={styles.guestKeepBanner}>
+          <Text style={styles.guestKeepText}>
+            Save this scan to your account so your goals and allergies stay connected.
+          </Text>
+          <TouchableOpacity
+            onPress={handleKeepGuestResult}
+            style={styles.guestKeepButton}
+            accessibilityRole="button"
+            accessibilityLabel="Keep this result"
+          >
+            <Text style={styles.guestKeepButtonText}>Keep this result</Text>
+          </TouchableOpacity>
+        </View>
+      ) : null}
 
       {/* We render dashboard immediately. 
         As 'efficacy', 'safety' etc. arrive, this component re-renders and fills in the blanks.
@@ -938,7 +988,7 @@ export default function ScanResultScreen() {
           analysis={compositeAnalysis}
           isStreaming={showStreamingBadge}
           accessLevel={
-            premiumAccess.isPremium || isFirstRevealActive || isFirstRevealPendingGrant
+            isGuestScan ? 'full' : premiumAccess.isPremium || isFirstRevealActive || isFirstRevealPendingGrant
               ? 'full'
               : 'preview_locked'
           }
@@ -1142,6 +1192,36 @@ const styles = StyleSheet.create({
     color: '#111827',
     fontSize: 13,
     fontWeight: '600',
+  },
+  guestKeepBanner: {
+    marginHorizontal: 16,
+    marginTop: 8,
+    marginBottom: 8,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
+    backgroundColor: '#EFF6FF',
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    gap: 10,
+  },
+  guestKeepText: {
+    color: '#1E3A8A',
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: '600',
+  },
+  guestKeepButton: {
+    alignSelf: 'flex-start',
+    borderRadius: 999,
+    backgroundColor: '#2563EB',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+  },
+  guestKeepButtonText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '800',
   },
   // New style for the floating badge
   streamingBadge: {

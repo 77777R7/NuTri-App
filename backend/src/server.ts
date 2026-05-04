@@ -18105,9 +18105,9 @@ app.post(
         )
       : ENRICH_STREAM_QUEUE_WAIT_MS;
     const normalized = normalizeBarcodeInput(rawBarcode);
+    const scanSessionIdRaw = (parsedBody as Record<string, unknown>)["scanSessionId"];
     const guestScan = (req as AuthenticatedRequest).guestScan;
     if (guestScan) {
-      const scanSessionIdRaw = (parsedBody as Record<string, unknown>)["scanSessionId"];
       void recordGuestScanSessionProgress({
         guestScanSessionId: guestScan.session.id,
         claimToken: guestScan.claimToken,
@@ -19181,6 +19181,19 @@ app.post(
       });
       abortPipelineOnce(new Error("stream_finalized"));
       clearWatchdogs();
+      if (guestScan) {
+        void recordGuestScanSessionProgress({
+          guestScanSessionId: guestScan.session.id,
+          claimToken: guestScan.claimToken,
+          scanSessionId:
+            typeof scanSessionIdRaw === "string" ? scanSessionIdRaw : null,
+          barcode: rawBarcode,
+          barcodeGtin14: normalized?.code ? normalized.code.padStart(14, "0") : null,
+          status: "result_ready",
+        }).catch((error) => {
+          console.warn("[guest-scan] Failed to record scan completion", error);
+        });
+      }
       res.end();
     };
     const scheduleBundleOnlyFinalize = () => {

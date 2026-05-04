@@ -9,6 +9,13 @@ const gateSource = readFileSync(path.join(root, 'app/(auth)/gate.tsx'), 'utf8');
 const indexSource = readFileSync(path.join(root, 'app/index.tsx'), 'utf8');
 const configSource = readFileSync(path.join(root, 'constants/Config.ts'), 'utf8');
 const envSource = readFileSync(path.join(root, 'lib/env.ts'), 'utf8');
+const scanSessionSource = readFileSync(path.join(root, 'lib/scan/session.ts'), 'utf8');
+const barcodeSource = readFileSync(path.join(root, 'app/scan/barcode.tsx'), 'utf8');
+const streamSource = readFileSync(path.join(root, 'hooks/useStreamAnalysis.ts'), 'utf8');
+const resultSource = readFileSync(path.join(root, 'app/scan/result.tsx'), 'utf8');
+const claimSource = readFileSync(path.join(root, 'app/guest-scan/claim.tsx'), 'utf8');
+const signupSource = readFileSync(path.join(root, 'app/(auth)/auth/signup.tsx'), 'utf8');
+const loginSource = readFileSync(path.join(root, 'app/(auth)/auth/login.tsx'), 'utf8');
 
 test('guest scan API creates a server session and stores claim token locally', () => {
   assert.match(apiSource, /Config\.apiBaseUrl/);
@@ -33,4 +40,40 @@ test('auth gate exposes Start Free Scan behind feature flag without routing clai
 test('signed-out app entry can reach the auth gate', () => {
   assert.match(indexSource, /Config\.guestScanEnabled/);
   assert.match(indexSource, /<Redirect href="\/\(auth\)\/gate" \/>/);
+});
+
+test('guest scan metadata stays attached to scan session and stream headers', () => {
+  assert.match(scanSessionSource, /guestScanSessionId\?: string \| null/);
+  assert.match(barcodeSource, /guestScanSessionId/);
+  assert.match(barcodeSource, /setGuestScanSessionScan/);
+  assert.match(resultSource, /session\.guestScanSessionId/);
+  assert.match(streamSource, /scanSessionId\?: string \| null/);
+  assert.match(streamSource, /guestScanSessionId\?: string \| null/);
+  assert.match(streamSource, /getGuestScanSession/);
+  assert.match(streamSource, /X-Guest-Scan-Session-Id/);
+  assert.match(streamSource, /X-Guest-Scan-Claim-Token/);
+  assert.match(streamSource, /X-Scan-Session-Id/);
+  assert.match(streamSource, /scanSessionId/);
+});
+
+test('guest scan result receives one full reveal and keep action routes through claim', () => {
+  assert.match(resultSource, /isGuestScan/);
+  assert.match(resultSource, /guestScanSessionId/);
+  assert.match(resultSource, /\/guest-scan\/claim/);
+  assert.match(resultSource, /Keep this result/);
+  assert.match(resultSource, /isGuestScan \? 'full'/);
+});
+
+test('post-auth guest claim route reads token from local storage, not URL', () => {
+  assert.match(claimSource, /claimGuestScanSessionOnServer/);
+  assert.match(claimSource, /guestScanSessionId/);
+  assert.doesNotMatch(claimSource, /params\.claimToken/);
+  assert.match(claimSource, /router\.replace/);
+});
+
+test('auth screens preserve guest claim redirect context', () => {
+  assert.match(signupSource, /postAuthRedirect/);
+  assert.match(signupSource, /getPostAuthDestination/);
+  assert.match(signupSource, /guest-scan\/claim/);
+  assert.match(loginSource, /guest-scan\/claim/);
 });
