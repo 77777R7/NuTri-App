@@ -27,6 +27,11 @@ test("enrich-stream product_info hydrates Sports Research 90284 images from over
   );
 
   assert.match(routeSource, /const pickPreferredProductImageUrl = \(/);
+  assert.doesNotMatch(routeSource, /const cachedOverlayClaims = await/);
+  assert.match(
+    routeSource,
+    /let cachedOverlayClaims: DecisionSupportOverlayClaims \| null = null;[\s\S]*?cachedOverlayClaims = await getOverlayClaimsForBarcode\(\);/,
+  );
   assert.match(
     routeSource,
     /const overlayImageUrl = options\?\.overlayClaims\?\.imageUrl \?\? null;/,

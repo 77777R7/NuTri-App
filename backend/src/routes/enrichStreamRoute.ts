@@ -4139,6 +4139,7 @@ export const registerEnrichStreamRoute = (
     let bypassCachedFastPathForAuthority = false;
     let cachedLooksWebOnly = false;
     let prefetchedNameMatchFacts: LnhpdFacts | null = null;
+    let cachedOverlayClaims: DecisionSupportOverlayClaims | null = null;
     if (authorityRegressionScenarioActive) {
       bypassCachedFastPathForAuthority = true;
       console.info("[ResolutionV2] Bypassing cached snapshot for authority regression sample", {
@@ -4146,7 +4147,7 @@ export const registerEnrichStreamRoute = (
       });
     }
     if (cachedFast) {
-      const cachedOverlayClaims = await getOverlayClaimsForBarcode();
+      cachedOverlayClaims = await getOverlayClaimsForBarcode();
       const cachedNeedsOverlayRefresh =
         Boolean(cachedOverlayClaims) &&
         !snapshotPayloadUsesIherbOverlaySupport(cachedFast.analysisPayload);
