@@ -7046,9 +7046,12 @@ export const compileScientificBackgroundAsync = async (
       if (!repaired) {
         const hasAnyPlannedHeading = parsedWriterHasAnyPlannedHeading({
           plan,
-          parsed,
+          parsed: parseResult.parsed,
         });
-        if ((parsed.sections ?? []).length > 0 && !hasAnyPlannedHeading) {
+        if (
+          (parseResult.parsed.sections ?? []).length > 0 &&
+          !hasAnyPlannedHeading
+        ) {
           diagnostics.gateRejectCount += 1;
           diagnostics.fallbackReason = "quality_gate_rejected";
           appendGateRejectReasons(diagnostics, ["heading_mismatch_plan"]);

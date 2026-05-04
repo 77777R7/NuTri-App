@@ -897,6 +897,7 @@ const inferRowIngredientFamily = (params: {
 }): IngredientScienceIngredientFamily => {
   const rowText = normalizeText(params.rowName);
   if (!rowText) return "generic";
+  const rowLookupText = rowText.toLowerCase();
 
   const productText = normalizeText(params.productName);
   if (
@@ -907,7 +908,11 @@ const inferRowIngredientFamily = (params: {
   if (/^fiber$/i.test(rowText) && FIBER_PRODUCT_TITLE_PATTERN.test(productText))
     return "fiber";
 
-  const rowFamily = inferFamilyFromText(rowText);
+  const rawRowFamily = inferFamilyFromText(rowText);
+  const rowFamily =
+    rawRowFamily !== "generic"
+      ? rawRowFamily
+      : inferFamilyFromText(rowLookupText);
   if (rowFamily !== "generic") return rowFamily;
 
   const normalizedProductText = productText.toLowerCase();
@@ -918,7 +923,7 @@ const inferRowIngredientFamily = (params: {
     HARD_BLEND_LIKE_PATTERN.test(rowText) ||
     SOFT_BLEND_LIKE_PATTERN.test(rowText)
   ) {
-    return inferFamilyFromText(`${rowText} ${normalizedProductText}`);
+    return inferFamilyFromText(`${rowLookupText} ${normalizedProductText}`);
   }
 
   return "generic";
