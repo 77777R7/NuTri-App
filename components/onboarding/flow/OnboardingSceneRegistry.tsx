@@ -646,8 +646,8 @@ function WelcomeFlowScene({
                   },
                 ]}
               >
-                Answer a few quick questions and NuTri will shape the clearest
-                next picks for you.
+                Scan a supplement and see fit and safety fast. First, set your
+                goal and what to avoid.
               </Text>
             </View>
           </View>
@@ -672,7 +672,7 @@ function WelcomeFlowScene({
               <View style={flowStyles.welcomeProgressInactiveDot} />
             </View>
 
-            <WelcomePrimaryCTA title="Get Started" onPress={handleGetStarted} />
+            <WelcomePrimaryCTA title="Set up my first scan" onPress={handleGetStarted} />
 
             <View
               style={[
@@ -1074,6 +1074,11 @@ function GoalsFlowScene({
       answers: selectedGoals,
       source: 'gemini_port',
     });
+    trackOnboardingEvent('goals_completed', {
+      answerCount: selectedGoals.length,
+      answers: selectedGoals,
+      source: 'onboarding_goals',
+    });
     goToStep('allergy', 'forward');
     void flushDraft();
   }, [commitDraft, draft?.preferredTypes, flushDraft, goToStep, selectedGoals]);
@@ -1306,7 +1311,7 @@ function AllergyFlowScene({
     });
   }, []);
 
-  const persist = useCallback(() => {
+  const persist = useCallback((skipped = false) => {
     const normalized = normalizeAvoidItemsSelection(selected);
     commitDraft({
       avoidItems: normalized.avoidItems,
@@ -1319,6 +1324,11 @@ function AllergyFlowScene({
       answerCount: selected.length,
       answers: selected,
     });
+    trackOnboardingEvent(skipped ? 'allergy_skipped' : 'allergy_completed', {
+      answerCount: selected.length,
+      answers: selected,
+      source: 'onboarding_allergy',
+    });
     goToStep('plan-preview', 'forward');
     void flushDraft();
   }, [commitDraft, flushDraft, goToStep, selected]);
@@ -1328,8 +1338,8 @@ function AllergyFlowScene({
       backgroundVariant: 'qa',
       progressFillWidth: getSharedShellProgressFillWidth('allergy'),
       onBack: () => goToStep('goals', 'back'),
-      onContinue: persist,
-      onSkip: persist,
+      onContinue: () => persist(false),
+      onSkip: () => persist(true),
       continueLabel: 'Continue',
       footerReserveHeight: ONBOARDING_SHARED_SHELL_QA_FOOTER_SPACE,
     }),

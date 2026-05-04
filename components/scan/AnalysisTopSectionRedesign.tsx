@@ -11,7 +11,7 @@ import {
   ShieldCheck,
   Target,
 } from "lucide-react-native";
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   LayoutAnimation,
   Platform,
@@ -31,6 +31,10 @@ import type {
   TopSectionInsightTopic,
   TopSectionSecondaryNotePresentation,
 } from "@/lib/scan/analysisTopSectionPresentation";
+import {
+  NUTRI_ACTIVATION_DEFINITION,
+  trackOnboardingEvent,
+} from "@/lib/analytics/onboarding";
 import { sanitizeScanDisplayText } from "@/lib/scan/neverBlank";
 
 if (
@@ -227,6 +231,13 @@ export const AnalysisTopSectionRedesign: React.FC<
     !personalizationCoachDismissed &&
     hasGoalCoachSpot &&
     hasAllergyCoachSpot;
+  const handleDismissPersonalizationCoach = useCallback(() => {
+    setPersonalizationCoachDismissed(true);
+    trackOnboardingEvent("coach_dismissed", {
+      activationDefinition: NUTRI_ACTIVATION_DEFINITION.id,
+      surface: "scan_result_personalized_insights",
+    });
+  }, []);
 
   return (
     <View style={styles.wrapper}>
@@ -702,7 +713,7 @@ export const AnalysisTopSectionRedesign: React.FC<
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="Dismiss personalized insights guide"
-              onPress={() => setPersonalizationCoachDismissed(true)}
+              onPress={handleDismissPersonalizationCoach}
               style={styles.personalizationCoachTapLayer}
             />
           ) : null}

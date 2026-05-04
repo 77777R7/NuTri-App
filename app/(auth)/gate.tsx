@@ -11,6 +11,7 @@ import { BrandGradient } from '@/components/BrandGradient';
 import { Config } from '@/constants/Config';
 import { useAuth } from '@/contexts/AuthContext';
 import { createGuestScanSessionFromServer } from '@/lib/api/guestScan';
+import { trackOnboardingEvent } from '@/lib/analytics/onboarding';
 import { AUTH_DISABLED } from '@/lib/auth-mode';
 import { colors, spacing, type } from '@/lib/theme';
 
@@ -18,9 +19,9 @@ const AnimText = Animated.createAnimatedComponent(Text as any);
 
 const PHRASES = [
   'NuTri ',
-  'Let’s scan your supplement',
-  'Let’s study your supplement',
-  'Let’s optimize your health',
+  'Scan a supplement',
+  'See fit and safety fast',
+  'Save what works for you',
 ];
 
 export default function AuthGateScreen() {
@@ -80,6 +81,7 @@ export default function AuthGateScreen() {
       try {
         await Haptics.selectionAsync();
       } catch {}
+      trackOnboardingEvent('first_scan_started', { source: 'auth_gate_start_free_scan' });
       const session = await createGuestScanSessionFromServer();
       router.push({
         pathname: '/scan/barcode',
@@ -123,6 +125,9 @@ export default function AuthGateScreen() {
           >
             {PHRASES[index]}
           </AnimText>
+          <Text style={styles.scanFirstSubtext}>
+            Get a fast read on fit, safety, and what to avoid.
+          </Text>
         </View>
 
         <View style={{ paddingBottom: insets.bottom + spacing.lg + spacing.md, gap: spacing.md }}>
@@ -233,6 +238,15 @@ const styles = StyleSheet.create({
     color: colors.subtext,
     fontSize: 15,
     fontWeight: '600',
+  },
+  scanFirstSubtext: {
+    marginTop: 14,
+    maxWidth: 280,
+    color: colors.subtext,
+    fontSize: 16,
+    lineHeight: 22,
+    fontWeight: '600',
+    textAlign: 'center',
   },
   errorText: {
     color: '#EF4444',

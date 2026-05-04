@@ -3,12 +3,14 @@ import ProfileScreen from '@/components/screens/ProfileScreen';
 import { MySupplementView } from '@/components/screens/MySupplement';
 import { ContentFrame } from '@/components/common/ContentFrame';
 import { useDailyCheckIns } from '@/contexts/DailyCheckInContext';
-import { usePersonalization } from '@/contexts/PersonalizationContext';
+import { useOnboarding } from '@/contexts/OnboardingContext';
 import { useSavedSupplements } from '@/contexts/SavedSupplementsContext';
 import { useScanHistory } from '@/contexts/ScanHistoryContext';
 import { useFullBleed } from '@/hooks/useFullBleed';
 import { useScreenTokens } from '@/hooks/useScreenTokens';
 import { apiClient, type NutriTipsData } from '@/lib/api-client';
+import { NUTRI_ACTIVATION_DEFINITION, trackOnboardingEvent } from '@/lib/analytics/onboarding';
+import { trackOnboardingReturnMilestones } from '@/lib/analytics/onboarding-return';
 import {
   buildCheckInSeries,
   getCurrentPerfectStreakDays,
@@ -103,6 +105,7 @@ const SECTION_GAP = 20;
 const STACK_GAP = 16;
 const TREND_BAR_HEIGHT = 128;
 const TREND_BAR_MIN_HEIGHT = 8;
+const clampNumber = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
 
 type Density = 'compact' | 'regular';
 
@@ -112,12 +115,18 @@ const getTwoUpDensity = (contentWidth: number, gap: number): Density => {
 };
 
 const BOTTOM_INSET_TRIM = 0;
-const BOTTOM_FADE_EXTRA = 120;
 const TOP_FADE_EXTRA = 4;
 const NAV_HEIGHT = 64;
 const PLUS_BUTTON_SIZE = 64;
 const NAV_PILL_GAP = 16;
 const NAV_PILL_TARGET_WIDTH = 300;
+const BOTTOM_FADE_CUSHION_RATIO = 0.06;
+const BOTTOM_FADE_MIN_CUSHION = 34;
+const BOTTOM_FADE_MAX_CUSHION = 62;
+const BOTTOM_FADE_MIN_INTENSITY = 34;
+const BOTTOM_FADE_MAX_INTENSITY = 52;
+const BOTTOM_FADE_INTENSITY_HEIGHT_MIN = 640;
+const BOTTOM_FADE_INTENSITY_HEIGHT_MAX = 852;
 
 // 类型定义
 type SupplementItem = {
@@ -741,6 +750,7 @@ const SavedSupplements = ({
 }) => {
   const { t } = useTranslation();
   const { savedSupplements } = useSavedSupplements();
+  const { scans } = useScanHistory();
   const { checkInsByDate, toggleCheckIn } = useDailyCheckIns();
   const scrollProgress = useSharedValue(0);
   const { bleedStyle, contentStyle } = useFullBleed(pageX);
@@ -785,6 +795,13 @@ const SavedSupplements = ({
     () => savedSupplements.some(item => item.syncedToCheckIn),
     [savedSupplements],
   );
+  const latestScanName = useMemo(() => {
+    const rawName = scans[0]?.productName?.trim() ?? '';
+    const fallback = 'your first scan';
+    const name = rawName && rawName.toLowerCase() !== 'unknown supplement' ? rawName : fallback;
+    return name.length > 44 ? `${name.slice(0, 41).trim()}...` : name;
+  }, [scans]);
+  const hasRecentScanWaitingToSave = scans.length > 0 && !hasAnyCheckInSupplements;
 
   const handleScroll = useAnimatedScrollHandler({
     onScroll: (event) => {
@@ -823,14 +840,18 @@ const SavedSupplements = ({
                 ? 'Future dates are not available for check-in.'
                 : hasAnyCheckInSupplements
                   ? 'No supplements were scheduled for this date.'
-                  : t.checkInEmptyTitle}
+                  : hasRecentScanWaitingToSave
+                    ? `Save ${latestScanName} to start tracking`
+                    : t.checkInEmptyTitle}
             </Text>
             <Text style={styles.checkInEmptyDescription}>
               {selectedDateIsFuture
                 ? 'Pick today or an earlier date to log supplements.'
                 : hasAnyCheckInSupplements
                   ? 'Only supplements scheduled for this date appear here.'
-                  : t.checkInEmptyDescription}
+                  : hasRecentScanWaitingToSave
+                    ? 'Your scan is ready. Save it to your stack and it will appear here for Daily Check-in.'
+                    : t.checkInEmptyDescription}
             </Text>
           </View>
         </View>
@@ -1578,6 +1599,18 @@ const RecentlyScanned = () => {
       return;
     }
 
+    const activationPayload = {
+      activationDefinition: NUTRI_ACTIVATION_DEFINITION.id,
+      source: 'home_recent_scans',
+      scanHistoryId: item.id,
+      supplementId: item.supplementId ?? null,
+      hasBarcode: Boolean(item.barcode),
+    };
+    trackOnboardingEvent('saved_to_stack', activationPayload);
+    if (added.syncedToCheckIn !== false) {
+      trackOnboardingEvent('check_in_started', activationPayload);
+    }
+
     setTimeout(() => {
       setSavingIds(prev => ({ ...prev, [item.id]: false }));
     }, 240);
@@ -1856,9 +1889,26 @@ const BottomNav = ({
   pageX: number;
 }) => {
   const insets = useSafeAreaInsets();
-  const { width: windowWidth } = useWindowDimensions();
+  const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   const bottomInset = Math.max(0, insets.bottom - BOTTOM_INSET_TRIM);
-  const bottomFadeHeight = Math.max(160, bottomInset + BOTTOM_FADE_EXTRA);
+  const bottomFadeCushion = Math.round(
+    clampNumber(
+      windowHeight * BOTTOM_FADE_CUSHION_RATIO,
+      BOTTOM_FADE_MIN_CUSHION,
+      BOTTOM_FADE_MAX_CUSHION,
+    ),
+  );
+  const bottomFadeIntensityProgress = clampNumber(
+    (windowHeight - BOTTOM_FADE_INTENSITY_HEIGHT_MIN) /
+      (BOTTOM_FADE_INTENSITY_HEIGHT_MAX - BOTTOM_FADE_INTENSITY_HEIGHT_MIN),
+    0,
+    1,
+  );
+  const bottomFadeIntensity = Math.round(
+    BOTTOM_FADE_MIN_INTENSITY +
+      (BOTTOM_FADE_MAX_INTENSITY - BOTTOM_FADE_MIN_INTENSITY) * bottomFadeIntensityProgress,
+  );
+  const bottomFadeHeight = bottomInset + PLUS_BUTTON_SIZE + bottomFadeCushion;
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const activeId = useSharedValue<TabId>(currentTab);
   const available = windowWidth - pageX * 2 - PLUS_BUTTON_SIZE - NAV_PILL_GAP;
@@ -2053,7 +2103,7 @@ const BottomNav = ({
               />
             }
           >
-            <BlurView intensity={52} tint="light" style={StyleSheet.absoluteFill} />
+            <BlurView intensity={bottomFadeIntensity} tint="light" style={StyleSheet.absoluteFill} />
           </MaskedView>
 
           <LinearGradient
@@ -2225,9 +2275,9 @@ const HomeTab = () => {
   const frameWidth = tokens.frameWidth ?? tokens.width;
   const contentWidth = Math.max(0, frameWidth - tokens.pageX * 2);
   const twoUpDensity = getTwoUpDensity(contentWidth, STACK_GAP);
-  const { home } = usePersonalization();
   const { savedSupplements } = useSavedSupplements();
   const { checkInsByDate } = useDailyCheckIns();
+  const { draft: onboardingDraft, onbCompleted } = useOnboarding();
   const [baseDate, setBaseDate] = useState(() => new Date());
   const [selectedDayId, setSelectedDayId] = useState(() => getLocalDateKey(new Date()));
   const [tipsPayload, setTipsPayload] = useState<NutriTipsData | null>(null);
@@ -2235,6 +2285,10 @@ const HomeTab = () => {
   const [tipsLoading, setTipsLoading] = useState(true);
   const todayId = useMemo(() => getLocalDateKey(baseDate), [baseDate]);
   const todayIdRef = useRef(todayId);
+  const hasActivationFollowUp = useMemo(
+    () => savedSupplements.some(item => item.syncedToCheckIn),
+    [savedSupplements],
+  );
 
   const refreshToday = useCallback(() => {
     const now = new Date();
@@ -2245,19 +2299,31 @@ const HomeTab = () => {
     setBaseDate(now);
     setSelectedDayId(prev => (prev === prevTodayId ? nextTodayId : prev));
   }, []);
+  const trackReturnMilestones = useCallback(() => {
+    if (!onbCompleted || !onboardingDraft?.onboardingCompletedAt || !hasActivationFollowUp) return;
+    void trackOnboardingReturnMilestones({
+      onboardingCompletedAt: onboardingDraft.onboardingCompletedAt,
+      source: 'home_tab',
+    });
+  }, [hasActivationFollowUp, onbCompleted, onboardingDraft?.onboardingCompletedAt]);
 
   useEffect(() => {
     todayIdRef.current = todayId;
   }, [todayId]);
 
   useEffect(() => {
+    trackReturnMilestones();
+  }, [trackReturnMilestones]);
+
+  useEffect(() => {
     const subscription = AppState.addEventListener('change', state => {
       if (state === 'active') {
         refreshToday();
+        trackReturnMilestones();
       }
     });
     return () => subscription.remove();
-  }, [refreshToday]);
+  }, [refreshToday, trackReturnMilestones]);
 
   useEffect(() => {
     const now = new Date();

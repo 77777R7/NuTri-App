@@ -4032,6 +4032,7 @@ const AnalysisBundleDashboard: React.FC<{
     onCoreReadyChange?: (ready: boolean) => void;
     saveItem?: AnalysisDashboardSaveItem | null;
     onboardingDraftOverride?: ProfileDraft | null;
+    topAccessory?: React.ReactNode;
 }> = ({
     bundle,
     analysis,
@@ -4049,6 +4050,7 @@ const AnalysisBundleDashboard: React.FC<{
     onCoreReadyChange,
     saveItem = null,
     onboardingDraftOverride = null,
+    topAccessory = null,
 }) => {
     const { t } = useTranslation();
     const { loading: authLoading, token: authToken, session, setPostAuthRedirect } = useAuth();
@@ -10195,6 +10197,8 @@ const AnalysisBundleDashboard: React.FC<{
                 scrollEventThrottle={16}
                 {...scrollProps}
             >
+                {topAccessory}
+
                 {!disableHeroHeader ? (
                     <AnalysisTopSectionRedesign
                         hero={topSectionPresentation.hero}
@@ -10485,6 +10489,7 @@ type AnalysisDashboardProps = {
     onCoreReadyChange?: (ready: boolean) => void;
     saveItem?: AnalysisDashboardSaveItem | null;
     onboardingDraftOverride?: ProfileDraft | null;
+    topAccessory?: React.ReactNode;
 };
 
 const ensureModernAnalysisBundle = (
@@ -10548,6 +10553,7 @@ export const AnalysisDashboard: React.FC<AnalysisDashboardProps> = ({
     onCoreReadyChange,
     saveItem = null,
     onboardingDraftOverride = null,
+    topAccessory = null,
 }) => {
     const modernBundle = ensureModernAnalysisBundle(analysisBundle, analysis, scanSessionId);
     return (
@@ -10568,6 +10574,7 @@ export const AnalysisDashboard: React.FC<AnalysisDashboardProps> = ({
             onCoreReadyChange={onCoreReadyChange}
             saveItem={saveItem}
             onboardingDraftOverride={onboardingDraftOverride}
+            topAccessory={topAccessory}
         />
     );
 };

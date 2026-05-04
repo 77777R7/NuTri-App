@@ -302,7 +302,7 @@ export default function WelcomeScreen() {
                   Welcome to NuTri
                 </Text>
                 <Text allowFontScaling={false} style={[styles.subtext, isCompactHeight && styles.subtextCompact]}>
-                  Answer a few quick questions and NuTri will shape the clearest next picks for you.
+                  Scan a supplement and see fit and safety fast. First, set your goal and what to avoid.
                 </Text>
               </RNAnimated.View>
             </View>
@@ -323,7 +323,7 @@ export default function WelcomeScreen() {
                 <View style={styles.progressInactiveDot} />
               </View>
 
-              <WelcomePrimaryCTA title="Get Started" onPress={handleGetStarted} />
+              <WelcomePrimaryCTA title="Set up my first scan" onPress={handleGetStarted} />
 
               <View style={styles.microcopySlot}>
                 <RNAnimated.Text
