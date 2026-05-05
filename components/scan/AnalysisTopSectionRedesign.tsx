@@ -11,9 +11,10 @@ import {
   ShieldCheck,
   Target,
 } from "lucide-react-native";
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   LayoutAnimation,
+  type LayoutChangeEvent,
   Platform,
   Pressable,
   StyleSheet,
@@ -31,6 +32,10 @@ import type {
   TopSectionInsightTopic,
   TopSectionSecondaryNotePresentation,
 } from "@/lib/scan/analysisTopSectionPresentation";
+import {
+  NUTRI_ACTIVATION_DEFINITION,
+  trackOnboardingEvent,
+} from "@/lib/analytics/onboarding";
 import { sanitizeScanDisplayText } from "@/lib/scan/neverBlank";
 
 if (
@@ -50,6 +55,10 @@ type AnalysisTopSectionRedesignProps = {
   heroImageUri?: string | null;
   verifiedLabelText: string;
   lockedPreview?: boolean;
+  onPersonalizationCoachLayout?: (payload: {
+    syncKey: string;
+    sectionY: number;
+  }) => void;
 };
 
 type GoalCoverageRenderItem = {
@@ -174,6 +183,7 @@ export const AnalysisTopSectionRedesign: React.FC<
   heroImageUri,
   verifiedLabelText,
   lockedPreview = false,
+  onPersonalizationCoachLayout,
 }) => {
   const derivedSyncKey = useMemo(
     () =>
@@ -202,6 +212,8 @@ export const AnalysisTopSectionRedesign: React.FC<
   >({});
   const [personalizationCoachDismissed, setPersonalizationCoachDismissed] =
     useState(false);
+  const [personalizationCoachSectionY, setPersonalizationCoachSectionY] =
+    useState<number | null>(null);
 
   useEffect(() => {
     if (lastSyncKeyRef.current === derivedSyncKey) return;
@@ -227,6 +239,35 @@ export const AnalysisTopSectionRedesign: React.FC<
     !personalizationCoachDismissed &&
     hasGoalCoachSpot &&
     hasAllergyCoachSpot;
+  const handlePersonalizationCoachSectionLayout = useCallback(
+    (event: LayoutChangeEvent) => {
+      setPersonalizationCoachSectionY(event.nativeEvent.layout.y);
+    },
+    [],
+  );
+  const handleDismissPersonalizationCoach = useCallback(() => {
+    setPersonalizationCoachDismissed(true);
+    trackOnboardingEvent("coach_dismissed", {
+      activationDefinition: NUTRI_ACTIVATION_DEFINITION.id,
+      surface: "scan_result_personalized_insights",
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!showPersonalizationCoach || personalizationCoachSectionY == null) {
+      return;
+    }
+
+    onPersonalizationCoachLayout?.({
+      syncKey: derivedSyncKey,
+      sectionY: personalizationCoachSectionY,
+    });
+  }, [
+    derivedSyncKey,
+    onPersonalizationCoachLayout,
+    personalizationCoachSectionY,
+    showPersonalizationCoach,
+  ]);
 
   return (
     <View style={styles.wrapper}>
@@ -341,6 +382,7 @@ export const AnalysisTopSectionRedesign: React.FC<
 
       {insights.length > 0 ? (
         <Animated.View
+          onLayout={handlePersonalizationCoachSectionLayout}
           entering={FadeInUp.duration(260).delay(100)}
           style={[
             styles.insightsSection,
@@ -702,7 +744,7 @@ export const AnalysisTopSectionRedesign: React.FC<
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="Dismiss personalized insights guide"
-              onPress={() => setPersonalizationCoachDismissed(true)}
+              onPress={handleDismissPersonalizationCoach}
               style={styles.personalizationCoachTapLayer}
             />
           ) : null}

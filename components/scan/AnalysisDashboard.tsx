@@ -4425,12 +4425,29 @@ const AnalysisBundleDashboard: React.FC<{
     const comparisonSnapInterval = comparisonCardWidth + 12;
     const TileRenderer = disableTileAnimation ? StaticTile : AnimatedTile;
     const ScrollContainer: any = disableReanimatedScroll ? ScrollView : Animated.ScrollView;
+    const scrollContainerRef = useRef<any>(null);
+    const topSectionYRef = useRef(0);
+    const lastPersonalizationCoachScrollKeyRef = useRef<string | null>(null);
     const handlePlainScroll = useCallback((event: any) => {
         scrollY.value = event.nativeEvent.contentOffset.y;
     }, [scrollY]);
     const scrollProps = disableReanimatedScroll
         ? { onScroll: handlePlainScroll }
         : { onScroll: scrollHandler };
+    const handleTopSectionLayout = useCallback((event: LayoutChangeEvent) => {
+        topSectionYRef.current = event.nativeEvent.layout.y;
+    }, []);
+    const handlePersonalizationCoachLayout = useCallback((payload: { syncKey: string; sectionY: number }) => {
+        if (lastPersonalizationCoachScrollKeyRef.current === payload.syncKey) return;
+        lastPersonalizationCoachScrollKeyRef.current = payload.syncKey;
+
+        const anchorOffset = Math.min(Math.max(viewportHeight * 0.16, 96), 132);
+        const targetY = Math.max(0, topSectionYRef.current + payload.sectionY - anchorOffset);
+
+        setTimeout(() => {
+            scrollContainerRef.current?.scrollTo?.({ y: targetY, animated: true });
+        }, 80);
+    }, [viewportHeight]);
 
     useEffect(() => {
         if (!__DEV__) return;
@@ -10160,6 +10177,7 @@ const AnalysisBundleDashboard: React.FC<{
             ) : null}
 
             <ScrollContainer
+                ref={scrollContainerRef}
                 style={styles.scroll}
                 contentContainerStyle={styles.scrollContent}
                 showsVerticalScrollIndicator={false}
@@ -10167,17 +10185,20 @@ const AnalysisBundleDashboard: React.FC<{
                 {...scrollProps}
             >
                 {!disableHeroHeader ? (
-                    <AnalysisTopSectionRedesign
-                        hero={topSectionPresentation.hero}
-                        banner={topSectionPresentation.banner}
-                        insights={topSectionPresentation.insights}
-                        secondaryNote={topSectionPresentation.secondaryNote ?? null}
-                        productTitle={productTitle}
-                        productSubtitle={isPreviewLocked ? null : productSubtitle}
-                        heroImageUri={heroImageUri}
-                        verifiedLabelText={verifiedLabelText}
-                        lockedPreview={isPreviewLocked}
-                    />
+                    <View onLayout={handleTopSectionLayout}>
+                        <AnalysisTopSectionRedesign
+                            hero={topSectionPresentation.hero}
+                            banner={topSectionPresentation.banner}
+                            insights={topSectionPresentation.insights}
+                            secondaryNote={topSectionPresentation.secondaryNote ?? null}
+                            productTitle={productTitle}
+                            productSubtitle={isPreviewLocked ? null : productSubtitle}
+                            heroImageUri={heroImageUri}
+                            verifiedLabelText={verifiedLabelText}
+                            lockedPreview={isPreviewLocked}
+                            onPersonalizationCoachLayout={handlePersonalizationCoachLayout}
+                        />
+                    </View>
                 ) : null}
 
                 {!disableHeroHeader ? <View style={styles.sectionDivider} /> : null}
