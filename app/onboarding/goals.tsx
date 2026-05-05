@@ -50,6 +50,11 @@ export default function GoalsScreen() {
       answers: selectedGoals,
       source: 'gemini_port',
     });
+    trackOnboardingEvent('goals_completed', {
+      answerCount: selectedGoals.length,
+      answers: selectedGoals,
+      source: 'onboarding_goals',
+    });
     setDirection('forward');
     router.replace('/onboarding/allergy');
   }, [draft?.preferredTypes, router, saveDraft, selectedGoals, setDirection]);
