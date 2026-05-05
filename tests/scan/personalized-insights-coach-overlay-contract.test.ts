@@ -45,6 +45,9 @@ test('the scan result coach dims the page, highlights both rows, and dismisses o
   assert.match(topSectionSource, /personalizationCoachPageScrim/);
   assert.match(topSectionSource, /personalizationCoachSpotRow/);
   assert.match(topSectionSource, /personalizationCoachTapLayer/);
+  assert.match(topSectionSource, /onPersonalizationCoachLayout/);
+  assert.match(dashboardSource, /scrollContainerRef/);
+  assert.match(dashboardSource, /scrollTo\?\.\(\{ y: targetY, animated: true \}\)/);
   assert.match(topSectionSource, /setPersonalizationCoachDismissed\(true\)/);
   assert.match(topSectionSource, /fit for your goal/);
   assert.match(topSectionSource, /anything you should avoid/);
