@@ -200,7 +200,7 @@ export default function AllergyScreen() {
     },
   });
 
-  const persist = useCallback(async () => {
+  const persist = useCallback(async (skipped = false) => {
     const normalized = normalizeAvoidItemsSelection(selected);
     await saveDraft(
       {
@@ -215,6 +215,11 @@ export default function AllergyScreen() {
       question: 'avoid_items',
       answerCount: selected.length,
       answers: selected,
+    });
+    trackOnboardingEvent(skipped ? 'allergy_skipped' : 'allergy_completed', {
+      answerCount: selected.length,
+      answers: selected,
+      source: 'onboarding_allergy',
     });
     setDirection('forward');
     router.replace('/onboarding/plan-preview');
@@ -231,8 +236,8 @@ export default function AllergyScreen() {
         setDirection('back');
         router.replace('/onboarding/goals');
       }}
-      onContinue={persist}
-      onSkip={persist}
+      onContinue={() => persist(false)}
+      onSkip={() => persist(true)}
       continueLabel="Continue"
       onListScroll={handleScroll}
       listOverlay={
