@@ -5,6 +5,7 @@ import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'rea
 import { getPostAuthDestination, useAuth } from '@/contexts/AuthContext';
 import { claimGuestScanSessionOnServer } from '@/lib/api/guestScan';
 import { trackOnboardingEvent } from '@/lib/analytics/onboarding';
+import { getLastGuestScanSession } from '@/lib/scan/guestSession';
 
 const normalizeLocalPath = (value: unknown): string => {
   if (typeof value !== 'string' || value.trim().length === 0) return '/main';
@@ -16,15 +17,47 @@ export default function GuestScanClaimScreen() {
   const { session, loading } = useAuth();
   const params = useLocalSearchParams<{ guestScanSessionId?: string; returnTo?: string }>();
   const [error, setError] = useState<string | null>(null);
+  const [fallbackGuestScanSessionId, setFallbackGuestScanSessionId] = useState('');
+  const [fallbackResolved, setFallbackResolved] = useState(false);
 
-  const guestScanSessionId = useMemo(
+  const routeGuestScanSessionId = useMemo(
     () => (typeof params.guestScanSessionId === 'string' ? params.guestScanSessionId.trim() : ''),
     [params.guestScanSessionId],
   );
+  const guestScanSessionId = routeGuestScanSessionId || fallbackGuestScanSessionId;
   const returnTo = useMemo(() => normalizeLocalPath(params.returnTo), [params.returnTo]);
 
   useEffect(() => {
+    let cancelled = false;
+
+    if (routeGuestScanSessionId) {
+      setFallbackGuestScanSessionId('');
+      setFallbackResolved(true);
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    setFallbackGuestScanSessionId('');
+    setFallbackResolved(false);
+    void getLastGuestScanSession()
+      .then((lastSession) => {
+        if (cancelled) return;
+        setFallbackGuestScanSessionId(lastSession?.guestScanSessionId ?? '');
+      })
+      .finally(() => {
+        if (cancelled) return;
+        setFallbackResolved(true);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [routeGuestScanSessionId]);
+
+  useEffect(() => {
     if (loading) return;
+    if (!guestScanSessionId && !fallbackResolved) return;
 
     if (!session?.user) {
       const redirect = `/guest-scan/claim?guestScanSessionId=${encodeURIComponent(guestScanSessionId)}&returnTo=${encodeURIComponent(returnTo)}`;

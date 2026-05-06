@@ -17,6 +17,7 @@ import {
   View,
 } from "@/components/ui/nativewind-primitives";
 import { getPostAuthDestination, useAuth } from "@/contexts/AuthContext";
+import { encodeAuthRedirectParam, normalizeAuthRedirectParam } from "@/lib/auth-session";
 import { AUTH_FALLBACK_PATH } from "@/lib/auth-mode";
 import { getAuthErrorMessage } from "@/lib/errors";
 import { colors } from "@/lib/theme";
@@ -78,12 +79,7 @@ export default function SignupScreen() {
   const redirectTarget = useMemo(() => {
     const encodedRedirect = typeof params.redirect === "string" ? params.redirect : null;
     const candidate = encodedRedirect ?? postAuthRedirect;
-    if (!candidate) return null;
-    try {
-      return decodeURIComponent(candidate);
-    } catch {
-      return candidate;
-    }
+    return normalizeAuthRedirectParam(candidate);
   }, [params.redirect, postAuthRedirect]);
   const isGuestClaimRedirect = redirectTarget?.includes("/guest-scan/claim") === true;
 
@@ -209,7 +205,7 @@ export default function SignupScreen() {
               if (redirectTarget) {
                 router.replace({
                   pathname: "/auth/login",
-                  params: { redirect: redirectTarget },
+                  params: { redirect: encodeAuthRedirectParam(redirectTarget) },
                 });
                 return;
               }
