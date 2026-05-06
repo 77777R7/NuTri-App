@@ -46,8 +46,8 @@ test('science UI uses new B/C sidecars and removes the legacy ingredient summary
 });
 
 test('server exposes ingredient overview and scientific background sidecars with shared authority helper', () => {
-  assert.match(serverSource, /app\.post\("\/api\/ingredient-overview\/v1", verifySupabaseToken/);
-  assert.match(serverSource, /app\.post\("\/api\/scientific-background\/v1", verifySupabaseToken/);
+  assert.match(serverSource, /app\.post\(\s*"\/api\/ingredient-overview\/v1",\s*verifySupabaseTokenOrGuestScanToken/s);
+  assert.match(serverSource, /app\.post\(\s*"\/api\/scientific-background\/v1",\s*verifySupabaseTokenOrGuestScanToken/s);
   assert.match(serverSource, /const buildDecisionSupportAuthorityBundle = async \(/);
   assert.match(serverSource, /buildDecisionSupportDigestMismatchPayload/);
   assert.match(serverSource, /decisionInputsHash:\s*z\.string\(\)\.trim\(\)\.min\(1\)\.nullable\(\)\.optional\(\)/);
@@ -57,9 +57,9 @@ test('server exposes ingredient overview and scientific background sidecars with
   assert.match(serverSource, /authority\.personalizationScopeHash/);
   assert.match(
     serverSource,
-    /const cacheKey = \[\s*authority\.decisionSupport\.digest,\s*authority\.decisionSupport\.decisionInputsHash,\s*authority\.personalizationScopeHash,/,
+    /const cacheKey = buildScanSidecarCacheKey\(\{\s*route: "ingredient_overview",\s*barcode: normalizedBarcode\.code,\s*decisionDigest: authority\.decisionSupport\.digest,\s*decisionInputsHash: authority\.decisionSupport\.decisionInputsHash,\s*personalizationScopeHash: authority\.personalizationScopeHash,/s,
   );
-  assert.ok(serverSource.includes('normalizeIngredientScienceKey(parsedBody.selectedIngredientName)'));
+  assert.match(serverSource, /normalizeIngredientScienceKey\(\s*parsedBody\.selectedIngredientName,\s*\)/);
   assert.ok(serverSource.includes('backgroundRefreshPending: boolean;'));
   assert.ok(serverSource.includes('recommendedRetryAfterMs: number | null;'));
   assert.ok(serverSource.includes('withIngredientOverviewRefreshHint'));

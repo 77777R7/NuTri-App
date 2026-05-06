@@ -26,6 +26,7 @@ const SENTRY_DSN = process.env.SENTRY_DSN ?? process.env.EXPO_PUBLIC_SENTRY_DSN;
 const POSTHOG_API_KEY = process.env.POSTHOG_API_KEY ?? process.env.EXPO_PUBLIC_POSTHOG_API_KEY;
 const DISABLE_AUTH = process.env.EXPO_PUBLIC_DISABLE_AUTH ?? process.env.DISABLE_AUTH ?? '0';
 const FORCE_AUTH = process.env.EXPO_PUBLIC_FORCE_AUTH ?? process.env.FORCE_AUTH ?? '0';
+const GUEST_SCAN_ENABLED = process.env.EXPO_PUBLIC_GUEST_SCAN_ENABLED ?? process.env.GUEST_SCAN_ENABLED ?? '0';
 const REVENUECAT_IOS_API_KEY =
   process.env.EXPO_PUBLIC_REVENUECAT_IOS_API_KEY ?? process.env.REVENUECAT_IOS_API_KEY;
 const REVENUECAT_ANDROID_API_KEY =
@@ -170,6 +171,7 @@ const createExpoConfig = ({ config }: ConfigContext): ExpoConfig => {
       searchApiBaseUrl: SEARCH_API_BASE_URL,
       disableAuth: DISABLE_AUTH,
       forceAuth: FORCE_AUTH,
+      guestScanEnabled: GUEST_SCAN_ENABLED,
       sentryDsn: SENTRY_DSN,
       posthogApiKey: POSTHOG_API_KEY,
       revenueCatIosApiKey: REVENUECAT_IOS_API_KEY,

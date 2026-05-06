@@ -32,6 +32,7 @@ export type ScanSession =
     result?: BarcodeScanResult;
     isLoading?: boolean;
     source?: string | null;
+    guestScanSessionId?: string | null;
     searchResultSeed?: SearchResultSeed | null;
     onboardingDraftSnapshot?: ProfileDraft | null;
   };

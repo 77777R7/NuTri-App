@@ -8,11 +8,13 @@ import { ActivityIndicator, Dimensions, StyleSheet, Text, TouchableOpacity, View
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ResponsiveScreen } from '@/components/common/ResponsiveScreen';
+import { Config } from '@/constants/Config';
 import { useOnboarding } from '@/contexts/OnboardingContext';
 import type { DesignTokens } from '@/constants/designTokens';
 import { useResponsiveTokens } from '@/hooks/useResponsiveTokens';
 import { trackOnboardingEvent } from '@/lib/analytics/onboarding';
 import { safeBack } from '@/lib/navigation/safeBack';
+import { setGuestScanSessionScan } from '@/lib/scan/guestSession';
 import { ensureSessionId, setScanSession } from '@/lib/scan/session';
 
 const SUPPORTED_TYPES = ['ean13', 'ean8', 'upc_a', 'upc_e', 'code128', 'code39', 'qr'] as const;
@@ -45,8 +47,16 @@ const normalizeBarcodeCandidate = (raw: string): string | null => {
 };
 
 export default function BarcodeScanScreen() {
-  const params = useLocalSearchParams<{ source?: string }>();
+  const params = useLocalSearchParams<{ source?: string; guestScanSessionId?: string }>();
   const isOnboardingScan = params.source === 'onboarding';
+  const guestScanSessionId =
+    params.source === 'guest_scan' &&
+    Config.guestScanEnabled &&
+    typeof params.guestScanSessionId === 'string' &&
+    params.guestScanSessionId.trim().length > 0
+      ? params.guestScanSessionId.trim()
+      : null;
+  const isGuestScan = Boolean(guestScanSessionId);
   const backFallback = isOnboardingScan ? '/onboarding/done' : '/main';
   const { draft } = useOnboarding();
   const { tokens } = useResponsiveTokens();
@@ -83,9 +93,10 @@ export default function BarcodeScanScreen() {
       params: {
         sessionId,
         ...(source ? { source } : {}),
+        ...(source === 'guest_scan' && guestScanSessionId ? { guestScanSessionId } : {}),
       },
     });
-  }, []);
+  }, [guestScanSessionId]);
 
   const handleBarcode = useCallback(
     async (result: BarcodeScanningResult) => {
@@ -133,9 +144,23 @@ export default function BarcodeScanScreen() {
           mode: 'barcode',
           input: { barcode: normalized },
           isLoading: true,
-          source: isOnboardingScan ? 'onboarding' : params.source ?? null,
+          source: isGuestScan ? 'guest_scan' : isOnboardingScan ? 'onboarding' : params.source ?? null,
+          guestScanSessionId: isGuestScan ? guestScanSessionId : null,
           onboardingDraftSnapshot: isOnboardingScan ? draft ?? null : null,
         });
+        if (isGuestScan && guestScanSessionId) {
+          void setGuestScanSessionScan(guestScanSessionId, {
+            scanSessionId: sessionId,
+            barcode: normalized,
+            status: 'scanning',
+          });
+          trackOnboardingEvent('guest_scan_barcode_captured', {
+            source: 'barcode_scan',
+            guestScanSessionId,
+            scanSessionId: sessionId,
+            barcodeLength: normalized.length,
+          });
+        }
         trackOnboardingEvent('first_scan_completed', {
           source: 'barcode_scan',
           barcodeLength: normalized.length,
@@ -144,7 +169,7 @@ export default function BarcodeScanScreen() {
         // Delay navigation to let user see the checkmark
         navigationLockedRef.current = true;
         navigationTimerRef.current = setTimeout(() => {
-          navigateToResult(sessionId, typeof params.source === 'string' ? params.source : null);
+          navigateToResult(sessionId, isGuestScan ? 'guest_scan' : typeof params.source === 'string' ? params.source : null);
         }, 800);
 
       } catch (error) {
@@ -162,7 +187,7 @@ export default function BarcodeScanScreen() {
         }, 2000);
       }
     },
-    [draft, isOnboardingScan, navigateToResult, params.source, status],
+    [draft, guestScanSessionId, isGuestScan, isOnboardingScan, navigateToResult, params.source, status],
   );
 
   const handleRequestCameraPermission = useCallback(async () => {

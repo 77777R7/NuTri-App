@@ -126,6 +126,9 @@ Header rules:
 - Tokens must not be logged.
 - Tokens must not be emitted in analytics.
 - Guest headers should only be attached when `source=guest_scan`.
+- Once a backend guest session records a `barcode_gtin14`, later stream
+  attempts with a different barcode must be rejected instead of creating an
+  unlimited anonymous analysis lane.
 
 ## Backend Table Contract
 
