@@ -25,6 +25,7 @@ import {
   trackOnboardingEvent,
 } from '@/lib/analytics/onboarding';
 import { choosePreferredProductImageUrl } from '@/lib/productImagePreference';
+import { getGuestScanSession } from '@/lib/scan/guestSession';
 import { consumeScanSessionWithStatusAsync, ensureSessionId, type ScanSession } from '@/lib/scan/session';
 import { resolveReasonCodeMessage } from '@/lib/scan/streamStateMachine';
 import { getBarcodeQuality } from '@/lib/scan/quality';
@@ -213,6 +214,8 @@ export default function ScanResultScreen() {
       )
       : null;
   const isGuestScan = Boolean(guestScanSessionId);
+  const [guestScanClaimed, setGuestScanClaimed] = useState(false);
+  const shouldShowGuestClaimPrompt = isGuestScan && !guestScanClaimed;
   const [dashboardRuntimeError, setDashboardRuntimeError] = useState<string | null>(null);
   const dashboardRenderMode: 'full' = resolveDashboardRenderMode(isExpoGo);
   const analysisHeaderScrollY = useSharedValue(0);
@@ -241,6 +244,31 @@ export default function ScanResultScreen() {
     && currentScanId != null
     && firstScanReveal.reveal.state === 'granted'
     && firstScanReveal.reveal.scanId === currentScanId;
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!guestScanSessionId) {
+      setGuestScanClaimed(false);
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    void getGuestScanSession(guestScanSessionId)
+      .then((guestSession) => {
+        if (cancelled) return;
+        setGuestScanClaimed(guestSession?.status === 'claimed');
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setGuestScanClaimed(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [guestScanSessionId]);
+
   const searchResultSeed = session?.mode === 'barcode' ? session.searchResultSeed ?? null : null;
   const loadingBadgeTimingRef = useRef({
     startedAt: 0,
@@ -1039,7 +1067,7 @@ export default function ScanResultScreen() {
     },
     status: 'success'
   };
-  const activationActionNode = !isGuestScan && activationSaveItem && !isActivationItemSaved ? (
+  const activationActionNode = !shouldShowGuestClaimPrompt && activationSaveItem && !isActivationItemSaved ? (
     <View style={styles.activationActionBanner}>
       <View style={styles.activationActionCopy}>
         <Text style={styles.activationActionEyebrow}>Next step</Text>
@@ -1083,19 +1111,19 @@ export default function ScanResultScreen() {
         title="Analysis"
         miniScore={headerMiniScore ? { ...headerMiniScore, scrollY: analysisHeaderScrollY } : null}
         savePillState={
-          isGuestScan
+          shouldShowGuestClaimPrompt
             ? 'save'
             : activationSaveItem
               ? (isActivationItemSaved ? 'saved' : 'save')
               : 'disabled'
         }
-        onSavePress={isGuestScan ? handleKeepGuestResult : handleSaveFromDashboard}
+        onSavePress={shouldShowGuestClaimPrompt ? handleKeepGuestResult : handleSaveFromDashboard}
         onOpenSaved={handleOpenSaved}
         miniScoreThresholdStart={headerMiniScoreTrigger.start}
         miniScoreThresholdRange={headerMiniScoreTrigger.range}
       />
 
-      {isGuestScan ? (
+      {shouldShowGuestClaimPrompt ? (
         <View style={styles.guestKeepBanner}>
           <Text style={styles.guestKeepText}>
             Save this scan to your account so your goals and allergies stay connected.
