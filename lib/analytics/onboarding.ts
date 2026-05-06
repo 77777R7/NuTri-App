@@ -26,7 +26,15 @@ export type OnboardingAnalyticsEvent =
   | 'permission_prompted'
   | 'permission_granted'
   | 'permission_denied'
-  | 'first_filter_used';
+  | 'first_filter_used'
+  | 'guest_scan_started'
+  | 'guest_scan_barcode_captured'
+  | 'guest_scan_result_started'
+  | 'guest_scan_result_ready'
+  | 'guest_scan_keep_tapped'
+  | 'guest_scan_auth_started'
+  | 'guest_scan_claim_succeeded'
+  | 'guest_scan_claim_failed';
 
 export const trackOnboardingEvent = (event: OnboardingAnalyticsEvent, payload: Record<string, unknown> = {}) => {
   emitAnalyticsEvent('onboarding', event, payload);

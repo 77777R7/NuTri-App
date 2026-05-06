@@ -8,7 +8,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Text, View } from '@/components/ui/nativewind-primitives';
 import { BrandGradient } from '@/components/BrandGradient';
+import { Config } from '@/constants/Config';
 import { useAuth } from '@/contexts/AuthContext';
+import { createGuestScanSessionFromServer } from '@/lib/api/guestScan';
+import { trackOnboardingEvent } from '@/lib/analytics/onboarding';
 import { AUTH_DISABLED } from '@/lib/auth-mode';
 import { colors, spacing, type } from '@/lib/theme';
 
@@ -16,9 +19,9 @@ const AnimText = Animated.createAnimatedComponent(Text as any);
 
 const PHRASES = [
   'NuTri ',
-  'Let’s scan your supplement',
-  'Let’s study your supplement',
-  'Let’s optimize your health',
+  'Scan a supplement',
+  'See fit and safety fast',
+  'Save what works for you',
 ];
 
 export default function AuthGateScreen() {
@@ -29,6 +32,9 @@ export default function AuthGateScreen() {
   const fade = useRef(new Animated.Value(0)).current;
   const translateY = useRef(new Animated.Value(12)).current;
   const [index, setIndex] = useState(0);
+  const [guestScanStarting, setGuestScanStarting] = useState(false);
+  const [guestScanError, setGuestScanError] = useState<string | null>(null);
+  const guestScanEnabled = Config.guestScanEnabled;
 
   useEffect(() => {
     if (AUTH_DISABLED) {
@@ -66,6 +72,36 @@ export default function AuthGateScreen() {
   }, [authLoading, fade, session, translateY]);
 
   const go = useCallback((path: Href) => router.push(path), [router]);
+  const startFreeScan = useCallback(async () => {
+    if (guestScanStarting) return;
+
+    setGuestScanError(null);
+    setGuestScanStarting(true);
+    try {
+      try {
+        await Haptics.selectionAsync();
+      } catch {}
+
+      trackOnboardingEvent('guest_scan_started', {
+        source: 'auth_gate_start_free_scan',
+      });
+      trackOnboardingEvent('first_scan_started', {
+        source: 'auth_gate_start_free_scan',
+      });
+      const session = await createGuestScanSessionFromServer();
+      router.push({
+        pathname: '/scan/barcode',
+        params: {
+          source: 'guest_scan',
+          guestScanSessionId: session.guestScanSessionId,
+        },
+      } as Href);
+    } catch {
+      setGuestScanError('Unable to start scan. Please try again.');
+    } finally {
+      setGuestScanStarting(false);
+    }
+  }, [guestScanStarting, router]);
 
   if (AUTH_DISABLED || authLoading || session) return null;
 
@@ -95,9 +131,33 @@ export default function AuthGateScreen() {
           >
             {PHRASES[index]}
           </AnimText>
+          <Text style={styles.scanFirstSubtext}>
+            Get a fast read on fit, safety, and what to avoid.
+          </Text>
         </View>
 
         <View style={{ paddingBottom: insets.bottom + spacing.lg + spacing.md, gap: spacing.md }}>
+          {guestScanEnabled ? (
+            <>
+              <TouchableOpacity
+                onPress={startFreeScan}
+                disabled={guestScanStarting}
+                activeOpacity={0.9}
+                accessibilityRole="button"
+                accessibilityLabel="Start Free Scan"
+                testID="gate-start-free-scan"
+                style={[styles.pillPrimary, guestScanStarting ? styles.pillDisabled : null]}
+              >
+                <Text style={styles.pillPrimaryText}>
+                  {guestScanStarting ? 'Starting...' : 'Start Free Scan'}
+                </Text>
+              </TouchableOpacity>
+              {guestScanError ? (
+                <Text style={styles.errorText}>{guestScanError}</Text>
+              ) : null}
+            </>
+          ) : null}
+
           {/* Create account */}
           <TouchableOpacity
             onPress={async () => {
@@ -110,9 +170,9 @@ export default function AuthGateScreen() {
             accessibilityRole="button"
             accessibilityLabel="Create account"
             testID="gate-create-account"
-            style={styles.pillPrimary}
+            style={guestScanEnabled ? styles.pillSecondary : styles.pillPrimary}
           >
-            <Text style={styles.pillPrimaryText}>Create account</Text>
+            <Text style={guestScanEnabled ? styles.pillSecondaryText : styles.pillPrimaryText}>Create account</Text>
           </TouchableOpacity>
 
           {/* Log in */}
@@ -154,6 +214,9 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: '800',
   },
+  pillDisabled: {
+    opacity: 0.68,
+  },
   pillSecondary: {
     width: '100%',                // ✅ 关键：铺满父容器
     borderRadius: 999,
@@ -181,5 +244,20 @@ const styles = StyleSheet.create({
     color: colors.subtext,
     fontSize: 15,
     fontWeight: '600',
+  },
+  scanFirstSubtext: {
+    marginTop: 14,
+    maxWidth: 280,
+    color: colors.subtext,
+    fontSize: 16,
+    lineHeight: 22,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  errorText: {
+    color: '#EF4444',
+    fontSize: 13,
+    fontWeight: '600',
+    textAlign: 'center',
   },
 });
