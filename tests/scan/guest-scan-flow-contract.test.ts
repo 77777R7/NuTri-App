@@ -16,6 +16,8 @@ const streamSource = readFileSync(path.join(root, 'hooks/useStreamAnalysis.ts'),
 const resultSource = readFileSync(path.join(root, 'app/scan/result.tsx'), 'utf8');
 const dashboardSource = readFileSync(path.join(root, 'components/scan/AnalysisDashboard.tsx'), 'utf8');
 const serverSource = readFileSync(path.join(root, 'backend/src/server.ts'), 'utf8');
+const scanSidecarRoutesSource = readFileSync(path.join(root, 'backend/src/routes/scanSidecarRoutes.ts'), 'utf8');
+const scienceSidecarRoutesSource = readFileSync(path.join(root, 'backend/src/routes/scienceSidecarRoutes.ts'), 'utf8');
 const claimSource = readFileSync(path.join(root, 'app/guest-scan/claim.tsx'), 'utf8');
 const signupSource = readFileSync(path.join(root, 'app/(auth)/auth/signup.tsx'), 'utf8');
 const loginSource = readFileSync(path.join(root, 'app/(auth)/auth/login.tsx'), 'utf8');
@@ -60,9 +62,11 @@ test('guest scan metadata stays attached to scan session and stream headers', ()
 });
 
 test('guest scan result sidecars reuse guest scan auth instead of requiring a signed-in user', () => {
-  assert.match(serverSource, /\/api\/product-overview-ai\/v1"[\s\S]{0,120}verifySupabaseTokenOrGuestScanToken/);
-  assert.match(serverSource, /\/api\/ingredient-overview\/v1"[\s\S]{0,120}verifySupabaseTokenOrGuestScanToken/);
-  assert.match(serverSource, /\/api\/scientific-background\/v1"[\s\S]{0,120}verifySupabaseTokenOrGuestScanToken/);
+  assert.match(scanSidecarRoutesSource, /\/api\/product-overview-ai\/v1"[\s\S]{0,120}deps\.verifySupabaseToken/);
+  assert.match(scienceSidecarRoutesSource, /\/api\/ingredient-overview\/v1"[\s\S]{0,120}deps\.verifySupabaseToken/);
+  assert.match(scienceSidecarRoutesSource, /\/api\/scientific-background\/v1"[\s\S]{0,120}deps\.verifySupabaseToken/);
+  assert.match(serverSource, /registerScanSidecarRoutes\(app,\s*\{[\s\S]{0,160}verifySupabaseToken:\s*verifySupabaseTokenOrGuestScanToken/);
+  assert.match(serverSource, /registerScienceSidecarRoutes\(app,\s*\{[\s\S]{0,160}verifySupabaseToken:\s*verifySupabaseTokenOrGuestScanToken/);
   assert.match(resultSource, /guestScanSessionId=\{guestScanSessionId\}/);
   assert.match(dashboardSource, /guestScanSessionId\?: string \| null/);
   assert.match(dashboardSource, /getGuestScanSession/);
@@ -80,7 +84,9 @@ test('guest scan result receives one full reveal and keep action routes through 
   assert.match(resultSource, /shouldShowGuestClaimPrompt/);
   assert.match(resultSource, /\/guest-scan\/claim/);
   assert.match(resultSource, /Keep this result/);
-  assert.match(resultSource, /isGuestScan\s*\?\s*'full'/);
+  assert.match(resultSource, /const resolveDashboardRenderMode = \([^)]*\): 'full' => \{[\s\S]*?return 'full';[\s\S]*?\};/);
+  assert.match(resultSource, /<AnalysisDashboard/);
+  assert.doesNotMatch(resultSource, /<LiteAnalysisDashboard/);
 });
 
 test('post-auth guest claim route reads token from local storage, not URL', () => {
