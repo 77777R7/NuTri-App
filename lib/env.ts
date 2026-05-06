@@ -8,6 +8,7 @@ const DIRECT_PUBLIC_ENV: Record<string, string | undefined> = {
   EXPO_PUBLIC_API_BASE_URL: process.env.EXPO_PUBLIC_API_BASE_URL,
   EXPO_PUBLIC_SEARCH_API_BASE_URL: process.env.EXPO_PUBLIC_SEARCH_API_BASE_URL,
   EXPO_PUBLIC_SCAN_TERMINAL_LOCK_ENABLED: process.env.EXPO_PUBLIC_SCAN_TERMINAL_LOCK_ENABLED,
+  EXPO_PUBLIC_GUEST_SCAN_ENABLED: process.env.EXPO_PUBLIC_GUEST_SCAN_ENABLED,
   EXPO_PUBLIC_API_PORT: process.env.EXPO_PUBLIC_API_PORT,
 };
 
@@ -203,6 +204,7 @@ const envValues = {
   sentryDsn: getEnvValue('sentryDsn', { optional: true }),
   posthogApiKey: getEnvValue('posthogApiKey', { optional: true }),
   scanTerminalLockEnabled: getEnvValue('scanTerminalLockEnabled', { optional: true }),
+  guestScanEnabled: getEnvValue('guestScanEnabled', { optional: true }),
 };
 
 // Keep search endpoint aligned with the same localhost->LAN fallback logic as apiBaseUrl.
@@ -293,5 +295,6 @@ export const ENV = {
   posthogApiKey: envValues.posthogApiKey ?? null,
   searchApiBaseUrl: searchApiBaseUrl as string,
   scanTerminalLockEnabled: parseOptionalBoolean(envValues.scanTerminalLockEnabled, false),
+  guestScanEnabled: parseOptionalBoolean(envValues.guestScanEnabled, false),
   validate: validateEnv,
 };

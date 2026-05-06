@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { StyleSheet } from "react-native";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -16,7 +16,7 @@ import {
   TouchableOpacity,
   View,
 } from "@/components/ui/nativewind-primitives";
-import { useAuth } from "@/contexts/AuthContext";
+import { getPostAuthDestination, useAuth } from "@/contexts/AuthContext";
 import { AUTH_FALLBACK_PATH } from "@/lib/auth-mode";
 import { getAuthErrorMessage } from "@/lib/errors";
 import { colors } from "@/lib/theme";
@@ -38,13 +38,17 @@ export const unstable_settings = { headerShown: false };
 
 export default function SignupScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams<{ redirect?: string }>();
   const {
+    session,
     signUpWithPassword,
     signInWithGoogle,
     signInWithApple,
     error,
     clearError,
     loading,
+    postAuthRedirect,
+    setPostAuthRedirect,
   } = useAuth();
 
   const {
@@ -71,6 +75,18 @@ export default function SignupScreen() {
     useState(false);
   const [appleAvailable, setAppleAvailable] = useState(false);
 
+  const redirectTarget = useMemo(() => {
+    const encodedRedirect = typeof params.redirect === "string" ? params.redirect : null;
+    const candidate = encodedRedirect ?? postAuthRedirect;
+    if (!candidate) return null;
+    try {
+      return decodeURIComponent(candidate);
+    } catch {
+      return candidate;
+    }
+  }, [params.redirect, postAuthRedirect]);
+  const isGuestClaimRedirect = redirectTarget?.includes("/guest-scan/claim") === true;
+
   useEffect(() => {
     let mounted = true;
     AppleAuthentication.isAvailableAsync()
@@ -95,6 +111,14 @@ export default function SignupScreen() {
       setFeedback(error);
     }
   }, [error]);
+
+  useEffect(() => {
+    if (!loading && session) {
+      const destination = redirectTarget ? getPostAuthDestination(redirectTarget) : "/";
+      setPostAuthRedirect(null);
+      router.replace(destination);
+    }
+  }, [loading, redirectTarget, router, session, setPostAuthRedirect]);
 
   useEffect(() => {
     if (!feedback) {
@@ -181,7 +205,16 @@ export default function SignupScreen() {
         <Text style={styles.footerText}>
           Already have an account?{" "}
           <Text
-            onPress={() => router.replace("/auth/login")}
+            onPress={() => {
+              if (redirectTarget) {
+                router.replace({
+                  pathname: "/auth/login",
+                  params: { redirect: redirectTarget },
+                });
+                return;
+              }
+              router.replace("/auth/login");
+            }}
             style={styles.footerLink}
           >
             Sign in
@@ -189,6 +222,14 @@ export default function SignupScreen() {
         </Text>
       }
     >
+      {isGuestClaimRedirect ? (
+        <View style={[styles.feedback, styles.feedbackInfo]}>
+          <Text style={styles.feedbackTextInfo}>
+            Create a free account to save this scan and personalize it with your goals and allergies.
+          </Text>
+        </View>
+      ) : null}
+
       {feedback ? (
         <View
           style={[
@@ -366,6 +407,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#FCA5A5",
   },
+  feedbackInfo: {
+    backgroundColor: "#EFF6FF",
+    borderWidth: 1,
+    borderColor: "#BFDBFE",
+  },
   feedbackText: {
     fontSize: 14,
     fontWeight: "600",
@@ -375,6 +421,12 @@ const styles = StyleSheet.create({
   },
   feedbackTextError: {
     color: "#B91C1C",
+  },
+  feedbackTextInfo: {
+    color: "#1E3A8A",
+    fontSize: 14,
+    fontWeight: "600",
+    lineHeight: 20,
   },
   inputGroup: {
     marginBottom: 16,

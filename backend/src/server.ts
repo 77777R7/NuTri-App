@@ -70,6 +70,13 @@ import {
 } from "./scanStreamTimingPolicy.js";
 import { resolveScanStreamRuntimeConfig } from "./scanStreamRuntimeConfig.js";
 import {
+  claimGuestScanSession,
+  createGuestScanSession,
+  recordGuestScanSessionProgress,
+  validateGuestScanToken,
+  type GuestScanSessionRow,
+} from "./guestScanSessions.js";
+import {
   buildFactsDigestFromDsld,
   buildFactsDigestFromLnhpd,
   buildFactsDigestFromWeb,
@@ -7150,6 +7157,10 @@ type AuthenticatedRequest = Request & {
     id: string;
     email?: string | null;
   };
+  guestScan?: {
+    session: GuestScanSessionRow;
+    claimToken: string;
+  };
   // Set only when the request is authenticated via REGRESSION_AUTH_TOKEN.
   // Used to gate internal debug/audit fields from normal users.
   regressionAuth?: boolean;
@@ -7159,6 +7170,8 @@ const authDisabled =
   process.env.DISABLE_AUTH === "true" || process.env.DISABLE_AUTH === "1";
 const allowAuthBypass =
   process.env.ALLOW_AUTH_BYPASS === "true" || process.env.ALLOW_AUTH_BYPASS === "1";
+const readGuestScanEnabled = (): boolean =>
+  process.env.GUEST_SCAN_ENABLED === "true" || process.env.GUEST_SCAN_ENABLED === "1";
 const regressionAuthToken = process.env.REGRESSION_AUTH_TOKEN ?? null;
 const regressionAuthRoutes = new Set([
   "/api/enrich-stream",
@@ -7248,6 +7261,50 @@ const verifySupabaseToken = async (req: Request, res: Response, next: NextFuncti
       .status(503)
       .json({ error: "auth_unavailable" } satisfies ErrorResponse);
   }
+};
+
+const readFirstHeader = (value: string | string[] | undefined): string => {
+  const raw = Array.isArray(value) ? value[0] : value;
+  return typeof raw === "string" ? raw.trim() : "";
+};
+
+const verifySupabaseTokenOrGuestScanToken = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  if (req.headers.authorization) {
+    return verifySupabaseToken(req, res, next);
+  }
+
+  const guestScanSessionId = readFirstHeader(req.headers["x-guest-scan-session-id"]);
+  const guestScanClaimToken = readFirstHeader(req.headers["x-guest-scan-claim-token"]);
+
+  if (!guestScanSessionId && !guestScanClaimToken) {
+    return verifySupabaseToken(req, res, next);
+  }
+
+  if (!readGuestScanEnabled()) {
+    return res
+      .status(503)
+      .json({ error: "guest_scan_unavailable" } satisfies ErrorResponse);
+  }
+
+  const validation = await validateGuestScanToken({
+    guestScanSessionId,
+    claimToken: guestScanClaimToken,
+  });
+  if (!validation.ok) {
+    return res
+      .status(validation.status)
+      .json({ error: validation.error } satisfies ErrorResponse);
+  }
+
+  (req as AuthenticatedRequest).guestScan = {
+    session: validation.session,
+    claimToken: guestScanClaimToken,
+  };
+  return next();
 };
 
 const parseRequestBody = <T>(schema: z.ZodType<T>, req: Request, res: Response): T | null => {
@@ -8054,6 +8111,11 @@ const buildBarcodeCacheKey = (barcode: string): string => {
   const normalized = normalizeBarcodeInput(barcode);
   return normalized ? normalized.code.padStart(14, "0") : barcode;
 };
+
+const guestScanClaimBodySchema = z.object({
+  guestScanSessionId: z.string().min(1),
+  claimToken: z.string().min(1),
+});
 
 const ensureOverviewBodySchema = z
   .object({
@@ -9664,6 +9726,75 @@ app.get("/api/nutri-tips", async (_req: Request, res: Response) => {
     captureException(error, { route: "/api/nutri-tips" });
     console.error("/api/nutri-tips unexpected error", error);
     return res.status(500).json({ success: false, message: "Failed to load tips." });
+  }
+});
+
+app.post("/api/guest-scan/session", async (_req: Request, res: Response) => {
+  if (!readGuestScanEnabled()) {
+    return res
+      .status(503)
+      .json({ error: "guest_scan_unavailable" } satisfies ErrorResponse);
+  }
+
+  try {
+    const session = await createGuestScanSession();
+    res.setHeader("Cache-Control", "no-store");
+    return res.json({
+      guestScanSessionId: session.guestScanSessionId,
+      claimToken: session.claimToken,
+      status: session.status,
+      expiresAt: session.expiresAt,
+    });
+  } catch (error) {
+    captureException(error, { route: "/api/guest-scan/session" });
+    console.error("/api/guest-scan/session unexpected error", error);
+    return res
+      .status(503)
+      .json({ error: "guest_scan_unavailable" } satisfies ErrorResponse);
+  }
+});
+
+app.post("/api/guest-scan/claim", verifySupabaseToken, async (req: Request, res: Response) => {
+  if (!readGuestScanEnabled()) {
+    return res
+      .status(503)
+      .json({ error: "guest_scan_unavailable" } satisfies ErrorResponse);
+  }
+
+  const parsedBody = parseRequestBody(guestScanClaimBodySchema, req, res);
+  if (!parsedBody) return;
+
+  const user = (req as AuthenticatedRequest).user;
+  if (!user?.id) {
+    return res
+      .status(401)
+      .json({ error: "unauthorized" } satisfies ErrorResponse);
+  }
+
+  try {
+    const result = await claimGuestScanSession({
+      guestScanSessionId: parsedBody.guestScanSessionId,
+      claimToken: parsedBody.claimToken,
+      userId: user.id,
+    });
+    if (!result.ok) {
+      return res
+        .status(result.status)
+        .json({ error: result.error } satisfies ErrorResponse);
+    }
+
+    return res.json({
+      ok: true,
+      guestScanSessionId: result.session.id,
+      status: result.session.status,
+      claimedAt: result.session.claimed_at,
+    });
+  } catch (error) {
+    captureException(error, { route: "/api/guest-scan/claim" });
+    console.error("/api/guest-scan/claim unexpected error", error);
+    return res
+      .status(503)
+      .json({ error: "guest_scan_unavailable" } satisfies ErrorResponse);
   }
 });
 
@@ -11483,7 +11614,7 @@ const buildDecisionSupportAllergyContext = (params: {
 };
 
 registerDecisionSupportRoutes(app, {
-  verifySupabaseToken,
+  verifySupabaseToken: verifySupabaseTokenOrGuestScanToken,
   normalizeBarcodeInput,
   parseDecisionSupportViewMode,
   parseDebugDecisionRequested,
@@ -11509,7 +11640,7 @@ registerDecisionSupportRoutes(app, {
 });
 
 registerScienceSidecarRoutes(app, {
-  verifySupabaseToken,
+  verifySupabaseToken: verifySupabaseTokenOrGuestScanToken,
   parseRequestBody,
   buildDecisionSupportAuthorityBundle: (normalizedBarcode, options) =>
     buildDecisionSupportAuthorityBundle(normalizedBarcode, { req: options.req }),
@@ -11544,7 +11675,7 @@ app.get("/api/patch-shadow/status", verifySupabaseToken, (req: Request, res: Res
 });
 
 registerScanSidecarRoutes(app, {
-  verifySupabaseToken,
+  verifySupabaseToken: verifySupabaseTokenOrGuestScanToken,
   parseRequestBody,
   applyLegacyShadowHeaders,
   isRegressionRequest: (req) => (req as AuthenticatedRequest).regressionAuth === true,
@@ -11846,7 +11977,8 @@ app.get("/api/client-runtime-flags", verifySupabaseToken, (_req: Request, res: R
  * Main streaming endpoint: Two-step search + AI analysis
  */
 registerEnrichStreamRoute(app, {
-  verifySupabaseToken,
+  verifySupabaseToken: verifySupabaseTokenOrGuestScanToken,
+  recordGuestScanSessionProgress,
   parseRequestBody,
   AMAZON_DOMAINS,
   ANALYSIS_BUNDLE_FAST_TIMEOUT_MS,

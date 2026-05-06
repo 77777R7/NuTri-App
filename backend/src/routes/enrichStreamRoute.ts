@@ -34,13 +34,28 @@ type SearchResilienceOptions = any;
 type SecondarySeedMatch = any;
 type SnapshotAnalysisPayload = any;
 type SupplementSnapshot = any;
-type AuthenticatedRequest = Request & { regressionAuth?: boolean; user?: { id?: string } | null };
+type AuthenticatedRequest = Request & {
+  regressionAuth?: boolean;
+  user?: { id?: string } | null;
+  guestScan?: {
+    session: { id: string };
+    claimToken: string;
+  };
+};
 
 type ParseRequestBody = <T>(schema: z.ZodType<T>, req: Request, res: Response) => T | null;
 
 export type EnrichStreamRouteDependencies = Record<string, any> & {
   verifySupabaseToken: RequestHandler;
   parseRequestBody: ParseRequestBody;
+  recordGuestScanSessionProgress?: (params: {
+    guestScanSessionId: string;
+    claimToken: string;
+    scanSessionId: string | null;
+    barcode: string | null;
+    barcodeGtin14: string | null;
+    status: "result_started" | "result_ready";
+  }) => Promise<{ ok: true } | { ok: false; status: number; error: string }>;
 };
 
 const enrichStreamBodySchema = z
@@ -463,6 +478,26 @@ export const registerEnrichStreamRoute = (
     ? Math.max(ENRICH_STREAM_QUEUE_WAIT_MS, ENRICH_STREAM_QUEUE_WAIT_MS_BUNDLE_ONLY)
     : ENRICH_STREAM_QUEUE_WAIT_MS;
   const normalized = normalizeBarcodeInput(rawBarcode);
+  const scanSessionIdRaw = (parsedBody as Record<string, unknown>)["scanSessionId"];
+  const scanSessionId = typeof scanSessionIdRaw === "string" && scanSessionIdRaw.trim().length > 0
+    ? scanSessionIdRaw.trim()
+    : null;
+  const guestScan = (req as AuthenticatedRequest).guestScan;
+  if (guestScan && deps.recordGuestScanSessionProgress) {
+    const guestProgress = await deps.recordGuestScanSessionProgress({
+      guestScanSessionId: guestScan.session.id,
+      claimToken: guestScan.claimToken,
+      scanSessionId,
+      barcode: rawBarcode,
+      barcodeGtin14: normalized?.code ? normalized.code.padStart(14, "0") : null,
+      status: "result_started",
+    });
+    if (!guestProgress.ok) {
+      return res
+        .status(guestProgress.status)
+        .json({ error: guestProgress.error });
+    }
+  }
   const model = resolveDeepSeekModel(process.env.DEEPSEEK_MODEL);
   const acceptLanguageHeader =
     typeof req.headers["accept-language"] === "string" ? req.headers["accept-language"] : null;
@@ -1365,6 +1400,16 @@ export const registerEnrichStreamRoute = (
       if (emitted) {
         streamState.doneSent = true;
         streamState.tDone = Date.now();
+        if (guestScan && deps.recordGuestScanSessionProgress) {
+          void deps.recordGuestScanSessionProgress({
+            guestScanSessionId: guestScan.session.id,
+            claimToken: guestScan.claimToken,
+            scanSessionId,
+            barcode: rawBarcode,
+            barcodeGtin14: normalized?.code ? normalized.code.padStart(14, "0") : null,
+            status: "result_ready",
+          });
+        }
         recordScanStreamTerminal?.({
           terminal: "DONE",
           reason: resolvedReason,

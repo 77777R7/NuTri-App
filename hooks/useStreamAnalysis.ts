@@ -5,6 +5,8 @@ import { Config } from '@/constants/Config';
 import { withAuthHeaders } from '@/lib/auth-token';
 import { AUTH_DISABLED } from '@/lib/auth-mode';
 import { resolveBrand } from '@/lib/brand/resolveBrand';
+import { getGuestScanSession } from '@/lib/scan/guestSession';
+import type { SearchResultSeed } from '@/lib/scan/session';
 import {
     resolveTrustedDisplayIdentity,
     type DisplayIdentityMode,
@@ -42,6 +44,13 @@ type ProductInfo = {
     name: string | null;
     category?: string | null;
     image?: string | null;
+};
+
+type StreamLaunchOptions = {
+    launchSource?: string | null;
+    searchSeed?: SearchResultSeed | null;
+    scanSessionId?: string | null;
+    guestScanSessionId?: string | null;
 };
 
 // Ingredient analysis from enhanced efficacy
@@ -229,6 +238,64 @@ const EXPECTED_DEGRADED_REASON_CODES = new Set([
     'REV1_WATCHDOG_TIMEOUT',
 ]);
 
+const normalizeSeedText = (value?: string | null): string | null => {
+    if (typeof value !== 'string') return null;
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed : null;
+};
+
+const buildSeededProductInfo = (seed?: SearchResultSeed | null): ProductInfo | null => {
+    if (!seed) return null;
+    const name = normalizeSeedText(seed.name);
+    const brand = normalizeSeedText(seed.brand);
+    const category = normalizeSeedText(seed.category);
+    const image = normalizeSeedText(seed.imageUrl ?? null);
+    if (!name && !brand && !category && !image) return null;
+    return {
+        brand,
+        name,
+        category,
+        image,
+    };
+};
+
+const buildInitialAnalysisState = (seed?: SearchResultSeed | null): AnalysisState => ({
+    brandExtraction: null,
+    productInfo: buildSeededProductInfo(seed),
+    sources: [],
+    efficacy: null,
+    safety: null,
+    usage: null,
+    value: null,
+    social: null,
+    meta: null,
+    analysisMeta: null,
+    analysisBundle: null,
+    status: 'idle',
+    errorKind: 'none',
+    reasonCode: null,
+    stage: null,
+    requestId: null,
+    lastSseEventType: null,
+    watchdogReason: null,
+    error: null,
+});
+
+const buildSearchSeedFingerprint = (seed?: SearchResultSeed | null): string => {
+    if (!seed) return '';
+    return [
+        normalizeSeedText(seed.productId),
+        normalizeSeedText(seed.barcode ?? null),
+        normalizeSeedText(seed.upcCode ?? null),
+        normalizeSeedText(seed.name),
+        normalizeSeedText(seed.brand),
+        normalizeSeedText(seed.category),
+        normalizeSeedText(seed.imageUrl ?? null),
+        normalizeSeedText(seed.factsStatus ?? null),
+        normalizeSeedText(seed.coverageStatus ?? null),
+    ].join('|');
+};
+
 export const resolveTerminalStatus = (params: {
     previousStatus: AnalysisStatus;
     nextStatus: AnalysisStatus;
@@ -366,28 +433,21 @@ export const parseStreamErrorEvent = (params: {
     };
 };
 
-export function useStreamAnalysis(barcode: string): AnalysisStateWithSnapshot {
-    const [state, setState] = useState<AnalysisState>({
-        brandExtraction: null,
-        productInfo: null,
-        sources: [],
-        efficacy: null,
-        safety: null,
-        usage: null,
-        value: null,
-        social: null,
-        meta: null,
-        analysisMeta: null,
-        analysisBundle: null,
-        status: 'idle',
-        errorKind: 'none',
-        reasonCode: null,
-        stage: null,
-        requestId: null,
-        lastSseEventType: null,
-        watchdogReason: null,
-        error: null,
-    });
+export function useStreamAnalysis(barcode: string, options?: StreamLaunchOptions): AnalysisStateWithSnapshot {
+    const normalizedLaunchSource = typeof options?.launchSource === 'string'
+        ? options.launchSource.trim().toLowerCase()
+        : '';
+    const searchSeed = options?.searchSeed ?? null;
+    const scanSessionId =
+        typeof options?.scanSessionId === 'string' && options.scanSessionId.trim().length > 0
+            ? options.scanSessionId.trim()
+            : null;
+    const guestScanSessionId =
+        typeof options?.guestScanSessionId === 'string' && options.guestScanSessionId.trim().length > 0
+            ? options.guestScanSessionId.trim()
+            : null;
+    const searchSeedFingerprint = buildSearchSeedFingerprint(searchSeed);
+    const [state, setState] = useState<AnalysisState>(() => buildInitialAnalysisState(searchSeed));
     const [serverSnapshot, setServerSnapshot] = useState<SupplementSnapshot | null>(null);
 
     const eventSourceRef = useRef<RNEventSource | null>(null);
@@ -397,22 +457,18 @@ export function useStreamAnalysis(barcode: string): AnalysisStateWithSnapshot {
     const rev1DoneWatchdogRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     useEffect(() => {
-        if (!barcode) return;
+        if (!barcode) {
+            setState(buildInitialAnalysisState(searchSeed));
+            setServerSnapshot(null);
+            return;
+        }
 
         let sawAnyActivity = false;
 
-        setState(prev => ({
-            ...prev,
+        setState({
+            ...buildInitialAnalysisState(searchSeed),
             status: 'loading',
-            errorKind: 'none',
-            reasonCode: null,
-            stage: null,
-            requestId: null,
-            lastSseEventType: null,
-            watchdogReason: null,
-            error: null,
-            analysisBundle: null,
-        }));
+        });
         setServerSnapshot(null);
         hasBundleRef.current = false;
         rev1SeenRef.current = false;
@@ -542,17 +598,50 @@ export function useStreamAnalysis(barcode: string): AnalysisStateWithSnapshot {
                 'Content-Type': 'application/json',
                 Accept: 'text/event-stream',
             });
+            if (
+                Config.guestScanEnabled &&
+                normalizedLaunchSource === 'guest_scan' &&
+                guestScanSessionId
+            ) {
+                const guestSession = await getGuestScanSession(guestScanSessionId);
+                if (guestSession?.claimToken) {
+                    headers['X-Guest-Scan-Session-Id'] = guestSession.guestScanSessionId;
+                    headers['X-Guest-Scan-Claim-Token'] = guestSession.claimToken;
+                    if (scanSessionId) {
+                        headers['X-Scan-Session-Id'] = scanSessionId;
+                    }
+                }
+            }
             if (!isActive) return;
 
             console.log('[SSE] Init:', {
                 apiUrl: API_URL,
                 authDisabled: AUTH_DISABLED,
                 hasBearer: Boolean(headers.Authorization),
+                guestScan: Boolean(headers['X-Guest-Scan-Session-Id']),
             });
 
-            const streamPayload = USE_BUNDLE_ONLY_STREAM_MODE
+            const streamPayload: Record<string, unknown> = USE_BUNDLE_ONLY_STREAM_MODE
                 ? { barcode, streamMode: 'analysis_bundle_only' as const }
                 : { barcode };
+            if (normalizedLaunchSource) {
+                streamPayload.launchSource = normalizedLaunchSource;
+            }
+            if (scanSessionId) {
+                streamPayload.scanSessionId = scanSessionId;
+            }
+            if (searchSeed) {
+                streamPayload.searchContext = {
+                    productId: searchSeed.productId,
+                    barcode: searchSeed.barcode ?? null,
+                    upcCode: searchSeed.upcCode ?? null,
+                    productName: searchSeed.name,
+                    brandName: searchSeed.brand,
+                    category: searchSeed.category,
+                    factsStatus: searchSeed.factsStatus ?? null,
+                    coverageStatus: searchSeed.coverageStatus ?? null,
+                };
+            }
 
             // Initialize SSE connection (POST method)
             const es = new RNEventSource(`${API_URL}/api/enrich-stream`, {
@@ -1066,7 +1155,7 @@ export function useStreamAnalysis(barcode: string): AnalysisStateWithSnapshot {
             clearTimeout(rev1Guard);
             closeStream();
         };
-    }, [barcode]);
+    }, [barcode, guestScanSessionId, normalizedLaunchSource, scanSessionId, searchSeedFingerprint]);
 
     const snapshot = useMemo(
         () => serverSnapshot ?? buildBarcodeSnapshot({ barcode, analysis: state }),

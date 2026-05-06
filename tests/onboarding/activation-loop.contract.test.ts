@@ -38,6 +38,10 @@ const i18nSource = readFileSync(
   new URL('../../lib/i18n.ts', import.meta.url),
   'utf8',
 );
+const guestScanContractSource = readFileSync(
+  new URL('../../docs/superpowers/specs/2026-05-05-guest-scan-claim-contract.md', import.meta.url),
+  'utf8',
+);
 
 test('activation is defined as result ready plus a follow-up action', () => {
   assert.match(onboardingAnalyticsSource, /first_scan_result_plus_follow_up_v1/);
@@ -101,8 +105,8 @@ test('home empty state catches the first scan and return milestones are instrume
   assert.match(onboardingReturnSource, /event:\s*'d7_return'/);
 });
 
-test('activation handoff package does not include guest scan claim scope', () => {
-  assert.doesNotMatch(scanResultSource, /guestScanSessionId/);
-  assert.doesNotMatch(scanResultSource, /handleKeepGuestResult/);
-  assert.doesNotMatch(scanResultSource, /app\/guest-scan\/claim/);
+test('guest scan claim remains a separately contracted scope from activation handoff', () => {
+  assert.match(guestScanContractSource, /Guest Scan Claim Contract/);
+  assert.match(guestScanContractSource, /implementation PR may touch the required client\/backend surfaces/);
+  assert.match(guestScanContractSource, /Do not change the compact logged-in onboarding flow/);
 });

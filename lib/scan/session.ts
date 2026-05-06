@@ -1,4 +1,20 @@
+import type { ProfileDraft } from '@/types/onboarding';
+
 import type { BarcodeScanResult } from './service';
+
+export type SearchResultSeed = {
+  productId: string;
+  barcode?: string | null;
+  upcCode?: string | null;
+  name: string;
+  brand: string;
+  category: string;
+  benefit: string;
+  dose: string;
+  imageUrl?: string | null;
+  factsStatus?: 'full' | 'partial' | 'none';
+  coverageStatus?: 'coverage_ready' | 'not_enough_structured_data';
+};
 
 const generateId = () => {
   try {
@@ -15,6 +31,10 @@ export type ScanSession =
     input: { barcode: string };
     result?: BarcodeScanResult;
     isLoading?: boolean;
+    source?: string | null;
+    guestScanSessionId?: string | null;
+    searchResultSeed?: SearchResultSeed | null;
+    onboardingDraftSnapshot?: ProfileDraft | null;
   };
 
 export const SCAN_SESSION_SCHEMA_VERSION = 1 as const;

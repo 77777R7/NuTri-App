@@ -1,5 +1,6 @@
 import { Redirect } from 'expo-router';
 
+import { Config } from '@/constants/Config';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOnboarding } from '@/contexts/OnboardingContext';
 import { AUTH_DISABLED } from '@/lib/auth-mode';
@@ -17,7 +18,10 @@ export default function AppIndex() {
   }
 
   if (!session) {
-    return <Redirect href="/(auth)/gate" />;
+    if (Config.guestScanEnabled) {
+      return <Redirect href="/(auth)/gate" />;
+    }
+    return <Redirect href="/auth/login" />;
   }
 
   if (onboardingLoading) {
