@@ -10,6 +10,7 @@ const indexSource = readFileSync(path.join(root, 'app/index.tsx'), 'utf8');
 const configSource = readFileSync(path.join(root, 'constants/Config.ts'), 'utf8');
 const envSource = readFileSync(path.join(root, 'lib/env.ts'), 'utf8');
 const scanSessionSource = readFileSync(path.join(root, 'lib/scan/session.ts'), 'utf8');
+const authSessionSource = readFileSync(path.join(root, 'lib/auth-session.ts'), 'utf8');
 const barcodeSource = readFileSync(path.join(root, 'app/scan/barcode.tsx'), 'utf8');
 const streamSource = readFileSync(path.join(root, 'hooks/useStreamAnalysis.ts'), 'utf8');
 const resultSource = readFileSync(path.join(root, 'app/scan/result.tsx'), 'utf8');
@@ -83,6 +84,7 @@ test('guest scan result receives one full reveal and keep action routes through 
 test('post-auth guest claim route reads token from local storage, not URL', () => {
   assert.match(claimSource, /claimGuestScanSessionOnServer/);
   assert.match(claimSource, /guestScanSessionId/);
+  assert.match(claimSource, /getLastGuestScanSession/);
   assert.doesNotMatch(claimSource, /params\.claimToken/);
   assert.match(claimSource, /router\.replace/);
 });
@@ -90,6 +92,11 @@ test('post-auth guest claim route reads token from local storage, not URL', () =
 test('auth screens preserve guest claim redirect context', () => {
   assert.match(signupSource, /postAuthRedirect/);
   assert.match(signupSource, /getPostAuthDestination/);
+  assert.match(signupSource, /normalizeAuthRedirectParam/);
+  assert.match(signupSource, /encodeAuthRedirectParam\(redirectTarget\)/);
   assert.match(signupSource, /guest-scan\/claim/);
+  assert.match(loginSource, /normalizeAuthRedirectParam/);
+  assert.match(loginSource, /encodeAuthRedirectParam\(redirectTarget\)/);
   assert.match(loginSource, /guest-scan\/claim/);
+  assert.match(authSessionSource, /trimmed\.startsWith\('\/'\)/);
 });
