@@ -20,8 +20,8 @@ export default function GoalsScreen() {
   }, [draft?.goals]);
 
   useEffect(() => {
-    if (progress < 6) {
-      void setProgress(6);
+    if (progress < 3) {
+      void setProgress(3);
     }
   }, [progress, setProgress]);
 
@@ -42,7 +42,7 @@ export default function GoalsScreen() {
           preferredTypes: draft?.preferredTypes ?? [],
         }),
       },
-      6,
+      3,
     );
     trackOnboardingEvent('question_answered', {
       question: 'goals',
@@ -50,14 +50,19 @@ export default function GoalsScreen() {
       answers: selectedGoals,
       source: 'gemini_port',
     });
+    trackOnboardingEvent('goals_completed', {
+      answerCount: selectedGoals.length,
+      answers: selectedGoals,
+      source: 'onboarding_goals',
+    });
     setDirection('forward');
-    router.replace('/onboarding/types');
+    router.replace('/onboarding/allergy');
   }, [draft?.preferredTypes, router, saveDraft, selectedGoals, setDirection]);
 
   return (
     <QAMultiSelectScreen
       screenKey="goals"
-      qaStepIndex={4}
+      qaStepIndex={1}
       eyebrow="Your goal"
       title="What are your goals right now?"
       subtitle="Select at least one."
@@ -66,7 +71,7 @@ export default function GoalsScreen() {
       onToggle={toggleGoal}
       onBack={() => {
         setDirection('back');
-        router.replace('/onboarding/experience');
+        router.replace('/onboarding/data-trust');
       }}
       onContinue={persist}
       onSkip={persist}

@@ -54,6 +54,7 @@ import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
 import { Config } from '@/constants/Config';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOnboarding } from '@/contexts/OnboardingContext';
+import { useSubscription } from '@/contexts/SubscriptionContext';
 import { withAuthHeaders } from '@/lib/auth-token';
 import { useTranslation } from '@/lib/i18n';
 import { lookupFoundationForIngredient, summarizeFoundationHits } from '@/lib/knowledge/foundationLookup';
@@ -68,6 +69,7 @@ import { isNutritionLabelLikeIngredient } from '@/lib/scan/isNutritionLabelLikeI
 import { enforceNeverBlank, isPlaceholderText, sanitizeCoverBullets, sanitizeCoverLine } from '@/lib/scan/neverBlank';
 import { buildRecordFactsViewModel } from '@/lib/scan/recordFactsViewModel';
 import { mergeScienceIngredientCandidates } from '@/lib/scan/scienceIngredientSnapshot';
+import { getGuestScanSession } from '@/lib/scan/guestSession';
 import { buildSafetySignalPack } from '@/lib/scan/safetySignalPack';
 import { resolveTrustedDisplayIdentity } from '@/lib/scan/resolveTrustedDisplayIdentity';
 import { buildVerificationPresentation } from '@/lib/scan/verificationPresentation';
@@ -126,6 +128,24 @@ type FactsDtoState = {
     status: 'idle' | 'loading' | 'ready' | 'error';
     data: FactsDTO | null;
     error: string | null;
+};
+
+const withOptionalGuestScanHeaders = async (
+    headers: Record<string, string>,
+    guestScanSessionId?: string | null,
+): Promise<Record<string, string>> => {
+    const normalizedGuestScanSessionId =
+        typeof guestScanSessionId === 'string' ? guestScanSessionId.trim() : '';
+    if (!normalizedGuestScanSessionId) return headers;
+
+    const guestSession = await getGuestScanSession(normalizedGuestScanSessionId);
+    if (!guestSession?.claimToken) return headers;
+
+    return {
+        ...headers,
+        'X-Guest-Scan-Session-Id': guestSession.guestScanSessionId,
+        'X-Guest-Scan-Claim-Token': guestSession.claimToken,
+    };
 };
 
 type DecisionSupportState = {
@@ -858,11 +878,7 @@ const pickDominantGoalCoverageLabel = (
     return ranked[0]?.goalLabel ?? null;
 };
 
-const findGoalCoverageByLabel = <
-    T extends {
-        goalLabel: string;
-    },
->(
+const findGoalCoverageByLabel = <T extends { goalLabel: string }>(
     coverage: T[],
     goalLabel: string,
 ): T | null => {
@@ -1266,6 +1282,12 @@ function normalizeText(value?: string | null) {
     return value?.replace(/\s+/g, ' ').trim() ?? '';
 }
 
+const lowerFirst = (value?: string | null) => {
+    const normalized = normalizeText(value);
+    if (!normalized) return '';
+    return normalized.charAt(0).toLowerCase() + normalized.slice(1);
+};
+
 const toTitleCaseWords = (value?: string | null): string => {
     const normalized = normalizeText(value);
     if (!normalized) return '';
@@ -1506,27 +1528,6 @@ function emitScanUxMetric(event: string, payload: Record<string, unknown> = {}) 
         event,
         ...payload,
     });
-    const apiBaseUrl = Config.apiBaseUrl?.replace(/\/+$/, '');
-    if (!apiBaseUrl) return;
-    void fetch(`${apiBaseUrl}/api/scan-ux-metrics`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            event,
-            payload,
-            emittedAt: new Date().toISOString(),
-        }),
-    }).catch(() => {
-        // Metrics must never affect scan rendering.
-    });
-}
-
-function lowerFirst(value: string | null | undefined): string {
-    const normalized = normalizeText(value);
-    if (!normalized) return '';
-    return normalized.charAt(0).toLowerCase() + normalized.slice(1);
 }
 
 function resolveSimpleTaxonomyLabel(label: string, fallback: string = 'Official record') {
@@ -2719,22 +2720,6 @@ type PaywallPlanCard = {
     selected: boolean;
 };
 
-const scanSubscriptionPreview = {
-    annualPackage: null,
-    monthlyPackage: null,
-    primaryPackage: null,
-    trialEligibility: 'unknown',
-    uiPreviewMode: true,
-    previewMode: true,
-    purchaseBusy: false,
-    restoreBusy: false,
-    loading: false,
-    error: null,
-    clearError: () => undefined,
-    purchasePrimaryPackage: async () => ({ ok: false, cancelled: true, message: 'Purchases are not configured in this build.' }),
-    restorePurchases: async () => ({ ok: false, cancelled: true, message: 'Purchases are not configured in this build.' }),
-} as const;
-
 const ScanPaywallModal: React.FC<{
     visible: boolean;
     source: PaywallSource | null;
@@ -3410,6 +3395,8 @@ type IngredientOverviewSidecarState = {
     source?: 'api' | 'server-fallback';
     fallbackUsed?: boolean;
     promptVersion?: string;
+    backgroundRefreshPending?: boolean;
+    recommendedRetryAfterMs?: number | null;
     data?: IngredientOverviewBlock;
     error?: string;
 };
@@ -3541,8 +3528,6 @@ const isBlendLikeName = (name: string): boolean =>
 
 const isOmega3TotalLineName = (name: string): boolean =>
     /\btotal\b.*\bomega\s*-?\s*3\b|\bomega\s*-?\s*3\b.*\btotal\b/i.test(name);
-
-const isOmega3AggregateLineName = isOmega3TotalLineName;
 
 const isOmega3SourceLineName = (name: string): boolean =>
     /\bfish\s*oil\b|\bkrill\s*oil\b|\balgal\s*oil\b|\boil\s*concentrate\b/i.test(name);
@@ -3907,7 +3892,7 @@ const scoreScienceModalIngredientRow = (
     const doseMagnitude = parseOverviewDoseMagnitude(row.dose);
     const hasOmegaBreakdownPeers = rows.some((candidate) => isOmega3BreakdownLineName(candidate.name));
     const isOmegaSourceLine = isOmega3SourceLineName(displayName) && hasOmegaBreakdownPeers;
-    const isOmegaAggregateLine = isOmega3AggregateLineName(displayName);
+    const isOmegaAggregateLine = isOmega3TotalLineName(displayName);
     const isOmegaBreakdownLine = isOmega3BreakdownLineName(displayName);
 
     return (
@@ -4039,6 +4024,7 @@ const AnalysisBundleDashboard: React.FC<{
     scoreState?: ScoreState;
     sourceType?: SourceType;
     scanSessionId?: string | null;
+    guestScanSessionId?: string | null;
     externalScrollY?: SharedValue<number>;
     miniHeaderMode?: 'inline' | 'header';
     onMiniScoreMetaChange?: (meta: { overallScore: number; overallBand: string | null; muted: boolean }) => void;
@@ -4046,6 +4032,7 @@ const AnalysisBundleDashboard: React.FC<{
     onCoreReadyChange?: (ready: boolean) => void;
     saveItem?: AnalysisDashboardSaveItem | null;
     onboardingDraftOverride?: ProfileDraft | null;
+    topAccessory?: React.ReactNode;
 }> = ({
     bundle,
     analysis,
@@ -4055,6 +4042,7 @@ const AnalysisBundleDashboard: React.FC<{
     scoreState = 'active',
     sourceType = 'barcode',
     scanSessionId = null,
+    guestScanSessionId = null,
     externalScrollY,
     miniHeaderMode = 'inline',
     onMiniScoreMetaChange,
@@ -4062,12 +4050,13 @@ const AnalysisBundleDashboard: React.FC<{
     onCoreReadyChange,
     saveItem = null,
     onboardingDraftOverride = null,
+    topAccessory = null,
 }) => {
     const { t } = useTranslation();
     const { loading: authLoading, token: authToken, session, setPostAuthRedirect } = useAuth();
     const { draft: onboardingDraft, loading: onboardingLoading } = useOnboarding();
     const effectiveOnboardingDraft = onboardingDraftOverride ?? onboardingDraft;
-    const subscription = scanSubscriptionPreview;
+    const subscription = useSubscription();
     const isPreviewLocked = accessLevel === 'preview_locked';
     const [selectedTileType, setSelectedTileType] = useState<TileType | null>(null);
     const [paywallSource, setPaywallSource] = useState<PaywallSource | null>(null);
@@ -4096,9 +4085,12 @@ const AnalysisBundleDashboard: React.FC<{
     const ingredientOverviewStateRef = useRef<Record<string, IngredientOverviewSidecarState>>({});
     const scientificBackgroundStateRef = useRef<Record<string, ScientificBackgroundSidecarState>>({});
     const ingredientOverviewRevalidateAtRef = useRef<Record<string, number>>({});
+    const ingredientOverviewRetryCountRef = useRef<Record<string, number>>({});
+    const ingredientOverviewFallbackStartedAtRef = useRef<Record<string, number>>({});
     const scientificBackgroundRevalidateAtRef = useRef<Record<string, number>>({});
     const scientificBackgroundRetryCountRef = useRef<Record<string, number>>({});
     const scientificBackgroundFallbackStartedAtRef = useRef<Record<string, number>>({});
+    const [ingredientOverviewRetryTick, setIngredientOverviewRetryTick] = useState(0);
     const [scientificBackgroundRetryTick, setScientificBackgroundRetryTick] = useState(0);
     const decisionSupportCacheRef = useRef<Map<string, Record<string, unknown>>>(new Map());
     const decisionSupportByBarcodeRef = useRef<Map<string, Record<string, unknown>>>(decisionSupportWarmCache);
@@ -4456,12 +4448,29 @@ const AnalysisBundleDashboard: React.FC<{
     const comparisonSnapInterval = comparisonCardWidth + 12;
     const TileRenderer = disableTileAnimation ? StaticTile : AnimatedTile;
     const ScrollContainer: any = disableReanimatedScroll ? ScrollView : Animated.ScrollView;
+    const scrollContainerRef = useRef<any>(null);
+    const topSectionYRef = useRef(0);
+    const lastPersonalizationCoachScrollKeyRef = useRef<string | null>(null);
     const handlePlainScroll = useCallback((event: any) => {
         scrollY.value = event.nativeEvent.contentOffset.y;
     }, [scrollY]);
     const scrollProps = disableReanimatedScroll
         ? { onScroll: handlePlainScroll }
         : { onScroll: scrollHandler };
+    const handleTopSectionLayout = useCallback((event: LayoutChangeEvent) => {
+        topSectionYRef.current = event.nativeEvent.layout.y;
+    }, []);
+    const handlePersonalizationCoachLayout = useCallback((payload: { syncKey: string; sectionY: number }) => {
+        if (lastPersonalizationCoachScrollKeyRef.current === payload.syncKey) return;
+        lastPersonalizationCoachScrollKeyRef.current = payload.syncKey;
+
+        const anchorOffset = Math.min(Math.max(viewportHeight * 0.16, 96), 132);
+        const targetY = Math.max(0, topSectionYRef.current + payload.sectionY - anchorOffset);
+
+        setTimeout(() => {
+            scrollContainerRef.current?.scrollTo?.({ y: targetY, animated: true });
+        }, 80);
+    }, [viewportHeight]);
 
     useEffect(() => {
         if (!__DEV__) return;
@@ -6510,6 +6519,7 @@ const AnalysisBundleDashboard: React.FC<{
             },
             personalInsight: {
                 supportLabels: (personalInsight?.supports ?? []).map((signal) => signal.label),
+                hasSavedGoals: localDecisionSupportSignals.goalCount > 0,
                 preferSupportSignal,
                 resolvedSupportGoalLabel,
                 conflictSummary: firstConflict ?? null,
@@ -6564,6 +6574,7 @@ const AnalysisBundleDashboard: React.FC<{
         decisionPersonalizedResultLane?.dosageContext,
         decisionPersonalizedResultLane?.goalFit,
         decisionPersonalizedResultLane?.personalInsight,
+        localDecisionSupportSignals.goalCount,
         localDecisionSupportSignals.allergyCount,
         localDecisionSupportSignals.restrictionCount,
         safetyTipCoverText,
@@ -7645,9 +7656,12 @@ const AnalysisBundleDashboard: React.FC<{
         const run = async () => {
             try {
                 const baseUrl = String(Config.searchApiBaseUrl).replace(/\/$/, '');
-                const headers = await withAuthHeaders({
-                    'Content-Type': 'application/json',
-                });
+                const headers = await withOptionalGuestScanHeaders(
+                    await withAuthHeaders({
+                        'Content-Type': 'application/json',
+                    }),
+                    guestScanSessionId,
+                );
                 if (cancelled) return;
                 timeoutId = setTimeout(() => {
                     timedOut = true;
@@ -7771,6 +7785,7 @@ const AnalysisBundleDashboard: React.FC<{
         buildOverviewAiLoadingState,
         buildOverviewAiUnavailableState,
         canRequestOverviewAi,
+        guestScanSessionId,
         overviewAiDigest,
         overviewAiRequestFingerprint,
         setProductOverviewAiState,
@@ -8008,9 +8023,12 @@ const AnalysisBundleDashboard: React.FC<{
         ingredientOverviewStateRef.current = {};
         scientificBackgroundStateRef.current = {};
         ingredientOverviewRevalidateAtRef.current = {};
+        ingredientOverviewRetryCountRef.current = {};
+        ingredientOverviewFallbackStartedAtRef.current = {};
         scientificBackgroundRevalidateAtRef.current = {};
         scientificBackgroundRetryCountRef.current = {};
         scientificBackgroundFallbackStartedAtRef.current = {};
+        setIngredientOverviewRetryTick(0);
         setScientificBackgroundRetryTick(0);
         setActiveIngredientName(keyIngredientsForDetail[0] ?? null);
         setActiveSafetyIngredientName(keyIngredientsForSafety[0] ?? null);
@@ -8029,12 +8047,27 @@ const AnalysisBundleDashboard: React.FC<{
         }
         const current = ingredientOverviewStateRef.current[ingredientOverviewRequestKey];
         const lastRevalidateAt = ingredientOverviewRevalidateAtRef.current[ingredientOverviewRequestKey] ?? 0;
+        const retryCount = ingredientOverviewRetryCountRef.current[ingredientOverviewRequestKey] ?? 0;
+        const fallbackStartedAt = ingredientOverviewFallbackStartedAtRef.current[ingredientOverviewRequestKey] ?? 0;
+        const withinRefreshWindow =
+            !current?.backgroundRefreshPending
+            || !fallbackStartedAt
+            || (Date.now() - fallbackStartedAt) <= SCIENTIFIC_BACKGROUND_REFRESH_POLL_MAX_WINDOW_MS;
+        const retryDelayMs =
+            current?.backgroundRefreshPending
+                ? clampScientificBackgroundRefreshDelay(current.recommendedRetryAfterMs)
+                : SCIENTIFIC_BACKGROUND_REVALIDATE_COOLDOWN_MS;
+        const canAutoRetryFallback =
+            current?.backgroundRefreshPending
+                ? retryCount < SCIENTIFIC_BACKGROUND_REFRESH_POLL_MAX_ATTEMPTS && withinRefreshWindow
+                : true;
         const shouldRevalidateFallback =
             selectedTileType === 'science'
             && shouldRenderScienceSidecars
             && current?.status === 'ok'
             && current.source === 'server-fallback'
-            && Date.now() - lastRevalidateAt >= SCIENTIFIC_BACKGROUND_REVALIDATE_COOLDOWN_MS;
+            && canAutoRetryFallback
+            && Date.now() - lastRevalidateAt >= retryDelayMs;
         if (
             current
             && (
@@ -8060,16 +8093,28 @@ const AnalysisBundleDashboard: React.FC<{
             try {
                 if (revalidateFallback) {
                     ingredientOverviewRevalidateAtRef.current[ingredientOverviewRequestKey] = Date.now();
+                    ingredientOverviewRetryCountRef.current[ingredientOverviewRequestKey] =
+                        (ingredientOverviewRetryCountRef.current[ingredientOverviewRequestKey] ?? 0) + 1;
                 }
                 setIngredientOverviewSidecarState(ingredientOverviewRequestKey, (currentState) =>
                     isIngredientOverviewRenderableState(currentState)
                         ? { ...currentState, status: 'loading' }
                         : { status: 'loading' },
                 );
+                if (
+                    ingredientOverviewFallbackStartedAtRef.current[ingredientOverviewRequestKey] == null
+                    && current?.status === 'ok'
+                    && current.source === 'server-fallback'
+                ) {
+                    ingredientOverviewFallbackStartedAtRef.current[ingredientOverviewRequestKey] = Date.now();
+                }
                 const baseUrl = String(Config.searchApiBaseUrl).replace(/\/$/, '');
-                const headers = await withAuthHeaders({
-                    'Content-Type': 'application/json',
-                });
+                const headers = await withOptionalGuestScanHeaders(
+                    await withAuthHeaders({
+                        'Content-Type': 'application/json',
+                    }),
+                    guestScanSessionId,
+                );
                 if (localDecisionSupportHeader) {
                     headers['x-local-personalization'] = localDecisionSupportHeader;
                     headers['Cache-Control'] = 'no-cache, no-store';
@@ -8120,9 +8165,17 @@ const AnalysisBundleDashboard: React.FC<{
 
                 if (!response.ok) {
                     settled = true;
+                    delete ingredientOverviewRetryCountRef.current[ingredientOverviewRequestKey];
+                    delete ingredientOverviewFallbackStartedAtRef.current[ingredientOverviewRequestKey];
+                    delete ingredientOverviewRevalidateAtRef.current[ingredientOverviewRequestKey];
                     setIngredientOverviewSidecarState(ingredientOverviewRequestKey, (currentState) =>
                         isIngredientOverviewRenderableState(currentState)
-                            ? { ...currentState, status: 'ok' }
+                            ? {
+                                ...currentState,
+                                status: 'ok',
+                                backgroundRefreshPending: false,
+                                recommendedRetryAfterMs: null,
+                            }
                             : {
                                 status: 'error',
                                 error: `HTTP ${response.status}`,
@@ -8142,19 +8195,42 @@ const AnalysisBundleDashboard: React.FC<{
                 }
 
                 settled = true;
+                const source = payload.source === 'fallback' ? 'server-fallback' : 'api';
+                const backgroundRefreshPending =
+                    source === 'server-fallback' && payload.backgroundRefreshPending === true;
+                if (backgroundRefreshPending) {
+                    ingredientOverviewFallbackStartedAtRef.current[ingredientOverviewRequestKey] ??= Date.now();
+                    ingredientOverviewRevalidateAtRef.current[ingredientOverviewRequestKey] ??= Date.now();
+                } else {
+                    delete ingredientOverviewFallbackStartedAtRef.current[ingredientOverviewRequestKey];
+                    delete ingredientOverviewRevalidateAtRef.current[ingredientOverviewRequestKey];
+                }
+                if (source === 'api' || !backgroundRefreshPending) {
+                    delete ingredientOverviewRetryCountRef.current[ingredientOverviewRequestKey];
+                }
                 setIngredientOverviewSidecarState(ingredientOverviewRequestKey, {
                     status: 'ok',
-                    source: payload.source === 'fallback' ? 'server-fallback' : 'api',
+                    source,
                     fallbackUsed: payload.fallbackUsed,
                     promptVersion: payload.promptVersion,
+                    backgroundRefreshPending,
+                    recommendedRetryAfterMs: payload.recommendedRetryAfterMs ?? null,
                     data: payload.ingredientOverview,
                 });
             } catch (error) {
                 if (cancelled) return;
                 settled = true;
+                delete ingredientOverviewRetryCountRef.current[ingredientOverviewRequestKey];
+                delete ingredientOverviewFallbackStartedAtRef.current[ingredientOverviewRequestKey];
+                delete ingredientOverviewRevalidateAtRef.current[ingredientOverviewRequestKey];
                 setIngredientOverviewSidecarState(ingredientOverviewRequestKey, (currentState) =>
                     isIngredientOverviewRenderableState(currentState)
-                        ? { ...currentState, status: 'ok' }
+                        ? {
+                            ...currentState,
+                            status: 'ok',
+                            backgroundRefreshPending: false,
+                            recommendedRetryAfterMs: null,
+                        }
                         : {
                             status: 'error',
                             error: error instanceof Error ? error.message : 'Ingredient overview unavailable',
@@ -8187,14 +8263,47 @@ const AnalysisBundleDashboard: React.FC<{
         shouldPrimeScienceSidecars,
         decisionBarcodeForScience,
         decisionDigestForScience,
-        ingredientOverviewState?.status,
-        ingredientOverviewState?.source,
         ingredientOverviewRequestKey,
+        guestScanSessionId,
         localDecisionSupportHeader,
         scienceDecisionInputsHash,
         sciencePersonalizationScopeHash,
+        ingredientOverviewRetryTick,
         selectedTileType,
         setIngredientOverviewSidecarState,
+        shouldRenderScienceSidecars,
+    ]);
+
+    useEffect(() => {
+        if (selectedTileType !== 'science') return;
+        if (!shouldRenderScienceSidecars || !ingredientOverviewRequestKey) return;
+        if (ingredientOverviewState?.status !== 'ok' || ingredientOverviewState.source !== 'server-fallback') return;
+        if (!ingredientOverviewState.backgroundRefreshPending) return;
+        const retryCount = ingredientOverviewRetryCountRef.current[ingredientOverviewRequestKey] ?? 0;
+        const fallbackStartedAt = ingredientOverviewFallbackStartedAtRef.current[ingredientOverviewRequestKey] ?? 0;
+        if (retryCount >= SCIENTIFIC_BACKGROUND_REFRESH_POLL_MAX_ATTEMPTS) return;
+        if (
+            fallbackStartedAt
+            && Date.now() - fallbackStartedAt > SCIENTIFIC_BACKGROUND_REFRESH_POLL_MAX_WINDOW_MS
+        ) {
+            return;
+        }
+        const lastRevalidateAt = ingredientOverviewRevalidateAtRef.current[ingredientOverviewRequestKey] ?? 0;
+        const retryAfterMs = clampScientificBackgroundRefreshDelay(
+            ingredientOverviewState.recommendedRetryAfterMs,
+        );
+        const remainingMs = Math.max(retryAfterMs - (Date.now() - lastRevalidateAt), 0);
+        const timer = setTimeout(() => {
+            setIngredientOverviewRetryTick((value) => value + 1);
+        }, remainingMs);
+        return () => clearTimeout(timer);
+    }, [
+        ingredientOverviewRequestKey,
+        ingredientOverviewState?.backgroundRefreshPending,
+        ingredientOverviewState?.recommendedRetryAfterMs,
+        ingredientOverviewState?.source,
+        ingredientOverviewState?.status,
+        selectedTileType,
         shouldRenderScienceSidecars,
     ]);
 
@@ -8281,9 +8390,12 @@ const AnalysisBundleDashboard: React.FC<{
                 ) {
                     scientificBackgroundFallbackStartedAtRef.current[requestKey] = Date.now();
                 }
-                const headers = await withAuthHeaders({
-                    'Content-Type': 'application/json',
-                });
+                const headers = await withOptionalGuestScanHeaders(
+                    await withAuthHeaders({
+                        'Content-Type': 'application/json',
+                    }),
+                    guestScanSessionId,
+                );
                 if (localDecisionSupportHeader) {
                     headers['x-local-personalization'] = localDecisionSupportHeader;
                     headers['Cache-Control'] = 'no-cache, no-store';
@@ -8441,15 +8553,12 @@ const AnalysisBundleDashboard: React.FC<{
         decisionBarcodeForScience,
         decisionDigestForScience,
         decisionScienceIngredientRows,
+        guestScanSessionId,
         localDecisionSupportHeader,
         selectedTileType,
         scienceDecisionInputsHash,
         sciencePersonalizationScopeHash,
         scientificBackgroundRetryTick,
-        scientificBackgroundState?.status,
-        scientificBackgroundState?.source,
-        scientificBackgroundState?.backgroundRefreshPending,
-        scientificBackgroundState?.recommendedRetryAfterMs,
         scientificBackgroundRequestKey,
         scienceSourceFinalKey,
         setScientificBackgroundSidecarState,
@@ -10103,24 +10212,30 @@ const AnalysisBundleDashboard: React.FC<{
             ) : null}
 
             <ScrollContainer
+                ref={scrollContainerRef}
                 style={styles.scroll}
                 contentContainerStyle={styles.scrollContent}
                 showsVerticalScrollIndicator={false}
                 scrollEventThrottle={16}
                 {...scrollProps}
             >
+                {topAccessory}
+
                 {!disableHeroHeader ? (
-                    <AnalysisTopSectionRedesign
-                        hero={topSectionPresentation.hero}
-                        banner={topSectionPresentation.banner}
-                        insights={topSectionPresentation.insights}
-                        secondaryNote={topSectionPresentation.secondaryNote ?? null}
-                        productTitle={productTitle}
-                        productSubtitle={isPreviewLocked ? null : productSubtitle}
-                        heroImageUri={heroImageUri}
-                        verifiedLabelText={verifiedLabelText}
-                        lockedPreview={isPreviewLocked}
-                    />
+                    <View onLayout={handleTopSectionLayout}>
+                        <AnalysisTopSectionRedesign
+                            hero={topSectionPresentation.hero}
+                            banner={topSectionPresentation.banner}
+                            insights={topSectionPresentation.insights}
+                            secondaryNote={topSectionPresentation.secondaryNote ?? null}
+                            productTitle={productTitle}
+                            productSubtitle={isPreviewLocked ? null : productSubtitle}
+                            heroImageUri={heroImageUri}
+                            verifiedLabelText={verifiedLabelText}
+                            lockedPreview={isPreviewLocked}
+                            onPersonalizationCoachLayout={handlePersonalizationCoachLayout}
+                        />
+                    </View>
                 ) : null}
 
                 {!disableHeroHeader ? <View style={styles.sectionDivider} /> : null}
@@ -10390,6 +10505,7 @@ type AnalysisDashboardProps = {
     scoreState?: ScoreState;
     sourceType?: SourceType;
     scanSessionId?: string | null;
+    guestScanSessionId?: string | null;
     analysisBundle?: AnalysisBundle | null;
     externalScrollY?: SharedValue<number>;
     miniHeaderMode?: 'inline' | 'header';
@@ -10398,6 +10514,7 @@ type AnalysisDashboardProps = {
     onCoreReadyChange?: (ready: boolean) => void;
     saveItem?: AnalysisDashboardSaveItem | null;
     onboardingDraftOverride?: ProfileDraft | null;
+    topAccessory?: React.ReactNode;
 };
 
 const ensureModernAnalysisBundle = (
@@ -10452,6 +10569,7 @@ export const AnalysisDashboard: React.FC<AnalysisDashboardProps> = ({
     scoreState,
     sourceType,
     scanSessionId = null,
+    guestScanSessionId = null,
     analysisBundle,
     externalScrollY,
     miniHeaderMode = 'inline',
@@ -10460,6 +10578,7 @@ export const AnalysisDashboard: React.FC<AnalysisDashboardProps> = ({
     onCoreReadyChange,
     saveItem = null,
     onboardingDraftOverride = null,
+    topAccessory = null,
 }) => {
     const modernBundle = ensureModernAnalysisBundle(analysisBundle, analysis, scanSessionId);
     return (
@@ -10472,6 +10591,7 @@ export const AnalysisDashboard: React.FC<AnalysisDashboardProps> = ({
             scoreState={scoreState}
             sourceType={sourceType}
             scanSessionId={scanSessionId}
+            guestScanSessionId={guestScanSessionId}
             externalScrollY={externalScrollY}
             miniHeaderMode={miniHeaderMode}
             onMiniScoreMetaChange={onMiniScoreMetaChange}
@@ -10479,6 +10599,7 @@ export const AnalysisDashboard: React.FC<AnalysisDashboardProps> = ({
             onCoreReadyChange={onCoreReadyChange}
             saveItem={saveItem}
             onboardingDraftOverride={onboardingDraftOverride}
+            topAccessory={topAccessory}
         />
     );
 };

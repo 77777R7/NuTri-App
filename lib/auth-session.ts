@@ -33,3 +33,19 @@ export const parseAuthRedirectParams = (url: string): Record<string, string> => 
 
   return params;
 };
+
+export const encodeAuthRedirectParam = (target: string): string => encodeURIComponent(target);
+
+export const normalizeAuthRedirectParam = (value: string | null | undefined): string | null => {
+  if (typeof value !== 'string') return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  if (trimmed.startsWith('/') && !trimmed.startsWith('//')) return trimmed;
+
+  try {
+    const decoded = decodeURIComponent(trimmed);
+    return decoded.startsWith('/') && !decoded.startsWith('//') ? decoded : trimmed;
+  } catch {
+    return trimmed;
+  }
+};

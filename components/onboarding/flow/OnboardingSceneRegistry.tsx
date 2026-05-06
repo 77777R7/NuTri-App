@@ -89,33 +89,32 @@ const BLUR_PROPS =
 export const ONBOARDING_FLOW_STEPS = [
   'welcome',
   'data-trust',
-  'age-range',
-  'sex',
-  'experience',
   'goals',
-  'types',
   'allergy',
-  'blocker',
-  'setup',
   'plan-preview',
   'first-stack',
 ] as const;
 
-export type OnboardingFlowStep = (typeof ONBOARDING_FLOW_STEPS)[number];
+const ONBOARDING_LEGACY_FLOW_STEPS = [
+  'age-range',
+  'sex',
+  'experience',
+  'types',
+  'blocker',
+  'setup',
+] as const;
 
-export const ONBOARDING_FLOW_PROGRESS: Record<OnboardingFlowStep, number> = {
+export type OnboardingFlowStep =
+  | (typeof ONBOARDING_FLOW_STEPS)[number]
+  | (typeof ONBOARDING_LEGACY_FLOW_STEPS)[number];
+
+export const ONBOARDING_FLOW_PROGRESS: Partial<Record<OnboardingFlowStep, number>> = {
   welcome: 1,
   'data-trust': 2,
-  'age-range': 3,
-  sex: 4,
-  experience: 5,
-  goals: 6,
-  types: 7,
-  allergy: 8,
-  blocker: 9,
-  setup: 10,
-  'plan-preview': 11,
-  'first-stack': 11,
+  goals: 3,
+  allergy: 4,
+  'plan-preview': 5,
+  'first-stack': 5,
 };
 
 type OnboardingFlowSceneProps = {
@@ -142,14 +141,8 @@ export const resolveInitialOnboardingFlowStep = ({
 
   if (progress <= 1) return 'welcome';
   if (progress === 2) return 'data-trust';
-  if (progress === 3) return 'age-range';
-  if (progress === 4) return 'sex';
-  if (progress === 5) return 'experience';
-  if (progress === 6) return 'goals';
-  if (progress === 7) return 'types';
-  if (progress === 8) return 'allergy';
-  if (progress === 9) return 'blocker';
-  if (progress === 10) return 'setup';
+  if (progress === 3) return 'goals';
+  if (progress === 4) return 'allergy';
   return 'plan-preview';
 };
 
@@ -672,7 +665,7 @@ function DataTrustFlowScene({
     }
 
     commitDraft({ onboardingVersion: 'v2' });
-    goToStep('age-range', 'forward');
+    goToStep('goals', 'forward');
     void flushDraft();
   }, [commitDraft, flushDraft, goToStep]);
 
@@ -971,7 +964,7 @@ function GoalsFlowScene({
       answers: selectedGoals,
       source: 'gemini_port',
     });
-    goToStep('types', 'forward');
+    goToStep('allergy', 'forward');
     void flushDraft();
   }, [commitDraft, draft?.preferredTypes, flushDraft, goToStep, selectedGoals]);
 
@@ -979,7 +972,7 @@ function GoalsFlowScene({
     () => ({
       backgroundVariant: 'qa',
       progressFillWidth: getSharedShellProgressFillWidth('goals'),
-      onBack: () => goToStep('experience', 'back'),
+      onBack: () => goToStep('data-trust', 'back'),
       onContinue: persist,
       onSkip: persist,
       continueLabel: 'Continue',
@@ -1209,7 +1202,7 @@ function AllergyFlowScene({
       answerCount: selected.length,
       answers: selected,
     });
-    goToStep('blocker', 'forward');
+    goToStep('plan-preview', 'forward');
     void flushDraft();
   }, [commitDraft, flushDraft, goToStep, selected]);
 
@@ -1217,7 +1210,7 @@ function AllergyFlowScene({
     () => ({
       backgroundVariant: 'qa',
       progressFillWidth: getSharedShellProgressFillWidth('allergy'),
-      onBack: () => goToStep('types', 'back'),
+      onBack: () => goToStep('goals', 'back'),
       onContinue: persist,
       onSkip: persist,
       continueLabel: 'Continue',
@@ -1503,22 +1496,10 @@ export function renderOnboardingScene(
       return <WelcomeFlowScene {...props} />;
     case 'data-trust':
       return <DataTrustFlowScene {...props} />;
-    case 'age-range':
-      return <AgeRangeFlowScene {...props} />;
-    case 'sex':
-      return <SexFlowScene {...props} />;
-    case 'experience':
-      return <ExperienceFlowScene {...props} />;
     case 'goals':
       return <GoalsFlowScene {...props} />;
-    case 'types':
-      return <TypesFlowScene {...props} />;
     case 'allergy':
       return <AllergyFlowScene {...props} />;
-    case 'blocker':
-      return <BlockerFlowScene {...props} />;
-    case 'setup':
-      return <SetupFlowScene {...props} />;
     case 'plan-preview':
       return <PlanPreviewFlowScene {...props} />;
     case 'first-stack':

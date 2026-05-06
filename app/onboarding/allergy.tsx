@@ -141,8 +141,8 @@ export default function AllergyScreen() {
   }, [draft?.allergyFlags, draft?.avoidItems, draft?.ingredientRestrictions, draft?.noKnownAllergies]);
 
   useEffect(() => {
-    if (progress < 8) {
-      void setProgress(8);
+    if (progress < 4) {
+      void setProgress(4);
     }
   }, [progress, setProgress]);
 
@@ -200,7 +200,7 @@ export default function AllergyScreen() {
     },
   });
 
-  const persist = useCallback(async () => {
+  const persist = useCallback(async (skipped = false) => {
     const normalized = normalizeAvoidItemsSelection(selected);
     await saveDraft(
       {
@@ -209,30 +209,35 @@ export default function AllergyScreen() {
         ingredientRestrictions: normalized.ingredientRestrictions,
         noKnownAllergies: normalized.noKnownAllergies,
       },
-      8,
+      4,
     );
     trackOnboardingEvent('question_answered', {
       question: 'avoid_items',
       answerCount: selected.length,
       answers: selected,
     });
+    trackOnboardingEvent(skipped ? 'allergy_skipped' : 'allergy_completed', {
+      answerCount: selected.length,
+      answers: selected,
+      source: 'onboarding_allergy',
+    });
     setDirection('forward');
-    router.replace('/onboarding/blocker');
+    router.replace('/onboarding/plan-preview');
   }, [router, saveDraft, selected, setDirection]);
 
   return (
     <QAScreenShell
       screenKey="allergy"
-      qaStepIndex={6}
+      qaStepIndex={2}
       eyebrow=""
       title="Anything to avoid?"
       subtitle="Optional. We'll flag ingredients that may not fit your routine."
       onBack={() => {
         setDirection('back');
-        router.replace('/onboarding/types');
+        router.replace('/onboarding/goals');
       }}
-      onContinue={persist}
-      onSkip={persist}
+      onContinue={() => persist(false)}
+      onSkip={() => persist(true)}
       continueLabel="Continue"
       onListScroll={handleScroll}
       listOverlay={

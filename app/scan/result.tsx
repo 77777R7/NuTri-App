@@ -11,10 +11,18 @@ import { ResponsiveScreen } from '@/components/common/ResponsiveScreen';
 import { ScanResultHeaderChrome } from '@/components/scan/ScanResultHeaderChrome';
 import { OrganicSpinner } from '@/components/ui/OrganicSpinner';
 import { ShinyText } from '@/components/ui/ShinyText';
+import { Config } from '@/constants/Config';
+import { useAuth } from '@/contexts/AuthContext';
 import { useScanHistory } from '@/contexts/ScanHistoryContext';
 import { useResponsiveTokens } from '@/hooks/useResponsiveTokens';
 import { useStreamAnalysis } from '@/hooks/useStreamAnalysis';
 import { useSavedSupplements } from '@/contexts/SavedSupplementsContext';
+import {
+  NUTRI_ACTIVATION_DEFINITION,
+  trackOnboardingEvent,
+} from '@/lib/analytics/onboarding';
+import { choosePreferredProductImageUrl } from '@/lib/productImagePreference';
+import { getGuestScanSession } from '@/lib/scan/guestSession';
 import { consumeScanSessionWithStatusAsync, ensureSessionId, type ScanSession } from '@/lib/scan/session';
 import { resolveReasonCodeMessage } from '@/lib/scan/streamStateMachine';
 import { getBarcodeQuality } from '@/lib/scan/quality';
@@ -161,19 +169,46 @@ export default function ScanResultScreen() {
   const styles = useMemo(() => createStyles(tokens), [tokens]);
   const appOwnership = Constants.appOwnership;
   const isExpoGo = appOwnership === 'expo' || appOwnership === 'guest';
+  const { session: authSession, setPostAuthRedirect } = useAuth();
   const { addScan } = useScanHistory();
   const { addSupplement, savedSupplements, updateSupplement } = useSavedSupplements();
   const addedRef = useRef(false);
   const lastDosageRef = useRef<string | null>(null);
   const lastBrandRef = useRef<string | null>(null);
   const lastSupplementIdRef = useRef<string | null>(null);
+  const resultReadyTrackedRef = useRef<string | null>(null);
+  const guestResultStartedTrackedRef = useRef<string | null>(null);
 
   // Get session to retrieve barcode
-  const params = useLocalSearchParams<{ sessionId?: string; devBarcode?: string }>();
+  const params = useLocalSearchParams<{ sessionId?: string; devBarcode?: string; source?: string; guestScanSessionId?: string }>();
   const [session, setSession] = useState<ScanSession | null>(null);
   const [sessionResolved, setSessionResolved] = useState(false);
   const [sessionState, setSessionState] = useState<'ok' | 'session_expired'>('ok');
   const barcode = session?.mode === 'barcode' ? session.input.barcode : '';
+  const routeSource = typeof params.source === 'string' && params.source.trim().length > 0
+    ? params.source.trim()
+    : null;
+  const sessionSource = typeof session?.source === 'string' && session.source.trim().length > 0
+    ? session.source.trim()
+    : null;
+  const effectiveScanSource = sessionSource ?? routeSource;
+  const currentScanId =
+    typeof params.sessionId === 'string' && params.sessionId.trim().length > 0
+      ? params.sessionId.trim()
+      : session?.id ?? null;
+  const guestScanSessionId =
+    effectiveScanSource === 'guest_scan' && Config.guestScanEnabled
+      ? (
+        typeof session?.guestScanSessionId === 'string' && session.guestScanSessionId.trim().length > 0
+          ? session.guestScanSessionId.trim()
+          : typeof params.guestScanSessionId === 'string' && params.guestScanSessionId.trim().length > 0
+            ? params.guestScanSessionId.trim()
+            : null
+      )
+      : null;
+  const isGuestScan = Boolean(guestScanSessionId);
+  const [guestScanClaimed, setGuestScanClaimed] = useState(false);
+  const shouldShowGuestClaimPrompt = isGuestScan && !guestScanClaimed;
   const [dashboardRuntimeError, setDashboardRuntimeError] = useState<string | null>(null);
   const dashboardRenderMode: 'full' = resolveDashboardRenderMode(isExpoGo);
   const analysisHeaderScrollY = useSharedValue(0);
@@ -182,6 +217,32 @@ export default function ScanResultScreen() {
     DEFAULT_HEADER_MINI_SCORE_TRIGGER,
   );
   const [dashboardCoreReady, setDashboardCoreReady] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!guestScanSessionId) {
+      setGuestScanClaimed(false);
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    void getGuestScanSession(guestScanSessionId)
+      .then((guestSession) => {
+        if (cancelled) return;
+        setGuestScanClaimed(guestSession?.status === 'claimed');
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setGuestScanClaimed(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [guestScanSessionId]);
+
+  const searchResultSeed = session?.mode === 'barcode' ? session.searchResultSeed ?? null : null;
   const loadingBadgeTimingRef = useRef({
     startedAt: 0,
     seen: false,
@@ -210,7 +271,12 @@ export default function ScanResultScreen() {
     analysisMeta,
     snapshot,
     analysisBundle,
-  } = useStreamAnalysis(barcode);
+  } = useStreamAnalysis(barcode, {
+    launchSource: effectiveScanSource,
+    searchSeed: searchResultSeed,
+    scanSessionId: currentScanId,
+    guestScanSessionId,
+  });
   const barcodeQuality = useMemo(
     () => getBarcodeQuality({
       status,
@@ -274,7 +340,7 @@ export default function ScanResultScreen() {
       name: productInfo?.name ?? bundleIdentity?.name ?? snapshotProduct?.name ?? null,
       brand: productInfo?.brand ?? bundleIdentity?.brand ?? snapshotProduct?.brand ?? null,
       category: productInfo?.category ?? snapshotProduct?.category ?? null,
-      image: productInfo?.image ?? snapshotProduct?.imageUrl ?? null,
+      image: choosePreferredProductImageUrl(productInfo?.image, snapshotProduct?.imageUrl),
     };
     const hasIdentity =
       (typeof candidate.name === 'string' && candidate.name.trim().length > 0) ||
@@ -331,6 +397,51 @@ export default function ScanResultScreen() {
     });
   }, [barcode, dashboardCoreReady, params.sessionId, showStreamingBadge, status]);
 
+  useEffect(() => {
+    if (!isGuestScan || !guestScanSessionId || !currentScanId || !barcode) return;
+    if (guestResultStartedTrackedRef.current === currentScanId) return;
+
+    guestResultStartedTrackedRef.current = currentScanId;
+    trackOnboardingEvent('guest_scan_result_started', {
+      source: 'scan_result',
+      guestScanSessionId,
+      scanSessionId: currentScanId,
+      barcodeLength: barcode.length,
+    });
+  }, [barcode, currentScanId, guestScanSessionId, isGuestScan]);
+
+  useEffect(() => {
+    if (!dashboardCoreReady || !currentScanId || status === 'error') return;
+    if (resultReadyTrackedRef.current === currentScanId) return;
+
+    resultReadyTrackedRef.current = currentScanId;
+    trackOnboardingEvent('result_ready', {
+      activationDefinition: NUTRI_ACTIVATION_DEFINITION.id,
+      source: effectiveScanSource ?? 'scan_result',
+      scanSessionId: currentScanId,
+      routeDecision: barcodeQuality.page,
+      guest: isGuestScan,
+      barcodeLength: barcode ? barcode.length : 0,
+    });
+    if (isGuestScan) {
+      trackOnboardingEvent('guest_scan_result_ready', {
+        source: 'scan_result',
+        guestScanSessionId,
+        scanSessionId: currentScanId,
+        routeDecision: barcodeQuality.page,
+      });
+    }
+  }, [
+    barcode,
+    barcodeQuality.page,
+    currentScanId,
+    dashboardCoreReady,
+    effectiveScanSource,
+    guestScanSessionId,
+    isGuestScan,
+    status,
+  ]);
+
   const formatDose = useCallback((value?: number | string | null, unit?: string | null) => {
     if (value == null) return null;
     const cleanValue = typeof value === 'string' ? value.trim() : value;
@@ -385,17 +496,44 @@ export default function ScanResultScreen() {
     );
   }, [analysisBundle, efficacy, extractDoseFromText, formatDose, usage]);
 
-  const dashboardSaveItem = useMemo(() => {
-    if (barcodeQuality.page !== 'dashboard' || !recentScanProductInfo) return null;
+  const activationSaveItem = useMemo(() => {
+    if (barcodeQuality.page !== 'dashboard') return null;
+    const productIdentity = analysisBundle?.meta?.productIdentity ?? null;
+    const snapshotProduct = snapshot?.product ?? null;
+    const productName =
+      recentScanProductInfo?.name ??
+      productInfo?.name ??
+      productIdentity?.name ??
+      snapshotProduct?.name ??
+      'Scanned supplement';
+    const brandName =
+      recentScanProductInfo?.brand ??
+      productInfo?.brand ??
+      productIdentity?.brand ??
+      snapshotProduct?.brand ??
+      'Unknown brand';
+
     return {
       supplementId: snapshot?.product?.entityRefs?.supplementId ?? null,
       barcode: barcode || null,
-      productName: recentScanProductInfo.name ?? 'Unknown supplement',
-      brandName: recentScanProductInfo.brand ?? 'Unknown brand',
+      productName,
+      brandName,
       dosageText: dashboardDosageText,
-      imageUrl: recentScanProductInfo.image ?? null,
+      imageUrl: choosePreferredProductImageUrl(
+        recentScanProductInfo?.image,
+        productInfo?.image,
+        snapshotProduct?.imageUrl,
+      ),
     };
-  }, [barcode, barcodeQuality.page, dashboardDosageText, recentScanProductInfo, snapshot?.product?.entityRefs?.supplementId]);
+  }, [
+    analysisBundle?.meta?.productIdentity,
+    barcode,
+    barcodeQuality.page,
+    dashboardDosageText,
+    productInfo,
+    recentScanProductInfo,
+    snapshot?.product,
+  ]);
 
   const savedKeySet = useMemo(() => {
     const keys = new Set<string>();
@@ -405,22 +543,64 @@ export default function ScanResultScreen() {
     return keys;
   }, [savedSupplements]);
 
-  const isDashboardItemSaved = useMemo(() => {
-    if (!dashboardSaveItem) return false;
-    return getSavedSupplementKeys(dashboardSaveItem).some((key) => savedKeySet.has(key));
-  }, [dashboardSaveItem, savedKeySet]);
+  const isActivationItemSaved = useMemo(() => {
+    if (!activationSaveItem) return false;
+    return getSavedSupplementKeys(activationSaveItem).some((key) => savedKeySet.has(key));
+  }, [activationSaveItem, savedKeySet]);
 
   const handleSaveFromDashboard = useCallback(() => {
-    if (!dashboardSaveItem) return;
-    addSupplement({
-      supplementId: dashboardSaveItem.supplementId ?? undefined,
-      barcode: dashboardSaveItem.barcode ?? null,
-      imageUrl: dashboardSaveItem.imageUrl ?? null,
-      productName: dashboardSaveItem.productName,
-      brandName: dashboardSaveItem.brandName,
-      dosageText: dashboardSaveItem.dosageText,
+    if (!activationSaveItem) return;
+    const added = addSupplement({
+      supplementId: activationSaveItem.supplementId ?? undefined,
+      barcode: activationSaveItem.barcode ?? null,
+      imageUrl: activationSaveItem.imageUrl ?? null,
+      productName: activationSaveItem.productName,
+      brandName: activationSaveItem.brandName,
+      dosageText: activationSaveItem.dosageText,
     });
-  }, [addSupplement, dashboardSaveItem]);
+    if (!added) return;
+
+    const activationPayload = {
+      activationDefinition: NUTRI_ACTIVATION_DEFINITION.id,
+      source: 'scan_result_primary_action',
+      launchSource: effectiveScanSource ?? 'scan_result',
+      scanSessionId: currentScanId,
+      supplementId: activationSaveItem.supplementId ?? null,
+      hasBarcode: Boolean(activationSaveItem.barcode),
+    };
+    trackOnboardingEvent('saved_to_stack', activationPayload);
+    if (added.syncedToCheckIn !== false) {
+      trackOnboardingEvent('check_in_started', activationPayload);
+    }
+  }, [activationSaveItem, addSupplement, currentScanId, effectiveScanSource]);
+
+  const handleKeepGuestResult = useCallback(() => {
+    if (!guestScanSessionId || !currentScanId) return;
+
+    const returnTo = `/scan/result?sessionId=${encodeURIComponent(currentScanId)}&source=guest_scan&guestScanSessionId=${encodeURIComponent(guestScanSessionId)}`;
+    const redirectTarget = `/guest-scan/claim?guestScanSessionId=${encodeURIComponent(guestScanSessionId)}&returnTo=${encodeURIComponent(returnTo)}`;
+    trackOnboardingEvent('guest_scan_keep_tapped', {
+      source: 'scan_result',
+      guestScanSessionId,
+      scanSessionId: currentScanId,
+    });
+
+    if (authSession?.user) {
+      router.push(redirectTarget as never);
+      return;
+    }
+
+    trackOnboardingEvent('guest_scan_auth_started', {
+      source: 'scan_result',
+      guestScanSessionId,
+      scanSessionId: currentScanId,
+    });
+    setPostAuthRedirect(redirectTarget);
+    router.push({
+      pathname: '/auth/signup',
+      params: { redirect: redirectTarget },
+    });
+  }, [authSession?.user, currentScanId, guestScanSessionId, setPostAuthRedirect]);
 
   const handleOpenSaved = useCallback(() => {
     router.push({ pathname: '/main/Home-Page', params: { tab: 'saved' } });
@@ -741,6 +921,26 @@ export default function ScanResultScreen() {
     },
     status: 'success'
   };
+  const activationActionNode = !shouldShowGuestClaimPrompt && activationSaveItem && !isActivationItemSaved ? (
+    <View style={styles.activationActionBanner}>
+      <View style={styles.activationActionCopy}>
+        <Text style={styles.activationActionEyebrow}>Next step</Text>
+        <Text style={styles.activationActionTitle}>Save this supplement to your stack</Text>
+        <Text style={styles.activationActionText}>
+          Keep this result and add it to Daily Check-in.
+        </Text>
+      </View>
+      <TouchableOpacity
+        onPress={handleSaveFromDashboard}
+        style={styles.activationActionButton}
+        accessibilityRole="button"
+        accessibilityLabel="Save to my stack"
+        testID="scan-result-save-to-stack-action"
+      >
+        <Text style={styles.activationActionButtonText}>Save to my stack</Text>
+      </TouchableOpacity>
+    </View>
+  ) : null;
 
   // Pass a loading flag so Dashboard knows stream is active
 
@@ -764,12 +964,35 @@ export default function ScanResultScreen() {
         onBack={handleBack}
         title="Analysis"
         miniScore={headerMiniScore ? { ...headerMiniScore, scrollY: analysisHeaderScrollY } : null}
-        savePillState={dashboardSaveItem ? (isDashboardItemSaved ? 'saved' : 'save') : 'disabled'}
-        onSavePress={handleSaveFromDashboard}
+        savePillState={
+          shouldShowGuestClaimPrompt
+            ? 'save'
+            : activationSaveItem
+              ? (isActivationItemSaved ? 'saved' : 'save')
+              : 'disabled'
+        }
+        onSavePress={shouldShowGuestClaimPrompt ? handleKeepGuestResult : handleSaveFromDashboard}
         onOpenSaved={handleOpenSaved}
         miniScoreThresholdStart={headerMiniScoreTrigger.start}
         miniScoreThresholdRange={headerMiniScoreTrigger.range}
       />
+
+      {shouldShowGuestClaimPrompt ? (
+        <View style={styles.guestKeepBanner}>
+          <Text style={styles.guestKeepText}>
+            Save this scan to your account so your goals and allergies stay connected.
+          </Text>
+          <TouchableOpacity
+            onPress={handleKeepGuestResult}
+            style={styles.guestKeepButton}
+            accessibilityRole="button"
+            accessibilityLabel="Keep this result"
+            testID="scan-result-keep-guest-result"
+          >
+            <Text style={styles.guestKeepButtonText}>Keep this result</Text>
+          </TouchableOpacity>
+        </View>
+      ) : null}
 
       {/* We render dashboard immediately. 
         As 'efficacy', 'safety' etc. arrive, this component re-renders and fills in the blanks.
@@ -779,14 +1002,17 @@ export default function ScanResultScreen() {
           analysis={compositeAnalysis}
           isStreaming={showStreamingBadge}
           sourceType="barcode"
-          scanSessionId={typeof params.sessionId === 'string' ? params.sessionId : null}
+          scanSessionId={currentScanId}
+          guestScanSessionId={guestScanSessionId}
           analysisBundle={analysisBundle}
+          onboardingDraftOverride={session?.onboardingDraftSnapshot ?? null}
           externalScrollY={analysisHeaderScrollY}
           miniHeaderMode="header"
           onMiniScoreMetaChange={handleHeaderMiniScoreChange}
           onMiniScoreTriggerChange={handleHeaderMiniScoreTriggerChange}
           onCoreReadyChange={handleDashboardCoreReadyChange}
-          saveItem={dashboardSaveItem}
+          saveItem={activationSaveItem}
+          topAccessory={activationActionNode}
         />
       </DashboardErrorBoundary>
 
@@ -977,6 +1203,90 @@ const styles = StyleSheet.create({
     color: '#111827',
     fontSize: 13,
     fontWeight: '600',
+  },
+  guestKeepBanner: {
+    marginHorizontal: 16,
+    marginTop: 8,
+    marginBottom: 8,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
+    backgroundColor: '#EFF6FF',
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    gap: 10,
+  },
+  guestKeepText: {
+    color: '#1E3A8A',
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: '600',
+  },
+  guestKeepButton: {
+    alignSelf: 'flex-start',
+    borderRadius: 999,
+    backgroundColor: '#2563EB',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+  },
+  guestKeepButtonText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  activationActionBanner: {
+    marginBottom: 14,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: 'rgba(37,99,235,0.20)',
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    shadowColor: '#2563EB',
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 4,
+  },
+  activationActionCopy: {
+    flex: 1,
+    minWidth: 0,
+  },
+  activationActionEyebrow: {
+    color: '#2563EB',
+    fontSize: 11,
+    fontWeight: '900',
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
+    marginBottom: 3,
+  },
+  activationActionTitle: {
+    color: '#0F172A',
+    fontSize: 15,
+    lineHeight: 19,
+    fontWeight: '900',
+  },
+  activationActionText: {
+    color: '#64748B',
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: '600',
+    marginTop: 3,
+  },
+  activationActionButton: {
+    flexShrink: 0,
+    borderRadius: 999,
+    backgroundColor: '#2563EB',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+  },
+  activationActionButtonText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '900',
   },
   // New style for the floating badge
   streamingBadge: {
