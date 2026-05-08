@@ -14,6 +14,7 @@ import Svg, { Path } from 'react-native-svg';
 
 import {
   QA_FOREGROUND,
+  QA_CTA_BLACK,
   QA_GLASS_BORDER,
   QA_GLASS_WHITE,
   QA_PROGRESS_TRACK_HEIGHT,
@@ -202,7 +203,7 @@ const styles = StyleSheet.create({
   progressFill: {
     height: QA_PROGRESS_TRACK_HEIGHT,
     borderRadius: 999,
-    backgroundColor: '#4D6EFF',
+    backgroundColor: QA_CTA_BLACK,
   },
 });
 

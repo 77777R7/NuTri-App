@@ -14,8 +14,8 @@ export const QA_SERIF_FONT = Platform.select({
   default: 'serif',
 });
 
-export const QA_ACTIVE_BLUE = '#4D6EFF';
-export const QA_ACTIVE_BLUE_SOFT = '#6B90F4';
+export const QA_ACTIVE_BLUE = '#0D0D0D';
+export const QA_ACTIVE_BLUE_SOFT = '#252525';
 export const QA_INACTIVE_DOT = '#D5DAE6';
 
 export const QA_CTA_BLACK = '#0D0D0D';

@@ -28,10 +28,9 @@ import Animated, {
 
 import { StepSlide } from '@/components/animation/StepSlide';
 import { QAContinueCTA } from '@/components/onboarding/qa/QAContinueCTA';
-import { QA_SERIF_FONT } from '@/components/onboarding/qa/qaTokens';
+import { QA_CTA_BLACK, QA_SERIF_FONT } from '@/components/onboarding/qa/qaTokens';
 import { WelcomeHeroGlow } from '@/components/onboarding/welcome/WelcomeHeroGlow';
 import {
-  ACTIVE_BLUE,
   FOREGROUND,
   INACTIVE_DOT,
   MUTED,
@@ -696,9 +695,9 @@ const styles = StyleSheet.create({
     width: 11,
     height: 11,
     borderRadius: 999,
-    backgroundColor: 'rgba(59,106,247,0.18)',
-    shadowColor: ACTIVE_BLUE,
-    shadowOpacity: 0.16,
+    backgroundColor: 'rgba(13,13,13,0.12)',
+    shadowColor: QA_CTA_BLACK,
+    shadowOpacity: 0.14,
     shadowRadius: 4,
     shadowOffset: { width: 0, height: 1 },
   },
@@ -706,7 +705,7 @@ const styles = StyleSheet.create({
     width: 11,
     height: 11,
     borderRadius: 999,
-    backgroundColor: ACTIVE_BLUE,
+    backgroundColor: QA_CTA_BLACK,
     borderWidth: 2,
     borderColor: 'rgba(255,255,255,0.96)',
   },
@@ -801,7 +800,7 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     fontWeight: '600',
     textAlign: 'center',
-    color: ACTIVE_BLUE,
+    color: FOREGROUND,
   },
   policySlot: {
     width: '100%',

@@ -150,7 +150,7 @@ export function QAOptionRow({
     borderColor: interpolateColor(
       selection.value,
       [0, 1],
-      [QA_GLASS_BORDER_SOFT, 'rgba(77,110,255,0.22)'],
+      [QA_GLASS_BORDER_SOFT, 'rgba(13,13,13,0.18)'],
     ),
   }));
 

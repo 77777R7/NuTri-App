@@ -69,7 +69,7 @@ export function QAMoreOptionsPill({
           />
           <LinearGradient
             pointerEvents="none"
-            colors={['rgba(240,245,255,0.96)', 'rgba(220,232,255,0.72)']}
+            colors={['rgba(255,255,255,0.88)', 'rgba(244,245,248,0.78)']}
             start={{ x: 0.18, y: 0 }}
             end={{ x: 0.9, y: 1 }}
             style={StyleSheet.absoluteFillObject}
@@ -82,7 +82,7 @@ export function QAMoreOptionsPill({
           </Text>
 
           <Animated.View style={chevronStyle}>
-            <ChevronDown size={16} color="#3B6AF7" strokeWidth={2.25} />
+            <ChevronDown size={16} color="#0D0D0D" strokeWidth={2.25} />
           </Animated.View>
         </View>
       </Pressable>
@@ -116,7 +116,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    backgroundColor: 'rgba(220,232,255,0.6)',
+    backgroundColor: 'rgba(244,245,248,0.78)',
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.8)',
   },
@@ -142,7 +142,7 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     fontWeight: '600',
     letterSpacing: -0.48,
-    color: '#3B6AF7',
+    color: '#0D0D0D',
     textAlign: 'center',
   },
 });
