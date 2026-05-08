@@ -88,6 +88,11 @@ test('guest scan result receives one full reveal and uses post-scan Continue bef
   assert.match(resultSource, />Continue</);
   assert.match(resultSource, /Next: 2 quick questions for Goal fit and Allergy check\./);
   assert.match(resultSource, /const activationActionNode = !isGuestScan/);
+  assert.match(resultSource, /handleGuestScanHighIntentClaim/);
+  assert.match(resultSource, /guest_scan_high_intent_claim_tapped/);
+  assert.match(resultSource, /source: intent === 'track_supplement' \? 'scan_result_track' : 'scan_result_save'/);
+  assert.match(resultSource, /onSavePress=\{shouldRouteSaveThroughGuestClaim \? \(\) => handleGuestScanHighIntentClaim\('save_to_stack'\) : handleSaveFromDashboard\}/);
+  assert.doesNotMatch(resultSource, /trackOnboardingEvent\('guest_scan_keep_tapped'/);
   assert.match(resultSource, /pathname: '\/onboarding\/data-trust'/);
   assert.match(resultSource, /mode: 'post_scan'/);
   assert.match(resultSource, /returnTo/);

@@ -767,13 +767,14 @@ export default function ScanResultScreen() {
     }
   }, [activationSaveItem, addSupplement, currentScanId, effectiveScanSource]);
 
-  const handleKeepGuestResult = useCallback(() => {
+  const handleGuestScanHighIntentClaim = useCallback((intent: 'save_to_stack' | 'track_supplement' = 'save_to_stack') => {
     if (!guestScanSessionId || !currentScanId) return;
 
     const returnTo = `/scan/result?sessionId=${encodeURIComponent(currentScanId)}&source=guest_scan&guestScanSessionId=${encodeURIComponent(guestScanSessionId)}`;
     const redirectTarget = `/guest-scan/claim?guestScanSessionId=${encodeURIComponent(guestScanSessionId)}&returnTo=${encodeURIComponent(returnTo)}`;
-    trackOnboardingEvent('guest_scan_keep_tapped', {
-      source: 'scan_result',
+    trackOnboardingEvent('guest_scan_high_intent_claim_tapped', {
+      source: intent === 'track_supplement' ? 'scan_result_track' : 'scan_result_save',
+      intent,
       guestScanSessionId,
       scanSessionId: currentScanId,
     });
@@ -784,7 +785,8 @@ export default function ScanResultScreen() {
     }
 
     trackOnboardingEvent('guest_scan_auth_started', {
-      source: 'scan_result',
+      source: intent === 'track_supplement' ? 'scan_result_track' : 'scan_result_save',
+      intent,
       guestScanSessionId,
       scanSessionId: currentScanId,
     });
@@ -1202,7 +1204,7 @@ export default function ScanResultScreen() {
         </Text>
       </View>
       <TouchableOpacity
-        onPress={shouldRouteSaveThroughGuestClaim ? handleKeepGuestResult : handleSaveFromDashboard}
+        onPress={shouldRouteSaveThroughGuestClaim ? () => handleGuestScanHighIntentClaim('save_to_stack') : handleSaveFromDashboard}
         style={styles.activationActionButton}
         accessibilityRole="button"
         accessibilityLabel="Save to my stack"
@@ -1242,7 +1244,7 @@ export default function ScanResultScreen() {
               ? (isActivationItemSaved ? 'saved' : 'save')
               : 'disabled'
         }
-        onSavePress={shouldRouteSaveThroughGuestClaim ? handleKeepGuestResult : handleSaveFromDashboard}
+        onSavePress={shouldRouteSaveThroughGuestClaim ? () => handleGuestScanHighIntentClaim('save_to_stack') : handleSaveFromDashboard}
         onOpenSaved={handleOpenSaved}
         miniScoreThresholdStart={headerMiniScoreTrigger.start}
         miniScoreThresholdRange={headerMiniScoreTrigger.range}

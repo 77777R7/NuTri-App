@@ -19,7 +19,7 @@ const assertIncludes = (needle: string) => {
 
 test('guest scan claim contract defines the guarded scan-to-claim flow', () => {
   for (const required of [
-    'Start Free Scan -> barcode captured -> result_ready -> keep tapped -> auth complete -> claim succeeded',
+    'Start Free Scan -> barcode captured -> result_ready -> save/track tapped -> auth complete -> claim succeeded',
     'EXPO_PUBLIC_GUEST_SCAN_ENABLED=1',
     'GUEST_SCAN_ENABLED=1',
     'POST /api/guest-scan/session',

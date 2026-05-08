@@ -16,7 +16,7 @@ one result, and then sign up or sign in to keep it.
 Activation remains product-first:
 
 ```text
-Start Free Scan -> barcode captured -> result_ready -> keep tapped -> auth complete -> claim succeeded
+Start Free Scan -> barcode captured -> result_ready -> save/track tapped -> auth complete -> claim succeeded
 ```
 
 ## Non-Goals
@@ -78,7 +78,7 @@ routes must return a controlled unavailable response.
   - Adds guest headers only for guest scans.
 - `app/scan/result.tsx`
   - Treats the validated guest scan as a one-result full reveal.
-  - Sends keep/save action through the claim handoff instead of normal saved-stack behavior while signed out.
+  - Sends high-intent Save/Track actions through the claim handoff instead of normal saved-stack behavior while signed out.
   - Routes post-auth to `/guest-scan/claim`.
 - `app/guest-scan/claim.tsx`
   - Reads `guestScanSessionId` from route params.
@@ -221,7 +221,7 @@ guest_scan_started
 guest_scan_barcode_captured
 guest_scan_result_started
 guest_scan_result_ready
-guest_scan_keep_tapped
+guest_scan_high_intent_claim_tapped
 guest_scan_auth_started
 guest_scan_claim_succeeded
 guest_scan_claim_failed
