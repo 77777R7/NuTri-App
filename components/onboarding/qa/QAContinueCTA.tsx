@@ -16,8 +16,8 @@ import {
   QA_CTA_STATE_DURATION_MS,
 } from '@/components/onboarding/flow/onboardingMotion';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
-import { QA_ACTIVE_BLUE } from './qaTokens';
 import { useOnboardingLayoutTokens } from '@/hooks/useOnboardingLayoutTokens';
+import { QA_CTA_BLACK, QA_CTA_BLACK_EDGE } from './qaTokens';
 
 type QAContinueCTAProps = {
   title: string;
@@ -107,7 +107,7 @@ export function QAContinueCTA({
           <View style={styles.clipShell}>
             <Animated.View pointerEvents="none" style={[styles.fill, disabledLayerStyle]}>
               <LinearGradient
-                colors={['#B7C7EF', '#AEC0EA', '#A6B8E5']}
+                colors={['#C8C8C8', '#BEBEBE', '#B4B4B4']}
                 locations={[0, 0.52, 1]}
                 start={{ x: 0.14, y: 0.06 }}
                 end={{ x: 0.92, y: 0.96 }}
@@ -117,7 +117,7 @@ export function QAContinueCTA({
 
             <Animated.View pointerEvents="none" style={[styles.fill, enabledLayerStyle]}>
               <LinearGradient
-                colors={['#6F98F8', '#638CEE', '#5782E8']}
+                colors={['#171717', QA_CTA_BLACK, '#050505']}
                 locations={[0, 0.52, 1]}
                 start={{ x: 0.14, y: 0.06 }}
                 end={{ x: 0.92, y: 0.96 }}
@@ -128,7 +128,7 @@ export function QAContinueCTA({
             <Animated.View pointerEvents="none" style={[styles.topCap, disabledLayerStyle]}>
               <LinearGradient
                 colors={[
-                  'rgba(255,255,255,0.12)',
+                  'rgba(255,255,255,0.10)',
                   'rgba(255,255,255,0.04)',
                   'rgba(255,255,255,0)',
                 ]}
@@ -141,8 +141,8 @@ export function QAContinueCTA({
             <Animated.View pointerEvents="none" style={[styles.topCap, enabledLayerStyle]}>
               <LinearGradient
                 colors={[
-                  'rgba(255,255,255,0.22)',
-                  'rgba(255,255,255,0.08)',
+                  'rgba(255,255,255,0.16)',
+                  'rgba(255,255,255,0.05)',
                   'rgba(255,255,255,0)',
                 ]}
                 locations={[0, 0.56, 1]}
@@ -187,10 +187,10 @@ const styles = StyleSheet.create({
   buttonFrame: {
     borderRadius: 999,
     backgroundColor: 'transparent',
-    shadowColor: QA_ACTIVE_BLUE,
-    shadowOpacity: 0.15,
-    shadowRadius: 11,
-    shadowOffset: { width: 0, height: 6 },
+    shadowColor: QA_CTA_BLACK_EDGE,
+    shadowOpacity: 0.14,
+    shadowRadius: 13,
+    shadowOffset: { width: 0, height: 7 },
     elevation: 12,
   },
   clipShell: {
@@ -200,8 +200,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.18)',
-    backgroundColor: QA_ACTIVE_BLUE,
+    borderColor: 'rgba(255,255,255,0.10)',
+    backgroundColor: QA_CTA_BLACK,
   },
   pressed: {
     transform: [{ scale: 0.986 }],
@@ -226,7 +226,7 @@ const styles = StyleSheet.create({
   },
   text: {
     fontWeight: '600',
-    letterSpacing: -0.45,
+    letterSpacing: 0,
     color: '#FFFFFF',
     textAlign: 'center',
   },
