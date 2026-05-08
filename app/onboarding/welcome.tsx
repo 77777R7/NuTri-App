@@ -28,8 +28,8 @@ import { WelcomeHeroCarousel } from '@/components/onboarding/welcome/WelcomeHero
 import { WelcomeHeroGlow } from '@/components/onboarding/welcome/WelcomeHeroGlow';
 import { OnboardingLogoPill } from '@/components/onboarding/welcome/OnboardingLogoPill';
 import { WelcomePrimaryCTA } from '@/components/onboarding/welcome/WelcomePrimaryCTA';
+import { QA_CTA_BLACK, QA_SERIF_FONT } from '@/components/onboarding/qa/qaTokens';
 import {
-  ACTIVE_BLUE,
   FOREGROUND,
   INACTIVE_DOT,
   MUTED,
@@ -410,17 +410,17 @@ const styles = StyleSheet.create({
     paddingBottom: 0,
   },
   headline: {
-    fontSize: 44,
-    lineHeight: 48,
-    fontWeight: '700',
-    letterSpacing: -2,
+    fontFamily: QA_SERIF_FONT,
+    fontSize: 34,
+    lineHeight: 38,
+    fontWeight: '500',
+    letterSpacing: 0,
     textAlign: 'center',
     color: FOREGROUND,
   },
   headlineCompact: {
-    fontSize: 42,
-    lineHeight: 45,
-    letterSpacing: -1.8,
+    fontSize: 32,
+    lineHeight: 36,
   },
   subtext: {
     marginTop: 12,
@@ -456,7 +456,7 @@ const styles = StyleSheet.create({
     width: 28,
     height: 6,
     borderRadius: 999,
-    backgroundColor: ACTIVE_BLUE,
+    backgroundColor: QA_CTA_BLACK,
   },
   progressInactiveDot: {
     width: 7,
