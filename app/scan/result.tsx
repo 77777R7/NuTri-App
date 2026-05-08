@@ -5,7 +5,13 @@ import { StatusBar } from 'expo-status-bar';
 import { FileText } from 'lucide-react-native';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { BackHandler, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { useSharedValue } from 'react-native-reanimated';
+import Animated, {
+  runOnJS,
+  useAnimatedReaction,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+} from 'react-native-reanimated';
 
 import { ResponsiveScreen } from '@/components/common/ResponsiveScreen';
 import { ScanResultHeaderChrome } from '@/components/scan/ScanResultHeaderChrome';
@@ -13,8 +19,8 @@ import { OrganicSpinner } from '@/components/ui/OrganicSpinner';
 import { ShinyText } from '@/components/ui/ShinyText';
 import { Config } from '@/constants/Config';
 import { useAuth } from '@/contexts/AuthContext';
-import { useScanHistory } from '@/contexts/ScanHistoryContext';
 import { useOnboarding } from '@/contexts/OnboardingContext';
+import { useScanHistory } from '@/contexts/ScanHistoryContext';
 import { useResponsiveTokens } from '@/hooks/useResponsiveTokens';
 import { useFirstScanReveal } from '@/hooks/useFirstScanReveal';
 import { useStreamAnalysis } from '@/hooks/useStreamAnalysis';
@@ -62,6 +68,14 @@ const SHOW_SCAN_DEBUG =
 const DEFAULT_HEADER_MINI_SCORE_TRIGGER: HeaderMiniScoreTriggerState = {
   start: 210,
   range: 70,
+};
+const POST_SCAN_CONTINUE_REVEAL_DISTANCE = 160;
+const POST_SCAN_CONTINUE_TRANSLATE_Y = 96;
+const POST_SCAN_CONTINUE_BOTTOM_SPACE = 136;
+const POST_SCAN_CONTINUE_SPRING = {
+  damping: 18,
+  stiffness: 180,
+  mass: 0.85,
 };
 
 const emitScanUxMetric = (event: string, payload: Record<string, unknown> = {}) => {
@@ -173,8 +187,13 @@ export default function ScanResultScreen() {
   const appOwnership = Constants.appOwnership;
   const isExpoGo = appOwnership === 'expo' || appOwnership === 'guest';
   const { session: authSession, setPostAuthRedirect } = useAuth();
+  const {
+    draft: onboardingDraft,
+    loading: onboardingLoading,
+    onbCompleted,
+    progress: onboardingProgress,
+  } = useOnboarding();
   const { addScan } = useScanHistory();
-  const { onbCompleted, loading: onboardingLoading } = useOnboarding();
   const { addSupplement, savedSupplements, updateSupplement } = useSavedSupplements();
   const premiumAccess = usePremiumAccess();
   const firstScanReveal = useFirstScanReveal();
@@ -215,7 +234,6 @@ export default function ScanResultScreen() {
       : null;
   const isGuestScan = Boolean(guestScanSessionId);
   const [guestScanClaimed, setGuestScanClaimed] = useState(false);
-  const shouldShowGuestClaimPrompt = isGuestScan && !guestScanClaimed;
   const [dashboardRuntimeError, setDashboardRuntimeError] = useState<string | null>(null);
   const dashboardRenderMode: 'full' = resolveDashboardRenderMode(isExpoGo);
   const analysisHeaderScrollY = useSharedValue(0);
@@ -244,6 +262,11 @@ export default function ScanResultScreen() {
     && currentScanId != null
     && firstScanReveal.reveal.state === 'granted'
     && firstScanReveal.reveal.scanId === currentScanId;
+  const dashboardContentHeight = useSharedValue(0);
+  const dashboardViewportHeight = useSharedValue(0);
+  const postScanContinueReady = useSharedValue(0);
+  const postScanContinueUnlocked = useSharedValue(0);
+  const [postScanContinueVisible, setPostScanContinueVisible] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -338,6 +361,11 @@ export default function ScanResultScreen() {
   }, []);
   useEffect(() => {
     analysisHeaderScrollY.value = 0;
+    dashboardContentHeight.value = 0;
+    dashboardViewportHeight.value = 0;
+    postScanContinueReady.value = 0;
+    postScanContinueUnlocked.value = 0;
+    setPostScanContinueVisible(false);
     setHeaderMiniScore(null);
     setHeaderMiniScoreTrigger(DEFAULT_HEADER_MINI_SCORE_TRIGGER);
     setDashboardCoreReady(false);
@@ -347,7 +375,15 @@ export default function ScanResultScreen() {
       seen: false,
       hiddenLogged: false,
     };
-  }, [analysisHeaderScrollY, barcode, params.sessionId]);
+  }, [
+    analysisHeaderScrollY,
+    barcode,
+    dashboardContentHeight,
+    dashboardViewportHeight,
+    params.sessionId,
+    postScanContinueReady,
+    postScanContinueUnlocked,
+  ]);
 
   const analysisOriginPath = effectiveScanSource === 'search' ? '/search' : '/scan/barcode';
   const canReturnToSearch = effectiveScanSource === 'search';
@@ -422,6 +458,95 @@ export default function ScanResultScreen() {
   const holdDashboardDuringSkeleton = false;
   const isStreaming = status === 'streaming' || status === 'loading';
   const showStreamingBadge = isStreaming && !dashboardCoreReady;
+  const resultReadyForActivation =
+    dashboardCoreReady || (status === 'complete' && barcodeQuality.page === 'dashboard');
+  const postScanQuestionsComplete = onboardingProgress >= 4;
+  const shouldShowGuestPostScanContinue =
+    isGuestScan &&
+    !guestScanClaimed &&
+    !onboardingLoading &&
+    resultReadyForActivation &&
+    barcodeQuality.page === 'dashboard' &&
+    !postScanQuestionsComplete &&
+    Boolean(currentScanId && guestScanSessionId);
+  const effectiveDashboardOnboardingDraft = onboardingDraft ?? session?.onboardingDraftSnapshot ?? null;
+  const shouldRouteSaveThroughGuestClaim = isGuestScan && !guestScanClaimed;
+
+  const handleDashboardScrollViewportMetricsChange = useCallback((metrics: {
+    contentHeight: number;
+    viewportHeight: number;
+  }) => {
+    dashboardContentHeight.value = metrics.contentHeight;
+    dashboardViewportHeight.value = metrics.viewportHeight;
+  }, [dashboardContentHeight, dashboardViewportHeight]);
+
+  const buildGuestScanResultReturnTo = useCallback(() => {
+    if (!currentScanId || !guestScanSessionId) return null;
+    const query = new URLSearchParams({
+      sessionId: currentScanId,
+      source: 'guest_scan',
+      guestScanSessionId,
+    });
+    const routeDevBarcode = typeof params.devBarcode === 'string' ? params.devBarcode.trim() : '';
+    if (__DEV__ && routeDevBarcode.length > 0) {
+      query.set('devBarcode', routeDevBarcode);
+    }
+    return `/scan/result?${query.toString()}`;
+  }, [currentScanId, guestScanSessionId, params.devBarcode]);
+
+  const handlePostScanContinue = useCallback(() => {
+    const returnTo = buildGuestScanResultReturnTo();
+    if (!returnTo || !guestScanSessionId || !currentScanId) return;
+
+    router.push({
+      pathname: '/onboarding/data-trust',
+      params: {
+        mode: 'post_scan',
+        returnTo,
+      },
+    });
+  }, [buildGuestScanResultReturnTo, currentScanId, guestScanSessionId]);
+
+  useEffect(() => {
+    postScanContinueReady.value = shouldShowGuestPostScanContinue ? 1 : 0;
+    if (!shouldShowGuestPostScanContinue) {
+      postScanContinueUnlocked.value = 0;
+      setPostScanContinueVisible(false);
+    }
+  }, [postScanContinueReady, postScanContinueUnlocked, shouldShowGuestPostScanContinue]);
+
+  useAnimatedReaction(
+    () => {
+      if (postScanContinueReady.value !== 1) return false;
+      const contentHeight = dashboardContentHeight.value;
+      const viewportHeight = dashboardViewportHeight.value;
+      if (contentHeight <= 0 || viewportHeight <= 0) return false;
+
+      const meaningfulContentHeight = Math.max(0, contentHeight - POST_SCAN_CONTINUE_BOTTOM_SPACE);
+      const maxScrollY = Math.max(meaningfulContentHeight - viewportHeight, 0);
+      if (maxScrollY <= 1) return true;
+
+      const remainingScrollDistance = meaningfulContentHeight - (analysisHeaderScrollY.value + viewportHeight);
+      return remainingScrollDistance < POST_SCAN_CONTINUE_REVEAL_DISTANCE;
+    },
+    (shouldReveal, wasRevealed) => {
+      if (shouldReveal && !wasRevealed && postScanContinueUnlocked.value < 1) {
+        postScanContinueUnlocked.value = withSpring(1, POST_SCAN_CONTINUE_SPRING);
+        runOnJS(setPostScanContinueVisible)(true);
+      }
+    },
+  );
+
+  const postScanContinueAnimatedStyle = useAnimatedStyle(() => {
+    const progress = postScanContinueUnlocked.value;
+    return {
+      opacity: progress,
+      transform: [
+        { translateY: (1 - progress) * POST_SCAN_CONTINUE_TRANSLATE_Y },
+        { scale: 0.96 + progress * 0.04 },
+      ],
+    };
+  });
 
   useEffect(() => {
     if (!__DEV__) return;
@@ -479,7 +604,7 @@ export default function ScanResultScreen() {
   }, [barcode, currentScanId, guestScanSessionId, isGuestScan]);
 
   useEffect(() => {
-    if (!dashboardCoreReady || !currentScanId || status === 'error') return;
+    if (!resultReadyForActivation || !currentScanId || status === 'error') return;
     if (resultReadyTrackedRef.current === currentScanId) return;
 
     resultReadyTrackedRef.current = currentScanId;
@@ -503,10 +628,10 @@ export default function ScanResultScreen() {
     barcode,
     barcodeQuality.page,
     currentScanId,
-    dashboardCoreReady,
     effectiveScanSource,
     guestScanSessionId,
     isGuestScan,
+    resultReadyForActivation,
     status,
   ]);
 
@@ -1067,17 +1192,17 @@ export default function ScanResultScreen() {
     },
     status: 'success'
   };
-  const activationActionNode = !shouldShowGuestClaimPrompt && activationSaveItem && !isActivationItemSaved ? (
+  const activationActionNode = !isGuestScan && !shouldShowGuestPostScanContinue && activationSaveItem && !isActivationItemSaved ? (
     <View style={styles.activationActionBanner}>
       <View style={styles.activationActionCopy}>
         <Text style={styles.activationActionEyebrow}>Next step</Text>
         <Text style={styles.activationActionTitle}>Save this supplement to your stack</Text>
         <Text style={styles.activationActionText}>
-          Keep this result and add it to Daily Check-in.
+          Save it for Daily Check-in when you are ready.
         </Text>
       </View>
       <TouchableOpacity
-        onPress={handleSaveFromDashboard}
+        onPress={shouldRouteSaveThroughGuestClaim ? handleKeepGuestResult : handleSaveFromDashboard}
         style={styles.activationActionButton}
         accessibilityRole="button"
         accessibilityLabel="Save to my stack"
@@ -1111,34 +1236,17 @@ export default function ScanResultScreen() {
         title="Analysis"
         miniScore={headerMiniScore ? { ...headerMiniScore, scrollY: analysisHeaderScrollY } : null}
         savePillState={
-          shouldShowGuestClaimPrompt
-            ? 'save'
+          shouldShowGuestPostScanContinue
+            ? 'disabled'
             : activationSaveItem
               ? (isActivationItemSaved ? 'saved' : 'save')
               : 'disabled'
         }
-        onSavePress={shouldShowGuestClaimPrompt ? handleKeepGuestResult : handleSaveFromDashboard}
+        onSavePress={shouldRouteSaveThroughGuestClaim ? handleKeepGuestResult : handleSaveFromDashboard}
         onOpenSaved={handleOpenSaved}
         miniScoreThresholdStart={headerMiniScoreTrigger.start}
         miniScoreThresholdRange={headerMiniScoreTrigger.range}
       />
-
-      {shouldShowGuestClaimPrompt ? (
-        <View style={styles.guestKeepBanner}>
-          <Text style={styles.guestKeepText}>
-            Save this scan to your account so your goals and allergies stay connected.
-          </Text>
-          <TouchableOpacity
-            onPress={handleKeepGuestResult}
-            style={styles.guestKeepButton}
-            accessibilityRole="button"
-            accessibilityLabel="Keep this result"
-            testID="scan-result-keep-guest-result"
-          >
-            <Text style={styles.guestKeepButtonText}>Keep this result</Text>
-          </TouchableOpacity>
-        </View>
-      ) : null}
 
       {/* We render dashboard immediately. 
         As 'efficacy', 'safety' etc. arrive, this component re-renders and fills in the blanks.
@@ -1158,16 +1266,44 @@ export default function ScanResultScreen() {
           scanSessionId={currentScanId}
           guestScanSessionId={guestScanSessionId}
           analysisBundle={analysisBundle}
-          onboardingDraftOverride={session?.onboardingDraftSnapshot ?? null}
+          onboardingDraftOverride={effectiveDashboardOnboardingDraft}
           externalScrollY={analysisHeaderScrollY}
+          contentBottomInset={shouldShowGuestPostScanContinue ? POST_SCAN_CONTINUE_BOTTOM_SPACE : 0}
           miniHeaderMode="header"
           onMiniScoreMetaChange={handleHeaderMiniScoreChange}
           onMiniScoreTriggerChange={handleHeaderMiniScoreTriggerChange}
           onCoreReadyChange={handleDashboardCoreReadyChange}
+          onScrollViewportMetricsChange={handleDashboardScrollViewportMetricsChange}
           saveItem={activationSaveItem}
           topAccessory={activationActionNode}
         />
       </DashboardErrorBoundary>
+
+      {shouldShowGuestPostScanContinue ? (
+        <Animated.View
+          pointerEvents={postScanContinueVisible ? 'box-none' : 'none'}
+          style={[
+            styles.postScanContinueFloating,
+            postScanContinueAnimatedStyle,
+          ]}
+        >
+          <View style={styles.postScanContinueCard}>
+            <TouchableOpacity
+              onPress={handlePostScanContinue}
+              style={styles.postScanContinueButton}
+              accessibilityRole="button"
+              accessibilityLabel="Continue to goals and allergy check"
+              testID="scan-result-post-scan-continue"
+            >
+              <Text style={styles.postScanContinueButtonText}>Continue</Text>
+            </TouchableOpacity>
+            <Text style={styles.postScanContinueHint}>
+              Next: 2 quick questions for Goal fit and Allergy check.
+            </Text>
+            <Text style={styles.postScanContinueArrow}>↑</Text>
+          </View>
+        </Animated.View>
+      ) : null}
 
       {dashboardRuntimeError ? (
         <View style={styles.dashboardErrorBanner}>
@@ -1357,35 +1493,62 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
   },
-  guestKeepBanner: {
-    marginHorizontal: 16,
-    marginTop: 8,
-    marginBottom: 8,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#BFDBFE',
-    backgroundColor: '#EFF6FF',
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    gap: 10,
+  postScanContinueFloating: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 18,
+    alignItems: 'center',
+    paddingHorizontal: 30,
+    zIndex: 24,
   },
-  guestKeepText: {
-    color: '#1E3A8A',
+  postScanContinueCard: {
+    width: '100%',
+    maxWidth: 520,
+    alignItems: 'center',
+    backgroundColor: 'transparent',
+    paddingHorizontal: 0,
+    paddingTop: 0,
+    paddingBottom: 0,
+    shadowColor: '#2563EB',
+    shadowOpacity: 0.12,
+    shadowRadius: 22,
+    shadowOffset: { width: 0, height: 10 },
+    elevation: 8,
+  },
+  postScanContinueButton: {
+    width: '100%',
+    minHeight: 60,
+    borderRadius: 999,
+    backgroundColor: '#2563EB',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#2563EB',
+    shadowOpacity: 0.28,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 10 },
+    elevation: 10,
+  },
+  postScanContinueButtonText: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    lineHeight: 24,
+    fontWeight: '900',
+  },
+  postScanContinueHint: {
+    marginTop: 10,
+    color: '#64748B',
     fontSize: 13,
     lineHeight: 18,
     fontWeight: '600',
+    textAlign: 'center',
   },
-  guestKeepButton: {
-    alignSelf: 'flex-start',
-    borderRadius: 999,
-    backgroundColor: '#2563EB',
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-  },
-  guestKeepButtonText: {
-    color: '#FFFFFF',
-    fontSize: 13,
-    fontWeight: '800',
+  postScanContinueArrow: {
+    marginTop: 6,
+    color: '#CBD5E1',
+    fontSize: 32,
+    lineHeight: 34,
+    fontWeight: '400',
   },
   activationActionBanner: {
     marginBottom: 14,
