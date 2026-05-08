@@ -77,13 +77,28 @@ test('guest scan result sidecars reuse guest scan auth instead of requiring a si
   assert.match(dashboardSource, /\/api\/scientific-background\/v1/);
 });
 
-test('guest scan result receives one full reveal and keep action routes through claim', () => {
+test('guest scan result receives one full reveal and uses post-scan Continue before claim', () => {
   assert.match(resultSource, /isGuestScan/);
   assert.match(resultSource, /guestScanSessionId/);
   assert.match(resultSource, /getGuestScanSession/);
-  assert.match(resultSource, /shouldShowGuestClaimPrompt/);
   assert.match(resultSource, /\/guest-scan\/claim/);
-  assert.match(resultSource, /Keep this result/);
+  assert.match(resultSource, /shouldShowGuestPostScanContinue/);
+  assert.match(resultSource, /resultReadyForActivation/);
+  assert.match(resultSource, /status === 'complete' && barcodeQuality\.page === 'dashboard'/);
+  assert.match(resultSource, /POST_SCAN_CONTINUE_REVEAL_DISTANCE = 160/);
+  assert.match(resultSource, /POST_SCAN_CONTINUE_TRANSLATE_Y = 96/);
+  assert.match(resultSource, /withSpring\(1, POST_SCAN_CONTINUE_SPRING\)/);
+  assert.match(resultSource, /testID="scan-result-post-scan-continue"/);
+  assert.match(resultSource, />Continue</);
+  assert.match(resultSource, /Next: 2 quick questions for Goal fit and Allergy check\./);
+  assert.match(resultSource, /const activationActionNode = !isGuestScan/);
+  assert.match(resultSource, /pathname: '\/onboarding\/goals'/);
+  assert.match(resultSource, /mode: 'post_scan'/);
+  assert.match(resultSource, /returnTo/);
+  assert.doesNotMatch(resultSource, /testID="scan-result-keep-guest-result"/);
+  assert.doesNotMatch(resultSource, />Keep this result</);
+  assert.match(dashboardSource, /onScrollViewportMetricsChange\?: \(metrics: ScrollViewportMetrics\) => void/);
+  assert.match(dashboardSource, /contentBottomInset\?: number/);
   assert.match(resultSource, /const resolveDashboardRenderMode = \([^)]*\): 'full' => \{[\s\S]*?return 'full';[\s\S]*?\};/);
   assert.match(resultSource, /<AnalysisDashboard/);
   assert.doesNotMatch(resultSource, /<LiteAnalysisDashboard/);

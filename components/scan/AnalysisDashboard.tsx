@@ -102,6 +102,10 @@ type SourceType = string;
 type TileType = 'overview' | 'science' | 'usage' | 'safety';
 type AnalysisAccessLevel = 'full' | 'preview_locked';
 type PaywallSource = TileType | 'score' | 'comparison';
+type ScrollViewportMetrics = {
+    contentHeight: number;
+    viewportHeight: number;
+};
 
 type CoverStatus = 'complete' | 'partial' | 'limited';
 
@@ -4026,10 +4030,12 @@ const AnalysisBundleDashboard: React.FC<{
     scanSessionId?: string | null;
     guestScanSessionId?: string | null;
     externalScrollY?: SharedValue<number>;
+    contentBottomInset?: number;
     miniHeaderMode?: 'inline' | 'header';
     onMiniScoreMetaChange?: (meta: { overallScore: number; overallBand: string | null; muted: boolean }) => void;
     onMiniScoreTriggerChange?: (trigger: { start: number; range: number }) => void;
     onCoreReadyChange?: (ready: boolean) => void;
+    onScrollViewportMetricsChange?: (metrics: ScrollViewportMetrics) => void;
     saveItem?: AnalysisDashboardSaveItem | null;
     onboardingDraftOverride?: ProfileDraft | null;
     topAccessory?: React.ReactNode;
@@ -4044,10 +4050,12 @@ const AnalysisBundleDashboard: React.FC<{
     scanSessionId = null,
     guestScanSessionId = null,
     externalScrollY,
+    contentBottomInset = 0,
     miniHeaderMode = 'inline',
     onMiniScoreMetaChange,
     onMiniScoreTriggerChange,
     onCoreReadyChange,
+    onScrollViewportMetricsChange,
     saveItem = null,
     onboardingDraftOverride = null,
     topAccessory = null,
@@ -4451,6 +4459,30 @@ const AnalysisBundleDashboard: React.FC<{
     const scrollContainerRef = useRef<any>(null);
     const topSectionYRef = useRef(0);
     const lastPersonalizationCoachScrollKeyRef = useRef<string | null>(null);
+    const scrollViewportMetricsRef = useRef<ScrollViewportMetrics>({
+        contentHeight: 0,
+        viewportHeight: 0,
+    });
+    const emitScrollViewportMetrics = useCallback((updates: Partial<ScrollViewportMetrics>) => {
+        const next = {
+            ...scrollViewportMetricsRef.current,
+            ...updates,
+        };
+        if (
+            next.contentHeight === scrollViewportMetricsRef.current.contentHeight &&
+            next.viewportHeight === scrollViewportMetricsRef.current.viewportHeight
+        ) {
+            return;
+        }
+        scrollViewportMetricsRef.current = next;
+        onScrollViewportMetricsChange?.(next);
+    }, [onScrollViewportMetricsChange]);
+    const handleScrollViewportLayout = useCallback((event: LayoutChangeEvent) => {
+        emitScrollViewportMetrics({ viewportHeight: event.nativeEvent.layout.height });
+    }, [emitScrollViewportMetrics]);
+    const handleScrollContentSizeChange = useCallback((_width: number, height: number) => {
+        emitScrollViewportMetrics({ contentHeight: height });
+    }, [emitScrollViewportMetrics]);
     const handlePlainScroll = useCallback((event: any) => {
         scrollY.value = event.nativeEvent.contentOffset.y;
     }, [scrollY]);
@@ -10214,9 +10246,14 @@ const AnalysisBundleDashboard: React.FC<{
             <ScrollContainer
                 ref={scrollContainerRef}
                 style={styles.scroll}
-                contentContainerStyle={styles.scrollContent}
+                contentContainerStyle={[
+                    styles.scrollContent,
+                    contentBottomInset > 0 ? { paddingBottom: 40 + contentBottomInset } : null,
+                ]}
                 showsVerticalScrollIndicator={false}
                 scrollEventThrottle={16}
+                onLayout={handleScrollViewportLayout}
+                onContentSizeChange={handleScrollContentSizeChange}
                 {...scrollProps}
             >
                 {topAccessory}
@@ -10508,10 +10545,12 @@ type AnalysisDashboardProps = {
     guestScanSessionId?: string | null;
     analysisBundle?: AnalysisBundle | null;
     externalScrollY?: SharedValue<number>;
+    contentBottomInset?: number;
     miniHeaderMode?: 'inline' | 'header';
     onMiniScoreMetaChange?: (meta: { overallScore: number; overallBand: string | null; muted: boolean }) => void;
     onMiniScoreTriggerChange?: (trigger: { start: number; range: number }) => void;
     onCoreReadyChange?: (ready: boolean) => void;
+    onScrollViewportMetricsChange?: (metrics: ScrollViewportMetrics) => void;
     saveItem?: AnalysisDashboardSaveItem | null;
     onboardingDraftOverride?: ProfileDraft | null;
     topAccessory?: React.ReactNode;
@@ -10572,10 +10611,12 @@ export const AnalysisDashboard: React.FC<AnalysisDashboardProps> = ({
     guestScanSessionId = null,
     analysisBundle,
     externalScrollY,
+    contentBottomInset = 0,
     miniHeaderMode = 'inline',
     onMiniScoreMetaChange,
     onMiniScoreTriggerChange,
     onCoreReadyChange,
+    onScrollViewportMetricsChange,
     saveItem = null,
     onboardingDraftOverride = null,
     topAccessory = null,
@@ -10593,10 +10634,12 @@ export const AnalysisDashboard: React.FC<AnalysisDashboardProps> = ({
             scanSessionId={scanSessionId}
             guestScanSessionId={guestScanSessionId}
             externalScrollY={externalScrollY}
+            contentBottomInset={contentBottomInset}
             miniHeaderMode={miniHeaderMode}
             onMiniScoreMetaChange={onMiniScoreMetaChange}
             onMiniScoreTriggerChange={onMiniScoreTriggerChange}
             onCoreReadyChange={onCoreReadyChange}
+            onScrollViewportMetricsChange={onScrollViewportMetricsChange}
             saveItem={saveItem}
             onboardingDraftOverride={onboardingDraftOverride}
             topAccessory={topAccessory}

@@ -37,6 +37,7 @@ import { QAMoreOptionsPill } from '@/components/onboarding/qa/QAMoreOptionsPill'
 import { QAContentLayout } from '@/components/onboarding/qa/QAContentLayout';
 import { QAOptionRow } from '@/components/onboarding/qa/QAOptionRow';
 import { QA_EYEBROW } from '@/components/onboarding/qa/qaTokens';
+import { ProblemIntroScreen } from '@/components/onboarding/problem/ProblemIntroScreen';
 import { WelcomeHeroCarousel } from '@/components/onboarding/welcome/WelcomeHeroCarousel';
 import { WelcomeHeroGlow } from '@/components/onboarding/welcome/WelcomeHeroGlow';
 import { WelcomePrimaryCTA } from '@/components/onboarding/welcome/WelcomePrimaryCTA';
@@ -88,6 +89,7 @@ const BLUR_PROPS =
 
 export const ONBOARDING_FLOW_STEPS = [
   'welcome',
+  'problem',
   'data-trust',
   'goals',
   'allergy',
@@ -501,7 +503,7 @@ function WelcomeFlowScene({
       trackOnboardingEvent('onboarding_started', {
         version: 'welcome_cta_root_fix_v1',
       });
-      goToStep('data-trust', 'forward');
+      goToStep('problem', 'forward');
       isNavigatingRef.current = false;
     });
   }, [goToStep, microcopyOpacity, microcopyTranslate]);
@@ -627,6 +629,20 @@ function WelcomeFlowScene({
       </View>
     </View>
   );
+}
+
+function ProblemFlowScene({
+  goToStep,
+}: Pick<OnboardingFlowSceneProps, 'goToStep'>) {
+  const handleNext = useCallback(() => {
+    trackOnboardingEvent('problem_page_completed', {
+      source: 'onboarding_problem',
+      version: 'problem_blue_card_v1',
+    });
+    goToStep('data-trust', 'forward');
+  }, [goToStep]);
+
+  return <ProblemIntroScreen onNext={handleNext} />;
 }
 
 function DataTrustFlowScene({
@@ -1494,6 +1510,8 @@ export function renderOnboardingScene(
   switch (step) {
     case 'welcome':
       return <WelcomeFlowScene {...props} />;
+    case 'problem':
+      return <ProblemFlowScene {...props} />;
     case 'data-trust':
       return <DataTrustFlowScene {...props} />;
     case 'goals':
