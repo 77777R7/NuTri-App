@@ -31,7 +31,7 @@ export type OnboardingAnalyticsEvent =
   | 'guest_scan_barcode_captured'
   | 'guest_scan_result_started'
   | 'guest_scan_result_ready'
-  | 'guest_scan_keep_tapped'
+  | 'guest_scan_high_intent_claim_tapped'
   | 'guest_scan_auth_started'
   | 'guest_scan_claim_succeeded'
   | 'guest_scan_claim_failed';
