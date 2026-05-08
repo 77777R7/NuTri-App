@@ -2,7 +2,7 @@ import React from 'react';
 import { Pressable, StyleSheet, Text, View, type ReactNode } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
-import { QA_ACTIVE_BLUE, QA_CTA_HEIGHT } from './qaTokens';
+import { QA_CTA_BLACK, QA_CTA_BLACK_EDGE, QA_CTA_HEIGHT } from './qaTokens';
 
 type QAContinueCTAProps = {
   title: string;
@@ -34,8 +34,8 @@ export function QAContinueCTA({
               pointerEvents="none"
               colors={
                 disabled
-                  ? ['#B7C7EF', '#AEC0EA', '#A6B8E5']
-                  : ['#6F98F8', '#638CEE', '#5782E8']
+                  ? ['#C8C8C8', '#BEBEBE', '#B4B4B4']
+                  : ['#171717', QA_CTA_BLACK, '#050505']
               }
               locations={[0, 0.52, 1]}
               start={{ x: 0.14, y: 0.06 }}
@@ -48,13 +48,13 @@ export function QAContinueCTA({
               colors={
                 disabled
                   ? [
-                      'rgba(255,255,255,0.12)',
+                      'rgba(255,255,255,0.10)',
                       'rgba(255,255,255,0.04)',
                       'rgba(255,255,255,0)',
                     ]
                   : [
-                      'rgba(255,255,255,0.22)',
-                      'rgba(255,255,255,0.08)',
+                      'rgba(255,255,255,0.16)',
+                      'rgba(255,255,255,0.05)',
                       'rgba(255,255,255,0)',
                     ]
               }
@@ -94,10 +94,10 @@ const styles = StyleSheet.create({
     height: QA_CTA_HEIGHT,
     borderRadius: 999,
     backgroundColor: 'transparent',
-    shadowColor: QA_ACTIVE_BLUE,
-    shadowOpacity: 0.15,
-    shadowRadius: 11,
-    shadowOffset: { width: 0, height: 6 },
+    shadowColor: QA_CTA_BLACK_EDGE,
+    shadowOpacity: 0.14,
+    shadowRadius: 13,
+    shadowOffset: { width: 0, height: 7 },
     elevation: 12,
   },
   buttonFrameDisabled: {
@@ -113,8 +113,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.18)',
-    backgroundColor: QA_ACTIVE_BLUE,
+    borderColor: 'rgba(255,255,255,0.10)',
+    backgroundColor: QA_CTA_BLACK,
   },
   pressed: {
     transform: [{ scale: 0.986 }],
@@ -141,7 +141,7 @@ const styles = StyleSheet.create({
     fontSize: 17,
     lineHeight: 22,
     fontWeight: '600',
-    letterSpacing: -0.45,
+    letterSpacing: 0,
     color: '#FFFFFF',
     textAlign: 'center',
   },

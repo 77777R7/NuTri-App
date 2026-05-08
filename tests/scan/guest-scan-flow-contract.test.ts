@@ -92,7 +92,7 @@ test('guest scan result receives one full reveal and uses post-scan Continue bef
   assert.match(resultSource, />Continue</);
   assert.match(resultSource, /Next: 2 quick questions for Goal fit and Allergy check\./);
   assert.match(resultSource, /const activationActionNode = !isGuestScan/);
-  assert.match(resultSource, /pathname: '\/onboarding\/goals'/);
+  assert.match(resultSource, /pathname: '\/onboarding\/data-trust'/);
   assert.match(resultSource, /mode: 'post_scan'/);
   assert.match(resultSource, /returnTo/);
   assert.doesNotMatch(resultSource, /testID="scan-result-keep-guest-result"/);

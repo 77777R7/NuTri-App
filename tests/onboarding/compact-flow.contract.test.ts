@@ -20,6 +20,10 @@ const problemSource = readFileSync(
   new URL('../../app/onboarding/problem.tsx', import.meta.url),
   'utf8',
 );
+const solutionSource = readFileSync(
+  new URL('../../app/onboarding/solution.tsx', import.meta.url),
+  'utf8',
+);
 const welcomeSource = readFileSync(
   new URL('../../app/onboarding/welcome.tsx', import.meta.url),
   'utf8',
@@ -33,7 +37,7 @@ test('compact onboarding keeps value framing, trust, goals, safety, preview, and
   assert.equal(ONBOARDING_TOTAL_STEPS, 6);
   assert.match(
     registrySource,
-    /export const ONBOARDING_FLOW_STEPS = \[\s*'welcome',\s*'problem',\s*'data-trust',\s*'goals',\s*'allergy',\s*'plan-preview',\s*'first-stack',\s*\] as const;/,
+    /export const ONBOARDING_FLOW_STEPS = \[\s*'welcome',\s*'problem',\s*'solution',\s*'data-trust',\s*'goals',\s*'allergy',\s*'plan-preview',\s*'first-stack',\s*\] as const;/,
   );
   assert.match(registrySource, /welcome:\s*1/);
   assert.match(registrySource, /'data-trust':\s*2/);
@@ -53,11 +57,16 @@ test('compact onboarding does not expose deferred setup steps in the active shar
   }
 
   assert.match(layoutSource, /<Stack\.Screen name="problem" \/>/);
+  assert.match(layoutSource, /<Stack\.Screen name="solution" \/>/);
   assert.match(welcomeSource, /router\.replace\('\/onboarding\/problem'\)/);
   assert.match(problemSource, /ProblemIntroScreen/);
-  assert.match(problemSource, /router\.replace\('\/onboarding\/data-trust'\)/);
+  assert.match(problemSource, /router\.replace\('\/onboarding\/solution'\)/);
+  assert.match(solutionSource, /SolutionIntroScreen/);
+  assert.match(solutionSource, /pathname:\s*'\/scan\/barcode'/);
+  assert.match(solutionSource, /source:\s*'onboarding'/);
   assert.match(registrySource, /goToStep\('problem', 'forward'\)/);
-  assert.match(registrySource, /goToStep\('data-trust', 'forward'\)/);
+  assert.match(registrySource, /goToStep\('solution', 'forward'\)/);
+  assert.match(registrySource, /exitTo\('\/scan\/barcode\?source=onboarding', 'forward'\)/);
   assert.match(dataTrustSource, /router\.replace\('\/onboarding\/goals'\)/);
   assert.match(registrySource, /goToStep\('goals', 'forward'\)/);
   assert.match(registrySource, /goToStep\('allergy', 'forward'\)/);

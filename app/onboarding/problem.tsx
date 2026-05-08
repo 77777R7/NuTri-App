@@ -17,8 +17,8 @@ export default function ProblemScreen() {
       version: 'problem_blue_card_v1',
     });
     setDirection('forward');
-    await saveDraft({ onboardingVersion: 'v2' }, 2);
-    router.replace('/onboarding/data-trust');
+    await saveDraft({ onboardingVersion: 'v2' });
+    router.replace('/onboarding/solution');
   }, [router, saveDraft, setDirection]);
 
   return <ProblemIntroScreen onNext={handleNext} />;

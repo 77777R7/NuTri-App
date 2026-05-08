@@ -432,7 +432,7 @@ export default function ScanResultScreen() {
     if (!returnTo || !guestScanSessionId || !currentScanId) return;
 
     router.push({
-      pathname: '/onboarding/goals',
+      pathname: '/onboarding/data-trust',
       params: {
         mode: 'post_scan',
         returnTo,

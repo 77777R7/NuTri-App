@@ -5,19 +5,30 @@ import test from 'node:test';
 
 const root = process.cwd();
 const scanResultSource = readFileSync(path.join(root, 'app/scan/result.tsx'), 'utf8');
+const dataTrustSource = readFileSync(path.join(root, 'app/onboarding/data-trust.tsx'), 'utf8');
 const goalsSource = readFileSync(path.join(root, 'app/onboarding/goals.tsx'), 'utf8');
 const allergySource = readFileSync(path.join(root, 'app/onboarding/allergy.tsx'), 'utf8');
 
-test('scan result sends post-scan Continue through goals with a local returnTo', () => {
+test('scan result sends post-scan Continue through data trust with a local returnTo', () => {
   assert.match(scanResultSource, /buildGuestScanResultReturnTo/);
   assert.match(scanResultSource, /\/scan\/result\?sessionId=/);
   assert.match(scanResultSource, /source=guest_scan/);
   assert.match(scanResultSource, /guestScanSessionId=/);
   assert.match(scanResultSource, /params\.devBarcode/);
   assert.match(scanResultSource, /query\.set\('devBarcode', routeDevBarcode\)/);
-  assert.match(scanResultSource, /pathname: '\/onboarding\/goals'/);
+  assert.match(scanResultSource, /pathname: '\/onboarding\/data-trust'/);
   assert.match(scanResultSource, /mode: 'post_scan'/);
   assert.match(scanResultSource, /returnTo/);
+});
+
+test('data trust post-scan mode carries returnTo to goals before the QA steps', () => {
+  assert.match(dataTrustSource, /useLocalSearchParams/);
+  assert.match(dataTrustSource, /normalizePostScanReturnTo/);
+  assert.match(dataTrustSource, /trimmed\.startsWith\('\/scan\/result\?'\)/);
+  assert.match(dataTrustSource, /params\.mode === 'post_scan'/);
+  assert.match(dataTrustSource, /pathname: '\/onboarding\/goals'/);
+  assert.match(dataTrustSource, /mode: 'post_scan'/);
+  assert.match(dataTrustSource, /returnTo: postScanReturnTo/);
 });
 
 test('goals post-scan mode carries returnTo to allergy instead of the normal compact flow', () => {
