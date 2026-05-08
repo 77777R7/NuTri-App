@@ -85,6 +85,7 @@ const BLUR_PROPS =
   Platform.OS === 'android'
     ? ({ experimentalBlurMethod: 'dimezisBlurView' } as const)
     : ({} as const);
+const PROBLEM_CARD_BLUE = '#1E40AF';
 
 export const ONBOARDING_FLOW_STEPS = [
   'welcome',
@@ -1983,9 +1984,9 @@ const flowStyles = StyleSheet.create({
     width: 11,
     height: 11,
     borderRadius: 999,
-    backgroundColor: 'rgba(13,13,13,0.12)',
-    shadowColor: QA_CTA_BLACK,
-    shadowOpacity: 0.14,
+    backgroundColor: 'rgba(30,64,175,0.18)',
+    shadowColor: PROBLEM_CARD_BLUE,
+    shadowOpacity: 0.16,
     shadowRadius: 4,
     shadowOffset: { width: 0, height: 1 },
   },
@@ -1993,7 +1994,7 @@ const flowStyles = StyleSheet.create({
     width: 11,
     height: 11,
     borderRadius: 999,
-    backgroundColor: QA_CTA_BLACK,
+    backgroundColor: PROBLEM_CARD_BLUE,
     borderWidth: 2,
     borderColor: 'rgba(255,255,255,0.96)',
   },

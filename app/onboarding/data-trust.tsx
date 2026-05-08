@@ -28,7 +28,7 @@ import Animated, {
 
 import { StepSlide } from '@/components/animation/StepSlide';
 import { QAContinueCTA } from '@/components/onboarding/qa/QAContinueCTA';
-import { QA_CTA_BLACK, QA_SERIF_FONT } from '@/components/onboarding/qa/qaTokens';
+import { QA_SERIF_FONT } from '@/components/onboarding/qa/qaTokens';
 import { WelcomeHeroGlow } from '@/components/onboarding/welcome/WelcomeHeroGlow';
 import {
   FOREGROUND,
@@ -44,6 +44,7 @@ import { useOnboardingLayoutTokens } from '@/hooks/useOnboardingLayoutTokens';
 import { trackOnboardingEvent } from '@/lib/analytics/onboarding';
 
 const PRIVACY_POLICY_URL = 'https://www.nutri.app/privacy';
+const PROBLEM_CARD_BLUE = '#1E40AF';
 
 const BLUR_PROPS =
   Platform.OS === 'android'
@@ -695,9 +696,9 @@ const styles = StyleSheet.create({
     width: 11,
     height: 11,
     borderRadius: 999,
-    backgroundColor: 'rgba(13,13,13,0.12)',
-    shadowColor: QA_CTA_BLACK,
-    shadowOpacity: 0.14,
+    backgroundColor: 'rgba(30,64,175,0.18)',
+    shadowColor: PROBLEM_CARD_BLUE,
+    shadowOpacity: 0.16,
     shadowRadius: 4,
     shadowOffset: { width: 0, height: 1 },
   },
@@ -705,7 +706,7 @@ const styles = StyleSheet.create({
     width: 11,
     height: 11,
     borderRadius: 999,
-    backgroundColor: QA_CTA_BLACK,
+    backgroundColor: PROBLEM_CARD_BLUE,
     borderWidth: 2,
     borderColor: 'rgba(255,255,255,0.96)',
   },
