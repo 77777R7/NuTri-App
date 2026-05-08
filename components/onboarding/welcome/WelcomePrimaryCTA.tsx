@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
-import { CTA_BLUE, CTA_BLUE_EDGE } from './welcomeTokens';
+import { QA_CTA_BLACK, QA_CTA_BLACK_EDGE } from '@/components/onboarding/qa/qaTokens';
 
 type WelcomePrimaryCTAProps = {
   title: string;
@@ -34,7 +34,7 @@ export function WelcomePrimaryCTA({
           <View style={styles.clipShell}>
             <LinearGradient
               pointerEvents="none"
-              colors={['#739AF8', CTA_BLUE, '#5B84EE']}
+              colors={['#171717', QA_CTA_BLACK, '#050505']}
               locations={[0, 0.52, 1]}
               start={{ x: 0.14, y: 0.06 }}
               end={{ x: 0.92, y: 0.96 }}
@@ -81,7 +81,7 @@ const styles = StyleSheet.create({
     height: BUTTON_HEIGHT,
     borderRadius: 999,
     backgroundColor: 'transparent',
-    shadowColor: CTA_BLUE_EDGE,
+    shadowColor: QA_CTA_BLACK_EDGE,
     shadowOpacity: 0.13,
     shadowRadius: 11,
     shadowOffset: { width: 0, height: 6 },
@@ -93,7 +93,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: CTA_BLUE,
+    backgroundColor: QA_CTA_BLACK,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.14)',
   },

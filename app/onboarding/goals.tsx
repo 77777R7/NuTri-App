@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
 
 import { QAMultiSelectScreen } from '@/components/onboarding/qa/QAMultiSelectScreen';
 import { useOnboarding } from '@/contexts/OnboardingContext';
@@ -33,11 +34,13 @@ export default function GoalsScreen() {
     setSelectedGoals(draft?.goals ?? []);
   }, [draft?.goals]);
 
-  useEffect(() => {
-    if (progress < 3) {
-      void setProgress(3);
-    }
-  }, [progress, setProgress]);
+  useFocusEffect(
+    useCallback(() => {
+      if (progress < 3) {
+        void setProgress(3);
+      }
+    }, [progress, setProgress]),
+  );
 
   const toggleGoal = useCallback((goal: string) => {
     setSelectedGoals((current) =>

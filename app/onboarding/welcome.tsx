@@ -81,11 +81,13 @@ export default function WelcomeScreen() {
     }, []),
   );
 
-  useEffect(() => {
-    if (progress !== 1) {
-      void setProgress(1);
-    }
-  }, [progress, setProgress]);
+  useFocusEffect(
+    useCallback(() => {
+      if (progress !== 1) {
+        void setProgress(1);
+      }
+    }, [progress, setProgress]),
+  );
 
   useEffect(() => {
     RNAnimated.sequence([

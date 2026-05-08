@@ -6,6 +6,7 @@ import {
   View,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
 import Animated, {
   cancelAnimation,
   Easing,
@@ -158,11 +159,13 @@ export default function AllergyScreen() {
     );
   }, [draft?.allergyFlags, draft?.avoidItems, draft?.ingredientRestrictions, draft?.noKnownAllergies]);
 
-  useEffect(() => {
-    if (progress < 4) {
-      void setProgress(4);
-    }
-  }, [progress, setProgress]);
+  useFocusEffect(
+    useCallback(() => {
+      if (progress < 4) {
+        void setProgress(4);
+      }
+    }, [progress, setProgress]),
+  );
 
   useEffect(() => {
     expandProgress.value = withTiming(showMore ? 1 : 0, {
