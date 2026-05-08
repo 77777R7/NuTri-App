@@ -5,14 +5,17 @@ import {
   Text,
   View,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
 import Animated, {
   cancelAnimation,
   Easing,
   useAnimatedScrollHandler,
   useAnimatedStyle,
   useSharedValue,
+  withDelay,
   withTiming,
+  type SharedValue,
 } from 'react-native-reanimated';
 
 import { QAMoreOptionsPill } from '@/components/onboarding/qa/QAMoreOptionsPill';
@@ -33,6 +36,14 @@ import {
 const SCROLLBAR_HIDE_DELAY_MS = 1200;
 const SCROLLBAR_FADE_DURATION_MS = 720;
 
+const normalizePostScanReturnTo = (value: unknown) => {
+  const raw = Array.isArray(value) ? value[0] : value;
+  if (typeof raw !== 'string') return null;
+  const trimmed = raw.trim();
+  if ((trimmed !== '/scan/result' && !trimmed.startsWith('/scan/result?')) || trimmed.startsWith('//')) return null;
+  return trimmed;
+};
+
 function AllergyScrollbar({
   progress,
   opacity,
@@ -40,8 +51,8 @@ function AllergyScrollbar({
   bottom = 14,
   thumbHeight = 40,
 }: {
-  progress: Animated.SharedValue<number>;
-  opacity: Animated.SharedValue<number>;
+  progress: SharedValue<number>;
+  opacity: SharedValue<number>;
   top?: number;
   bottom?: number;
   thumbHeight?: number;
@@ -78,8 +89,14 @@ function AllergyScrollbar({
 
 export default function AllergyScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams<{ mode?: string; returnTo?: string }>();
   const { draft, progress, saveDraft, setProgress } = useOnboarding();
   const { setDirection } = useTransitionDir();
+  const postScanReturnTo = useMemo(
+    () => normalizePostScanReturnTo(params.returnTo),
+    [params.returnTo],
+  );
+  const isPostScanMode = params.mode === 'post_scan' && Boolean(postScanReturnTo);
   const [selected, setSelected] = useState<string[]>(
     buildAvoidItemsFromStructuredPreferences({
       avoidItems: draft?.avoidItems,
@@ -97,11 +114,13 @@ export default function AllergyScreen() {
   const fadeOutScrollbar = useCallback(() => {
     'worklet';
     cancelAnimation(scrollbarOpacity);
-    scrollbarOpacity.value = withTiming(0, {
-      duration: SCROLLBAR_FADE_DURATION_MS,
-      delay: SCROLLBAR_HIDE_DELAY_MS,
-      easing: Easing.bezier(0.22, 1, 0.36, 1),
-    });
+    scrollbarOpacity.value = withDelay(
+      SCROLLBAR_HIDE_DELAY_MS,
+      withTiming(0, {
+        duration: SCROLLBAR_FADE_DURATION_MS,
+        easing: Easing.bezier(0.22, 1, 0.36, 1),
+      }),
+    );
   }, [scrollbarOpacity]);
 
   const showScrollbar = useCallback(() => {
@@ -140,11 +159,13 @@ export default function AllergyScreen() {
     );
   }, [draft?.allergyFlags, draft?.avoidItems, draft?.ingredientRestrictions, draft?.noKnownAllergies]);
 
-  useEffect(() => {
-    if (progress < 4) {
-      void setProgress(4);
-    }
-  }, [progress, setProgress]);
+  useFocusEffect(
+    useCallback(() => {
+      if (progress < 4) {
+        void setProgress(4);
+      }
+    }, [progress, setProgress]),
+  );
 
   useEffect(() => {
     expandProgress.value = withTiming(showMore ? 1 : 0, {
@@ -222,8 +243,12 @@ export default function AllergyScreen() {
       source: 'onboarding_allergy',
     });
     setDirection('forward');
+    if (isPostScanMode && postScanReturnTo) {
+      router.replace(postScanReturnTo as never);
+      return;
+    }
     router.replace('/onboarding/plan-preview');
-  }, [router, saveDraft, selected, setDirection]);
+  }, [isPostScanMode, postScanReturnTo, router, saveDraft, selected, setDirection]);
 
   return (
     <QAScreenShell
@@ -234,6 +259,16 @@ export default function AllergyScreen() {
       subtitle="Optional. We'll flag ingredients that may not fit your routine."
       onBack={() => {
         setDirection('back');
+        if (isPostScanMode && postScanReturnTo) {
+          router.replace({
+            pathname: '/onboarding/goals',
+            params: {
+              mode: 'post_scan',
+              returnTo: postScanReturnTo,
+            },
+          });
+          return;
+        }
         router.replace('/onboarding/goals');
       }}
       onContinue={() => persist(false)}

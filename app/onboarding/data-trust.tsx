@@ -13,7 +13,7 @@ import {
 import * as Haptics from 'expo-haptics';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import Animated, {
   Easing,
@@ -27,8 +27,9 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { StepSlide } from '@/components/animation/StepSlide';
+import { QAContinueCTA } from '@/components/onboarding/qa/QAContinueCTA';
+import { QA_SERIF_FONT } from '@/components/onboarding/qa/qaTokens';
 import { WelcomeHeroGlow } from '@/components/onboarding/welcome/WelcomeHeroGlow';
-import { WelcomePrimaryCTA } from '@/components/onboarding/welcome/WelcomePrimaryCTA';
 import {
   ACTIVE_BLUE,
   FOREGROUND,
@@ -49,6 +50,14 @@ const BLUR_PROPS =
   Platform.OS === 'android'
     ? ({ experimentalBlurMethod: 'dimezisBlurView' } as const)
     : ({} as const);
+
+const normalizePostScanReturnTo = (value: unknown) => {
+  const raw = Array.isArray(value) ? value[0] : value;
+  if (typeof raw !== 'string') return null;
+  const trimmed = raw.trim();
+  if ((trimmed !== '/scan/result' && !trimmed.startsWith('/scan/result?')) || trimmed.startsWith('//')) return null;
+  return trimmed;
+};
 
 const TRUST_ROWS = [
   {
@@ -242,11 +251,17 @@ function TrustHeroPanel({
 
 export default function DataTrustScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams<{ mode?: string; returnTo?: string }>();
   const { height } = useWindowDimensions();
   const layoutTokens = useOnboardingLayoutTokens();
   const insets = layoutTokens.insets;
   const { saveDraft } = useOnboarding();
   const { setDirection, consumeDirection } = useTransitionDir();
+  const postScanReturnTo = useMemo(
+    () => normalizePostScanReturnTo(params.returnTo),
+    [params.returnTo],
+  );
+  const isPostScanMode = params.mode === 'post_scan' && Boolean(postScanReturnTo);
 
   const enterDir = useMemo(() => {
     const direction = consumeDirection();
@@ -377,8 +392,18 @@ export default function DataTrustScreen() {
 
     setDirection('forward');
     await saveDraft({ onboardingVersion: 'v2' }, 2);
+    if (isPostScanMode && postScanReturnTo) {
+      router.replace({
+        pathname: '/onboarding/goals',
+        params: {
+          mode: 'post_scan',
+          returnTo: postScanReturnTo,
+        },
+      });
+      return;
+    }
     router.replace('/onboarding/goals');
-  }, [router, saveDraft, setDirection]);
+  }, [isPostScanMode, postScanReturnTo, router, saveDraft, setDirection]);
 
   return (
     <View style={styles.root}>
@@ -508,7 +533,7 @@ export default function DataTrustScreen() {
                 <View style={styles.progressActivePill} />
               </View>
 
-              <WelcomePrimaryCTA title="Get Started" onPress={handleGetStarted} />
+              <QAContinueCTA title="Continue" onPress={handleGetStarted} />
 
               <View style={styles.policySlot}>
                 <RNAnimated.Text
@@ -714,15 +739,16 @@ const styles = StyleSheet.create({
   headline: {
     fontSize: 39,
     lineHeight: 41,
-    fontWeight: '700',
-    letterSpacing: -1.9,
+    fontFamily: QA_SERIF_FONT,
+    fontWeight: '500',
+    letterSpacing: 0,
     textAlign: 'center',
     color: FOREGROUND,
   },
   headlineCompact: {
     fontSize: 37,
     lineHeight: 39,
-    letterSpacing: -1.75,
+    letterSpacing: 0,
   },
   subtext: {
     marginTop: 16,
@@ -764,7 +790,7 @@ const styles = StyleSheet.create({
     width: 26,
     height: 6,
     borderRadius: 999,
-    backgroundColor: ACTIVE_BLUE,
+    backgroundColor: '#111111',
   },
   policyLink: {
     position: 'absolute',

@@ -3,14 +3,12 @@ import {
   Animated as RNAnimated,
   BackHandler,
   Easing as RNEasing,
-  Platform,
   StyleSheet,
   Text,
   View,
   useWindowDimensions,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
-import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -28,6 +26,7 @@ import Animated, {
 import { StepSlide } from '@/components/animation/StepSlide';
 import { WelcomeHeroCarousel } from '@/components/onboarding/welcome/WelcomeHeroCarousel';
 import { WelcomeHeroGlow } from '@/components/onboarding/welcome/WelcomeHeroGlow';
+import { OnboardingLogoPill } from '@/components/onboarding/welcome/OnboardingLogoPill';
 import { WelcomePrimaryCTA } from '@/components/onboarding/welcome/WelcomePrimaryCTA';
 import {
   ACTIVE_BLUE,
@@ -41,11 +40,6 @@ import {
 import { useOnboarding } from '@/contexts/OnboardingContext';
 import { useTransitionDir } from '@/contexts/TransitionContext';
 import { trackOnboardingEvent } from '@/lib/analytics/onboarding';
-
-const BLUR_PROPS =
-  Platform.OS === 'android'
-    ? ({ experimentalBlurMethod: 'dimezisBlurView' } as const)
-    : ({} as const);
 
 export default function WelcomeScreen() {
   const router = useRouter();
@@ -87,11 +81,13 @@ export default function WelcomeScreen() {
     }, []),
   );
 
-  useEffect(() => {
-    if (progress !== 1) {
-      void setProgress(1);
-    }
-  }, [progress, setProgress]);
+  useFocusEffect(
+    useCallback(() => {
+      if (progress !== 1) {
+        void setProgress(1);
+      }
+    }, [progress, setProgress]),
+  );
 
   useEffect(() => {
     RNAnimated.sequence([
@@ -220,10 +216,9 @@ export default function WelcomeScreen() {
 
     setDirection('forward');
     await new Promise((resolve) => setTimeout(resolve, 130));
-    await setProgress(2);
     trackOnboardingEvent('onboarding_started', { version: 'welcome_cta_root_fix_v1' });
-    router.replace('/onboarding/data-trust');
-  }, [microcopyOpacity, microcopyTranslate, router, setDirection, setProgress]);
+    router.replace('/onboarding/problem');
+  }, [microcopyOpacity, microcopyTranslate, router, setDirection]);
 
   return (
     <View style={styles.root}>
@@ -245,24 +240,7 @@ export default function WelcomeScreen() {
               },
             ]}
           >
-            <View style={styles.logoPill}>
-              <BlurView
-                intensity={18}
-                tint="light"
-                style={[StyleSheet.absoluteFillObject, styles.logoBlur]}
-                {...BLUR_PROPS}
-              />
-              <LinearGradient
-                colors={['rgba(255,255,255,0.58)', 'rgba(255,255,255,0.44)']}
-                start={{ x: 0.18, y: 0 }}
-                end={{ x: 0.82, y: 1 }}
-                style={StyleSheet.absoluteFillObject}
-              />
-              <View style={styles.logoPillBorder} pointerEvents="none" />
-              <Text allowFontScaling={false} style={styles.logoText}>
-                NuTri
-              </Text>
-            </View>
+            <OnboardingLogoPill />
           </RNAnimated.View>
 
           <View style={styles.main}>

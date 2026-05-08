@@ -131,6 +131,9 @@ export const OnboardingProvider = ({ children }: OnboardingProviderProps) => {
 
   const commitProgress = useCallback((value: number) => {
     const sanitized = Math.max(1, Math.min(value, ONBOARDING_TOTAL_STEPS));
+    if (progressRef.current === sanitized) {
+      return;
+    }
     progressRef.current = sanitized;
     setProgressState(sanitized);
   }, []);

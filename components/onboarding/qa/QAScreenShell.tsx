@@ -41,6 +41,7 @@ import {
   QA_MUTED,
   QA_PROGRESS_TRACK_HEIGHT,
   QA_PROGRESS_TRACK_WIDTH,
+  QA_SERIF_FONT,
 } from './qaTokens';
 
 const BLUR_PROPS =
@@ -534,7 +535,7 @@ const styles = StyleSheet.create({
   progressFill: {
     height: QA_PROGRESS_TRACK_HEIGHT,
     borderRadius: 999,
-    backgroundColor: '#4D6EFF',
+    backgroundColor: '#111111',
   },
   headerSpacer: {
     width: 40,
@@ -556,8 +557,9 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
   title: {
-    fontWeight: '700',
-    letterSpacing: -1.6,
+    fontFamily: QA_SERIF_FONT,
+    fontWeight: '500',
+    letterSpacing: 0,
     color: QA_FOREGROUND,
   },
   subtitle: {

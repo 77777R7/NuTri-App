@@ -27,6 +27,8 @@ const OnboardingGate = () => {
       }}
     >
       <Stack.Screen name="welcome" />
+      <Stack.Screen name="problem" />
+      <Stack.Screen name="solution" />
       <Stack.Screen name="data-trust" />
       <Stack.Screen name="goals" />
       <Stack.Screen name="allergy" />
