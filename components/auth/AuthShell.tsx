@@ -9,10 +9,11 @@ import {
   View,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { Image } from "expo-image";
 import { useNavigation, type NavigationProp } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { BrandGradient } from "@/components/BrandGradient";
+import { AuthLogoPill } from "@/components/auth/AuthLogoPill";
 import { AUTH_FALLBACK_PATH } from "@/lib/auth-mode";
 import { colors } from "@/lib/theme";
 import { safeBack } from "@/lib/navigation/safeBack";
@@ -31,8 +32,16 @@ type AuthShellProps = {
   fallbackHref?: Href;
 };
 
+const SERIF_FONT = Platform.select({
+  ios: "Georgia",
+  android: "serif",
+  default: "serif",
+});
+
+const AUTH_BACKGROUND = require("@/assets/images/auth-sky-background-portrait.png");
+
 /**
- * Shared container for auth screens: applies gradient background, top safe area,
+ * Shared container for auth screens: applies the onboarding visual language,
  * consistent card sizing, and bottom padding that respects home indicator space.
  */
 export function AuthShell({
@@ -60,7 +69,14 @@ export function AuthShell({
   };
 
   return (
-    <BrandGradient>
+    <View style={styles.shell}>
+      <Image
+        source={AUTH_BACKGROUND}
+        contentFit="cover"
+        transition={180}
+        style={StyleSheet.absoluteFill}
+      />
+      <View style={styles.backgroundWash} />
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         style={styles.flex}
@@ -69,7 +85,10 @@ export function AuthShell({
           <View
             style={[
               styles.topBar,
-              { paddingTop: (insets.top || 12) + topBarOffset },
+              {
+                height: (insets.top || 12) + topBarOffset + 48,
+                paddingTop: (insets.top || 12) + topBarOffset,
+              },
             ]}
           >
             {showBack ? (
@@ -85,6 +104,9 @@ export function AuthShell({
             ) : (
               <View style={styles.backPlaceholder} />
             )}
+            <View style={styles.logoSlot} pointerEvents="none">
+              <AuthLogoPill />
+            </View>
           </View>
 
           <ScrollView
@@ -103,7 +125,9 @@ export function AuthShell({
             {title ? <Text style={styles.title}>{title}</Text> : null}
             {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
 
-            <View style={styles.card}>{children}</View>
+            <View style={styles.card}>
+              <View style={styles.cardContent}>{children}</View>
+            </View>
 
             {footer ? (
               <View
@@ -118,11 +142,19 @@ export function AuthShell({
           </ScrollView>
         </View>
       </KeyboardAvoidingView>
-    </BrandGradient>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  shell: {
+    flex: 1,
+    backgroundColor: "#F7FAFF",
+  },
+  backgroundWash: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(255,255,255,0.24)",
+  },
   flex: {
     flex: 1,
   },
@@ -134,9 +166,9 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   topBar: {
-    height: 44,
     justifyContent: "center",
     paddingHorizontal: 20,
+    zIndex: 10,
   },
   backButton: {
     width: 44,
@@ -144,14 +176,23 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     alignItems: "center",
     justifyContent: "center",
+    backgroundColor: "rgba(255,255,255,0.42)",
   },
   backPlaceholder: {
     width: 44,
     height: 44,
   },
+  logoSlot: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    alignItems: "center",
+  },
   content: {
     flexGrow: 1,
     paddingHorizontal: 20,
+    alignItems: "center",
   },
   hero: {
     alignItems: "center",
@@ -159,36 +200,40 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   title: {
-    fontSize: 28,
-    fontWeight: Platform.select({ ios: "800", android: "700" }) as any,
-    color: colors.text,
-    letterSpacing: 0.2,
+    width: "100%",
+    maxWidth: 392,
+    fontFamily: SERIF_FONT,
+    fontSize: 37,
+    lineHeight: 44,
+    fontWeight: "500",
+    color: "#0B1020",
+    letterSpacing: -0.7,
     marginBottom: 8,
-    textAlign: "left",
+    textAlign: "center",
   },
   subtitle: {
-    fontSize: 16,
-    color: colors.textMuted,
-    marginBottom: 20,
+    width: "100%",
+    maxWidth: 340,
+    fontSize: 15,
+    lineHeight: 21,
+    color: "#667085",
+    marginBottom: 14,
+    fontWeight: "600",
+    textAlign: "center",
   },
   card: {
     alignSelf: "center",
     width: "100%",
-    maxWidth: 380,
-    backgroundColor: colors.card,
-    borderRadius: 24,
-    paddingHorizontal: 24,
-    paddingTop: 24,
-    paddingBottom: 24,
-    shadowColor: "#000",
-    shadowOpacity: 0.08,
-    shadowRadius: 16,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 6,
+    maxWidth: 392,
+  },
+  cardContent: {
+    paddingHorizontal: 8,
+    paddingTop: 8,
+    paddingBottom: 8,
   },
   footer: {
     alignItems: "center",
-    marginTop: 24,
+    marginTop: 18,
     paddingHorizontal: 8,
   },
 });

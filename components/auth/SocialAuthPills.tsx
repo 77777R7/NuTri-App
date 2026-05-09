@@ -112,12 +112,12 @@ const styles = StyleSheet.create({
   stack: {
     width: "100%",
     alignItems: "center",
-    gap: 12,
+    gap: 10,
   },
   googleButton: {
     width: "100%",
     maxWidth: 360,
-    height: 52,
+    height: 50,
     borderRadius: 999,
     backgroundColor: colors.card,
     borderWidth: 1,
@@ -141,17 +141,17 @@ const styles = StyleSheet.create({
   appleWrapper: {
     width: "100%",
     maxWidth: 360,
-    height: 52,
+    height: 50,
   },
   appleNative: {
     width: "100%",
     maxWidth: 360,
-    height: 52,
+    height: 50,
   },
   appleFallback: {
     width: "100%",
     maxWidth: 360,
-    height: 52,
+    height: 50,
     borderRadius: 999,
     backgroundColor: colors.text, // near-black
     flexDirection: "row",

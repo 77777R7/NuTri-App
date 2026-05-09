@@ -25,7 +25,7 @@ export default function AppIndex() {
 
   if (!session) {
     if (Config.guestScanEnabled) {
-      return <Redirect href="/(auth)/gate" />;
+      return <Redirect href="/gate" />;
     }
     return <Redirect href="/auth/login" />;
   }

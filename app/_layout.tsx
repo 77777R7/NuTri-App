@@ -4,7 +4,7 @@ import 'react-native-reanimated';
 import '../global.css';
 import { useEffect } from 'react';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { Stack, useRootNavigationState } from 'expo-router';
+import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -27,7 +27,6 @@ SplashScreen.preventAutoHideAsync().catch(() => undefined);
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
-  const navReady = Boolean(useRootNavigationState()?.key);
 
   useEffect(() => {
     try {
@@ -39,14 +38,8 @@ export default function RootLayout() {
   }, []);
 
   useEffect(() => {
-    if (navReady) {
-      SplashScreen.hideAsync().catch(() => undefined);
-    }
-  }, [navReady]);
-
-  if (!navReady) {
-    return null;
-  }
+    SplashScreen.hideAsync().catch(() => undefined);
+  }, []);
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>

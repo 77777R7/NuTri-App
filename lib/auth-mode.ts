@@ -65,4 +65,4 @@ export const AUTH_DISABLED = resolveAuthDisabled({
   disableForPrivateApiHost,
   isDevRuntime,
 });
-export const AUTH_FALLBACK_PATH = AUTH_DISABLED ? '/main' : '/(auth)/gate';
+export const AUTH_FALLBACK_PATH = AUTH_DISABLED ? '/main' : '/gate';

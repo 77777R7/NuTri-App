@@ -193,9 +193,9 @@ export default function SignupScreen() {
     <AuthShell
       showBack
       fallbackHref={AUTH_FALLBACK_PATH}
-      title="Join NuTri today"
-      subtitle="Create your account to personalise your supplement routine."
-      contentOffsetTop={48}
+      title="Create account"
+      subtitle="Save scans. Personalize results."
+      contentOffsetTop={24}
       topBarOffset={12}
       footer={
         <Text style={styles.footerText}>
@@ -372,16 +372,9 @@ export default function SignupScreen() {
         loading={socialLoading}
         onApple={handleAppleSignUp}
         onGoogle={handleGoogleSignUp}
+        topGap={16}
       />
 
-      <TouchableOpacity
-        activeOpacity={0.85}
-        onPress={() => router.replace('/')}
-        style={styles.testButton}
-        accessibilityLabel="Skip to main app (testing only)"
-      >
-        <Text style={styles.testButtonText}>Next (testing)</Text>
-      </TouchableOpacity>
     </AuthShell>
   );
 }
@@ -394,9 +387,9 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   feedbackSuccess: {
-    backgroundColor: "#D1FAE5",
+    backgroundColor: "#EEF6FF",
     borderWidth: 1,
-    borderColor: "#A7F3D0",
+    borderColor: "#BFDBFE",
   },
   feedbackError: {
     backgroundColor: "#FEE2E2",
@@ -413,7 +406,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   feedbackTextSuccess: {
-    color: "#047857",
+    color: "#1E40AF",
   },
   feedbackTextError: {
     color: "#B91C1C",
@@ -425,23 +418,28 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   inputGroup: {
-    marginBottom: 16,
+    marginBottom: 12,
   },
   label: {
     fontSize: 14,
-    fontWeight: "600",
-    color: colors.text,
+    fontWeight: "700",
+    color: "#101828",
     marginBottom: 8,
   },
   inputRow: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#F9FAFB",
-    borderRadius: 14,
+    backgroundColor: "rgba(255,255,255,0.76)",
+    borderRadius: 18,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: "rgba(15,23,42,0.10)",
     paddingHorizontal: 16,
-    height: 52,
+    height: 50,
+    shadowColor: "#9AB7DA",
+    shadowOpacity: 0.10,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 7 },
+    elevation: 2,
   },
   inputError: {
     borderColor: "#F87171",
@@ -458,12 +456,12 @@ const styles = StyleSheet.create({
     color: "#B91C1C",
   },
   primaryButton: {
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: colors.brand,
+    height: 54,
+    borderRadius: 999,
+    backgroundColor: "#0D0D0D",
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 20,
+    marginBottom: 16,
   },
   primaryLabel: {
     color: "#FFFFFF",
@@ -482,28 +480,12 @@ const styles = StyleSheet.create({
   dividerLine: {
     flex: 1,
     height: StyleSheet.hairlineWidth,
-    backgroundColor: colors.border,
+    backgroundColor: "rgba(15,23,42,0.10)",
   },
   dividerText: {
     fontSize: 13,
     color: colors.textMuted,
     fontWeight: "500",
-  },
-  testButton: {
-    marginTop: 24,
-    paddingVertical: 14,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: colors.brand,
-    backgroundColor: "#F0FDF4",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  testButtonText: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: colors.brand,
-    textTransform: "uppercase",
   },
   footerText: {
     color: colors.textMuted,
@@ -511,7 +493,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   footerLink: {
-    color: colors.brand,
+    color: "#1E40AF",
     fontWeight: "700",
   },
 });

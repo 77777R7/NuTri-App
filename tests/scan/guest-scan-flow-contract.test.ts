@@ -29,20 +29,19 @@ test('guest scan API creates a server session and stores claim token locally', (
   assert.doesNotMatch(apiSource, /URLSearchParams\([^)]*claimToken/s);
 });
 
-test('auth gate exposes Start Free Scan behind feature flag without routing claim token', () => {
+test('auth gate no longer exposes Start Free Scan as the first signed-out action', () => {
   assert.match(configSource, /guestScanEnabled: ENV\.guestScanEnabled/);
   assert.match(envSource, /EXPO_PUBLIC_GUEST_SCAN_ENABLED/);
-  assert.match(gateSource, /Config\.guestScanEnabled/);
-  assert.match(gateSource, /gate-start-free-scan/);
-  assert.match(gateSource, /createGuestScanSessionFromServer/);
-  assert.match(gateSource, /pathname: '\/scan\/barcode'/);
-  assert.match(gateSource, /guestScanSessionId: session\.guestScanSessionId/);
+  assert.doesNotMatch(gateSource, /Config\.guestScanEnabled/);
+  assert.doesNotMatch(gateSource, /gate-start-free-scan/);
+  assert.doesNotMatch(gateSource, /createGuestScanSessionFromServer/);
+  assert.doesNotMatch(gateSource, /pathname: '\/scan\/barcode'/);
   assert.doesNotMatch(gateSource, /claimToken/);
 });
 
 test('signed-out app entry can reach the auth gate', () => {
   assert.match(indexSource, /Config\.guestScanEnabled/);
-  assert.match(indexSource, /<Redirect href="\/\(auth\)\/gate" \/>/);
+  assert.match(indexSource, /<Redirect href="\/gate" \/>/);
 });
 
 test('guest scan metadata stays attached to scan session and stream headers', () => {

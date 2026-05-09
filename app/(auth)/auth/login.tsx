@@ -199,14 +199,10 @@ export default function LoginScreen() {
     <AuthShell
       showBack
       fallbackHref={AUTH_FALLBACK_PATH}
-      contentOffsetTop={72}
+      title="Welcome back"
+      subtitle="Scans. Stack. Insights."
+      contentOffsetTop={22}
       topBarOffset={12}
-      hero={
-        <View style={styles.hero}>
-          <Text style={styles.heroBrand}>NuTri</Text>
-          <Text style={styles.heroHeadline}>Welcome back</Text>
-        </View>
-      }
       footer={
         <View style={styles.footer}>
           <Text style={styles.footerText}>
@@ -228,15 +224,11 @@ export default function LoginScreen() {
             </Text>
           </Text>
           <Text style={styles.terms}>
-            By continuing you agree to NuTri’s{" "}
-            <Text style={styles.footerLink}>Terms of Service</Text> and{" "}
-            <Text style={styles.footerLink}>Privacy Policy</Text>.
+            <Text style={styles.footerLink}>Terms</Text> · <Text style={styles.footerLink}>Privacy</Text>
           </Text>
         </View>
       }
     >
-      <Text style={styles.sectionTitle}>Member Access</Text>
-
       {isGuestClaimRedirect ? (
         <View style={styles.feedbackInfo}>
           <Text style={styles.feedbackTextInfo}>
@@ -365,7 +357,7 @@ export default function LoginScreen() {
         {submitting ? (
           <ActivityIndicator color="#FFFFFF" />
         ) : (
-          <Text style={styles.primaryLabel}>Sign In</Text>
+          <Text style={styles.primaryLabel}>Sign in</Text>
         )}
       </TouchableOpacity>
 
@@ -381,32 +373,20 @@ export default function LoginScreen() {
         loading={socialLoading}
         onApple={onApple}
         onGoogle={onGoogle}
+        topGap={16}
       />
     </AuthShell>
   );
 }
 
 const styles = StyleSheet.create({
-  hero: {
-    alignItems: "center",
-  },
-  heroBrand: {
-    fontSize: 28,
-    fontWeight: "800",
-    color: colors.brand,
-    letterSpacing: 0.5,
-  },
-  heroHeadline: {
-    marginTop: 6,
-    fontSize: 20,
-    fontWeight: "700",
-    color: colors.text,
-  },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: colors.text,
-    marginBottom: 12,
+    fontSize: 13,
+    fontWeight: "800",
+    color: "#667085",
+    letterSpacing: 1.2,
+    marginBottom: 16,
+    textTransform: "uppercase",
   },
   feedback: {
     borderRadius: 14,
@@ -438,23 +418,28 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   inputGroup: {
-    marginBottom: 12,
+    marginBottom: 14,
   },
   label: {
-    color: colors.text,
+    color: "#101828",
     fontSize: 14,
-    fontWeight: "600",
+    fontWeight: "700",
     marginBottom: 8,
   },
   inputRow: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#F9FAFB",
-    borderRadius: 14,
+    backgroundColor: "rgba(255,255,255,0.76)",
+    borderRadius: 18,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: "rgba(15,23,42,0.10)",
     paddingHorizontal: 14,
-    height: 52,
+    height: 54,
+    shadowColor: "#9AB7DA",
+    shadowOpacity: 0.10,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 7 },
+    elevation: 2,
   },
   inputError: {
     borderColor: "#F87171",
@@ -476,26 +461,26 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     marginTop: 4,
-    marginBottom: 16,
+    marginBottom: 14,
   },
   linkPrimary: {
-    color: colors.brand,
-    fontWeight: "600",
+    color: "#1E40AF",
+    fontWeight: "800",
   },
   linkSecondary: {
-    color: colors.brandDark,
-    fontWeight: "600",
+    color: "#1E40AF",
+    fontWeight: "800",
   },
   faded: {
     opacity: 0.5,
   },
   primaryButton: {
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: colors.brand,
+    height: 54,
+    borderRadius: 999,
+    backgroundColor: "#0D0D0D",
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 20,
+    marginBottom: 16,
   },
   primaryLabel: {
     color: "#FFFFFF",
@@ -514,7 +499,7 @@ const styles = StyleSheet.create({
   dividerLine: {
     flex: 1,
     height: StyleSheet.hairlineWidth,
-    backgroundColor: colors.border,
+    backgroundColor: "rgba(15,23,42,0.10)",
   },
   dividerText: {
     fontSize: 13,
@@ -531,7 +516,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   footerLink: {
-    color: colors.brand,
+    color: "#1E40AF",
     fontWeight: "700",
   },
   terms: {
