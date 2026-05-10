@@ -19,7 +19,7 @@ export const onboardingPalette = {
   line: 'rgba(180,193,224,0.58)',
   inactive: '#D7DEEF',
   progressTrack: 'rgba(11,22,56,0.06)',
-  progressFill: '#5F83F5',
+  progressFill: '#0D0D0D',
   link: '#56637F',
   danger: '#E1567A',
   dangerSoft: 'rgba(225,86,122,0.10)',

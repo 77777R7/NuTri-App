@@ -1069,7 +1069,7 @@ const styles = StyleSheet.create({
     marginTop: 0.68,
     marginLeft: 0.68,
     borderRadius: 999,
-    backgroundColor: PAGE_BLUE,
+    backgroundColor: '#0D0D0D',
   },
   headerSpacer: {
     width: 40,

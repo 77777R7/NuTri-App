@@ -10,9 +10,7 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
-import { BlurView } from 'expo-blur';
 import { Image } from 'expo-image';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
@@ -29,6 +27,7 @@ import Animated, {
 import { StepSlide } from '@/components/animation/StepSlide';
 import { WelcomeHeroCarousel } from '@/components/onboarding/welcome/WelcomeHeroCarousel';
 import { WelcomeHeroGlow } from '@/components/onboarding/welcome/WelcomeHeroGlow';
+import { OnboardingLogoPill } from '@/components/onboarding/welcome/OnboardingLogoPill';
 import { WelcomePrimaryCTA } from '@/components/onboarding/welcome/WelcomePrimaryCTA';
 import {
   FOREGROUND,
@@ -40,10 +39,6 @@ import { useOnboarding } from '@/contexts/OnboardingContext';
 import { useTransitionDir } from '@/contexts/TransitionContext';
 import { trackOnboardingEvent } from '@/lib/analytics/onboarding';
 
-const BLUR_PROPS =
-  Platform.OS === 'android'
-    ? ({ experimentalBlurMethod: 'dimezisBlurView' } as const)
-    : ({} as const);
 const WELCOME_SKY_BACKGROUND = require('@/assets/images/auth-sky-background-portrait.png');
 
 export default function WelcomeScreen() {
@@ -245,24 +240,7 @@ export default function WelcomeScreen() {
               },
             ]}
           >
-            <View style={styles.logoPill}>
-              <BlurView
-                intensity={18}
-                tint="light"
-                style={[StyleSheet.absoluteFillObject, styles.logoBlur]}
-                {...BLUR_PROPS}
-              />
-              <LinearGradient
-                colors={['rgba(255,255,255,0.58)', 'rgba(255,255,255,0.44)']}
-                start={{ x: 0.18, y: 0 }}
-                end={{ x: 0.82, y: 1 }}
-                style={StyleSheet.absoluteFillObject}
-              />
-              <View style={styles.logoPillBorder} pointerEvents="none" />
-              <Text allowFontScaling={false} style={styles.logoText}>
-                NuTri
-              </Text>
-            </View>
+            <OnboardingLogoPill />
           </RNAnimated.View>
 
           <View style={styles.main}>
@@ -377,35 +355,6 @@ const styles = StyleSheet.create({
   },
   main: {
     flex: 1,
-  },
-  logoPill: {
-    minWidth: 86,
-    height: 40,
-    paddingHorizontal: 22,
-    borderRadius: 999,
-    overflow: 'hidden',
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#CAD4E8',
-    shadowOpacity: 0.14,
-    shadowRadius: 14,
-    shadowOffset: { width: 0, height: 8 },
-  },
-  logoBlur: {
-    borderRadius: 999,
-  },
-  logoPillBorder: {
-    ...StyleSheet.absoluteFillObject,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.9)',
-  },
-  logoText: {
-    fontSize: 16,
-    lineHeight: 18,
-    fontWeight: '700',
-    letterSpacing: -0.34,
-    color: FOREGROUND,
   },
   viewport: {
     flex: 1,
