@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Platform, StyleSheet, Text, View } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -36,14 +36,14 @@ const cardPose = (offset: number) => {
   }
 
   if (offset === 1) {
-    return { translateY: 16, scale: 0.94, opacity: 0.85, zIndex: 30 };
+    return { translateY: 16, scale: 0.94, opacity: 0.42, zIndex: 30 };
   }
 
   if (offset === 2) {
-    return { translateY: 32, scale: 0.88, opacity: 0.65, zIndex: 20 };
+    return { translateY: 32, scale: 0.88, opacity: 0.24, zIndex: 20 };
   }
 
-  return { translateY: 48, scale: 0.82, opacity: 0.45, zIndex: 10 };
+  return { translateY: 48, scale: 0.82, opacity: 0.14, zIndex: 10 };
 };
 
 type WelcomeHeroCarouselProps = {
@@ -241,7 +241,7 @@ function HeroCardItem({
     if (isExiting) {
       const p = exitProgress.value;
       return {
-        opacity: interpolate(p, [0, 0.4, 1], [1, 0.85, 0.45]),
+        opacity: interpolate(p, [0, 0.4, 1], [1, 0.42, 0.14]),
         zIndex: p < 0.4 ? 50 : 10,
         transform: [
           { translateY: interpolate(p, [0, 0.4, 1], [0, 210, 48]) },
@@ -346,9 +346,9 @@ export function WelcomeHeroCarousel({
     currentRef.current = currentIndex;
   }, [currentIndex]);
 
-  const handleExitComplete = (index: number) => {
+  const handleExitComplete = useCallback((index: number) => {
     setExitingIndex((active) => (active === index ? null : active));
-  };
+  }, []);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -397,10 +397,10 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     backgroundColor: 'rgba(255,255,255,0.36)',
     shadowColor: CARD_SHADOW,
-    shadowOpacity: 0.56,
-    shadowRadius: 32,
-    shadowOffset: { width: 0, height: 18 },
-    elevation: 16,
+    shadowOpacity: 0.14,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 10 },
+    elevation: 8,
   },
   cardBlur: {
     borderRadius: CARD_RADIUS,

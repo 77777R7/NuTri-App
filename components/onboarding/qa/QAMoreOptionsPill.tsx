@@ -82,7 +82,7 @@ export function QAMoreOptionsPill({
           </Text>
 
           <Animated.View style={chevronStyle}>
-            <ChevronDown size={16} color="#3B6AF7" strokeWidth={2.25} />
+            <ChevronDown size={16} color="#2445B8" strokeWidth={2.25} />
           </Animated.View>
         </View>
       </Pressable>
@@ -142,7 +142,7 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     fontWeight: '600',
     letterSpacing: -0.48,
-    color: '#3B6AF7',
+    color: '#2445B8',
     textAlign: 'center',
   },
 });

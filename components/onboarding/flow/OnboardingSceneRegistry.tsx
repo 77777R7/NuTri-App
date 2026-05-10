@@ -18,6 +18,7 @@ import {
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { BlurView } from 'expo-blur';
+import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
   cancelAnimation,
@@ -35,6 +36,8 @@ import { QAMoreOptionsPill } from '@/components/onboarding/qa/QAMoreOptionsPill'
 import { QAContentLayout } from '@/components/onboarding/qa/QAContentLayout';
 import { QAOptionRow } from '@/components/onboarding/qa/QAOptionRow';
 import { QA_EYEBROW } from '@/components/onboarding/qa/qaTokens';
+import { ProblemIntroScreen } from '@/components/onboarding/problem/ProblemIntroScreen';
+import { SolutionIntroScreen } from '@/components/onboarding/solution/SolutionIntroScreen';
 import { WelcomeHeroCarousel } from '@/components/onboarding/welcome/WelcomeHeroCarousel';
 import { WelcomeHeroGlow } from '@/components/onboarding/welcome/WelcomeHeroGlow';
 import { WelcomePrimaryCTA } from '@/components/onboarding/welcome/WelcomePrimaryCTA';
@@ -84,9 +87,12 @@ const BLUR_PROPS =
   Platform.OS === 'android'
     ? ({ experimentalBlurMethod: 'dimezisBlurView' } as const)
     : ({} as const);
+const WELCOME_SKY_BACKGROUND = require('@/assets/images/auth-sky-background-portrait.png');
 
 export const ONBOARDING_FLOW_STEPS = [
   'welcome',
+  'problem',
+  'solution',
   'data-trust',
   'goals',
   'allergy',
@@ -109,11 +115,13 @@ export type OnboardingFlowStep =
 
 export const ONBOARDING_FLOW_PROGRESS: Partial<Record<OnboardingFlowStep, number>> = {
   welcome: 1,
-  'data-trust': 2,
-  goals: 3,
-  allergy: 4,
-  'plan-preview': 5,
-  'first-stack': 5,
+  problem: 2,
+  solution: 3,
+  'data-trust': 4,
+  goals: 5,
+  allergy: 6,
+  'plan-preview': 7,
+  'first-stack': 7,
 };
 
 type OnboardingFlowSceneProps = {
@@ -139,9 +147,11 @@ export const resolveInitialOnboardingFlowStep = ({
   }
 
   if (progress <= 1) return 'welcome';
-  if (progress === 2) return 'data-trust';
-  if (progress === 3) return 'goals';
-  if (progress === 4) return 'allergy';
+  if (progress === 2) return 'problem';
+  if (progress === 3) return 'solution';
+  if (progress === 4) return 'data-trust';
+  if (progress === 5) return 'goals';
+  if (progress === 6) return 'allergy';
   return 'plan-preview';
 };
 
@@ -271,7 +281,10 @@ function AllergyScrollbar({
   });
 
   const handleLayout = useCallback((event: LayoutChangeEvent) => {
-    setTrackHeight(event.nativeEvent.layout.height);
+    const nextHeight = Math.round(event.nativeEvent.layout.height);
+    setTrackHeight((currentHeight) =>
+      currentHeight === nextHeight ? currentHeight : nextHeight,
+    );
   }, []);
 
   return (
@@ -563,19 +576,20 @@ function WelcomeFlowScene({
       trackOnboardingEvent('onboarding_started', {
         version: 'welcome_cta_root_fix_v1',
       });
-      goToStep('data-trust', 'forward');
+      goToStep('problem', 'forward');
       isNavigatingRef.current = false;
     });
   }, [goToStep, microcopyOpacity, microcopyTranslate]);
 
   return (
     <View style={flowStyles.welcomeRoot}>
-      <LinearGradient
-        colors={[WELCOME_BG_TOP, WELCOME_BG_BOTTOM]}
-        start={{ x: 0.5, y: 0 }}
-        end={{ x: 0.5, y: 1 }}
+      <Image
+        source={WELCOME_SKY_BACKGROUND}
+        contentFit="cover"
+        transition={180}
         style={StyleSheet.absoluteFillObject}
       />
+      <View style={flowStyles.welcomeBackgroundWash} />
 
       <View style={[flowStyles.welcomeScreen, { paddingTop: layoutTokens.welcomeTopPadding }]}>
         <View style={flowStyles.welcomeLogoWrap}>
@@ -626,6 +640,9 @@ function WelcomeFlowScene({
             >
               <Text
                 allowFontScaling={false}
+                adjustsFontSizeToFit
+                minimumFontScale={0.78}
+                numberOfLines={1}
                 style={[
                   flowStyles.welcomeHeadline,
                   {
@@ -646,8 +663,7 @@ function WelcomeFlowScene({
                   },
                 ]}
               >
-                Answer a few quick questions and NuTri will shape the clearest
-                next picks for you.
+                Scan · Fit · Safety
               </Text>
             </View>
           </View>
@@ -698,6 +714,26 @@ function WelcomeFlowScene({
       </View>
     </View>
   );
+}
+
+function ProblemFlowScene({
+  goToStep,
+}: OnboardingFlowSceneProps) {
+  const handleContinue = useCallback(() => {
+    goToStep('solution', 'forward');
+  }, [goToStep]);
+
+  return <ProblemIntroScreen onNext={handleContinue} />;
+}
+
+function SolutionFlowScene({
+  exitTo,
+}: OnboardingFlowSceneProps) {
+  const handleContinue = useCallback(() => {
+    exitTo('/scan/barcode?source=onboarding', 'forward');
+  }, [exitTo]);
+
+  return <SolutionIntroScreen onScan={handleContinue} />;
 }
 
 function DataTrustFlowScene({
@@ -1405,9 +1441,12 @@ function AllergyFlowScene({
           style={flowStyles.allergyMeasureProxy}
         >
           <View
-            onLayout={(event) =>
-              setMoreOptionsHeight(event.nativeEvent.layout.height)
-            }
+            onLayout={(event) => {
+              const nextHeight = Math.round(event.nativeEvent.layout.height);
+              setMoreOptionsHeight((currentHeight) =>
+                currentHeight === nextHeight ? currentHeight : nextHeight,
+              );
+            }}
             style={flowStyles.allergyMoreRowsInner}
           >
             {secondaryOptions.map((option) => (
@@ -1633,6 +1672,10 @@ export function renderOnboardingScene(
   switch (step) {
     case 'welcome':
       return <WelcomeFlowScene {...props} />;
+    case 'problem':
+      return <ProblemFlowScene {...props} />;
+    case 'solution':
+      return <SolutionFlowScene {...props} />;
     case 'data-trust':
       return <DataTrustFlowScene {...props} />;
     case 'goals':
@@ -1655,7 +1698,11 @@ const flowStyles = StyleSheet.create({
   },
   welcomeScreen: {
     flex: 1,
-    backgroundColor: WELCOME_BG,
+    backgroundColor: 'transparent',
+  },
+  welcomeBackgroundWash: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(255,255,255,0.20)',
   },
   welcomeLogoWrap: {
     height: 40,
@@ -1720,6 +1767,7 @@ const flowStyles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
+    top: -6,
   },
   welcomeCopyWrap: {
     alignItems: 'center',
@@ -1730,26 +1778,32 @@ const flowStyles = StyleSheet.create({
     paddingBottom: 0,
   },
   welcomeHeadline: {
+    width: '100%',
+    fontFamily: Platform.select({
+      ios: 'Georgia',
+      android: 'serif',
+      default: 'serif',
+    }),
     fontSize: 44,
     lineHeight: 48,
     fontWeight: '700',
-    letterSpacing: -2,
+    letterSpacing: -1.35,
     textAlign: 'center',
     color: FOREGROUND,
   },
   welcomeHeadlineCompact: {
-    fontSize: 42,
-    lineHeight: 45,
-    letterSpacing: -1.8,
+    fontSize: 39,
+    lineHeight: 44,
+    letterSpacing: -1.2,
   },
   welcomeSubtext: {
     marginTop: 12,
     maxWidth: 312,
     fontSize: 17,
     lineHeight: 25,
-    fontWeight: '500',
+    fontWeight: '600',
     textAlign: 'center',
-    color: MUTED,
+    color: 'rgba(12,21,49,0.48)',
   },
   welcomeSubtextCompact: {
     fontSize: 16,
@@ -1776,7 +1830,7 @@ const flowStyles = StyleSheet.create({
     width: 28,
     height: 6,
     borderRadius: 999,
-    backgroundColor: ACTIVE_BLUE,
+    backgroundColor: FOREGROUND,
   },
   welcomeProgressInactiveDot: {
     width: 7,
@@ -2025,8 +2079,8 @@ const flowStyles = StyleSheet.create({
     left: 0,
     right: 0,
     borderRadius: 999,
-    backgroundColor: 'rgba(59,106,247,0.7)',
-    shadowColor: '#60A5FA',
+    backgroundColor: 'rgba(36,69,184,0.72)',
+    shadowColor: '#2445B8',
     shadowOpacity: 0.4,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 0 },

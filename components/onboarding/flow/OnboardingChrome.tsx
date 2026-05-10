@@ -202,7 +202,7 @@ const styles = StyleSheet.create({
   progressFill: {
     height: QA_PROGRESS_TRACK_HEIGHT,
     borderRadius: 999,
-    backgroundColor: '#4D6EFF',
+    backgroundColor: '#0D0D0D',
   },
 });
 

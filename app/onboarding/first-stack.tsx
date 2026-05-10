@@ -556,7 +556,7 @@ export default function FirstStackScreen() {
 
   const handleContinueSelection = useCallback(
     async (action: FirstStackActionPreference) => {
-      await saveDraft({ firstActionPreference: action }, 5);
+      await saveDraft({ firstActionPreference: action }, 7);
       await recordOverrideEvents([
         {
           id: `first_action_${Date.now()}`,

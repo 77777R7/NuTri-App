@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { BlurView } from 'expo-blur';
+import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
@@ -44,41 +45,22 @@ import { useOnboardingLayoutTokens } from '@/hooks/useOnboardingLayoutTokens';
 import { trackOnboardingEvent } from '@/lib/analytics/onboarding';
 
 const PRIVACY_POLICY_URL = 'https://www.nutri.app/privacy';
+const PRIVACY_ILLUSTRATION = require('@/assets/images/data-trust-privacy-illustration.png');
 
 const BLUR_PROPS =
   Platform.OS === 'android'
     ? ({ experimentalBlurMethod: 'dimezisBlurView' } as const)
     : ({} as const);
 
-const TRUST_ROWS = [
-  {
-    title: 'Private by default',
-    body: 'We only ask for what helps narrow fit.',
-    bodyMaxWidth: 232,
-  },
-  {
-    title: 'Only what sharpens fit',
-    body: 'Your answers shape recommendations, not ads.',
-    bodyMaxWidth: 169,
-  },
-  {
-    title: 'Still in your control',
-    body: 'You can update this later in Profile.',
-    bodyMaxWidth: 215,
-  },
-] as const;
-
 type TrustHeroPanelProps = {
   panelWidth: number;
   panelHeight: number;
-  rowGap: number;
   density: 'regular' | 'compact' | 'tight';
 };
 
 function TrustHeroPanel({
   panelWidth,
   panelHeight,
-  rowGap,
   density,
 }: TrustHeroPanelProps) {
   const pulse = useSharedValue(0);
@@ -140,20 +122,13 @@ function TrustHeroPanel({
   }));
 
   const heroWidth = panelWidth;
-  const heroHeight = panelHeight + 26;
+  const heroHeight = panelHeight + 16;
   const glowCardHeight = Math.round(panelHeight * 0.76);
-  const compactTrust = density !== 'regular';
-  const trustContentPaddingHorizontal = density === 'tight' ? 20 : compactTrust ? 22 : 28;
-  const trustContentPaddingVertical = density === 'tight' ? 18 : compactTrust ? 20 : 28;
-  const trustGuideLeft = density === 'tight' ? 26.5 : compactTrust ? 28.5 : 32.5;
-  const trustGuideInset = density === 'tight' ? 24 : compactTrust ? 28 : 40;
-  const trustRowGapValue = density === 'tight' ? 10 : compactTrust ? 11 : 14;
-  const trustDotOffset = density === 'tight' ? 2 : compactTrust ? 3 : 4;
-  const trustTitleSize = density === 'tight' ? 13.5 : compactTrust ? 14.25 : 15;
-  const trustTitleLineHeight = density === 'tight' ? 16 : compactTrust ? 17 : 18;
-  const trustBodyMarginTop = density === 'tight' ? 3 : compactTrust ? 4 : 6;
-  const trustBodySize = density === 'tight' ? 11.5 : compactTrust ? 12.25 : 13;
-  const trustBodyLineHeight = density === 'tight' ? 14 : compactTrust ? 15.5 : 17;
+  const illustrationHeight = density === 'tight' ? 210 : density === 'compact' ? 242 : 278;
+  const titleSize = density === 'tight' ? 31 : density === 'compact' ? 34 : 38;
+  const titleLineHeight = density === 'tight' ? 34 : density === 'compact' ? 37 : 41;
+  const subtitleSize = density === 'tight' ? 13.5 : density === 'compact' ? 14.5 : 15.5;
+  const subtitleLineHeight = density === 'tight' ? 19 : density === 'compact' ? 20 : 22;
 
   return (
     <Animated.View style={[styles.heroShell, { width: heroWidth, height: heroHeight }, floatStyle]}>
@@ -177,63 +152,39 @@ function TrustHeroPanel({
         <View style={styles.panelBorder} pointerEvents="none" />
         <View style={styles.panelTopSpecular} pointerEvents="none" />
 
-        <View
-          style={[
-            styles.panelContent,
-            {
-              gap: rowGap,
-              paddingHorizontal: trustContentPaddingHorizontal,
-              paddingVertical: trustContentPaddingVertical,
-            },
-          ]}
-        >
-          <View
-            style={[
-              styles.panelGuide,
-              {
-                left: trustGuideLeft,
-                top: trustGuideInset,
-                bottom: trustGuideInset,
-              },
-            ]}
-            pointerEvents="none"
+        <View style={styles.privacyCardContent}>
+          <Image
+            source={PRIVACY_ILLUSTRATION}
+            contentFit="contain"
+            transition={180}
+            style={[styles.privacyIllustration, { height: illustrationHeight }]}
           />
-          {TRUST_ROWS.map((row) => (
-            <View key={row.title} style={[styles.rowItem, { gap: trustRowGapValue }]}>
-              <View style={[styles.dotWrap, { paddingTop: trustDotOffset }]}>
-                <View style={styles.dotShadow} />
-                <View style={styles.dot} />
-              </View>
-              <View style={styles.rowTextWrap}>
-                <Text
-                  allowFontScaling={false}
-                  style={[
-                    styles.rowTitle,
-                    {
-                      fontSize: trustTitleSize,
-                      lineHeight: trustTitleLineHeight,
-                    },
-                  ]}
-                >
-                  {row.title}
-                </Text>
-                <Text
-                  allowFontScaling={false}
-                  style={[
-                    styles.rowBody,
-                    {
-                      maxWidth: row.bodyMaxWidth,
-                      marginTop: trustBodyMarginTop,
-                      fontSize: trustBodySize,
-                      lineHeight: trustBodyLineHeight,
-                    },
-                  ]}
-                >
-                  {row.body}
-                </Text>
-              </View>
-            </View>
-          ))}
+          <View style={styles.privacyCopy}>
+            <Text
+              allowFontScaling={false}
+              style={[
+                styles.privacyTitle,
+                {
+                  fontSize: titleSize,
+                  lineHeight: titleLineHeight,
+                },
+              ]}
+            >
+              We care about{'\n'}your data.
+            </Text>
+            <Text
+              allowFontScaling={false}
+              style={[
+                styles.privacySubtitle,
+                {
+                  fontSize: subtitleSize,
+                  lineHeight: subtitleLineHeight,
+                },
+              ]}
+            >
+              Used only to personalize your results.
+            </Text>
+          </View>
         </View>
       </View>
     </Animated.View>
@@ -376,7 +327,7 @@ export default function DataTrustScreen() {
     }
 
     setDirection('forward');
-    await saveDraft({ onboardingVersion: 'v2' }, 2);
+    await saveDraft({ onboardingVersion: 'v2' }, 4);
     router.replace('/onboarding/goals');
   }, [router, saveDraft, setDirection]);
 
@@ -445,48 +396,8 @@ export default function DataTrustScreen() {
                 <TrustHeroPanel
                   panelWidth={panelWidth}
                   panelHeight={layoutTokens.dataTrustPanelHeight}
-                  rowGap={layoutTokens.dataTrustRowGap}
                   density={layoutTokens.density}
                 />
-              </RNAnimated.View>
-
-              <RNAnimated.View
-                style={[
-                  styles.copyWrap,
-                  isCompactHeight && styles.copyWrapCompact,
-                  { paddingHorizontal: layoutTokens.dataTrustCopyPaddingX },
-                  {
-                    opacity: copyOpacity,
-                    transform: [{ translateY: copyTranslate }],
-                  },
-                ]}
-              >
-                <Text
-                  allowFontScaling={false}
-                  style={[
-                    styles.headline,
-                    isCompactHeight && styles.headlineCompact,
-                    {
-                      fontSize: layoutTokens.dataTrustHeadlineSize,
-                      lineHeight: layoutTokens.dataTrustHeadlineLineHeight,
-                    },
-                  ]}
-                >
-                  Only what helps us{`\n`}narrow what fits.
-                </Text>
-                <Text
-                  allowFontScaling={false}
-                  style={[
-                    styles.subtext,
-                    isCompactHeight && styles.subtextCompact,
-                    {
-                      fontSize: layoutTokens.dataTrustSubtextSize,
-                      lineHeight: layoutTokens.dataTrustSubtextLineHeight,
-                    },
-                  ]}
-                >
-                  A few answers help NuTri shape recommendations and setup. Nothing extra gets in the way.
-                </Text>
               </RNAnimated.View>
             </View>
 
@@ -703,6 +614,37 @@ const styles = StyleSheet.create({
     letterSpacing: -0.08,
     color: MUTED,
   },
+  privacyCardContent: {
+    flex: 1,
+    paddingHorizontal: 18,
+    paddingTop: 16,
+    paddingBottom: 24,
+    justifyContent: 'space-between',
+  },
+  privacyIllustration: {
+    width: '100%',
+  },
+  privacyCopy: {
+    paddingHorizontal: 14,
+    paddingBottom: 2,
+  },
+  privacyTitle: {
+    fontFamily: Platform.select({
+      ios: 'Georgia',
+      android: 'serif',
+      default: 'serif',
+    }),
+    fontWeight: '500',
+    letterSpacing: -1.35,
+    color: FOREGROUND,
+  },
+  privacySubtitle: {
+    marginTop: 14,
+    maxWidth: 292,
+    fontWeight: '500',
+    letterSpacing: -0.16,
+    color: MUTED,
+  },
   copyWrap: {
     alignItems: 'center',
     paddingHorizontal: 36,
@@ -764,7 +706,7 @@ const styles = StyleSheet.create({
     width: 26,
     height: 6,
     borderRadius: 999,
-    backgroundColor: ACTIVE_BLUE,
+    backgroundColor: '#0D0D0D',
   },
   policyLink: {
     position: 'absolute',
@@ -775,7 +717,7 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     fontWeight: '600',
     textAlign: 'center',
-    color: ACTIVE_BLUE,
+    color: 'rgba(12,21,49,0.72)',
   },
   policySlot: {
     width: '100%',

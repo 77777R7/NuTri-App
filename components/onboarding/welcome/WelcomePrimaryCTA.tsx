@@ -7,9 +7,6 @@ import {
   type StyleProp,
   type ViewStyle,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-
-import { CTA_BLUE, CTA_BLUE_EDGE } from './welcomeTokens';
 
 type WelcomePrimaryCTAProps = {
   title: string;
@@ -32,29 +29,6 @@ export function WelcomePrimaryCTA({
       >
         <View style={styles.buttonFrame}>
           <View style={styles.clipShell}>
-            <LinearGradient
-              pointerEvents="none"
-              colors={['#739AF8', CTA_BLUE, '#5B84EE']}
-              locations={[0, 0.52, 1]}
-              start={{ x: 0.14, y: 0.06 }}
-              end={{ x: 0.92, y: 0.96 }}
-              style={styles.fill}
-            />
-
-            <LinearGradient
-              pointerEvents="none"
-              colors={[
-                'rgba(255,255,255,0.18)',
-                'rgba(255,255,255,0.06)',
-                'rgba(255,255,255,0)',
-              ]}
-              locations={[0, 0.56, 1]}
-              start={{ x: 0.5, y: 0 }}
-              end={{ x: 0.5, y: 1 }}
-              style={styles.topCap}
-            />
-            <View style={styles.outerStroke} pointerEvents="none" />
-
             <Text allowFontScaling={false} style={styles.text}>
               {title}
             </Text>
@@ -81,11 +55,11 @@ const styles = StyleSheet.create({
     height: BUTTON_HEIGHT,
     borderRadius: 999,
     backgroundColor: 'transparent',
-    shadowColor: CTA_BLUE_EDGE,
-    shadowOpacity: 0.13,
-    shadowRadius: 11,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 14,
+    shadowColor: '#0D0D0D',
+    shadowOpacity: 0.12,
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 12,
   },
   clipShell: {
     flex: 1,
@@ -93,30 +67,10 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: CTA_BLUE,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.14)',
+    backgroundColor: '#0D0D0D',
   },
   pressed: {
     transform: [{ scale: 0.985 }],
-  },
-  fill: {
-    ...StyleSheet.absoluteFillObject,
-    borderRadius: 999,
-  },
-  topCap: {
-    position: 'absolute',
-    left: 26,
-    right: 26,
-    top: 5,
-    height: 12,
-    borderRadius: 999,
-  },
-  outerStroke: {
-    ...StyleSheet.absoluteFillObject,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.10)',
   },
   text: {
     fontSize: 17,

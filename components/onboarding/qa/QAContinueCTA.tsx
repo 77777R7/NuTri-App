@@ -1,7 +1,6 @@
 import React, { useEffect } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import type { ReactNode } from 'react';
-import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
   Easing,
   interpolate,
@@ -16,7 +15,6 @@ import {
   QA_CTA_STATE_DURATION_MS,
 } from '@/components/onboarding/flow/onboardingMotion';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
-import { QA_ACTIVE_BLUE } from './qaTokens';
 import { useOnboardingLayoutTokens } from '@/hooks/useOnboardingLayoutTokens';
 
 type QAContinueCTAProps = {
@@ -51,12 +49,12 @@ export function QAContinueCTA({
   }, [disabled, enabledProgress, reduceMotion]);
 
   const outerStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(enabledProgress.value, [0, 1], [0.9, 1]),
+    opacity: interpolate(enabledProgress.value, [0, 1], [0.46, 1]),
   }));
 
   const buttonStateStyle = useAnimatedStyle(() => ({
-    shadowOpacity: interpolate(enabledProgress.value, [0, 1], [0.06, 0.18]),
-    shadowRadius: interpolate(enabledProgress.value, [0, 1], [8, 13]),
+    shadowOpacity: interpolate(enabledProgress.value, [0, 1], [0.03, 0.12]),
+    shadowRadius: interpolate(enabledProgress.value, [0, 1], [6, 14]),
     shadowOffset: {
       width: 0,
       height: interpolate(enabledProgress.value, [0, 1], [4, 7]),
@@ -106,52 +104,12 @@ export function QAContinueCTA({
         >
           <View style={styles.clipShell}>
             <Animated.View pointerEvents="none" style={[styles.fill, disabledLayerStyle]}>
-              <LinearGradient
-                colors={['#B7C7EF', '#AEC0EA', '#A6B8E5']}
-                locations={[0, 0.52, 1]}
-                start={{ x: 0.14, y: 0.06 }}
-                end={{ x: 0.92, y: 0.96 }}
-                style={styles.fill}
-              />
+              <View style={styles.disabledFill} />
             </Animated.View>
 
             <Animated.View pointerEvents="none" style={[styles.fill, enabledLayerStyle]}>
-              <LinearGradient
-                colors={['#6F98F8', '#638CEE', '#5782E8']}
-                locations={[0, 0.52, 1]}
-                start={{ x: 0.14, y: 0.06 }}
-                end={{ x: 0.92, y: 0.96 }}
-                style={styles.fill}
-              />
+              <View style={styles.enabledFill} />
             </Animated.View>
-
-            <Animated.View pointerEvents="none" style={[styles.topCap, disabledLayerStyle]}>
-              <LinearGradient
-                colors={[
-                  'rgba(255,255,255,0.12)',
-                  'rgba(255,255,255,0.04)',
-                  'rgba(255,255,255,0)',
-                ]}
-                locations={[0, 0.56, 1]}
-                start={{ x: 0.5, y: 0 }}
-                end={{ x: 0.5, y: 1 }}
-                style={StyleSheet.absoluteFillObject}
-              />
-            </Animated.View>
-            <Animated.View pointerEvents="none" style={[styles.topCap, enabledLayerStyle]}>
-              <LinearGradient
-                colors={[
-                  'rgba(255,255,255,0.22)',
-                  'rgba(255,255,255,0.08)',
-                  'rgba(255,255,255,0)',
-                ]}
-                locations={[0, 0.56, 1]}
-                start={{ x: 0.5, y: 0 }}
-                end={{ x: 0.5, y: 1 }}
-                style={StyleSheet.absoluteFillObject}
-              />
-            </Animated.View>
-            <View style={styles.outerStroke} pointerEvents="none" />
 
             {children ? children : null}
             {showLabel ? (
@@ -187,11 +145,11 @@ const styles = StyleSheet.create({
   buttonFrame: {
     borderRadius: 999,
     backgroundColor: 'transparent',
-    shadowColor: QA_ACTIVE_BLUE,
-    shadowOpacity: 0.15,
-    shadowRadius: 11,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 12,
+    shadowColor: '#0D0D0D',
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 7 },
+    elevation: 10,
   },
   clipShell: {
     flex: 1,
@@ -199,9 +157,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.18)',
-    backgroundColor: QA_ACTIVE_BLUE,
+    backgroundColor: '#0D0D0D',
   },
   pressed: {
     transform: [{ scale: 0.986 }],
@@ -210,19 +166,15 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     borderRadius: 999,
   },
-  topCap: {
-    position: 'absolute',
-    left: 26,
-    right: 26,
-    top: 5,
-    height: 12,
-    borderRadius: 999,
-  },
-  outerStroke: {
+  disabledFill: {
     ...StyleSheet.absoluteFillObject,
     borderRadius: 999,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.12)',
+    backgroundColor: '#0D0D0D',
+  },
+  enabledFill: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: 999,
+    backgroundColor: '#0D0D0D',
   },
   text: {
     fontWeight: '600',

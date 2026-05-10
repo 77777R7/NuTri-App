@@ -20,8 +20,8 @@ export default function GoalsScreen() {
   }, [draft?.goals]);
 
   useEffect(() => {
-    if (progress < 3) {
-      void setProgress(3);
+    if (progress < 5) {
+      void setProgress(5);
     }
   }, [progress, setProgress]);
 

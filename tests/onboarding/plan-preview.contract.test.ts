@@ -32,7 +32,7 @@ test('plan-preview preserves saveDraft step and smart filter payload', () => {
   assert.match(source, /smartFilterConfig:\s*buildSmartFilterConfig\(/);
   assert.match(source, /goals:\s*draft\?\.goals \?\? \[\]/);
   assert.match(source, /preferredTypes:\s*draft\?\.preferredTypes \?\? \[\]/);
-  assert.match(source, /,\s*5,\s*\)/);
+  assert.match(source, /,\s*7,\s*\)/);
 });
 
 test('plan-preview keeps personalized goal recommendation source and interaction state', () => {

@@ -152,7 +152,7 @@ export function PlanPreviewFlowScene({
               preferredTypes: draft?.preferredTypes ?? [],
             }),
           },
-          5,
+          7,
         );
         goToStep('first-stack', 'forward');
         void flushDraft();
@@ -418,7 +418,7 @@ export function FirstStackFlowScene({
         actionKey: action,
       });
 
-      commitDraft({ firstActionPreference: action }, 5);
+      commitDraft({ firstActionPreference: action }, 7);
       await flushDraft();
       await recordOverrideEvents([
         {

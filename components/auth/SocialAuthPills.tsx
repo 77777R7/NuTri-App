@@ -1,12 +1,10 @@
 import React from "react";
-import { Platform, StyleSheet } from "react-native";
-import * as AppleAuthentication from "expo-apple-authentication";
+import { StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
-import { colors } from "@/lib/theme";
+import { GoogleGMark } from "@/components/auth/GoogleGMark";
 import {
   ActivityIndicator,
-  Text,
   TouchableOpacity,
   View,
 } from "@/components/ui/nativewind-primitives";
@@ -46,133 +44,61 @@ export const SocialAuthPills: React.FC<SocialAuthPillsProps> = ({
   };
 
   const googleOpacity = disabled || isGoogleLoading ? styles.disabled : undefined;
-  const fallbackDisabled = disabled || isAppleLoading || Platform.OS !== "ios";
-  const fallbackOpacity = fallbackDisabled ? styles.disabled : undefined;
+  const appleDisabled = disabled || isAppleLoading || !appleAvailable;
+  const appleOpacity = appleDisabled ? styles.disabled : undefined;
 
   return (
-    <View style={[styles.stack, { marginTop: topGap }]}>
+    <View style={[styles.row, { marginTop: topGap }]}>
       <TouchableOpacity
         accessibilityLabel="Sign in with Google"
         accessibilityRole="button"
         activeOpacity={0.9}
         disabled={disabled || isGoogleLoading}
         onPress={handleGooglePress}
-        style={[styles.googleButton, googleOpacity]}
+        style={[styles.iconButton, googleOpacity]}
       >
         {isGoogleLoading ? (
           <ActivityIndicator color="#DB4437" />
         ) : (
-          <>
-            <Ionicons name="logo-google" size={20} color="#DB4437" />
-            <Text style={styles.googleText}>Sign in with Google</Text>
-          </>
+          <GoogleGMark size={30} />
         )}
       </TouchableOpacity>
 
-      {appleAvailable && Platform.OS === "ios" ? (
-        <View style={[styles.appleWrapper, disabled ? styles.disabled : null]}>
-          <AppleAuthentication.AppleAuthenticationButton
-            buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
-            buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
-            cornerRadius={999}
-            onPress={handleApplePress}
-            accessibilityLabel="Sign in with Apple"
-            style={styles.appleNative}
-          />
-          {isAppleLoading ? (
-            <View pointerEvents="none" style={styles.loadingOverlay}>
-              <ActivityIndicator color="#FFFFFF" />
-            </View>
-          ) : null}
-        </View>
-      ) : (
-        <TouchableOpacity
-          accessibilityLabel="Sign in with Apple"
-          accessibilityRole="button"
-          activeOpacity={0.9}
-          disabled={fallbackDisabled}
-          onPress={handleApplePress}
-          style={[styles.appleFallback, fallbackOpacity]}
-        >
-          {isAppleLoading ? (
-            <ActivityIndicator color="#FFFFFF" />
-          ) : (
-            <>
-              <Ionicons name="logo-apple" size={20} color="#FFFFFF" />
-              <Text style={styles.appleText}>Sign in with Apple</Text>
-            </>
-          )}
-        </TouchableOpacity>
-      )}
+      <TouchableOpacity
+        accessibilityLabel="Sign in with Apple"
+        accessibilityRole="button"
+        activeOpacity={0.9}
+        disabled={appleDisabled}
+        onPress={handleApplePress}
+        style={[styles.iconButton, appleOpacity]}
+      >
+        {isAppleLoading ? (
+          <ActivityIndicator color="#111111" />
+        ) : (
+          <Ionicons name="logo-apple" size={32} color="#050505" />
+        )}
+      </TouchableOpacity>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  stack: {
+  row: {
     width: "100%",
     alignItems: "center",
-    gap: 10,
-  },
-  googleButton: {
-    width: "100%",
-    maxWidth: 360,
-    height: 50,
-    borderRadius: 999,
-    backgroundColor: colors.card,
-    borderWidth: 1,
-    borderColor: colors.border,
     flexDirection: "row",
-    alignItems: "center",
+    gap: 30,
     justifyContent: "center",
-    paddingHorizontal: 16,
-    shadowColor: "#000000",
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 3 },
-    elevation: 2,
   },
-  googleText: {
-    marginLeft: 8,
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#374151",
-  },
-  appleWrapper: {
-    width: "100%",
-    maxWidth: 360,
-    height: 50,
-  },
-  appleNative: {
-    width: "100%",
-    maxWidth: 360,
-    height: 50,
-  },
-  appleFallback: {
-    width: "100%",
-    maxWidth: 360,
-    height: 50,
-    borderRadius: 999,
-    backgroundColor: colors.text, // near-black
-    flexDirection: "row",
+  iconButton: {
     alignItems: "center",
+    backgroundColor: "#FFFFFF",
+    borderRadius: 28,
+    height: 56,
     justifyContent: "center",
-    paddingHorizontal: 16,
-  },
-  appleText: {
-    marginLeft: 8,
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#FFFFFF",
+    width: 56,
   },
   disabled: {
-    opacity: 0.6,
-  },
-  loadingOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: 999,
-    backgroundColor: "rgba(0,0,0,0.4)",
+    opacity: 0.35,
   },
 });

@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { StyleSheet } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
@@ -75,6 +76,8 @@ export default function SignupScreen() {
   const [emailConfirmationPending, setEmailConfirmationPending] =
     useState(false);
   const [appleAvailable, setAppleAvailable] = useState(false);
+  const [passwordVisible, setPasswordVisible] = useState(false);
+  const [confirmPasswordVisible, setConfirmPasswordVisible] = useState(false);
 
   const redirectTarget = useMemo(() => {
     const encodedRedirect = typeof params.redirect === "string" ? params.redirect : null;
@@ -195,11 +198,11 @@ export default function SignupScreen() {
       fallbackHref={AUTH_FALLBACK_PATH}
       title="Create account"
       subtitle="Save scans. Personalize results."
-      contentOffsetTop={24}
-      topBarOffset={12}
+      contentOffsetTop={44}
+      topBarOffset={0}
       footer={
         <Text style={styles.footerText}>
-          Already have an account?{" "}
+          Have an account?{" "}
           <Text
             onPress={() => {
               if (redirectTarget) {
@@ -251,7 +254,6 @@ export default function SignupScreen() {
           const { field } = fieldProps;
           return (
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Email</Text>
               <View
                 style={[
                   styles.inputRow,
@@ -265,7 +267,7 @@ export default function SignupScreen() {
                   keyboardType="email-address"
                   onBlur={field.onBlur}
                   onChangeText={field.onChange}
-                  placeholder="you@example.com"
+                  placeholder="Email Address"
                   placeholderTextColor="#9CA3AF"
                   style={styles.input}
                   value={field.value}
@@ -286,7 +288,6 @@ export default function SignupScreen() {
           const { field } = fieldProps;
           return (
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Password</Text>
               <View
                 style={[
                   styles.inputRow,
@@ -297,12 +298,24 @@ export default function SignupScreen() {
                   autoCapitalize="none"
                   onBlur={field.onBlur}
                   onChangeText={field.onChange}
-                  placeholder="Choose a strong password"
+                  placeholder="Password"
                   placeholderTextColor="#9CA3AF"
-                  secureTextEntry
+                  secureTextEntry={!passwordVisible}
                   style={styles.input}
                   value={field.value}
                 />
+                <TouchableOpacity
+                  accessibilityLabel={passwordVisible ? "Hide password" : "Show password"}
+                  accessibilityRole="button"
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  onPress={() => setPasswordVisible(value => !value)}
+                >
+                  <Ionicons
+                    name={passwordVisible ? "eye-off-outline" : "eye-outline"}
+                    size={20}
+                    color="#B5B5B5"
+                  />
+                </TouchableOpacity>
               </View>
               {errors.password?.message ? (
                 <Text style={styles.errorText}>{errors.password.message}</Text>
@@ -319,7 +332,6 @@ export default function SignupScreen() {
           const { field } = fieldProps;
           return (
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Confirm password</Text>
               <View
                 style={[
                   styles.inputRow,
@@ -330,12 +342,24 @@ export default function SignupScreen() {
                   autoCapitalize="none"
                   onBlur={field.onBlur}
                   onChangeText={field.onChange}
-                  placeholder="Re-enter your password"
+                  placeholder="Confirm Password"
                   placeholderTextColor="#9CA3AF"
-                  secureTextEntry
+                  secureTextEntry={!confirmPasswordVisible}
                   style={styles.input}
                   value={field.value}
                 />
+                <TouchableOpacity
+                  accessibilityLabel={confirmPasswordVisible ? "Hide password" : "Show password"}
+                  accessibilityRole="button"
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  onPress={() => setConfirmPasswordVisible(value => !value)}
+                >
+                  <Ionicons
+                    name={confirmPasswordVisible ? "eye-off-outline" : "eye-outline"}
+                    size={20}
+                    color="#B5B5B5"
+                  />
+                </TouchableOpacity>
               </View>
               {errors.confirmPassword?.message ? (
                 <Text style={styles.errorText}>
@@ -356,7 +380,7 @@ export default function SignupScreen() {
         {submitting ? (
           <ActivityIndicator color="#FFFFFF" />
         ) : (
-          <Text style={styles.primaryLabel}>Create account</Text>
+          <Text style={styles.primaryLabel}>SIGN UP</Text>
         )}
       </TouchableOpacity>
 
@@ -372,7 +396,7 @@ export default function SignupScreen() {
         loading={socialLoading}
         onApple={handleAppleSignUp}
         onGoogle={handleGoogleSignUp}
-        topGap={16}
+        topGap={22}
       />
 
     </AuthShell>
@@ -418,28 +442,17 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   inputGroup: {
-    marginBottom: 12,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: "#101828",
-    marginBottom: 8,
+    marginBottom: 16,
   },
   inputRow: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "rgba(255,255,255,0.76)",
-    borderRadius: 18,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 28,
     borderWidth: 1,
-    borderColor: "rgba(15,23,42,0.10)",
-    paddingHorizontal: 16,
-    height: 50,
-    shadowColor: "#9AB7DA",
-    shadowOpacity: 0.10,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 7 },
-    elevation: 2,
+    borderColor: "#E7E7E7",
+    paddingHorizontal: 22,
+    height: 58,
   },
   inputError: {
     borderColor: "#F87171",
@@ -447,7 +460,7 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     height: "100%",
-    fontSize: 16,
+    fontSize: 18,
     color: colors.text,
   },
   errorText: {
@@ -456,17 +469,18 @@ const styles = StyleSheet.create({
     color: "#B91C1C",
   },
   primaryButton: {
-    height: 54,
+    height: 58,
     borderRadius: 999,
-    backgroundColor: "#0D0D0D",
+    backgroundColor: "#050505",
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 16,
+    marginBottom: 28,
   },
   primaryLabel: {
     color: "#FFFFFF",
-    fontSize: 18,
-    fontWeight: "700",
+    fontSize: 16,
+    fontWeight: "800",
+    letterSpacing: 0.6,
   },
   disabled: {
     opacity: 0.7,
@@ -484,16 +498,16 @@ const styles = StyleSheet.create({
   },
   dividerText: {
     fontSize: 13,
-    color: colors.textMuted,
-    fontWeight: "500",
+    color: "rgba(11,16,32,0.56)",
+    fontWeight: "600",
   },
   footerText: {
-    color: colors.textMuted,
-    fontSize: 13,
+    color: "rgba(11,16,32,0.58)",
+    fontSize: 14,
     textAlign: "center",
   },
   footerLink: {
-    color: "#1E40AF",
-    fontWeight: "700",
+    color: "#050505",
+    fontWeight: "800",
   },
 });

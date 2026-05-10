@@ -2,8 +2,6 @@ import React, { useMemo, useState } from 'react';
 import { LayoutChangeEvent, StyleSheet, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 
-import { onboardingPalette } from './theme';
-
 type VerticalGlowScrollbarProps = {
   progress: number;
   visible: boolean;
@@ -28,7 +26,10 @@ export const VerticalGlowScrollbar = ({
   }, [clamped, thumbHeight, trackHeight]);
 
   const handleLayout = (event: LayoutChangeEvent) => {
-    setTrackHeight(event.nativeEvent.layout.height);
+    const nextHeight = Math.round(event.nativeEvent.layout.height);
+    setTrackHeight((currentHeight) =>
+      currentHeight === nextHeight ? currentHeight : nextHeight,
+    );
   };
 
   return (
@@ -53,8 +54,8 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     borderRadius: 999,
-    backgroundColor: 'rgba(79,125,255,0.72)',
-    shadowColor: onboardingPalette.primary,
+    backgroundColor: 'rgba(36,69,184,0.72)',
+    shadowColor: '#2445B8',
     shadowOpacity: 0.4,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 0 },

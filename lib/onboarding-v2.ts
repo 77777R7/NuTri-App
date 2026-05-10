@@ -1,4 +1,4 @@
-export const ONBOARDING_TOTAL_STEPS = 6;
+export const ONBOARDING_TOTAL_STEPS = 8;
 
 export const AGE_RANGE_OPTIONS = [
   '13-17',

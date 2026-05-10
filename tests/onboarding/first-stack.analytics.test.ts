@@ -60,7 +60,7 @@ test('shared flow keeps analytics and override recording coherent for scan manua
 
 test('shared flow awaits persistence before accepted telemetry and navigation', () => {
   assert.match(sharedFlowSource, /async \(action: FirstStackActionPreference\) =>/);
-  assert.match(sharedFlowSource, /commitDraft\(\{ firstActionPreference: action \}, 5\)/);
+  assert.match(sharedFlowSource, /commitDraft\(\{ firstActionPreference: action \}, 7\)/);
   assert.match(sharedFlowSource, /await flushDraft\(\)/);
   assert.match(sharedFlowSource, /await recordOverrideEvents\(\[/);
   assert.match(sharedFlowSource, /trackEvaluatedLoopSave/);

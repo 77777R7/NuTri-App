@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { BlurView } from 'expo-blur';
+import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -30,13 +31,10 @@ import { WelcomeHeroCarousel } from '@/components/onboarding/welcome/WelcomeHero
 import { WelcomeHeroGlow } from '@/components/onboarding/welcome/WelcomeHeroGlow';
 import { WelcomePrimaryCTA } from '@/components/onboarding/welcome/WelcomePrimaryCTA';
 import {
-  ACTIVE_BLUE,
   FOREGROUND,
   INACTIVE_DOT,
   MUTED,
   WELCOME_BG,
-  WELCOME_BG_BOTTOM,
-  WELCOME_BG_TOP,
 } from '@/components/onboarding/welcome/welcomeTokens';
 import { useOnboarding } from '@/contexts/OnboardingContext';
 import { useTransitionDir } from '@/contexts/TransitionContext';
@@ -46,6 +44,7 @@ const BLUR_PROPS =
   Platform.OS === 'android'
     ? ({ experimentalBlurMethod: 'dimezisBlurView' } as const)
     : ({} as const);
+const WELCOME_SKY_BACKGROUND = require('@/assets/images/auth-sky-background-portrait.png');
 
 export default function WelcomeScreen() {
   const router = useRouter();
@@ -54,7 +53,7 @@ export default function WelcomeScreen() {
   const { progress, setProgress } = useOnboarding();
   const { setDirection, consumeDirection } = useTransitionDir();
 
-  const cardWidth = Math.min(width - 56, 320);
+  const cardWidth = Math.min(width - 82, 292);
   const cardHeight = Math.round(cardWidth * 0.553);
   const isCompactHeight = height < 860;
 
@@ -222,17 +221,18 @@ export default function WelcomeScreen() {
     await new Promise((resolve) => setTimeout(resolve, 130));
     await setProgress(2);
     trackOnboardingEvent('onboarding_started', { version: 'welcome_cta_root_fix_v1' });
-    router.replace('/onboarding/data-trust');
+    router.replace('/onboarding/problem');
   }, [microcopyOpacity, microcopyTranslate, router, setDirection, setProgress]);
 
   return (
     <View style={styles.root}>
-      <LinearGradient
-        colors={[WELCOME_BG_TOP, WELCOME_BG_BOTTOM]}
-        start={{ x: 0.5, y: 0 }}
-        end={{ x: 0.5, y: 1 }}
+      <Image
+        source={WELCOME_SKY_BACKGROUND}
+        contentFit="cover"
+        transition={180}
         style={StyleSheet.absoluteFillObject}
       />
+      <View style={styles.backgroundWash} />
 
       <StepSlide direction={enterDir} slideOnFirst mountKey="welcome-cta-root-fix" style={styles.slideWrap}>
         <View style={[styles.screen, { paddingTop: insets.top + 10 }]}>
@@ -298,11 +298,17 @@ export default function WelcomeScreen() {
                   },
                 ]}
               >
-                <Text allowFontScaling={false} style={[styles.headline, isCompactHeight && styles.headlineCompact]}>
+                <Text
+                  allowFontScaling={false}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.78}
+                  numberOfLines={1}
+                  style={[styles.headline, isCompactHeight && styles.headlineCompact]}
+                >
                   Welcome to NuTri
                 </Text>
                 <Text allowFontScaling={false} style={[styles.subtext, isCompactHeight && styles.subtextCompact]}>
-                  Answer a few quick questions and NuTri will shape the clearest next picks for you.
+                  Scan · Fit · Safety
                 </Text>
               </RNAnimated.View>
             </View>
@@ -352,12 +358,16 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: WELCOME_BG,
   },
+  backgroundWash: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(255,255,255,0.20)',
+  },
   slideWrap: {
     flex: 1,
   },
   screen: {
     flex: 1,
-    backgroundColor: WELCOME_BG,
+    backgroundColor: 'transparent',
   },
   logoWrap: {
     height: 40,
@@ -422,6 +432,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
+    top: -6,
   },
   copyWrap: {
     alignItems: 'center',
@@ -432,30 +443,36 @@ const styles = StyleSheet.create({
     paddingBottom: 0,
   },
   headline: {
-    fontSize: 44,
-    lineHeight: 48,
+    fontFamily: Platform.select({
+      ios: 'Georgia',
+      android: 'serif',
+      default: 'serif',
+    }),
+    width: '100%',
+    fontSize: 36,
+    lineHeight: 42,
     fontWeight: '700',
-    letterSpacing: -2,
+    letterSpacing: -1.35,
     textAlign: 'center',
     color: FOREGROUND,
   },
   headlineCompact: {
-    fontSize: 42,
-    lineHeight: 45,
-    letterSpacing: -1.8,
+    fontSize: 34,
+    lineHeight: 40,
+    letterSpacing: -1.2,
   },
   subtext: {
     marginTop: 12,
     maxWidth: 312,
-    fontSize: 17,
-    lineHeight: 25,
-    fontWeight: '500',
+    fontSize: 18,
+    lineHeight: 24,
+    fontWeight: '600',
     textAlign: 'center',
-    color: MUTED,
+    color: 'rgba(12,21,49,0.48)',
   },
   subtextCompact: {
-    fontSize: 16,
-    lineHeight: 24,
+    fontSize: 17,
+    lineHeight: 23,
   },
   footer: {
     paddingHorizontal: 24,
@@ -478,7 +495,7 @@ const styles = StyleSheet.create({
     width: 28,
     height: 6,
     borderRadius: 999,
-    backgroundColor: ACTIVE_BLUE,
+    backgroundColor: FOREGROUND,
   },
   progressInactiveDot: {
     width: 7,

@@ -10,12 +10,11 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
+import { StatusBar } from "expo-status-bar";
 import { useNavigation, type NavigationProp } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { AuthLogoPill } from "@/components/auth/AuthLogoPill";
 import { AUTH_FALLBACK_PATH } from "@/lib/auth-mode";
-import { colors } from "@/lib/theme";
 import { safeBack } from "@/lib/navigation/safeBack";
 import type { Href } from "expo-router";
 
@@ -37,7 +36,6 @@ const SERIF_FONT = Platform.select({
   android: "serif",
   default: "serif",
 });
-
 const AUTH_BACKGROUND = require("@/assets/images/auth-sky-background-portrait.png");
 
 /**
@@ -77,37 +75,26 @@ export function AuthShell({
         style={StyleSheet.absoluteFill}
       />
       <View style={styles.backgroundWash} />
+      <StatusBar style="dark" />
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         style={styles.flex}
       >
         <View style={styles.root}>
-          <View
-            style={[
-              styles.topBar,
-              {
-                height: (insets.top || 12) + topBarOffset + 48,
-                paddingTop: (insets.top || 12) + topBarOffset,
-              },
-            ]}
-          >
-            {showBack ? (
-              <TouchableOpacity
-                onPress={handleBack}
-                style={styles.backButton}
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                accessibilityRole="button"
-                accessibilityLabel="Go back"
-              >
-                <Ionicons name="chevron-back" size={24} color={colors.text} />
-              </TouchableOpacity>
-            ) : (
-              <View style={styles.backPlaceholder} />
-            )}
-            <View style={styles.logoSlot} pointerEvents="none">
-              <AuthLogoPill />
-            </View>
-          </View>
+          {showBack ? (
+            <TouchableOpacity
+              onPress={handleBack}
+              style={[
+                styles.floatingBackButton,
+                { top: Math.max(86, (insets.top || 0) + 28) },
+              ]}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              accessibilityRole="button"
+              accessibilityLabel="Go back"
+            >
+              <Ionicons name="arrow-back" size={25} color="#0B1020" />
+            </TouchableOpacity>
+          ) : null}
 
           <ScrollView
             style={styles.scrollView}
@@ -115,30 +102,27 @@ export function AuthShell({
             contentContainerStyle={[
               styles.content,
               {
-                paddingTop: contentOffsetTop,
-                paddingBottom: Math.max(16, insets.bottom + 8),
+                paddingTop: Math.max(10, (insets.top || 0) + topBarOffset),
+                paddingBottom: Math.max(10, insets.bottom + 10),
               },
             ]}
           >
-            {hero ? <View style={styles.hero}>{hero}</View> : null}
-
-            {title ? <Text style={styles.title}>{title}</Text> : null}
-            {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
-
-            <View style={styles.card}>
-              <View style={styles.cardContent}>{children}</View>
-            </View>
-
-            {footer ? (
-              <View
-                style={[
-                  styles.footer,
-                  { marginBottom: Math.max(16, insets.bottom + 8) },
-                ]}
-              >
-                {footer}
+            <View style={styles.panel}>
+              <View style={[styles.panelTop, { marginBottom: contentOffsetTop }]}>
+                <View style={styles.backPlaceholder} />
               </View>
-            ) : null}
+
+              {hero ? <View style={styles.hero}>{hero}</View> : null}
+
+              {title ? <Text style={styles.title}>{title}</Text> : null}
+              {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
+
+              <View style={styles.card}>
+                <View style={styles.cardContent}>{children}</View>
+              </View>
+
+              {footer ? <View style={styles.footer}>{footer}</View> : null}
+            </View>
           </ScrollView>
         </View>
       </KeyboardAvoidingView>
@@ -153,7 +137,7 @@ const styles = StyleSheet.create({
   },
   backgroundWash: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(255,255,255,0.24)",
+    backgroundColor: "rgba(255,255,255,0.20)",
   },
   flex: {
     flex: 1,
@@ -163,77 +147,77 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
-    backgroundColor: 'transparent',
-  },
-  topBar: {
-    justifyContent: "center",
-    paddingHorizontal: 20,
-    zIndex: 10,
-  },
-  backButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "rgba(255,255,255,0.42)",
-  },
-  backPlaceholder: {
-    width: 44,
-    height: 44,
-  },
-  logoSlot: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    bottom: 0,
-    alignItems: "center",
+    backgroundColor: "transparent",
   },
   content: {
     flexGrow: 1,
-    paddingHorizontal: 20,
+    paddingHorizontal: 14,
     alignItems: "center",
+    justifyContent: "center",
+  },
+  panel: {
+    width: "100%",
+    maxWidth: 390,
+    minHeight: 716,
+    backgroundColor: "transparent",
+    paddingHorizontal: 26,
+    paddingTop: 30,
+    paddingBottom: 24,
+  },
+  floatingBackButton: {
+    position: "absolute",
+    left: 26,
+    zIndex: 20,
+    alignItems: "center",
+    justifyContent: "center",
+    width: 42,
+    height: 42,
+  },
+  backPlaceholder: {
+    width: 42,
+    height: 42,
   },
   hero: {
     alignItems: "center",
     marginTop: 8,
     marginBottom: 20,
   },
+  panelTop: {
+    width: "100%",
+  },
   title: {
     width: "100%",
-    maxWidth: 392,
     fontFamily: SERIF_FONT,
-    fontSize: 37,
-    lineHeight: 44,
-    fontWeight: "500",
+    fontSize: 38,
+    lineHeight: 46,
+    fontWeight: "700",
     color: "#0B1020",
-    letterSpacing: -0.7,
+    letterSpacing: -0.6,
     marginBottom: 8,
-    textAlign: "center",
+    textAlign: "left",
   },
   subtitle: {
     width: "100%",
-    maxWidth: 340,
-    fontSize: 15,
-    lineHeight: 21,
-    color: "#667085",
-    marginBottom: 14,
-    fontWeight: "600",
-    textAlign: "center",
+    fontSize: 22,
+    lineHeight: 28,
+    color: "#333333",
+    marginBottom: 30,
+    fontWeight: "400",
+    textAlign: "left",
   },
   card: {
     alignSelf: "center",
     width: "100%",
-    maxWidth: 392,
   },
   cardContent: {
-    paddingHorizontal: 8,
-    paddingTop: 8,
-    paddingBottom: 8,
+    paddingHorizontal: 0,
+    paddingTop: 0,
+    paddingBottom: 0,
   },
   footer: {
     alignItems: "center",
-    marginTop: 18,
-    paddingHorizontal: 8,
+    marginTop: "auto",
+    paddingTop: 26,
+    paddingHorizontal: 0,
   },
 });

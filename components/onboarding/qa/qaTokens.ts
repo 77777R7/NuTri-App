@@ -6,8 +6,8 @@ export const QA_FOREGROUND = '#0C1531';
 export const QA_MUTED = '#7B879E';
 export const QA_EYEBROW = '#6E7B97';
 
-export const QA_ACTIVE_BLUE = '#4D6EFF';
-export const QA_ACTIVE_BLUE_SOFT = '#6B90F4';
+export const QA_ACTIVE_BLUE = '#0D0D0D';
+export const QA_ACTIVE_BLUE_SOFT = '#2A2A2A';
 export const QA_INACTIVE_DOT = '#D5DAE6';
 
 export const QA_GLASS_WHITE = 'rgba(255,255,255,0.56)';

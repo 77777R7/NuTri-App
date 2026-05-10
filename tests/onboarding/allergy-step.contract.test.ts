@@ -66,7 +66,7 @@ test('allergy QA hero screen preserves saveDraft step and analytics contract', (
   assert.match(allergySource, /avoidItems:\s*normalized\.avoidItems/);
   assert.match(allergySource, /allergyFlags:\s*normalized\.allergyFlags/);
   assert.match(allergySource, /ingredientRestrictions:\s*normalized\.ingredientRestrictions/);
-  assert.match(allergySource, /,\s*4,\s*\)/);
+  assert.match(allergySource, /,\s*6,\s*\)/);
   assert.match(allergySource, /trackOnboardingEvent\('question_answered'/);
   assert.match(allergySource, /question:\s*'avoid_items'/);
   assert.match(allergySource, /answerCount:\s*selected\.length/);

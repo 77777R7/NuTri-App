@@ -37,19 +37,19 @@ export function WelcomeHeroGlow({
   const ambientCy = cardHeight * 0.62;
   const orbCy = cardHeight * 0.74;
 
-  const ambientRadius = useDerivedValue(() => cardWidth * 0.76 + diffuse.value * 10, [cardWidth]);
-  const diffuseRadius = useDerivedValue(() => cardWidth * 0.44 + diffuse.value * 34, [cardWidth]);
-  const bloomRadius = useDerivedValue(() => cardWidth * 0.38 + pulse.value * 16, [cardWidth]);
-  const coreRadius = useDerivedValue(() => cardWidth * 0.26 + pulse.value * 10, [cardWidth]);
+  const ambientRadius = useDerivedValue(() => cardWidth * 0.56 + diffuse.value * 6, [cardWidth]);
+  const diffuseRadius = useDerivedValue(() => cardWidth * 0.4 + diffuse.value * 24, [cardWidth]);
+  const bloomRadius = useDerivedValue(() => cardWidth * 0.34 + pulse.value * 12, [cardWidth]);
+  const coreRadius = useDerivedValue(() => cardWidth * 0.23 + pulse.value * 8, [cardWidth]);
 
-  const ambientOpacity = useDerivedValue(() => 0.5 + (1 - diffuse.value) * 0.06);
-  const diffuseOpacity = useDerivedValue(() => 0.22 * (1 - diffuse.value));
-  const bloomOpacity = useDerivedValue(() => 0.18 + pulse.value * 0.12);
-  const coreOpacity = useDerivedValue(() => 0.26 + pulse.value * 0.14);
+  const ambientOpacity = useDerivedValue(() => 0.035 + (1 - diffuse.value) * 0.01);
+  const diffuseOpacity = useDerivedValue(() => 0.08 * (1 - diffuse.value));
+  const bloomOpacity = useDerivedValue(() => 0.07 + pulse.value * 0.05);
+  const coreOpacity = useDerivedValue(() => 0.1 + pulse.value * 0.06);
 
   const fallbackAnimatedStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(diffuse.value, [0, 1], [0.22, 0.3]),
-    transform: [{ scale: interpolate(pulse.value, [0, 1], [0.985, 1.03]) }],
+    opacity: interpolate(diffuse.value, [0, 1], [0.04, 0.07]),
+    transform: [{ scale: interpolate(pulse.value, [0, 1], [0.99, 1.018]) }],
   }));
 
   if (!Skia) {
@@ -126,13 +126,13 @@ export function WelcomeHeroGlow({
               c={vec(cx, ambientCy)}
               r={ambientRadius}
               colors={[
-                'rgba(230,236,248,0.94)',
-                'rgba(237,242,252,0.52)',
-                'rgba(243,245,251,0)',
+                'rgba(195,224,255,0.38)',
+                'rgba(182,218,255,0.12)',
+                'rgba(182,218,255,0)',
               ]}
-              positions={[0.06, 0.68, 1]}
+              positions={[0.0, 0.6, 1]}
             />
-            <BlurMask blur={46} style="normal" />
+            <BlurMask blur={30} style="normal" />
           </Circle>
         </Group>
 
@@ -197,16 +197,16 @@ const styles = StyleSheet.create({
   fallbackAmbient: {
     position: 'absolute',
     borderRadius: 9999,
-    backgroundColor: 'rgba(231,237,248,0.78)',
+    backgroundColor: 'rgba(183,220,255,0.16)',
   },
   fallbackDiffuse: {
     position: 'absolute',
     borderRadius: 9999,
-    backgroundColor: 'rgba(91,139,255,0.16)',
+    backgroundColor: 'rgba(91,139,255,0.11)',
   },
   fallbackCore: {
     position: 'absolute',
     borderRadius: 9999,
-    backgroundColor: 'rgba(146,196,255,0.24)',
+    backgroundColor: 'rgba(146,196,255,0.16)',
   },
 });

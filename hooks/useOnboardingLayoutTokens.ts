@@ -110,10 +110,10 @@ const DENSITY_VALUES: Record<
     optionLabelLineHeight: 22,
     optionDescriptionSize: 14,
     optionDescriptionLineHeight: 20,
-    welcomeHeadlineSize: 44,
-    welcomeHeadlineLineHeight: 48,
-    welcomeSubtextSize: 17,
-    welcomeSubtextLineHeight: 25,
+    welcomeHeadlineSize: 36,
+    welcomeHeadlineLineHeight: 42,
+    welcomeSubtextSize: 18,
+    welcomeSubtextLineHeight: 24,
     welcomeFooterMinHeight: 166,
     welcomeFooterPaddingTop: 10,
     welcomeProgressMarginBottom: 16,
@@ -126,7 +126,7 @@ const DENSITY_VALUES: Record<
     dataTrustHeroTopPadding: 22,
     dataTrustViewportPaddingBottom: 24,
     dataTrustCopyPaddingX: 36,
-    dataTrustPanelHeight: 236,
+    dataTrustPanelHeight: 468,
     dataTrustRowGap: 24,
     summaryContentPaddingX: 32,
     summaryContentPaddingTop: 24,
@@ -174,9 +174,9 @@ const DENSITY_VALUES: Record<
     optionLabelLineHeight: 21,
     optionDescriptionSize: 13,
     optionDescriptionLineHeight: 18,
-    welcomeHeadlineSize: 40,
-    welcomeHeadlineLineHeight: 42,
-    welcomeSubtextSize: 16,
+    welcomeHeadlineSize: 34,
+    welcomeHeadlineLineHeight: 40,
+    welcomeSubtextSize: 17,
     welcomeSubtextLineHeight: 23,
     welcomeFooterMinHeight: 150,
     welcomeFooterPaddingTop: 8,
@@ -190,7 +190,7 @@ const DENSITY_VALUES: Record<
     dataTrustHeroTopPadding: 14,
     dataTrustViewportPaddingBottom: 18,
     dataTrustCopyPaddingX: 28,
-    dataTrustPanelHeight: 236,
+    dataTrustPanelHeight: 430,
     dataTrustRowGap: 16,
     summaryContentPaddingX: 28,
     summaryContentPaddingTop: 16,
@@ -238,10 +238,10 @@ const DENSITY_VALUES: Record<
     optionLabelLineHeight: 19,
     optionDescriptionSize: 12.5,
     optionDescriptionLineHeight: 16,
-    welcomeHeadlineSize: 36,
+    welcomeHeadlineSize: 32,
     welcomeHeadlineLineHeight: 38,
-    welcomeSubtextSize: 15,
-    welcomeSubtextLineHeight: 21,
+    welcomeSubtextSize: 16,
+    welcomeSubtextLineHeight: 22,
     welcomeFooterMinHeight: 138,
     welcomeFooterPaddingTop: 6,
     welcomeProgressMarginBottom: 12,
@@ -254,7 +254,7 @@ const DENSITY_VALUES: Record<
     dataTrustHeroTopPadding: 8,
     dataTrustViewportPaddingBottom: 12,
     dataTrustCopyPaddingX: 22,
-    dataTrustPanelHeight: 230,
+    dataTrustPanelHeight: 388,
     dataTrustRowGap: 12,
     summaryContentPaddingX: 24,
     summaryContentPaddingTop: 12,
@@ -334,12 +334,12 @@ export const useOnboardingLayoutTokens = () => {
   const sideMargin = Math.max(0, (width - frameWidth) / 2);
   const shellFooterInset = Math.max(insets.bottom - 4, values.shellFooterInsetFloor);
   const welcomeTopPadding = insets.top + values.shellTopOffset;
-  const welcomeCardWidth = clamp(round(Math.min(width - 56, 320) * heroCardScale), 236, 320);
-  const dataTrustPanelInset = density === 'tight' ? 92 : density === 'compact' ? 100 : 110;
+  const welcomeCardWidth = clamp(round(Math.min(width - 82, 292) * heroCardScale), 220, 292);
+  const dataTrustPanelInset = density === 'tight' ? 68 : density === 'compact' ? 60 : 56;
   const dataTrustPanelWidth = clamp(
-    round(Math.min(width - dataTrustPanelInset, 320) * heroCardScale),
-    220,
-    320,
+    round(Math.min(width - dataTrustPanelInset, 340) * heroCardScale),
+    260,
+    340,
   );
   const dataTrustPanelHeight = values.dataTrustPanelHeight;
 

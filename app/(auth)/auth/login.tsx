@@ -200,13 +200,13 @@ export default function LoginScreen() {
       showBack
       fallbackHref={AUTH_FALLBACK_PATH}
       title="Welcome back"
-      subtitle="Scans. Stack. Insights."
-      contentOffsetTop={22}
-      topBarOffset={12}
+      subtitle="Sign in to continue."
+      contentOffsetTop={44}
+      topBarOffset={0}
       footer={
         <View style={styles.footer}>
           <Text style={styles.footerText}>
-            Don’t have an account?{" "}
+            New to NuTri?{" "}
             <Text
               onPress={() => {
                 if (redirectTarget) {
@@ -220,11 +220,8 @@ export default function LoginScreen() {
               }}
               style={styles.footerLink}
             >
-              Create one
+              Create account
             </Text>
-          </Text>
-          <Text style={styles.terms}>
-            <Text style={styles.footerLink}>Terms</Text> · <Text style={styles.footerLink}>Privacy</Text>
           </Text>
         </View>
       }
@@ -248,9 +245,7 @@ export default function LoginScreen() {
         name="email"
         render={({ field }: { field: { onBlur: () => void; onChange: (value: string) => void; value: string } }) => (
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Email</Text>
             <View style={[styles.inputRow, errors.email ? styles.inputError : undefined]}>
-              <Ionicons name="mail-outline" size={20} color="#9CA3AF" />
               <TextInput
                 autoCapitalize="none"
                 autoComplete="email"
@@ -263,7 +258,7 @@ export default function LoginScreen() {
                   setFeedback(null);
                   field.onChange(nextValue);
                 }}
-                placeholder="you@example.com"
+                placeholder="Email Address"
                 placeholderTextColor="#9CA3AF"
                 returnKeyType="next"
                 style={styles.input}
@@ -283,9 +278,7 @@ export default function LoginScreen() {
         name="password"
         render={({ field }: { field: { onBlur: () => void; onChange: (value: string) => void; value: string } }) => (
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Password</Text>
             <View style={[styles.inputRow, errors.password ? styles.inputError : undefined]}>
-              <Ionicons name="lock-closed-outline" size={20} color="#9CA3AF" />
               <TextInput
                 autoCapitalize="none"
                 autoComplete="password"
@@ -300,7 +293,7 @@ export default function LoginScreen() {
                 onSubmitEditing={() => {
                   void onEmailPassword();
                 }}
-                placeholder="Enter your password"
+                placeholder="Password"
                 placeholderTextColor="#9CA3AF"
                 returnKeyType="done"
                 secureTextEntry={!passwordVisible}
@@ -357,7 +350,7 @@ export default function LoginScreen() {
         {submitting ? (
           <ActivityIndicator color="#FFFFFF" />
         ) : (
-          <Text style={styles.primaryLabel}>Sign in</Text>
+          <Text style={styles.primaryLabel}>SIGN IN</Text>
         )}
       </TouchableOpacity>
 
@@ -373,21 +366,13 @@ export default function LoginScreen() {
         loading={socialLoading}
         onApple={onApple}
         onGoogle={onGoogle}
-        topGap={16}
+        topGap={22}
       />
     </AuthShell>
   );
 }
 
 const styles = StyleSheet.create({
-  sectionTitle: {
-    fontSize: 13,
-    fontWeight: "800",
-    color: "#667085",
-    letterSpacing: 1.2,
-    marginBottom: 16,
-    textTransform: "uppercase",
-  },
   feedback: {
     borderRadius: 14,
     backgroundColor: "#FEE2E2",
@@ -418,28 +403,17 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   inputGroup: {
-    marginBottom: 14,
-  },
-  label: {
-    color: "#101828",
-    fontSize: 14,
-    fontWeight: "700",
-    marginBottom: 8,
+    marginBottom: 16,
   },
   inputRow: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "rgba(255,255,255,0.76)",
-    borderRadius: 18,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 28,
     borderWidth: 1,
-    borderColor: "rgba(15,23,42,0.10)",
-    paddingHorizontal: 14,
-    height: 54,
-    shadowColor: "#9AB7DA",
-    shadowOpacity: 0.10,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 7 },
-    elevation: 2,
+    borderColor: "#E7E7E7",
+    paddingHorizontal: 22,
+    height: 58,
   },
   inputError: {
     borderColor: "#F87171",
@@ -447,8 +421,7 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     height: "100%",
-    marginLeft: 10,
-    fontSize: 16,
+    fontSize: 18,
     color: colors.text,
   },
   errorText: {
@@ -460,12 +433,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginTop: 4,
-    marginBottom: 14,
+    marginTop: -2,
+    marginBottom: 20,
   },
   linkPrimary: {
-    color: "#1E40AF",
-    fontWeight: "800",
+    color: "#0B1020",
+    fontWeight: "700",
   },
   linkSecondary: {
     color: "#1E40AF",
@@ -475,17 +448,18 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   primaryButton: {
-    height: 54,
+    height: 58,
     borderRadius: 999,
-    backgroundColor: "#0D0D0D",
+    backgroundColor: "#050505",
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 16,
+    marginBottom: 28,
   },
   primaryLabel: {
     color: "#FFFFFF",
-    fontSize: 18,
-    fontWeight: "700",
+    fontSize: 16,
+    fontWeight: "800",
+    letterSpacing: 0.6,
   },
   disabled: {
     opacity: 0.7,
@@ -503,25 +477,20 @@ const styles = StyleSheet.create({
   },
   dividerText: {
     fontSize: 13,
-    color: colors.textMuted,
-    fontWeight: "500",
+    color: "rgba(11,16,32,0.56)",
+    fontWeight: "600",
   },
   footer: {
     alignItems: "center",
     gap: 8,
   },
   footerText: {
-    color: colors.textMuted,
-    fontSize: 13,
+    color: "rgba(11,16,32,0.58)",
+    fontSize: 14,
     textAlign: "center",
   },
   footerLink: {
-    color: "#1E40AF",
-    fontWeight: "700",
-  },
-  terms: {
-    color: colors.textMuted,
-    fontSize: 12,
-    textAlign: "center",
+    color: "#050505",
+    fontWeight: "800",
   },
 });

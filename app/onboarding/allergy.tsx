@@ -60,7 +60,10 @@ function AllergyScrollbar({
   });
 
   const handleLayout = useCallback((event: LayoutChangeEvent) => {
-    setTrackHeight(event.nativeEvent.layout.height);
+    const nextHeight = Math.round(event.nativeEvent.layout.height);
+    setTrackHeight((currentHeight) =>
+      currentHeight === nextHeight ? currentHeight : nextHeight,
+    );
   }, []);
 
   return (
@@ -141,8 +144,8 @@ export default function AllergyScreen() {
   }, [draft?.allergyFlags, draft?.avoidItems, draft?.ingredientRestrictions, draft?.noKnownAllergies]);
 
   useEffect(() => {
-    if (progress < 4) {
-      void setProgress(4);
+    if (progress < 6) {
+      void setProgress(6);
     }
   }, [progress, setProgress]);
 
@@ -209,7 +212,7 @@ export default function AllergyScreen() {
         ingredientRestrictions: normalized.ingredientRestrictions,
         noKnownAllergies: normalized.noKnownAllergies,
       },
-      4,
+      6,
     );
     trackOnboardingEvent('question_answered', {
       question: 'avoid_items',
@@ -293,9 +296,12 @@ export default function AllergyScreen() {
           style={styles.measureProxy}
         >
           <View
-            onLayout={(event) =>
-              setMoreOptionsHeight(event.nativeEvent.layout.height)
-            }
+            onLayout={(event) => {
+              const nextHeight = Math.round(event.nativeEvent.layout.height);
+              setMoreOptionsHeight((currentHeight) =>
+                currentHeight === nextHeight ? currentHeight : nextHeight,
+              );
+            }}
             style={styles.moreRowsInner}
           >
             {secondaryOptions.map((option) => (
@@ -373,8 +379,8 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     borderRadius: 999,
-    backgroundColor: 'rgba(59,106,247,0.7)',
-    shadowColor: '#60A5FA',
+    backgroundColor: 'rgba(36,69,184,0.72)',
+    shadowColor: '#2445B8',
     shadowOpacity: 0.4,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 0 },

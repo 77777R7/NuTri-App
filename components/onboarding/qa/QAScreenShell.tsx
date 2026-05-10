@@ -34,6 +34,7 @@ import {
   QA_BG,
   QA_BG_BOTTOM,
   QA_BG_TOP,
+  QA_ACTIVE_BLUE,
   QA_EYEBROW,
   QA_FOREGROUND,
   QA_GLASS_BORDER,
@@ -534,7 +535,7 @@ const styles = StyleSheet.create({
   progressFill: {
     height: QA_PROGRESS_TRACK_HEIGHT,
     borderRadius: 999,
-    backgroundColor: '#4D6EFF',
+    backgroundColor: QA_ACTIVE_BLUE,
   },
   headerSpacer: {
     width: 40,
@@ -556,8 +557,9 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
   title: {
+    fontFamily: 'Georgia',
     fontWeight: '700',
-    letterSpacing: -1.6,
+    letterSpacing: -1.1,
     color: QA_FOREGROUND,
   },
   subtitle: {

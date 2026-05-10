@@ -984,7 +984,7 @@ export default function PlanPreviewScreen() {
           preferredTypes: draft?.preferredTypes ?? [],
         }),
       },
-      5,
+      7,
     );
     setDirection('forward');
     router.replace('/onboarding/first-stack');
