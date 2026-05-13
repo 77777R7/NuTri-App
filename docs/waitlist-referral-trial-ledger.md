@@ -7,7 +7,7 @@ Supabase is the only source of truth for NuTri waitlist signup, referral, and tr
 - `waitlist_signups`: one row per signup email, with its short `referral_code`, UTM JSON, beehiiv subscription metadata, and signup status.
 - `waitlist_referrals`: one confirmed referral credit per referred email. Self-referrals are blocked and duplicate referral credit is prevented by unique constraints.
 - `waitlist_trial_bonuses`: one trial preview/activation row per email.
-- `waitlist_referral_milestone_events`: idempotent outbox rows for beehiiv milestone emails.
+- `waitlist_referral_milestone_events`: idempotent outbox rows for beehiiv milestone emails. Pending events can be claimed later so an early missing beehiiv automation config does not permanently lose the notification.
 
 ## Referral Flow
 
@@ -17,6 +17,7 @@ Supabase is the only source of truth for NuTri waitlist signup, referral, and tr
 4. B opens A's link and joins.
 5. `/api/waitlist` rejects self-referral, writes B, inserts one confirmed `waitlist_referrals` row, recalculates A's `referred_count`, and updates A's trial bonus row.
 6. If A crosses 1, 2, or 3 confirmed friends, Supabase creates a milestone outbox event. The website API then asks beehiiv to send the milestone email.
+7. The website API also claims a small batch of pending milestone events after each configured signup request, so queued notifications can be recovered once the beehiiv automation is connected.
 
 ## Trial Rules
 

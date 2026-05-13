@@ -30,6 +30,9 @@ const waitlistTrialMigrationSource = readFileSync(
 ) + '\n' + readFileSync(
   new URL('../../supabase/migrations/20260513070422_waitlist_referral_ledger.sql', import.meta.url),
   'utf8',
+) + '\n' + readFileSync(
+  new URL('../../supabase/migrations/20260513080308_waitlist_referral_pending_milestone_events.sql', import.meta.url),
+  'utf8',
 );
 
 test('second normal scan is gated before barcode capture starts', () => {
@@ -129,10 +132,12 @@ test('waitlist trial bonuses use Supabase ledger preview plus explicit paywall a
   assert.match(waitlistTrialMigrationSource, /create or replace function public\.get_waitlist_trial_bonus_preview/);
   assert.match(waitlistTrialMigrationSource, /create or replace function private\.activate_waitlist_trial_bonus_impl/);
   assert.match(waitlistTrialMigrationSource, /create or replace function public\.activate_waitlist_trial_bonus/);
+  assert.match(waitlistTrialMigrationSource, /create or replace function public\.claim_waitlist_referral_milestone_events/);
   assert.match(waitlistTrialMigrationSource, /waitlist_referrals_no_self_referral/);
   assert.match(waitlistTrialMigrationSource, /waitlist_referrals_referred_confirmed_uidx/);
   assert.match(waitlistTrialMigrationSource, /security definer/);
   assert.match(waitlistTrialMigrationSource, /grant execute on function public\.register_waitlist_signup[\s\S]+to service_role/);
+  assert.match(waitlistTrialMigrationSource, /grant execute on function public\.claim_waitlist_referral_milestone_events[\s\S]+to service_role/);
   assert.match(waitlistTrialMigrationSource, /revoke all on function private\.activate_waitlist_trial_bonus_impl\(\) from public/);
   assert.match(waitlistTrialMigrationSource, /compute_waitlist_bonus_days/);
   assert.match(waitlistTrialMigrationSource, /waitlist_trial_bonuses_select_own_email/);
