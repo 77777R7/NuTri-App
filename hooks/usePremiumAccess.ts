@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOnboarding } from '@/contexts/OnboardingContext';
 import { useSubscription } from '@/contexts/SubscriptionContext';
+import { useWaitlistTrialBonus } from '@/hooks/useWaitlistTrialBonus';
 import { supabase } from '@/lib/supabase';
 
 type PremiumAccessSource =
@@ -10,6 +11,7 @@ type PremiumAccessSource =
   | 'subscription_sdk'
   | 'session_metadata'
   | 'remote_user_profile'
+  | 'waitlist_trial'
   | 'local_trial'
   | 'none';
 
@@ -61,6 +63,11 @@ export const usePremiumAccess = (): PremiumAccessState => {
   const { user, loading: authLoading } = useAuth();
   const { trial, loading: onboardingLoading } = useOnboarding();
   const subscription = useSubscription();
+  const {
+    active: waitlistTrialActive,
+    loading: waitlistTrialLoading,
+    refresh: refreshWaitlistTrial,
+  } = useWaitlistTrialBonus();
   const [remoteStatus, setRemoteStatus] = useState<string | null>(null);
   const [remoteTrialStatus, setRemoteTrialStatus] = useState<string | null>(null);
   const [remoteLoading, setRemoteLoading] = useState(false);
@@ -167,6 +174,18 @@ export const usePremiumAccess = (): PremiumAccessState => {
       };
     }
 
+    if (waitlistTrialActive) {
+      return {
+        isPremium: true,
+        loading: authLoading || onboardingLoading || remoteLoading || subscription.loading || waitlistTrialLoading,
+        source: 'waitlist_trial',
+        status: 'waitlist_trialing',
+        refresh: async () => {
+          await Promise.all([refresh(), refreshWaitlistTrial()]);
+        },
+      };
+    }
+
     const localStatus = normalizeStatus(trial.status);
     if (hasPremiumFromStatus(localStatus)) {
       return {
@@ -180,10 +199,12 @@ export const usePremiumAccess = (): PremiumAccessState => {
 
     return {
       isPremium: false,
-      loading: authLoading || onboardingLoading || remoteLoading || subscription.loading,
+      loading: authLoading || onboardingLoading || remoteLoading || subscription.loading || waitlistTrialLoading,
       source: 'none',
       status: subscription.entitlementStatus ?? remoteStatus ?? remoteTrialStatus ?? sessionStatus ?? localStatus,
-      refresh,
+      refresh: async () => {
+        await Promise.all([refresh(), refreshWaitlistTrial()]);
+      },
     };
   }, [
     authLoading,
@@ -198,6 +219,9 @@ export const usePremiumAccess = (): PremiumAccessState => {
     subscription.testOverride,
     trial.status,
     user,
+    waitlistTrialActive,
+    waitlistTrialLoading,
+    refreshWaitlistTrial,
   ]);
 
   return value;

@@ -1,78 +1,210 @@
 import { StatusBar } from 'expo-status-bar';
 import { router } from 'expo-router';
-import { Check, ChevronLeft, Lock, Sparkles } from 'lucide-react-native';
+import { Check, ChevronLeft } from 'lucide-react-native';
 import React, { useEffect, useMemo, useRef } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image } from 'expo-image';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { ResponsiveScreen } from '@/components/common/ResponsiveScreen';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { useFirstScanReveal } from '@/hooks/useFirstScanReveal';
+import { useWaitlistTrialBonus } from '@/hooks/useWaitlistTrialBonus';
+import { openPrivacyPolicy, openTermsOfService } from '@/lib/legalLinks';
+import type { OfficialPaywallSource } from '@/lib/pro/featureGates';
+import { buildWaitlistTrialSummary } from '@/lib/pro/waitlistTrialBonus';
 
 type OfficialPaywallPageProps = {
-  source: 'first_scan_result' | 'score' | 'comparison' | 'overview' | 'science' | 'usage' | 'safety';
+  source: OfficialPaywallSource;
   scanId?: string | null;
   returnTo?: string | null;
   onClose?: () => void;
 };
 
-const getCopy = (source: OfficialPaywallPageProps['source']) => {
-  switch (source) {
-    case 'first_scan_result':
-      return {
-        title: 'Know if this supplement fits you before you buy',
-        body: 'You just saw the full first-scan premium analysis. Keep personalized fit, ingredient science, and better alternatives unlocked.',
-      };
-    case 'score':
-      return {
-        title: 'Unlock the full NuTri Score',
-        body: 'Open the complete score breakdown, decision details, and product fit before you buy.',
-      };
-    case 'comparison':
-      return {
-        title: 'Unlock Better Alternatives',
-        body: 'Compare this product with stronger options and see whether a better fit already exists.',
-      };
-    case 'overview':
-      return {
-        title: 'Unlock Product Overview',
-        body: 'See what this supplement is, what it provides, and the key gaps to check before you commit.',
-      };
-    case 'science':
-      return {
-        title: 'Unlock Science & Ingredients',
-        body: 'Read ingredient-by-ingredient science, dose context, and the formal evidence behind the formula.',
-      };
-    case 'usage':
-      return {
-        title: 'Unlock Usage Guidance',
-        body: 'Get product-specific routine guidance, best-fit timing, and the next steps for this supplement.',
-      };
-    case 'safety':
-      return {
-        title: 'Unlock Safety Notes',
-        body: 'Review warnings, upper-limit context, and the watch-outs that matter before adding this product.',
-      };
-    default:
-      return {
-        title: 'Unlock Premium',
-        body: 'Get personalized fit, ingredient science, and better alternatives in one place.',
-      };
-  }
+type FeatureCopy = {
+  title: string;
+  body: string;
+  titlePrefix?: string;
+  titleSuffix?: string;
 };
 
+type PaywallCopy = {
+  headline: string;
+  subheadline: string;
+  features: FeatureCopy[];
+};
+
+const SERIF_FONT = Platform.select({
+  ios: 'Georgia',
+  android: 'serif',
+  default: 'serif',
+});
+
+const PAYWALL_BACKGROUND = require('@/assets/images/paywall/paywall-sky-background.png');
+
+const RESULT_BREAKDOWN_FEATURES: FeatureCopy[] = [
+  {
+    title: 'Full NuTri Score',
+    body: 'See why a product scores well, where evidence is missing, and what needs a second look.',
+  },
+  {
+    title: 'Ingredient Deep Dive',
+    body: 'Open Science & Ingredients, Practical Usage, and Safety notes for this scan.',
+  },
+  {
+    title: 'Personalized Fit Checks',
+    body: 'Use your goals and allergies to understand fit before adding it to your routine.',
+  },
+  {
+    title: 'More Scan Results',
+    body: 'Go beyond your first free result and check more supplements before you buy.',
+  },
+];
+
+const CORE_PRO_FEATURES: FeatureCopy[] = [
+  {
+    title: 'More Supplement Scans',
+    body: 'Go beyond your first free scan and check more supplements before you buy.',
+  },
+  {
+    title: 'Product Search',
+    body: 'Open the supplement database and inspect searchable product results.',
+  },
+  {
+    title: 'More Saved Supplements',
+    body: 'Keep more than one supplement in My Saved for check-ins and stack review.',
+  },
+  {
+    title: 'Saved Stack Safety',
+    body: 'Check repeated ingredients and dose overlaps when labels include usable dose data.',
+  },
+];
+
+const STACK_SAFETY_FEATURES: FeatureCopy[] = [
+  {
+    title: 'Saved Stack Safety',
+    body: 'Check repeated ingredients across your stack, dose overlaps, and safety signals when labels include usable dose data.',
+  },
+  {
+    title: 'Duplicate Ingredients',
+    body: 'Spot repeated actives across saved supplements before they quietly stack up.',
+  },
+  {
+    title: 'Dose Context',
+    body: 'See adult upper-limit context when labels include enough usable dose data.',
+  },
+];
+
+const getPaywallCopy = (source: OfficialPaywallPageProps['source']): PaywallCopy => {
+  if (source === 'stack_safety') {
+    return {
+      headline: 'Protect your saved stack.',
+      subheadline: 'Unlock stack-level checks for repeated ingredients and dose overlaps.',
+      features: STACK_SAFETY_FEATURES,
+    };
+  }
+
+  if (source === 'scan_limit') {
+    return {
+      headline: 'Scan more supplements with Pro.',
+      subheadline: 'Your first supplement scan is free. Pro unlocks additional scans before you buy.',
+      features: CORE_PRO_FEATURES,
+    };
+  }
+
+  if (source === 'product_search') {
+    return {
+      headline: 'Search the supplement database with Pro.',
+      subheadline: 'Find products by supplement, brand, or goal and open the results that matter.',
+      features: CORE_PRO_FEATURES,
+    };
+  }
+
+  if (source === 'saved_supplement_limit') {
+    return {
+      headline: 'Save more supplements with Pro.',
+      subheadline: 'Free users can keep one supplement. Pro unlocks a fuller saved stack.',
+      features: CORE_PRO_FEATURES,
+    };
+  }
+
+  if (source === 'score') {
+    return {
+      headline: 'Unlock the full NuTri Score.',
+      subheadline: 'See the score breakdown, evidence gaps, and decision details for this scan.',
+      features: RESULT_BREAKDOWN_FEATURES,
+    };
+  }
+
+  if (source === 'science') {
+    return {
+      headline: 'Unlock the ingredient deep dive.',
+      subheadline: 'Open the ingredient science, form context, and practical evidence behind this formula.',
+      features: RESULT_BREAKDOWN_FEATURES,
+    };
+  }
+
+  if (source === 'usage') {
+    return {
+      headline: 'Unlock practical usage context.',
+      subheadline: 'See routine timing, label directions, and what to check before using this supplement.',
+      features: RESULT_BREAKDOWN_FEATURES,
+    };
+  }
+
+  if (source === 'safety') {
+    return {
+      headline: 'Unlock safety context.',
+      subheadline: 'Review label warnings, upper-limit context, and supplement-specific watch-outs.',
+      features: RESULT_BREAKDOWN_FEATURES,
+    };
+  }
+
+  if (source === 'overview') {
+    return {
+      headline: 'Unlock the full product breakdown.',
+      subheadline: 'See what the supplement provides, what is missing, and where the label needs a closer look.',
+      features: RESULT_BREAKDOWN_FEATURES,
+    };
+  }
+
+  return {
+    headline: 'Unlock full scan breakdowns and saved-stack safety checks.',
+    subheadline: 'Keep checking supplements after your first free scan, search the database, and build a saved stack.',
+    features: CORE_PRO_FEATURES,
+  };
+};
+
+const normalizeAnnualMeta = (value: string | null) => {
+  if (!value) return '$2.50/mo';
+  return value.replace('/month', '/mo').replace('/mo.', '/mo');
+};
+
+const annualTrialLine = (annualPrice: string, annualMeta: string | null) => (
+  `${annualPrice} / Year · About ${normalizeAnnualMeta(annualMeta)}`
+);
+
 export function OfficialPaywallPage({ source, scanId = null, returnTo = null, onClose }: OfficialPaywallPageProps) {
+  const insets = useSafeAreaInsets();
   const { session, setPostAuthRedirect } = useAuth();
   const subscription = useSubscription();
+  const waitlistTrial = useWaitlistTrialBonus();
   const firstScanReveal = useFirstScanReveal();
   const impressionLoggedRef = useRef(false);
 
   const annualProduct = subscription.annualPackage?.product ?? null;
   const monthlyProduct = subscription.monthlyPackage?.product ?? null;
-  const annualPriceLine = annualProduct?.priceString ?? '$59.99/year';
-  const monthlyPriceLine = monthlyProduct?.priceString ?? '$10.99/month';
-  const annualMetaLine = annualProduct?.pricePerMonthString ?? '$5.00/month';
-  const copy = useMemo(() => getCopy(source), [source]);
+  const annualPriceLine = annualProduct?.priceString ?? '$29.99';
+  const monthlyPriceLine = monthlyProduct?.priceString ?? '$4.99';
+  const annualMetaLine = annualProduct?.pricePerMonthString ?? null;
+  const monthlyPlanMeta = `${monthlyPriceLine} / Month`;
+  const copy = useMemo(() => getPaywallCopy(source), [source]);
+  const annualTrialEligible = Boolean(annualProduct?.introPrice) && subscription.trialEligibility === 'eligible';
+  const waitlistTrialActive = Boolean(waitlistTrial.active && waitlistTrial.bonus);
+  const waitlistTrialSummary = waitlistTrial.bonus ? buildWaitlistTrialSummary(waitlistTrial.bonus) : null;
+  const annualPlanMeta = waitlistTrialActive && waitlistTrialSummary
+    ? waitlistTrialSummary
+    : annualTrialLine(annualPriceLine, annualMetaLine);
 
   useEffect(() => {
     if (source !== 'first_scan_result' || !scanId || impressionLoggedRef.current) {
@@ -84,74 +216,42 @@ export function OfficialPaywallPage({ source, scanId = null, returnTo = null, on
   }, [firstScanReveal, scanId, source]);
 
   const primaryLabel = useMemo(() => {
-    if (!session?.user) {
-      return 'Sign in to continue';
-    }
-    if (subscription.uiPreviewMode) {
-      return 'Preview Premium';
-    }
     if (subscription.purchaseBusy) {
       return 'Starting purchase...';
     }
-
-    const purchaseProduct = annualProduct ?? subscription.primaryPackage?.product ?? null;
-    if (purchaseProduct?.introPrice && subscription.trialEligibility === 'eligible') {
-      return 'Start Free Trial';
+    if (waitlistTrialActive && waitlistTrial.bonus) {
+      return `Continue with ${waitlistTrial.bonus.totalTrialDays}-day trial`;
     }
-    if (purchaseProduct?.priceString) {
-      return `Continue for ${purchaseProduct.priceString}`;
-    }
-    if (subscription.loading) {
+    if (subscription.loading && session?.user && !subscription.uiPreviewMode) {
       return 'Loading plans...';
     }
-    return 'Get Premium';
+    return annualTrialEligible ? 'Start 7-day free trial' : 'Continue yearly';
   }, [
-    annualProduct,
+    annualTrialEligible,
     session?.user,
     subscription.loading,
-    subscription.primaryPackage,
     subscription.purchaseBusy,
-    subscription.trialEligibility,
     subscription.uiPreviewMode,
+    waitlistTrial.bonus,
+    waitlistTrialActive,
   ]);
 
-  const supportingText = useMemo(() => {
-    if (!session?.user) {
-      return 'Sign in first so we can attach Premium access to your account.';
-    }
-    if (subscription.uiPreviewMode) {
-      return 'UI preview mode. Purchase buttons stay local until store keys are configured.';
-    }
-    if (subscription.previewMode) {
-      return 'Real purchases work in a development build or production build.';
-    }
-    const purchaseProduct = annualProduct ?? subscription.primaryPackage?.product ?? null;
-    if (!purchaseProduct) {
-      return subscription.loading ? 'Loading the latest plans from the store.' : 'Plans are temporarily unavailable.';
-    }
-    if (purchaseProduct.introPrice && subscription.trialEligibility === 'eligible' && purchaseProduct.priceString) {
-      return `Free trial available, then ${purchaseProduct.priceString}.`;
-    }
-    return purchaseProduct.priceString ?? null;
-  }, [
-    annualProduct,
-    session?.user,
-    subscription.loading,
-    subscription.previewMode,
-    subscription.primaryPackage,
-    subscription.trialEligibility,
-    subscription.uiPreviewMode,
-  ]);
+  const primaryDisabled =
+    subscription.purchaseBusy
+    || (!waitlistTrialActive && Boolean(session?.user) && !subscription.uiPreviewMode && (!subscription.primaryPackage || subscription.loading));
+  const monthlyDisabled =
+    subscription.purchaseBusy
+    || (Boolean(session?.user) && !subscription.uiPreviewMode && (!subscription.monthlyPackage || subscription.loading));
 
   const footerText = useMemo(() => {
-    if (subscription.uiPreviewMode) {
-      return '7-day free trial, then $59.99/year. Auto-renews until canceled. Cancel anytime in App Store or Google Play settings.';
+    if (waitlistTrialActive && waitlistTrial.bonus) {
+      return `Your waitlist trial is active until ${new Date(waitlistTrial.bonus.trialExpiresAt ?? '').toLocaleDateString()}. No payment is collected for this waitlist trial.`;
     }
-    if (annualProduct?.introPrice && subscription.trialEligibility === 'eligible') {
-      return `${annualPriceLine}. Trial eligibility is shown before purchase. Auto-renews until canceled.`;
+    if (annualTrialEligible) {
+      return `7-day free trial, then ${annualPriceLine} per year. Auto-renews until canceled. Cancel anytime in App Store or Google Play subscription settings.`;
     }
-    return `${annualPriceLine}. Auto-renews until canceled. Cancel anytime in App Store or Google Play settings.`;
-  }, [annualPriceLine, annualProduct?.introPrice, subscription.trialEligibility, subscription.uiPreviewMode]);
+    return `${annualPriceLine} per year or ${monthlyPriceLine} per month. Auto-renews until canceled. Cancel anytime in App Store or Google Play subscription settings.`;
+  }, [annualPriceLine, annualTrialEligible, monthlyPriceLine, waitlistTrial.bonus, waitlistTrialActive]);
 
   const handleClose = () => {
     subscription.clearError();
@@ -187,6 +287,11 @@ export function OfficialPaywallPage({ source, scanId = null, returnTo = null, on
       return;
     }
 
+    if (waitlistTrialActive) {
+      handleClose();
+      return;
+    }
+
     const result = await subscription.purchasePrimaryPackage();
     if (result.ok) {
       if (source === 'first_scan_result' && scanId) {
@@ -196,7 +301,54 @@ export function OfficialPaywallPage({ source, scanId = null, returnTo = null, on
     }
   };
 
+  const handleMonthlyPress = async () => {
+    if (!session?.user) {
+      const query = new URLSearchParams({
+        source,
+        ...(scanId ? { scanId } : {}),
+        ...(returnTo ? { returnTo } : {}),
+      });
+      setPostAuthRedirect(`/paywall/official?${query.toString()}`);
+      subscription.clearError();
+      router.push('/auth/login');
+      return;
+    }
+
+    if (subscription.uiPreviewMode) {
+      if (source === 'first_scan_result' && scanId) {
+        await firstScanReveal.markConverted(scanId);
+      }
+      handleClose();
+      return;
+    }
+
+    if (waitlistTrialActive) {
+      handleClose();
+      return;
+    }
+
+    const result = await subscription.purchaseMonthlyPackage();
+    if (result.ok) {
+      if (source === 'first_scan_result' && scanId) {
+        await firstScanReveal.markConverted(scanId);
+      }
+      handleClose();
+    }
+  };
+
   const handleRestorePress = async () => {
+    if (!session?.user) {
+      const query = new URLSearchParams({
+        source,
+        ...(scanId ? { scanId } : {}),
+        ...(returnTo ? { returnTo } : {}),
+      });
+      setPostAuthRedirect(`/paywall/official?${query.toString()}`);
+      subscription.clearError();
+      router.push('/auth/login');
+      return;
+    }
+
     if (subscription.uiPreviewMode) {
       return;
     }
@@ -210,381 +362,436 @@ export function OfficialPaywallPage({ source, scanId = null, returnTo = null, on
     }
   };
 
-  return (
-    <ResponsiveScreen style={styles.screen} contentStyle={styles.content} gutter={0}>
-      <StatusBar style="dark" />
+  const renderFeatureTitle = (feature: FeatureCopy) => {
+    if (!feature.titleSuffix) {
+      return <Text style={styles.featureTitle}>{feature.title}</Text>;
+    }
 
-      <View style={styles.header}>
-        <Pressable style={styles.headerButton} onPress={handleClose}>
-          <ChevronLeft size={20} color="#0F172A" />
+    return (
+      <Text style={styles.featureTitle}>
+        {feature.title}{' '}
+        <Text style={styles.featureAmpersand}>&</Text>
+        {' '}{feature.titleSuffix}
+      </Text>
+    );
+  };
+
+  return (
+    <View style={styles.screen}>
+      <StatusBar style="light" />
+      <View style={styles.headerArt}>
+        <Image
+          source={PAYWALL_BACKGROUND}
+          contentFit="cover"
+          transition={180}
+          style={StyleSheet.absoluteFill}
+        />
+        <Pressable
+          style={[styles.closeButton, { top: Math.max(insets.top + 10, 48) }]}
+          onPress={handleClose}
+          hitSlop={10}
+          accessibilityRole="button"
+          accessibilityLabel="Close paywall"
+        >
+          <ChevronLeft size={22} color="#FFFFFF" strokeWidth={2.8} />
         </Pressable>
-        <View style={styles.headerBadge}>
-          <Lock size={14} color="#0F172A" />
-          <Text style={styles.headerBadgeText}>Premium</Text>
-        </View>
-        <View style={styles.headerSpacer} />
+        <Text style={styles.proTitle}>NuTri Pro</Text>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        <View style={styles.hero}>
-          <View style={styles.heroBadge}>
-            <Sparkles size={14} color="#1D4ED8" />
-            <Text style={styles.heroBadgeText}>Official Paywall</Text>
-          </View>
-          <Text style={styles.title}>{copy.title}</Text>
-          <Text style={styles.body}>{copy.body}</Text>
-        </View>
-
-        {source === 'first_scan_result' ? (
-          <View style={styles.previewCard}>
-            <Text style={styles.previewEyebrow}>First Scan Reveal</Text>
-            <Text style={styles.previewTitle}>Your first scan showed the full premium result.</Text>
-            <Text style={styles.previewBody}>
-              If you continue without subscribing, that one-time reveal is spent and future access falls back to the locked version.
-            </Text>
-          </View>
-        ) : null}
-
-        <View style={styles.benefitList}>
-          {[
-            'Personalized fit for your goals',
-            'Ingredient science that is easier to trust',
-            'Compare with better alternatives before checkout',
-          ].map(item => (
-            <View key={item} style={styles.benefitRow}>
-              <View style={styles.benefitIconWrap}>
-                <Check size={14} color="#FFFFFF" />
-              </View>
-              <Text style={styles.benefitText}>{item}</Text>
-            </View>
-          ))}
-        </View>
-
-        <View style={styles.planList}>
-          <View style={[styles.planCard, styles.planCardSelected]}>
-            <View style={styles.planHeader}>
-              <Text style={[styles.planTitle, styles.planTitleSelected]}>Annual</Text>
-              <View style={styles.planBadge}>
-                <Text style={styles.planBadgeText}>Best value</Text>
-              </View>
-            </View>
-            <Text style={[styles.planPrice, styles.planPriceSelected]}>{annualPriceLine}</Text>
-            <Text style={styles.planDetail}>
-              {subscription.uiPreviewMode
-                ? 'Billed yearly'
-                : subscription.trialEligibility === 'eligible'
-                  ? '7-day free trial'
-                  : 'Billed yearly'}
-            </Text>
-            {annualMetaLine ? <Text style={styles.planMeta}>{annualMetaLine}</Text> : null}
-          </View>
-
-          <View style={[styles.planCard, styles.planCardMuted]}>
-            <View style={styles.planHeader}>
-              <Text style={styles.planTitle}>Monthly</Text>
-            </View>
-            <Text style={styles.planPrice}>{monthlyPriceLine}</Text>
-            <Text style={styles.planDetail}>Billed monthly</Text>
-          </View>
-        </View>
-
-        <Pressable
-          style={[
-            styles.primaryButton,
-            (subscription.purchaseBusy || (Boolean(session?.user) && !subscription.uiPreviewMode && (!subscription.primaryPackage || subscription.loading)))
-              ? styles.primaryButtonDisabled
-              : null,
-          ]}
-          onPress={() => {
-            void handlePrimaryPress();
-          }}
-          disabled={
-            subscription.purchaseBusy
-            || (Boolean(session?.user) && !subscription.uiPreviewMode && (!subscription.primaryPackage || subscription.loading))
-          }
+      <View style={styles.sheet}>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={[styles.scrollContent, { paddingBottom: Math.max(insets.bottom + 26, 42) }]}
         >
-          {subscription.purchaseBusy ? (
-            <ActivityIndicator size="small" color="#FFFFFF" />
-          ) : (
-            <Text style={styles.primaryButtonText}>{primaryLabel}</Text>
-          )}
-        </Pressable>
+          <View style={styles.heroCopy}>
+            <Text style={styles.headline}>{copy.headline}</Text>
+            <Text style={styles.subheadline}>{copy.subheadline}</Text>
+          </View>
 
-        {supportingText ? <Text style={styles.supportingText}>{supportingText}</Text> : null}
-        {subscription.error ? <Text style={styles.errorText}>{subscription.error}</Text> : null}
-        <Text style={styles.footerText}>{footerText}</Text>
+          <View style={styles.featureList}>
+            {copy.features.map((feature) => (
+              <View key={`${feature.title}-${feature.titleSuffix ?? ''}`} style={styles.featureRow}>
+                <View style={styles.featureIcon}>
+                  <Check size={14} color="#FFFFFF" strokeWidth={3.2} />
+                </View>
+                <View style={styles.featureCopy}>
+                  {renderFeatureTitle(feature)}
+                  <Text style={styles.featureBody}>{feature.body}</Text>
+                </View>
+              </View>
+            ))}
+          </View>
 
-        {session?.user ? (
+          {waitlistTrialActive && waitlistTrial.bonus ? (
+            <View style={styles.waitlistBonusCard}>
+              <Text style={styles.waitlistBonusEyebrow}>WAITLIST BONUS APPLIED</Text>
+              <Text style={styles.waitlistBonusTitle}>
+                {waitlistTrial.bonus.totalTrialDays} days of NuTri Pro trial
+              </Text>
+              <Text style={styles.waitlistBonusBody}>
+                {waitlistTrial.bonus.bonusDays > 0
+                  ? `Your invite activity unlocked ${waitlistTrial.bonus.bonusDays} extra ${waitlistTrial.bonus.bonusDays === 1 ? 'day' : 'days'} on top of the 3-day starting trial.`
+                  : 'Your 3-day starting trial is active. Invite friends before launch to unlock more bonus days.'}
+              </Text>
+            </View>
+          ) : null}
+
+          <View style={styles.planStack}>
+            <Pressable
+              style={[styles.planButton, styles.annualButton, primaryDisabled ? styles.disabled : null]}
+              onPress={() => {
+                void handlePrimaryPress();
+              }}
+              disabled={primaryDisabled}
+              accessibilityRole="button"
+              accessibilityLabel={
+                waitlistTrialActive
+                  ? 'Continue with waitlist trial'
+                  : annualTrialEligible
+                    ? 'Start annual free trial'
+                    : 'Continue yearly'
+              }
+            >
+              <Image source={PAYWALL_BACKGROUND} contentFit="cover" style={styles.annualBackground} />
+              <View style={styles.bestValueBadge}>
+                <Text style={styles.bestValueText}>{waitlistTrialActive ? 'WAITLIST BONUS' : 'BEST VALUE'}</Text>
+              </View>
+              {subscription.purchaseBusy ? (
+                <ActivityIndicator size="small" color="#0F172A" />
+              ) : (
+                <>
+                  <Text style={styles.planTitlePrimary}>{primaryLabel}</Text>
+                  <Text style={styles.planMetaPrimary}>{annualPlanMeta}</Text>
+                </>
+              )}
+            </Pressable>
+
+            {waitlistTrialActive ? null : (
+              <Pressable
+                style={[styles.planButton, styles.monthlyButton, monthlyDisabled ? styles.disabled : null]}
+                onPress={() => {
+                  void handleMonthlyPress();
+                }}
+                disabled={monthlyDisabled}
+                accessibilityRole="button"
+                accessibilityLabel="Continue monthly"
+              >
+                <Text style={styles.planTitleSecondary}>Continue monthly</Text>
+                <Text style={styles.planMetaSecondary}>{monthlyPlanMeta}</Text>
+              </Pressable>
+            )}
+          </View>
+
+          {subscription.error ? <Text style={styles.errorText}>{subscription.error}</Text> : null}
+
           <Pressable
             style={styles.restoreButton}
             onPress={() => {
               void handleRestorePress();
             }}
             disabled={subscription.restoreBusy}
+            accessibilityRole="button"
+            accessibilityLabel="Restore purchases"
           >
             {subscription.restoreBusy ? (
-              <ActivityIndicator size="small" color="#0F172A" />
+              <ActivityIndicator size="small" color="#45556C" />
             ) : (
               <Text style={styles.restoreButtonText}>Restore Purchases</Text>
             )}
           </Pressable>
-        ) : null}
 
-        <Pressable style={styles.secondaryButton} onPress={handleClose}>
-          <Text style={styles.secondaryButtonText}>Not now</Text>
-        </Pressable>
-      </ScrollView>
-    </ResponsiveScreen>
+          <View style={styles.legalLinks}>
+            <Pressable
+              onPress={() => {
+                void openTermsOfService();
+              }}
+              accessibilityRole="link"
+              accessibilityLabel="Open Terms of Service"
+              hitSlop={10}
+            >
+              <Text style={styles.legalLink}>Terms</Text>
+            </Pressable>
+            <Pressable
+              onPress={() => {
+                void openPrivacyPolicy();
+              }}
+              accessibilityRole="link"
+              accessibilityLabel="Open Privacy Policy"
+              hitSlop={10}
+            >
+              <Text style={styles.legalLink}>Privacy</Text>
+            </Pressable>
+          </View>
+
+          <Text style={styles.footerText}>{footerText}</Text>
+        </ScrollView>
+      </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   screen: {
-    backgroundColor: '#F3F4F8',
-  },
-  content: {
     flex: 1,
+    backgroundColor: '#050505',
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: 8,
+  headerArt: {
+    height: 240,
+    overflow: 'hidden',
+    backgroundColor: '#87D9FF',
   },
-  headerButton: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+  closeButton: {
+    position: 'absolute',
+    left: 20,
+    zIndex: 4,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.92)',
+    backgroundColor: 'rgba(0,0,0,0.20)',
   },
-  headerBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 999,
-    backgroundColor: 'rgba(255,255,255,0.92)',
-  },
-  headerBadgeText: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#0F172A',
-  },
-  headerSpacer: {
-    width: 38,
-    height: 38,
-  },
-  scrollContent: {
-    paddingHorizontal: 20,
-    paddingBottom: 28,
-    gap: 16,
-  },
-  hero: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 8,
-    padding: 20,
-    gap: 10,
-  },
-  heroBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    gap: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 999,
-    backgroundColor: '#E8F0FF',
-  },
-  heroBadgeText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#1D4ED8',
-  },
-  title: {
-    fontSize: 29,
-    lineHeight: 35,
-    fontWeight: '800',
-    color: '#0F172A',
-  },
-  body: {
-    fontSize: 15,
-    lineHeight: 22,
-    color: '#475569',
-  },
-  previewCard: {
-    backgroundColor: '#0F172A',
-    borderRadius: 8,
-    padding: 18,
-    gap: 8,
-  },
-  previewEyebrow: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#93C5FD',
-    textTransform: 'uppercase',
-  },
-  previewTitle: {
-    fontSize: 20,
-    lineHeight: 26,
+  proTitle: {
+    position: 'absolute',
+    left: 24,
+    bottom: 48,
+    fontSize: 34,
+    lineHeight: 38,
     fontWeight: '800',
     color: '#FFFFFF',
+    letterSpacing: -0.3,
+    textShadowColor: 'rgba(0,0,0,0.12)',
+    textShadowOffset: { width: 0, height: 3 },
+    textShadowRadius: 3,
   },
-  previewBody: {
-    fontSize: 14,
-    lineHeight: 21,
-    color: 'rgba(255,255,255,0.82)',
-  },
-  benefitList: {
+  sheet: {
+    flex: 1,
+    marginTop: -32,
+    overflow: 'hidden',
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
     backgroundColor: '#FFFFFF',
-    borderRadius: 8,
-    padding: 18,
-    gap: 14,
   },
-  benefitRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
+  scrollContent: {
+    paddingHorizontal: 24,
+    paddingTop: 32,
+  },
+  heroCopy: {
     gap: 10,
   },
-  benefitIconWrap: {
+  headline: {
+    width: '100%',
+    fontFamily: SERIF_FONT,
+    fontSize: 26,
+    lineHeight: 36,
+    fontWeight: '600',
+    color: '#1C1C1E',
+    letterSpacing: -0.2,
+  },
+  subheadline: {
+    maxWidth: 382,
+    fontSize: 15,
+    lineHeight: 21,
+    fontWeight: '600',
+    color: '#62748E',
+    letterSpacing: -0.2,
+  },
+  featureList: {
+    gap: 20,
+    marginTop: 32,
+  },
+  featureRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 16,
+  },
+  featureIcon: {
     width: 22,
     height: 22,
     borderRadius: 11,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#2563EB',
-    marginTop: 1,
+    marginTop: 2,
+    backgroundColor: '#2C2C2E',
   },
-  benefitText: {
+  featureCopy: {
     flex: 1,
-    fontSize: 15,
-    lineHeight: 22,
+    gap: 2,
+  },
+  featureTitle: {
+    fontFamily: SERIF_FONT,
+    fontSize: 17,
+    lineHeight: 23.5,
     fontWeight: '600',
+    color: '#1C1C1E',
+  },
+  featureAmpersand: {
+    fontFamily: Platform.select({
+      ios: 'Times New Roman',
+      android: 'serif',
+      default: 'serif',
+    }),
+    fontWeight: '600',
+  },
+  featureBody: {
+    fontSize: 14.5,
+    lineHeight: 19,
+    fontWeight: '600',
+    color: '#62748E',
+    letterSpacing: -0.2,
+  },
+  waitlistBonusCard: {
+    marginTop: 30,
+    borderRadius: 22,
+    borderWidth: 1.5,
+    borderColor: '#B7E7FF',
+    paddingHorizontal: 18,
+    paddingVertical: 17,
+    backgroundColor: '#F0FAFF',
+  },
+  waitlistBonusEyebrow: {
+    fontSize: 10,
+    lineHeight: 14,
+    fontWeight: '900',
+    color: '#0678B8',
+    letterSpacing: 0.8,
+  },
+  waitlistBonusTitle: {
+    marginTop: 5,
+    fontSize: 18,
+    lineHeight: 25,
+    fontWeight: '900',
     color: '#0F172A',
+    letterSpacing: -0.45,
   },
-  planList: {
-    gap: 12,
-  },
-  planCard: {
-    borderRadius: 8,
-    padding: 18,
-    borderWidth: 1,
-  },
-  planCardSelected: {
-    backgroundColor: '#ECF3FF',
-    borderColor: '#3B82F6',
-  },
-  planCardMuted: {
-    backgroundColor: '#FFFFFF',
-    borderColor: '#E2E8F0',
-  },
-  planHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 8,
-    marginBottom: 8,
-  },
-  planTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#334155',
-  },
-  planTitleSelected: {
-    color: '#0F172A',
-  },
-  planBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 999,
-    backgroundColor: '#1D4ED8',
-  },
-  planBadgeText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#FFFFFF',
-  },
-  planPrice: {
-    fontSize: 28,
-    lineHeight: 32,
-    fontWeight: '800',
-    color: '#1E293B',
-  },
-  planPriceSelected: {
-    color: '#0F172A',
-  },
-  planDetail: {
-    marginTop: 6,
+  waitlistBonusBody: {
+    marginTop: 5,
     fontSize: 14,
-    lineHeight: 20,
-    color: '#475569',
+    lineHeight: 19.5,
+    fontWeight: '600',
+    color: '#52657A',
+    letterSpacing: -0.15,
   },
-  planMeta: {
-    marginTop: 4,
-    fontSize: 13,
-    lineHeight: 18,
-    color: '#64748B',
+  planStack: {
+    gap: 14,
+    marginTop: 40,
   },
-  primaryButton: {
-    height: 54,
-    borderRadius: 8,
+  planButton: {
+    position: 'relative',
+    width: '100%',
+    minHeight: 80,
+    overflow: 'visible',
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#0F172A',
-    marginTop: 4,
   },
-  primaryButtonDisabled: {
-    opacity: 0.6,
+  annualButton: {
+    backgroundColor: '#93DAFF',
   },
-  primaryButtonText: {
-    fontSize: 16,
+  annualBackground: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: 16,
+  },
+  monthlyButton: {
+    borderWidth: 1.5,
+    borderColor: '#E2E8F0',
+    backgroundColor: '#FFFFFF',
+  },
+  disabled: {
+    opacity: 0.62,
+  },
+  bestValueBadge: {
+    position: 'absolute',
+    top: -12,
+    right: 18,
+    minWidth: 92,
+    height: 27,
+    borderRadius: 999,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#2B7FFF',
+    shadowColor: '#000000',
+    shadowOpacity: 0.14,
+    shadowRadius: 5,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 3,
+  },
+  bestValueText: {
+    fontSize: 10,
+    lineHeight: 15,
     fontWeight: '800',
     color: '#FFFFFF',
+    letterSpacing: 0.6,
   },
-  supportingText: {
-    fontSize: 14,
-    lineHeight: 21,
-    textAlign: 'center',
-    color: '#475569',
+  planTitlePrimary: {
+    fontSize: 17,
+    lineHeight: 25.5,
+    fontWeight: '800',
+    color: '#000000',
+    letterSpacing: -0.75,
+  },
+  planMetaPrimary: {
+    fontSize: 13.5,
+    lineHeight: 20,
+    fontWeight: '600',
+    color: '#62748E',
+    letterSpacing: -0.35,
+  },
+  planTitleSecondary: {
+    fontSize: 17,
+    lineHeight: 25.5,
+    fontWeight: '800',
+    color: '#000000',
+    letterSpacing: -0.75,
+  },
+  planMetaSecondary: {
+    fontSize: 13.5,
+    lineHeight: 20,
+    fontWeight: '600',
+    color: '#62748E',
+    letterSpacing: -0.35,
   },
   errorText: {
+    marginTop: 14,
     fontSize: 13,
-    lineHeight: 19,
+    lineHeight: 18,
     textAlign: 'center',
     color: '#B91C1C',
   },
-  footerText: {
-    fontSize: 12,
-    lineHeight: 18,
-    textAlign: 'center',
-    color: '#64748B',
-  },
   restoreButton: {
-    height: 46,
-    borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: '#CBD5E1',
-    backgroundColor: '#FFFFFF',
+    marginTop: 32,
+    paddingVertical: 2,
   },
   restoreButtonText: {
     fontSize: 14,
+    lineHeight: 21,
     fontWeight: '700',
-    color: '#0F172A',
+    color: '#45556C',
+    textDecorationLine: 'underline',
   },
-  secondaryButton: {
-    alignItems: 'center',
+  legalLinks: {
+    flexDirection: 'row',
     justifyContent: 'center',
-    paddingVertical: 14,
+    gap: 16,
+    marginTop: 14,
   },
-  secondaryButtonText: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#475569',
+  legalLink: {
+    fontSize: 13,
+    lineHeight: 19.5,
+    fontWeight: '600',
+    color: '#62748E',
+    textDecorationLine: 'underline',
+  },
+  footerText: {
+    marginTop: 28,
+    paddingHorizontal: 16,
+    fontSize: 11,
+    lineHeight: 15.5,
+    fontWeight: '600',
+    textAlign: 'center',
+    color: '#90A1B9',
+    letterSpacing: 0.05,
   },
 });

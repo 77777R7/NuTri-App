@@ -2,19 +2,23 @@ import { useLocalSearchParams, router } from 'expo-router';
 import React from 'react';
 
 import { OfficialPaywallPage } from '@/components/paywall/OfficialPaywallPage';
+import type { OfficialPaywallSource } from '@/lib/pro/featureGates';
 
-const normalizeSource = (value: string | string[] | undefined) => {
+const normalizeSource = (value: string | string[] | undefined): OfficialPaywallSource => {
   if (typeof value !== 'string') {
     return 'first_scan_result' as const;
   }
 
   switch (value) {
     case 'score':
-    case 'comparison':
     case 'overview':
     case 'science':
     case 'usage':
     case 'safety':
+    case 'stack_safety':
+    case 'scan_limit':
+    case 'product_search':
+    case 'saved_supplement_limit':
     case 'first_scan_result':
       return value;
     default:
