@@ -1,17 +1,25 @@
 import { StatusBar } from 'expo-status-bar';
 import { router } from 'expo-router';
 import { Check, ChevronLeft } from 'lucide-react-native';
-import React, { useEffect, useMemo, useRef } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { PostPurchaseSuccessPage } from '@/components/paywall/PostPurchaseSuccessPage';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { useFirstScanReveal } from '@/hooks/useFirstScanReveal';
 import { useWaitlistTrialBonus } from '@/hooks/useWaitlistTrialBonus';
+import {
+  trackPaywallPurchaseStarted,
+  trackPaywallPurchaseSuccess,
+  trackPaywallViewed,
+  trackPostPurchaseResumeFailed,
+  trackPostPurchaseResumeSuccess,
+} from '@/lib/analytics/pro';
 import { openPrivacyPolicy, openTermsOfService } from '@/lib/legalLinks';
-import type { OfficialPaywallSource } from '@/lib/pro/featureGates';
+import { resolvePostPurchaseResumePath, type OfficialPaywallSource } from '@/lib/pro/featureGates';
 import { buildWaitlistTrialSummary } from '@/lib/pro/waitlistTrialBonus';
 
 type OfficialPaywallPageProps = {
@@ -32,6 +40,13 @@ type PaywallCopy = {
   headline: string;
   subheadline: string;
   features: FeatureCopy[];
+};
+
+type PostPurchaseState = {
+  productId: string | null;
+  isTrial: boolean;
+  isRestore: boolean;
+  completedAt: number;
 };
 
 const SERIF_FONT = Platform.select({
@@ -191,6 +206,10 @@ export function OfficialPaywallPage({ source, scanId = null, returnTo = null, on
   const waitlistTrial = useWaitlistTrialBonus();
   const firstScanReveal = useFirstScanReveal();
   const impressionLoggedRef = useRef(false);
+  const paywallViewedRef = useRef(false);
+  const [postPurchaseVisible, setPostPurchaseVisible] = useState(false);
+  const [postPurchaseState, setPostPurchaseState] = useState<PostPurchaseState | null>(null);
+  const [waitlistTrialError, setWaitlistTrialError] = useState<string | null>(null);
 
   const annualProduct = subscription.annualPackage?.product ?? null;
   const monthlyProduct = subscription.monthlyPackage?.product ?? null;
@@ -201,10 +220,26 @@ export function OfficialPaywallPage({ source, scanId = null, returnTo = null, on
   const copy = useMemo(() => getPaywallCopy(source), [source]);
   const annualTrialEligible = Boolean(annualProduct?.introPrice) && subscription.trialEligibility === 'eligible';
   const waitlistTrialActive = Boolean(waitlistTrial.active && waitlistTrial.bonus);
+  const waitlistTrialAvailable = Boolean(waitlistTrial.bonus && waitlistTrial.bonus.status !== 'expired');
   const waitlistTrialSummary = waitlistTrial.bonus ? buildWaitlistTrialSummary(waitlistTrial.bonus) : null;
-  const annualPlanMeta = waitlistTrialActive && waitlistTrialSummary
+  const annualPlanMeta = waitlistTrialAvailable && waitlistTrialSummary
     ? waitlistTrialSummary
     : annualTrialLine(annualPriceLine, annualMetaLine);
+  const postPurchaseResumeTo = useMemo(
+    () => resolvePostPurchaseResumePath({ source, returnTo }),
+    [returnTo, source],
+  );
+
+  useEffect(() => {
+    if (paywallViewedRef.current) return;
+    paywallViewedRef.current = true;
+
+    trackPaywallViewed({
+      source,
+      returnTo,
+      resumeTo: postPurchaseResumeTo,
+    });
+  }, [postPurchaseResumeTo, returnTo, source]);
 
   useEffect(() => {
     if (source !== 'first_scan_result' || !scanId || impressionLoggedRef.current) {
@@ -216,11 +251,14 @@ export function OfficialPaywallPage({ source, scanId = null, returnTo = null, on
   }, [firstScanReveal, scanId, source]);
 
   const primaryLabel = useMemo(() => {
-    if (subscription.purchaseBusy) {
-      return 'Starting purchase...';
+    if (subscription.purchaseBusy || waitlistTrial.activating) {
+      return waitlistTrial.activating ? 'Starting trial...' : 'Starting purchase...';
     }
     if (waitlistTrialActive && waitlistTrial.bonus) {
       return `Continue with ${waitlistTrial.bonus.totalTrialDays}-day trial`;
+    }
+    if (waitlistTrialAvailable && waitlistTrial.bonus) {
+      return `Start your ${waitlistTrial.bonus.totalTrialDays}-day free trial`;
     }
     if (subscription.loading && session?.user && !subscription.uiPreviewMode) {
       return 'Loading plans...';
@@ -232,13 +270,16 @@ export function OfficialPaywallPage({ source, scanId = null, returnTo = null, on
     subscription.loading,
     subscription.purchaseBusy,
     subscription.uiPreviewMode,
+    waitlistTrial.activating,
     waitlistTrial.bonus,
     waitlistTrialActive,
+    waitlistTrialAvailable,
   ]);
 
   const primaryDisabled =
     subscription.purchaseBusy
-    || (!waitlistTrialActive && Boolean(session?.user) && !subscription.uiPreviewMode && (!subscription.primaryPackage || subscription.loading));
+    || waitlistTrial.activating
+    || (!waitlistTrialAvailable && Boolean(session?.user) && !subscription.uiPreviewMode && (!subscription.primaryPackage || subscription.loading));
   const monthlyDisabled =
     subscription.purchaseBusy
     || (Boolean(session?.user) && !subscription.uiPreviewMode && (!subscription.monthlyPackage || subscription.loading));
@@ -247,11 +288,14 @@ export function OfficialPaywallPage({ source, scanId = null, returnTo = null, on
     if (waitlistTrialActive && waitlistTrial.bonus) {
       return `Your waitlist trial is active until ${new Date(waitlistTrial.bonus.trialExpiresAt ?? '').toLocaleDateString()}. No payment is collected for this waitlist trial.`;
     }
+    if (waitlistTrialAvailable && waitlistTrial.bonus) {
+      return 'Your waitlist trial starts only when you tap the button. No payment is collected for this waitlist trial.';
+    }
     if (annualTrialEligible) {
       return `7-day free trial, then ${annualPriceLine} per year. Auto-renews until canceled. Cancel anytime in App Store or Google Play subscription settings.`;
     }
     return `${annualPriceLine} per year or ${monthlyPriceLine} per month. Auto-renews until canceled. Cancel anytime in App Store or Google Play subscription settings.`;
-  }, [annualPriceLine, annualTrialEligible, monthlyPriceLine, waitlistTrial.bonus, waitlistTrialActive]);
+  }, [annualPriceLine, annualTrialEligible, monthlyPriceLine, waitlistTrial.bonus, waitlistTrialActive, waitlistTrialAvailable]);
 
   const handleClose = () => {
     subscription.clearError();
@@ -266,7 +310,69 @@ export function OfficialPaywallPage({ source, scanId = null, returnTo = null, on
     router.replace(returnTo ?? '/main/Home-Page');
   };
 
+  const revealPostPurchaseSuccess = useCallback(async ({
+    productId = null,
+    isTrial = false,
+    isRestore = false,
+  }: {
+    productId?: string | null;
+    isTrial?: boolean;
+    isRestore?: boolean;
+  } = {}) => {
+    subscription.clearError();
+    if (source === 'first_scan_result' && scanId) {
+      await firstScanReveal.markConverted(scanId);
+    }
+    setPostPurchaseState({
+      productId,
+      isTrial,
+      isRestore,
+      completedAt: Date.now(),
+    });
+    trackPaywallPurchaseSuccess({
+      source,
+      returnTo,
+      resumeTo: postPurchaseResumeTo,
+      productId,
+      isTrial,
+      isRestore,
+    });
+    setPostPurchaseVisible(true);
+  }, [firstScanReveal, postPurchaseResumeTo, returnTo, scanId, source, subscription]);
+
+  const handlePostPurchaseContinue = useCallback(() => {
+    const timeToFirstProAction = postPurchaseState?.completedAt
+      ? Date.now() - postPurchaseState.completedAt
+      : null;
+
+    try {
+      router.replace(postPurchaseResumeTo);
+      trackPostPurchaseResumeSuccess({
+        source,
+        returnTo,
+        resumeTo: postPurchaseResumeTo,
+        productId: postPurchaseState?.productId ?? null,
+        isTrial: postPurchaseState?.isTrial ?? false,
+        isRestore: postPurchaseState?.isRestore ?? false,
+        timeToFirstProAction,
+      });
+    } catch (resumeError) {
+      trackPostPurchaseResumeFailed({
+        source,
+        returnTo,
+        resumeTo: postPurchaseResumeTo,
+        productId: postPurchaseState?.productId ?? null,
+        isTrial: postPurchaseState?.isTrial ?? false,
+        isRestore: postPurchaseState?.isRestore ?? false,
+        timeToFirstProAction,
+      });
+      console.warn('[paywall] failed to resume post-purchase action', resumeError);
+    }
+  }, [postPurchaseResumeTo, postPurchaseState, returnTo, source]);
+
   const handlePrimaryPress = async () => {
+    setWaitlistTrialError(null);
+
     if (!session?.user) {
       const query = new URLSearchParams({
         source,
@@ -280,10 +386,11 @@ export function OfficialPaywallPage({ source, scanId = null, returnTo = null, on
     }
 
     if (subscription.uiPreviewMode) {
-      if (source === 'first_scan_result' && scanId) {
-        await firstScanReveal.markConverted(scanId);
-      }
-      handleClose();
+      await revealPostPurchaseSuccess({
+        productId: subscription.primaryPackage?.product.identifier ?? null,
+        isTrial: Boolean(subscription.primaryPackage?.product.introPrice),
+        isRestore: false,
+      });
       return;
     }
 
@@ -292,12 +399,45 @@ export function OfficialPaywallPage({ source, scanId = null, returnTo = null, on
       return;
     }
 
+    if (waitlistTrialAvailable && waitlistTrial.bonus) {
+      trackPaywallPurchaseStarted({
+        source,
+        returnTo,
+        resumeTo: postPurchaseResumeTo,
+        productId: 'waitlist_trial',
+        isTrial: true,
+        isRestore: false,
+      });
+
+      const activatedTrial = await waitlistTrial.activate();
+      if (activatedTrial?.status === 'active') {
+        await revealPostPurchaseSuccess({
+          productId: 'waitlist_trial',
+          isTrial: true,
+          isRestore: false,
+        });
+        return;
+      }
+
+      setWaitlistTrialError('Could not start your waitlist trial yet. Please try again.');
+      return;
+    }
+
+    trackPaywallPurchaseStarted({
+      source,
+      returnTo,
+      resumeTo: postPurchaseResumeTo,
+      productId: subscription.primaryPackage?.product.identifier ?? null,
+      isTrial: Boolean(subscription.primaryPackage?.product.introPrice),
+      isRestore: false,
+    });
     const result = await subscription.purchasePrimaryPackage();
     if (result.ok) {
-      if (source === 'first_scan_result' && scanId) {
-        await firstScanReveal.markConverted(scanId);
-      }
-      handleClose();
+      await revealPostPurchaseSuccess({
+        productId: result.productId ?? subscription.primaryPackage?.product.identifier ?? null,
+        isTrial: result.isTrial ?? Boolean(subscription.primaryPackage?.product.introPrice),
+        isRestore: false,
+      });
     }
   };
 
@@ -315,10 +455,11 @@ export function OfficialPaywallPage({ source, scanId = null, returnTo = null, on
     }
 
     if (subscription.uiPreviewMode) {
-      if (source === 'first_scan_result' && scanId) {
-        await firstScanReveal.markConverted(scanId);
-      }
-      handleClose();
+      await revealPostPurchaseSuccess({
+        productId: subscription.monthlyPackage?.product.identifier ?? null,
+        isTrial: Boolean(subscription.monthlyPackage?.product.introPrice),
+        isRestore: false,
+      });
       return;
     }
 
@@ -327,12 +468,21 @@ export function OfficialPaywallPage({ source, scanId = null, returnTo = null, on
       return;
     }
 
+    trackPaywallPurchaseStarted({
+      source,
+      returnTo,
+      resumeTo: postPurchaseResumeTo,
+      productId: subscription.monthlyPackage?.product.identifier ?? null,
+      isTrial: Boolean(subscription.monthlyPackage?.product.introPrice),
+      isRestore: false,
+    });
     const result = await subscription.purchaseMonthlyPackage();
     if (result.ok) {
-      if (source === 'first_scan_result' && scanId) {
-        await firstScanReveal.markConverted(scanId);
-      }
-      handleClose();
+      await revealPostPurchaseSuccess({
+        productId: result.productId ?? subscription.monthlyPackage?.product.identifier ?? null,
+        isTrial: result.isTrial ?? Boolean(subscription.monthlyPackage?.product.introPrice),
+        isRestore: false,
+      });
     }
   };
 
@@ -355,12 +505,28 @@ export function OfficialPaywallPage({ source, scanId = null, returnTo = null, on
 
     const result = await subscription.restorePurchases();
     if (result.ok) {
-      if (source === 'first_scan_result' && scanId) {
-        await firstScanReveal.markConverted(scanId);
-      }
-      handleClose();
+      await revealPostPurchaseSuccess({
+        productId: result.productId ?? null,
+        isTrial: result.isTrial ?? false,
+        isRestore: true,
+      });
     }
   };
+
+  if (postPurchaseVisible) {
+    return (
+      <PostPurchaseSuccessPage
+        source={source}
+        resumeTo={postPurchaseResumeTo}
+        returnTo={returnTo}
+        productId={postPurchaseState?.productId ?? null}
+        isTrial={postPurchaseState?.isTrial ?? false}
+        isRestore={postPurchaseState?.isRestore ?? false}
+        purchaseCompletedAt={postPurchaseState?.completedAt ?? null}
+        onContinue={handlePostPurchaseContinue}
+      />
+    );
+  }
 
   const renderFeatureTitle = (feature: FeatureCopy) => {
     if (!feature.titleSuffix) {
@@ -422,16 +588,20 @@ export function OfficialPaywallPage({ source, scanId = null, returnTo = null, on
             ))}
           </View>
 
-          {waitlistTrialActive && waitlistTrial.bonus ? (
+          {waitlistTrialAvailable && waitlistTrial.bonus ? (
             <View style={styles.waitlistBonusCard}>
-              <Text style={styles.waitlistBonusEyebrow}>WAITLIST BONUS APPLIED</Text>
+              <Text style={styles.waitlistBonusEyebrow}>
+                {waitlistTrialActive ? 'WAITLIST BONUS APPLIED' : 'WAITLIST BONUS READY'}
+              </Text>
               <Text style={styles.waitlistBonusTitle}>
                 {waitlistTrial.bonus.totalTrialDays} days of NuTri Pro trial
               </Text>
               <Text style={styles.waitlistBonusBody}>
-                {waitlistTrial.bonus.bonusDays > 0
+                {waitlistTrialActive
+                  ? 'Your trial is active. NuTri Pro access stays unlocked until this trial period ends.'
+                  : waitlistTrial.bonus.bonusDays > 0
                   ? `Your invite activity unlocked ${waitlistTrial.bonus.bonusDays} extra ${waitlistTrial.bonus.bonusDays === 1 ? 'day' : 'days'} on top of the 3-day starting trial.`
-                  : 'Your 3-day starting trial is active. Invite friends before launch to unlock more bonus days.'}
+                  : 'Your 3-day starting trial is ready. It starts only after you tap the button below.'}
               </Text>
             </View>
           ) : null}
@@ -447,6 +617,8 @@ export function OfficialPaywallPage({ source, scanId = null, returnTo = null, on
               accessibilityLabel={
                 waitlistTrialActive
                   ? 'Continue with waitlist trial'
+                  : waitlistTrialAvailable
+                    ? 'Start waitlist trial'
                   : annualTrialEligible
                     ? 'Start annual free trial'
                     : 'Continue yearly'
@@ -454,9 +626,9 @@ export function OfficialPaywallPage({ source, scanId = null, returnTo = null, on
             >
               <Image source={PAYWALL_BACKGROUND} contentFit="cover" style={styles.annualBackground} />
               <View style={styles.bestValueBadge}>
-                <Text style={styles.bestValueText}>{waitlistTrialActive ? 'WAITLIST BONUS' : 'BEST VALUE'}</Text>
+                <Text style={styles.bestValueText}>{waitlistTrialAvailable ? 'WAITLIST TRIAL' : 'BEST VALUE'}</Text>
               </View>
-              {subscription.purchaseBusy ? (
+              {subscription.purchaseBusy || waitlistTrial.activating ? (
                 <ActivityIndicator size="small" color="#0F172A" />
               ) : (
                 <>
@@ -466,7 +638,7 @@ export function OfficialPaywallPage({ source, scanId = null, returnTo = null, on
               )}
             </Pressable>
 
-            {waitlistTrialActive ? null : (
+            {waitlistTrialAvailable ? null : (
               <Pressable
                 style={[styles.planButton, styles.monthlyButton, monthlyDisabled ? styles.disabled : null]}
                 onPress={() => {
@@ -483,6 +655,7 @@ export function OfficialPaywallPage({ source, scanId = null, returnTo = null, on
           </View>
 
           {subscription.error ? <Text style={styles.errorText}>{subscription.error}</Text> : null}
+          {waitlistTrialError ? <Text style={styles.errorText}>{waitlistTrialError}</Text> : null}
 
           <Pressable
             style={styles.restoreButton}

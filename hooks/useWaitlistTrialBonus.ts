@@ -12,10 +12,12 @@ import {
 
 type WaitlistTrialBonusState = {
   loading: boolean;
+  activating: boolean;
   bonus: WaitlistTrialBonus | null;
   active: boolean;
   summary: string | null;
   refresh: () => Promise<void>;
+  activate: () => Promise<WaitlistTrialBonus | null>;
 };
 
 type WaitlistTrialBonusRpcRow = {
@@ -66,6 +68,7 @@ export const useWaitlistTrialBonus = (): WaitlistTrialBonusState => {
   const email = user?.email?.trim().toLowerCase() ?? null;
   const [bonus, setBonus] = useState<WaitlistTrialBonus | null>(null);
   const [loading, setLoading] = useState(false);
+  const [activating, setActivating] = useState(false);
 
   const refresh = useCallback(async () => {
     if (!email) {
@@ -77,9 +80,9 @@ export const useWaitlistTrialBonus = (): WaitlistTrialBonusState => {
     setLoading(true);
 
     try {
-      const { data, error } = await (supabase.rpc as any)('activate_waitlist_trial_bonus');
+      const { data, error } = await (supabase.rpc as any)('get_waitlist_trial_bonus_preview');
       if (error) {
-        console.warn('[waitlist-trial] failed to activate waitlist trial bonus', error);
+        console.warn('[waitlist-trial] failed to fetch waitlist trial preview', error);
         setBonus(null);
         return;
       }
@@ -87,10 +90,37 @@ export const useWaitlistTrialBonus = (): WaitlistTrialBonusState => {
       const row = Array.isArray(data) ? data[0] : data;
       setBonus(mapRowToBonus(row as WaitlistTrialBonusRpcRow | null));
     } catch (error) {
-      console.warn('[waitlist-trial] unexpected waitlist trial activation error', error);
+      console.warn('[waitlist-trial] unexpected waitlist trial preview error', error);
       setBonus(null);
     } finally {
       setLoading(false);
+    }
+  }, [email]);
+
+  const activate = useCallback(async () => {
+    if (!email) {
+      setBonus(null);
+      return null;
+    }
+
+    setActivating(true);
+
+    try {
+      const { data, error } = await (supabase.rpc as any)('activate_waitlist_trial_bonus');
+      if (error) {
+        console.warn('[waitlist-trial] failed to activate waitlist trial bonus', error);
+        return null;
+      }
+
+      const row = Array.isArray(data) ? data[0] : data;
+      const nextBonus = mapRowToBonus(row as WaitlistTrialBonusRpcRow | null);
+      setBonus(nextBonus);
+      return nextBonus;
+    } catch (error) {
+      console.warn('[waitlist-trial] unexpected waitlist trial activation error', error);
+      return null;
+    } finally {
+      setActivating(false);
     }
   }, [email]);
 
@@ -108,9 +138,11 @@ export const useWaitlistTrialBonus = (): WaitlistTrialBonusState => {
 
   return {
     loading: authLoading || loading,
+    activating,
     bonus,
     active,
     summary,
     refresh,
+    activate,
   };
 };
