@@ -238,7 +238,7 @@ export const PRODUCT_SEARCH_BROWSE_BOOTSTRAP_LIMIT = 120;
 const MAX_PRELIMINARY_CANDIDATES = 180;
 const MAX_SUGGESTION_BRANDS = 6;
 const COLD_FALLBACK_QUERY_LIMIT = 220;
-const COLD_FALLBACK_BROWSE_LIMIT = 320;
+const COLD_FALLBACK_BROWSE_LIMIT = 1200;
 const COLD_FALLBACK_MAX_QUERY_TERMS = 8;
 const COLD_INDEX_MIN_CANDIDATES_BEFORE_EXPAND = 60;
 const PRODUCT_SEARCH_CATALOG_STATS_TTL_MS = 5 * 60 * 1000;
@@ -685,6 +685,7 @@ const getErrorMessage = (error: unknown): string =>
 
 const readProductSearchCatalogStatsFromDatabase = async (
   fallbackRows?: ProductSearchIndexRow[] | null,
+  options: { preferFallbackAnalysisReady?: boolean } = {},
 ): Promise<ProductSearchCatalogStats> => {
   const fallbackStats = fallbackRows ? buildCatalogStatsFromRows(fallbackRows) : normalizeCatalogStats({
     totalRecords: 0,
@@ -726,7 +727,10 @@ const readProductSearchCatalogStatsFromDatabase = async (
 
     return normalizeCatalogStats({
       totalRecords: catalogCountResult.count ?? fallbackStats.totalRecords,
-      analysisReadyTotal: analysisReadyCountResult.count ?? fallbackStats.analysisReadyTotal,
+      analysisReadyTotal:
+        options.preferFallbackAnalysisReady && fallbackRows
+          ? fallbackStats.analysisReadyTotal
+          : analysisReadyCountResult.count ?? fallbackStats.analysisReadyTotal,
     });
   } catch (error) {
     console.warn("[product-search] catalog stats read failed; using local fallback", {
@@ -734,6 +738,11 @@ const readProductSearchCatalogStatsFromDatabase = async (
     });
     return fallbackStats;
   }
+};
+
+const readPersistedProductSearchCatalogStats = async (): Promise<ProductSearchCatalogStats | null> => {
+  const persistedBootstrap = await readPersistedProductSearchHomeBootstrap();
+  return persistedBootstrap?.catalogStats ?? null;
 };
 
 const resolveProductSearchCatalogStats = async (
@@ -746,7 +755,8 @@ const resolveProductSearchCatalogStats = async (
   if (inflightCatalogStats) return inflightCatalogStats;
 
   inflightCatalogStats = (async () => {
-    const payload = await readProductSearchCatalogStatsFromDatabase(fallbackRows);
+    const persistedStats = await readPersistedProductSearchCatalogStats();
+    const payload = persistedStats ?? (await readProductSearchCatalogStatsFromDatabase(fallbackRows));
     cachedCatalogStats = {
       builtAt: Date.now(),
       payload,
@@ -3813,7 +3823,9 @@ export const writePersistedProductSearchHomeBootstrap = async (
 
 export const refreshPersistedProductSearchHomeBootstrap = async (): Promise<ProductSearchBootstrapResponse> => {
   const fallbackRows = await fetchColdFallbackRows({ query: "", page: 1, limit: DEFAULT_LIMIT });
-  const catalogStats = await resolveProductSearchCatalogStats(fallbackRows);
+  const catalogStats = await readProductSearchCatalogStatsFromDatabase(fallbackRows, {
+    preferFallbackAnalysisReady: true,
+  });
   const payload = buildProductSearchBootstrapPayloadFromRows(fallbackRows, { catalogStats });
   await writePersistedProductSearchHomeBootstrap(payload);
   return payload;
