@@ -23,6 +23,14 @@ type SearchGoalKey =
 type SearchGoalTier = "strong_match" | "related" | "weak_match" | "no_match";
 type FactsStatus = "full" | "partial" | "none";
 type CoverageStatus = "coverage_ready" | "not_enough_structured_data";
+export type ProductSearchResultTier = "analysis_ready" | "basic_catalog" | "needs_label_verification";
+
+export type ProductSearchCatalogStats = {
+  totalRecords: number;
+  analysisReadyTotal: number;
+  displayTotalRecordsLabel: string;
+  displayAnalysisReadyLabel: string;
+};
 
 type OverlaySearchTableRow = {
   id?: number | null;
@@ -109,6 +117,7 @@ export type ProductSearchIndexRow = {
 type ProductSearchIndex = {
   builtAt: number;
   rows: ProductSearchIndexRow[];
+  catalogStats?: ProductSearchCatalogStats;
 };
 
 export type SearchQueryPlan = {
@@ -167,6 +176,9 @@ export type ProductSearchCard = {
   matchReason?: string | null;
   factsStatus: FactsStatus;
   coverageStatus: CoverageStatus;
+  resultTier: ProductSearchResultTier;
+  resultTierLabel: string;
+  resultTierDescription: string | null;
 };
 
 export type ProductSearchResponse = {
@@ -186,12 +198,14 @@ export type ProductSearchResponse = {
     brands: string[];
     popularSearches: string[];
   };
+  catalogStats: ProductSearchCatalogStats;
 };
 
 export type ProductSearchBootstrapResponse = {
   generatedAt: number;
   categories: Record<string, ProductSearchCard[]>;
   paginationByCategory?: Record<string, ProductSearchResponse["pagination"]>;
+  catalogStats: ProductSearchCatalogStats;
 };
 
 type SearchParams = {
@@ -227,6 +241,7 @@ const COLD_FALLBACK_QUERY_LIMIT = 220;
 const COLD_FALLBACK_BROWSE_LIMIT = 320;
 const COLD_FALLBACK_MAX_QUERY_TERMS = 8;
 const COLD_INDEX_MIN_CANDIDATES_BEFORE_EXPAND = 60;
+const PRODUCT_SEARCH_CATALOG_STATS_TTL_MS = 5 * 60 * 1000;
 const POPULAR_SEARCHES = ["Magnesium", "Vitamin D", "Omega-3", "Probiotic", "Ashwagandha"];
 export const DEFAULT_PRODUCT_SEARCH_WARM_QUERIES = [
   "magnesium",
@@ -445,6 +460,13 @@ let cachedPersistedHomeBootstrap:
       payload: ProductSearchBootstrapResponse;
     }
   | null = null;
+let cachedCatalogStats:
+  | {
+      builtAt: number;
+      payload: ProductSearchCatalogStats;
+    }
+  | null = null;
+let inflightCatalogStats: Promise<ProductSearchCatalogStats> | null = null;
 let inflightColdBootstrap: Promise<ProductSearchBootstrapResponse> | null = null;
 const cachedColdSearchResponses = new Map<
   string,
@@ -483,6 +505,104 @@ const normalizeLookupText = (value: string | null | undefined): string =>
 
 const normalizeBrandComparableText = (value: string | null | undefined): string =>
   normalizeLookupText(value).replace(/\b([a-z]+) s\b/g, "$1s");
+
+const formatSearchCount = (value: number): string =>
+  new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(Math.max(0, Math.floor(value)));
+
+const formatCatalogTotalLabel = (value: number): string => {
+  const normalized = Math.max(0, Math.floor(value));
+  if (normalized >= 10000) {
+    return `${formatSearchCount(Math.floor(normalized / 10000) * 10000)}+`;
+  }
+  if (normalized >= 1000) {
+    return `${formatSearchCount(Math.floor(normalized / 1000) * 1000)}+`;
+  }
+  return formatSearchCount(normalized);
+};
+
+const normalizeCatalogStats = (stats: {
+  totalRecords: number;
+  analysisReadyTotal: number;
+}): ProductSearchCatalogStats => {
+  const totalRecords = Math.max(0, Math.floor(stats.totalRecords));
+  const analysisReadyTotal = Math.max(0, Math.floor(stats.analysisReadyTotal));
+
+  return {
+    totalRecords,
+    analysisReadyTotal,
+    displayTotalRecordsLabel: formatCatalogTotalLabel(totalRecords),
+    displayAnalysisReadyLabel: formatSearchCount(analysisReadyTotal),
+  };
+};
+
+const getProductSearchResultTier = (
+  value: Pick<ProductSearchIndexRow, "factsStatus" | "coverageStatus">,
+): ProductSearchResultTier => {
+  if (value.coverageStatus === "coverage_ready" && value.factsStatus === "full") {
+    return "analysis_ready";
+  }
+  if (value.factsStatus === "partial") return "basic_catalog";
+  return "needs_label_verification";
+};
+
+const getProductSearchResultTierLabel = (tier: ProductSearchResultTier): string => {
+  switch (tier) {
+    case "analysis_ready":
+      return "Ready for full analysis";
+    case "basic_catalog":
+      return "Basic record";
+    case "needs_label_verification":
+      return "Needs label verification";
+  }
+};
+
+const getProductSearchResultTierDescription = (tier: ProductSearchResultTier): string | null =>
+  tier === "analysis_ready" ? null : "Not enough label detail for full analysis";
+
+const PRODUCT_SEARCH_RESULT_TIER_RANK: Record<ProductSearchResultTier, number> = {
+  analysis_ready: 0,
+  basic_catalog: 1,
+  needs_label_verification: 2,
+};
+
+const compareProductSearchResultTier = (left: ProductSearchCard, right: ProductSearchCard): number =>
+  PRODUCT_SEARCH_RESULT_TIER_RANK[left.resultTier] - PRODUCT_SEARCH_RESULT_TIER_RANK[right.resultTier];
+
+const isAnalysisReadySearchRow = (
+  value: Pick<ProductSearchIndexRow, "factsStatus" | "coverageStatus">,
+): boolean => getProductSearchResultTier(value) === "analysis_ready";
+
+const isAnalysisReadySearchCard = (
+  value: Pick<ProductSearchCard, "factsStatus" | "coverageStatus">,
+): boolean => getProductSearchResultTier(value) === "analysis_ready";
+
+const buildCatalogStatsFromRows = (rows: ProductSearchIndexRow[]): ProductSearchCatalogStats =>
+  normalizeCatalogStats({
+    totalRecords: rows.length,
+    analysisReadyTotal: rows.filter(isAnalysisReadySearchRow).length,
+  });
+
+const buildCatalogStatsFromCards = (cards: ProductSearchCard[]): ProductSearchCatalogStats =>
+  normalizeCatalogStats({
+    totalRecords: cards.length,
+    analysisReadyTotal: cards.filter(isAnalysisReadySearchCard).length,
+  });
+
+const attachCatalogStatsToResponse = (
+  response: ProductSearchResponse,
+  catalogStats: ProductSearchCatalogStats,
+): ProductSearchResponse => ({
+  ...response,
+  catalogStats,
+});
+
+const attachCatalogStatsToBootstrap = (
+  response: ProductSearchBootstrapResponse,
+  catalogStats: ProductSearchCatalogStats,
+): ProductSearchBootstrapResponse => ({
+  ...response,
+  catalogStats,
+});
 
 const toPostgrestIlikeRawValue = (value: string | null | undefined): string | null => {
   const trimmed = safeTrim(value);
@@ -562,6 +682,84 @@ const getErrorMessage = (error: unknown): string =>
       ? (error as { message?: unknown }).message
       : error,
   );
+
+const readProductSearchCatalogStatsFromDatabase = async (
+  fallbackRows?: ProductSearchIndexRow[] | null,
+): Promise<ProductSearchCatalogStats> => {
+  const fallbackStats = fallbackRows ? buildCatalogStatsFromRows(fallbackRows) : normalizeCatalogStats({
+    totalRecords: 0,
+    analysisReadyTotal: 0,
+  });
+
+  try {
+    const [catalogCountResult, analysisReadyCountResult] = await Promise.all([
+      withRetry(
+        () =>
+          supabase
+            .from("iherb_overlay_products")
+            .select("*", { head: true, count: "exact" }),
+        { retries: 1, baseDelayMs: 80, maxDelayMs: 250 },
+      ),
+      withRetry(
+        () =>
+          supabase
+            .from("product_search_index")
+            .select("*", { head: true, count: "exact" })
+            .eq("facts_status", "full")
+            .eq("coverage_status", "coverage_ready"),
+        { retries: 1, baseDelayMs: 80, maxDelayMs: 250 },
+      ),
+    ]);
+
+    const catalogError = catalogCountResult.error;
+    const analysisReadyError = analysisReadyCountResult.error;
+    if (
+      catalogError ||
+      (analysisReadyError && !isMissingProductSearchIndexTableError(analysisReadyError))
+    ) {
+      console.warn("[product-search] catalog stats count fell back to local rows", {
+        catalogError: catalogError ? getErrorMessage(catalogError) : null,
+        analysisReadyError: analysisReadyError ? getErrorMessage(analysisReadyError) : null,
+      });
+      return fallbackStats;
+    }
+
+    return normalizeCatalogStats({
+      totalRecords: catalogCountResult.count ?? fallbackStats.totalRecords,
+      analysisReadyTotal: analysisReadyCountResult.count ?? fallbackStats.analysisReadyTotal,
+    });
+  } catch (error) {
+    console.warn("[product-search] catalog stats read failed; using local fallback", {
+      error: getErrorMessage(error),
+    });
+    return fallbackStats;
+  }
+};
+
+const resolveProductSearchCatalogStats = async (
+  fallbackRows?: ProductSearchIndexRow[] | null,
+): Promise<ProductSearchCatalogStats> => {
+  const now = Date.now();
+  if (cachedCatalogStats && now - cachedCatalogStats.builtAt < PRODUCT_SEARCH_CATALOG_STATS_TTL_MS) {
+    return cachedCatalogStats.payload;
+  }
+  if (inflightCatalogStats) return inflightCatalogStats;
+
+  inflightCatalogStats = (async () => {
+    const payload = await readProductSearchCatalogStatsFromDatabase(fallbackRows);
+    cachedCatalogStats = {
+      builtAt: Date.now(),
+      payload,
+    };
+    return payload;
+  })();
+
+  try {
+    return await inflightCatalogStats;
+  } finally {
+    inflightCatalogStats = null;
+  }
+};
 
 const KNOWN_SEARCH_BRAND_PREFIXES = KNOWN_SEARCH_BRAND_ALIASES
   .map((brand) => normalizeLookupText(brand))
@@ -2586,6 +2784,7 @@ const enrichSearchRow = (
     (queryIntent
       ? scoreSearchRelevanceTier(row, queryIntent)
       : { tier: 4 as SearchRelevanceTier, reason: "fallback" as const });
+  const resultTier = getProductSearchResultTier(row);
 
   return {
     row,
@@ -2612,6 +2811,9 @@ const enrichSearchRow = (
       matchReason,
       factsStatus,
       coverageStatus,
+      resultTier,
+      resultTierLabel: getProductSearchResultTierLabel(resultTier),
+      resultTierDescription: getProductSearchResultTierDescription(resultTier),
     },
   };
 };
@@ -2627,6 +2829,9 @@ const sortCandidates = (left: EnrichedCandidate, right: EnrichedCandidate, hasQu
     const qualityDelta = right.qualityScore - left.qualityScore;
     if (qualityDelta !== 0) return qualityDelta;
   }
+
+  const resultTierDelta = compareProductSearchResultTier(left.card, right.card);
+  if (resultTierDelta !== 0) return resultTierDelta;
 
   const popularityDelta = right.card.popularityScore - left.card.popularityScore;
   if (popularityDelta !== 0) return popularityDelta;
@@ -2657,6 +2862,31 @@ const filterFocusedProductCandidates = (
 ): EnrichedCandidate[] => {
   if (intent.kind !== "brand_product" && intent.kind !== "exact_product") return items;
   return items.filter((item) => item.relevanceTier <= 2);
+};
+
+const shouldAllowNonReadyCatalogResults = (
+  params: SearchParams,
+  intent: SearchQueryIntent,
+  hasQuery: boolean,
+): boolean => {
+  if (
+    intent.kind === "exact_barcode" ||
+    intent.kind === "exact_product" ||
+    intent.kind === "brand_product" ||
+    intent.kind === "form_dose"
+  ) {
+    return true;
+  }
+  if (safeTrim(params.brand)) return true;
+  if (!hasQuery) return false;
+
+  const hasBrandLeadOnly =
+    !!(intent.brandLead || intent.brandHint) &&
+    intent.coreTerms.length === 0 &&
+    intent.ingredientFamilies.length === 0 &&
+    intent.benefitGoalKey === null &&
+    intent.categoryTypeKey === null;
+  return hasBrandLeadOnly;
 };
 
 const NON_SUPPLEMENT_TITLE_PATTERN =
@@ -2785,6 +3015,7 @@ const buildSearchIndex = async (): Promise<ProductSearchIndex> => {
     return {
       builtAt: Date.now(),
       rows: indexedRows,
+      catalogStats: buildCatalogStatsFromRows(indexedRows),
     };
   }
 
@@ -2832,12 +3063,15 @@ const buildSearchIndex = async (): Promise<ProductSearchIndex> => {
     lastSeenId = nextLastSeenId;
   }
 
+  const rankedRows = rows.map((row) => ({
+    ...row,
+    brandPopularity: brandCounts.get(normalizeLookupText(row.brandName)) ?? 0,
+  }));
+
   return {
     builtAt: Date.now(),
-    rows: rows.map((row) => ({
-      ...row,
-      brandPopularity: brandCounts.get(normalizeLookupText(row.brandName)) ?? 0,
-    })),
+    rows: rankedRows,
+    catalogStats: buildCatalogStatsFromRows(rankedRows),
   };
 };
 
@@ -3251,6 +3485,7 @@ const fetchColdFallbackRows = async (params: SearchParams): Promise<ProductSearc
 export const buildSearchResponseFromRows = (
   rows: ProductSearchIndexRow[],
   params: SearchParams,
+  options: { catalogStats?: ProductSearchCatalogStats | null } = {},
 ): ProductSearchResponse => {
   const page = Number.isFinite(params.page) && (params.page ?? 0) > 0 ? Math.floor(params.page as number) : 1;
   const limit = Math.min(
@@ -3261,6 +3496,8 @@ export const buildSearchResponseFromRows = (
   const queryIntent = classifySearchQueryIntent(params.query, { category: params.category });
   const hasQuery =
     queryPlan.requiredGroups.length > 0 || queryPlan.optionalGroups.length > 0;
+  const allowNonReadyCatalogResults = shouldAllowNonReadyCatalogResults(params, queryIntent, hasQuery);
+  const catalogStats = options.catalogStats ?? buildCatalogStatsFromRows(rows);
   const normalizedBrandFilter = normalizeLookupText(params.brand);
   const categoryTypeKey = categoryFilterToTypeKey(params.category);
 
@@ -3312,6 +3549,9 @@ export const buildSearchResponseFromRows = (
     }),
   );
   enriched = filterFocusedProductCandidates(enriched, queryIntent);
+  if (!allowNonReadyCatalogResults) {
+    enriched = enriched.filter((entry) => entry.card.resultTier === "analysis_ready");
+  }
   if (shouldDiversifySearchResults(params, queryPlan, queryIntent, hasQuery)) {
     enriched = diversifyByBrand(enriched);
   }
@@ -3341,6 +3581,7 @@ export const buildSearchResponseFromRows = (
       brands: topBrands,
       popularSearches: POPULAR_SEARCHES,
     },
+    catalogStats,
   };
 };
 
@@ -3351,7 +3592,9 @@ const applyColdBarcodeExactFallbackIfNeeded = async (
   if (!shouldUseColdBarcodeExactFallback(response, params)) return response;
 
   const fallbackRows = await fetchColdFallbackRows(params);
-  const fallbackResponse = buildSearchResponseFromRows(fallbackRows, params);
+  const fallbackResponse = buildSearchResponseFromRows(fallbackRows, params, {
+    catalogStats: response.catalogStats,
+  });
   if (!productSearchResponseHasExactBarcodeMatch(fallbackResponse, params.query)) return response;
 
   console.info("[product-search] using cold barcode exact fallback after warm index miss", {
@@ -3362,7 +3605,9 @@ const applyColdBarcodeExactFallbackIfNeeded = async (
 
 export const buildProductSearchBootstrapPayloadFromRows = (
   rows: ProductSearchIndexRow[],
+  options: { catalogStats?: ProductSearchCatalogStats | null } = {},
 ): ProductSearchBootstrapResponse => {
+  const catalogStats = options.catalogStats ?? buildCatalogStatsFromRows(rows);
   const responses = SEARCH_BROWSE_CATEGORIES.map((category) => {
     const params: SearchParams = {
       query: "",
@@ -3370,7 +3615,7 @@ export const buildProductSearchBootstrapPayloadFromRows = (
       page: 1,
       limit: DEFAULT_LIMIT,
     };
-    const firstPage = buildSearchResponseFromRows(rows, params);
+    const firstPage = buildSearchResponseFromRows(rows, params, { catalogStats });
     const cachedPages = Math.max(
       1,
       Math.ceil(
@@ -3381,7 +3626,7 @@ export const buildProductSearchBootstrapPayloadFromRows = (
       buildSearchResponseFromRows(rows, {
         ...params,
         page: index + 1,
-      }).supplements,
+      }, { catalogStats }).supplements,
     ).flat();
 
     return [
@@ -3406,10 +3651,30 @@ export const buildProductSearchBootstrapPayloadFromRows = (
     paginationByCategory: Object.fromEntries(
       responses.map(([category, response]) => [category, response.pagination]),
     ),
+    catalogStats,
   };
 };
 
-const normalizePersistedSearchBootstrapPayload = (value: unknown): ProductSearchBootstrapResponse | null => {
+const normalizePersistedProductSearchCard = (value: unknown): ProductSearchCard => {
+  const card = value as ProductSearchCard;
+  const resultTier = card.resultTier ?? getProductSearchResultTier({
+    factsStatus: card.factsStatus ?? "none",
+    coverageStatus: card.coverageStatus ?? "not_enough_structured_data",
+  });
+
+  return {
+    ...card,
+    resultTier,
+    resultTierLabel: card.resultTierLabel ?? getProductSearchResultTierLabel(resultTier),
+    resultTierDescription:
+      card.resultTierDescription ?? getProductSearchResultTierDescription(resultTier),
+  };
+};
+
+const normalizePersistedSearchBootstrapPayload = (
+  value: unknown,
+  fallbackIndexedRows?: number | null,
+): ProductSearchBootstrapResponse | null => {
   const record = toObjectRecord(value);
   const categories = toObjectRecord(record.categories);
   if (Object.keys(categories).length === 0) return null;
@@ -3417,7 +3682,7 @@ const normalizePersistedSearchBootstrapPayload = (value: unknown): ProductSearch
   const normalizedCategories: ProductSearchBootstrapResponse["categories"] = {};
   for (const [category, supplements] of Object.entries(categories)) {
     if (!Array.isArray(supplements)) continue;
-    normalizedCategories[category] = supplements as ProductSearchCard[];
+    normalizedCategories[category] = supplements.map(normalizePersistedProductSearchCard);
   }
 
   if (Object.keys(normalizedCategories).length === 0) return null;
@@ -3450,10 +3715,27 @@ const normalizePersistedSearchBootstrapPayload = (value: unknown): ProductSearch
     }
   }
 
+  const catalogStatsRecord = toObjectRecord(record.catalogStats);
+  const allCards = Object.values(normalizedCategories).flat();
+  const fallbackReadyTotal =
+    paginationByCategory.All?.total ??
+    allCards.filter(isAnalysisReadySearchCard).length;
+  const catalogStats = normalizeCatalogStats({
+    totalRecords: Number.isFinite(Number(catalogStatsRecord.totalRecords))
+      ? Number(catalogStatsRecord.totalRecords)
+      : Number.isFinite(Number(fallbackIndexedRows))
+        ? Number(fallbackIndexedRows)
+        : allCards.length,
+    analysisReadyTotal: Number.isFinite(Number(catalogStatsRecord.analysisReadyTotal))
+      ? Number(catalogStatsRecord.analysisReadyTotal)
+      : fallbackReadyTotal,
+  });
+
   return {
     generatedAt: Number.isFinite(record.generatedAt) ? Number(record.generatedAt) : Date.now(),
     categories: normalizedCategories,
     paginationByCategory,
+    catalogStats,
   };
 };
 
@@ -3480,7 +3762,8 @@ const readPersistedProductSearchHomeBootstrap = async (): Promise<ProductSearchB
     throw new Error(`[product-search] home cache read failed: ${getErrorMessage(error)}`);
   }
 
-  const payload = normalizePersistedSearchBootstrapPayload((data as ProductSearchHomeCacheTableRow | null)?.payload);
+  const row = data as ProductSearchHomeCacheTableRow | null;
+  const payload = normalizePersistedSearchBootstrapPayload(row?.payload, row?.indexed_rows ?? null);
   if (!payload) return null;
 
   cachedPersistedHomeBootstrap = {
@@ -3530,7 +3813,8 @@ export const writePersistedProductSearchHomeBootstrap = async (
 
 export const refreshPersistedProductSearchHomeBootstrap = async (): Promise<ProductSearchBootstrapResponse> => {
   const fallbackRows = await fetchColdFallbackRows({ query: "", page: 1, limit: DEFAULT_LIMIT });
-  const payload = buildProductSearchBootstrapPayloadFromRows(fallbackRows);
+  const catalogStats = await resolveProductSearchCatalogStats(fallbackRows);
+  const payload = buildProductSearchBootstrapPayloadFromRows(fallbackRows, { catalogStats });
   await writePersistedProductSearchHomeBootstrap(payload);
   return payload;
 };
@@ -3592,11 +3876,13 @@ const buildBrowseResponseFromBootstrapPayload = (
       brands: [],
       popularSearches: POPULAR_SEARCHES,
     },
+    catalogStats: payload.catalogStats,
   };
 };
 
 const rebuildWarmBrowseResponseMap = (index: ProductSearchIndex): void => {
   const responses = new Map<string, ProductSearchResponse>();
+  const catalogStats = index.catalogStats ?? buildCatalogStatsFromRows(index.rows);
 
   for (const category of SEARCH_BROWSE_CATEGORIES) {
     const params: SearchParams = {
@@ -3605,14 +3891,14 @@ const rebuildWarmBrowseResponseMap = (index: ProductSearchIndex): void => {
       page: 1,
       limit: DEFAULT_LIMIT,
     };
-    const response = buildSearchResponseFromRows(index.rows, params);
+    const response = buildSearchResponseFromRows(index.rows, params, { catalogStats });
     responses.set(buildBrowseCacheKey(params), response);
   }
 
   cachedBrowseResponseMap = {
     builtAt: index.builtAt,
     responses,
-    bootstrap: buildProductSearchBootstrapPayloadFromRows(index.rows),
+    bootstrap: buildProductSearchBootstrapPayloadFromRows(index.rows, { catalogStats }),
   };
 };
 
@@ -3641,13 +3927,15 @@ const getWarmBrowseResponse = (params: SearchParams): ProductSearchResponse | nu
 export const getProductSearchBootstrap = async (): Promise<ProductSearchBootstrapResponse> => {
   const warmIndex = getUsableSearchIndex({ warmIfMissing: false });
   if (warmIndex && cachedBrowseResponseMap?.builtAt === warmIndex.builtAt) {
-    return cachedBrowseResponseMap.bootstrap;
+    const catalogStats = await resolveProductSearchCatalogStats(warmIndex.rows);
+    return attachCatalogStatsToBootstrap(cachedBrowseResponseMap.bootstrap, catalogStats);
   }
   if (warmIndex) {
     if (!cachedBrowseResponseMap || cachedBrowseResponseMap.builtAt !== warmIndex.builtAt) {
       rebuildWarmBrowseResponseMap(warmIndex);
     }
-    return cachedBrowseResponseMap!.bootstrap;
+    const catalogStats = await resolveProductSearchCatalogStats(warmIndex.rows);
+    return attachCatalogStatsToBootstrap(cachedBrowseResponseMap!.bootstrap, catalogStats);
   }
 
   const persistedBootstrap = await readPersistedProductSearchHomeBootstrap();
@@ -3687,7 +3975,9 @@ export const searchProducts = async (params: SearchParams): Promise<ProductSearc
   const hasSearchIntent = Boolean(safeTrim(params.query) || safeTrim(params.brand));
   const warmBrowseResponse = getWarmBrowseResponse(params);
   if (warmBrowseResponse) {
-    return warmBrowseResponse;
+    const warmIndex = getUsableSearchIndex({ warmIfMissing: false });
+    const catalogStats = await resolveProductSearchCatalogStats(warmIndex?.rows ?? null);
+    return attachCatalogStatsToResponse(warmBrowseResponse, catalogStats);
   }
 
   if (!safeTrim(params.query) && !safeTrim(params.brand)) {
@@ -3705,7 +3995,8 @@ export const searchProducts = async (params: SearchParams): Promise<ProductSearc
     if (!cachedBrowseResponseMap || cachedBrowseResponseMap.builtAt !== index.builtAt) {
       rebuildWarmBrowseResponseMap(index);
     }
-    const response = buildSearchResponseFromRows(index.rows, params);
+    const catalogStats = await resolveProductSearchCatalogStats(index.rows);
+    const response = buildSearchResponseFromRows(index.rows, params, { catalogStats });
     return applyColdBarcodeExactFallbackIfNeeded(response, params);
   }
 
@@ -3728,7 +4019,8 @@ export const searchProducts = async (params: SearchParams): Promise<ProductSearc
 
   const coldResponsePromise = (async () => {
     const fallbackRows = await fetchColdFallbackRows(params);
-    const response = buildSearchResponseFromRows(fallbackRows, params);
+    const catalogStats = await resolveProductSearchCatalogStats(fallbackRows);
+    const response = buildSearchResponseFromRows(fallbackRows, params, { catalogStats });
     cachedColdSearchResponses.set(coldCacheKey, {
       builtAt: Date.now(),
       payload: response,

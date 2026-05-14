@@ -79,6 +79,16 @@ export type SearchSupplement = {
   matchReason?: string | null;
   factsStatus?: 'full' | 'partial' | 'none';
   coverageStatus?: 'coverage_ready' | 'not_enough_structured_data';
+  resultTier?: 'analysis_ready' | 'basic_catalog' | 'needs_label_verification';
+  resultTierLabel?: string | null;
+  resultTierDescription?: string | null;
+};
+
+export type ProductSearchCatalogStats = {
+  totalRecords: number;
+  analysisReadyTotal: number;
+  displayTotalRecordsLabel: string;
+  displayAnalysisReadyLabel: string;
 };
 
 export type SearchResponse = {
@@ -98,6 +108,7 @@ export type SearchResponse = {
     brands: string[];
     popularSearches: string[];
   };
+  catalogStats?: ProductSearchCatalogStats;
 };
 
 export type SearchAPIResponse =
@@ -111,6 +122,7 @@ export type SearchBootstrapResponse = {
   generatedAt: number;
   categories: Record<string, SearchSupplement[]>;
   paginationByCategory?: Record<string, SearchResponse['pagination']>;
+  catalogStats?: ProductSearchCatalogStats;
 };
 
 export type SearchBootstrapAPIResponse =

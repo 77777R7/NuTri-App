@@ -111,6 +111,118 @@ test("buildSearchQueryPlan keeps vitamin letter families as phrase aliases inste
   assert.deepEqual(vitaminCPlan.optionalGroups, []);
 });
 
+test("search responses expose catalog stats and hide low-facts rows from empty category browse", () => {
+  const readyVitamin = buildRow({
+    id: "ready-vitamin",
+    productId: "ready-vitamin",
+    brandName: "Jamieson",
+    title: "Vitamin D3 1000 IU",
+    categories: ["Vitamins"],
+    searchText: "jamieson vitamin d3 cholecalciferol 1000 iu",
+    ingredientFamilies: ["vitamin_d"],
+    ingredients: [{ name: "Vitamin D3", dose: "1000 IU" }],
+    factsStatus: "full",
+    coverageStatus: "coverage_ready",
+  });
+  const lowFactsVitamin = buildRow({
+    id: "low-facts-vitamin",
+    productId: "low-facts-vitamin",
+    brandName: "Unknown Brand",
+    title: "Vitamin D Blend",
+    categories: ["Vitamins"],
+    searchText: "unknown brand vitamin d blend",
+    ingredientFamilies: ["vitamin_d"],
+    ingredients: [],
+    factsStatus: "none",
+    coverageStatus: "not_enough_structured_data",
+    brandPopularity: 999,
+  });
+
+  const response = buildSearchResponseFromRows(
+    [lowFactsVitamin, readyVitamin],
+    { query: "", category: "Vitamins", page: 1, limit: 20 },
+  );
+
+  assert.equal(response.catalogStats.totalRecords, 2);
+  assert.equal(response.catalogStats.analysisReadyTotal, 1);
+  assert.equal(response.catalogStats.displayAnalysisReadyLabel, "1");
+  assert.deepEqual(response.supplements.map((item) => item.productId), ["ready-vitamin"]);
+  assert.equal(response.supplements[0]?.resultTier, "analysis_ready");
+  assert.equal(response.supplements[0]?.resultTierLabel, "Ready for full analysis");
+});
+
+test("exact brand-product searches can include basic catalog rows after analysis-ready matches", () => {
+  const readyOmega = buildRow({
+    id: "ready-omega",
+    productId: "ready-omega",
+    brandName: "Sports Research",
+    title: "Omega-3 Fish Oil",
+    searchText: "sports research omega 3 fish oil epa dha softgels",
+    ingredientFamilies: ["omega_3"],
+    ingredients: [{ name: "Fish Oil", dose: "1250 mg" }],
+    factsStatus: "full",
+    coverageStatus: "coverage_ready",
+  });
+  const basicOmega = buildRow({
+    id: "basic-omega",
+    productId: "basic-omega",
+    brandName: "Sports Research",
+    title: "Omega-3 Softgels",
+    searchText: "sports research omega 3 fish oil softgels",
+    ingredientFamilies: ["omega_3"],
+    ingredients: [{ name: "Fish Oil" }],
+    factsStatus: "partial",
+    coverageStatus: "not_enough_structured_data",
+  });
+
+  const response = buildSearchResponseFromRows(
+    [basicOmega, readyOmega],
+    { query: "Sports Research omega-3", page: 1, limit: 10 },
+  );
+
+  assert.deepEqual(response.supplements.map((item) => item.resultTier), [
+    "analysis_ready",
+    "basic_catalog",
+  ]);
+  assert.equal(response.supplements[1]?.resultTierLabel, "Basic record");
+  assert.equal(response.supplements[1]?.resultTierDescription, "Not enough label detail for full analysis");
+});
+
+test("broad ingredient searches do not surface low-facts rows as primary results", () => {
+  const readyMagnesium = buildRow({
+    id: "ready-magnesium",
+    productId: "ready-magnesium",
+    brandName: "Webber Naturals",
+    title: "Magnesium Bisglycinate 200 mg",
+    searchText: "webber naturals magnesium bisglycinate glycinate mineral 200 mg",
+    ingredientFamilies: ["magnesium"],
+    formSignals: ["glycinate"],
+    ingredients: [{ name: "Magnesium Bisglycinate", dose: "200 mg" }],
+    factsStatus: "full",
+    coverageStatus: "coverage_ready",
+  });
+  const lowFactsMagnesium = buildRow({
+    id: "low-facts-magnesium",
+    productId: "low-facts-magnesium",
+    brandName: "Popular Fallback",
+    title: "Magnesium Complex",
+    searchText: "popular fallback magnesium complex mineral",
+    ingredientFamilies: ["magnesium"],
+    ingredients: [],
+    factsStatus: "none",
+    coverageStatus: "not_enough_structured_data",
+    brandPopularity: 10000,
+  });
+
+  const response = buildSearchResponseFromRows(
+    [lowFactsMagnesium, readyMagnesium],
+    { query: "magnesium", page: 1, limit: 10 },
+  );
+
+  assert.deepEqual(response.supplements.map((item) => item.productId), ["ready-magnesium"]);
+  assert.ok(response.supplements.every((item) => item.resultTier === "analysis_ready"));
+});
+
 test("classifySearchQueryIntent separates product, ingredient, benefit, and browse searches", () => {
   assert.equal(classifySearchQueryIntent("Jamieson Vitamin D3 1000 IU").kind, "exact_product");
   assert.equal(classifySearchQueryIntent("Sports Research omega-3").kind, "brand_product");
@@ -399,6 +511,9 @@ test("Product Search browse bootstrap caches continuation rows instead of a one-
   assert.equal(allPagination?.shown, 20);
   assert.equal(allPagination?.hasMore, true);
   assert.equal(allPagination?.nextPage, 2);
+  assert.equal(bootstrap.catalogStats.totalRecords, 160);
+  assert.equal(bootstrap.catalogStats.analysisReadyTotal, 160);
+  assert.equal(bootstrap.catalogStats.displayAnalysisReadyLabel, "160");
   assert.equal(new Set(allRows.map((item) => item.productId)).size, allRows.length);
 });
 
@@ -702,6 +817,12 @@ test("barcode exact search detects warm-index misses that need cold fallback", (
       totalIsExact: true,
     },
     suggestions: { categories: [], brands: [], popularSearches: [] },
+    catalogStats: {
+      totalRecords: 0,
+      analysisReadyTotal: 0,
+      displayTotalRecordsLabel: "0",
+      displayAnalysisReadyLabel: "0",
+    },
   };
   const exactResponse: ProductSearchResponse = {
     ...emptyResponse,
@@ -722,6 +843,9 @@ test("barcode exact search detects warm-index misses that need cold fallback", (
         relevanceScore: 36,
         factsStatus: "full",
         coverageStatus: "coverage_ready",
+        resultTier: "analysis_ready",
+        resultTierLabel: "Ready for full analysis",
+        resultTierDescription: null,
       },
     ],
   };
@@ -885,17 +1009,19 @@ test("broad ingredient search diversifies top results by brand and prefers cover
         brandName: "NOW Foods",
         title: "Magnesium Caps",
         searchText: "now foods magnesium mineral caps",
-        ingredients: [],
+        ingredients: [{ name: "Magnesium", dose: "250 mg" }],
         brandPopularity: 1200,
       }),
     ],
     { query: "magnesium", page: 1, limit: 4 },
   );
 
-  assert.deepEqual(response.supplements.slice(0, 3).map((item) => item.brand), [
-    "Webber Naturals",
+  const topBrands = response.supplements.slice(0, 3).map((item) => item.brand);
+  assert.equal(new Set(topBrands).size, 3);
+  assert.deepEqual([...topBrands].sort(), [
     "Jamieson",
     "NOW Foods",
+    "Webber Naturals",
   ]);
   assert.equal(response.supplements[0]?.coverageStatus, "coverage_ready");
   assert.equal(response.supplements[0]?.matchReason, "Title match");

@@ -4,6 +4,7 @@ import { usePremiumAccess } from '@/hooks/usePremiumAccess';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   apiClient,
+  type ProductSearchCatalogStats,
   type SearchAPIResponse,
   type SearchBootstrapAPIResponse,
   type SearchResponse,
@@ -63,7 +64,7 @@ const CATEGORIES: Category[] = [
 ];
 const SEARCH_REQUEST_TIMEOUT_MS = 8000;
 const SEARCH_LOAD_MORE_TIMEOUT_MS = 10000;
-const SEARCH_BOOTSTRAP_STORAGE_KEY = 'product-search-bootstrap-v6';
+const SEARCH_BOOTSTRAP_STORAGE_KEY = 'product-search-bootstrap-v7';
 const SEARCH_BOOTSTRAP_MAX_AGE_MS = 6 * 60 * 60 * 1000;
 
 const SEARCH_PAGE_LIMIT = 20;
@@ -134,6 +135,7 @@ type StoredSearchBootstrap = {
   savedAt: number;
   categories: Partial<Record<Category, SearchSupplement[]>>;
   paginationByCategory?: Partial<Record<Category, SearchResponse['pagination']>>;
+  catalogStats?: ProductSearchCatalogStats | null;
 };
 
 const bootstrapPayloadHasContinuationContract = (
@@ -187,8 +189,24 @@ const buildSearchPagination = (
   };
 };
 
-const buildCoverageLabel = (item: SearchSupplement) =>
-  item.coverageStatus === 'coverage_ready' ? 'Full facts' : 'Limited facts';
+const getResultTier = (item: SearchSupplement) => {
+  if (item.resultTier) return item.resultTier;
+  if (item.coverageStatus === 'coverage_ready' && item.factsStatus === 'full') {
+    return 'analysis_ready';
+  }
+  return item.factsStatus === 'partial' ? 'basic_catalog' : 'needs_label_verification';
+};
+
+const buildCoverageLabel = (item: SearchSupplement) => {
+  const tier = getResultTier(item);
+  if (tier === 'analysis_ready') return 'Full facts';
+  return item.resultTierLabel ?? (tier === 'basic_catalog' ? 'Basic record' : 'Needs label verification');
+};
+
+const buildResultTierDescription = (item: SearchSupplement) =>
+  getResultTier(item) === 'analysis_ready'
+    ? null
+    : item.resultTierDescription ?? 'Not enough label detail for full analysis';
 
 const hasNavigableProductId = (item: SearchSupplement) =>
   typeof item.productId === 'string' && item.productId.trim().length > 0;
@@ -202,6 +220,7 @@ const getSearchResultIdentity = (item: SearchSupplement) =>
 const buildCachedSearchResponse = (
   supplements: SearchSupplement[],
   pagination?: SearchResponse['pagination'],
+  catalogStats?: ProductSearchCatalogStats | null,
 ): SearchResponse => ({
   supplements,
   pagination: buildSearchPagination(supplements, pagination),
@@ -210,6 +229,7 @@ const buildCachedSearchResponse = (
     brands: [],
     popularSearches: [],
   },
+  ...(catalogStats ? { catalogStats } : {}),
 });
 
 const AnimatedSearchFlatList = Animated.createAnimatedComponent(FlatList<SearchSupplement>);
@@ -246,6 +266,8 @@ const SearchResultRow = React.memo(function SearchResultRow({
   categoryFontSize,
 }: SearchResultRowProps) {
   const categoryStyle = CATEGORY_STYLES[item.category] ?? CATEGORY_STYLES.Supplement;
+  const resultTier = getResultTier(item);
+  const resultTierDescription = buildResultTierDescription(item);
 
   return (
     <Pressable
@@ -372,23 +394,32 @@ const SearchResultRow = React.memo(function SearchResultRow({
             <View
               style={[
                 styles.signalTag,
-                item.coverageStatus === 'coverage_ready'
+                resultTier === 'analysis_ready'
                   ? styles.signalTagReady
-                  : styles.signalTagLimited,
+                  : resultTier === 'basic_catalog'
+                    ? styles.signalTagBasic
+                    : styles.signalTagVerification,
               ]}
             >
               <Text
                 style={[
                   styles.signalTagText,
-                  item.coverageStatus === 'coverage_ready'
+                  resultTier === 'analysis_ready'
                     ? styles.signalTagTextReady
-                    : styles.signalTagTextLimited,
+                    : resultTier === 'basic_catalog'
+                      ? styles.signalTagTextBasic
+                      : styles.signalTagTextVerification,
                 ]}
               >
                 {buildCoverageLabel(item)}
               </Text>
             </View>
           </View>
+          {resultTierDescription ? (
+            <Text style={styles.resultTierDescription} numberOfLines={2}>
+              {resultTierDescription}
+            </Text>
+          ) : null}
         </View>
       </View>
     </Pressable>
@@ -406,6 +437,7 @@ const SearchExperience = () => {
   const [pagination, setPagination] = useState<SearchResponse['pagination']>(() =>
     buildSearchPagination([]),
   );
+  const [catalogStats, setCatalogStats] = useState<ProductSearchCatalogStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -473,6 +505,7 @@ const SearchExperience = () => {
     (
       categories: Partial<Record<Category, SearchSupplement[]>>,
       paginationByCategory?: Partial<Record<Category, SearchResponse['pagination']>>,
+      nextCatalogStats?: ProductSearchCatalogStats | null,
     ) => {
       let seededAny = false;
 
@@ -501,13 +534,16 @@ const SearchExperience = () => {
               shown: Math.min(endIndex, total),
               hasMore: endIndex < total,
               nextPage: endIndex < total ? page + 1 : null,
-            }),
+            }, nextCatalogStats),
           );
         }
         seededAny = true;
       }
 
       if (seededAny) {
+        if (nextCatalogStats) {
+          setCatalogStats(nextCatalogStats);
+        }
         bootstrapSeededRef.current = true;
         setBootstrapStatus('ready');
       }
@@ -520,6 +556,9 @@ const SearchExperience = () => {
       const nextResults = getNavigableSupplements(payload.supplements ?? []);
       setResults(nextResults);
       setPagination(buildSearchPagination(nextResults, payload.pagination));
+      if (payload.catalogStats) {
+        setCatalogStats(payload.catalogStats);
+      }
       setErrorMessage(null);
       setLoadMoreError(null);
       if (options?.animate) {
@@ -593,7 +632,7 @@ const SearchExperience = () => {
           return;
         }
 
-        seedBootstrapCategories(parsed.categories, parsed.paginationByCategory);
+        seedBootstrapCategories(parsed.categories, parsed.paginationByCategory, parsed.catalogStats);
       } catch {
         // Ignore corrupt local cache and rebuild it from the server bootstrap.
       } finally {
@@ -724,6 +763,7 @@ const SearchExperience = () => {
             seedBootstrapCategories(
               { [activeFilter]: activePayload.supplements },
               { [activeFilter]: activePayload.pagination },
+              activePayload.catalogStats,
             );
             applyResolvedResults(activePayload, { animate: true });
             setLoading(false);
@@ -755,7 +795,7 @@ const SearchExperience = () => {
           return;
         }
 
-        seedBootstrapCategories(nextCategories, nextPaginationByCategory);
+        seedBootstrapCategories(nextCategories, nextPaginationByCategory, payload.catalogStats);
         setBootstrapStatus('ready');
         await AsyncStorage.setItem(
           SEARCH_BOOTSTRAP_STORAGE_KEY,
@@ -763,6 +803,7 @@ const SearchExperience = () => {
             savedAt: Date.now(),
             categories: nextCategories,
             paginationByCategory: nextPaginationByCategory,
+            catalogStats: payload.catalogStats ?? null,
           } satisfies StoredSearchBootstrap),
         );
 
@@ -958,11 +999,14 @@ const SearchExperience = () => {
     !loading && results.length > 0 && (pagination.hasMore ?? pagination.page < pagination.totalPages);
   const shownCount = results.length > 0 ? results.length : pagination.shown ?? 0;
   const displayTotal = Math.max(shownCount, pagination.total);
-  const totalCopy = pagination.totalIsExact === false ? `${displayTotal}+` : String(pagination.total);
+  const catalogTotalLabel = catalogStats?.displayTotalRecordsLabel ?? '30,000+';
+  const analysisReadyLabel =
+    catalogStats?.displayAnalysisReadyLabel ??
+    (pagination.totalIsExact === false ? `${displayTotal}+` : String(pagination.total || 0));
   const resultSummary = loading && results.length === 0
     ? 'Searching...'
     : pagination.total > 0
-      ? `Showing ${Math.min(shownCount, displayTotal)} of ${totalCopy} results`
+      ? `Showing ${Math.min(shownCount, displayTotal)} of ${analysisReadyLabel} analysis-ready results`
       : hasActiveSearch
         ? 'No results yet'
         : 'Browse popular supplements';
@@ -1114,6 +1158,27 @@ const SearchExperience = () => {
                 },
               ]}
             >
+              <MotiView
+                from={{ opacity: 0, translateY: 10 }}
+                animate={{ opacity: 1, translateY: 0 }}
+                transition={{ type: 'timing', duration: 360, delay: 90 }}
+                style={styles.catalogStatsPanel}
+                testID="product-search-catalog-stats"
+              >
+                <Text style={styles.catalogStatsTitle}>
+                  Search {catalogTotalLabel} supplement records
+                </Text>
+                <Text style={styles.catalogStatsSubline}>
+                  {catalogStats ? (
+                    <>
+                      {analysisReadyLabel} ready for full analysis
+                    </>
+                  ) : (
+                    'Loading analysis-ready catalog'
+                  )}
+                </Text>
+              </MotiView>
+
               <MotiView
                 from={{ opacity: 0, translateY: 10 }}
                 animate={{ opacity: 1, translateY: 0 }}
@@ -1420,6 +1485,23 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     letterSpacing: -0.9,
   },
+  catalogStatsPanel: {
+    gap: 3,
+  },
+  catalogStatsTitle: {
+    color: '#14213D',
+    fontSize: 17,
+    lineHeight: 22,
+    fontWeight: '800',
+    letterSpacing: 0,
+  },
+  catalogStatsSubline: {
+    color: '#73819B',
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: '600',
+    letterSpacing: 0,
+  },
   searchInputWrap: {
     borderRadius: 18,
     backgroundColor: '#FFFFFF',
@@ -1631,9 +1713,13 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(16,185,129,0.2)',
     backgroundColor: '#ECFDF5',
   },
-  signalTagLimited: {
+  signalTagBasic: {
     borderColor: 'rgba(245,158,11,0.22)',
     backgroundColor: '#FFFBEB',
+  },
+  signalTagVerification: {
+    borderColor: 'rgba(100,116,139,0.22)',
+    backgroundColor: '#F8FAFC',
   },
   signalTagText: {
     color: '#4F46E5',
@@ -1644,8 +1730,19 @@ const styles = StyleSheet.create({
   signalTagTextReady: {
     color: '#047857',
   },
-  signalTagTextLimited: {
+  signalTagTextBasic: {
     color: '#B45309',
+  },
+  signalTagTextVerification: {
+    color: '#475569',
+  },
+  resultTierDescription: {
+    marginTop: 7,
+    color: '#73819B',
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: '600',
+    letterSpacing: 0,
   },
   resultAction: {
     marginLeft: 12,

@@ -30,7 +30,7 @@ const verificationPresentationSource = readSource("../../lib/scan/verificationPr
 
 test("Product Search list exposes pagination, result count, and user-readable match signals", () => {
   assert.match(searchSource, /SEARCH_PAGE_LIMIT = 20/);
-  assert.match(searchSource, /product-search-bootstrap-v6/);
+  assert.match(searchSource, /product-search-bootstrap-v7/);
   assert.match(searchSource, /bootstrapPayloadHasContinuationContract/);
   assert.match(searchSource, /storedBootstrapHasContinuationContract/);
   assert.match(searchSource, /hasNavigableProductId/);
@@ -43,13 +43,20 @@ test("Product Search list exposes pagination, result count, and user-readable ma
     searchSource,
     /!bootstrapPayloadHasContinuationContract\(\{[\s\S]*categories: nextCategories,[\s\S]*paginationByCategory: nextPaginationByCategory,[\s\S]*\}\)[\s\S]*setBootstrapStatus\('failed'\)[\s\S]*return;/,
   );
-  assert.match(searchSource, /displayTotal = Math\.max\(shownCount, pagination\.total\)/);
-  assert.match(searchSource, /Showing \$\{Math\.min\(shownCount, displayTotal\)\} of \$\{totalCopy\} results/);
+  assert.match(searchSource, /catalogStats/);
+  assert.match(searchSource, /Search \{catalogTotalLabel\} supplement records/);
+  assert.match(searchSource, /\{analysisReadyLabel\} ready for full analysis/);
+  assert.match(searchSource, /analysis-ready results/);
+  assert.doesNotMatch(searchSource, /Showing \$\{Math\.min\(shownCount, displayTotal\)\} of \$\{totalCopy\} results/);
   assert.match(searchSource, /handleLoadMore/);
   assert.match(searchSource, /matchReason/);
   assert.match(searchSource, /Full facts/);
-  assert.match(searchSource, /Limited facts/);
+  assert.match(searchSource, /Basic record/);
+  assert.match(searchSource, /Needs label verification/);
   assert.match(apiClientSource, /matchReason\?: string \| null/);
+  assert.match(apiClientSource, /catalogStats\?: ProductSearchCatalogStats/);
+  assert.match(apiClientSource, /resultTier\?: 'analysis_ready' \| 'basic_catalog' \| 'needs_label_verification'/);
+  assert.match(apiClientSource, /resultTierDescription\?: string \| null/);
   assert.match(apiClientSource, /hasMore\?: boolean/);
   assert.match(apiClientSource, /nextPage\?: number \| null/);
   assert.match(apiClientSource, /shown\?: number/);
@@ -117,7 +124,8 @@ test("Product Search exposes stable simulator smoke test ids", () => {
 
 test("Product Search shows user progress instead of technical page copy", () => {
   assert.match(searchSource, /Showing/);
-  assert.match(searchSource, /totalCopy/);
+  assert.match(searchSource, /analysisReadyLabel/);
+  assert.match(searchSource, /analysis-ready results/);
   assert.doesNotMatch(searchSource, /Page \{/);
 });
 
