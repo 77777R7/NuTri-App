@@ -693,24 +693,25 @@ const readProductSearchCatalogStatsFromDatabase = async (
   });
 
   try {
-    const [catalogCountResult, analysisReadyCountResult] = await Promise.all([
-      withRetry(
-        () =>
-          supabase
-            .from("iherb_overlay_products")
-            .select("*", { head: true, count: "exact" }),
-        { retries: 1, baseDelayMs: 80, maxDelayMs: 250 },
-      ),
-      withRetry(
-        () =>
-          supabase
-            .from("product_search_index")
-            .select("*", { head: true, count: "exact" })
-            .eq("facts_status", "full")
-            .eq("coverage_status", "coverage_ready"),
-        { retries: 1, baseDelayMs: 80, maxDelayMs: 250 },
-      ),
-    ]);
+    const catalogCountResult = await withRetry(
+      () =>
+        supabase
+          .from("iherb_overlay_products")
+          .select("*", { head: true, count: "exact" }),
+      { retries: 1, baseDelayMs: 80, maxDelayMs: 250 },
+    );
+
+    const analysisReadyCountResult = options.preferFallbackAnalysisReady
+      ? { count: fallbackStats.analysisReadyTotal, error: null }
+      : await withRetry(
+          () =>
+            supabase
+              .from("product_search_index")
+              .select("*", { head: true, count: "exact" })
+              .eq("facts_status", "full")
+              .eq("coverage_status", "coverage_ready"),
+          { retries: 1, baseDelayMs: 80, maxDelayMs: 250 },
+        );
 
     const catalogError = catalogCountResult.error;
     const analysisReadyError = analysisReadyCountResult.error;
@@ -3261,6 +3262,14 @@ const fetchColdProductSearchIndexRows = async (
       .order("brand_popularity", { ascending: false })
       .order("source_updated_at", { ascending: false, nullsFirst: false })
       .limit(limit);
+  const buildBaseRangeQuery = (from: number, to: number) =>
+    supabase
+      .from("product_search_index")
+      .select(PRODUCT_SEARCH_LIST_INDEX_SELECT)
+      .order("quality_rank", { ascending: false })
+      .order("brand_popularity", { ascending: false })
+      .order("source_updated_at", { ascending: false, nullsFirst: false })
+      .range(from, to);
 
   const mergedRows = new Map<string, ProductSearchIndexTableRow>();
   const mergeBatch = (batch: ProductSearchIndexTableRow[] | null | undefined) => {
@@ -3394,6 +3403,13 @@ const fetchColdProductSearchIndexRows = async (
     const batch = await executeQuery(query);
     if (batch === null) return null;
     mergeBatch(batch);
+    if (!hasQuery && COLD_FALLBACK_BROWSE_LIMIT > 1000) {
+      const continuationBatch = await executeQuery(
+        buildBaseRangeQuery(1000, COLD_FALLBACK_BROWSE_LIMIT - 1),
+      );
+      if (continuationBatch === null) return null;
+      mergeBatch(continuationBatch);
+    }
   }
 
   return buildMergedIndexRows();
