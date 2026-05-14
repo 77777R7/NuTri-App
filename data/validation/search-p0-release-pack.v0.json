@@ -1,0 +1,3195 @@
+{
+  "version": "search-p0-release-pack.v0",
+  "baseline": "product-search-ranking-v2",
+  "description": "Release-focused Product Search replay pack with real user-style supplement queries, expected search intent, expected relevance tier, category/page checks, and zero-result guards.",
+  "scenarios": [
+    {
+      "id": "search_p0_barcode_sr_omega3",
+      "surface": "search",
+      "origin": "search_result",
+      "category": "omega3_source_oil",
+      "personas": [
+        "fish_allergy"
+      ],
+      "input": {
+        "query": "00023249011835",
+        "queryType": "barcode"
+      },
+      "product": {
+        "productId": "Sports Research Omega-3",
+        "brand": "Sports Research",
+        "name": "Alaskan Omega-3 Fish Oil",
+        "barcode": "00023249011835"
+      },
+      "expected": {
+        "search": {
+          "expectedProductId": "Sports Research Omega-3",
+          "metric": "barcode_exact",
+          "intent": "exact_barcode",
+          "tier": 0,
+          "mustMatchTerms": [
+            "Sports Research",
+            "Omega"
+          ]
+        }
+      },
+      "gates": [
+        "search_relevance"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_p0_exact_jamieson_d3_1000",
+      "surface": "search",
+      "origin": "search_result",
+      "category": "vitamin_mineral_single",
+      "personas": [],
+      "input": {
+        "query": "Jamieson Vitamin D3 1000 IU",
+        "queryType": "exact_product"
+      },
+      "product": {
+        "productId": "term-match-jamieson-d3-1000",
+        "brand": "Jamieson",
+        "name": "Vitamin D3 1000 IU",
+        "barcode": null
+      },
+      "expected": {
+        "search": {
+          "expectedProductId": "term-match-jamieson-d3-1000",
+          "metric": "top3",
+          "intent": "exact_product",
+          "tier": 0,
+          "mustMatchTerms": [
+            "Jamieson",
+            "Vitamin D3"
+          ]
+        }
+      },
+      "gates": [
+        "search_relevance"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_p0_exact_jamieson_d3_tablets",
+      "surface": "search",
+      "origin": "search_result",
+      "category": "vitamin_mineral_single",
+      "personas": [],
+      "input": {
+        "query": "Jamieson Vitamin D3 1,000 IU tablets",
+        "queryType": "exact_product"
+      },
+      "product": {
+        "productId": "term-match-jamieson-d3-tablets",
+        "brand": "Jamieson",
+        "name": "Vitamin D3 1,000 IU Tablets",
+        "barcode": null
+      },
+      "expected": {
+        "search": {
+          "expectedProductId": "term-match-jamieson-d3-tablets",
+          "metric": "top3",
+          "intent": "exact_product",
+          "tier": 0,
+          "mustMatchTerms": [
+            "Jamieson",
+            "Vitamin D3"
+          ]
+        }
+      },
+      "gates": [
+        "search_relevance"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_p0_exact_nordic_ultimate_omega",
+      "surface": "search",
+      "origin": "search_result",
+      "category": "omega3_source_oil",
+      "personas": [
+        "fish_allergy"
+      ],
+      "input": {
+        "query": "Nordic Naturals Ultimate Omega",
+        "queryType": "exact_product"
+      },
+      "product": {
+        "productId": "term-match-nordic-ultimate-omega",
+        "brand": "Nordic Naturals",
+        "name": "Ultimate Omega",
+        "barcode": null
+      },
+      "expected": {
+        "search": {
+          "expectedProductId": "term-match-nordic-ultimate-omega",
+          "metric": "top3",
+          "intent": "exact_product",
+          "tier": 0,
+          "mustMatchTerms": [
+            "Nordic Naturals",
+            "Omega"
+          ]
+        }
+      },
+      "gates": [
+        "search_relevance"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_p0_exact_now_magnesium_caps",
+      "surface": "search",
+      "origin": "search_result",
+      "category": "mineral_stack",
+      "personas": [],
+      "input": {
+        "query": "NOW Foods Magnesium Caps",
+        "queryType": "exact_product"
+      },
+      "product": {
+        "productId": "term-match-now-magnesium-caps",
+        "brand": "NOW Foods",
+        "name": "Magnesium Caps",
+        "barcode": null
+      },
+      "expected": {
+        "search": {
+          "expectedProductId": "term-match-now-magnesium-caps",
+          "metric": "top3",
+          "intent": "exact_product",
+          "tier": 0,
+          "mustMatchTerms": [
+            "NOW Foods",
+            "Magnesium"
+          ]
+        }
+      },
+      "gates": [
+        "search_relevance"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_p0_exact_natrol_melatonin_5mg",
+      "surface": "search",
+      "origin": "search_result",
+      "category": "sleep_amino",
+      "personas": [
+        "melatonin_sensitivity",
+        "sleep_goal"
+      ],
+      "input": {
+        "query": "Natrol Melatonin 5 mg",
+        "queryType": "exact_product"
+      },
+      "product": {
+        "productId": "term-match-natrol-melatonin-5mg",
+        "brand": "Natrol",
+        "name": "Melatonin 5 mg",
+        "barcode": null
+      },
+      "expected": {
+        "search": {
+          "expectedProductId": "term-match-natrol-melatonin-5mg",
+          "metric": "top3",
+          "intent": "exact_product",
+          "tier": 0,
+          "mustMatchTerms": [
+            "Natrol",
+            "Melatonin"
+          ]
+        }
+      },
+      "gates": [
+        "search_relevance"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_p0_exact_qunol_coq10",
+      "surface": "search",
+      "origin": "search_result",
+      "category": "metabolic_body_composition",
+      "personas": [],
+      "input": {
+        "query": "Qunol CoQ10 100 mg",
+        "queryType": "exact_product"
+      },
+      "product": {
+        "productId": "term-match-qunol-coq10",
+        "brand": "Qunol",
+        "name": "CoQ10 100 mg",
+        "barcode": null
+      },
+      "expected": {
+        "search": {
+          "expectedProductId": "term-match-qunol-coq10",
+          "metric": "top3",
+          "intent": "exact_product",
+          "tier": 0,
+          "mustMatchTerms": [
+            "Qunol",
+            "CoQ10"
+          ]
+        }
+      },
+      "gates": [
+        "search_relevance"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_p0_exact_jarrow_methyl_b12",
+      "surface": "search",
+      "origin": "search_result",
+      "category": "multivitamin_b_complex",
+      "personas": [],
+      "input": {
+        "query": "Jarrow methyl B12 5000 mcg",
+        "queryType": "exact_product"
+      },
+      "product": {
+        "productId": "term-match-jarrow-methyl-b12",
+        "brand": "Jarrow Formulas",
+        "name": "Methyl B12 5000 mcg",
+        "barcode": null
+      },
+      "expected": {
+        "search": {
+          "expectedProductId": "term-match-jarrow-methyl-b12",
+          "metric": "top3",
+          "intent": "exact_product",
+          "tier": 0,
+          "mustMatchTerms": [
+            "B12"
+          ]
+        }
+      },
+      "gates": [
+        "search_relevance"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_p0_exact_life_extension_two_per_day",
+      "surface": "search",
+      "origin": "search_result",
+      "category": "multivitamin_b_complex",
+      "personas": [],
+      "input": {
+        "query": "Life Extension Two-Per-Day multivitamin",
+        "queryType": "exact_product"
+      },
+      "product": {
+        "productId": "term-match-life-extension-two-per-day",
+        "brand": "Life Extension",
+        "name": "Two-Per-Day Multivitamin",
+        "barcode": null
+      },
+      "expected": {
+        "search": {
+          "expectedProductId": "term-match-life-extension-two-per-day",
+          "metric": "top3",
+          "intent": "exact_product",
+          "tier": 0,
+          "mustMatchTerms": [
+            "Life Extension",
+            "Multivitamin"
+          ]
+        }
+      },
+      "gates": [
+        "search_relevance"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_p0_exact_doctors_best_magnesium",
+      "surface": "search",
+      "origin": "search_result",
+      "category": "mineral_stack",
+      "personas": [],
+      "input": {
+        "query": "Doctors Best high absorption magnesium",
+        "queryType": "exact_product"
+      },
+      "product": {
+        "productId": "term-match-doctors-best-magnesium",
+        "brand": "Doctors Best",
+        "name": "High Absorption Magnesium",
+        "barcode": null
+      },
+      "expected": {
+        "search": {
+          "expectedProductId": "term-match-doctors-best-magnesium",
+          "metric": "top3",
+          "intent": "exact_product",
+          "tier": 0,
+          "mustMatchTerms": [
+            "Magnesium"
+          ]
+        }
+      },
+      "gates": [
+        "search_relevance"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_p0_exact_thorne_basic_prenatal",
+      "surface": "search",
+      "origin": "search_result",
+      "category": "prenatal_kids",
+      "personas": [
+        "pregnancy_prenatal"
+      ],
+      "input": {
+        "query": "Thorne Basic Prenatal",
+        "queryType": "exact_product"
+      },
+      "product": {
+        "productId": "term-match-thorne-basic-prenatal",
+        "brand": "Thorne",
+        "name": "Basic Prenatal",
+        "barcode": null
+      },
+      "expected": {
+        "search": {
+          "expectedProductId": "term-match-thorne-basic-prenatal",
+          "metric": "top3",
+          "intent": "exact_product",
+          "tier": 0,
+          "mustMatchTerms": [
+            "Prenatal"
+          ]
+        }
+      },
+      "gates": [
+        "search_relevance"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_p0_exact_garden_life_probiotic",
+      "surface": "search",
+      "origin": "search_result",
+      "category": "probiotic_microbiome",
+      "personas": [
+        "digestion_goal"
+      ],
+      "input": {
+        "query": "Garden of Life Dr Formulated Probiotics",
+        "queryType": "exact_product"
+      },
+      "product": {
+        "productId": "term-match-garden-life-probiotic",
+        "brand": "Garden of Life",
+        "name": "Dr Formulated Probiotics",
+        "barcode": null
+      },
+      "expected": {
+        "search": {
+          "expectedProductId": "term-match-garden-life-probiotic",
+          "metric": "top3",
+          "intent": "exact_product",
+          "tier": 0,
+          "mustMatchTerms": [
+            "Probiotic"
+          ]
+        }
+      },
+      "gates": [
+        "search_relevance"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_p0_brand_sports_research_omega3",
+      "surface": "search",
+      "origin": "search_result",
+      "category": "omega3_source_oil",
+      "personas": [
+        "fish_allergy"
+      ],
+      "input": {
+        "query": "Sports Research omega-3",
+        "queryType": "brand_product"
+      },
+      "product": {
+        "productId": "term-match-sports-research-omega3",
+        "brand": "Sports Research",
+        "name": "Omega-3",
+        "barcode": null
+      },
+      "expected": {
+        "search": {
+          "expectedProductId": "term-match-sports-research-omega3",
+          "metric": "recall5",
+          "intent": "brand_product",
+          "tier": 0,
+          "mustMatchTerms": [
+            "Sports Research",
+            "Omega"
+          ]
+        }
+      },
+      "gates": [
+        "search_relevance"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_p0_brand_nordic_omega3",
+      "surface": "search",
+      "origin": "search_result",
+      "category": "omega3_source_oil",
+      "personas": [
+        "fish_allergy"
+      ],
+      "input": {
+        "query": "Nordic Naturals omega 3",
+        "queryType": "brand_product"
+      },
+      "product": {
+        "productId": "term-match-nordic-omega3",
+        "brand": "Nordic Naturals",
+        "name": "Omega-3",
+        "barcode": null
+      },
+      "expected": {
+        "search": {
+          "expectedProductId": "term-match-nordic-omega3",
+          "metric": "recall5",
+          "intent": "brand_product",
+          "tier": 0,
+          "mustMatchTerms": [
+            "Nordic Naturals",
+            "Omega"
+          ]
+        }
+      },
+      "gates": [
+        "search_relevance"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_p0_brand_now_magnesium",
+      "surface": "search",
+      "origin": "search_result",
+      "category": "mineral_stack",
+      "personas": [],
+      "input": {
+        "query": "NOW magnesium glycinate",
+        "queryType": "brand_product"
+      },
+      "product": {
+        "productId": "term-match-now-magnesium-glycinate",
+        "brand": "NOW Foods",
+        "name": "Magnesium Glycinate",
+        "barcode": null
+      },
+      "expected": {
+        "search": {
+          "expectedProductId": "term-match-now-magnesium-glycinate",
+          "metric": "recall5",
+          "intent": "brand_product",
+          "tier": 0,
+          "mustMatchTerms": [
+            "Magnesium"
+          ]
+        }
+      },
+      "gates": [
+        "search_relevance"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_p0_brand_jamieson_vitamin_d",
+      "surface": "search",
+      "origin": "search_result",
+      "category": "vitamin_mineral_single",
+      "personas": [],
+      "input": {
+        "query": "Jamieson vitamin d",
+        "queryType": "brand_product"
+      },
+      "product": {
+        "productId": "term-match-jamieson-vitamin-d",
+        "brand": "Jamieson",
+        "name": "Vitamin D",
+        "barcode": null
+      },
+      "expected": {
+        "search": {
+          "expectedProductId": "term-match-jamieson-vitamin-d",
+          "metric": "recall5",
+          "intent": "brand_product",
+          "tier": 0,
+          "mustMatchTerms": [
+            "Jamieson",
+            "Vitamin D"
+          ]
+        }
+      },
+      "gates": [
+        "search_relevance"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_p0_brand_webber_magnesium",
+      "surface": "search",
+      "origin": "search_result",
+      "category": "mineral_stack",
+      "personas": [],
+      "input": {
+        "query": "Webber Naturals magnesium bisglycinate",
+        "queryType": "brand_product"
+      },
+      "product": {
+        "productId": "term-match-webber-magnesium-bisglycinate",
+        "brand": "Webber Naturals",
+        "name": "Magnesium Bisglycinate",
+        "barcode": null
+      },
+      "expected": {
+        "search": {
+          "expectedProductId": "term-match-webber-magnesium-bisglycinate",
+          "metric": "recall5",
+          "intent": "brand_product",
+          "tier": 0,
+          "mustMatchTerms": [
+            "Webber",
+            "Magnesium"
+          ]
+        }
+      },
+      "gates": [
+        "search_relevance"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_p0_brand_natural_factors_ashwagandha",
+      "surface": "search",
+      "origin": "search_result",
+      "category": "botanical_extract",
+      "personas": [
+        "stress_goal"
+      ],
+      "input": {
+        "query": "Natural Factors ashwagandha sensoril",
+        "queryType": "brand_product"
+      },
+      "product": {
+        "productId": "term-match-natural-factors-ashwagandha",
+        "brand": "Natural Factors",
+        "name": "Ashwagandha Sensoril",
+        "barcode": null
+      },
+      "expected": {
+        "search": {
+          "expectedProductId": "term-match-natural-factors-ashwagandha",
+          "metric": "recall5",
+          "intent": "brand_product",
+          "tier": 0,
+          "mustMatchTerms": [
+            "Ashwagandha"
+          ]
+        }
+      },
+      "gates": [
+        "search_relevance"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_p0_brand_thorne_magnesium",
+      "surface": "search",
+      "origin": "search_result",
+      "category": "mineral_stack",
+      "personas": [],
+      "input": {
+        "query": "Thorne magnesium bisglycinate",
+        "queryType": "brand_product"
+      },
+      "product": {
+        "productId": "term-match-thorne-magnesium",
+        "brand": "Thorne",
+        "name": "Magnesium Bisglycinate",
+        "barcode": null
+      },
+      "expected": {
+        "search": {
+          "expectedProductId": "term-match-thorne-magnesium",
+          "metric": "recall5",
+          "intent": "brand_product",
+          "tier": 0,
+          "mustMatchTerms": [
+            "Magnesium"
+          ]
+        }
+      },
+      "gates": [
+        "search_relevance"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_p0_brand_solgar_zinc",
+      "surface": "search",
+      "origin": "search_result",
+      "category": "vitamin_mineral_single",
+      "personas": [
+        "immunity_goal"
+      ],
+      "input": {
+        "query": "Solgar zinc picolinate",
+        "queryType": "brand_product"
+      },
+      "product": {
+        "productId": "term-match-solgar-zinc",
+        "brand": "Solgar",
+        "name": "Zinc Picolinate",
+        "barcode": null
+      },
+      "expected": {
+        "search": {
+          "expectedProductId": "term-match-solgar-zinc",
+          "metric": "recall5",
+          "intent": "brand_product",
+          "tier": 0,
+          "mustMatchTerms": [
+            "Zinc"
+          ]
+        }
+      },
+      "gates": [
+        "search_relevance"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_p0_brand_carlson_fish_oil",
+      "surface": "search",
+      "origin": "search_result",
+      "category": "omega3_source_oil",
+      "personas": [
+        "fish_allergy"
+      ],
+      "input": {
+        "query": "Carlson fish oil",
+        "queryType": "brand_product"
+      },
+      "product": {
+        "productId": "term-match-carlson-fish-oil",
+        "brand": "Carlson",
+        "name": "Fish Oil",
+        "barcode": null
+      },
+      "expected": {
+        "search": {
+          "expectedProductId": "term-match-carlson-fish-oil",
+          "metric": "recall5",
+          "intent": "brand_product",
+          "tier": 0,
+          "mustMatchTerms": [
+            "Fish Oil"
+          ]
+        }
+      },
+      "gates": [
+        "search_relevance"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_p0_brand_pure_encapsulations_b12",
+      "surface": "search",
+      "origin": "search_result",
+      "category": "multivitamin_b_complex",
+      "personas": [],
+      "input": {
+        "query": "Pure Encapsulations B12",
+        "queryType": "brand_product"
+      },
+      "product": {
+        "productId": "term-match-pure-encapsulations-b12",
+        "brand": "Pure Encapsulations",
+        "name": "B12",
+        "barcode": null
+      },
+      "expected": {
+        "search": {
+          "expectedProductId": "term-match-pure-encapsulations-b12",
+          "metric": "recall5",
+          "intent": "brand_product",
+          "tier": 0,
+          "mustMatchTerms": [
+            "B12"
+          ]
+        }
+      },
+      "gates": [
+        "search_relevance"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_p0_form_d3_1000",
+      "surface": "search",
+      "origin": "search_result",
+      "category": "vitamin_mineral_single",
+      "personas": [],
+      "input": {
+        "query": "D3 1000 IU",
+        "queryType": "ingredient_form"
+      },
+      "product": {
+        "productId": "term-match-d3-1000",
+        "brand": "Term Match",
+        "name": "Vitamin D3 1000 IU",
+        "barcode": null
+      },
+      "expected": {
+        "search": {
+          "expectedProductId": "term-match-d3-1000",
+          "metric": "recall5",
+          "intent": "form_dose",
+          "tier": 1,
+          "mustMatchTerms": [
+            "Vitamin D3",
+            "1000 IU"
+          ]
+        }
+      },
+      "gates": [
+        "search_relevance"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_p0_form_d3_2500",
+      "surface": "search",
+      "origin": "search_result",
+      "category": "vitamin_mineral_single",
+      "personas": [],
+      "input": {
+        "query": "D3 2500 IU",
+        "queryType": "ingredient_form"
+      },
+      "product": {
+        "productId": "term-match-d3-2500",
+        "brand": "Term Match",
+        "name": "Vitamin D3 2500 IU",
+        "barcode": null
+      },
+      "expected": {
+        "search": {
+          "expectedProductId": "term-match-d3-2500",
+          "metric": "recall5",
+          "intent": "form_dose",
+          "tier": 1,
+          "mustMatchTerms": [
+            "Vitamin D3"
+          ]
+        }
+      },
+      "gates": [
+        "search_relevance"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_p0_form_vitamin_d_drops",
+      "surface": "search",
+      "origin": "search_result",
+      "category": "vitamin_mineral_single",
+      "personas": [],
+      "input": {
+        "query": "vitamin d drops",
+        "queryType": "ingredient_form"
+      },
+      "product": {
+        "productId": "term-match-vitamin-d-drops",
+        "brand": "Term Match",
+        "name": "Vitamin D Drops",
+        "barcode": null
+      },
+      "expected": {
+        "search": {
+          "expectedProductId": "term-match-vitamin-d-drops",
+          "metric": "recall5",
+          "intent": "form_dose",
+          "tier": 1,
+          "mustMatchTerms": [
+            "Vitamin D"
+          ]
+        }
+      },
+      "gates": [
+        "search_relevance"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_p0_form_b12_methylcobalamin",
+      "surface": "search",
+      "origin": "search_result",
+      "category": "multivitamin_b_complex",
+      "personas": [],
+      "input": {
+        "query": "B12 methylcobalamin",
+        "queryType": "vitamin_alias"
+      },
+      "product": {
+        "productId": "term-match-b12-methylcobalamin",
+        "brand": "Term Match",
+        "name": "B12 Methylcobalamin",
+        "barcode": null
+      },
+      "expected": {
+        "search": {
+          "expectedProductId": "term-match-b12-methylcobalamin",
+          "metric": "recall5",
+          "intent": "form_dose",
+          "tier": 1,
+          "mustMatchTerms": [
+            "B12"
+          ]
+        }
+      },
+      "gates": [
+        "search_relevance"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_p0_form_b12_5000_mcg",
+      "surface": "search",
+      "origin": "search_result",
+      "category": "multivitamin_b_complex",
+      "personas": [],
+      "input": {
+        "query": "B12 5000 mcg",
+        "queryType": "ingredient_form"
+      },
+      "product": {
+        "productId": "term-match-b12-5000",
+        "brand": "Term Match",
+        "name": "B12 5000 mcg",
+        "barcode": null
+      },
+      "expected": {
+        "search": {
+          "expectedProductId": "term-match-b12-5000",
+          "metric": "recall5",
+          "intent": "form_dose",
+          "tier": 1,
+          "mustMatchTerms": [
+            "B12"
+          ]
+        }
+      },
+      "gates": [
+        "search_relevance"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_p0_form_magnesium_glycinate",
+      "surface": "search",
+      "origin": "search_result",
+      "category": "mineral_stack",
+      "personas": [],
+      "input": {
+        "query": "magnesium glycinate",
+        "queryType": "ingredient_form"
+      },
+      "product": {
+        "productId": "term-match-magnesium-glycinate",
+        "brand": "Term Match",
+        "name": "Magnesium Glycinate",
+        "barcode": null
+      },
+      "expected": {
+        "search": {
+          "expectedProductId": "term-match-magnesium-glycinate",
+          "metric": "recall5",
+          "intent": "form_dose",
+          "tier": 1,
+          "mustMatchTerms": [
+            "Magnesium"
+          ]
+        }
+      },
+      "gates": [
+        "search_relevance"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_p0_form_magnesium_bisglycinate",
+      "surface": "search",
+      "origin": "search_result",
+      "category": "mineral_stack",
+      "personas": [],
+      "input": {
+        "query": "magnesium bisglycinate 200 mg",
+        "queryType": "ingredient_form"
+      },
+      "product": {
+        "productId": "term-match-magnesium-bisglycinate",
+        "brand": "Term Match",
+        "name": "Magnesium Bisglycinate 200 mg",
+        "barcode": null
+      },
+      "expected": {
+        "search": {
+          "expectedProductId": "term-match-magnesium-bisglycinate",
+          "metric": "recall5",
+          "intent": "form_dose",
+          "tier": 1,
+          "mustMatchTerms": [
+            "Magnesium"
+          ]
+        }
+      },
+      "gates": [
+        "search_relevance"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_p0_form_magnesium_citrate",
+      "surface": "search",
+      "origin": "search_result",
+      "category": "mineral_stack",
+      "personas": [],
+      "input": {
+        "query": "magnesium citrate",
+        "queryType": "ingredient_form"
+      },
+      "product": {
+        "productId": "term-match-magnesium-citrate",
+        "brand": "Term Match",
+        "name": "Magnesium Citrate",
+        "barcode": null
+      },
+      "expected": {
+        "search": {
+          "expectedProductId": "term-match-magnesium-citrate",
+          "metric": "recall5",
+          "intent": "form_dose",
+          "tier": 1,
+          "mustMatchTerms": [
+            "Magnesium"
+          ]
+        }
+      },
+      "gates": [
+        "search_relevance"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_p0_form_magnesium_threonate",
+      "surface": "search",
+      "origin": "search_result",
+      "category": "mineral_stack",
+      "personas": [],
+      "input": {
+        "query": "magnesium threonate",
+        "queryType": "ingredient_form"
+      },
+      "product": {
+        "productId": "term-match-magnesium-threonate",
+        "brand": "Term Match",
+        "name": "Magnesium Threonate",
+        "barcode": null
+      },
+      "expected": {
+        "search": {
+          "expectedProductId": "term-match-magnesium-threonate",
+          "metric": "recall5",
+          "intent": "form_dose",
+          "tier": 1,
+          "mustMatchTerms": [
+            "Magnesium"
+          ]
+        }
+      },
+      "gates": [
+        "search_relevance"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_p0_form_zinc_picolinate",
+      "surface": "search",
+      "origin": "search_result",
+      "category": "vitamin_mineral_single",
+      "personas": [
+        "immunity_goal"
+      ],
+      "input": {
+        "query": "zinc picolinate",
+        "queryType": "ingredient_form"
+      },
+      "product": {
+        "productId": "term-match-zinc-picolinate",
+        "brand": "Term Match",
+        "name": "Zinc Picolinate",
+        "barcode": null
+      },
+      "expected": {
+        "search": {
+          "expectedProductId": "term-match-zinc-picolinate",
+          "metric": "recall5",
+          "intent": "form_dose",
+          "tier": 1,
+          "mustMatchTerms": [
+            "Zinc"
+          ]
+        }
+      },
+      "gates": [
+        "search_relevance"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_p0_form_iron_bisglycinate",
+      "surface": "search",
+      "origin": "search_result",
+      "category": "vitamin_mineral_single",
+      "personas": [],
+      "input": {
+        "query": "iron bisglycinate",
+        "queryType": "ingredient_form"
+      },
+      "product": {
+        "productId": "term-match-iron-bisglycinate",
+        "brand": "Term Match",
+        "name": "Iron Bisglycinate",
+        "barcode": null
+      },
+      "expected": {
+        "search": {
+          "expectedProductId": "term-match-iron-bisglycinate",
+          "metric": "recall5",
+          "intent": "form_dose",
+          "tier": 1,
+          "mustMatchTerms": [
+            "Iron"
+          ]
+        }
+      },
+      "gates": [
+        "search_relevance"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_p0_form_fish_oil_epa_dha",
+      "surface": "search",
+      "origin": "search_result",
+      "category": "omega3_source_oil",
+      "personas": [
+        "fish_allergy"
+      ],
+      "input": {
+        "query": "fish oil epa dha",
+        "queryType": "ingredient_form"
+      },
+      "product": {
+        "productId": "term-match-fish-oil-epa-dha",
+        "brand": "Term Match",
+        "name": "Fish Oil EPA DHA",
+        "barcode": null
+      },
+      "expected": {
+        "search": {
+          "expectedProductId": "term-match-fish-oil-epa-dha",
+          "metric": "recall5",
+          "intent": "form_dose",
+          "tier": 1,
+          "mustMatchTerms": [
+            "Fish Oil"
+          ]
+        }
+      },
+      "gates": [
+        "search_relevance"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_p0_form_krill_oil",
+      "surface": "search",
+      "origin": "search_result",
+      "category": "omega3_source_oil",
+      "personas": [
+        "shellfish_allergy"
+      ],
+      "input": {
+        "query": "krill oil omega 3",
+        "queryType": "ingredient_form"
+      },
+      "product": {
+        "productId": "term-match-krill-oil",
+        "brand": "Term Match",
+        "name": "Krill Oil Omega-3",
+        "barcode": null
+      },
+      "expected": {
+        "search": {
+          "expectedProductId": "term-match-krill-oil",
+          "metric": "recall5",
+          "intent": "form_dose",
+          "tier": 1,
+          "mustMatchTerms": [
+            "Krill"
+          ]
+        }
+      },
+      "gates": [
+        "search_relevance"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_p0_form_whey_isolate",
+      "surface": "search",
+      "origin": "search_result",
+      "category": "protein_fiber",
+      "personas": [
+        "dairy_allergy",
+        "fitness_recovery_goal"
+      ],
+      "input": {
+        "query": "whey protein isolate",
+        "queryType": "ingredient_form"
+      },
+      "product": {
+        "productId": "term-match-whey-isolate",
+        "brand": "Term Match",
+        "name": "Whey Protein Isolate",
+        "barcode": null
+      },
+      "expected": {
+        "search": {
+          "expectedProductId": "term-match-whey-isolate",
+          "metric": "recall5",
+          "intent": "form_dose",
+          "tier": 1,
+          "mustMatchTerms": [
+            "Whey"
+          ]
+        }
+      },
+      "gates": [
+        "search_relevance"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_p0_form_creatine_monohydrate",
+      "surface": "search",
+      "origin": "search_result",
+      "category": "protein_fiber",
+      "personas": [
+        "fitness_recovery_goal"
+      ],
+      "input": {
+        "query": "creatine monohydrate",
+        "queryType": "ingredient_form"
+      },
+      "product": {
+        "productId": "term-match-creatine-monohydrate",
+        "brand": "Term Match",
+        "name": "Creatine Monohydrate",
+        "barcode": null
+      },
+      "expected": {
+        "search": {
+          "expectedProductId": "term-match-creatine-monohydrate",
+          "metric": "recall5",
+          "intent": "form_dose",
+          "tier": 1,
+          "mustMatchTerms": [
+            "Creatine"
+          ]
+        }
+      },
+      "gates": [
+        "search_relevance"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_p0_form_collagen_peptides",
+      "surface": "search",
+      "origin": "search_result",
+      "category": "protein_fiber",
+      "personas": [],
+      "input": {
+        "query": "collagen peptides",
+        "queryType": "ingredient_form"
+      },
+      "product": {
+        "productId": "term-match-collagen-peptides",
+        "brand": "Term Match",
+        "name": "Collagen Peptides",
+        "barcode": null
+      },
+      "expected": {
+        "search": {
+          "expectedProductId": "term-match-collagen-peptides",
+          "metric": "recall5",
+          "intent": "form_dose",
+          "tier": 1,
+          "mustMatchTerms": [
+            "Collagen"
+          ]
+        }
+      },
+      "gates": [
+        "search_relevance"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_p0_form_probiotic_50_billion",
+      "surface": "search",
+      "origin": "search_result",
+      "category": "probiotic_microbiome",
+      "personas": [
+        "digestion_goal"
+      ],
+      "input": {
+        "query": "probiotic 50 billion cfu",
+        "queryType": "ingredient_form"
+      },
+      "product": {
+        "productId": "term-match-probiotic-50b",
+        "brand": "Term Match",
+        "name": "Probiotic 50 Billion CFU",
+        "barcode": null
+      },
+      "expected": {
+        "search": {
+          "expectedProductId": "term-match-probiotic-50b",
+          "metric": "recall5",
+          "intent": "form_dose",
+          "tier": 1,
+          "mustMatchTerms": [
+            "Probiotic"
+          ]
+        }
+      },
+      "gates": [
+        "search_relevance"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_p0_form_electrolyte_powder",
+      "surface": "search",
+      "origin": "search_result",
+      "category": "mineral_stack",
+      "personas": [
+        "fitness_recovery_goal"
+      ],
+      "input": {
+        "query": "electrolyte powder",
+        "queryType": "ingredient_form"
+      },
+      "product": {
+        "productId": "term-match-electrolyte-powder",
+        "brand": "Term Match",
+        "name": "Electrolyte Powder",
+        "barcode": null
+      },
+      "expected": {
+        "search": {
+          "expectedProductId": "term-match-electrolyte-powder",
+          "metric": "recall5",
+          "intent": "form_dose",
+          "tier": 1,
+          "mustMatchTerms": [
+            "Electrolyte"
+          ]
+        }
+      },
+      "gates": [
+        "search_relevance"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_p0_ing_vitamin_d",
+      "surface": "search",
+      "origin": "search_result",
+      "category": "vitamin_mineral_single",
+      "personas": [],
+      "input": {
+        "query": "vitamin d",
+        "queryType": "vitamin_phrase"
+      },
+      "product": {
+        "productId": "term-match-vitamin-d",
+        "brand": "Term Match",
+        "name": "Vitamin D",
+        "barcode": null
+      },
+      "expected": {
+        "search": {
+          "expectedProductId": "term-match-vitamin-d",
+          "metric": "recall5",
+          "intent": "ingredient_family",
+          "tier": 2,
+          "mustMatchTerms": [
+            "Vitamin D"
+          ]
+        }
+      },
+      "gates": [
+        "search_relevance"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_p0_ing_vitamin_c",
+      "surface": "search",
+      "origin": "search_result",
+      "category": "vitamin_mineral_single",
+      "personas": [],
+      "input": {
+        "query": "vitamin c",
+        "queryType": "vitamin_phrase"
+      },
+      "product": {
+        "productId": "term-match-vitamin-c",
+        "brand": "Term Match",
+        "name": "Vitamin C",
+        "barcode": null
+      },
+      "expected": {
+        "search": {
+          "expectedProductId": "term-match-vitamin-c",
+          "metric": "recall5",
+          "intent": "ingredient_family",
+          "tier": 2,
+          "mustMatchTerms": [
+            "Vitamin C"
+          ]
+        }
+      },
+      "gates": [
+        "search_relevance"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_p0_ing_vitamin_k2",
+      "surface": "search",
+      "origin": "search_result",
+      "category": "vitamin_mineral_single",
+      "personas": [],
+      "input": {
+        "query": "vitamin k2",
+        "queryType": "vitamin_phrase"
+      },
+      "product": {
+        "productId": "term-match-vitamin-k2",
+        "brand": "Term Match",
+        "name": "Vitamin K2",
+        "barcode": null
+      },
+      "expected": {
+        "search": {
+          "expectedProductId": "term-match-vitamin-k2",
+          "metric": "recall5",
+          "intent": "ingredient_family",
+          "tier": 2,
+          "mustMatchTerms": [
+            "Vitamin K"
+          ]
+        }
+      },
+      "gates": [
+        "search_relevance"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_p0_ing_vitamin_e",
+      "surface": "search",
+      "origin": "search_result",
+      "category": "vitamin_mineral_single",
+      "personas": [],
+      "input": {
+        "query": "vitamin e tocopherol",
+        "queryType": "vitamin_phrase"
+      },
+      "product": {
+        "productId": "term-match-vitamin-e",
+        "brand": "Term Match",
+        "name": "Vitamin E",
+        "barcode": null
+      },
+      "expected": {
+        "search": {
+          "expectedProductId": "term-match-vitamin-e",
+          "metric": "recall5",
+          "intent": "ingredient_family",
+          "tier": 2,
+          "mustMatchTerms": [
+            "Vitamin E"
+          ]
+        }
+      },
+      "gates": [
+        "search_relevance"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_p0_ing_vitamin_a",
+      "surface": "search",
+      "origin": "search_result",
+      "category": "vitamin_mineral_single",
+      "personas": [],
+      "input": {
+        "query": "vitamin a retinol",
+        "queryType": "vitamin_phrase"
+      },
+      "product": {
+        "productId": "term-match-vitamin-a",
+        "brand": "Term Match",
+        "name": "Vitamin A",
+        "barcode": null
+      },
+      "expected": {
+        "search": {
+          "expectedProductId": "term-match-vitamin-a",
+          "metric": "recall5",
+          "intent": "ingredient_family",
+          "tier": 2,
+          "mustMatchTerms": [
+            "Vitamin A"
+          ]
+        }
+      },
+      "gates": [
+        "search_relevance"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_p0_ing_omega3",
+      "surface": "search",
+      "origin": "search_result",
+      "category": "omega3_source_oil",
+      "personas": [
+        "fish_allergy"
+      ],
+      "input": {
+        "query": "omega-3",
+        "queryType": "ingredient"
+      },
+      "product": {
+        "productId": "term-match-omega-3",
+        "brand": "Term Match",
+        "name": "Omega-3",
+        "barcode": null
+      },
+      "expected": {
+        "search": {
+          "expectedProductId": "term-match-omega-3",
+          "metric": "recall5",
+          "intent": "ingredient_family",
+          "tier": 2,
+          "mustMatchTerms": [
+            "Omega"
+          ]
+        }
+      },
+      "gates": [
+        "search_relevance"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_p0_ing_fish_oil",
+      "surface": "search",
+      "origin": "search_result",
+      "category": "omega3_source_oil",
+      "personas": [
+        "fish_allergy"
+      ],
+      "input": {
+        "query": "fish oil",
+        "queryType": "ingredient"
+      },
+      "product": {
+        "productId": "term-match-fish-oil",
+        "brand": "Term Match",
+        "name": "Fish Oil",
+        "barcode": null
+      },
+      "expected": {
+        "search": {
+          "expectedProductId": "term-match-fish-oil",
+          "metric": "recall5",
+          "intent": "ingredient_family",
+          "tier": 2,
+          "mustMatchTerms": [
+            "Fish Oil"
+          ]
+        }
+      },
+      "gates": [
+        "search_relevance"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_p0_ing_magnesium",
+      "surface": "search",
+      "origin": "search_result",
+      "category": "mineral_stack",
+      "personas": [],
+      "input": {
+        "query": "magnesium",
+        "queryType": "ingredient"
+      },
+      "product": {
+        "productId": "term-match-magnesium",
+        "brand": "Term Match",
+        "name": "Magnesium",
+        "barcode": null
+      },
+      "expected": {
+        "search": {
+          "expectedProductId": "term-match-magnesium",
+          "metric": "recall5",
+          "intent": "ingredient_family",
+          "tier": 2,
+          "mustMatchTerms": [
+            "Magnesium"
+          ]
+        }
+      },
+      "gates": [
+        "search_relevance"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_p0_ing_zinc",
+      "surface": "search",
+      "origin": "search_result",
+      "category": "vitamin_mineral_single",
+      "personas": [
+        "immunity_goal"
+      ],
+      "input": {
+        "query": "zinc immune",
+        "queryType": "ingredient_goal"
+      },
+      "product": {
+        "productId": "term-match-zinc",
+        "brand": "Term Match",
+        "name": "Zinc",
+        "barcode": null
+      },
+      "expected": {
+        "search": {
+          "expectedProductId": "term-match-zinc",
+          "metric": "recall5",
+          "intent": "ingredient_family",
+          "tier": 2,
+          "mustMatchTerms": [
+            "Zinc"
+          ]
+        }
+      },
+      "gates": [
+        "search_relevance"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_p0_ing_calcium_d3",
+      "surface": "search",
+      "origin": "search_result",
+      "category": "mineral_stack",
+      "personas": [],
+      "input": {
+        "query": "calcium vitamin d3",
+        "queryType": "ingredient_stack"
+      },
+      "product": {
+        "productId": "term-match-calcium-d3",
+        "brand": "Term Match",
+        "name": "Calcium Vitamin D3",
+        "barcode": null
+      },
+      "expected": {
+        "search": {
+          "expectedProductId": "term-match-calcium-d3",
+          "metric": "recall5",
+          "intent": "ingredient_family",
+          "tier": 2,
+          "mustMatchTerms": [
+            "Calcium"
+          ]
+        }
+      },
+      "gates": [
+        "search_relevance"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_p0_ing_iron",
+      "surface": "search",
+      "origin": "search_result",
+      "category": "vitamin_mineral_single",
+      "personas": [],
+      "input": {
+        "query": "iron supplement",
+        "queryType": "ingredient"
+      },
+      "product": {
+        "productId": "term-match-iron",
+        "brand": "Term Match",
+        "name": "Iron",
+        "barcode": null
+      },
+      "expected": {
+        "search": {
+          "expectedProductId": "term-match-iron",
+          "metric": "recall5",
+          "intent": "ingredient_family",
+          "tier": 2,
+          "mustMatchTerms": [
+            "Iron"
+          ]
+        }
+      },
+      "gates": [
+        "search_relevance"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_p0_ing_selenium",
+      "surface": "search",
+      "origin": "search_result",
+      "category": "vitamin_mineral_single",
+      "personas": [],
+      "input": {
+        "query": "selenium thyroid support",
+        "queryType": "ingredient_goal"
+      },
+      "product": {
+        "productId": "term-match-selenium",
+        "brand": "Term Match",
+        "name": "Selenium",
+        "barcode": null
+      },
+      "expected": {
+        "search": {
+          "expectedProductId": "term-match-selenium",
+          "metric": "recall5",
+          "intent": "ingredient_family",
+          "tier": 2,
+          "mustMatchTerms": [
+            "Selenium"
+          ]
+        }
+      },
+      "gates": [
+        "search_relevance"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_p0_ing_potassium",
+      "surface": "search",
+      "origin": "search_result",
+      "category": "mineral_stack",
+      "personas": [
+        "fitness_recovery_goal"
+      ],
+      "input": {
+        "query": "potassium electrolyte",
+        "queryType": "ingredient_goal"
+      },
+      "product": {
+        "productId": "term-match-potassium",
+        "brand": "Term Match",
+        "name": "Potassium",
+        "barcode": null
+      },
+      "expected": {
+        "search": {
+          "expectedProductId": "term-match-potassium",
+          "metric": "recall5",
+          "intent": "ingredient_family",
+          "tier": 2,
+          "mustMatchTerms": [
+            "Potassium"
+          ]
+        }
+      },
+      "gates": [
+        "search_relevance"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_p0_ing_ashwagandha",
+      "surface": "search",
+      "origin": "search_result",
+      "category": "botanical_extract",
+      "personas": [
+        "stress_goal"
+      ],
+      "input": {
+        "query": "ashwagandha stress",
+        "queryType": "ingredient_goal"
+      },
+      "product": {
+        "productId": "term-match-ashwagandha",
+        "brand": "Term Match",
+        "name": "Ashwagandha",
+        "barcode": null
+      },
+      "expected": {
+        "search": {
+          "expectedProductId": "term-match-ashwagandha",
+          "metric": "recall5",
+          "intent": "ingredient_family",
+          "tier": 2,
+          "mustMatchTerms": [
+            "Ashwagandha"
+          ]
+        }
+      },
+      "gates": [
+        "search_relevance"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_p0_ing_turmeric",
+      "surface": "search",
+      "origin": "search_result",
+      "category": "botanical_extract",
+      "personas": [],
+      "input": {
+        "query": "turmeric curcumin",
+        "queryType": "ingredient_alias"
+      },
+      "product": {
+        "productId": "term-match-turmeric",
+        "brand": "Term Match",
+        "name": "Turmeric Curcumin",
+        "barcode": null
+      },
+      "expected": {
+        "search": {
+          "expectedProductId": "term-match-turmeric",
+          "metric": "recall5",
+          "intent": "ingredient_family",
+          "tier": 2,
+          "mustMatchTerms": [
+            "Turmeric"
+          ]
+        }
+      },
+      "gates": [
+        "search_relevance"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_p0_ing_lions_mane",
+      "surface": "search",
+      "origin": "search_result",
+      "category": "botanical_extract",
+      "personas": [],
+      "input": {
+        "query": "lions mane focus",
+        "queryType": "ingredient_goal"
+      },
+      "product": {
+        "productId": "term-match-lions-mane",
+        "brand": "Term Match",
+        "name": "Lions Mane",
+        "barcode": null
+      },
+      "expected": {
+        "search": {
+          "expectedProductId": "term-match-lions-mane",
+          "metric": "recall5",
+          "intent": "ingredient_family",
+          "tier": 2,
+          "mustMatchTerms": [
+            "Lion"
+          ]
+        }
+      },
+      "gates": [
+        "search_relevance"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_p0_ing_rhodiola",
+      "surface": "search",
+      "origin": "search_result",
+      "category": "botanical_extract",
+      "personas": [
+        "stress_goal"
+      ],
+      "input": {
+        "query": "rhodiola stress",
+        "queryType": "ingredient_goal"
+      },
+      "product": {
+        "productId": "term-match-rhodiola",
+        "brand": "Term Match",
+        "name": "Rhodiola",
+        "barcode": null
+      },
+      "expected": {
+        "search": {
+          "expectedProductId": "term-match-rhodiola",
+          "metric": "recall5",
+          "intent": "ingredient_family",
+          "tier": 2,
+          "mustMatchTerms": [
+            "Rhodiola"
+          ]
+        }
+      },
+      "gates": [
+        "search_relevance"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_p0_ing_maca",
+      "surface": "search",
+      "origin": "search_result",
+      "category": "botanical_extract",
+      "personas": [],
+      "input": {
+        "query": "maca root",
+        "queryType": "ingredient"
+      },
+      "product": {
+        "productId": "term-match-maca",
+        "brand": "Term Match",
+        "name": "Maca",
+        "barcode": null
+      },
+      "expected": {
+        "search": {
+          "expectedProductId": "term-match-maca",
+          "metric": "recall5",
+          "intent": "ingredient_family",
+          "tier": 2,
+          "mustMatchTerms": [
+            "Maca"
+          ]
+        }
+      },
+      "gates": [
+        "search_relevance"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_p0_ing_elderberry",
+      "surface": "search",
+      "origin": "search_result",
+      "category": "botanical_extract",
+      "personas": [
+        "immunity_goal"
+      ],
+      "input": {
+        "query": "elderberry immune",
+        "queryType": "ingredient_goal"
+      },
+      "product": {
+        "productId": "term-match-elderberry",
+        "brand": "Term Match",
+        "name": "Elderberry",
+        "barcode": null
+      },
+      "expected": {
+        "search": {
+          "expectedProductId": "term-match-elderberry",
+          "metric": "recall5",
+          "intent": "ingredient_family",
+          "tier": 2,
+          "mustMatchTerms": [
+            "Elderberry"
+          ]
+        }
+      },
+      "gates": [
+        "search_relevance"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_p0_ing_cranberry",
+      "surface": "search",
+      "origin": "search_result",
+      "category": "botanical_extract",
+      "personas": [],
+      "input": {
+        "query": "cranberry supplement",
+        "queryType": "ingredient"
+      },
+      "product": {
+        "productId": "term-match-cranberry",
+        "brand": "Term Match",
+        "name": "Cranberry",
+        "barcode": null
+      },
+      "expected": {
+        "search": {
+          "expectedProductId": "term-match-cranberry",
+          "metric": "recall5",
+          "intent": "ingredient_family",
+          "tier": 2,
+          "mustMatchTerms": [
+            "Cranberry"
+          ]
+        }
+      },
+      "gates": [
+        "search_relevance"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_p0_ing_melatonin",
+      "surface": "search",
+      "origin": "search_result",
+      "category": "sleep_amino",
+      "personas": [
+        "melatonin_sensitivity",
+        "sleep_goal"
+      ],
+      "input": {
+        "query": "melatonin sleep",
+        "queryType": "ingredient_goal"
+      },
+      "product": {
+        "productId": "term-match-melatonin",
+        "brand": "Term Match",
+        "name": "Melatonin",
+        "barcode": null
+      },
+      "expected": {
+        "search": {
+          "expectedProductId": "term-match-melatonin",
+          "metric": "recall5",
+          "intent": "ingredient_family",
+          "tier": 2,
+          "mustMatchTerms": [
+            "Melatonin"
+          ]
+        }
+      },
+      "gates": [
+        "search_relevance"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_p0_ing_glycine",
+      "surface": "search",
+      "origin": "search_result",
+      "category": "sleep_amino",
+      "personas": [
+        "sleep_goal"
+      ],
+      "input": {
+        "query": "glycine sleep",
+        "queryType": "ingredient_goal"
+      },
+      "product": {
+        "productId": "term-match-glycine",
+        "brand": "Term Match",
+        "name": "Glycine",
+        "barcode": null
+      },
+      "expected": {
+        "search": {
+          "expectedProductId": "term-match-glycine",
+          "metric": "recall5",
+          "intent": "ingredient_family",
+          "tier": 2,
+          "mustMatchTerms": [
+            "Glycine"
+          ]
+        }
+      },
+      "gates": [
+        "search_relevance"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_p0_ing_l_theanine",
+      "surface": "search",
+      "origin": "search_result",
+      "category": "sleep_amino",
+      "personas": [
+        "stress_goal"
+      ],
+      "input": {
+        "query": "l-theanine calm",
+        "queryType": "ingredient_goal"
+      },
+      "product": {
+        "productId": "term-match-theanine",
+        "brand": "Term Match",
+        "name": "L-Theanine",
+        "barcode": null
+      },
+      "expected": {
+        "search": {
+          "expectedProductId": "term-match-theanine",
+          "metric": "recall5",
+          "intent": "ingredient_family",
+          "tier": 2,
+          "mustMatchTerms": [
+            "Theanine"
+          ]
+        }
+      },
+      "gates": [
+        "search_relevance"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_p0_ing_berberine",
+      "surface": "search",
+      "origin": "search_result",
+      "category": "metabolic_body_composition",
+      "personas": [],
+      "input": {
+        "query": "berberine metabolic",
+        "queryType": "ingredient_goal"
+      },
+      "product": {
+        "productId": "term-match-berberine",
+        "brand": "Term Match",
+        "name": "Berberine",
+        "barcode": null
+      },
+      "expected": {
+        "search": {
+          "expectedProductId": "term-match-berberine",
+          "metric": "recall5",
+          "intent": "ingredient_family",
+          "tier": 2,
+          "mustMatchTerms": [
+            "Berberine"
+          ]
+        }
+      },
+      "gates": [
+        "search_relevance"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_p0_ing_bacopa",
+      "surface": "search",
+      "origin": "search_result",
+      "category": "botanical_extract",
+      "personas": [],
+      "input": {
+        "query": "bacopa focus",
+        "queryType": "ingredient_goal"
+      },
+      "product": {
+        "productId": "term-match-bacopa",
+        "brand": "Term Match",
+        "name": "Bacopa",
+        "barcode": null
+      },
+      "expected": {
+        "search": {
+          "expectedProductId": "term-match-bacopa",
+          "metric": "recall5",
+          "intent": "ingredient_family",
+          "tier": 2,
+          "mustMatchTerms": [
+            "Bacopa"
+          ]
+        }
+      },
+      "gates": [
+        "search_relevance"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_p0_ing_coq10",
+      "surface": "search",
+      "origin": "search_result",
+      "category": "metabolic_body_composition",
+      "personas": [],
+      "input": {
+        "query": "coq10 energy",
+        "queryType": "ingredient_goal"
+      },
+      "product": {
+        "productId": "term-match-coq10",
+        "brand": "Term Match",
+        "name": "CoQ10",
+        "barcode": null
+      },
+      "expected": {
+        "search": {
+          "expectedProductId": "term-match-coq10",
+          "metric": "recall5",
+          "intent": "ingredient_family",
+          "tier": 2,
+          "mustMatchTerms": [
+            "CoQ10"
+          ]
+        }
+      },
+      "gates": [
+        "search_relevance"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_p0_ing_prenatal",
+      "surface": "search",
+      "origin": "search_result",
+      "category": "prenatal_kids",
+      "personas": [
+        "pregnancy_prenatal"
+      ],
+      "input": {
+        "query": "prenatal vitamin",
+        "queryType": "ingredient"
+      },
+      "product": {
+        "productId": "term-match-prenatal",
+        "brand": "Term Match",
+        "name": "Prenatal Vitamin",
+        "barcode": null
+      },
+      "expected": {
+        "search": {
+          "expectedProductId": "term-match-prenatal",
+          "metric": "recall5",
+          "intent": "ingredient_family",
+          "tier": 2,
+          "mustMatchTerms": [
+            "Prenatal"
+          ]
+        }
+      },
+      "gates": [
+        "search_relevance"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_p0_goal_sleep",
+      "surface": "search",
+      "origin": "search_result",
+      "category": "sleep_amino",
+      "personas": [
+        "sleep_goal"
+      ],
+      "input": {
+        "query": "sleep",
+        "queryType": "goal"
+      },
+      "product": {
+        "productId": "term-match-sleep",
+        "brand": "Term Match",
+        "name": "Sleep Support",
+        "barcode": null
+      },
+      "expected": {
+        "search": {
+          "expectedProductId": "term-match-sleep",
+          "metric": "recall5",
+          "intent": "benefit_goal",
+          "tier": 2,
+          "mustMatchTerms": [
+            "Sleep"
+          ]
+        }
+      },
+      "gates": [
+        "search_relevance"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_p0_goal_joint_support",
+      "surface": "search",
+      "origin": "search_result",
+      "category": "metabolic_body_composition",
+      "personas": [],
+      "input": {
+        "query": "joint support",
+        "queryType": "goal"
+      },
+      "product": {
+        "productId": "term-match-joint-support",
+        "brand": "Term Match",
+        "name": "Joint Support",
+        "barcode": null
+      },
+      "expected": {
+        "search": {
+          "expectedProductId": "term-match-joint-support",
+          "metric": "recall5",
+          "intent": "benefit_goal",
+          "tier": 2,
+          "mustMatchTerms": [
+            "Joint"
+          ]
+        }
+      },
+      "gates": [
+        "search_relevance"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_p0_goal_stress",
+      "surface": "search",
+      "origin": "search_result",
+      "category": "botanical_extract",
+      "personas": [
+        "stress_goal"
+      ],
+      "input": {
+        "query": "stress support",
+        "queryType": "goal"
+      },
+      "product": {
+        "productId": "term-match-stress-support",
+        "brand": "Term Match",
+        "name": "Stress Support",
+        "barcode": null
+      },
+      "expected": {
+        "search": {
+          "expectedProductId": "term-match-stress-support",
+          "metric": "recall5",
+          "intent": "benefit_goal",
+          "tier": 2,
+          "mustMatchTerms": [
+            "Stress"
+          ]
+        }
+      },
+      "gates": [
+        "search_relevance"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_p0_goal_energy",
+      "surface": "search",
+      "origin": "search_result",
+      "category": "metabolic_body_composition",
+      "personas": [],
+      "input": {
+        "query": "energy support",
+        "queryType": "goal"
+      },
+      "product": {
+        "productId": "term-match-energy-support",
+        "brand": "Term Match",
+        "name": "Energy Support",
+        "barcode": null
+      },
+      "expected": {
+        "search": {
+          "expectedProductId": "term-match-energy-support",
+          "metric": "recall5",
+          "intent": "benefit_goal",
+          "tier": 2,
+          "mustMatchTerms": [
+            "Energy"
+          ]
+        }
+      },
+      "gates": [
+        "search_relevance"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_p0_goal_immune",
+      "surface": "search",
+      "origin": "search_result",
+      "category": "vitamin_mineral_single",
+      "personas": [
+        "immunity_goal"
+      ],
+      "input": {
+        "query": "immune support",
+        "queryType": "goal"
+      },
+      "product": {
+        "productId": "term-match-immune-support",
+        "brand": "Term Match",
+        "name": "Immune Support",
+        "barcode": null
+      },
+      "expected": {
+        "search": {
+          "expectedProductId": "term-match-immune-support",
+          "metric": "recall5",
+          "intent": "benefit_goal",
+          "tier": 2,
+          "mustMatchTerms": [
+            "Immune"
+          ]
+        }
+      },
+      "gates": [
+        "search_relevance"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_p0_goal_focus",
+      "surface": "search",
+      "origin": "search_result",
+      "category": "botanical_extract",
+      "personas": [],
+      "input": {
+        "query": "focus support",
+        "queryType": "goal"
+      },
+      "product": {
+        "productId": "term-match-focus-support",
+        "brand": "Term Match",
+        "name": "Focus Support",
+        "barcode": null
+      },
+      "expected": {
+        "search": {
+          "expectedProductId": "term-match-focus-support",
+          "metric": "recall5",
+          "intent": "benefit_goal",
+          "tier": 2,
+          "mustMatchTerms": [
+            "Focus"
+          ]
+        }
+      },
+      "gates": [
+        "search_relevance"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_p0_goal_recovery",
+      "surface": "search",
+      "origin": "search_result",
+      "category": "protein_fiber",
+      "personas": [
+        "fitness_recovery_goal"
+      ],
+      "input": {
+        "query": "muscle recovery",
+        "queryType": "goal"
+      },
+      "product": {
+        "productId": "term-match-muscle-recovery",
+        "brand": "Term Match",
+        "name": "Muscle Recovery",
+        "barcode": null
+      },
+      "expected": {
+        "search": {
+          "expectedProductId": "term-match-muscle-recovery",
+          "metric": "recall5",
+          "intent": "benefit_goal",
+          "tier": 2,
+          "mustMatchTerms": [
+            "Recovery"
+          ]
+        }
+      },
+      "gates": [
+        "search_relevance"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_p0_goal_digestive",
+      "surface": "search",
+      "origin": "search_result",
+      "category": "probiotic_microbiome",
+      "personas": [
+        "digestion_goal"
+      ],
+      "input": {
+        "query": "digestive support",
+        "queryType": "goal"
+      },
+      "product": {
+        "productId": "term-match-digestive-support",
+        "brand": "Term Match",
+        "name": "Digestive Support",
+        "barcode": null
+      },
+      "expected": {
+        "search": {
+          "expectedProductId": "term-match-digestive-support",
+          "metric": "recall5",
+          "intent": "benefit_goal",
+          "tier": 2,
+          "mustMatchTerms": [
+            "Digestive"
+          ]
+        }
+      },
+      "gates": [
+        "search_relevance"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_p0_goal_gut_health",
+      "surface": "search",
+      "origin": "search_result",
+      "category": "probiotic_microbiome",
+      "personas": [
+        "digestion_goal"
+      ],
+      "input": {
+        "query": "gut health",
+        "queryType": "goal"
+      },
+      "product": {
+        "productId": "term-match-gut-health",
+        "brand": "Term Match",
+        "name": "Gut Health",
+        "barcode": null
+      },
+      "expected": {
+        "search": {
+          "expectedProductId": "term-match-gut-health",
+          "metric": "recall5",
+          "intent": "benefit_goal",
+          "tier": 2,
+          "mustMatchTerms": [
+            "Gut"
+          ]
+        }
+      },
+      "gates": [
+        "search_relevance"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_p0_goal_hair_skin_nails",
+      "surface": "search",
+      "origin": "search_result",
+      "category": "vitamin_mineral_single",
+      "personas": [],
+      "input": {
+        "query": "hair skin nails",
+        "queryType": "goal"
+      },
+      "product": {
+        "productId": "term-match-hair-skin-nails",
+        "brand": "Term Match",
+        "name": "Hair Skin Nails",
+        "barcode": null
+      },
+      "expected": {
+        "search": {
+          "expectedProductId": "term-match-hair-skin-nails",
+          "metric": "recall5",
+          "intent": "benefit_goal",
+          "tier": 2,
+          "mustMatchTerms": [
+            "Hair"
+          ]
+        }
+      },
+      "gates": [
+        "search_relevance"
+      ],
+      "severityOnFail": "P2"
+    },
+    {
+      "id": "search_p0_goal_weight_management",
+      "surface": "search",
+      "origin": "search_result",
+      "category": "metabolic_body_composition",
+      "personas": [],
+      "input": {
+        "query": "weight management",
+        "queryType": "goal"
+      },
+      "product": {
+        "productId": "term-match-weight-management",
+        "brand": "Term Match",
+        "name": "Weight Management",
+        "barcode": null
+      },
+      "expected": {
+        "search": {
+          "expectedProductId": "term-match-weight-management",
+          "metric": "recall5",
+          "intent": "benefit_goal",
+          "tier": 2,
+          "mustMatchTerms": [
+            "Weight"
+          ]
+        }
+      },
+      "gates": [
+        "search_relevance"
+      ],
+      "severityOnFail": "P2"
+    },
+    {
+      "id": "search_p0_goal_mood",
+      "surface": "search",
+      "origin": "search_result",
+      "category": "botanical_extract",
+      "personas": [
+        "stress_goal"
+      ],
+      "input": {
+        "query": "mood support",
+        "queryType": "goal"
+      },
+      "product": {
+        "productId": "term-match-mood-support",
+        "brand": "Term Match",
+        "name": "Mood Support",
+        "barcode": null
+      },
+      "expected": {
+        "search": {
+          "expectedProductId": "term-match-mood-support",
+          "metric": "recall5",
+          "intent": "benefit_goal",
+          "tier": 2,
+          "mustMatchTerms": [
+            "Mood"
+          ]
+        }
+      },
+      "gates": [
+        "search_relevance"
+      ],
+      "severityOnFail": "P2"
+    },
+    {
+      "id": "search_p0_goal_bone_health",
+      "surface": "search",
+      "origin": "search_result",
+      "category": "mineral_stack",
+      "personas": [],
+      "input": {
+        "query": "bone health",
+        "queryType": "goal"
+      },
+      "product": {
+        "productId": "term-match-bone-health",
+        "brand": "Term Match",
+        "name": "Bone Health",
+        "barcode": null
+      },
+      "expected": {
+        "search": {
+          "expectedProductId": "term-match-bone-health",
+          "metric": "recall5",
+          "intent": "benefit_goal",
+          "tier": 2,
+          "mustMatchTerms": [
+            "Bone"
+          ]
+        }
+      },
+      "gates": [
+        "search_relevance"
+      ],
+      "severityOnFail": "P2"
+    },
+    {
+      "id": "search_p0_goal_heart_health",
+      "surface": "search",
+      "origin": "search_result",
+      "category": "omega3_source_oil",
+      "personas": [
+        "fish_allergy"
+      ],
+      "input": {
+        "query": "heart health",
+        "queryType": "goal"
+      },
+      "product": {
+        "productId": "term-match-heart-health",
+        "brand": "Term Match",
+        "name": "Heart Health",
+        "barcode": null
+      },
+      "expected": {
+        "search": {
+          "expectedProductId": "term-match-heart-health",
+          "metric": "recall5",
+          "intent": "benefit_goal",
+          "tier": 2,
+          "mustMatchTerms": [
+            "Heart"
+          ]
+        }
+      },
+      "gates": [
+        "search_relevance"
+      ],
+      "severityOnFail": "P2"
+    },
+    {
+      "id": "search_p0_browse_protein",
+      "surface": "search",
+      "origin": "search_result",
+      "category": "protein_fiber",
+      "personas": [
+        "fitness_recovery_goal"
+      ],
+      "input": {
+        "query": "protein",
+        "queryType": "category_browse"
+      },
+      "product": {
+        "productId": "term-match-protein",
+        "brand": "Term Match",
+        "name": "Protein",
+        "barcode": null
+      },
+      "expected": {
+        "search": {
+          "expectedProductId": "term-match-protein",
+          "metric": "recall5",
+          "intent": "category_browse",
+          "tier": 3,
+          "mustMatchTerms": [
+            "Protein"
+          ]
+        }
+      },
+      "gates": [
+        "search_relevance"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_p0_browse_probiotic",
+      "surface": "search",
+      "origin": "search_result",
+      "category": "probiotic_microbiome",
+      "personas": [
+        "digestion_goal"
+      ],
+      "input": {
+        "query": "probiotic",
+        "queryType": "category_browse"
+      },
+      "product": {
+        "productId": "term-match-probiotic",
+        "brand": "Term Match",
+        "name": "Probiotic",
+        "barcode": null
+      },
+      "expected": {
+        "search": {
+          "expectedProductId": "term-match-probiotic",
+          "metric": "recall5",
+          "intent": "category_browse",
+          "tier": 3,
+          "mustMatchTerms": [
+            "Probiotic"
+          ]
+        }
+      },
+      "gates": [
+        "search_relevance"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_p0_browse_vitamins",
+      "surface": "search",
+      "origin": "search_result",
+      "category": "vitamin_mineral_single",
+      "personas": [],
+      "input": {
+        "query": "vitamins",
+        "queryType": "category_browse"
+      },
+      "product": {
+        "productId": "term-match-vitamins",
+        "brand": "Term Match",
+        "name": "Vitamins",
+        "barcode": null
+      },
+      "expected": {
+        "search": {
+          "expectedProductId": "term-match-vitamins",
+          "metric": "recall5",
+          "intent": "category_browse",
+          "tier": 3,
+          "mustMatchTerms": [
+            "Vitamin"
+          ]
+        }
+      },
+      "gates": [
+        "search_relevance"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_p0_browse_minerals",
+      "surface": "search",
+      "origin": "search_result",
+      "category": "mineral_stack",
+      "personas": [],
+      "input": {
+        "query": "minerals",
+        "queryType": "category_browse"
+      },
+      "product": {
+        "productId": "term-match-minerals",
+        "brand": "Term Match",
+        "name": "Minerals",
+        "barcode": null
+      },
+      "expected": {
+        "search": {
+          "expectedProductId": "term-match-minerals",
+          "metric": "recall5",
+          "intent": "category_browse",
+          "tier": 3,
+          "mustMatchTerms": [
+            "Mineral"
+          ]
+        }
+      },
+      "gates": [
+        "search_relevance"
+      ],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_p0_browse_herbs",
+      "surface": "search",
+      "origin": "search_result",
+      "category": "botanical_extract",
+      "personas": [],
+      "input": {
+        "query": "herbs",
+        "queryType": "category_browse"
+      },
+      "product": {
+        "productId": "term-match-herbs",
+        "brand": "Term Match",
+        "name": "Herbs",
+        "barcode": null
+      },
+      "expected": {
+        "search": {
+          "expectedProductId": "term-match-herbs",
+          "metric": "recall5",
+          "intent": "category_browse",
+          "tier": 3,
+          "mustMatchTerms": [
+            "Herb"
+          ]
+        }
+      },
+      "gates": [
+        "search_relevance"
+      ],
+      "severityOnFail": "P2"
+    },
+    {
+      "id": "search_p0_browse_category_minerals_page2",
+      "surface": "search",
+      "origin": "search_result",
+      "category": "mineral_stack",
+      "personas": [],
+      "input": {
+        "query": "magnesium",
+        "queryType": "category_filter",
+        "category": "Minerals",
+        "page": 2
+      },
+      "product": {
+        "productId": "term-match-magnesium-page2",
+        "brand": "Term Match",
+        "name": "Magnesium Page 2",
+        "barcode": null
+      },
+      "expected": {
+        "search": {
+          "expectedProductId": "term-match-magnesium-page2",
+          "metric": "recall5",
+          "intent": "ingredient_family",
+          "tier": 2,
+          "mustMatchTerms": [
+            "Magnesium"
+          ]
+        }
+      },
+      "gates": [
+        "search_relevance"
+      ],
+      "severityOnFail": "P2"
+    },
+    {
+      "id": "search_p0_browse_category_protein_page2",
+      "surface": "search",
+      "origin": "search_result",
+      "category": "protein_fiber",
+      "personas": [
+        "fitness_recovery_goal"
+      ],
+      "input": {
+        "query": "protein",
+        "queryType": "category_filter",
+        "category": "Protein",
+        "page": 2
+      },
+      "product": {
+        "productId": "term-match-protein-page2",
+        "brand": "Term Match",
+        "name": "Protein Page 2",
+        "barcode": null
+      },
+      "expected": {
+        "search": {
+          "expectedProductId": "term-match-protein-page2",
+          "metric": "recall5",
+          "intent": "category_browse",
+          "tier": 3,
+          "mustMatchTerms": [
+            "Protein"
+          ]
+        }
+      },
+      "gates": [
+        "search_relevance"
+      ],
+      "severityOnFail": "P2"
+    },
+    {
+      "id": "search_p0_browse_category_probiotics_page2",
+      "surface": "search",
+      "origin": "search_result",
+      "category": "probiotic_microbiome",
+      "personas": [
+        "digestion_goal"
+      ],
+      "input": {
+        "query": "probiotic",
+        "queryType": "category_filter",
+        "category": "Probiotics",
+        "page": 2
+      },
+      "product": {
+        "productId": "term-match-probiotic-page2",
+        "brand": "Term Match",
+        "name": "Probiotic Page 2",
+        "barcode": null
+      },
+      "expected": {
+        "search": {
+          "expectedProductId": "term-match-probiotic-page2",
+          "metric": "recall5",
+          "intent": "category_browse",
+          "tier": 3,
+          "mustMatchTerms": [
+            "Probiotic"
+          ]
+        }
+      },
+      "gates": [
+        "search_relevance"
+      ],
+      "severityOnFail": "P2"
+    },
+    {
+      "id": "search_p0_pagination_magnesium_glycinate_page3",
+      "surface": "search",
+      "origin": "search_result",
+      "category": "mineral_stack",
+      "personas": [],
+      "input": {
+        "query": "magnesium glycinate",
+        "queryType": "ingredient_form",
+        "page": 3
+      },
+      "product": {
+        "productId": "term-match-magnesium-glycinate-page3",
+        "brand": "Term Match",
+        "name": "Magnesium Glycinate Page 3",
+        "barcode": null
+      },
+      "expected": {
+        "search": {
+          "expectedProductId": "term-match-magnesium-glycinate-page3",
+          "metric": "recall5",
+          "intent": "ingredient_family",
+          "tier": 1,
+          "mustMatchTerms": [
+            "Magnesium"
+          ],
+          "pagination": {
+            "page": 3
+          },
+          "noDuplicateProductIds": true
+        }
+      },
+      "gates": [
+        "search_relevance"
+      ],
+      "severityOnFail": "P2"
+    },
+    {
+      "id": "search_p0_pagination_vitamin_d_category_page2",
+      "surface": "search",
+      "origin": "search_result",
+      "category": "vitamin_mineral_single",
+      "personas": [],
+      "input": {
+        "query": "vitamin d",
+        "queryType": "category_filter",
+        "category": "Vitamins",
+        "page": 2
+      },
+      "product": {
+        "productId": "term-match-vitamin-d-category-page2",
+        "brand": "Term Match",
+        "name": "Vitamin D Category Page 2",
+        "barcode": null
+      },
+      "expected": {
+        "search": {
+          "expectedProductId": "term-match-vitamin-d-category-page2",
+          "metric": "recall5",
+          "intent": "ingredient_family",
+          "tier": 2,
+          "mustMatchTerms": [
+            "Vitamin D"
+          ],
+          "pagination": {
+            "page": 2
+          },
+          "noDuplicateProductIds": true
+        }
+      },
+      "gates": [
+        "search_relevance"
+      ],
+      "severityOnFail": "P2"
+    },
+    {
+      "id": "search_p0_pagination_brand_product_page2",
+      "surface": "search",
+      "origin": "search_result",
+      "category": "omega3_source_oil",
+      "personas": [
+        "fish_allergy"
+      ],
+      "input": {
+        "query": "Sports Research omega-3",
+        "queryType": "brand_product",
+        "page": 2
+      },
+      "product": {
+        "productId": "term-match-sports-research-omega3-page2",
+        "brand": "Sports Research",
+        "name": "Sports Research Omega-3 Page 2",
+        "barcode": null
+      },
+      "expected": {
+        "search": {
+          "expectedProductId": "term-match-sports-research-omega3-page2",
+          "metric": "zero_results",
+          "intent": "brand_product",
+          "tier": 1,
+          "pagination": {
+            "page": 2,
+            "hasMore": false
+          },
+          "noDuplicateProductIds": true,
+          "brandProductNoForcedDiversity": true
+        }
+      },
+      "gates": [
+        "search_relevance"
+      ],
+      "severityOnFail": "P2"
+    },
+    {
+      "id": "search_p0_discovery_multivitamin",
+      "surface": "search",
+      "origin": "search_result",
+      "category": "multivitamin_b_complex",
+      "personas": [],
+      "input": {
+        "query": "daily multivitamin",
+        "queryType": "discovery"
+      },
+      "product": {
+        "productId": "term-match-daily-multivitamin",
+        "brand": "Term Match",
+        "name": "Daily Multivitamin",
+        "barcode": null
+      },
+      "expected": {
+        "search": {
+          "expectedProductId": "term-match-daily-multivitamin",
+          "metric": "recall5",
+          "intent": "discovery",
+          "tier": 4,
+          "mustMatchTerms": [
+            "Multivitamin"
+          ]
+        }
+      },
+      "gates": [
+        "search_relevance"
+      ],
+      "severityOnFail": "P2"
+    },
+    {
+      "id": "search_p0_discovery_kids_gummies",
+      "surface": "search",
+      "origin": "search_result",
+      "category": "prenatal_kids",
+      "personas": [],
+      "input": {
+        "query": "kids vitamin gummies",
+        "queryType": "discovery"
+      },
+      "product": {
+        "productId": "term-match-kids-gummies",
+        "brand": "Term Match",
+        "name": "Kids Vitamin Gummies",
+        "barcode": null
+      },
+      "expected": {
+        "search": {
+          "expectedProductId": "term-match-kids-gummies",
+          "metric": "recall5",
+          "intent": "discovery",
+          "tier": 4,
+          "mustMatchTerms": [
+            "Vitamin"
+          ]
+        }
+      },
+      "gates": [
+        "search_relevance"
+      ],
+      "severityOnFail": "P2"
+    },
+    {
+      "id": "search_p0_discovery_green_tea_capsules",
+      "surface": "search",
+      "origin": "search_result",
+      "category": "food_like",
+      "personas": [],
+      "input": {
+        "query": "green tea capsules",
+        "queryType": "discovery"
+      },
+      "product": {
+        "productId": "term-match-green-tea-capsules",
+        "brand": "Term Match",
+        "name": "Green Tea Capsules",
+        "barcode": null
+      },
+      "expected": {
+        "search": {
+          "expectedProductId": "term-match-green-tea-capsules",
+          "metric": "recall5",
+          "intent": "discovery",
+          "tier": 4,
+          "mustMatchTerms": [
+            "Green Tea"
+          ]
+        }
+      },
+      "gates": [
+        "search_relevance"
+      ],
+      "severityOnFail": "P2"
+    },
+    {
+      "id": "search_p0_zero_result_guard",
+      "surface": "search",
+      "origin": "search_result",
+      "category": "sparse_title_led",
+      "personas": [],
+      "input": {
+        "query": "zzzxxy unavailable supplement",
+        "queryType": "zero_result"
+      },
+      "product": {
+        "productId": "zero-results",
+        "brand": "No Match",
+        "name": "No matching supplement",
+        "barcode": null
+      },
+      "expected": {
+        "search": {
+          "expectedProductId": "zero-results",
+          "metric": "zero_results",
+          "intent": "discovery",
+          "tier": 4
+        }
+      },
+      "gates": [
+        "search_relevance"
+      ],
+      "severityOnFail": "P2"
+    }
+  ]
+}

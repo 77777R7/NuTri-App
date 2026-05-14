@@ -76,6 +76,7 @@ export type SearchSupplement = {
   imageUrl?: string | null;
   relevanceScore?: number;
   popularityScore?: number;
+  matchReason?: string | null;
   factsStatus?: 'full' | 'partial' | 'none';
   coverageStatus?: 'coverage_ready' | 'not_enough_structured_data';
 };
@@ -87,6 +88,10 @@ export type SearchResponse = {
     page: number;
     limit: number;
     totalPages: number;
+    hasMore?: boolean;
+    nextPage?: number | null;
+    shown?: number;
+    totalIsExact?: boolean;
   };
   suggestions: {
     categories: string[];
@@ -105,6 +110,7 @@ export type SearchAPIResponse =
 export type SearchBootstrapResponse = {
   generatedAt: number;
   categories: Record<string, SearchSupplement[]>;
+  paginationByCategory?: Record<string, SearchResponse['pagination']>;
 };
 
 export type SearchBootstrapAPIResponse =
@@ -112,6 +118,136 @@ export type SearchBootstrapAPIResponse =
   | {
       success: boolean;
       data: SearchBootstrapResponse;
+    };
+
+export type SearchProductDetailResponse = {
+  product: {
+    productId: string;
+    barcode: string | null;
+    upcCode: string | null;
+    name: string;
+    brand: string;
+    category: string | null;
+    benefit: string | null;
+    dose: string | null;
+    imageUrl: string | null;
+    link: string | null;
+    factsStatus: 'full' | 'partial' | 'none';
+    coverageStatus: 'coverage_ready' | 'not_enough_structured_data';
+  };
+  defaultAnchor: {
+    name: string | null;
+    dose: string | null;
+    sourceTier: string | null;
+  };
+  nutriScoreCardV2?: Record<string, unknown> | null;
+  personalizedResultLane?: Record<string, unknown> | null;
+  topBlockers?: Array<Record<string, unknown>> | null;
+  overviewBlock?: {
+    sourceStrip?: string[] | null;
+    bestForBullets?: string[] | null;
+    providesVerified?: {
+      servingSize?: string | null;
+      servingsPerContainer?: number | null;
+      keyIngredients?: Array<{ name: string; dose?: string | null }> | null;
+      dosageForm?: string | null;
+      count?: string | null;
+    } | null;
+    missingInfo?: string[] | null;
+  } | null;
+  scienceBlock?: {
+    ingredientSourceTier?: string | null;
+    ingredientRows?: Array<{ name: string; dose?: string | null }> | null;
+    ingredientSnapshotNames?: string[] | null;
+    aiSummaryContract3?: [string, string, string] | null;
+  } | null;
+  ingredientOverview: {
+    mode: 'single_anchor' | 'multi_anchor' | 'blend_anchor';
+    titleLine: string | null;
+    paragraph1: string;
+    paragraph2: string | null;
+    compareHint: string | null;
+  } | null;
+  ingredientOverviewSource: 'api' | 'fallback' | null;
+  ingredientOverviewDiagnostics?: {
+    liveWriterConfigured: boolean;
+    liveWriterAttempted: boolean;
+    liveWriterHit: boolean;
+    attemptCount: number;
+    timeoutMs: number;
+    maxRetries: number;
+    fallbackReason: string | null;
+    lastError: string | null;
+    parseFailureCount: number;
+    gateRejectCount: number;
+    timeoutCount: number;
+    errorCount: number;
+  } | null;
+  scientificBackground: {
+    mode: 'research_mode' | 'label_context_mode';
+    selectedLabel: string;
+    selectedDose: string | null;
+    introLine: string | null;
+    sections: Array<{
+      heading: string;
+      summary: string;
+      bullets: string[];
+      evidenceRead: string;
+      shopperMeaning: string | null;
+    }>;
+    closingNote: string | null;
+  } | null;
+  scientificBackgroundSource: 'api' | 'fallback' | null;
+  scientificBackgroundDiagnostics?: {
+    liveWriterConfigured: boolean;
+    liveWriterAttempted: boolean;
+    liveWriterHit: boolean;
+    attemptCount: number;
+    timeoutMs: number;
+    maxRetries: number;
+    fallbackReason: string | null;
+    lastError: string | null;
+    parseFailureCount: number;
+    gateRejectCount: number;
+    timeoutCount: number;
+    errorCount: number;
+  } | null;
+  deepDiveAsync?: {
+    ingredientOverview?: {
+      backgroundRefreshPending: boolean;
+      recommendedRetryAfterMs: number | null;
+    } | null;
+    scientificBackground?: {
+      backgroundRefreshPending: boolean;
+      recommendedRetryAfterMs: number | null;
+    } | null;
+  } | null;
+  usageBlock?: {
+    directions?: {
+      text?: string | null;
+      lines?: string[] | null;
+      sourceTier?: string | null;
+      hasDirectionsTextVisible?: boolean | null;
+    } | null;
+  } | null;
+  safetyBlock?: {
+    labelWarnings?: Array<{ text?: string | null; label?: string | null } | string> | null;
+    generalWatchouts?: Array<{ text?: string | null; label?: string | null } | string> | null;
+    ulGuidance?: Array<{ text?: string | null; label?: string | null } | string> | null;
+  } | null;
+  suggestedUse: string | null;
+  warnings: string | null;
+  decisionDigest: string;
+  decisionInputsHash?: string | null;
+  personalizationScopeHash?: string | null;
+  decisionContractVersion?: string | null;
+};
+
+export type SearchProductDetailAPIResponse =
+  | SearchProductDetailResponse
+  | {
+      success: boolean;
+      data: SearchProductDetailResponse;
     };
 
 export type AnalyzeRequest = {
@@ -420,6 +556,25 @@ export const apiClient = {
       method: 'GET',
       ...options,
     }),
+
+  searchProductDetail: (
+    productId: string,
+    options?: (AuthenticatedRequestOptions & { revalidateFallback?: boolean }),
+  ) => {
+    const { revalidateFallback, ...requestOptions } = options ?? {};
+    const params = new URLSearchParams({ productId });
+    if (revalidateFallback === true) {
+      params.set('revalidateFallback', '1');
+    }
+    return requestTo<SearchProductDetailAPIResponse>(
+      ENV.searchApiBaseUrl,
+      `/api/search/product-detail?${params.toString()}`,
+      {
+        method: 'GET',
+        ...requestOptions,
+      },
+    );
+  },
 
   analyze: (payload: AnalyzeRequest, options?: AuthenticatedRequestOptions) =>
     request<AnalyzeResponse>('/api/analyze', {

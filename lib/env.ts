@@ -7,6 +7,9 @@ const DIRECT_PUBLIC_ENV: Record<string, string | undefined> = {
   EXPO_PUBLIC_PADDLE_OCR_ENDPOINT: process.env.EXPO_PUBLIC_PADDLE_OCR_ENDPOINT,
   EXPO_PUBLIC_API_BASE_URL: process.env.EXPO_PUBLIC_API_BASE_URL,
   EXPO_PUBLIC_SEARCH_API_BASE_URL: process.env.EXPO_PUBLIC_SEARCH_API_BASE_URL,
+  EXPO_PUBLIC_REVENUECAT_IOS_API_KEY: process.env.EXPO_PUBLIC_REVENUECAT_IOS_API_KEY,
+  EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY: process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY,
+  EXPO_PUBLIC_REVENUECAT_ENTITLEMENT_ID: process.env.EXPO_PUBLIC_REVENUECAT_ENTITLEMENT_ID,
   EXPO_PUBLIC_SCAN_TERMINAL_LOCK_ENABLED: process.env.EXPO_PUBLIC_SCAN_TERMINAL_LOCK_ENABLED,
   EXPO_PUBLIC_API_PORT: process.env.EXPO_PUBLIC_API_PORT,
 };
@@ -202,6 +205,9 @@ const envValues = {
   apiBaseUrl,
   sentryDsn: getEnvValue('sentryDsn', { optional: true }),
   posthogApiKey: getEnvValue('posthogApiKey', { optional: true }),
+  revenueCatIosApiKey: getEnvValue('revenueCatIosApiKey', { optional: true }),
+  revenueCatAndroidApiKey: getEnvValue('revenueCatAndroidApiKey', { optional: true }),
+  revenueCatEntitlementId: getEnvValue('revenueCatEntitlementId', { optional: true }),
   scanTerminalLockEnabled: getEnvValue('scanTerminalLockEnabled', { optional: true }),
 };
 
@@ -291,6 +297,9 @@ export const ENV = {
   apiBaseUrl: envValues.apiBaseUrl as string,
   sentryDsn: envValues.sentryDsn ?? null,
   posthogApiKey: envValues.posthogApiKey ?? null,
+  revenueCatIosApiKey: envValues.revenueCatIosApiKey ?? null,
+  revenueCatAndroidApiKey: envValues.revenueCatAndroidApiKey ?? null,
+  revenueCatEntitlementId: envValues.revenueCatEntitlementId ?? null,
   searchApiBaseUrl: searchApiBaseUrl as string,
   scanTerminalLockEnabled: parseOptionalBoolean(envValues.scanTerminalLockEnabled, false),
   validate: validateEnv,

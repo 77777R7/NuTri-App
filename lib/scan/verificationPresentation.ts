@@ -116,6 +116,7 @@ export const buildVerificationPresentation = (
         : 'web_only';
 
   const datasetLabel = resolveDatasetLabel(sourceDataset);
+  const isLabelRecord = sourceDataset === 'label_record';
 
   if (verificationStatus === 'final') {
     return {
@@ -125,15 +126,22 @@ export const buildVerificationPresentation = (
       blockedReasons,
       degraded,
       copyTokens: {
-        badgeLabel: 'Verified source',
-        sourceCopy: 'This analysis is based on verified record data. Scan Supplement Facts for richer product-level detail.',
-        sourceBullets: [
-          'Based on verified record data.',
-          'Scan the Supplement Facts panel for richer product-level insights.',
-        ],
-        overviewSubtitle: 'Product-level context from verified record',
-        factsCardTitle: 'What we verified',
-        overviewLead: `Analyzed from ${datasetLabel}.`,
+        badgeLabel: isLabelRecord ? 'Database label record' : 'Verified source',
+        sourceCopy: isLabelRecord
+          ? 'This analysis is based on structured product label data in the database.'
+          : 'This analysis is based on verified record data. Scan Supplement Facts for richer product-level detail.',
+        sourceBullets: isLabelRecord
+          ? [
+              'Based on structured database label data.',
+              'Use the package label to confirm any recent formula changes.',
+            ]
+          : [
+              'Based on verified record data.',
+              'Scan the Supplement Facts panel for richer product-level insights.',
+            ],
+        overviewSubtitle: isLabelRecord ? 'Product-level context from database label record' : 'Product-level context from verified record',
+        factsCardTitle: isLabelRecord ? 'What the record includes' : 'What we verified',
+        overviewLead: isLabelRecord ? 'Analyzed from database label record.' : `Analyzed from ${datasetLabel}.`,
         evidencePillLabel: 'Label facts',
         datasetLabel,
       },

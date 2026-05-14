@@ -25,6 +25,9 @@ const OPENAI_API_KEY = process.env.EXPO_PUBLIC_OPENAI_API_KEY ?? process.env.OPE
 const PADDLE_OCR_ENDPOINT = process.env.EXPO_PUBLIC_PADDLE_OCR_ENDPOINT ?? process.env.PADDLE_OCR_ENDPOINT;
 const SENTRY_DSN = process.env.SENTRY_DSN ?? process.env.EXPO_PUBLIC_SENTRY_DSN;
 const POSTHOG_API_KEY = process.env.POSTHOG_API_KEY ?? process.env.EXPO_PUBLIC_POSTHOG_API_KEY;
+const REVENUECAT_IOS_API_KEY = process.env.EXPO_PUBLIC_REVENUECAT_IOS_API_KEY ?? process.env.REVENUECAT_IOS_API_KEY;
+const REVENUECAT_ANDROID_API_KEY = process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY ?? process.env.REVENUECAT_ANDROID_API_KEY;
+const REVENUECAT_ENTITLEMENT_ID = process.env.EXPO_PUBLIC_REVENUECAT_ENTITLEMENT_ID ?? process.env.REVENUECAT_ENTITLEMENT_ID ?? 'pro';
 const DISABLE_AUTH = process.env.EXPO_PUBLIC_DISABLE_AUTH ?? process.env.DISABLE_AUTH ?? '0';
 const FORCE_AUTH = process.env.EXPO_PUBLIC_FORCE_AUTH ?? process.env.FORCE_AUTH ?? '0';
 
@@ -166,6 +169,9 @@ const createExpoConfig = ({ config }: ConfigContext): ExpoConfig => {
       forceAuth: FORCE_AUTH,
       sentryDsn: SENTRY_DSN,
       posthogApiKey: POSTHOG_API_KEY,
+      revenueCatIosApiKey: REVENUECAT_IOS_API_KEY,
+      revenueCatAndroidApiKey: REVENUECAT_ANDROID_API_KEY,
+      revenueCatEntitlementId: REVENUECAT_ENTITLEMENT_ID,
       eas: {
         projectId: easProjectId,
       },

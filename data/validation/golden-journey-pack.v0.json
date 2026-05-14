@@ -1,0 +1,1144 @@
+{
+  "version": "golden-journey-pack.v0",
+  "baseline": "science-baseline-v1",
+  "description": "Curated cross-surface scan/search/profile scenarios for the first non-UI quality gate slice.",
+  "scenarios": [
+    {
+      "id": "scan_core_sr_omega3_fish_allergy",
+      "surface": "barcode_scan",
+      "origin": "barcode_scan",
+      "category": "omega3_source_oil",
+      "personas": ["fish_allergy", "vegan_preference"],
+      "input": { "barcode": "00023249011835" },
+      "product": {
+        "productId": "core-sr-omega3",
+        "brand": "Sports Research",
+        "name": "Alaskan Omega-3 Fish Oil, 90 Softgels",
+        "barcode": "00023249011835"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": ["Fish Oil", "Omega-3 Fish Oil", "Total Omega-3"],
+          "warn": ["EPA", "DHA"],
+          "fail": ["Calories", "Total Fat", "Gelatin"]
+        },
+        "overview": {
+          "mustMention": ["fish oil", "omega-3"],
+          "bannedPhrases": ["web hint", "overall wellness"]
+        },
+        "scientificBackground": {
+          "mustMention": ["omega-3", "EPA", "DHA"],
+          "bannedPhrases": ["safe for you", "prevents heart disease"]
+        },
+        "profileWarnings": {
+          "mustInclude": ["fish"],
+          "mustNotInclude": ["shellfish"]
+        },
+        "consistency": {
+          "barcode": "00023249011835",
+          "selectedAnchor": "Fish Oil",
+          "scoreBand": "Strong"
+        }
+      },
+      "gates": ["route_health", "default_anchor", "allergy_sensitivity_relevance", "unsafe_language", "score_consistency"],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "scan_core_sr_vitamin_c_immunity_duplicate",
+      "surface": "barcode_scan",
+      "origin": "barcode_scan",
+      "category": "vitamin_mineral_single",
+      "personas": ["immunity_goal", "duplicate_zinc_magnesium_d"],
+      "input": { "barcode": "00023249090021" },
+      "product": {
+        "productId": "core-sr-vitamin-c",
+        "brand": "Sports Research",
+        "name": "Vitamin C 1000 mg",
+        "barcode": "00023249090021"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": ["Vitamin C", "Ascorbic Acid"],
+          "warn": ["Vitamin C Formula"],
+          "fail": ["Zinc", "Calories", "Serving Size"]
+        },
+        "overview": {
+          "mustMention": ["vitamin C"],
+          "bannedPhrases": ["daily routine", "web hint"]
+        },
+        "scientificBackground": {
+          "mustMention": ["vitamin C"],
+          "bannedPhrases": ["prevents colds", "cures"]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": ["safe for you"]
+        },
+        "consistency": {
+          "barcode": "00023249090021",
+          "selectedAnchor": "Vitamin C",
+          "scoreBand": "Strong"
+        }
+      },
+      "gates": ["route_health", "default_anchor", "goal_relevance", "unsafe_language", "score_consistency"],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "scan_core_gi_phage_digestive_goal",
+      "surface": "barcode_scan",
+      "origin": "barcode_scan",
+      "category": "probiotic_microbiome",
+      "personas": ["digestion_goal"],
+      "input": { "barcode": "00737870212539" },
+      "product": {
+        "productId": "core-gi-phage",
+        "brand": "Life Extension",
+        "name": "GI with Phage Technology",
+        "barcode": "00737870212539"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": ["Probiotic", "Phage", "Floraphage", "Florassist Probiotic", "Microbiome"],
+          "warn": ["Probiotic Blend"],
+          "fail": ["Vitamin D", "Proprietary Blend", "Calories"]
+        },
+        "overview": {
+          "mustMention": ["phage", "probiotic"],
+          "bannedPhrases": ["blend-style formula", "overall wellness"]
+        },
+        "scientificBackground": {
+          "mustMention": ["microbiome"],
+          "bannedPhrases": ["treats digestive disease", "safe for you"]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": ["immune compromised contraindication"]
+        },
+        "consistency": {
+          "barcode": "00737870212539",
+          "selectedAnchor": "Florassist Probiotic",
+          "scoreBand": "Fair"
+        }
+      },
+      "gates": ["route_health", "default_anchor", "unsafe_language", "selected_anchor_consistency"],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "scan_core_sr_astaxanthin_single_active",
+      "surface": "barcode_scan",
+      "origin": "barcode_scan",
+      "category": "botanical_extract",
+      "personas": [],
+      "input": { "barcode": "00023249012566" },
+      "product": {
+        "productId": "core-sr-astaxanthin",
+        "brand": "Sports Research",
+        "name": "Astaxanthin 12 mg",
+        "barcode": "00023249012566"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": ["Astaxanthin"],
+          "warn": ["Carotenoid"],
+          "fail": ["Safflower Oil", "Gelatin", "Calories"]
+        },
+        "overview": {
+          "mustMention": ["Astaxanthin"],
+          "bannedPhrases": ["general wellness", "web hint"]
+        },
+        "scientificBackground": {
+          "mustMention": ["Astaxanthin"],
+          "bannedPhrases": ["proven to", "prevents"]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": ["safe for you"]
+        },
+        "consistency": {
+          "barcode": "00023249012566",
+          "selectedAnchor": "Astaxanthin",
+          "scoreBand": "Strong"
+        }
+      },
+      "gates": ["route_health", "default_anchor", "overview_copy", "scientific_background", "unsafe_language"],
+      "severityOnFail": "P2"
+    },
+    {
+      "id": "scan_core_nac_sparse_result",
+      "surface": "barcode_scan",
+      "origin": "barcode_scan",
+      "category": "sparse_title_led",
+      "personas": [],
+      "input": { "barcode": "00766298001890" },
+      "product": {
+        "productId": "core-nac-600",
+        "brand": "NOW Foods",
+        "name": "NAC 600 mg",
+        "barcode": "00766298001890"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": ["NAC", "N-Acetyl Cysteine", "N-Acetyl-L-Cysteine (free-form)"],
+          "warn": ["Amino Acid"],
+          "fail": ["Vegetarian Capsules", "Serving Size"]
+        },
+        "overview": {
+          "mustMention": ["NAC"],
+          "bannedPhrases": ["web hint", "overall wellness"]
+        },
+        "scientificBackground": {
+          "mustMention": ["NAC"],
+          "bannedPhrases": ["treats", "cures"]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": ["safe for you"]
+        },
+        "consistency": {
+          "barcode": "00766298001890",
+          "selectedAnchor": "NAC",
+          "scoreBand": "Fair"
+        }
+      },
+      "gates": ["route_health", "default_anchor", "sparse_data_honesty", "unsafe_language"],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "scan_codeage_aloe_no_anchor_steal",
+      "surface": "barcode_scan",
+      "origin": "barcode_scan",
+      "category": "botanical_extract",
+      "personas": ["immunity_goal"],
+      "input": { "barcode": "00850049609104" },
+      "product": {
+        "productId": "codeage-sea-moss-vitamin-c-aloe",
+        "brand": "Codeage",
+        "name": "Amen Sea Moss + Vitamin C + Aloe",
+        "barcode": "00850049609104"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": ["Vitamin C", "Vitamin C (as Ascorbic Acid)"],
+          "warn": ["Sea Moss"],
+          "fail": ["Aloe Vera", "Sugars", "Calories"]
+        },
+        "overview": {
+          "mustMention": ["Vitamin C"],
+          "bannedPhrases": ["Aloe Vera is the main"]
+        },
+        "scientificBackground": {
+          "mustMention": ["Vitamin C"],
+          "bannedPhrases": ["Aloe Vera •"]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": ["safe for you"]
+        }
+      },
+      "gates": ["default_anchor", "selected_anchor_consistency", "goal_relevance"],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "scan_solaray_matcha_green_tea_stimulant",
+      "surface": "barcode_scan",
+      "origin": "barcode_scan",
+      "category": "botanical_extract",
+      "personas": ["stimulant_sensitivity"],
+      "input": { "barcode": "00076280837643" },
+      "product": {
+        "productId": "78436",
+        "brand": "Solaray",
+        "name": "Matcha Green Tea, 300 mg, 100 VegCaps",
+        "barcode": "00076280837643"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": ["Matcha Green Tea", "Green Tea", "Matcha"],
+          "warn": ["Botanical Extract"],
+          "fail": ["Caffeine", "Serving Size", "VegCaps"]
+        },
+        "overview": {
+          "mustMention": ["matcha", "green tea"],
+          "bannedPhrases": ["web hint", "overall wellness"]
+        },
+        "scientificBackground": {
+          "mustMention": ["green tea"],
+          "bannedPhrases": ["fat loss guaranteed", "safe for you"]
+        },
+        "profileWarnings": {
+          "mustInclude": ["green tea"],
+          "mustNotInclude": ["safe for you"]
+        },
+        "consistency": {
+          "barcode": "00076280837643",
+          "selectedAnchor": "Green Tea",
+          "scoreBand": "Fair"
+        }
+      },
+      "gates": ["default_anchor", "allergy_sensitivity_relevance", "overview_copy", "scientific_background", "unsafe_language"],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "scan_natures_way_algal_oil_vegan",
+      "surface": "barcode_scan",
+      "origin": "barcode_scan",
+      "category": "omega3_source_oil",
+      "personas": ["vegan_preference", "fish_allergy"],
+      "input": { "barcode": "00033674123256" },
+      "product": {
+        "productId": "natures-way-algal-oil",
+        "brand": "Nature's Way",
+        "name": "Omega-3 Algal Oil",
+        "barcode": "00033674123256"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": ["Algal Oil", "Omega-3 Algal Oil", "DHA"],
+          "warn": ["Omega-3"],
+          "fail": ["Fish Oil", "Calories", "Gelatin"]
+        },
+        "overview": {
+          "mustMention": ["algal oil"],
+          "bannedPhrases": ["fish oil"]
+        },
+        "scientificBackground": {
+          "mustMention": ["algal"],
+          "bannedPhrases": ["fish-oil source line"]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": ["fish allergy conflict", "shellfish"]
+        }
+      },
+      "gates": ["default_anchor", "allergy_sensitivity_relevance", "overview_copy", "scientific_background"],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "scan_beet_juice_food_like",
+      "surface": "barcode_scan",
+      "origin": "barcode_scan",
+      "category": "food_like",
+      "personas": ["gluten_restriction"],
+      "input": { "barcode": "00023363379095" },
+      "product": {
+        "productId": "eclectic-beet-juice-powder",
+        "brand": "Eclectic Herb",
+        "name": "Beet Juice Powder",
+        "barcode": "00023363379095"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": ["Food-based powder", "Beet Juice Powder", "Blend"],
+          "warn": ["Formula blend"],
+          "fail": ["Sugars", "Calories", "Potassium"]
+        },
+        "overview": {
+          "mustMention": ["powder"],
+          "bannedPhrases": ["Blend-style formula", "web hint"]
+        },
+        "scientificBackground": {
+          "mustMention": ["label"],
+          "bannedPhrases": ["research mode"]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": ["gluten-free"]
+        }
+      },
+      "gates": ["route_health", "default_anchor", "sparse_data_honesty", "unsafe_language"],
+      "severityOnFail": "P2"
+    },
+    {
+      "id": "scan_colon_cleanse_proprietary_blend",
+      "surface": "barcode_scan",
+      "origin": "barcode_scan",
+      "category": "probiotic_microbiome",
+      "personas": ["digestion_goal"],
+      "input": { "barcode": "00740985228463" },
+      "product": {
+        "productId": "21st-century-colon-cleanse",
+        "brand": "21st Century",
+        "name": "Colon Cleanse",
+        "barcode": "00740985228463"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": ["Proprietary Blend", "Formula blend"],
+          "warn": ["Fiber"],
+          "fail": ["Potassium", "Sugars", "Serving Size"]
+        },
+        "overview": {
+          "mustMention": ["grouped formula line"],
+          "bannedPhrases": ["Blend-style formula"]
+        },
+        "scientificBackground": {
+          "mustMention": ["blend"],
+          "bannedPhrases": ["treats constipation"]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": ["safe for you"]
+        }
+      },
+      "gates": ["default_anchor", "overview_copy", "unsafe_language"],
+      "severityOnFail": "P2"
+    },
+    {
+      "id": "scan_zinc_elderberry_immune_combo",
+      "surface": "barcode_scan",
+      "origin": "barcode_scan",
+      "category": "mineral_stack",
+      "personas": ["immunity_goal", "duplicate_zinc_magnesium_d"],
+      "input": { "barcode": "fixture:zinc-elderberry-vitamin-c-d" },
+      "product": {
+        "productId": "fixture-zinc-elderberry-vitamin-c-d",
+        "brand": "Fixture Naturals",
+        "name": "Zinc + Vitamin C + D + Elderberry Immune Formula",
+        "barcode": null
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": ["Zinc"],
+          "warn": ["Immune Blend"],
+          "fail": ["Vitamin C", "Vitamin D", "Elderberry", "Sugars"]
+        },
+        "overview": {
+          "mustMention": ["Zinc"],
+          "bannedPhrases": ["overall wellness"]
+        },
+        "scientificBackground": {
+          "mustMention": ["Zinc"],
+          "bannedPhrases": ["prevents colds"]
+        },
+        "profileWarnings": {
+          "mustInclude": ["duplicate"],
+          "mustNotInclude": ["safe for you"]
+        }
+      },
+      "gates": ["default_anchor", "duplicate_stack", "goal_relevance", "unsafe_language"],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "scan_5htp_melatonin_sleep",
+      "surface": "barcode_scan",
+      "origin": "barcode_scan",
+      "category": "sleep_amino",
+      "personas": ["sleep_goal", "melatonin_sensitivity"],
+      "input": { "barcode": "fixture:5htp-melatonin" },
+      "product": {
+        "productId": "fixture-5htp-melatonin",
+        "brand": "Fixture Labs",
+        "name": "5-HTP + Melatonin Sleep Support",
+        "barcode": null
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": ["5-HTP", "5-Hydroxytryptophan"],
+          "warn": ["Sleep Blend"],
+          "fail": ["Melatonin", "Magnesium", "Vitamin B6"]
+        },
+        "overview": {
+          "mustMention": ["5-HTP"],
+          "bannedPhrases": ["treats insomnia"]
+        },
+        "scientificBackground": {
+          "mustMention": ["5-HTP"],
+          "bannedPhrases": ["cures insomnia"]
+        },
+        "profileWarnings": {
+          "mustInclude": ["melatonin"],
+          "mustNotInclude": ["safe for you"]
+        }
+      },
+      "gates": ["default_anchor", "allergy_sensitivity_relevance", "goal_relevance", "unsafe_language"],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "scan_cla_carnitine_fitness",
+      "surface": "barcode_scan",
+      "origin": "barcode_scan",
+      "category": "metabolic_body_composition",
+      "personas": ["fitness_recovery_goal"],
+      "input": { "barcode": "fixture:cla-carnitine" },
+      "product": {
+        "productId": "fixture-cla-carnitine",
+        "brand": "Fixture Sports",
+        "name": "CLA with L-Carnitine Matrix",
+        "barcode": null
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": ["CLA", "Conjugated Linoleic Acid"],
+          "warn": ["Metabolic Blend"],
+          "fail": ["Carnitine Matrix", "L-Carnitine", "Green Tea"]
+        },
+        "overview": {
+          "mustMention": ["CLA"],
+          "bannedPhrases": ["fat loss guaranteed"]
+        },
+        "scientificBackground": {
+          "mustMention": ["CLA"],
+          "bannedPhrases": ["proven weight loss"]
+        },
+        "profileWarnings": {
+          "mustInclude": ["fitness"],
+          "mustNotInclude": ["safe for you"]
+        }
+      },
+      "gates": ["default_anchor", "goal_relevance", "unsafe_language"],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "scan_cal_mag_stack_duplicate",
+      "surface": "barcode_scan",
+      "origin": "barcode_scan",
+      "category": "mineral_stack",
+      "personas": ["duplicate_zinc_magnesium_d"],
+      "input": { "barcode": "fixture:cal-mag-zinc-d3" },
+      "product": {
+        "productId": "fixture-cal-mag-zinc-d3",
+        "brand": "Fixture Minerals",
+        "name": "Calcium Magnesium Zinc with Vitamin D3",
+        "barcode": null
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": ["Calcium Magnesium Mineral Stack", "Magnesium", "Zinc"],
+          "warn": ["Calcium"],
+          "fail": ["Vitamin C", "Vitamin D3", "Serving Size"]
+        },
+        "overview": {
+          "mustMention": ["mineral"],
+          "bannedPhrases": ["single-ingredient"]
+        },
+        "scientificBackground": {
+          "mustMention": ["mineral"],
+          "bannedPhrases": ["safe for you"]
+        },
+        "profileWarnings": {
+          "mustInclude": ["duplicate"],
+          "mustNotInclude": ["overdose"]
+        }
+      },
+      "gates": ["default_anchor", "duplicate_stack", "overview_copy", "unsafe_language"],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "scan_biogaia_protectis_zero_facts",
+      "surface": "barcode_scan",
+      "origin": "barcode_scan",
+      "category": "probiotic_microbiome",
+      "personas": [],
+      "input": { "barcode": "00602359460537" },
+      "product": {
+        "productId": "141213",
+        "brand": "BioGaia",
+        "name": "Protectis Baby, Immune Active Probiotic Drops, 0-36 Months, 0.17 fl oz (5 ml)",
+        "barcode": "00602359460537"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": ["Protectis Probiotic", "Protectis", "Probiotic"],
+          "warn": ["Baby Probiotic", "Immune Active Probiotic"],
+          "fail": ["Immune Active", "Drops", "Serving Size"]
+        },
+        "overview": {
+          "mustMention": ["protectis", "probiotic"],
+          "bannedPhrases": ["blend-style formula", "web hint"]
+        },
+        "scientificBackground": {
+          "mustMention": ["probiotic"],
+          "bannedPhrases": ["safe for you", "treats digestive disease"]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": ["safe for you"]
+        },
+        "consistency": {
+          "barcode": "00602359460537",
+          "selectedAnchor": "Protectis Probiotic",
+          "scoreBand": "Fair"
+        }
+      },
+      "gates": ["default_anchor", "sparse_data_honesty", "overview_copy", "scientific_background", "unsafe_language"],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "scan_whey_protein_dairy",
+      "surface": "barcode_scan",
+      "origin": "barcode_scan",
+      "category": "protein_fiber",
+      "personas": ["dairy_allergy", "fitness_recovery_goal"],
+      "input": { "barcode": "fixture:whey-protein" },
+      "product": {
+        "productId": "fixture-whey-protein",
+        "brand": "Fixture Protein",
+        "name": "Whey Protein Powder",
+        "barcode": null
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": ["Protein", "Whey Protein"],
+          "warn": ["Protein Powder"],
+          "fail": ["Potassium", "Sugars", "Calories"]
+        },
+        "overview": {
+          "mustMention": ["protein"],
+          "bannedPhrases": ["potassium is the main"]
+        },
+        "scientificBackground": {
+          "mustMention": ["protein"],
+          "bannedPhrases": ["guarantees muscle gain"]
+        },
+        "profileWarnings": {
+          "mustInclude": ["dairy"],
+          "mustNotInclude": ["safe for you"]
+        }
+      },
+      "gates": ["default_anchor", "allergy_sensitivity_relevance", "goal_relevance", "unsafe_language"],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "scan_apple_fiber_digestion",
+      "surface": "barcode_scan",
+      "origin": "barcode_scan",
+      "category": "protein_fiber",
+      "personas": ["digestion_goal"],
+      "input": { "barcode": "fixture:apple-fiber" },
+      "product": {
+        "productId": "fixture-apple-fiber",
+        "brand": "Fixture Fiber",
+        "name": "Apple Fiber",
+        "barcode": null
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": ["Fiber", "Apple Fiber"],
+          "warn": ["Dietary Fiber"],
+          "fail": ["Potassium", "Sugars", "Calories"]
+        },
+        "overview": {
+          "mustMention": ["fiber"],
+          "bannedPhrases": ["potassium is the main"]
+        },
+        "scientificBackground": {
+          "mustMention": ["fiber"],
+          "bannedPhrases": ["treats digestive disease"]
+        },
+        "profileWarnings": {
+          "mustInclude": ["digestion"],
+          "mustNotInclude": ["safe for you"]
+        }
+      },
+      "gates": ["default_anchor", "bad_anchor", "goal_relevance", "unsafe_language"],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "scan_prenatal_dha_pregnancy",
+      "surface": "barcode_scan",
+      "origin": "barcode_scan",
+      "category": "prenatal_kids",
+      "personas": ["pregnancy_prenatal", "fish_allergy"],
+      "input": { "barcode": "fixture:prenatal-dha" },
+      "product": {
+        "productId": "fixture-prenatal-dha",
+        "brand": "Fixture Prenatal",
+        "name": "Prenatal DHA",
+        "barcode": null
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": ["Prenatal DHA", "DHA", "Omega-3"],
+          "warn": ["Prenatal Formula"],
+          "fail": ["Generic Multivitamin", "Calories"]
+        },
+        "overview": {
+          "mustMention": ["prenatal", "DHA"],
+          "bannedPhrases": ["safe in pregnancy"]
+        },
+        "scientificBackground": {
+          "mustMention": ["DHA"],
+          "bannedPhrases": ["safe in pregnancy", "guarantees"]
+        },
+        "profileWarnings": {
+          "mustInclude": ["prenatal"],
+          "mustNotInclude": ["safe for you"]
+        }
+      },
+      "gates": ["default_anchor", "allergy_sensitivity_relevance", "unsafe_language", "selected_anchor_consistency"],
+      "severityOnFail": "P0"
+    },
+    {
+      "id": "scan_kids_gummy_no_sugar_anchor",
+      "surface": "barcode_scan",
+      "origin": "barcode_scan",
+      "category": "prenatal_kids",
+      "personas": ["gelatin_restriction"],
+      "input": { "barcode": "fixture:kids-gummy-multi" },
+      "product": {
+        "productId": "fixture-kids-gummy-multi",
+        "brand": "Fixture Kids",
+        "name": "Kids Multivitamin Gummies",
+        "barcode": null
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": ["Kids Multivitamin", "Multivitamin & Mineral Formula"],
+          "warn": ["Gummy Multivitamin"],
+          "fail": ["Sugars", "Gelatin", "Flavor"]
+        },
+        "overview": {
+          "mustMention": ["kids", "multivitamin"],
+          "bannedPhrases": ["sugars are the main"]
+        },
+        "scientificBackground": {
+          "mustMention": ["multivitamin"],
+          "bannedPhrases": ["adult dose", "safe for you"]
+        },
+        "profileWarnings": {
+          "mustInclude": ["gelatin"],
+          "mustNotInclude": ["safe for you"]
+        }
+      },
+      "gates": ["default_anchor", "allergy_sensitivity_relevance", "unsafe_language"],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "scan_krill_oil_shellfish",
+      "surface": "barcode_scan",
+      "origin": "barcode_scan",
+      "category": "omega3_source_oil",
+      "personas": ["shellfish_allergy"],
+      "input": { "barcode": "fixture:krill-oil-shellfish" },
+      "product": {
+        "productId": "fixture-krill-oil",
+        "brand": "Fixture Marine",
+        "name": "Krill Oil Omega-3",
+        "barcode": null
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": ["Krill Oil", "Omega-3 Krill Oil", "Omega-3"],
+          "warn": ["EPA", "DHA"],
+          "fail": ["Fish Oil", "Calories", "Gelatin"]
+        },
+        "overview": {
+          "mustMention": ["krill", "omega-3"],
+          "bannedPhrases": ["fish oil source"]
+        },
+        "scientificBackground": {
+          "mustMention": ["krill", "omega-3"],
+          "bannedPhrases": ["safe for you", "prevents"]
+        },
+        "profileWarnings": {
+          "mustInclude": ["shellfish"],
+          "mustNotInclude": ["safe for you"]
+        },
+        "consistency": {
+          "selectedAnchor": "Krill Oil",
+          "scoreBand": "Fair"
+        }
+      },
+      "gates": ["default_anchor", "allergy_sensitivity_relevance", "unsafe_language", "selected_anchor_consistency"],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "scan_soy_lectin_allergy",
+      "surface": "barcode_scan",
+      "origin": "barcode_scan",
+      "category": "protein_fiber",
+      "personas": ["soy_allergy", "fitness_recovery_goal"],
+      "input": { "barcode": "fixture:soy-protein-allergy" },
+      "product": {
+        "productId": "fixture-soy-protein",
+        "brand": "Fixture Plant",
+        "name": "Soy Protein Isolate",
+        "barcode": null
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": ["Soy Protein", "Protein", "Soy Protein Isolate"],
+          "warn": ["Protein Powder"],
+          "fail": ["Sugars", "Serving Size", "Calories"]
+        },
+        "overview": {
+          "mustMention": ["soy", "protein"],
+          "bannedPhrases": ["safe for you"]
+        },
+        "scientificBackground": {
+          "mustMention": ["soy", "protein"],
+          "bannedPhrases": ["guarantees", "cures"]
+        },
+        "profileWarnings": {
+          "mustInclude": ["soy"],
+          "mustNotInclude": ["dairy", "safe for you"]
+        },
+        "consistency": {
+          "selectedAnchor": "Soy Protein",
+          "scoreBand": "Fair"
+        }
+      },
+      "gates": ["default_anchor", "allergy_sensitivity_relevance", "goal_relevance", "unsafe_language", "selected_anchor_consistency"],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "scan_malformed_label_data_limited",
+      "surface": "barcode_scan",
+      "origin": "barcode_scan",
+      "category": "sparse_title_led",
+      "personas": [],
+      "input": { "barcode": "fixture:malformed-electrolyte-mix" },
+      "product": {
+        "productId": "fixture-malformed-electrolyte",
+        "brand": "Fixture Hydration",
+        "name": "Electrolyte Hydration Mix",
+        "barcode": null
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": ["Electrolyte Blend", "Hydration Mix", "Electrolyte Hydration Mix"],
+          "warn": ["Magnesium", "Potassium"],
+          "fail": ["Serving Size", "Natural Flavors", "Calories"]
+        },
+        "overview": {
+          "mustMention": ["hydration", "limited"],
+          "bannedPhrases": ["safe for you", "fully verified"]
+        },
+        "scientificBackground": {
+          "mustMention": ["electrolyte"],
+          "bannedPhrases": ["guarantees", "treats"]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": ["safe for you"]
+        },
+        "consistency": {
+          "selectedAnchor": "Electrolyte Blend",
+          "scoreBand": "Fair"
+        }
+      },
+      "gates": ["default_anchor", "sparse_data_honesty", "unsafe_language", "selected_anchor_consistency"],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_brand_family_sr_omega3",
+      "surface": "search",
+      "origin": "search_result",
+      "category": "omega3_source_oil",
+      "personas": [],
+      "input": {
+        "query": "Sports Research Alaskan Omega-3 Fish Oil",
+        "queryType": "brand_product"
+      },
+      "product": {
+        "productId": "core-sr-omega3",
+        "brand": "Sports Research",
+        "name": "Alaskan Omega-3 Fish Oil, 90 Softgels",
+        "barcode": "00023249011835"
+      },
+      "expected": {
+        "search": {
+          "expectedProductId": "core-sr-omega3",
+          "metric": "top1"
+        }
+      },
+      "gates": ["search_relevance"],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_brand_product_aloe",
+      "surface": "search",
+      "origin": "search_result",
+      "category": "botanical_extract",
+      "personas": [],
+      "input": {
+        "query": "NOW Aloe Vera Concentrate",
+        "queryType": "brand_product"
+      },
+      "product": {
+        "productId": "now-aloe-vera-concentrate",
+        "brand": "NOW Foods",
+        "name": "Aloe Vera Concentrate",
+        "barcode": "00733739030306"
+      },
+      "expected": {
+        "search": {
+          "expectedProductId": "now-aloe-vera-concentrate",
+          "metric": "top3"
+        }
+      },
+      "gates": ["search_relevance"],
+      "severityOnFail": "P2"
+    },
+    {
+      "id": "search_alias_vitamin_d3",
+      "surface": "search",
+      "origin": "search_result",
+      "category": "vitamin_mineral_single",
+      "personas": ["duplicate_zinc_magnesium_d"],
+      "input": {
+        "query": "D3 cholecalciferol",
+        "queryType": "alias"
+      },
+      "product": {
+        "productId": "fixture-vitamin-d3",
+        "brand": "Fixture Vitamins",
+        "name": "Vitamin D3",
+        "barcode": null
+      },
+      "expected": {
+        "search": {
+          "expectedProductId": "fixture-vitamin-d3",
+          "metric": "recall5",
+          "mustMatchTerms": ["Vitamin D", "D3"]
+        }
+      },
+      "gates": ["search_relevance"],
+      "severityOnFail": "P2"
+    },
+    {
+      "id": "search_alias_sensoril_ashwagandha",
+      "surface": "search",
+      "origin": "search_result",
+      "category": "botanical_extract",
+      "personas": ["stress_goal"],
+      "input": {
+        "query": "Sensoril stress support",
+        "queryType": "alias"
+      },
+      "product": {
+        "productId": "fixture-sensoril-ashwagandha",
+        "brand": "Fixture Herbs",
+        "name": "Ashwagandha Sensoril",
+        "barcode": null
+      },
+      "expected": {
+        "search": {
+          "expectedProductId": "fixture-sensoril-ashwagandha",
+          "metric": "recall5",
+          "mustMatchTerms": ["Ashwagandha", "Sensoril"]
+        }
+      },
+      "gates": ["search_relevance"],
+      "severityOnFail": "P2"
+    },
+    {
+      "id": "search_typo_floraphage",
+      "surface": "search",
+      "origin": "search_result",
+      "category": "probiotic_microbiome",
+      "personas": ["digestion_goal"],
+      "input": {
+        "query": "florafage probiotic",
+        "queryType": "typo"
+      },
+      "product": {
+        "productId": "fixture-floraphage",
+        "brand": "Fixture Probiotics",
+        "name": "Floraphage Probiotic Prebiotic Bacteriophage",
+        "barcode": null
+      },
+      "expected": {
+        "search": {
+          "expectedProductId": "fixture-floraphage",
+          "metric": "recall5",
+          "mustMatchTerms": ["Floraphage", "Probiotic"]
+        }
+      },
+      "gates": ["search_relevance"],
+      "severityOnFail": "P2"
+    },
+    {
+      "id": "search_barcode_sr_omega3",
+      "surface": "search",
+      "origin": "search_result",
+      "category": "omega3_source_oil",
+      "personas": [],
+      "input": {
+        "query": "00023249011835",
+        "queryType": "barcode"
+      },
+      "product": {
+        "productId": "core-sr-omega3",
+        "brand": "Sports Research",
+        "name": "Alaskan Omega-3 Fish Oil, 90 Softgels",
+        "barcode": "00023249011835"
+      },
+      "expected": {
+        "search": {
+          "expectedProductId": "core-sr-omega3",
+          "metric": "barcode_exact"
+        }
+      },
+      "gates": ["search_relevance"],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_alias_matcha_green_tea",
+      "surface": "search",
+      "origin": "search_result",
+      "category": "botanical_extract",
+      "personas": ["stimulant_sensitivity"],
+      "input": {
+        "query": "matcha camellia sinensis",
+        "queryType": "alias"
+      },
+      "product": {
+        "productId": "fixture-matcha-green-tea",
+        "brand": "Fixture Tea",
+        "name": "Matcha Green Tea Extract",
+        "barcode": null
+      },
+      "expected": {
+        "search": {
+          "expectedProductId": "fixture-matcha-green-tea",
+          "metric": "recall5",
+          "mustMatchTerms": ["Green Tea", "Matcha"]
+        }
+      },
+      "gates": ["search_relevance"],
+      "severityOnFail": "P2"
+    },
+    {
+      "id": "search_origin_sr_omega3_consistency",
+      "surface": "search_origin_result",
+      "origin": "search_result",
+      "category": "omega3_source_oil",
+      "personas": ["fish_allergy"],
+      "input": {
+        "query": "Sports Research Alaskan Omega-3 Fish Oil",
+        "queryType": "brand_product",
+        "searchResultSeed": {
+          "productId": "90284",
+          "barcode": "00023249011835",
+          "upcCode": "023249011835",
+          "name": "Alaskan Omega-3 Fish Oil, 90 Softgels",
+          "brand": "Sports Research",
+          "category": "Essential",
+          "benefit": "Omega-3 source oil",
+          "dose": "1,250 mg",
+          "factsStatus": "full",
+          "coverageStatus": "coverage_ready"
+        }
+      },
+      "product": {
+        "productId": "90284",
+        "brand": "Sports Research",
+        "name": "Alaskan Omega-3 Fish Oil, 90 Softgels",
+        "barcode": "00023249011835"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": ["Fish Oil", "Omega-3 Fish Oil", "Total Omega-3", "Wild Alaska Pollock Fish Oil Concentrate"],
+          "warn": ["EPA", "DHA"],
+          "fail": ["Calories", "Total Fat"]
+        },
+        "profileWarnings": {
+          "mustInclude": ["fish"],
+          "mustNotInclude": ["shellfish"]
+        },
+        "consistency": {
+          "productId": "90284",
+          "barcode": "00023249011835",
+          "selectedAnchor": "Wild Alaska Pollock Fish Oil Concentrate",
+          "scoreBand": "Strong"
+        }
+      },
+      "gates": ["click_through_seed_consistency", "canonical_product_consistency", "selected_anchor_consistency", "score_consistency", "warning_consistency"],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_origin_algal_oil_consistency",
+      "surface": "search_origin_result",
+      "origin": "search_result",
+      "category": "omega3_source_oil",
+      "personas": ["vegan_preference", "fish_allergy"],
+      "input": {
+        "query": "algal omega 3 dha",
+        "queryType": "alias",
+        "searchResultSeed": {
+          "productId": "83220",
+          "barcode": "00033674123256",
+          "upcCode": "033674123256",
+          "name": "NutraVege Plant-Based Omega-3 1000 mg Cranberry Orange Flavored",
+          "brand": "Nature's Way",
+          "category": "Essential",
+          "benefit": "Algal omega-3 source",
+          "dose": "DHA",
+          "factsStatus": "partial",
+          "coverageStatus": "coverage_ready"
+        }
+      },
+      "product": {
+        "productId": "83220",
+        "brand": "Nature's Way",
+        "name": "NutraVege Plant-Based Omega-3 1000 mg Cranberry Orange Flavored",
+        "barcode": "00033674123256"
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": ["Algal Oil", "Omega-3 Algal Oil", "DHA", "Algal oil (Schizochytrium spp.)"],
+          "warn": ["Omega-3"],
+          "fail": ["Fish Oil"]
+        },
+        "profileWarnings": {
+          "mustInclude": [],
+          "mustNotInclude": ["fish allergy conflict"]
+        },
+        "consistency": {
+          "productId": "83220",
+          "barcode": "00033674123256",
+          "selectedAnchor": "Algal oil (Schizochytrium spp.)"
+        }
+      },
+      "gates": ["click_through_seed_consistency", "canonical_product_consistency", "selected_anchor_consistency", "allergy_sensitivity_relevance"],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_origin_whey_dairy_consistency",
+      "surface": "search_origin_result",
+      "origin": "search_result",
+      "category": "protein_fiber",
+      "personas": ["dairy_allergy", "fitness_recovery_goal"],
+      "input": {
+        "query": "whey protein",
+        "queryType": "ingredient",
+        "searchResultSeed": {
+          "productId": "fixture-whey-protein",
+          "barcode": null,
+          "upcCode": null,
+          "name": "Whey Protein Powder",
+          "brand": "Fixture Protein",
+          "category": "Protein",
+          "benefit": "Protein powder",
+          "dose": "25 g protein",
+          "factsStatus": "partial",
+          "coverageStatus": "not_enough_structured_data"
+        }
+      },
+      "product": {
+        "productId": "fixture-whey-protein",
+        "brand": "Fixture Protein",
+        "name": "Whey Protein Powder",
+        "barcode": null
+      },
+      "expected": {
+        "defaultAnchor": {
+          "pass": ["Protein", "Whey Protein"],
+          "warn": ["Protein Powder"],
+          "fail": ["Potassium", "Sugars"]
+        },
+        "profileWarnings": {
+          "mustInclude": ["dairy"],
+          "mustNotInclude": ["safe for you"]
+        },
+        "consistency": {
+          "productId": "fixture-whey-protein",
+          "selectedAnchor": "Protein"
+        }
+      },
+      "gates": ["click_through_seed_consistency", "selected_anchor_consistency", "warning_consistency", "allergy_sensitivity_relevance"],
+      "severityOnFail": "P1"
+    }
+  ]
+}

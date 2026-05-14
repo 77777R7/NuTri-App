@@ -4,6 +4,7 @@ import {
   AlertTriangle,
   CheckCircle2,
   ChevronDown,
+  Cross,
   Info,
   Layers,
   Shield,
@@ -27,6 +28,7 @@ import type {
   TopSectionHeroPresentation,
   TopSectionInsightPresentation,
   TopSectionInsightTopic,
+  TopSectionSecondaryNotePresentation,
 } from '@/lib/scan/analysisTopSectionPresentation';
 import { sanitizeScanDisplayText } from '@/lib/scan/neverBlank';
 
@@ -38,6 +40,7 @@ type AnalysisTopSectionRedesignProps = {
   hero: TopSectionHeroPresentation;
   banner: TopSectionBannerPresentation | null;
   insights: TopSectionInsightPresentation[];
+  secondaryNote: TopSectionSecondaryNotePresentation | null;
   productTitle: string;
   productSubtitle?: string | null;
   heroImageUri?: string | null;
@@ -103,6 +106,7 @@ export const AnalysisTopSectionRedesign: React.FC<AnalysisTopSectionRedesignProp
   hero,
   banner,
   insights,
+  secondaryNote,
   productTitle,
   productSubtitle,
   heroImageUri,

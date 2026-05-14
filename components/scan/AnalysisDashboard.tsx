@@ -829,6 +829,12 @@ const isSupportiveGoalCoverageState = (
     state: 'strong' | 'some' | 'limited' | 'none' | 'unknown' | null | undefined,
 ): boolean => state === 'strong' || state === 'some';
 
+const lowerFirst = (value: string | null | undefined): string => {
+    const normalized = normalizeText(value);
+    if (!normalized) return '';
+    return `${normalized.slice(0, 1).toLowerCase()}${normalized.slice(1)}`;
+};
+
 const GOAL_COVERAGE_SIGNAL_PRIORITY: Record<'strong' | 'some' | 'limited' | 'none' | 'unknown', number> = {
     strong: 5,
     some: 4,
@@ -857,6 +863,19 @@ const pickDominantGoalCoverageLabel = (
             return a.goalLabel.localeCompare(b.goalLabel);
         });
     return ranked[0]?.goalLabel ?? null;
+};
+
+const findGoalCoverageByLabel = <
+    T extends {
+        goalLabel: string;
+    },
+>(
+    coverage: T[],
+    goalLabel: string | null | undefined,
+): T | null => {
+    const normalizedGoalLabel = normalizeText(goalLabel).toLowerCase();
+    if (!normalizedGoalLabel) return null;
+    return coverage.find((entry) => normalizeText(entry.goalLabel).toLowerCase() === normalizedGoalLabel) ?? null;
 };
 
 const getV2ModulesFromPayload = (payload: Record<string, unknown> | null | undefined): Record<string, unknown>[] => {
@@ -3399,6 +3418,11 @@ type ScientificBackgroundSidecarStateUpdater =
     | ScientificBackgroundSidecarState
     | ((current: ScientificBackgroundSidecarState | undefined) => ScientificBackgroundSidecarState | undefined);
 
+export type AnalysisDashboardPrefetchedDeepDive = {
+    ingredientOverview?: IngredientOverviewBlock | null;
+    scientificBackground?: ScientificBackgroundBlock | null;
+};
+
 const isIngredientOverviewRenderableState = (
     state: IngredientOverviewSidecarState | undefined,
 ): state is IngredientOverviewSidecarState & {
@@ -3507,6 +3531,8 @@ const isBlendLikeName = (name: string): boolean =>
 
 const isOmega3TotalLineName = (name: string): boolean =>
     /\btotal\b.*\bomega\s*-?\s*3\b|\bomega\s*-?\s*3\b.*\btotal\b/i.test(name);
+
+const isOmega3AggregateLineName = isOmega3TotalLineName;
 
 const isOmega3SourceLineName = (name: string): boolean =>
     /\bfish\s*oil\b|\bkrill\s*oil\b|\balgal\s*oil\b|\boil\s*concentrate\b/i.test(name);
@@ -4010,6 +4036,7 @@ const AnalysisBundleDashboard: React.FC<{
     onCoreReadyChange?: (ready: boolean) => void;
     saveItem?: AnalysisDashboardSaveItem | null;
     onboardingDraftOverride?: ProfileDraft | null;
+    prefetchedDeepDive?: AnalysisDashboardPrefetchedDeepDive | null;
 }> = ({
     bundle,
     analysis,
@@ -4026,6 +4053,7 @@ const AnalysisBundleDashboard: React.FC<{
     onCoreReadyChange,
     saveItem = null,
     onboardingDraftOverride = null,
+    prefetchedDeepDive = null,
 }) => {
     const { t } = useTranslation();
     const { loading: authLoading, token: authToken, session, setPostAuthRedirect } = useAuth();
@@ -6984,8 +7012,13 @@ const AnalysisBundleDashboard: React.FC<{
         || decisionUsageBlock?.directions?.hasDirectionsTextVisible,
     );
     const warningsAvailableForDecision = Boolean(recordFacts.warningsPresent || hasDecisionProductWarnings);
+    const isDatabaseLabelRecord =
+        trustedDisplayIdentity.sourceAttributionUsed === 'label_record'
+        && bundleState.meta.authoritativeIdentity?.type === 'webCanonicalId';
     const verifiedFromBase =
-        bundleSourceForTrust === 'lnhpd'
+        isDatabaseLabelRecord
+            ? 'Database label record'
+            : bundleSourceForTrust === 'lnhpd'
             ? 'Health Canada LNHPD (official record)'
             : bundleSourceForTrust === 'dsld'
                 ? 'NIH DSLD (official record)'
@@ -7027,9 +7060,9 @@ const AnalysisBundleDashboard: React.FC<{
                 : 'Limited';
     const trustReason =
         highImpactMissingLabels.length > 0
-            ? `${highImpactMissingLabels[0]} not captured in official record`
+            ? `${highImpactMissingLabels[0]} not captured in ${isDatabaseLabelRecord ? 'database record' : 'official record'}`
             : lowImpactMissingLabels.length > 0
-                ? `${lowImpactMissingLabels[0]} missing in official record`
+                ? `${lowImpactMissingLabels[0]} missing in ${isDatabaseLabelRecord ? 'database record' : 'official record'}`
                 : 'Core product fields are available';
     const trustVerifiedSummary = verifiedFieldLabels.length > 0
         ? `Verified: ${verifiedFieldLabels.slice(0, 3).join(', ')}`
@@ -7044,9 +7077,11 @@ const AnalysisBundleDashboard: React.FC<{
     const trustPanelSources: NonNullable<TileConfig['trustPanel']>['sources'] = [
         {
             tag: 'Product-specific',
-            label: 'Official record',
+            label: isDatabaseLabelRecord ? 'Database label record' : 'Official record',
             value:
-                bundleSourceForTrust === 'lnhpd'
+                isDatabaseLabelRecord
+                    ? `Product ${officialRecordSourceId || 'record'}`
+                    : bundleSourceForTrust === 'lnhpd'
                     ? `LNHPD ${officialRecordSourceId || 'record'}`
                     : bundleSourceForTrust === 'dsld'
                         ? `DSLD ${officialRecordSourceId || 'record'}`
@@ -7070,7 +7105,7 @@ const AnalysisBundleDashboard: React.FC<{
         {
             tag: 'Web evidence',
             label: 'Web evidence',
-            value: bundleSourceForTrust === 'web' || hasSupplementalOverlayEvidence
+            value: (bundleSourceForTrust === 'web' && !isDatabaseLabelRecord) || hasSupplementalOverlayEvidence
                 ? (hasSupplementalOverlayEvidence && bundleSourceForTrust !== 'web'
                     ? 'supplemental product-page label data used'
                     : 'used')
@@ -7081,7 +7116,7 @@ const AnalysisBundleDashboard: React.FC<{
     const sharedTrustPanel: NonNullable<TileConfig['trustPanel']> = {
         verifiedFrom: verifiedFromDisplay,
         retrievedOn,
-        webEvidence: bundleSourceForTrust === 'web' || hasSupplementalOverlayEvidence ? 'used' : 'not used',
+        webEvidence: (bundleSourceForTrust === 'web' && !isDatabaseLabelRecord) || hasSupplementalOverlayEvidence ? 'used' : 'not used',
         trustLevel,
         verifiedSummary: trustVerifiedSummary,
         missingSummary: trustMissingSummary,
@@ -7831,8 +7866,12 @@ const AnalysisBundleDashboard: React.FC<{
     const decisionBarcodeForScience = canonicalDecisionBarcode;
     const decisionDigestForScience = normalizeText(scienceSidecarDecisionPayload?.digest ?? '')
         || null;
+    const hasPrefetchedScienceDeepDive =
+        prefetchedDeepDive?.ingredientOverview != null
+        && prefetchedDeepDive?.scientificBackground != null;
     const shouldPrimeScienceSidecars =
-        scienceSidecarDecisionPayload != null
+        !hasPrefetchedScienceDeepDive
+        && scienceSidecarDecisionPayload != null
         && Boolean(decisionBarcodeForScience)
         && Boolean(decisionDigestForScience)
         && Boolean(scienceDecisionInputsHash)
@@ -7955,15 +7994,15 @@ const AnalysisBundleDashboard: React.FC<{
         () =>
             isIngredientOverviewRenderableState(ingredientOverviewState)
                 ? ingredientOverviewState.data
-                : null,
-        [ingredientOverviewState],
+                : prefetchedDeepDive?.ingredientOverview ?? null,
+        [ingredientOverviewState, prefetchedDeepDive?.ingredientOverview],
     );
     const resolvedScientificBackgroundBlock = useMemo(
         () =>
             isScientificBackgroundRenderableState(scientificBackgroundState)
                 ? scientificBackgroundState.data
-                : null,
-        [scientificBackgroundState],
+                : prefetchedDeepDive?.scientificBackground ?? null,
+        [scientificBackgroundState, prefetchedDeepDive?.scientificBackground],
     );
 
     useEffect(() => {
@@ -8478,6 +8517,7 @@ const AnalysisBundleDashboard: React.FC<{
     const shouldShowIngredientOverviewLoading =
         shouldRenderScienceSidecars
         && Boolean(ingredientOverviewRequestKey)
+        && !prefetchedDeepDive?.ingredientOverview
         && (
             ingredientOverviewState == null
             || (ingredientOverviewState.status === 'loading' && !isIngredientOverviewRenderableState(ingredientOverviewState))
@@ -8485,6 +8525,7 @@ const AnalysisBundleDashboard: React.FC<{
     const shouldShowScientificBackgroundLoading =
         shouldRenderScienceSidecars
         && Boolean(scientificBackgroundRequestKey)
+        && !prefetchedDeepDive?.scientificBackground
         && (
             scientificBackgroundState == null
             || (scientificBackgroundState.status === 'loading' && !isScientificBackgroundRenderableState(scientificBackgroundState))
@@ -10362,6 +10403,8 @@ type AnalysisDashboardProps = {
     onCoreReadyChange?: (ready: boolean) => void;
     saveItem?: AnalysisDashboardSaveItem | null;
     onboardingDraftOverride?: ProfileDraft | null;
+    prefetchedDeepDive?: AnalysisDashboardPrefetchedDeepDive | null;
+    personalizedGuideMode?: 'applied' | 'hidden' | null;
 };
 
 const ensureModernAnalysisBundle = (
@@ -10424,6 +10467,7 @@ export const AnalysisDashboard: React.FC<AnalysisDashboardProps> = ({
     onCoreReadyChange,
     saveItem = null,
     onboardingDraftOverride = null,
+    prefetchedDeepDive = null,
 }) => {
     const modernBundle = ensureModernAnalysisBundle(analysisBundle, analysis, scanSessionId);
     return (
@@ -10443,6 +10487,7 @@ export const AnalysisDashboard: React.FC<AnalysisDashboardProps> = ({
             onCoreReadyChange={onCoreReadyChange}
             saveItem={saveItem}
             onboardingDraftOverride={onboardingDraftOverride}
+            prefetchedDeepDive={prefetchedDeepDive}
         />
     );
 };

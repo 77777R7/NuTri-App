@@ -1,0 +1,450 @@
+{
+  "version": "golden-journey-pack.v1",
+  "extendsPackPath": "data/validation/golden-journey-pack.v0.json",
+  "baseline": "science-baseline-v1",
+  "description": "Expanded taxonomy-driven Golden Journey matrix built on top of the stable v0 gate.",
+  "scenarios": [
+    {
+      "id": "search_origin_krill_shellfish_consistency",
+      "surface": "search_origin_result",
+      "origin": "search_result",
+      "category": "omega3_source_oil",
+      "personas": ["shellfish_allergy"],
+      "input": {
+        "query": "krill oil omega 3",
+        "queryType": "ingredient",
+        "searchResultSeed": {
+          "productId": "fixture-krill-oil",
+          "barcode": null,
+          "upcCode": null,
+          "name": "Krill Oil Omega-3",
+          "brand": "Fixture Marine",
+          "category": "Essential",
+          "benefit": "Krill omega-3 source",
+          "dose": "500 mg",
+          "factsStatus": "partial",
+          "coverageStatus": "coverage_ready"
+        }
+      },
+      "product": { "productId": "fixture-krill-oil", "brand": "Fixture Marine", "name": "Krill Oil Omega-3", "barcode": null },
+      "expected": {
+        "defaultAnchor": { "pass": ["Krill Oil", "Omega-3"], "warn": ["EPA", "DHA"], "fail": ["Fish Oil"] },
+        "profileWarnings": { "mustInclude": ["shellfish"], "mustNotInclude": ["safe for you"] },
+        "consistency": { "productId": "fixture-krill-oil", "selectedAnchor": "Krill Oil" }
+      },
+      "gates": ["click_through_seed_consistency", "selected_anchor_consistency", "allergy_sensitivity_relevance"],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_origin_soy_protein_consistency",
+      "surface": "search_origin_result",
+      "origin": "search_result",
+      "category": "protein_fiber",
+      "personas": ["soy_allergy", "fitness_recovery_goal"],
+      "input": {
+        "query": "soy protein isolate",
+        "queryType": "ingredient",
+        "searchResultSeed": {
+          "productId": "fixture-soy-protein",
+          "barcode": null,
+          "upcCode": null,
+          "name": "Soy Protein Isolate",
+          "brand": "Fixture Plant",
+          "category": "Protein",
+          "benefit": "Plant protein",
+          "dose": "24 g protein",
+          "factsStatus": "partial",
+          "coverageStatus": "coverage_ready"
+        }
+      },
+      "product": { "productId": "fixture-soy-protein", "brand": "Fixture Plant", "name": "Soy Protein Isolate", "barcode": null },
+      "expected": {
+        "defaultAnchor": { "pass": ["Soy Protein", "Protein"], "warn": ["Protein Powder"], "fail": ["Calories"] },
+        "profileWarnings": { "mustInclude": ["soy"], "mustNotInclude": ["safe for you"] },
+        "consistency": { "productId": "fixture-soy-protein", "selectedAnchor": "Soy Protein" }
+      },
+      "gates": ["click_through_seed_consistency", "selected_anchor_consistency", "allergy_sensitivity_relevance"],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_origin_sleep_melatonin_consistency",
+      "surface": "search_origin_result",
+      "origin": "search_result",
+      "category": "sleep_amino",
+      "personas": ["sleep_goal", "melatonin_sensitivity"],
+      "input": {
+        "query": "melatonin sleep formula",
+        "queryType": "ingredient",
+        "searchResultSeed": {
+          "productId": "fixture-melatonin-sleep",
+          "barcode": null,
+          "upcCode": null,
+          "name": "Melatonin Sleep Formula",
+          "brand": "Fixture Sleep",
+          "category": "Sleep",
+          "benefit": "Sleep support",
+          "dose": "3 mg",
+          "factsStatus": "partial",
+          "coverageStatus": "coverage_ready"
+        }
+      },
+      "product": { "productId": "fixture-melatonin-sleep", "brand": "Fixture Sleep", "name": "Melatonin Sleep Formula", "barcode": null },
+      "expected": {
+        "defaultAnchor": { "pass": ["Melatonin", "Sleep Formula"], "warn": ["Theanine"], "fail": ["Vitamin C"] },
+        "profileWarnings": { "mustInclude": ["melatonin"], "mustNotInclude": ["safe for you"] },
+        "consistency": { "productId": "fixture-melatonin-sleep", "selectedAnchor": "Melatonin" }
+      },
+      "gates": ["click_through_seed_consistency", "selected_anchor_consistency", "allergy_sensitivity_relevance"],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_origin_probiotic_digestive_consistency",
+      "surface": "search_origin_result",
+      "origin": "search_result",
+      "category": "probiotic_microbiome",
+      "personas": ["digestion_goal"],
+      "input": {
+        "query": "probiotic digestive support",
+        "queryType": "ingredient",
+        "searchResultSeed": {
+          "productId": "fixture-probiotic-digestive",
+          "barcode": null,
+          "upcCode": null,
+          "name": "Probiotic Digestive Support",
+          "brand": "Fixture Probiotics",
+          "category": "Digestive",
+          "benefit": "Probiotic blend",
+          "dose": "30 billion CFU",
+          "factsStatus": "partial",
+          "coverageStatus": "coverage_ready"
+        }
+      },
+      "product": { "productId": "fixture-probiotic-digestive", "brand": "Fixture Probiotics", "name": "Probiotic Digestive Support", "barcode": null },
+      "expected": {
+        "defaultAnchor": { "pass": ["Probiotic", "Digestive Support"], "warn": ["CFU"], "fail": ["Vitamin D"] },
+        "profileWarnings": { "mustInclude": ["digestion"], "mustNotInclude": ["safe for you"] },
+        "consistency": { "productId": "fixture-probiotic-digestive", "selectedAnchor": "Probiotic" }
+      },
+      "gates": ["click_through_seed_consistency", "selected_anchor_consistency", "allergy_sensitivity_relevance"],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_origin_zinc_stack_duplicate_consistency",
+      "surface": "search_origin_result",
+      "origin": "search_result",
+      "category": "mineral_stack",
+      "personas": ["duplicate_zinc_magnesium_d", "immunity_goal"],
+      "input": {
+        "query": "zinc elderberry vitamin c",
+        "queryType": "ingredient",
+        "searchResultSeed": {
+          "productId": "fixture-zinc-elderberry-stack",
+          "barcode": null,
+          "upcCode": null,
+          "name": "Zinc + Elderberry Immune Stack",
+          "brand": "Fixture Minerals",
+          "category": "Mineral",
+          "benefit": "Immune support",
+          "dose": "15 mg zinc",
+          "factsStatus": "partial",
+          "coverageStatus": "coverage_ready"
+        }
+      },
+      "product": { "productId": "fixture-zinc-elderberry-stack", "brand": "Fixture Minerals", "name": "Zinc + Elderberry Immune Stack", "barcode": null },
+      "expected": {
+        "defaultAnchor": { "pass": ["Zinc", "Immune Stack"], "warn": ["Elderberry"], "fail": ["Vitamin C"] },
+        "profileWarnings": { "mustInclude": ["duplicate"], "mustNotInclude": ["safe for you"] },
+        "consistency": { "productId": "fixture-zinc-elderberry-stack", "selectedAnchor": "Zinc" }
+      },
+      "gates": ["click_through_seed_consistency", "selected_anchor_consistency", "allergy_sensitivity_relevance"],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_origin_food_like_collagen_bar_consistency",
+      "surface": "search_origin_result",
+      "origin": "search_result",
+      "category": "food_like",
+      "personas": ["dairy_allergy"],
+      "input": {
+        "query": "collagen snack bar",
+        "queryType": "ingredient",
+        "searchResultSeed": {
+          "productId": "fixture-collagen-bar",
+          "barcode": null,
+          "upcCode": null,
+          "name": "Collagen Protein Bar",
+          "brand": "Fixture Snacks",
+          "category": "Snack",
+          "benefit": "Food-like protein bar",
+          "dose": "12 g protein",
+          "factsStatus": "partial",
+          "coverageStatus": "not_enough_structured_data"
+        }
+      },
+      "product": { "productId": "fixture-collagen-bar", "brand": "Fixture Snacks", "name": "Collagen Protein Bar", "barcode": null },
+      "expected": {
+        "defaultAnchor": { "pass": ["Collagen Bar", "Protein Bar"], "warn": ["Collagen"], "fail": ["Calories", "Sugars"] },
+        "profileWarnings": { "mustInclude": [], "mustNotInclude": ["safe for you"] },
+        "consistency": { "productId": "fixture-collagen-bar", "selectedAnchor": "Protein Bar" }
+      },
+      "gates": ["click_through_seed_consistency", "selected_anchor_consistency", "warning_consistency"],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_origin_sparse_multimineral_consistency",
+      "surface": "search_origin_result",
+      "origin": "search_result",
+      "category": "sparse_title_led",
+      "personas": ["duplicate_zinc_magnesium_d"],
+      "input": {
+        "query": "multimineral daily support",
+        "queryType": "brand_product",
+        "searchResultSeed": {
+          "productId": "fixture-sparse-multimineral",
+          "barcode": null,
+          "upcCode": null,
+          "name": "Daily Multimineral Support",
+          "brand": "Fixture Minerals",
+          "category": "Mineral",
+          "benefit": "Sparse title-led panel",
+          "dose": "",
+          "factsStatus": "partial",
+          "coverageStatus": "not_enough_structured_data"
+        }
+      },
+      "product": { "productId": "fixture-sparse-multimineral", "brand": "Fixture Minerals", "name": "Daily Multimineral Support", "barcode": null },
+      "expected": {
+        "defaultAnchor": { "pass": ["Multimineral Support", "Mineral Blend"], "warn": ["Magnesium"], "fail": ["Serving Size"] },
+        "profileWarnings": { "mustInclude": [], "mustNotInclude": ["safe for you"] },
+        "consistency": { "productId": "fixture-sparse-multimineral", "selectedAnchor": "Multimineral Support" }
+      },
+      "gates": ["click_through_seed_consistency", "selected_anchor_consistency", "warning_consistency"],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_origin_osfortis_digestive_consistency",
+      "surface": "search_origin_result",
+      "origin": "search_result",
+      "category": "probiotic_microbiome",
+      "personas": ["digestion_goal"],
+      "input": {
+        "query": "osfortis probiotic",
+        "queryType": "alias",
+        "searchResultSeed": {
+          "productId": "fixture-osfortis-probiotic",
+          "barcode": null,
+          "upcCode": null,
+          "name": "Osfortis Probiotic",
+          "brand": "Fixture Probiotics",
+          "category": "Digestive",
+          "benefit": "Named probiotic strain",
+          "dose": "CFU",
+          "factsStatus": "partial",
+          "coverageStatus": "coverage_ready"
+        }
+      },
+      "product": { "productId": "fixture-osfortis-probiotic", "brand": "Fixture Probiotics", "name": "Osfortis Probiotic", "barcode": null },
+      "expected": {
+        "defaultAnchor": { "pass": ["Osfortis Probiotic", "Probiotic"], "warn": ["CFU"], "fail": ["Vitamin D"] },
+        "profileWarnings": { "mustInclude": ["digestion"], "mustNotInclude": ["safe for you"] },
+        "consistency": { "productId": "fixture-osfortis-probiotic", "selectedAnchor": "Osfortis Probiotic" }
+      },
+      "gates": ["click_through_seed_consistency", "selected_anchor_consistency", "allergy_sensitivity_relevance"],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_origin_aloe_food_drink_consistency",
+      "surface": "search_origin_result",
+      "origin": "search_result",
+      "category": "food_like",
+      "personas": ["gluten_restriction"],
+      "input": {
+        "query": "aloe hydration drink",
+        "queryType": "ingredient",
+        "searchResultSeed": {
+          "productId": "fixture-aloe-drink",
+          "barcode": null,
+          "upcCode": null,
+          "name": "Aloe Hydration Drink",
+          "brand": "Fixture Drinks",
+          "category": "Beverage",
+          "benefit": "Food-like hydration drink",
+          "dose": "",
+          "factsStatus": "partial",
+          "coverageStatus": "not_enough_structured_data"
+        }
+      },
+      "product": { "productId": "fixture-aloe-drink", "brand": "Fixture Drinks", "name": "Aloe Hydration Drink", "barcode": null },
+      "expected": {
+        "defaultAnchor": { "pass": ["Hydration Drink", "Aloe Drink"], "warn": ["Aloe"], "fail": ["Sugars"] },
+        "profileWarnings": { "mustInclude": [], "mustNotInclude": ["safe for you"] },
+        "consistency": { "productId": "fixture-aloe-drink", "selectedAnchor": "Hydration Drink" }
+      },
+      "gates": ["click_through_seed_consistency", "selected_anchor_consistency", "warning_consistency"],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_real_21stcentury_krill_oil",
+      "surface": "search",
+      "origin": "search_result",
+      "category": "omega3_source_oil",
+      "personas": ["shellfish_allergy"],
+      "input": {
+        "query": "21st century krill oil 350 mg",
+        "queryType": "brand_product"
+      },
+      "product": {
+        "productId": "41329",
+        "brand": "21st Century",
+        "name": "21st Century, Krill Oil, 350 mg, 60 Softgels",
+        "barcode": "00740985273678"
+      },
+      "expected": {
+        "search": {
+          "expectedProductId": "41329",
+          "metric": "top3"
+        }
+      },
+      "gates": ["search_relevance"],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_real_alani_whey_fruity_cereal",
+      "surface": "search",
+      "origin": "search_result",
+      "category": "protein_fiber",
+      "personas": ["dairy_allergy", "fitness_recovery_goal"],
+      "input": {
+        "query": "alani nu whey protein fruity cereal",
+        "queryType": "brand_product"
+      },
+      "product": {
+        "productId": "152889",
+        "brand": "Alani Nu",
+        "name": "Alani Nu, Whey Protein, Fruity Cereal, 2 lb 0.7 oz (927 g)",
+        "barcode": "00850645008011"
+      },
+      "expected": {
+        "search": {
+          "expectedProductId": "152889",
+          "metric": "top3"
+        }
+      },
+      "gates": ["search_relevance"],
+      "severityOnFail": "P1"
+    },
+    {
+      "id": "search_real_21stcentury_600_d3",
+      "surface": "search",
+      "origin": "search_result",
+      "category": "mineral_stack",
+      "personas": [],
+      "input": {
+        "query": "21st century 600+d3 calcium vitamin d3",
+        "queryType": "brand_product"
+      },
+      "product": {
+        "productId": "55898",
+        "brand": "21st Century",
+        "name": "21st Century, 600+D3, Calcium & Vitamin D3 Supplement, 400 Tablets",
+        "barcode": "00740985275313"
+      },
+      "expected": {
+        "search": {
+          "expectedProductId": "55898",
+          "metric": "top3"
+        }
+      },
+      "gates": ["search_relevance"],
+      "severityOnFail": "P1"
+    },
+
+    { "id": "scan_food_like_collagen_bar_negative", "surface": "barcode_scan", "origin": "barcode_scan", "category": "food_like", "personas": ["dairy_allergy"], "input": { "barcode": "fixture:collagen-bar" }, "product": { "productId": "fixture-collagen-bar", "brand": "Fixture Snacks", "name": "Collagen Protein Bar", "barcode": null }, "expected": { "defaultAnchor": { "pass": ["Protein Bar", "Collagen Bar"], "warn": ["Collagen"], "fail": ["Calories", "Sugars"] }, "profileWarnings": { "mustInclude": [], "mustNotInclude": ["safe for you"] } }, "gates": ["default_anchor", "unsafe_language"], "severityOnFail": "P1" },
+    { "id": "scan_food_like_matcha_latte_negative", "surface": "barcode_scan", "origin": "barcode_scan", "category": "food_like", "personas": ["stimulant_sensitivity"], "input": { "barcode": "fixture:matcha-latte" }, "product": { "productId": "fixture-matcha-latte", "brand": "Fixture Drinks", "name": "Matcha Latte Mix", "barcode": null }, "expected": { "defaultAnchor": { "pass": ["Drink Mix", "Matcha Latte"], "warn": ["Matcha"], "fail": ["Calories", "Sugars"] }, "profileWarnings": { "mustInclude": ["matcha"], "mustNotInclude": ["safe for you"] } }, "gates": ["default_anchor", "allergy_sensitivity_relevance", "unsafe_language"], "severityOnFail": "P1" },
+    { "id": "scan_food_like_protein_cookie_negative", "surface": "barcode_scan", "origin": "barcode_scan", "category": "food_like", "personas": ["dairy_allergy"], "input": { "barcode": "fixture:protein-cookie" }, "product": { "productId": "fixture-protein-cookie", "brand": "Fixture Snacks", "name": "Protein Cookie", "barcode": null }, "expected": { "defaultAnchor": { "pass": ["Protein Cookie", "Snack"], "warn": ["Protein"], "fail": ["Sugars", "Calories"] }, "profileWarnings": { "mustInclude": [], "mustNotInclude": ["safe for you"] } }, "gates": ["default_anchor", "unsafe_language"], "severityOnFail": "P1" },
+    { "id": "scan_food_like_electrolyte_drink_negative", "surface": "barcode_scan", "origin": "barcode_scan", "category": "food_like", "personas": ["fitness_recovery_goal"], "input": { "barcode": "fixture:electrolyte-drink" }, "product": { "productId": "fixture-electrolyte-drink", "brand": "Fixture Drinks", "name": "Electrolyte Drink", "barcode": null }, "expected": { "defaultAnchor": { "pass": ["Electrolyte Drink", "Hydration Drink"], "warn": ["Electrolyte"], "fail": ["Sugar", "Calories"] } }, "gates": ["default_anchor", "goal_relevance"], "severityOnFail": "P1" },
+    { "id": "scan_food_like_supergreens_snack_negative", "surface": "barcode_scan", "origin": "barcode_scan", "category": "food_like", "personas": ["gluten_restriction"], "input": { "barcode": "fixture:greens-snack" }, "product": { "productId": "fixture-greens-snack", "brand": "Fixture Snacks", "name": "Super Greens Snack Bites", "barcode": null }, "expected": { "defaultAnchor": { "pass": ["Snack Bites", "Greens Snack"], "warn": ["Greens"], "fail": ["Vitamin C", "Calories"] } }, "gates": ["default_anchor", "unsafe_language"], "severityOnFail": "P1" },
+
+    { "id": "scan_sparse_multimineral_malformed_panel", "surface": "barcode_scan", "origin": "barcode_scan", "category": "sparse_title_led", "personas": ["duplicate_zinc_magnesium_d"], "input": { "barcode": "fixture:sparse-multimineral" }, "product": { "productId": "fixture-sparse-multimineral", "brand": "Fixture Minerals", "name": "Daily Multimineral Support", "barcode": null }, "expected": { "defaultAnchor": { "pass": ["Multimineral Support", "Mineral Blend"], "warn": ["Magnesium"], "fail": ["Serving Size"] }, "profileWarnings": { "mustInclude": [], "mustNotInclude": ["safe for you"] } }, "gates": ["default_anchor", "sparse_data_honesty", "unsafe_language"], "severityOnFail": "P1" },
+    { "id": "scan_sparse_dha_softgel_title_led", "surface": "barcode_scan", "origin": "barcode_scan", "category": "sparse_title_led", "personas": ["pregnancy_prenatal"], "input": { "barcode": "fixture:sparse-dha" }, "product": { "productId": "fixture-sparse-dha", "brand": "Fixture Essentials", "name": "DHA Softgels", "barcode": null }, "expected": { "defaultAnchor": { "pass": ["DHA", "Omega-3"], "warn": ["Softgels"], "fail": ["Serving Size"] }, "profileWarnings": { "mustInclude": [], "mustNotInclude": ["safe for you"] } }, "gates": ["default_anchor", "sparse_data_honesty", "unsafe_language"], "severityOnFail": "P1" },
+    { "id": "scan_sparse_probiotic_capsule_title_led", "surface": "barcode_scan", "origin": "barcode_scan", "category": "sparse_title_led", "personas": ["digestion_goal"], "input": { "barcode": "fixture:sparse-probiotic" }, "product": { "productId": "fixture-sparse-probiotic", "brand": "Fixture Probiotics", "name": "Daily Probiotic Capsules", "barcode": null }, "expected": { "defaultAnchor": { "pass": ["Probiotic", "Daily Probiotic"], "warn": ["Capsules"], "fail": ["Serving Size"] }, "profileWarnings": { "mustInclude": ["digestion"], "mustNotInclude": ["safe for you"] } }, "gates": ["default_anchor", "sparse_data_honesty", "allergy_sensitivity_relevance"], "severityOnFail": "P1" },
+    { "id": "scan_sparse_green_mix_title_led", "surface": "barcode_scan", "origin": "barcode_scan", "category": "sparse_title_led", "personas": ["stimulant_sensitivity"], "input": { "barcode": "fixture:sparse-green-mix" }, "product": { "productId": "fixture-sparse-green-mix", "brand": "Fixture Greens", "name": "Green Mix", "barcode": null }, "expected": { "defaultAnchor": { "pass": ["Green Mix", "Greens Blend"], "warn": ["Green Tea"], "fail": ["Serving Size"] }, "profileWarnings": { "mustInclude": [], "mustNotInclude": ["safe for you"] } }, "gates": ["default_anchor", "sparse_data_honesty", "unsafe_language"], "severityOnFail": "P1" },
+
+    { "id": "scan_probiotic_vitamin_d_counterfactual", "surface": "barcode_scan", "origin": "barcode_scan", "category": "probiotic_microbiome", "personas": ["digestion_goal"], "input": { "barcode": "fixture:probiotic-vitamin-d" }, "product": { "productId": "fixture-probiotic-vitamin-d", "brand": "Fixture Probiotics", "name": "Probiotic + Vitamin D", "barcode": null }, "expected": { "defaultAnchor": { "pass": ["Probiotic", "Digestive Support"], "warn": ["Vitamin D"], "fail": ["Vitamin D", "Proprietary Blend"] }, "profileWarnings": { "mustInclude": ["digestion"], "mustNotInclude": ["safe for you"] } }, "gates": ["default_anchor", "allergy_sensitivity_relevance"], "severityOnFail": "P1" },
+    { "id": "scan_probiotic_protectis_digestive", "surface": "barcode_scan", "origin": "barcode_scan", "category": "probiotic_microbiome", "personas": ["digestion_goal"], "input": { "barcode": "fixture:protectis-probiotic" }, "product": { "productId": "fixture-protectis-probiotic", "brand": "Fixture Probiotics", "name": "Protectis Probiotic", "barcode": null }, "expected": { "defaultAnchor": { "pass": ["Protectis Probiotic", "Probiotic"], "warn": ["CFU"], "fail": ["Vitamin C"] }, "profileWarnings": { "mustInclude": ["digestion"], "mustNotInclude": ["safe for you"] } }, "gates": ["default_anchor", "allergy_sensitivity_relevance"], "severityOnFail": "P1" },
+    { "id": "scan_probiotic_osfortis_counterfactual", "surface": "barcode_scan", "origin": "barcode_scan", "category": "probiotic_microbiome", "personas": ["digestion_goal"], "input": { "barcode": "fixture:osfortis-probiotic-counter" }, "product": { "productId": "fixture-osfortis-probiotic", "brand": "Fixture Probiotics", "name": "Osfortis Probiotic", "barcode": null }, "expected": { "defaultAnchor": { "pass": ["Osfortis Probiotic", "Probiotic"], "warn": ["CFU"], "fail": ["Vitamin D"] }, "profileWarnings": { "mustInclude": ["digestion"], "mustNotInclude": ["safe for you"] } }, "gates": ["default_anchor", "allergy_sensitivity_relevance"], "severityOnFail": "P1" },
+    { "id": "scan_probiotic_floraphage_counterfactual", "surface": "barcode_scan", "origin": "barcode_scan", "category": "probiotic_microbiome", "personas": ["digestion_goal"], "input": { "barcode": "fixture:floraphage-counter" }, "product": { "productId": "fixture-floraphage-probiotic", "brand": "Fixture Probiotics", "name": "Floraphage Probiotic Prebiotic Bacteriophage", "barcode": null }, "expected": { "defaultAnchor": { "pass": ["Floraphage", "Probiotic"], "warn": ["Bacteriophage"], "fail": ["Vitamin D"] }, "profileWarnings": { "mustInclude": ["digestion"], "mustNotInclude": ["safe for you"] } }, "gates": ["default_anchor", "allergy_sensitivity_relevance"], "severityOnFail": "P1" },
+    { "id": "scan_probiotic_cfu_title_led", "surface": "barcode_scan", "origin": "barcode_scan", "category": "probiotic_microbiome", "personas": ["digestion_goal"], "input": { "barcode": "fixture:cfu-probiotic" }, "product": { "productId": "fixture-cfu-probiotic", "brand": "Fixture Probiotics", "name": "50 Billion CFU Probiotic", "barcode": null }, "expected": { "defaultAnchor": { "pass": ["Probiotic", "CFU Probiotic"], "warn": ["CFU"], "fail": ["Vitamin C"] }, "profileWarnings": { "mustInclude": ["digestion"], "mustNotInclude": ["safe for you"] } }, "gates": ["default_anchor", "allergy_sensitivity_relevance"], "severityOnFail": "P1" },
+
+    { "id": "scan_sleep_theanine_vs_melatonin_counterfactual", "surface": "barcode_scan", "origin": "barcode_scan", "category": "sleep_amino", "personas": ["sleep_goal", "melatonin_sensitivity"], "input": { "barcode": "fixture:sleep-theanine" }, "product": { "productId": "fixture-sleep-theanine", "brand": "Fixture Sleep", "name": "Theanine Sleep Support", "barcode": null }, "expected": { "defaultAnchor": { "pass": ["Theanine", "Sleep Support"], "warn": ["Melatonin"], "fail": ["Vitamin C"] }, "profileWarnings": { "mustInclude": [], "mustNotInclude": ["safe for you"] } }, "gates": ["default_anchor", "goal_relevance", "unsafe_language"], "severityOnFail": "P1" },
+    { "id": "scan_sleep_magnesium_glycinate_counterfactual", "surface": "barcode_scan", "origin": "barcode_scan", "category": "sleep_amino", "personas": ["sleep_goal", "duplicate_zinc_magnesium_d"], "input": { "barcode": "fixture:sleep-magnesium" }, "product": { "productId": "fixture-sleep-magnesium", "brand": "Fixture Sleep", "name": "Magnesium Glycinate Sleep Support", "barcode": null }, "expected": { "defaultAnchor": { "pass": ["Magnesium Glycinate", "Sleep Support"], "warn": ["Theanine"], "fail": ["Vitamin D"] } }, "gates": ["default_anchor", "goal_relevance"], "severityOnFail": "P1" },
+    { "id": "scan_sleep_gaba_formula_counterfactual", "surface": "barcode_scan", "origin": "barcode_scan", "category": "sleep_amino", "personas": ["sleep_goal"], "input": { "barcode": "fixture:sleep-gaba" }, "product": { "productId": "fixture-sleep-gaba", "brand": "Fixture Sleep", "name": "GABA Night Formula", "barcode": null }, "expected": { "defaultAnchor": { "pass": ["GABA", "Night Formula"], "warn": ["Theanine"], "fail": ["Vitamin C"] } }, "gates": ["default_anchor", "goal_relevance"], "severityOnFail": "P1" },
+    { "id": "scan_sleep_valerian_blend_counterfactual", "surface": "barcode_scan", "origin": "barcode_scan", "category": "sleep_amino", "personas": ["sleep_goal"], "input": { "barcode": "fixture:sleep-valerian" }, "product": { "productId": "fixture-sleep-valerian", "brand": "Fixture Sleep", "name": "Valerian Sleep Blend", "barcode": null }, "expected": { "defaultAnchor": { "pass": ["Sleep Blend", "Valerian"], "warn": ["Melatonin"], "fail": ["Vitamin C"] } }, "gates": ["default_anchor", "goal_relevance"], "severityOnFail": "P1" },
+    { "id": "scan_sleep_kids_melatonin_counterfactual", "surface": "barcode_scan", "origin": "barcode_scan", "category": "sleep_amino", "personas": ["melatonin_sensitivity"], "input": { "barcode": "fixture:kids-melatonin" }, "product": { "productId": "fixture-kids-melatonin", "brand": "Fixture Kids", "name": "Kids Melatonin Gummies", "barcode": null }, "expected": { "defaultAnchor": { "pass": ["Melatonin", "Kids Sleep"], "warn": ["Gummy"], "fail": ["Sugars"] }, "profileWarnings": { "mustInclude": ["melatonin"], "mustNotInclude": ["safe for you"] } }, "gates": ["default_anchor", "unsafe_language", "allergy_sensitivity_relevance"], "severityOnFail": "P1" },
+
+    { "id": "scan_duplicate_zinc_stack_counterfactual", "surface": "barcode_scan", "origin": "barcode_scan", "category": "mineral_stack", "personas": ["duplicate_zinc_magnesium_d", "immunity_goal"], "input": { "barcode": "fixture:duplicate-zinc-stack" }, "product": { "productId": "fixture-duplicate-zinc-stack", "brand": "Fixture Minerals", "name": "Zinc Daily Stack", "barcode": null }, "expected": { "defaultAnchor": { "pass": ["Zinc", "Mineral Stack"], "warn": ["Vitamin C"], "fail": ["Vitamin C"] }, "profileWarnings": { "mustInclude": ["duplicate"], "mustNotInclude": ["safe for you"] } }, "gates": ["default_anchor", "duplicate_stack", "allergy_sensitivity_relevance"], "severityOnFail": "P1" },
+    { "id": "scan_cal_mag_d3_duplicate_counterfactual", "surface": "barcode_scan", "origin": "barcode_scan", "category": "mineral_stack", "personas": ["duplicate_zinc_magnesium_d"], "input": { "barcode": "fixture:cal-mag-d3-duplicate" }, "product": { "productId": "fixture-cal-mag-d3-duplicate", "brand": "Fixture Minerals", "name": "Calcium Magnesium D3 Stack", "barcode": null }, "expected": { "defaultAnchor": { "pass": ["Calcium Magnesium", "Mineral Stack"], "warn": ["Vitamin D3"], "fail": ["Vitamin C"] }, "profileWarnings": { "mustInclude": ["duplicate"], "mustNotInclude": ["safe for you"] } }, "gates": ["default_anchor", "duplicate_stack"], "severityOnFail": "P1" },
+    { "id": "scan_electrolyte_mineral_stack_counterfactual", "surface": "barcode_scan", "origin": "barcode_scan", "category": "mineral_stack", "personas": ["fitness_recovery_goal"], "input": { "barcode": "fixture:electrolyte-mineral-stack" }, "product": { "productId": "fixture-electrolyte-mineral-stack", "brand": "Fixture Minerals", "name": "Electrolyte Mineral Stack", "barcode": null }, "expected": { "defaultAnchor": { "pass": ["Electrolyte Mineral Stack", "Mineral Stack"], "warn": ["Potassium"], "fail": ["Sugars"] } }, "gates": ["default_anchor", "goal_relevance"], "severityOnFail": "P1" },
+    { "id": "scan_iron_c_stack_counterfactual", "surface": "barcode_scan", "origin": "barcode_scan", "category": "mineral_stack", "personas": [], "input": { "barcode": "fixture:iron-c-stack" }, "product": { "productId": "fixture-iron-c-stack", "brand": "Fixture Minerals", "name": "Iron + C Stack", "barcode": null }, "expected": { "defaultAnchor": { "pass": ["Iron", "Iron Stack"], "warn": ["Vitamin C"], "fail": ["Calories"] } }, "gates": ["default_anchor"], "severityOnFail": "P1" },
+
+    { "id": "scan_omega3_fish_vs_algal_counterfactual", "surface": "barcode_scan", "origin": "barcode_scan", "category": "omega3_source_oil", "personas": ["vegan_preference", "fish_allergy"], "input": { "barcode": "fixture:omega-fish-vs-algal" }, "product": { "productId": "fixture-omega-fish-vs-algal", "brand": "Fixture Essentials", "name": "Omega-3 Fish Oil + Algal Blend", "barcode": null }, "expected": { "defaultAnchor": { "pass": ["Omega-3 Blend", "Fish Oil"], "warn": ["Algal Oil"], "fail": ["Calories"] }, "profileWarnings": { "mustInclude": ["fish"], "mustNotInclude": ["safe for you"] } }, "gates": ["default_anchor", "allergy_sensitivity_relevance"], "severityOnFail": "P1" },
+    { "id": "scan_omega3_krill_vs_fish_counterfactual", "surface": "barcode_scan", "origin": "barcode_scan", "category": "omega3_source_oil", "personas": ["shellfish_allergy"], "input": { "barcode": "fixture:omega-krill-vs-fish" }, "product": { "productId": "fixture-omega-krill-vs-fish", "brand": "Fixture Marine", "name": "Krill + Fish Oil Complex", "barcode": null }, "expected": { "defaultAnchor": { "pass": ["Krill Oil", "Omega-3 Complex"], "warn": ["Fish Oil"], "fail": ["Calories"] }, "profileWarnings": { "mustInclude": ["shellfish"], "mustNotInclude": ["safe for you"] } }, "gates": ["default_anchor", "allergy_sensitivity_relevance"], "severityOnFail": "P1" },
+
+    { "id": "scan_soy_protein_counterfactual", "surface": "barcode_scan", "origin": "barcode_scan", "category": "protein_fiber", "personas": ["soy_allergy", "fitness_recovery_goal"], "input": { "barcode": "fixture:soy-protein-counter" }, "product": { "productId": "fixture-soy-protein-counter", "brand": "Fixture Plant", "name": "Soy Protein Blend", "barcode": null }, "expected": { "defaultAnchor": { "pass": ["Soy Protein", "Protein"], "warn": ["Protein Blend"], "fail": ["Calories"] }, "profileWarnings": { "mustInclude": ["soy"], "mustNotInclude": ["safe for you"] } }, "gates": ["default_anchor", "allergy_sensitivity_relevance"], "severityOnFail": "P1" },
+    { "id": "scan_pea_protein_vegan_counterfactual", "surface": "barcode_scan", "origin": "barcode_scan", "category": "protein_fiber", "personas": ["vegan_preference", "fitness_recovery_goal"], "input": { "barcode": "fixture:pea-protein-counter" }, "product": { "productId": "fixture-pea-protein", "brand": "Fixture Plant", "name": "Pea Protein", "barcode": null }, "expected": { "defaultAnchor": { "pass": ["Pea Protein", "Protein"], "warn": ["Plant Protein"], "fail": ["Sugars"] } }, "gates": ["default_anchor", "goal_relevance"], "severityOnFail": "P1" },
+    { "id": "scan_psyllium_fiber_negative", "surface": "barcode_scan", "origin": "barcode_scan", "category": "protein_fiber", "personas": ["digestion_goal"], "input": { "barcode": "fixture:psyllium-fiber" }, "product": { "productId": "fixture-psyllium-fiber", "brand": "Fixture Fiber", "name": "Psyllium Fiber", "barcode": null }, "expected": { "defaultAnchor": { "pass": ["Fiber", "Psyllium Fiber"], "warn": ["Digestive Support"], "fail": ["Potassium"] }, "profileWarnings": { "mustInclude": ["digestion"], "mustNotInclude": ["safe for you"] } }, "gates": ["default_anchor", "goal_relevance"], "severityOnFail": "P1" },
+    { "id": "scan_inulin_prebiotic_fiber_negative", "surface": "barcode_scan", "origin": "barcode_scan", "category": "protein_fiber", "personas": ["digestion_goal"], "input": { "barcode": "fixture:inulin-fiber" }, "product": { "productId": "fixture-inulin-fiber", "brand": "Fixture Fiber", "name": "Inulin Prebiotic Fiber", "barcode": null }, "expected": { "defaultAnchor": { "pass": ["Fiber", "Prebiotic Fiber"], "warn": ["Inulin"], "fail": ["Sugars"] }, "profileWarnings": { "mustInclude": ["digestion"], "mustNotInclude": ["safe for you"] } }, "gates": ["default_anchor", "goal_relevance"], "severityOnFail": "P1" },
+
+    { "id": "scan_multivitamin_senior_counterfactual", "surface": "barcode_scan", "origin": "barcode_scan", "category": "multivitamin_b_complex", "personas": ["duplicate_zinc_magnesium_d"], "input": { "barcode": "fixture:senior-multi" }, "product": { "productId": "fixture-senior-multi", "brand": "Fixture Multi", "name": "Senior Multivitamin", "barcode": null }, "expected": { "defaultAnchor": { "pass": ["Multivitamin", "Senior Multivitamin"], "warn": ["Mineral Complex"], "fail": ["Inositol"] } }, "gates": ["default_anchor"], "severityOnFail": "P1" },
+    { "id": "scan_b_complex_counterfactual", "surface": "barcode_scan", "origin": "barcode_scan", "category": "multivitamin_b_complex", "personas": [], "input": { "barcode": "fixture:b-complex" }, "product": { "productId": "fixture-b-complex", "brand": "Fixture Vitamins", "name": "B-Complex", "barcode": null }, "expected": { "defaultAnchor": { "pass": ["B-Complex"], "warn": ["Vitamin B12"], "fail": ["Inositol"] } }, "gates": ["default_anchor"], "severityOnFail": "P1" },
+    { "id": "scan_multivitamin_kids_chewable_counterfactual", "surface": "barcode_scan", "origin": "barcode_scan", "category": "multivitamin_b_complex", "personas": ["gelatin_restriction"], "input": { "barcode": "fixture:kids-chewable-multi" }, "product": { "productId": "fixture-kids-chewable-multi", "brand": "Fixture Kids", "name": "Kids Chewable Multi", "barcode": null }, "expected": { "defaultAnchor": { "pass": ["Kids Multivitamin", "Chewable Multivitamin"], "warn": ["Chewable"], "fail": ["Sugars"] }, "profileWarnings": { "mustInclude": [], "mustNotInclude": ["safe for you"] } }, "gates": ["default_anchor", "unsafe_language"], "severityOnFail": "P1" },
+
+    { "id": "scan_prenatal_folate_counterfactual", "surface": "barcode_scan", "origin": "barcode_scan", "category": "prenatal_kids", "personas": ["pregnancy_prenatal"], "input": { "barcode": "fixture:prenatal-folate" }, "product": { "productId": "fixture-prenatal-folate", "brand": "Fixture Prenatal", "name": "Prenatal Folate", "barcode": null }, "expected": { "defaultAnchor": { "pass": ["Prenatal Folate", "Folate"], "warn": ["Prenatal"], "fail": ["safe in pregnancy"] }, "profileWarnings": { "mustInclude": ["prenatal"], "mustNotInclude": ["safe for you"] } }, "gates": ["default_anchor", "unsafe_language", "allergy_sensitivity_relevance"], "severityOnFail": "P0" },
+    { "id": "scan_kids_omega_dha_counterfactual", "surface": "barcode_scan", "origin": "barcode_scan", "category": "prenatal_kids", "personas": ["fish_allergy"], "input": { "barcode": "fixture:kids-omega-dha" }, "product": { "productId": "fixture-kids-omega-dha", "brand": "Fixture Kids", "name": "Kids DHA", "barcode": null }, "expected": { "defaultAnchor": { "pass": ["DHA", "Kids DHA"], "warn": ["Omega-3"], "fail": ["safe for you"] }, "profileWarnings": { "mustInclude": ["fish"], "mustNotInclude": ["safe for you"] } }, "gates": ["default_anchor", "unsafe_language", "allergy_sensitivity_relevance"], "severityOnFail": "P1" },
+    { "id": "scan_prenatal_iron_counterfactual", "surface": "barcode_scan", "origin": "barcode_scan", "category": "prenatal_kids", "personas": ["pregnancy_prenatal"], "input": { "barcode": "fixture:prenatal-iron" }, "product": { "productId": "fixture-prenatal-iron", "brand": "Fixture Prenatal", "name": "Prenatal Iron", "barcode": null }, "expected": { "defaultAnchor": { "pass": ["Iron", "Prenatal Iron"], "warn": ["Prenatal"], "fail": ["safe in pregnancy"] }, "profileWarnings": { "mustInclude": ["prenatal"], "mustNotInclude": ["safe for you"] } }, "gates": ["default_anchor", "unsafe_language", "allergy_sensitivity_relevance"], "severityOnFail": "P0" },
+
+    { "id": "scan_green_tea_stimulant_counterfactual", "surface": "barcode_scan", "origin": "barcode_scan", "category": "botanical_extract", "personas": ["stimulant_sensitivity"], "input": { "barcode": "fixture:green-tea-stimulant" }, "product": { "productId": "fixture-green-tea-stimulant", "brand": "Fixture Herbs", "name": "Green Tea Extract", "barcode": null }, "expected": { "defaultAnchor": { "pass": ["Green Tea", "Green Tea Extract"], "warn": ["EGCG"], "fail": ["Caffeine"] }, "profileWarnings": { "mustInclude": ["green tea"], "mustNotInclude": ["safe for you"] } }, "gates": ["default_anchor", "allergy_sensitivity_relevance"], "severityOnFail": "P1" },
+    { "id": "scan_ashwagandha_sensoril_counterfactual", "surface": "barcode_scan", "origin": "barcode_scan", "category": "botanical_extract", "personas": ["stress_goal"], "input": { "barcode": "fixture:ashwagandha-sensoril-counter" }, "product": { "productId": "fixture-ashwagandha-sensoril", "brand": "Fixture Herbs", "name": "Ashwagandha Sensoril", "barcode": null }, "expected": { "defaultAnchor": { "pass": ["Ashwagandha", "Sensoril"], "warn": ["Stress Support"], "fail": ["Calories"] } }, "gates": ["default_anchor", "goal_relevance"], "severityOnFail": "P1" },
+
+    { "id": "scan_berberine_metabolic_counterfactual", "surface": "barcode_scan", "origin": "barcode_scan", "category": "metabolic_body_composition", "personas": ["fitness_recovery_goal"], "input": { "barcode": "fixture:berberine-metabolic" }, "product": { "productId": "fixture-berberine-metabolic", "brand": "Fixture Metabolic", "name": "Berberine Metabolic Support", "barcode": null }, "expected": { "defaultAnchor": { "pass": ["Berberine", "Metabolic Support"], "warn": ["Chromium"], "fail": ["Calories"] } }, "gates": ["default_anchor", "goal_relevance"], "severityOnFail": "P1" },
+
+    { "id": "scan_vitamin_b12_alias_counterfactual", "surface": "barcode_scan", "origin": "barcode_scan", "category": "vitamin_mineral_single", "personas": [], "input": { "barcode": "fixture:vitamin-b12-alias" }, "product": { "productId": "fixture-vitamin-b12", "brand": "Fixture Vitamins", "name": "Methyl B12", "barcode": null }, "expected": { "defaultAnchor": { "pass": ["Vitamin B12", "Methyl B12"], "warn": ["Cobalamin"], "fail": ["Calories"] } }, "gates": ["default_anchor"], "severityOnFail": "P1" },
+
+    { "id": "scan_food_like_beet_chew_negative", "surface": "barcode_scan", "origin": "barcode_scan", "category": "food_like", "personas": ["gluten_restriction"], "input": { "barcode": "fixture:beet-chew-negative" }, "product": { "productId": "fixture-beet-chew-negative", "brand": "Fixture Snacks", "name": "Beet Chews", "barcode": null }, "expected": { "defaultAnchor": { "pass": ["Snack Chews", "Beet Chews"], "warn": ["Beet"], "fail": ["Vitamin C"] } }, "gates": ["default_anchor"], "severityOnFail": "P1" },
+    { "id": "scan_food_like_oat_superbar_negative", "surface": "barcode_scan", "origin": "barcode_scan", "category": "food_like", "personas": ["gluten_restriction"], "input": { "barcode": "fixture:oat-superbar" }, "product": { "productId": "fixture-oat-superbar", "brand": "Fixture Snacks", "name": "Superfood Oat Bar", "barcode": null }, "expected": { "defaultAnchor": { "pass": ["Oat Bar", "Snack Bar"], "warn": ["Superfood"], "fail": ["Vitamin C"] } }, "gates": ["default_anchor"], "severityOnFail": "P1" },
+    { "id": "scan_food_like_hydration_gel_negative", "surface": "barcode_scan", "origin": "barcode_scan", "category": "food_like", "personas": ["fitness_recovery_goal"], "input": { "barcode": "fixture:hydration-gel" }, "product": { "productId": "fixture-hydration-gel", "brand": "Fixture Sports", "name": "Hydration Gel", "barcode": null }, "expected": { "defaultAnchor": { "pass": ["Hydration Gel", "Energy Gel"], "warn": ["Electrolytes"], "fail": ["Magnesium"] } }, "gates": ["default_anchor", "goal_relevance"], "severityOnFail": "P1" },
+    { "id": "scan_sparse_collagen_powder_title_led", "surface": "barcode_scan", "origin": "barcode_scan", "category": "sparse_title_led", "personas": [], "input": { "barcode": "fixture:sparse-collagen" }, "product": { "productId": "fixture-sparse-collagen", "brand": "Fixture Beauty", "name": "Collagen Powder", "barcode": null }, "expected": { "defaultAnchor": { "pass": ["Collagen", "Collagen Powder"], "warn": ["Protein"], "fail": ["Serving Size"] } }, "gates": ["default_anchor", "sparse_data_honesty"], "severityOnFail": "P1" },
+    { "id": "scan_sparse_prenatal_title_led", "surface": "barcode_scan", "origin": "barcode_scan", "category": "sparse_title_led", "personas": ["pregnancy_prenatal"], "input": { "barcode": "fixture:sparse-prenatal" }, "product": { "productId": "fixture-sparse-prenatal", "brand": "Fixture Prenatal", "name": "Prenatal Essentials", "barcode": null }, "expected": { "defaultAnchor": { "pass": ["Prenatal Essentials", "Prenatal Formula"], "warn": ["Folate"], "fail": ["Serving Size"] }, "profileWarnings": { "mustInclude": ["prenatal"], "mustNotInclude": ["safe for you"] } }, "gates": ["default_anchor", "sparse_data_honesty", "allergy_sensitivity_relevance"], "severityOnFail": "P1" },
+    { "id": "scan_probiotic_prebiotic_counterfactual", "surface": "barcode_scan", "origin": "barcode_scan", "category": "probiotic_microbiome", "personas": ["digestion_goal"], "input": { "barcode": "fixture:probiotic-prebiotic" }, "product": { "productId": "fixture-probiotic-prebiotic", "brand": "Fixture Probiotics", "name": "Probiotic Prebiotic Blend", "barcode": null }, "expected": { "defaultAnchor": { "pass": ["Probiotic", "Probiotic Prebiotic Blend"], "warn": ["Prebiotic"], "fail": ["Vitamin D"] }, "profileWarnings": { "mustInclude": ["digestion"], "mustNotInclude": ["safe for you"] } }, "gates": ["default_anchor", "goal_relevance"], "severityOnFail": "P1" },
+    { "id": "scan_sleep_5htp_counterfactual", "surface": "barcode_scan", "origin": "barcode_scan", "category": "sleep_amino", "personas": ["sleep_goal"], "input": { "barcode": "fixture:sleep-5htp-counter" }, "product": { "productId": "fixture-sleep-5htp-counter", "brand": "Fixture Sleep", "name": "5-HTP Sleep Support", "barcode": null }, "expected": { "defaultAnchor": { "pass": ["5-HTP", "Sleep Support"], "warn": ["Melatonin"], "fail": ["Vitamin C"] } }, "gates": ["default_anchor", "goal_relevance"], "severityOnFail": "P1" },
+    { "id": "scan_sleep_magnesium_theanine_counterfactual", "surface": "barcode_scan", "origin": "barcode_scan", "category": "sleep_amino", "personas": ["sleep_goal", "duplicate_zinc_magnesium_d"], "input": { "barcode": "fixture:sleep-mag-theanine" }, "product": { "productId": "fixture-sleep-mag-theanine", "brand": "Fixture Sleep", "name": "Magnesium Theanine Night Formula", "barcode": null }, "expected": { "defaultAnchor": { "pass": ["Night Formula", "Theanine"], "warn": ["Magnesium"], "fail": ["Vitamin D"] } }, "gates": ["default_anchor", "goal_relevance"], "severityOnFail": "P1" },
+    { "id": "scan_calcium_magnesium_counterfactual_b", "surface": "barcode_scan", "origin": "barcode_scan", "category": "mineral_stack", "personas": ["duplicate_zinc_magnesium_d"], "input": { "barcode": "fixture:cal-mag-counter-b" }, "product": { "productId": "fixture-cal-mag-counter-b", "brand": "Fixture Minerals", "name": "Calcium Magnesium Support", "barcode": null }, "expected": { "defaultAnchor": { "pass": ["Calcium Magnesium", "Mineral Stack"], "warn": ["Zinc"], "fail": ["Vitamin C"] } }, "gates": ["default_anchor", "duplicate_stack"], "severityOnFail": "P1" },
+    { "id": "scan_duplicate_vitamin_d_stack_counterfactual", "surface": "barcode_scan", "origin": "barcode_scan", "category": "mineral_stack", "personas": ["duplicate_zinc_magnesium_d"], "input": { "barcode": "fixture:duplicate-vitamin-d-stack" }, "product": { "productId": "fixture-duplicate-vitamin-d-stack", "brand": "Fixture Minerals", "name": "D3 Mineral Support", "barcode": null }, "expected": { "defaultAnchor": { "pass": ["Vitamin D3", "Mineral Support"], "warn": ["Calcium"], "fail": ["Vitamin C"] }, "profileWarnings": { "mustInclude": ["duplicate"], "mustNotInclude": ["safe for you"] } }, "gates": ["default_anchor", "duplicate_stack"], "severityOnFail": "P1" },
+    { "id": "scan_omega3_prenatal_algal_counterfactual", "surface": "barcode_scan", "origin": "barcode_scan", "category": "omega3_source_oil", "personas": ["pregnancy_prenatal", "vegan_preference"], "input": { "barcode": "fixture:prenatal-algal-counter" }, "product": { "productId": "fixture-prenatal-algal-counter", "brand": "Fixture Prenatal", "name": "Prenatal Algal DHA", "barcode": null }, "expected": { "defaultAnchor": { "pass": ["Algal Oil", "Prenatal DHA"], "warn": ["DHA"], "fail": ["Fish Oil"] }, "profileWarnings": { "mustInclude": ["prenatal"], "mustNotInclude": ["safe for you"] } }, "gates": ["default_anchor", "allergy_sensitivity_relevance"], "severityOnFail": "P1" },
+    { "id": "scan_protein_cookie_soy_negative", "surface": "barcode_scan", "origin": "barcode_scan", "category": "food_like", "personas": ["soy_allergy"], "input": { "barcode": "fixture:protein-cookie-soy" }, "product": { "productId": "fixture-protein-cookie-soy", "brand": "Fixture Snacks", "name": "Protein Cookie with Soy Crisp", "barcode": null }, "expected": { "defaultAnchor": { "pass": ["Protein Cookie", "Snack"], "warn": ["Soy Crisp"], "fail": ["Vitamin C"] }, "profileWarnings": { "mustInclude": ["soy"], "mustNotInclude": ["safe for you"] } }, "gates": ["default_anchor", "allergy_sensitivity_relevance"], "severityOnFail": "P1" },
+    { "id": "scan_sparse_omega_title_led", "surface": "barcode_scan", "origin": "barcode_scan", "category": "sparse_title_led", "personas": ["fish_allergy"], "input": { "barcode": "fixture:sparse-omega-title" }, "product": { "productId": "fixture-sparse-omega-title", "brand": "Fixture Essentials", "name": "Omega Support", "barcode": null }, "expected": { "defaultAnchor": { "pass": ["Omega Support", "Omega-3"], "warn": ["Fish Oil"], "fail": ["Serving Size"] }, "profileWarnings": { "mustInclude": [], "mustNotInclude": ["safe for you"] } }, "gates": ["default_anchor", "sparse_data_honesty"], "severityOnFail": "P1" },
+    { "id": "scan_probiotic_sleep_combo_counterfactual", "surface": "barcode_scan", "origin": "barcode_scan", "category": "probiotic_microbiome", "personas": ["digestion_goal", "sleep_goal"], "input": { "barcode": "fixture:probiotic-sleep-combo" }, "product": { "productId": "fixture-probiotic-sleep-combo", "brand": "Fixture Probiotics", "name": "Probiotic Night Support", "barcode": null }, "expected": { "defaultAnchor": { "pass": ["Probiotic", "Night Support"], "warn": ["Melatonin"], "fail": ["Vitamin D"] }, "profileWarnings": { "mustInclude": ["digestion"], "mustNotInclude": ["safe for you"] } }, "gates": ["default_anchor", "goal_relevance"], "severityOnFail": "P1" },
+    { "id": "scan_duplicate_magnesium_sleep_counterfactual", "surface": "barcode_scan", "origin": "barcode_scan", "category": "sleep_amino", "personas": ["duplicate_zinc_magnesium_d", "sleep_goal"], "input": { "barcode": "fixture:duplicate-magnesium-sleep" }, "product": { "productId": "fixture-duplicate-magnesium-sleep", "brand": "Fixture Sleep", "name": "Magnesium Sleep Caps", "barcode": null }, "expected": { "defaultAnchor": { "pass": ["Magnesium", "Sleep Caps"], "warn": ["Theanine"], "fail": ["Vitamin D"] }, "profileWarnings": { "mustInclude": ["duplicate"], "mustNotInclude": ["safe for you"] } }, "gates": ["default_anchor", "duplicate_stack"], "severityOnFail": "P1" },
+    { "id": "scan_real_lifeextension_green_tea_short_panel", "surface": "barcode_scan", "origin": "barcode_scan", "category": "sparse_title_led", "personas": ["stimulant_sensitivity"], "input": { "barcode": "00737870954101" }, "product": { "productId": "7723", "brand": "Life Extension", "name": "Life Extension, Mega Green Tea Extract, Decaffeinated, 100 Vegetarian Capsules (725 mg per Capsule)", "barcode": "00737870954101" }, "expected": { "defaultAnchor": { "pass": ["Green Tea", "Green Tea Extract", "Mega Green Tea Extract"], "warn": ["Botanical Extract"], "fail": ["Vegetarian Capsules", "Serving Size"] }, "profileWarnings": { "mustInclude": ["green tea"], "mustNotInclude": ["safe for you"] } }, "gates": ["default_anchor", "sparse_data_honesty", "allergy_sensitivity_relevance", "unsafe_language"], "severityOnFail": "P1" },
+    { "id": "scan_real_bio_nutrition_krill_oil_complex_short_panel", "surface": "barcode_scan", "origin": "barcode_scan", "category": "sparse_title_led", "personas": ["shellfish_allergy"], "input": { "barcode": "00854936003303" }, "product": { "productId": "126071", "brand": "Bio Nutrition", "name": "Bio Nutrition, Krill Oil Complex, 500 mg , 45 Softgels", "barcode": "00854936003303" }, "expected": { "defaultAnchor": { "pass": ["Krill Oil", "Krill Oil Complex", "Omega-3 Complex"], "warn": ["Astaxanthin"], "fail": ["Softgels", "Serving Size"] }, "profileWarnings": { "mustInclude": ["shellfish"], "mustNotInclude": ["safe for you"] } }, "gates": ["default_anchor", "sparse_data_honesty", "allergy_sensitivity_relevance", "unsafe_language"], "severityOnFail": "P1" },
+    { "id": "scan_real_lifeextension_soy_isoflavones_short_panel", "surface": "barcode_scan", "origin": "barcode_scan", "category": "sparse_title_led", "personas": ["soy_allergy"], "input": { "barcode": "00737870164968" }, "product": { "productId": "47343", "brand": "Life Extension", "name": "Life Extension, Soy Isoflavones, 30 Vegetarian Capsules (135 mg per Capsule)", "barcode": "00737870164968" }, "expected": { "defaultAnchor": { "pass": ["Soy Isoflavones", "Isoflavones"], "warn": ["Botanical Support"], "fail": ["Vegetarian Capsules", "Serving Size"] }, "profileWarnings": { "mustInclude": ["soy"], "mustNotInclude": ["safe for you"] } }, "gates": ["default_anchor", "sparse_data_honesty", "allergy_sensitivity_relevance", "unsafe_language"], "severityOnFail": "P1" },
+    { "id": "scan_real_21stcentury_b12_prolonged_release_sparse", "surface": "barcode_scan", "origin": "barcode_scan", "category": "vitamin_mineral_single", "personas": [], "input": { "barcode": "00740985211045" }, "product": { "productId": "11262", "brand": "21st Century", "name": "21st Century, B-12, Prolonged Release, 1,000 mcg, 110 Tablets", "barcode": "00740985211045" }, "expected": { "defaultAnchor": { "pass": ["Vitamin B12", "B-12", "B-12 Prolonged Release"], "warn": ["Vitamin B"], "fail": ["Tablets", "Serving Size"] }, "profileWarnings": { "mustInclude": [], "mustNotInclude": ["safe for you"] } }, "gates": ["default_anchor", "sparse_data_honesty", "unsafe_language"], "severityOnFail": "P1" },
+    { "id": "scan_real_21stcentury_ashwagandha_sparse", "surface": "barcode_scan", "origin": "barcode_scan", "category": "botanical_extract", "personas": ["stress_goal"], "input": { "barcode": "00740985280713" }, "product": { "productId": "115013", "brand": "21st Century", "name": "21st Century, Ashwagandha Extract, Standardized, 60 Vegetarian Capsules (500 mg per Capsule)", "barcode": "00740985280713" }, "expected": { "defaultAnchor": { "pass": ["Ashwagandha", "Ashwagandha Extract"], "warn": ["Botanical Extract"], "fail": ["Vegetarian Capsules", "Serving Size"] }, "profileWarnings": { "mustInclude": [], "mustNotInclude": ["safe for you"] } }, "gates": ["default_anchor", "sparse_data_honesty", "goal_relevance", "unsafe_language"], "severityOnFail": "P1" },
+    { "id": "scan_real_biogaia_osfortis_vitamin_d_sparse", "surface": "barcode_scan", "origin": "barcode_scan", "category": "probiotic_microbiome", "personas": ["digestion_goal"], "input": { "barcode": "00602359460254" }, "product": { "productId": "103147", "brand": "BioGaia", "name": "BioGaia, Osfortis with Vitamin D, 60 Probiotic Capsules", "barcode": "00602359460254" }, "expected": { "defaultAnchor": { "pass": ["Osfortis Probiotic", "Osfortis", "Probiotic"], "warn": ["Digestive Support"], "fail": ["Vitamin D", "Capsules"] }, "profileWarnings": { "mustInclude": ["digestion"], "mustNotInclude": ["safe for you"] } }, "gates": ["default_anchor", "sparse_data_honesty", "goal_relevance", "unsafe_language"], "severityOnFail": "P1" },
+    { "id": "scan_real_doctorsbest_vegan_dha_algae_sparse", "surface": "barcode_scan", "origin": "barcode_scan", "category": "omega3_source_oil", "personas": ["vegan_preference", "fish_allergy"], "input": { "barcode": "00753950002968" }, "product": { "productId": "48309", "brand": "Doctor's Best", "name": "Doctor's Best, Vegan DHA from Algae with Life's DHA™ , 200 mg, 60 Veggie Softgels", "barcode": "00753950002968" }, "expected": { "defaultAnchor": { "pass": ["Algal Oil", "Vegan DHA", "DHA"], "warn": ["Omega-3"], "fail": ["Fish Oil", "Softgels"] }, "profileWarnings": { "mustInclude": ["fish"], "mustNotInclude": ["safe for you"] } }, "gates": ["default_anchor", "sparse_data_honesty", "allergy_sensitivity_relevance", "unsafe_language"], "severityOnFail": "P1" },
+    { "id": "scan_real_annies_snack_mix_food_like", "surface": "barcode_scan", "origin": "barcode_scan", "category": "food_like", "personas": ["gluten_restriction"], "input": { "barcode": "00013562300556" }, "product": { "productId": "31662", "brand": "Annie's Homegrown", "name": "Annie's Homegrown, Snack Mix, Original, 9 oz (255 g)", "barcode": "00013562300556" }, "expected": { "defaultAnchor": { "pass": ["Snack Mix", "Snack"], "warn": ["Original Snack Mix"], "fail": ["Vitamin C", "Calories", "Sugars"] }, "profileWarnings": { "mustInclude": [], "mustNotInclude": ["safe for you"] } }, "gates": ["route_health", "default_anchor", "unsafe_language"], "severityOnFail": "P1" },
+    { "id": "search_origin_real_21stcentury_krill_oil_consistency", "surface": "search_origin_result", "origin": "search_result", "category": "omega3_source_oil", "personas": ["shellfish_allergy"], "input": { "query": "21st century krill oil 350 mg", "queryType": "brand_product", "searchResultSeed": { "productId": "41329", "barcode": "00740985273678", "upcCode": "00740985273678", "name": "21st Century, Krill Oil, 350 mg, 60 Softgels", "brand": "21st Century", "category": "Omega-3", "benefit": "Krill omega-3 source", "dose": "350 mg", "factsStatus": "coverage_ready", "coverageStatus": "coverage_ready" } }, "product": { "productId": "41329", "brand": "21st Century", "name": "21st Century, Krill Oil, 350 mg, 60 Softgels", "barcode": "00740985273678" }, "expected": { "defaultAnchor": { "pass": ["Krill Oil", "Omega-3"], "warn": ["Astaxanthin"], "fail": ["Fish Oil"] }, "profileWarnings": { "mustInclude": ["shellfish"], "mustNotInclude": ["safe for you"] }, "consistency": { "productId": "41329", "barcode": "00740985273678", "selectedAnchor": "Krill Oil" } }, "gates": ["click_through_seed_consistency", "canonical_product_consistency", "selected_anchor_consistency", "allergy_sensitivity_relevance"], "severityOnFail": "P1" },
+    { "id": "search_origin_real_alani_whey_dairy_consistency", "surface": "search_origin_result", "origin": "search_result", "category": "protein_fiber", "personas": ["dairy_allergy", "fitness_recovery_goal"], "input": { "query": "alani nu whey protein fruity cereal", "queryType": "brand_product", "searchResultSeed": { "productId": "152889", "barcode": "00850645008011", "upcCode": "00850645008011", "name": "Alani Nu, Whey Protein, Fruity Cereal, 2 lb 0.7 oz (927 g)", "brand": "Alani Nu", "category": "Protein", "benefit": "Whey protein", "dose": "25 g protein", "factsStatus": "coverage_ready", "coverageStatus": "coverage_ready" } }, "product": { "productId": "152889", "brand": "Alani Nu", "name": "Alani Nu, Whey Protein, Fruity Cereal, 2 lb 0.7 oz (927 g)", "barcode": "00850645008011" }, "expected": { "defaultAnchor": { "pass": ["Whey Protein", "Protein"], "warn": ["Protein Powder"], "fail": ["Potassium"] }, "profileWarnings": { "mustInclude": ["dairy"], "mustNotInclude": ["safe for you"] }, "consistency": { "productId": "152889", "barcode": "00850645008011", "selectedAnchor": "Whey Protein" } }, "gates": ["click_through_seed_consistency", "canonical_product_consistency", "selected_anchor_consistency", "allergy_sensitivity_relevance"], "severityOnFail": "P1" },
+    { "id": "search_origin_real_21stcentury_soy_isoflavones_consistency", "surface": "search_origin_result", "origin": "search_result", "category": "botanical_extract", "personas": ["soy_allergy"], "input": { "query": "21st century soy isoflavones extract", "queryType": "brand_product", "searchResultSeed": { "productId": "43897", "barcode": "00740985223062", "upcCode": "00740985223062", "name": "21st Century, Soy Isoflavones Extract, Standardized, 60 Vegetarian Capsules (50 mg per Capsules)", "brand": "21st Century", "category": "Botanical", "benefit": "Soy isoflavones", "dose": "50 mg", "factsStatus": "coverage_ready", "coverageStatus": "coverage_ready" } }, "product": { "productId": "43897", "brand": "21st Century", "name": "21st Century, Soy Isoflavones Extract, Standardized, 60 Vegetarian Capsules (50 mg per Capsules)", "barcode": "00740985223062" }, "expected": { "defaultAnchor": { "pass": ["Soy Isoflavones", "Soy Isoflavones Extract"], "warn": ["Isoflavones"], "fail": ["Capsules"] }, "profileWarnings": { "mustInclude": ["soy"], "mustNotInclude": ["safe for you"] }, "consistency": { "productId": "43897", "barcode": "00740985223062", "selectedAnchor": "Soy Isoflavones" } }, "gates": ["click_through_seed_consistency", "canonical_product_consistency", "selected_anchor_consistency", "allergy_sensitivity_relevance"], "severityOnFail": "P1" },
+    { "id": "search_origin_real_21stcentury_600_d3_consistency", "surface": "search_origin_result", "origin": "search_result", "category": "mineral_stack", "personas": [], "input": { "query": "21st century 600+d3 calcium vitamin d3", "queryType": "brand_product", "searchResultSeed": { "productId": "55898", "barcode": "00740985275313", "upcCode": "00740985275313", "name": "21st Century, 600+D3, Calcium & Vitamin D3 Supplement, 400 Tablets", "brand": "21st Century", "category": "Mineral", "benefit": "Calcium and vitamin D3", "dose": "600 + D3", "factsStatus": "partial", "coverageStatus": "coverage_ready" } }, "product": { "productId": "55898", "brand": "21st Century", "name": "21st Century, 600+D3, Calcium & Vitamin D3 Supplement, 400 Tablets", "barcode": "00740985275313" }, "expected": { "defaultAnchor": { "pass": ["Calcium", "Calcium & Vitamin D3", "Vitamin D3"], "warn": ["Mineral Support"], "fail": ["Tablets"] }, "profileWarnings": { "mustInclude": [], "mustNotInclude": ["safe for you"] }, "consistency": { "productId": "55898", "barcode": "00740985275313", "selectedAnchor": "Calcium" } }, "gates": ["click_through_seed_consistency", "canonical_product_consistency", "selected_anchor_consistency"], "severityOnFail": "P1" },
+    { "id": "scan_real_21stcentury_600_d3_short_panel", "surface": "barcode_scan", "origin": "barcode_scan", "category": "mineral_stack", "personas": [], "input": { "barcode": "00740985275313" }, "product": { "productId": "55898", "brand": "21st Century", "name": "21st Century, 600+D3, Calcium & Vitamin D3 Supplement, 400 Tablets", "barcode": "00740985275313" }, "expected": { "defaultAnchor": { "pass": ["Calcium", "Calcium & Vitamin D3", "Vitamin D3"], "warn": ["Mineral Support"], "fail": ["Serving Size", "Tablets"] }, "profileWarnings": { "mustInclude": [], "mustNotInclude": ["safe for you"] } }, "gates": ["default_anchor", "sparse_data_honesty", "unsafe_language"], "severityOnFail": "P1" },
+    { "id": "scan_real_21stcentury_acidophilus_short_panel", "surface": "barcode_scan", "origin": "barcode_scan", "category": "probiotic_microbiome", "personas": ["digestion_goal"], "input": { "barcode": "00740985213391" }, "product": { "productId": "11193", "brand": "21st Century", "name": "21st Century, Acidophilus Probiotic Blend, 100 Capsules", "barcode": "00740985213391" }, "expected": { "defaultAnchor": { "pass": ["Probiotic", "Acidophilus", "Acidophilus Probiotic Blend"], "warn": ["Probiotic Blend"], "fail": ["Capsules", "Serving Size"] }, "profileWarnings": { "mustInclude": ["digestion"], "mustNotInclude": ["safe for you"] } }, "gates": ["default_anchor", "sparse_data_honesty", "goal_relevance"], "severityOnFail": "P1" },
+    { "id": "scan_real_alani_protein_bar_food_like", "surface": "barcode_scan", "origin": "barcode_scan", "category": "food_like", "personas": ["fitness_recovery_goal"], "input": { "barcode": "00810030517306" }, "product": { "productId": "152869", "brand": "Alani Nu", "name": "Alani Nu, Protein Bar, Caramel Crunch, 12 Bars, 1.69 oz (48 g) Each", "barcode": "00810030517306" }, "expected": { "defaultAnchor": { "pass": ["Protein Bar", "Snack Bar"], "warn": ["Protein"], "fail": ["Sugars", "Calories"] }, "profileWarnings": { "mustInclude": [], "mustNotInclude": ["safe for you"] } }, "gates": ["route_health", "default_anchor", "unsafe_language"], "severityOnFail": "P1" },
+    { "id": "scan_real_akasha_sea_moss_gel_food_like", "surface": "barcode_scan", "origin": "barcode_scan", "category": "food_like", "personas": [], "input": { "barcode": "00860009183544" }, "product": { "productId": "155754", "brand": "Akasha Superfoods", "name": "Akasha Superfoods, Liposomal Sea Moss Gel, Sweet Citrus, 30 Packets, 0.5 fl oz (15 ml) Each", "barcode": "00860009183544" }, "expected": { "defaultAnchor": { "pass": ["Sea Moss Gel", "Gel"], "warn": ["Sea Moss"], "fail": ["Sugars", "Calories"] }, "profileWarnings": { "mustInclude": [], "mustNotInclude": ["safe for you"] } }, "gates": ["route_health", "default_anchor", "unsafe_language"], "severityOnFail": "P1" },
+    { "id": "scan_real_alani_energy_drink_mix_food_like", "surface": "barcode_scan", "origin": "barcode_scan", "category": "food_like", "personas": ["fitness_recovery_goal"], "input": { "barcode": "00810030515098" }, "product": { "productId": "152911", "brand": "Alani Nu", "name": "Alani Nu, Energy Drink Mix, Cherry Slush, 10 Sticks, 0.27 oz (7.7 g) Each", "barcode": "00810030515098" }, "expected": { "defaultAnchor": { "pass": ["Energy Drink Mix", "Drink Mix"], "warn": ["Energy Drink"], "fail": ["B Vitamins", "Serving Size", "Calories"] }, "profileWarnings": { "mustInclude": [], "mustNotInclude": ["safe for you"] } }, "gates": ["route_health", "default_anchor", "goal_relevance", "unsafe_language"], "severityOnFail": "P1" },
+    { "id": "scan_real_alani_whey_protein_dairy", "surface": "barcode_scan", "origin": "barcode_scan", "category": "protein_fiber", "personas": ["dairy_allergy", "fitness_recovery_goal"], "input": { "barcode": "00850645008011" }, "product": { "productId": "152889", "brand": "Alani Nu", "name": "Alani Nu, Whey Protein, Fruity Cereal, 2 lb 0.7 oz (927 g)", "barcode": "00850645008011" }, "expected": { "defaultAnchor": { "pass": ["Whey Protein", "Protein"], "warn": ["Protein Powder"], "fail": ["Potassium", "Calories"] }, "profileWarnings": { "mustInclude": ["dairy"], "mustNotInclude": ["safe for you"] } }, "gates": ["default_anchor", "allergy_sensitivity_relevance", "goal_relevance"], "severityOnFail": "P1" },
+    { "id": "scan_real_21stcentury_soy_isoflavones", "surface": "barcode_scan", "origin": "barcode_scan", "category": "botanical_extract", "personas": ["soy_allergy"], "input": { "barcode": "00740985223062" }, "product": { "productId": "43897", "brand": "21st Century", "name": "21st Century, Soy Isoflavones Extract, Standardized, 60 Vegetarian Capsules (50 mg per Capsules)", "barcode": "00740985223062" }, "expected": { "defaultAnchor": { "pass": ["Soy Isoflavones", "Soy Isoflavones Extract"], "warn": ["Isoflavones"], "fail": ["Capsules", "Serving Size"] }, "profileWarnings": { "mustInclude": ["soy"], "mustNotInclude": ["safe for you"] } }, "gates": ["default_anchor", "allergy_sensitivity_relevance", "unsafe_language"], "severityOnFail": "P1" },
+    { "id": "scan_real_21stcentury_krill_oil_shellfish", "surface": "barcode_scan", "origin": "barcode_scan", "category": "omega3_source_oil", "personas": ["shellfish_allergy"], "input": { "barcode": "00740985273678" }, "product": { "productId": "41329", "brand": "21st Century", "name": "21st Century, Krill Oil, 350 mg, 60 Softgels", "barcode": "00740985273678" }, "expected": { "defaultAnchor": { "pass": ["Krill Oil", "Omega-3"], "warn": ["Astaxanthin"], "fail": ["Fish Oil", "Softgels"] }, "profileWarnings": { "mustInclude": ["shellfish"], "mustNotInclude": ["safe for you"] } }, "gates": ["default_anchor", "allergy_sensitivity_relevance", "unsafe_language"], "severityOnFail": "P1" },
+    { "id": "scan_prenatal_multivitamin_counterfactual_b", "surface": "barcode_scan", "origin": "barcode_scan", "category": "prenatal_kids", "personas": ["pregnancy_prenatal"], "input": { "barcode": "fixture:prenatal-multi-b" }, "product": { "productId": "fixture-prenatal-multi-b", "brand": "Fixture Prenatal", "name": "Prenatal Multivitamin", "barcode": null }, "expected": { "defaultAnchor": { "pass": ["Prenatal Multivitamin", "Multivitamin"], "warn": ["Folate"], "fail": ["Inositol"] }, "profileWarnings": { "mustInclude": ["prenatal"], "mustNotInclude": ["safe for you"] } }, "gates": ["default_anchor", "unsafe_language"], "severityOnFail": "P0" }
+  ]
+}
