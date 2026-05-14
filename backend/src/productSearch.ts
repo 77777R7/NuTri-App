@@ -3831,10 +3831,18 @@ export const writePersistedProductSearchHomeBootstrap = async (
 
 export const refreshPersistedProductSearchHomeBootstrap = async (): Promise<ProductSearchBootstrapResponse> => {
   const fallbackRows = await fetchColdFallbackRows({ query: "", page: 1, limit: DEFAULT_LIMIT });
-  const catalogStats = await readProductSearchCatalogStatsFromDatabase(fallbackRows, {
+  const baseCatalogStats = await readProductSearchCatalogStatsFromDatabase(fallbackRows, {
     preferFallbackAnalysisReady: true,
   });
-  const payload = buildProductSearchBootstrapPayloadFromRows(fallbackRows, { catalogStats });
+  const basePayload = buildProductSearchBootstrapPayloadFromRows(fallbackRows, {
+    catalogStats: baseCatalogStats,
+  });
+  const catalogStats = normalizeCatalogStats({
+    totalRecords: baseCatalogStats.totalRecords,
+    analysisReadyTotal:
+      basePayload.paginationByCategory?.All?.total ?? baseCatalogStats.analysisReadyTotal,
+  });
+  const payload = attachCatalogStatsToBootstrap(basePayload, catalogStats);
   await writePersistedProductSearchHomeBootstrap(payload);
   return payload;
 };
