@@ -693,25 +693,17 @@ const readProductSearchCatalogStatsFromDatabase = async (
   });
 
   try {
-    const catalogCountResult = await withRetry(
-      () =>
-        supabase
-          .from("iherb_overlay_products")
-          .select("*", { head: true, count: "exact" }),
-      { retries: 1, baseDelayMs: 80, maxDelayMs: 250 },
-    );
+    const catalogCountResult = await supabase
+      .from("iherb_overlay_products")
+      .select("*", { head: true, count: "exact" });
 
     const analysisReadyCountResult = options.preferFallbackAnalysisReady
       ? { count: fallbackStats.analysisReadyTotal, error: null }
-      : await withRetry(
-          () =>
-            supabase
-              .from("product_search_index")
-              .select("*", { head: true, count: "exact" })
-              .eq("facts_status", "full")
-              .eq("coverage_status", "coverage_ready"),
-          { retries: 1, baseDelayMs: 80, maxDelayMs: 250 },
-        );
+      : await supabase
+          .from("product_search_index")
+          .select("*", { head: true, count: "exact" })
+          .eq("facts_status", "full")
+          .eq("coverage_status", "coverage_ready");
 
     const catalogError = catalogCountResult.error;
     const analysisReadyError = analysisReadyCountResult.error;
