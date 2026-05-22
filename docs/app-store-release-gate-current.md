@@ -6,13 +6,25 @@ Workspace: `/Users/howard07/NuTriApp/nutri-app`
 
 ## Verdict
 
-Release candidate with blockers.
+Release candidate for TestFlight, with native purchase/device smoke still required.
 
-The current checkout has strong automated evidence for Product Search, Pro gates,
-onboarding routing, scan result contracts, backend bundle generation, and iOS
-Metro export. It is not ready to submit directly because the working tree still
-mixes release-ready Search changes with dirty protected scan/release files and
-unpackaged onboarding, paywall, profile, saved-stack, and backend changes.
+The release-critical packages have been separated into commits and the current
+release checker passes. Product Search, Pro gates, onboarding routing, scan
+result contracts, backend bundle generation, and iOS Metro export all have
+current automated evidence.
+
+Do not submit to App Store Review until TestFlight/native sandbox purchase smoke
+is complete. The working tree also still has non-protected dirty work that
+should either be committed in a follow-up release package or kept out of the
+submission branch.
+
+## Release Package Commits
+
+- `5f51dcf7` - Product Search release package.
+- `fc8b7ba7` - App Store config, RevenueCat env, release docs, release checker.
+- `70e41b17` - Pro gates, post-purchase success, saved limit, Stack Safety.
+- `c1cd3b26` - Onboarding/auth handoff and post-scan/profile return helpers.
+- `b8a6e1a4` - Protected scan release gates and scan contracts.
 
 ## Passed Evidence
 
@@ -21,6 +33,24 @@ unpackaged onboarding, paywall, profile, saved-stack, and backend changes.
   - iOS bundle generated successfully.
   - Bundle: `_expo/static/js/ios/entry-53b054e572fe816d2e414e50efdcfc43.hbc`
   - Output directory: `/private/tmp/nutri-ios-export-check`
+
+- `npx expo export --platform ios --output-dir /private/tmp/nutri-ios-export-check-2`
+  - Passed after release package commits.
+  - iOS bundle generated successfully.
+  - Bundle: `_expo/static/js/ios/entry-53b054e572fe816d2e414e50efdcfc43.hbc`
+  - Output directory: `/private/tmp/nutri-ios-export-check-2`
+
+- `npm run release:app-store-check`
+  - Passed after release package commits.
+  - Summary: `status=pass`, `blockerCount=0`, `warningCount=0`.
+  - Confirms:
+    - no unused `expo-location`
+    - no unused iOS location permission string
+    - camera purpose string configured
+    - production EAS profile has public HTTPS API URLs and RevenueCat contract
+    - App Store Connect app id configured
+    - required release docs exist
+    - no protected scan/release files are dirty
 
 - `npm run search:verify-release`
   - Passed.
@@ -33,6 +63,12 @@ unpackaged onboarding, paywall, profile, saved-stack, and backend changes.
   - Command:
     `node --import tsx --test tests/mySaved/stack-safety-paywall-contract.test.ts tests/mySaved/stack-safety-pro.contract.test.ts tests/pro/app-store-readiness-contract.test.ts tests/pro/pro-feature-gates.test.ts tests/pro/pro-paywall-contract.test.ts tests/pro/waitlist-trial-bonus.test.ts tests/auth/auth-mode-policy.test.ts backend/tests/week3-safety-wording.test.mjs`
   - Passed: 31/31.
+
+- Pro/Auth/Saved/Stack Safety release contracts after adding Stack Safety card
+  contract:
+  - Command:
+    `node --import tsx --test tests/mySaved/stack-safety-paywall-contract.test.ts tests/mySaved/stack-safety-pro.contract.test.ts tests/mySaved/stack-safety-presentation.test.ts tests/pro/app-store-readiness-contract.test.ts tests/pro/pro-feature-gates.test.ts tests/pro/pro-paywall-contract.test.ts tests/pro/waitlist-trial-bonus.test.ts tests/auth/auth-mode-policy.test.ts backend/tests/week3-safety-wording.test.mjs`
+  - Passed: 33/33.
 
 - Onboarding release contracts
   - Command:
@@ -52,20 +88,17 @@ unpackaged onboarding, paywall, profile, saved-stack, and backend changes.
   - Passed.
   - Render runtime wrapper generated.
 
-## Blocking Evidence
+## Remaining Non-Automated Release Evidence
 
-- `npm run release:app-store-check`
-  - Failed with `status=blocked`.
-  - Blocker: protected scan/release files are dirty and need a dedicated release
-    gate before submission:
-    - `app.config.ts`
-    - `app/scan/barcode.tsx`
-    - `app/scan/result.tsx`
-    - `backend/src/server.ts`
-    - `components/scan/AnalysisDashboard.tsx`
-    - `components/scan/AnalysisTopSectionRedesign.tsx`
-    - `components/scan/ScanResultHeaderChrome.tsx`
-    - `eas.json`
+- Native TestFlight install and sandbox purchase/restore have not been executed
+  in this gate yet.
+- App Store Connect subscription submission readiness still depends on Apple
+  Paid Apps Agreement/subscription product availability and first-subscription
+  review packaging.
+- Current working tree has non-protected dirty files that should not be silently
+  included in the App Store submission branch.
+
+## Typecheck Diagnostic Evidence
 
 - `npx tsc --noEmit`
   - Failed.
@@ -83,22 +116,24 @@ unpackaged onboarding, paywall, profile, saved-stack, and backend changes.
 
 ## Current Package Classification
 
-Ship-ready after packaging:
+Committed release packages:
 
 - Product Search release package.
-  - Search contracts and iOS bundle export passed.
-  - Needs final commit/merge discipline so the app branch uses the latest Search
-    UI/cache/index contracts.
-
-Needs dedicated release review before shipping:
-
-- Protected scan/release files listed above.
 - App Store config and production env wiring.
 - RevenueCat/paywall post-purchase flow.
-- Auth/onboarding/home profile changes.
-- My Saved and Stack Safety changes.
-- Backend science/safety/search support changes that are not part of the staged
-  Product Search package.
+- Auth/onboarding/home handoff package.
+- My Saved and Stack Safety gates.
+- Protected scan release package.
+
+Still outside the release package unless explicitly accepted:
+
+- Profile screen redesign changes.
+- Progress screen style changes.
+- Backend science/safety compiler changes not covered by the release commits.
+- Search replay/data/migration artifacts not committed in the Product Search
+  package.
+- Local/temp metadata such as `supabase/.temp/cli-latest`.
+- Untracked local tool or skill metadata unless intentionally required.
 
 Do not ship without explicit decision:
 
@@ -130,15 +165,15 @@ submit, run a real device or TestFlight smoke:
 
 ## Next Release Action
 
-Do not submit from the current dirty branch.
+Do not submit directly from the current dirty working tree.
 
-Next best step is to create a clean release branch or worktree, then apply
-packages one by one:
+Next best step is to create or switch to a clean release branch at the latest
+release package commit, then:
 
-1. Commit/merge Product Search package.
-2. Apply App Store config and RevenueCat env package.
-3. Apply Paywall/Pro package.
-4. Apply Onboarding/Auth/Home package only after focused contracts stay green.
-5. Apply protected Scan package only with the scan release contracts attached.
-6. Rerun `npm run release:app-store-check`.
-7. Build TestFlight and complete native sandbox purchase smoke.
+1. Rerun `npm run release:app-store-check`.
+2. Rerun `npm run search:verify-release`.
+3. Rerun focused Pro/Onboarding/Scan contract suites.
+4. Build TestFlight.
+5. Complete native sandbox purchase/restore smoke.
+6. Only then submit the app version and first subscription package to App Store
+   Review.
