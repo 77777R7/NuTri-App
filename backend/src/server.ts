@@ -704,10 +704,7 @@ const resolvePreferredStage0DsldLabelId = (
 const hasPreferredStage0DsldLabelId = (
   barcodeGtin14: string | null | undefined,
 ): boolean => resolvePreferredStage0DsldLabelId(barcodeGtin14) != null;
-const STAGE0_PROTOCOL_UNIFIED = parseBooleanEnv(
-  process.env.STAGE0_PROTOCOL_UNIFIED,
-  true,
-);
+const STAGE0_PROTOCOL_UNIFIED = parseBooleanEnv(process.env.STAGE0_PROTOCOL_UNIFIED, true);
 const DETERMINISTIC_SIGNALS_PRIMARY = parseBooleanEnv(
   process.env.DETERMINISTIC_SIGNALS_PRIMARY,
   true,
@@ -12343,6 +12340,9 @@ app.get("/api/search/product-detail", async (req: Request, res: Response) => {
         suggestedUse: overlayClaims.suggestedUse ?? null,
         warnings: overlayClaims.warnings ?? null,
         decisionDigest: decisionSupport.digest,
+        decisionInputsHash: decisionSupport.decisionInputsHash,
+        personalizationScopeHash: "none",
+        decisionContractVersion: decisionSupport.decisionContractVersion,
       },
     });
   } catch (error) {

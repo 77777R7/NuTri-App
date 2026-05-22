@@ -51,8 +51,11 @@ test('the scan result coach dims the page, highlights both rows, and dismisses o
   assert.match(topSectionSource, /setPersonalizationCoachDismissed\(true\)/);
   assert.match(topSectionSource, /fit for your goal/);
   assert.match(topSectionSource, /anything you should avoid/);
+  assert.match(topSectionSource, /Your answers are applied here/);
+  assert.match(topSectionSource, /personalizationCoachMode\?: "applied" \| "hidden" \| null/);
+  assert.match(topSectionSource, /\(isAppliedCoach \|\| !lockedPreview\)/);
   assert.match(dashboardSource, /const findGoalCoverageByLabel/);
   assert.match(dashboardSource, /const lowerFirst/);
   assert.match(dashboardSource, /const isOmegaAggregateLine = isOmega3TotalLineName\(displayName\);/);
-  assert.doesNotMatch(dashboardSource, /isOmega3AggregateLineName/);
+  assert.match(dashboardSource, /const isOmega3AggregateLineName = isOmega3TotalLineName/);
 });

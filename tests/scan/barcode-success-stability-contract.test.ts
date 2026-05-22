@@ -16,7 +16,7 @@ test('barcode success path avoids Reanimated worklet scheduling on release build
 test('barcode success path still shows success state and navigates to scan result', () => {
   assert.ok(source.includes("setStatus('success');"));
   assert.ok(source.includes('navigationTimerRef.current = setTimeout(() => {'));
-  assert.ok(source.includes('navigateToResult(sessionId);'));
+  assert.match(source, /navigateToResult\(sessionId(?:,|\))/);
   assert.ok(source.includes("status === 'success' && ("));
   assert.ok(source.includes('<View style={styles.successContainer}>'));
 });

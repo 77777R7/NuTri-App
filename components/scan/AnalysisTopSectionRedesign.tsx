@@ -55,10 +55,12 @@ type AnalysisTopSectionRedesignProps = {
   heroImageUri?: string | null;
   verifiedLabelText: string;
   lockedPreview?: boolean;
+  personalizationCoachMode?: "applied" | "hidden" | null;
   onPersonalizationCoachLayout?: (payload: {
     syncKey: string;
     sectionY: number;
   }) => void;
+  onPersonalizationCoachDismiss?: () => void;
 };
 
 type GoalCoverageRenderItem = {
@@ -183,7 +185,9 @@ export const AnalysisTopSectionRedesign: React.FC<
   heroImageUri,
   verifiedLabelText,
   lockedPreview = false,
+  personalizationCoachMode = null,
   onPersonalizationCoachLayout,
+  onPersonalizationCoachDismiss,
 }) => {
   const derivedSyncKey = useMemo(
     () =>
@@ -216,6 +220,10 @@ export const AnalysisTopSectionRedesign: React.FC<
     useState<number | null>(null);
 
   useEffect(() => {
+    setPersonalizationCoachDismissed(false);
+  }, [personalizationCoachMode]);
+
+  useEffect(() => {
     if (lastSyncKeyRef.current === derivedSyncKey) return;
     lastSyncKeyRef.current = derivedSyncKey;
     setExpandedKey(defaultExpandedKey);
@@ -230,15 +238,22 @@ export const AnalysisTopSectionRedesign: React.FC<
   }, [defaultExpandedKey, expandedKey, insights]);
 
   const heroChipColors = getHeroChipColors(hero.tone);
+  const isAppliedCoach = personalizationCoachMode === "applied";
+  const isCoachHidden = personalizationCoachMode === "hidden";
+  const coachSyncKey = `${personalizationCoachMode ?? "missing"}::${derivedSyncKey}`;
   const hasGoalCoachSpot = insights.some((row) => row.coachSpot === "goal_fit");
   const hasAllergyCoachSpot = insights.some(
     (row) => row.coachSpot === "allergy_check",
   );
+  const hasAppliedGoalRow = insights.some((row) => row.key === "personal_support");
+  const hasAppliedAllergyRow = insights.some((row) => row.key === "allergy_insight");
   const showPersonalizationCoach =
-    !lockedPreview &&
+    !isCoachHidden &&
+    (isAppliedCoach || !lockedPreview) &&
     !personalizationCoachDismissed &&
-    hasGoalCoachSpot &&
-    hasAllergyCoachSpot;
+    (isAppliedCoach
+      ? hasAppliedGoalRow && hasAppliedAllergyRow
+      : hasGoalCoachSpot && hasAllergyCoachSpot);
   const handlePersonalizationCoachSectionLayout = useCallback(
     (event: LayoutChangeEvent) => {
       setPersonalizationCoachSectionY(event.nativeEvent.layout.y);
@@ -250,8 +265,10 @@ export const AnalysisTopSectionRedesign: React.FC<
     trackOnboardingEvent("coach_dismissed", {
       activationDefinition: NUTRI_ACTIVATION_DEFINITION.id,
       surface: "scan_result_personalized_insights",
+      mode: isAppliedCoach ? "applied" : "missing_info",
     });
-  }, []);
+    onPersonalizationCoachDismiss?.();
+  }, [isAppliedCoach, onPersonalizationCoachDismiss]);
 
   useEffect(() => {
     if (!showPersonalizationCoach || personalizationCoachSectionY == null) {
@@ -259,11 +276,11 @@ export const AnalysisTopSectionRedesign: React.FC<
     }
 
     onPersonalizationCoachLayout?.({
-      syncKey: derivedSyncKey,
+      syncKey: coachSyncKey,
       sectionY: personalizationCoachSectionY,
     });
   }, [
-    derivedSyncKey,
+    coachSyncKey,
     onPersonalizationCoachLayout,
     personalizationCoachSectionY,
     showPersonalizationCoach,
@@ -396,16 +413,32 @@ export const AnalysisTopSectionRedesign: React.FC<
           {showPersonalizationCoach ? (
             <View pointerEvents="none" style={styles.personalizationCoachBubble}>
               <Text style={styles.personalizationCoachBubbleText}>
-                {
-                  "After you choose a goal and allergies, these two spots become personalized: "
-                }
-                <Text style={styles.personalizationCoachBubbleEmphasis}>
-                  fit for your goal
-                </Text>
-                {", and "}
-                <Text style={styles.personalizationCoachBubbleEmphasis}>
-                  anything you should avoid.
-                </Text>
+                {isAppliedCoach ? (
+                  <>
+                    {"Your answers are applied here. "}
+                    <Text style={styles.personalizationCoachBubbleEmphasis}>
+                      Goal fit
+                    </Text>
+                    {" and "}
+                    <Text style={styles.personalizationCoachBubbleEmphasis}>
+                      Allergy check
+                    </Text>
+                    {" now update for this supplement."}
+                  </>
+                ) : (
+                  <>
+                    {
+                      "After you choose a goal and allergies, these two spots become personalized: "
+                    }
+                    <Text style={styles.personalizationCoachBubbleEmphasis}>
+                      fit for your goal
+                    </Text>
+                    {", and "}
+                    <Text style={styles.personalizationCoachBubbleEmphasis}>
+                      anything you should avoid.
+                    </Text>
+                  </>
+                )}
               </Text>
               <View style={styles.personalizationCoachBubbleTail} />
             </View>
@@ -419,8 +452,10 @@ export const AnalysisTopSectionRedesign: React.FC<
             {insights.map((row, index) => {
               const isCoachHighlighted =
                 showPersonalizationCoach &&
-                (row.coachSpot === "goal_fit" ||
-                  row.coachSpot === "allergy_check");
+                (isAppliedCoach
+                  ? row.key === "personal_support" || row.key === "allergy_insight"
+                  : row.coachSpot === "goal_fit" ||
+                    row.coachSpot === "allergy_check");
               const isExpanded =
                 !showPersonalizationCoach && expandedKey === row.key;
               const { Icon, iconBg, iconColor } = resolveInsightIcon(

@@ -10,7 +10,6 @@ import {
     ChevronRight,
     Clock,
     Lock,
-    Pill,
     Shield,
     TrendingUp,
     X,
@@ -38,6 +37,7 @@ import Animated, {
     Easing,
     FadeInUp,
     FadeOutDown,
+    runOnJS,
     useAnimatedReaction,
     useAnimatedScrollHandler,
     useAnimatedStyle,
@@ -101,7 +101,13 @@ type SourceType = string;
 
 type TileType = 'overview' | 'science' | 'usage' | 'safety';
 type AnalysisAccessLevel = 'full' | 'preview_locked';
-type PaywallSource = TileType | 'score' | 'comparison';
+
+type AnalysisScrollViewportMetrics = {
+    contentHeight: number;
+    viewportHeight: number;
+    offsetY: number;
+};
+type PaywallSource = TileType | 'score';
 
 type CoverStatus = 'complete' | 'partial' | 'limited';
 
@@ -2055,53 +2061,6 @@ const NutriScoreCardV2: React.FC<{
     );
 };
 
-const ComparisonAlternativeCard: React.FC<{
-    alternative: DecisionSupportPersonalizedStandingAlternative;
-    cardWidth: number;
-}> = ({ alternative, cardWidth }) => {
-    const { t } = useTranslation();
-    const scoreText = Number.isFinite(Number(alternative.nutriScore))
-        ? `${Math.round(Number(alternative.nutriScore))}/100`
-        : '--';
-
-    return (
-        <View style={[styles.comparisonCard, { width: cardWidth }]}>
-            <View style={styles.comparisonCardTopRow}>
-                <View style={styles.comparisonCardIdentity}>
-                    {alternative.imageUrl ? (
-                        <Image source={{ uri: alternative.imageUrl }} style={styles.comparisonCardImage} />
-                    ) : (
-                        <View style={styles.comparisonCardImagePlaceholder}>
-                            <Pill size={18} color="#64748B" />
-                        </View>
-                    )}
-                    <View style={styles.comparisonCardIdentityText}>
-                        <Text style={styles.comparisonCardTitle} numberOfLines={2}>
-                            {alternative.title}
-                        </Text>
-                        {alternative.brand ? (
-                            <Text style={styles.comparisonCardBrand} numberOfLines={1}>
-                                {alternative.brand}
-                            </Text>
-                        ) : null}
-                    </View>
-                </View>
-
-                <View style={styles.comparisonCardScoreBlock}>
-                    <Text style={styles.comparisonCardScore}>{scoreText}</Text>
-                    <Text style={styles.comparisonCardScoreLabel}>{t.analysisComparisonScoreLabel}</Text>
-                </View>
-            </View>
-
-            {alternative.reason ? (
-                <Text style={styles.comparisonCardReason} numberOfLines={2}>
-                    {alternative.reason}
-                </Text>
-            ) : null}
-        </View>
-    );
-};
-
 function clampText(value?: string | null, maxChars: number = 100) {
     const normalized = normalizeText(value);
     if (!normalized) return '';
@@ -2697,15 +2656,10 @@ const getPaywallCopy = (source: PaywallSource | null) => {
                 title: 'Unlock Safety Notes',
                 body: 'Review warnings, upper-limit context, and the watch-outs that matter before adding this product.',
             };
-        case 'comparison':
-            return {
-                title: 'Unlock Better Alternatives',
-                body: 'Compare this product with stronger options and see whether a better fit already exists.',
-            };
         default:
             return {
                 title: 'Unlock Premium',
-                body: 'Get personalized fit, ingredient science, and better alternatives in one place.',
+                body: 'Get personalized fit, ingredient science, and safety context in one place.',
             };
     }
 };
@@ -2802,7 +2756,7 @@ const ScanPaywallModal: React.FC<{
                             </View>
                             <View style={styles.paywallBulletRow}>
                                 <View style={styles.paywallBulletDot} />
-                                <Text style={styles.paywallBulletText}>Compare with better alternatives before checkout</Text>
+                                <Text style={styles.paywallBulletText}>Safety context before you add it to your routine</Text>
                             </View>
                         </View>
 
@@ -3420,6 +3374,11 @@ type ScientificBackgroundSidecarStateUpdater =
     | ScientificBackgroundSidecarState
     | ((current: ScientificBackgroundSidecarState | undefined) => ScientificBackgroundSidecarState | undefined);
 
+export type AnalysisDashboardPrefetchedDeepDive = {
+    ingredientOverview?: IngredientOverviewBlock | null;
+    scientificBackground?: ScientificBackgroundBlock | null;
+};
+
 const isIngredientOverviewRenderableState = (
     state: IngredientOverviewSidecarState | undefined,
 ): state is IngredientOverviewSidecarState & {
@@ -3528,6 +3487,8 @@ const isBlendLikeName = (name: string): boolean =>
 
 const isOmega3TotalLineName = (name: string): boolean =>
     /\btotal\b.*\bomega\s*-?\s*3\b|\bomega\s*-?\s*3\b.*\btotal\b/i.test(name);
+
+const isOmega3AggregateLineName = isOmega3TotalLineName;
 
 const isOmega3SourceLineName = (name: string): boolean =>
     /\bfish\s*oil\b|\bkrill\s*oil\b|\balgal\s*oil\b|\boil\s*concentrate\b/i.test(name);
@@ -3849,7 +3810,7 @@ const isResearchModeScienceRow = (
     rows: ScienceSidecarIngredientRow[],
 ): boolean => {
     if (isBlendLikeName(row.name)) return false;
-    if (isOmega3TotalLineName(row.name)) return false;
+    if (isOmega3AggregateLineName(row.name)) return false;
     if (isOmega3SourceLineName(row.name) && rows.some((candidate) => isOmega3BreakdownLineName(candidate.name))) {
         return false;
     }
@@ -4033,6 +3994,12 @@ const AnalysisBundleDashboard: React.FC<{
     saveItem?: AnalysisDashboardSaveItem | null;
     onboardingDraftOverride?: ProfileDraft | null;
     topAccessory?: React.ReactNode;
+    prefetchedDeepDive?: AnalysisDashboardPrefetchedDeepDive | null;
+    bottomContentPadding?: number;
+    onScrollViewportMetricsChange?: (metrics: AnalysisScrollViewportMetrics) => void;
+    personalizedGuideMode?: 'applied' | 'hidden' | null;
+    onPersonalizedGuideDismiss?: () => void;
+    onRequestProUnlock?: (source: PaywallSource) => void;
 }> = ({
     bundle,
     analysis,
@@ -4051,15 +4018,28 @@ const AnalysisBundleDashboard: React.FC<{
     saveItem = null,
     onboardingDraftOverride = null,
     topAccessory = null,
+    prefetchedDeepDive = null,
+    bottomContentPadding,
+    onScrollViewportMetricsChange,
+    personalizedGuideMode = null,
+    onPersonalizedGuideDismiss,
+    onRequestProUnlock,
 }) => {
     const { t } = useTranslation();
     const { loading: authLoading, token: authToken, session, setPostAuthRedirect } = useAuth();
     const { draft: onboardingDraft, loading: onboardingLoading } = useOnboarding();
-    const effectiveOnboardingDraft = onboardingDraftOverride ?? onboardingDraft;
+    const effectiveOnboardingDraft = onboardingDraft ?? onboardingDraftOverride;
     const subscription = useSubscription();
     const isPreviewLocked = accessLevel === 'preview_locked';
     const [selectedTileType, setSelectedTileType] = useState<TileType | null>(null);
     const [paywallSource, setPaywallSource] = useState<PaywallSource | null>(null);
+    const requestProUnlock = useCallback((source: PaywallSource) => {
+        if (onRequestProUnlock) {
+            onRequestProUnlock(source);
+            return;
+        }
+        setPaywallSource(source);
+    }, [onRequestProUnlock]);
     const [bundleState, setBundleState] = useState<AnalysisBundle>(bundle);
     const [detailLoading, setDetailLoading] = useState(false);
     const [detailError, setDetailError] = useState<string | null>(null);
@@ -4109,8 +4089,8 @@ const AnalysisBundleDashboard: React.FC<{
     const analysisBarcodeRaw = normalizeText((analysis as { barcode?: string | null })?.barcode ?? null);
     const annualProduct = subscription.annualPackage?.product ?? null;
     const monthlyProduct = subscription.monthlyPackage?.product ?? null;
-    const annualPriceLine = annualProduct?.priceString ?? '$59.99/year';
-    const monthlyPriceLine = monthlyProduct?.priceString ?? '$10.99/month';
+    const annualPriceLine = annualProduct?.priceString ?? '$29.99/year';
+    const monthlyPriceLine = monthlyProduct?.priceString ?? '$4.99/month';
     const annualMetaLine = annualProduct?.pricePerMonthString ?? '$5.00/month';
     const paywallPlanCards = useMemo<PaywallPlanCard[]>(() => ([
         {
@@ -4234,7 +4214,7 @@ const AnalysisBundleDashboard: React.FC<{
     ]);
     const paywallFooterText = useMemo(() => {
         if (subscription.uiPreviewMode) {
-            return '7-day free trial, then $59.99/year. Auto-renews until canceled. Cancel anytime in App Store or Google Play settings.';
+            return '7-day free trial, then $29.99/year. Auto-renews until canceled. Cancel anytime in App Store or Google Play settings.';
         }
 
         if (!annualPriceLine) {
@@ -4437,15 +4417,43 @@ const AnalysisBundleDashboard: React.FC<{
     ]);
     const internalScrollY = useSharedValue(0);
     const scrollY = externalScrollY ?? internalScrollY;
+    const scrollViewportMetricsRef = useRef<AnalysisScrollViewportMetrics>({
+        contentHeight: 0,
+        viewportHeight: 0,
+        offsetY: 0,
+    });
+    const emitScrollViewportMetrics = useCallback(
+        (patch: Partial<AnalysisScrollViewportMetrics>) => {
+            if (!onScrollViewportMetricsChange) return;
+            const nextMetrics = {
+                ...scrollViewportMetricsRef.current,
+                ...patch,
+            };
+            scrollViewportMetricsRef.current = nextMetrics;
+            onScrollViewportMetricsChange(nextMetrics);
+        },
+        [onScrollViewportMetricsChange],
+    );
+    const handleScrollMetricsFromWorklet = useCallback(
+        (offsetY: number, contentHeight: number, viewportHeight: number) => {
+            emitScrollViewportMetrics({ offsetY, contentHeight, viewportHeight });
+        },
+        [emitScrollViewportMetrics],
+    );
     const scrollHandler = useAnimatedScrollHandler((event) => {
         scrollY.value = event.contentOffset.y;
+        if (onScrollViewportMetricsChange) {
+            runOnJS(handleScrollMetricsFromWorklet)(
+                event.contentOffset.y,
+                event.contentSize.height,
+                event.layoutMeasurement.height,
+            );
+        }
     });
     const { height: viewportHeight, width: viewportWidth } = useWindowDimensions();
     const [tilesContainerW, setTilesContainerW] = useState(0);
     const TILE_GAP = 12;
     const tileWidth: DimensionValue = tilesContainerW > 0 ? tilesContainerW : '100%';
-    const comparisonCardWidth = Math.min(Math.max(viewportWidth - 72, 280), 348);
-    const comparisonSnapInterval = comparisonCardWidth + 12;
     const TileRenderer = disableTileAnimation ? StaticTile : AnimatedTile;
     const ScrollContainer: any = disableReanimatedScroll ? ScrollView : Animated.ScrollView;
     const scrollContainerRef = useRef<any>(null);
@@ -4453,7 +4461,18 @@ const AnalysisBundleDashboard: React.FC<{
     const lastPersonalizationCoachScrollKeyRef = useRef<string | null>(null);
     const handlePlainScroll = useCallback((event: any) => {
         scrollY.value = event.nativeEvent.contentOffset.y;
-    }, [scrollY]);
+        emitScrollViewportMetrics({
+            offsetY: event.nativeEvent.contentOffset.y,
+            contentHeight: event.nativeEvent.contentSize.height,
+            viewportHeight: event.nativeEvent.layoutMeasurement.height,
+        });
+    }, [emitScrollViewportMetrics, scrollY]);
+    const handleScrollContainerLayout = useCallback((event: LayoutChangeEvent) => {
+        emitScrollViewportMetrics({ viewportHeight: event.nativeEvent.layout.height });
+    }, [emitScrollViewportMetrics]);
+    const handleScrollContentSizeChange = useCallback((_width: number, height: number) => {
+        emitScrollViewportMetrics({ contentHeight: height });
+    }, [emitScrollViewportMetrics]);
     const scrollProps = disableReanimatedScroll
         ? { onScroll: handlePlainScroll }
         : { onScroll: scrollHandler };
@@ -5617,24 +5636,6 @@ const AnalysisBundleDashboard: React.FC<{
             || sourceAttribution === 'label_record'
         );
     }, [bundleState.meta, canonicalDecisionBarcode, trustedDisplayIdentity.displayIdentityMode, trustedDisplayIdentity.sourceAttributionUsed]);
-    const comparisonStanding = decisionPersonalizedResultLane?.productStanding ?? null;
-    const comparisonAlternatives = Array.isArray(comparisonStanding?.betterAlternatives)
-        ? comparisonStanding.betterAlternatives.filter((item) => Boolean(item?.title))
-        : [];
-    const comparisonSummary = normalizeText(comparisonStanding?.summary ?? null);
-    const comparisonSecondarySummary = normalizeText(comparisonStanding?.secondarySummary ?? null);
-    const showComparisonSection =
-        Boolean(comparisonStanding)
-        && canonicalIdentityConfidenceHigh
-        && comparisonStanding?.status === 'ready'
-        && (
-            Boolean(comparisonSummary)
-            || comparisonAlternatives.length > 0
-        );
-    const showComparisonEmptyState =
-        showComparisonSection
-        && comparisonAlternatives.length === 0
-        && comparisonStanding?.standing !== 'unknown';
     const bundleSourceTypeFinal = bundleState.meta.sourceTypeFinal !== false && Number(bundleState.meta.revision) >= 1;
     const bundleSourceType = typeof bundleState.meta.sourceType === 'string' ? bundleState.meta.sourceType : null;
     const verificationPresentation = useMemo(
@@ -7031,8 +7032,13 @@ const AnalysisBundleDashboard: React.FC<{
         || decisionUsageBlock?.directions?.hasDirectionsTextVisible,
     );
     const warningsAvailableForDecision = Boolean(recordFacts.warningsPresent || hasDecisionProductWarnings);
+    const isDatabaseLabelRecord =
+        trustedDisplayIdentity.sourceAttributionUsed === 'label_record'
+        && bundleState.meta.authoritativeIdentity?.type === 'webCanonicalId';
     const verifiedFromBase =
-        bundleSourceForTrust === 'lnhpd'
+        isDatabaseLabelRecord
+            ? 'Database label record'
+            : bundleSourceForTrust === 'lnhpd'
             ? 'Health Canada LNHPD (official record)'
             : bundleSourceForTrust === 'dsld'
                 ? 'NIH DSLD (official record)'
@@ -7074,9 +7080,9 @@ const AnalysisBundleDashboard: React.FC<{
                 : 'Limited';
     const trustReason =
         highImpactMissingLabels.length > 0
-            ? `${highImpactMissingLabels[0]} not captured in official record`
+            ? `${highImpactMissingLabels[0]} not captured in ${isDatabaseLabelRecord ? 'database record' : 'official record'}`
             : lowImpactMissingLabels.length > 0
-                ? `${lowImpactMissingLabels[0]} missing in official record`
+                ? `${lowImpactMissingLabels[0]} missing in ${isDatabaseLabelRecord ? 'database record' : 'official record'}`
                 : 'Core product fields are available';
     const trustVerifiedSummary = verifiedFieldLabels.length > 0
         ? `Verified: ${verifiedFieldLabels.slice(0, 3).join(', ')}`
@@ -7091,9 +7097,11 @@ const AnalysisBundleDashboard: React.FC<{
     const trustPanelSources: NonNullable<TileConfig['trustPanel']>['sources'] = [
         {
             tag: 'Product-specific',
-            label: 'Official record',
+            label: isDatabaseLabelRecord ? 'Database label record' : 'Official record',
             value:
-                bundleSourceForTrust === 'lnhpd'
+                isDatabaseLabelRecord
+                    ? `Product ${officialRecordSourceId || 'record'}`
+                    : bundleSourceForTrust === 'lnhpd'
                     ? `LNHPD ${officialRecordSourceId || 'record'}`
                     : bundleSourceForTrust === 'dsld'
                         ? `DSLD ${officialRecordSourceId || 'record'}`
@@ -7117,7 +7125,7 @@ const AnalysisBundleDashboard: React.FC<{
         {
             tag: 'Web evidence',
             label: 'Web evidence',
-            value: bundleSourceForTrust === 'web' || hasSupplementalOverlayEvidence
+            value: (bundleSourceForTrust === 'web' && !isDatabaseLabelRecord) || hasSupplementalOverlayEvidence
                 ? (hasSupplementalOverlayEvidence && bundleSourceForTrust !== 'web'
                     ? 'supplemental product-page label data used'
                     : 'used')
@@ -7128,7 +7136,7 @@ const AnalysisBundleDashboard: React.FC<{
     const sharedTrustPanel: NonNullable<TileConfig['trustPanel']> = {
         verifiedFrom: verifiedFromDisplay,
         retrievedOn,
-        webEvidence: bundleSourceForTrust === 'web' || hasSupplementalOverlayEvidence ? 'used' : 'not used',
+        webEvidence: (bundleSourceForTrust === 'web' && !isDatabaseLabelRecord) || hasSupplementalOverlayEvidence ? 'used' : 'not used',
         trustLevel,
         verifiedSummary: trustVerifiedSummary,
         missingSummary: trustMissingSummary,
@@ -7882,8 +7890,12 @@ const AnalysisBundleDashboard: React.FC<{
     const decisionBarcodeForScience = canonicalDecisionBarcode;
     const decisionDigestForScience = normalizeText(scienceSidecarDecisionPayload?.digest ?? '')
         || null;
+    const hasPrefetchedScienceDeepDive =
+        prefetchedDeepDive?.ingredientOverview != null
+        && prefetchedDeepDive?.scientificBackground != null;
     const shouldPrimeScienceSidecars =
-        scienceSidecarDecisionPayload != null
+        !hasPrefetchedScienceDeepDive
+        && scienceSidecarDecisionPayload != null
         && Boolean(decisionBarcodeForScience)
         && Boolean(decisionDigestForScience)
         && Boolean(scienceDecisionInputsHash)
@@ -8006,15 +8018,15 @@ const AnalysisBundleDashboard: React.FC<{
         () =>
             isIngredientOverviewRenderableState(ingredientOverviewState)
                 ? ingredientOverviewState.data
-                : null,
-        [ingredientOverviewState],
+                : prefetchedDeepDive?.ingredientOverview ?? null,
+        [ingredientOverviewState, prefetchedDeepDive?.ingredientOverview],
     );
     const resolvedScientificBackgroundBlock = useMemo(
         () =>
             isScientificBackgroundRenderableState(scientificBackgroundState)
                 ? scientificBackgroundState.data
-                : null,
-        [scientificBackgroundState],
+                : prefetchedDeepDive?.scientificBackground ?? null,
+        [scientificBackgroundState, prefetchedDeepDive?.scientificBackground],
     );
 
     useEffect(() => {
@@ -8623,6 +8635,7 @@ const AnalysisBundleDashboard: React.FC<{
     const shouldShowIngredientOverviewLoading =
         shouldRenderScienceSidecars
         && Boolean(ingredientOverviewRequestKey)
+        && !prefetchedDeepDive?.ingredientOverview
         && (
             ingredientOverviewState == null
             || (ingredientOverviewState.status === 'loading' && !isIngredientOverviewRenderableState(ingredientOverviewState))
@@ -8630,6 +8643,7 @@ const AnalysisBundleDashboard: React.FC<{
     const shouldShowScientificBackgroundLoading =
         shouldRenderScienceSidecars
         && Boolean(scientificBackgroundRequestKey)
+        && !prefetchedDeepDive?.scientificBackground
         && (
             scientificBackgroundState == null
             || (scientificBackgroundState.status === 'loading' && !isScientificBackgroundRenderableState(scientificBackgroundState))
@@ -10214,7 +10228,14 @@ const AnalysisBundleDashboard: React.FC<{
             <ScrollContainer
                 ref={scrollContainerRef}
                 style={styles.scroll}
-                contentContainerStyle={styles.scrollContent}
+                onLayout={handleScrollContainerLayout}
+                onContentSizeChange={handleScrollContentSizeChange}
+                contentContainerStyle={[
+                    styles.scrollContent,
+                    typeof bottomContentPadding === 'number'
+                        ? { paddingBottom: Math.max(40, bottomContentPadding) }
+                        : null,
+                ]}
                 showsVerticalScrollIndicator={false}
                 scrollEventThrottle={16}
                 {...scrollProps}
@@ -10233,7 +10254,9 @@ const AnalysisBundleDashboard: React.FC<{
                             heroImageUri={heroImageUri}
                             verifiedLabelText={verifiedLabelText}
                             lockedPreview={isPreviewLocked}
+                            personalizationCoachMode={personalizedGuideMode}
                             onPersonalizationCoachLayout={handlePersonalizationCoachLayout}
+                            onPersonalizationCoachDismiss={onPersonalizedGuideDismiss}
                         />
                     </View>
                 ) : null}
@@ -10303,7 +10326,7 @@ const AnalysisBundleDashboard: React.FC<{
                                     <LockedSectionPreviewCard
                                         title="NuTri Score details"
                                         body="Full score details unlock after upgrade."
-                                        onPress={() => setPaywallSource('score')}
+                                        onPress={() => requestProUnlock('score')}
                                     />
                                 ) : !disableScoreRing ? (
                                     decisionSupportV2Available ? (
@@ -10351,7 +10374,7 @@ const AnalysisBundleDashboard: React.FC<{
                                         tile={tile}
                                         onPress={() => {
                                             if (isPreviewLocked) {
-                                                setPaywallSource(tile.type);
+                                                requestProUnlock(tile.type);
                                                 return;
                                             }
                                             setSelectedTileType(tile.type);
@@ -10370,67 +10393,6 @@ const AnalysisBundleDashboard: React.FC<{
                             <Text style={styles.bisectNoticeText}>Set by `no_tiles` in `EXPO_PUBLIC_SCAN_DASHBOARD_BISECT`.</Text>
                         </View>
                     )}
-
-                    {showComparisonSection ? <View style={styles.sectionDivider} /> : null}
-
-                    {showComparisonSection ? (
-                        <View style={styles.sectionBlock}>
-                            <View style={styles.sectionHeader}>
-                                <Text style={styles.sectionTitle}>{t.analysisSectionComparisonTitle}</Text>
-                                <Text style={styles.sectionSubtitle}>{t.analysisSectionComparisonSubtitle}</Text>
-                            </View>
-                            {isPreviewLocked ? (
-                                <LockedSectionPreviewCard
-                                    title="Compare with alternatives"
-                                    body="Alternative picks and product ranking stay behind Premium."
-                                    onPress={() => setPaywallSource('comparison')}
-                                />
-                            ) : (
-                                <>
-                                    <View style={styles.comparisonStandingCard}>
-                                        <Text style={styles.comparisonStandingSummary}>
-                                            {comparisonSummary || t.analysisComparisonNotEnoughPeers}
-                                        </Text>
-                                        {comparisonSecondarySummary ? (
-                                            <Text style={styles.comparisonStandingSecondary}>
-                                                {comparisonSecondarySummary}
-                                            </Text>
-                                        ) : null}
-                                    </View>
-
-                                    {comparisonAlternatives.length > 0 ? (
-                                        <>
-                                            <Text style={styles.comparisonAlternativesTitle}>
-                                                {t.analysisComparisonAlternativesTitle}
-                                            </Text>
-                                            <ScrollView
-                                                horizontal
-                                                showsHorizontalScrollIndicator={false}
-                                                decelerationRate="fast"
-                                                snapToAlignment="start"
-                                                snapToInterval={comparisonSnapInterval}
-                                                contentContainerStyle={styles.comparisonRailContent}
-                                            >
-                                                {comparisonAlternatives.map((alternative) => (
-                                                    <ComparisonAlternativeCard
-                                                        key={`${alternative.productId ?? alternative.title}`}
-                                                        alternative={alternative}
-                                                        cardWidth={comparisonCardWidth}
-                                                    />
-                                                ))}
-                                            </ScrollView>
-                                        </>
-                                    ) : null}
-
-                                    {showComparisonEmptyState ? (
-                                        <Text style={styles.comparisonEmptyState}>
-                                            {t.analysisComparisonAlreadyScoresWell}
-                                        </Text>
-                                    ) : null}
-                                </>
-                            )}
-                        </View>
-                    ) : null}
                 </>
             </ScrollContainer>
 
@@ -10515,6 +10477,12 @@ type AnalysisDashboardProps = {
     saveItem?: AnalysisDashboardSaveItem | null;
     onboardingDraftOverride?: ProfileDraft | null;
     topAccessory?: React.ReactNode;
+    prefetchedDeepDive?: AnalysisDashboardPrefetchedDeepDive | null;
+    bottomContentPadding?: number;
+    onScrollViewportMetricsChange?: (metrics: AnalysisScrollViewportMetrics) => void;
+    personalizedGuideMode?: 'applied' | 'hidden' | null;
+    onPersonalizedGuideDismiss?: () => void;
+    onRequestProUnlock?: (source: PaywallSource) => void;
 };
 
 const ensureModernAnalysisBundle = (
@@ -10579,6 +10547,12 @@ export const AnalysisDashboard: React.FC<AnalysisDashboardProps> = ({
     saveItem = null,
     onboardingDraftOverride = null,
     topAccessory = null,
+    prefetchedDeepDive = null,
+    bottomContentPadding,
+    onScrollViewportMetricsChange,
+    personalizedGuideMode = null,
+    onPersonalizedGuideDismiss,
+    onRequestProUnlock,
 }) => {
     const modernBundle = ensureModernAnalysisBundle(analysisBundle, analysis, scanSessionId);
     return (
@@ -10600,6 +10574,12 @@ export const AnalysisDashboard: React.FC<AnalysisDashboardProps> = ({
             saveItem={saveItem}
             onboardingDraftOverride={onboardingDraftOverride}
             topAccessory={topAccessory}
+            prefetchedDeepDive={prefetchedDeepDive}
+            bottomContentPadding={bottomContentPadding}
+            onScrollViewportMetricsChange={onScrollViewportMetricsChange}
+            personalizedGuideMode={personalizedGuideMode}
+            onPersonalizedGuideDismiss={onPersonalizedGuideDismiss}
+            onRequestProUnlock={onRequestProUnlock}
         />
     );
 };
@@ -10651,132 +10631,6 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(17,17,17,0.16)',
         marginTop: 18,
         marginBottom: 24,
-    },
-    comparisonStandingCard: {
-        borderRadius: 22,
-        borderWidth: 1,
-        borderColor: 'rgba(17,24,39,0.06)',
-        backgroundColor: 'rgba(255,255,255,0.88)',
-        paddingHorizontal: 16,
-        paddingVertical: 14,
-        shadowColor: '#0B1E36',
-        shadowOpacity: 0.035,
-        shadowRadius: 18,
-        shadowOffset: { width: 0, height: 6 },
-    },
-    comparisonStandingSummary: {
-        fontSize: 16,
-        lineHeight: 21,
-        fontWeight: '700',
-        color: '#111827',
-    },
-    comparisonStandingSecondary: {
-        marginTop: 4,
-        fontSize: 12,
-        lineHeight: 17,
-        fontWeight: '500',
-        color: '#6B7280',
-    },
-    comparisonAlternativesTitle: {
-        marginTop: 16,
-        marginBottom: 10,
-        fontSize: 13,
-        lineHeight: 18,
-        fontWeight: '700',
-        color: '#111827',
-    },
-    comparisonRailContent: {
-        paddingRight: 16,
-    },
-    comparisonCard: {
-        marginRight: 12,
-        borderRadius: 22,
-        borderWidth: 1,
-        borderColor: 'rgba(17,24,39,0.06)',
-        backgroundColor: 'rgba(255,255,255,0.92)',
-        paddingHorizontal: 16,
-        paddingVertical: 14,
-        shadowColor: '#0B1E36',
-        shadowOpacity: 0.04,
-        shadowRadius: 18,
-        shadowOffset: { width: 0, height: 6 },
-        minHeight: 102,
-        justifyContent: 'space-between',
-    },
-    comparisonCardTopRow: {
-        flexDirection: 'row',
-        alignItems: 'flex-start',
-        justifyContent: 'space-between',
-        gap: 12,
-    },
-    comparisonCardIdentity: {
-        flex: 1,
-        minWidth: 0,
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 12,
-    },
-    comparisonCardImage: {
-        width: 52,
-        height: 52,
-        borderRadius: 14,
-        backgroundColor: '#E5E7EB',
-    },
-    comparisonCardImagePlaceholder: {
-        width: 52,
-        height: 52,
-        borderRadius: 14,
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: '#F3F4F6',
-    },
-    comparisonCardIdentityText: {
-        flex: 1,
-        minWidth: 0,
-        gap: 4,
-    },
-    comparisonCardTitle: {
-        fontSize: 15,
-        lineHeight: 19,
-        fontWeight: '700',
-        color: '#111827',
-    },
-    comparisonCardBrand: {
-        fontSize: 13,
-        lineHeight: 17,
-        fontWeight: '500',
-        color: '#6B7280',
-    },
-    comparisonCardScoreBlock: {
-        alignItems: 'flex-end',
-        minWidth: 62,
-        gap: 2,
-    },
-    comparisonCardScore: {
-        fontSize: 16,
-        lineHeight: 20,
-        fontWeight: '800',
-        color: '#111827',
-    },
-    comparisonCardScoreLabel: {
-        fontSize: 11,
-        lineHeight: 14,
-        fontWeight: '600',
-        color: '#6B7280',
-    },
-    comparisonCardReason: {
-        marginTop: 12,
-        fontSize: 12,
-        lineHeight: 16,
-        fontWeight: '600',
-        color: '#334155',
-    },
-    comparisonEmptyState: {
-        marginTop: 14,
-        fontSize: 12,
-        lineHeight: 17,
-        fontWeight: '500',
-        color: '#6B7280',
     },
     headerSection: {
         marginBottom: 20,

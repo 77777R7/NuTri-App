@@ -72,13 +72,16 @@ test('guest scan result sidecars reuse guest scan auth instead of requiring a si
   assert.match(dashboardSource, /\/api\/scientific-background\/v1/);
 });
 
-test('guest scan result receives one full reveal and keep action routes through claim', () => {
+test('guest scan result receives one full reveal and header save routes through claim', () => {
   assert.match(resultSource, /isGuestScan/);
   assert.match(resultSource, /guestScanSessionId/);
   assert.match(resultSource, /getGuestScanSession/);
   assert.match(resultSource, /shouldShowGuestClaimPrompt/);
   assert.match(resultSource, /\/guest-scan\/claim/);
-  assert.match(resultSource, /Keep this result/);
+  assert.match(resultSource, /guest_scan_keep_tapped/);
+  assert.match(resultSource, /onSavePress=\{shouldShowGuestClaimPrompt \? handleKeepGuestResult : handleSaveFromDashboard\}/);
+  assert.doesNotMatch(resultSource, /scan-result-keep-guest-result/);
+  assert.doesNotMatch(resultSource, />Keep this result</);
   assert.match(resultSource, /isGuestScan\s*\?\s*'full'/);
 });
 

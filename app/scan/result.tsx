@@ -3,9 +3,16 @@ import Constants from 'expo-constants';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { FileText } from 'lucide-react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { BackHandler, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { useSharedValue } from 'react-native-reanimated';
+import { BackHandler, Platform, Pressable, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
+import Animated, {
+  Easing,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ResponsiveScreen } from '@/components/common/ResponsiveScreen';
 import { ScanResultHeaderChrome } from '@/components/scan/ScanResultHeaderChrome';
@@ -31,6 +38,12 @@ import { resolveReasonCodeMessage } from '@/lib/scan/streamStateMachine';
 import { getBarcodeQuality } from '@/lib/scan/quality';
 import { formatDoseForPill } from '@/lib/supplementDisplay';
 import { AnalysisDashboard } from '@/components/scan/AnalysisDashboard';
+import {
+  buildScanResultReturnTo,
+  PERSONALIZED_GUIDE_APPLIED,
+  POST_SCAN_MODE,
+} from '@/lib/onboarding/postScanReturn';
+import { buildOfficialPaywallParams } from '@/lib/pro/featureGates';
 
 type HeaderMiniScoreState = {
   overallScore: number;
@@ -42,6 +55,16 @@ type HeaderMiniScoreTriggerState = {
   start: number;
   range: number;
 };
+
+type DashboardScrollMetrics = {
+  contentHeight: number;
+  viewportHeight: number;
+  offsetY: number;
+};
+
+type ResultBreakdownPaywallSource = 'score' | 'overview' | 'science' | 'usage' | 'safety';
+
+type OnboardingResultPhase = 'normal' | 'before_qa' | 'after_qa';
 
 type RecentScanProductInfo = {
   name: string | null;
@@ -62,6 +85,29 @@ const SHOW_SCAN_DEBUG =
 const DEFAULT_HEADER_MINI_SCORE_TRIGGER: HeaderMiniScoreTriggerState = {
   start: 210,
   range: 70,
+};
+const POST_SCAN_CONTINUE_REVEAL_DISTANCE = 160;
+const POST_SCAN_CONTINUE_HIDE_DISTANCE = 260;
+const POST_SCAN_CONTINUE_UNSCROLLABLE_SLOP = 24;
+
+const shouldShowPostScanContinueForMetrics = (
+  metrics: DashboardScrollMetrics | null,
+  previousVisible: boolean,
+): boolean => {
+  if (!metrics) return false;
+  const { contentHeight, viewportHeight, offsetY } = metrics;
+  if (contentHeight <= 0 || viewportHeight <= 0) return false;
+
+  const scrollableDistance = Math.max(0, contentHeight - viewportHeight);
+  if (scrollableDistance <= POST_SCAN_CONTINUE_UNSCROLLABLE_SLOP) {
+    return true;
+  }
+
+  const remainingDistance = Math.max(0, scrollableDistance - offsetY);
+  const threshold = previousVisible
+    ? POST_SCAN_CONTINUE_HIDE_DISTANCE
+    : POST_SCAN_CONTINUE_REVEAL_DISTANCE;
+  return remainingDistance < threshold;
 };
 
 const emitScanUxMetric = (event: string, payload: Record<string, unknown> = {}) => {
@@ -170,11 +216,13 @@ class DashboardErrorBoundary extends React.Component<
 export default function ScanResultScreen() {
   const { tokens } = useResponsiveTokens();
   const styles = useMemo(() => createStyles(tokens), [tokens]);
+  const insets = useSafeAreaInsets();
+  const { width: viewportWidth } = useWindowDimensions();
   const appOwnership = Constants.appOwnership;
   const isExpoGo = appOwnership === 'expo' || appOwnership === 'guest';
   const { session: authSession, setPostAuthRedirect } = useAuth();
   const { addScan } = useScanHistory();
-  const { onbCompleted, loading: onboardingLoading } = useOnboarding();
+  const { draft: onboardingDraft, onbCompleted, loading: onboardingLoading } = useOnboarding();
   const { addSupplement, savedSupplements, updateSupplement } = useSavedSupplements();
   const premiumAccess = usePremiumAccess();
   const firstScanReveal = useFirstScanReveal();
@@ -185,9 +233,17 @@ export default function ScanResultScreen() {
   const firstScanPaywallRequestedRef = useRef<string | null>(null);
   const resultReadyTrackedRef = useRef<string | null>(null);
   const guestResultStartedTrackedRef = useRef<string | null>(null);
+  const postPurchaseSaveResumeRef = useRef<string | null>(null);
 
   // Get session to retrieve barcode
-  const params = useLocalSearchParams<{ sessionId?: string; devBarcode?: string; source?: string; guestScanSessionId?: string }>();
+  const params = useLocalSearchParams<{
+    sessionId?: string;
+    devBarcode?: string;
+    source?: string;
+    guestScanSessionId?: string;
+    personalizedGuide?: string;
+    resumeAction?: string;
+  }>();
   const [session, setSession] = useState<ScanSession | null>(null);
   const [sessionResolved, setSessionResolved] = useState(false);
   const [sessionState, setSessionState] = useState<'ok' | 'session_expired'>('ok');
@@ -217,6 +273,13 @@ export default function ScanResultScreen() {
   const [guestScanClaimed, setGuestScanClaimed] = useState(false);
   const shouldShowGuestClaimPrompt = isGuestScan && !guestScanClaimed;
   const [dashboardRuntimeError, setDashboardRuntimeError] = useState<string | null>(null);
+  const [showAppliedPersonalizedGuide, setShowAppliedPersonalizedGuide] = useState(false);
+  const [showOnboardingDoneGuide, setShowOnboardingDoneGuide] = useState(false);
+  const [showOnboardingSaveGuide, setShowOnboardingSaveGuide] = useState(false);
+  const [onboardingSaveGuideCompleted, setOnboardingSaveGuideCompleted] = useState(false);
+  const [postScanContinueVisible, setPostScanContinueVisible] = useState(false);
+  const latestDashboardScrollMetricsRef = useRef<DashboardScrollMetrics | null>(null);
+  const postScanContinueProgress = useSharedValue(0);
   const dashboardRenderMode: 'full' = resolveDashboardRenderMode(isExpoGo);
   const analysisHeaderScrollY = useSharedValue(0);
   const [headerMiniScore, setHeaderMiniScore] = useState<HeaderMiniScoreState | null>(null);
@@ -225,6 +288,12 @@ export default function ScanResultScreen() {
   );
   const [dashboardCoreReady, setDashboardCoreReady] = useState(false);
   const isOnboardingFirstScan = effectiveScanSource === 'onboarding';
+  const onboardingResultPhase: OnboardingResultPhase =
+    isOnboardingFirstScan && params.personalizedGuide === PERSONALIZED_GUIDE_APPLIED
+      ? 'after_qa'
+      : isOnboardingFirstScan
+        ? 'before_qa'
+    : 'normal';
   const allowsFirstScanRevealForCurrentScan = onbCompleted || isOnboardingFirstScan;
   const isFirstRevealEligibleForCurrentScan =
     !premiumAccess.isPremium
@@ -244,6 +313,72 @@ export default function ScanResultScreen() {
     && currentScanId != null
     && firstScanReveal.reveal.state === 'granted'
     && firstScanReveal.reveal.scanId === currentScanId;
+
+  const appliedGuideStorageKey = useMemo(() => {
+    if (params.personalizedGuide !== PERSONALIZED_GUIDE_APPLIED) return null;
+    const scanKey = currentScanId ?? guestScanSessionId;
+    return scanKey ? `post_scan_personalized_guide_seen:${scanKey}` : null;
+  }, [currentScanId, guestScanSessionId, params.personalizedGuide]);
+
+  const onboardingDoneGuideStorageKey = useMemo(() => {
+    if (onboardingResultPhase !== 'after_qa') return null;
+    const scanKey = currentScanId ?? guestScanSessionId;
+    return scanKey ? `post_scan_done_guide_seen:${scanKey}` : null;
+  }, [currentScanId, guestScanSessionId, onboardingResultPhase]);
+
+  useEffect(() => {
+    let cancelled = false;
+    setShowAppliedPersonalizedGuide(false);
+
+    if (!appliedGuideStorageKey) {
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    void AsyncStorage.getItem(appliedGuideStorageKey)
+      .then((seen) => {
+        if (cancelled) return;
+        setShowAppliedPersonalizedGuide(seen !== '1');
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setShowAppliedPersonalizedGuide(true);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [appliedGuideStorageKey]);
+
+  const handleAppliedPersonalizedGuideDismiss = useCallback(() => {
+    setShowAppliedPersonalizedGuide(false);
+    if (appliedGuideStorageKey) {
+      void AsyncStorage.setItem(appliedGuideStorageKey, '1').catch(() => undefined);
+    }
+    if (!onboardingDoneGuideStorageKey) return;
+    void AsyncStorage.getItem(onboardingDoneGuideStorageKey)
+      .then((seen) => {
+        if (seen !== '1') {
+          setShowOnboardingDoneGuide(true);
+        }
+      })
+      .catch(() => {
+        setShowOnboardingDoneGuide(true);
+      });
+  }, [appliedGuideStorageKey, onboardingDoneGuideStorageKey]);
+
+  const handleOnboardingDoneGuideDismiss = useCallback(() => {
+    setShowOnboardingDoneGuide(false);
+    if (!onboardingDoneGuideStorageKey) return;
+    void AsyncStorage.setItem(onboardingDoneGuideStorageKey, '1').catch(() => undefined);
+  }, [onboardingDoneGuideStorageKey]);
+
+  const onboardingSaveGuideStorageKey = useMemo(() => {
+    if (!isOnboardingFirstScan) return null;
+    const scanKey = currentScanId ?? guestScanSessionId;
+    return scanKey ? `onboarding_save_supplement_guide_seen:${scanKey}` : null;
+  }, [currentScanId, guestScanSessionId, isOnboardingFirstScan]);
 
   useEffect(() => {
     let cancelled = false;
@@ -362,7 +497,15 @@ export default function ScanResultScreen() {
     router.replace(analysisOriginPath);
   }, [analysisOriginPath, canReturnToSearch]);
 
+  const handleOnboardingDone = useCallback(() => {
+    router.replace('/gate');
+  }, []);
+
   const openFirstRevealExitPaywall = useCallback(() => {
+    if (onboardingResultPhase !== 'normal') {
+      return;
+    }
+
     if (!currentScanId || (!isFirstRevealActive && !isFirstRevealPendingGrant)) {
       navigateToAnalysisOrigin();
       return;
@@ -387,6 +530,7 @@ export default function ScanResultScreen() {
     isFirstRevealActive,
     isFirstRevealPendingGrant,
     navigateToAnalysisOrigin,
+    onboardingResultPhase,
   ]);
   const debugPanelNode = SHOW_SCAN_DEBUG ? (
     <DebugScanPanel
@@ -618,15 +762,38 @@ export default function ScanResultScreen() {
 
   const handleSaveFromDashboard = useCallback(() => {
     if (!activationSaveItem) return;
-    const added = addSupplement({
+    const addResult = addSupplement({
       supplementId: activationSaveItem.supplementId ?? undefined,
       barcode: activationSaveItem.barcode ?? null,
       imageUrl: activationSaveItem.imageUrl ?? null,
       productName: activationSaveItem.productName,
       brandName: activationSaveItem.brandName,
       dosageText: activationSaveItem.dosageText,
+    }, {
+      isPremium: premiumAccess.isPremium,
     });
-    if (!added) return;
+    if (addResult.status === 'limit_reached') {
+      const returnTo = currentScanId
+        ? buildScanResultReturnTo({
+          sessionId: currentScanId,
+          source: effectiveScanSource,
+          guestScanSessionId,
+          devBarcode: typeof params.devBarcode === 'string' ? params.devBarcode : null,
+          resumeAction: 'save_supplement',
+        })
+        : null;
+
+      router.push({
+        pathname: '/paywall/official',
+        params: buildOfficialPaywallParams({
+          source: 'saved_supplement_limit',
+          ...(currentScanId ? { scanId: currentScanId } : {}),
+          returnTo,
+        }),
+      });
+      return;
+    }
+    if (addResult.status !== 'added') return;
 
     const activationPayload = {
       activationDefinition: NUTRI_ACTIVATION_DEFINITION.id,
@@ -637,10 +804,38 @@ export default function ScanResultScreen() {
       hasBarcode: Boolean(activationSaveItem.barcode),
     };
     trackOnboardingEvent('saved_to_stack', activationPayload);
-    if (added.syncedToCheckIn !== false) {
+    if (addResult.supplement.syncedToCheckIn !== false) {
       trackOnboardingEvent('check_in_started', activationPayload);
     }
-  }, [activationSaveItem, addSupplement, currentScanId, effectiveScanSource]);
+  }, [
+    activationSaveItem,
+    addSupplement,
+    currentScanId,
+    effectiveScanSource,
+    guestScanSessionId,
+    params.devBarcode,
+    premiumAccess.isPremium,
+  ]);
+
+  useEffect(() => {
+    const resumeAction = typeof params.resumeAction === 'string' ? params.resumeAction : null;
+    if (resumeAction !== 'save_supplement') return;
+    if (!currentScanId || premiumAccess.loading || !premiumAccess.isPremium) return;
+    if (!activationSaveItem || isActivationItemSaved) return;
+
+    const resumeKey = `${currentScanId}:save_supplement`;
+    if (postPurchaseSaveResumeRef.current === resumeKey) return;
+    postPurchaseSaveResumeRef.current = resumeKey;
+    handleSaveFromDashboard();
+  }, [
+    activationSaveItem,
+    currentScanId,
+    handleSaveFromDashboard,
+    isActivationItemSaved,
+    params.resumeAction,
+    premiumAccess.isPremium,
+    premiumAccess.loading,
+  ]);
 
   const handleKeepGuestResult = useCallback(() => {
     if (!guestScanSessionId || !currentScanId) return;
@@ -669,6 +864,176 @@ export default function ScanResultScreen() {
       params: { redirect: redirectTarget },
     });
   }, [authSession?.user, currentScanId, guestScanSessionId, setPostAuthRedirect]);
+
+  const hasGoalPersonalization = (onboardingDraft?.goals?.length ?? 0) > 0;
+  const hasAllergyPersonalization = Boolean(
+    onboardingDraft?.noKnownAllergies ||
+      (onboardingDraft?.avoidItems?.length ?? 0) > 0 ||
+      (onboardingDraft?.allergyFlags?.length ?? 0) > 0 ||
+      (onboardingDraft?.ingredientRestrictions?.length ?? 0) > 0,
+  );
+  const shouldEnablePostScanContinue =
+    onboardingResultPhase === 'before_qa' &&
+    dashboardCoreReady &&
+    barcodeQuality.page === 'dashboard' &&
+    !onboardingLoading &&
+    params.personalizedGuide !== PERSONALIZED_GUIDE_APPLIED &&
+    (!hasGoalPersonalization || !hasAllergyPersonalization);
+  const shouldShowPostScanContinue = shouldEnablePostScanContinue && postScanContinueVisible;
+  const shouldUnlockPostScanResult =
+    shouldEnablePostScanContinue ||
+    params.personalizedGuide === PERSONALIZED_GUIDE_APPLIED ||
+    effectiveScanSource === 'onboarding';
+  const shouldEnableOnboardingSaveGuide =
+    onboardingResultPhase === 'before_qa' &&
+    dashboardCoreReady &&
+    barcodeQuality.page === 'dashboard' &&
+    params.personalizedGuide !== PERSONALIZED_GUIDE_APPLIED &&
+    !shouldShowGuestClaimPrompt &&
+    !showAppliedPersonalizedGuide &&
+    Boolean(activationSaveItem) &&
+    !isActivationItemSaved;
+  const shouldHoldPersonalizedGuideForSaveGuide =
+    onboardingResultPhase === 'before_qa' &&
+    !onboardingSaveGuideCompleted &&
+    shouldEnableOnboardingSaveGuide;
+
+  useEffect(() => {
+    let cancelled = false;
+
+    if (!shouldEnableOnboardingSaveGuide || !onboardingSaveGuideStorageKey) {
+      setShowOnboardingSaveGuide(false);
+      setOnboardingSaveGuideCompleted(false);
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    void AsyncStorage.getItem(onboardingSaveGuideStorageKey)
+      .then((seen) => {
+        if (cancelled) return;
+        const guideAlreadySeen = seen === '1';
+        setOnboardingSaveGuideCompleted(guideAlreadySeen);
+        setShowOnboardingSaveGuide(!guideAlreadySeen);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setOnboardingSaveGuideCompleted(false);
+        setShowOnboardingSaveGuide(true);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [onboardingSaveGuideStorageKey, shouldEnableOnboardingSaveGuide]);
+
+  const handleOnboardingSaveGuideDismiss = useCallback(() => {
+    setShowOnboardingSaveGuide(false);
+    setOnboardingSaveGuideCompleted(true);
+    if (!onboardingSaveGuideStorageKey) return;
+    void AsyncStorage.setItem(onboardingSaveGuideStorageKey, '1').catch(() => undefined);
+  }, [onboardingSaveGuideStorageKey]);
+
+  const handleDashboardScrollMetricsChange = useCallback(
+    (metrics: DashboardScrollMetrics) => {
+      latestDashboardScrollMetricsRef.current = metrics;
+      if (shouldEnablePostScanContinue) {
+        setPostScanContinueVisible((previousVisible) =>
+          shouldShowPostScanContinueForMetrics(metrics, previousVisible),
+        );
+      }
+    },
+    [shouldEnablePostScanContinue],
+  );
+
+  useEffect(() => {
+    setPostScanContinueVisible(false);
+  }, [currentScanId, params.personalizedGuide]);
+
+  useEffect(() => {
+    if (!shouldEnablePostScanContinue) {
+      setPostScanContinueVisible(false);
+      return;
+    }
+
+    setPostScanContinueVisible((previousVisible) =>
+      shouldShowPostScanContinueForMetrics(latestDashboardScrollMetricsRef.current, previousVisible),
+    );
+  }, [shouldEnablePostScanContinue]);
+
+  useEffect(() => {
+    postScanContinueProgress.value = withTiming(shouldShowPostScanContinue ? 1 : 0, {
+      duration: shouldShowPostScanContinue ? 260 : 200,
+      easing: Easing.out(Easing.cubic),
+    });
+  }, [postScanContinueProgress, shouldShowPostScanContinue]);
+
+  const postScanContinueAnimatedStyle = useAnimatedStyle(() => {
+    const progress = postScanContinueProgress.value;
+    return {
+      opacity: progress,
+      transform: [
+        { translateY: (1 - progress) * 112 },
+        { scale: 0.96 + progress * 0.04 },
+      ],
+    };
+  });
+
+  const handlePostScanContinue = useCallback(() => {
+    if (!currentScanId) return;
+
+    const returnTo = buildScanResultReturnTo({
+      sessionId: currentScanId,
+      source: isGuestScan ? 'guest_scan' : effectiveScanSource,
+      guestScanSessionId,
+      devBarcode: typeof params.devBarcode === 'string' ? params.devBarcode : null,
+    });
+
+    trackOnboardingEvent('post_scan_continue_tapped', {
+      activationDefinition: NUTRI_ACTIVATION_DEFINITION.id,
+      source: 'scan_result',
+      scanSessionId: currentScanId,
+      guestScanSessionId,
+      missingGoal: !hasGoalPersonalization,
+      missingAllergy: !hasAllergyPersonalization,
+    });
+
+    router.push({
+      pathname: '/onboarding/data-trust',
+      params: {
+        mode: POST_SCAN_MODE,
+        returnTo,
+      },
+    });
+  }, [
+    currentScanId,
+    effectiveScanSource,
+    guestScanSessionId,
+    hasAllergyPersonalization,
+    hasGoalPersonalization,
+    isGuestScan,
+    params.devBarcode,
+  ]);
+
+  const handleResultBreakdownUnlock = useCallback((source: ResultBreakdownPaywallSource) => {
+    const returnTo = currentScanId
+      ? buildScanResultReturnTo({
+        sessionId: currentScanId,
+        source: effectiveScanSource,
+        guestScanSessionId,
+        devBarcode: typeof params.devBarcode === 'string' ? params.devBarcode : null,
+      })
+      : null;
+
+    router.push({
+      pathname: '/paywall/official',
+      params: {
+        source,
+        ...(currentScanId ? { scanId: currentScanId } : {}),
+        ...(returnTo ? { returnTo } : {}),
+      },
+    });
+  }, [currentScanId, effectiveScanSource, guestScanSessionId, params.devBarcode]);
 
   const handleOpenSaved = useCallback(() => {
     router.push({ pathname: '/main/Home-Page', params: { tab: 'saved' } });
@@ -902,7 +1267,28 @@ export default function ScanResultScreen() {
   ]);
 
   useEffect(() => {
-    if (!isFirstRevealActive && !isFirstRevealPendingGrant) {
+    if (onboardingResultPhase === 'before_qa') {
+      const subscription = BackHandler.addEventListener('hardwareBackPress', () => true);
+      return () => {
+        subscription.remove();
+      };
+    }
+
+    if (onboardingResultPhase === 'after_qa') {
+      const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
+        handleOnboardingDone();
+        return true;
+      });
+      return () => {
+        subscription.remove();
+      };
+    }
+
+    if (onboardingResultPhase !== 'normal') {
+      return;
+    }
+
+    if (onboardingResultPhase === 'normal' && !isFirstRevealActive && !isFirstRevealPendingGrant) {
       return;
     }
 
@@ -914,9 +1300,18 @@ export default function ScanResultScreen() {
     return () => {
       subscription.remove();
     };
-  }, [isFirstRevealActive, isFirstRevealPendingGrant, openFirstRevealExitPaywall]);
+  }, [
+    handleOnboardingDone,
+    isFirstRevealActive,
+    isFirstRevealPendingGrant,
+    onboardingResultPhase,
+    openFirstRevealExitPaywall,
+  ]);
 
   const handleBack = () => {
+    if (onboardingResultPhase !== 'normal') {
+      return;
+    }
     openFirstRevealExitPaywall();
   };
 
@@ -925,6 +1320,8 @@ export default function ScanResultScreen() {
       <ResponsiveScreen contentStyle={styles.screen}>
         <ScanResultHeaderChrome
           onBack={handleBack}
+          leadingAction={onboardingResultPhase === 'after_qa' ? 'done' : onboardingResultPhase === 'before_qa' ? 'none' : 'back'}
+          onDonePress={handleOnboardingDone}
           title="Analysis"
           savePillState="disabled"
         />
@@ -942,6 +1339,8 @@ export default function ScanResultScreen() {
       <ResponsiveScreen contentStyle={styles.screen}>
         <ScanResultHeaderChrome
           onBack={handleBack}
+          leadingAction={onboardingResultPhase === 'after_qa' ? 'done' : onboardingResultPhase === 'before_qa' ? 'none' : 'back'}
+          onDonePress={handleOnboardingDone}
           title="Analysis"
           savePillState="disabled"
         />
@@ -966,6 +1365,8 @@ export default function ScanResultScreen() {
       <ResponsiveScreen contentStyle={styles.screen}>
         <ScanResultHeaderChrome
           onBack={handleBack}
+          leadingAction={onboardingResultPhase === 'after_qa' ? 'done' : onboardingResultPhase === 'before_qa' ? 'none' : 'back'}
+          onDonePress={handleOnboardingDone}
           title="Analysis"
           savePillState="disabled"
         />
@@ -1000,6 +1401,8 @@ export default function ScanResultScreen() {
       <ResponsiveScreen contentStyle={styles.screen}>
         <ScanResultHeaderChrome
           onBack={handleBack}
+          leadingAction={onboardingResultPhase === 'after_qa' ? 'done' : onboardingResultPhase === 'before_qa' ? 'none' : 'back'}
+          onDonePress={handleOnboardingDone}
           title="Analysis"
           savePillState="disabled"
         />
@@ -1022,6 +1425,8 @@ export default function ScanResultScreen() {
       <ResponsiveScreen contentStyle={styles.screen}>
         <ScanResultHeaderChrome
           onBack={handleBack}
+          leadingAction={onboardingResultPhase === 'after_qa' ? 'done' : onboardingResultPhase === 'before_qa' ? 'none' : 'back'}
+          onDonePress={handleOnboardingDone}
           title="Analysis"
           savePillState="disabled"
         />
@@ -1067,27 +1472,6 @@ export default function ScanResultScreen() {
     },
     status: 'success'
   };
-  const activationActionNode = !shouldShowGuestClaimPrompt && activationSaveItem && !isActivationItemSaved ? (
-    <View style={styles.activationActionBanner}>
-      <View style={styles.activationActionCopy}>
-        <Text style={styles.activationActionEyebrow}>Next step</Text>
-        <Text style={styles.activationActionTitle}>Save this supplement to your stack</Text>
-        <Text style={styles.activationActionText}>
-          Keep this result and add it to Daily Check-in.
-        </Text>
-      </View>
-      <TouchableOpacity
-        onPress={handleSaveFromDashboard}
-        style={styles.activationActionButton}
-        accessibilityRole="button"
-        accessibilityLabel="Save to my stack"
-        testID="scan-result-save-to-stack-action"
-      >
-        <Text style={styles.activationActionButtonText}>Save to my stack</Text>
-      </TouchableOpacity>
-    </View>
-  ) : null;
-
   // Pass a loading flag so Dashboard knows stream is active
 
   return (
@@ -1108,6 +1492,8 @@ export default function ScanResultScreen() {
       <StatusBar style="dark" />
       <ScanResultHeaderChrome
         onBack={handleBack}
+        leadingAction={onboardingResultPhase === 'after_qa' ? 'done' : onboardingResultPhase === 'before_qa' ? 'none' : 'back'}
+        onDonePress={handleOnboardingDone}
         title="Analysis"
         miniScore={headerMiniScore ? { ...headerMiniScore, scrollY: analysisHeaderScrollY } : null}
         savePillState={
@@ -1123,23 +1509,6 @@ export default function ScanResultScreen() {
         miniScoreThresholdRange={headerMiniScoreTrigger.range}
       />
 
-      {shouldShowGuestClaimPrompt ? (
-        <View style={styles.guestKeepBanner}>
-          <Text style={styles.guestKeepText}>
-            Save this scan to your account so your goals and allergies stay connected.
-          </Text>
-          <TouchableOpacity
-            onPress={handleKeepGuestResult}
-            style={styles.guestKeepButton}
-            accessibilityRole="button"
-            accessibilityLabel="Keep this result"
-            testID="scan-result-keep-guest-result"
-          >
-            <Text style={styles.guestKeepButtonText}>Keep this result</Text>
-          </TouchableOpacity>
-        </View>
-      ) : null}
-
       {/* We render dashboard immediately. 
         As 'efficacy', 'safety' etc. arrive, this component re-renders and fills in the blanks.
       */}
@@ -1150,7 +1519,7 @@ export default function ScanResultScreen() {
           accessLevel={
             isGuestScan
               ? 'full'
-              : premiumAccess.isPremium || isFirstRevealActive || isFirstRevealPendingGrant
+              : premiumAccess.isPremium || isFirstRevealActive || isFirstRevealPendingGrant || shouldUnlockPostScanResult
                 ? 'full'
                 : 'preview_locked'
           }
@@ -1165,9 +1534,118 @@ export default function ScanResultScreen() {
           onMiniScoreTriggerChange={handleHeaderMiniScoreTriggerChange}
           onCoreReadyChange={handleDashboardCoreReadyChange}
           saveItem={activationSaveItem}
-          topAccessory={activationActionNode}
+          bottomContentPadding={shouldEnablePostScanContinue ? 168 + Math.max(insets.bottom, 12) : undefined}
+          onScrollViewportMetricsChange={handleDashboardScrollMetricsChange}
+          personalizedGuideMode={
+            showAppliedPersonalizedGuide
+              ? 'applied'
+              : shouldHoldPersonalizedGuideForSaveGuide
+                ? 'hidden'
+                : null
+          }
+          onPersonalizedGuideDismiss={handleAppliedPersonalizedGuideDismiss}
+          onRequestProUnlock={handleResultBreakdownUnlock}
         />
       </DashboardErrorBoundary>
+
+      {shouldEnablePostScanContinue ? (
+        <Animated.View
+          pointerEvents={shouldShowPostScanContinue ? 'box-none' : 'none'}
+          style={[
+            styles.postScanContinueDock,
+            { paddingBottom: Math.max(insets.bottom, 12) },
+            postScanContinueAnimatedStyle,
+          ]}
+        >
+          <TouchableOpacity
+            activeOpacity={0.88}
+            onPress={handlePostScanContinue}
+            style={styles.postScanContinueButton}
+            accessibilityRole="button"
+            accessibilityLabel="Continue to two quick questions"
+            testID="scan-result-post-scan-continue"
+          >
+            <Text style={styles.postScanContinueButtonText}>Continue</Text>
+          </TouchableOpacity>
+          <Text style={styles.postScanContinueHint}>
+            Next: 2 quick questions for Goal fit and Allergy check.
+          </Text>
+        </Animated.View>
+      ) : null}
+
+      {showOnboardingSaveGuide ? (
+        <Pressable
+          onPress={handleOnboardingSaveGuideDismiss}
+          style={styles.onboardingSaveCoachOverlay}
+          accessibilityRole="button"
+          accessibilityLabel="Dismiss save supplement guide"
+          testID="onboarding-save-coach-overlay"
+        >
+          <View style={styles.onboardingSaveCoachScrim} />
+          <View
+            pointerEvents="none"
+            style={styles.onboardingSaveCoachTargetFrame}
+            testID="onboarding-save-coach-target"
+          >
+            <View style={styles.onboardingSaveCoachTargetPill}>
+              <BlurView intensity={24} tint="light" style={StyleSheet.absoluteFill} />
+              <Text style={styles.onboardingSaveCoachTargetText}>Save</Text>
+            </View>
+          </View>
+          <View
+            pointerEvents="none"
+            style={[
+              styles.onboardingSaveCoachBubble,
+              { maxWidth: Math.min(Math.max(viewportWidth - 48, 260), 324) },
+            ]}
+          >
+            <View style={styles.onboardingSaveCoachArrow} />
+            <Text style={styles.onboardingSaveCoachTitle}>Save this supplement.</Text>
+            <Text style={styles.onboardingSaveCoachText}>
+              Tap Save in the top right to add it to your stack.
+            </Text>
+          </View>
+        </Pressable>
+      ) : null}
+
+      {showOnboardingDoneGuide ? (
+        <Pressable
+          onPress={handleOnboardingDoneGuideDismiss}
+          style={styles.onboardingSaveCoachOverlay}
+          accessibilityRole="button"
+          accessibilityLabel="Dismiss done guide"
+          testID="onboarding-done-coach-overlay"
+        >
+          <View style={styles.onboardingSaveCoachScrim} />
+          <View
+            pointerEvents="none"
+            style={[
+              styles.onboardingSaveCoachTargetFrame,
+              styles.onboardingDoneCoachTargetFrame,
+            ]}
+            testID="onboarding-done-coach-target"
+          >
+            <View style={styles.onboardingSaveCoachTargetPill}>
+              <BlurView intensity={24} tint="light" style={StyleSheet.absoluteFill} />
+              <Text style={styles.onboardingSaveCoachTargetText}>Done</Text>
+            </View>
+          </View>
+          <View
+            pointerEvents="none"
+            style={[
+              styles.onboardingSaveCoachBubble,
+              styles.onboardingDoneCoachBubble,
+              { maxWidth: Math.min(Math.max(viewportWidth - 48, 260), 324) },
+            ]}
+          >
+            <View style={[styles.onboardingSaveCoachArrow, styles.onboardingDoneCoachArrow]} />
+            <Text style={styles.onboardingSaveCoachTitle}>Ready to finish?</Text>
+            <Text style={styles.onboardingSaveCoachText}>
+              Tap Done to keep this result and set up your account.
+            </Text>
+          </View>
+        </Pressable>
+      ) : null}
 
       {dashboardRuntimeError ? (
         <View style={styles.dashboardErrorBanner}>
@@ -1357,89 +1835,145 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
   },
-  guestKeepBanner: {
-    marginHorizontal: 16,
-    marginTop: 8,
-    marginBottom: 8,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#BFDBFE',
-    backgroundColor: '#EFF6FF',
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    gap: 10,
+  postScanContinueDock: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    paddingHorizontal: 24,
+    paddingTop: 18,
+    alignItems: 'center',
+    backgroundColor: 'transparent',
   },
-  guestKeepText: {
-    color: '#1E3A8A',
+  postScanContinueButton: {
+    width: '100%',
+    minHeight: 64,
+    borderRadius: 999,
+    backgroundColor: '#0D0D0D',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000000',
+    shadowOpacity: 0.18,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 10,
+  },
+  postScanContinueButtonText: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    lineHeight: 24,
+    fontWeight: '800',
+    letterSpacing: -0.2,
+  },
+  postScanContinueHint: {
+    marginTop: 10,
+    color: '#64748B',
     fontSize: 13,
     lineHeight: 18,
     fontWeight: '600',
+    textAlign: 'center',
   },
-  guestKeepButton: {
-    alignSelf: 'flex-start',
+  onboardingSaveCoachOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 60,
+  },
+  onboardingSaveCoachScrim: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(7,13,28,0.56)',
+  },
+  onboardingSaveCoachTargetFrame: {
+    position: 'absolute',
+    top: 8,
+    right: 14,
+    width: 88,
+    height: 56,
     borderRadius: 999,
-    backgroundColor: '#2563EB',
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-  },
-  guestKeepButtonText: {
-    color: '#FFFFFF',
-    fontSize: 13,
-    fontWeight: '800',
-  },
-  activationActionBanner: {
-    marginBottom: 14,
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: 'rgba(37,99,235,0.20)',
-    backgroundColor: '#FFFFFF',
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    flexDirection: 'row',
+    borderWidth: 2.5,
+    borderColor: '#FFFFFF',
+    backgroundColor: 'rgba(255,255,255,0.26)',
     alignItems: 'center',
-    gap: 12,
-    shadowColor: '#2563EB',
-    shadowOpacity: 0.08,
-    shadowRadius: 16,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 4,
+    justifyContent: 'center',
+    shadowColor: '#60A5FA',
+    shadowOpacity: 0.95,
+    shadowRadius: 22,
+    shadowOffset: { width: 0, height: 0 },
+    elevation: 14,
   },
-  activationActionCopy: {
-    flex: 1,
-    minWidth: 0,
+  onboardingDoneCoachTargetFrame: {
+    left: 14,
+    right: undefined,
   },
-  activationActionEyebrow: {
-    color: '#2563EB',
-    fontSize: 11,
-    fontWeight: '900',
-    textTransform: 'uppercase',
-    letterSpacing: 0.4,
-    marginBottom: 3,
-  },
-  activationActionTitle: {
-    color: '#0F172A',
-    fontSize: 15,
-    lineHeight: 19,
-    fontWeight: '900',
-  },
-  activationActionText: {
-    color: '#64748B',
-    fontSize: 12,
-    lineHeight: 16,
-    fontWeight: '600',
-    marginTop: 3,
-  },
-  activationActionButton: {
-    flexShrink: 0,
+  onboardingSaveCoachTargetPill: {
+    minWidth: 64,
+    height: 40,
     borderRadius: 999,
-    backgroundColor: '#2563EB',
-    paddingHorizontal: 14,
-    paddingVertical: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.82)',
+    backgroundColor: 'rgba(255,255,255,0.9)',
+    paddingHorizontal: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+    shadowColor: '#FFFFFF',
+    shadowOpacity: 0.9,
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 0 },
   },
-  activationActionButtonText: {
-    color: '#FFFFFF',
-    fontSize: 13,
+  onboardingSaveCoachTargetText: {
+    color: '#0B1220',
+    fontSize: 14,
+    lineHeight: 21,
+    fontWeight: '700',
+    letterSpacing: -0.5,
+  },
+  onboardingSaveCoachBubble: {
+    position: 'absolute',
+    top: 82,
+    right: 20,
+    borderRadius: 22,
+    borderWidth: 1,
+    borderColor: '#7DB7FF',
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 18,
+    paddingVertical: 16,
+    shadowColor: '#3B82F6',
+    shadowOpacity: 0.26,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 18,
+  },
+  onboardingDoneCoachBubble: {
+    left: 20,
+    right: undefined,
+  },
+  onboardingSaveCoachArrow: {
+    position: 'absolute',
+    top: -7,
+    right: 31,
+    width: 16,
+    height: 16,
+    borderLeftWidth: 1,
+    borderTopWidth: 1,
+    borderColor: '#7DB7FF',
+    backgroundColor: '#FFFFFF',
+    transform: [{ rotate: '45deg' }],
+  },
+  onboardingDoneCoachArrow: {
+    left: 35,
+    right: undefined,
+  },
+  onboardingSaveCoachTitle: {
+    color: '#0B1220',
+    fontSize: 16,
+    lineHeight: 21,
     fontWeight: '900',
+  },
+  onboardingSaveCoachText: {
+    marginTop: 5,
+    color: '#536179',
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: '600',
   },
   // New style for the floating badge
   streamingBadge: {

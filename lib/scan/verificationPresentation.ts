@@ -116,6 +116,7 @@ export const buildVerificationPresentation = (
         : 'web_only';
 
   const datasetLabel = resolveDatasetLabel(sourceDataset);
+  const isLabelRecord = sourceDataset === 'label_record';
 
   if (verificationStatus === 'final') {
     return {
@@ -125,10 +126,14 @@ export const buildVerificationPresentation = (
       blockedReasons,
       degraded,
       copyTokens: {
-        badgeLabel: 'Label verified',
-        sourceCopy: 'This analysis is based on verified record data. Scan Supplement Facts for richer product-level detail.',
+        badgeLabel: isLabelRecord ? 'Database label record' : 'Verified source',
+        sourceCopy: isLabelRecord
+          ? 'This analysis is based on structured product label data in the database. Scan Supplement Facts for richer product-level detail.'
+          : 'This analysis is based on verified record data. Scan Supplement Facts for richer product-level detail.',
         sourceBullets: [
-          'Based on verified record data.',
+          isLabelRecord
+            ? 'Based on structured product label data in the database.'
+            : 'Based on verified record data.',
           'Scan the Supplement Facts panel for richer product-level insights.',
         ],
         overviewSubtitle: 'Product-level context from verified record',

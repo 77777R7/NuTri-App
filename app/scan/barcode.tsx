@@ -11,9 +11,12 @@ import { ResponsiveScreen } from '@/components/common/ResponsiveScreen';
 import { Config } from '@/constants/Config';
 import { useOnboarding } from '@/contexts/OnboardingContext';
 import type { DesignTokens } from '@/constants/designTokens';
+import { useFirstScanReveal } from '@/hooks/useFirstScanReveal';
+import { usePremiumAccess } from '@/hooks/usePremiumAccess';
 import { useResponsiveTokens } from '@/hooks/useResponsiveTokens';
 import { trackOnboardingEvent } from '@/lib/analytics/onboarding';
 import { safeBack } from '@/lib/navigation/safeBack';
+import { buildOfficialPaywallParams, getScanEntryGateDecision } from '@/lib/pro/featureGates';
 import { setGuestScanSessionScan } from '@/lib/scan/guestSession';
 import { ensureSessionId, setScanSession } from '@/lib/scan/session';
 
@@ -58,7 +61,10 @@ export default function BarcodeScanScreen() {
       : null;
   const isGuestScan = Boolean(guestScanSessionId);
   const backFallback = isOnboardingScan ? '/onboarding/done' : '/main';
+  const shouldShowCloseButton = !isOnboardingScan;
   const { draft } = useOnboarding();
+  const premiumAccess = usePremiumAccess();
+  const firstScanReveal = useFirstScanReveal();
   const { tokens } = useResponsiveTokens();
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NavigationProp<ReactNavigation.RootParamList>>();
@@ -71,6 +77,13 @@ export default function BarcodeScanScreen() {
   const lastScanValueRef = useRef<string | null>(null);
   const lastScanAtRef = useRef(0);
   const navigationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const scanEntryGate = getScanEntryGateDecision({
+    isPremium: premiumAccess.isPremium,
+    firstCompletedScanId: firstScanReveal.firstCompletedScanId,
+    isOnboardingScan,
+    isGuestScan,
+  });
+  const scanEntryGateLoading = !isOnboardingScan && !isGuestScan && (premiumAccess.loading || firstScanReveal.loading);
 
   useEffect(() => {
     // Reset state on mount
@@ -85,7 +98,19 @@ export default function BarcodeScanScreen() {
         navigationTimerRef.current = null;
       }
     };
-  }, []);
+	  }, []);
+
+  useEffect(() => {
+    if (scanEntryGateLoading || scanEntryGate.allowed) return;
+
+    router.replace({
+      pathname: '/paywall/official',
+      params: buildOfficialPaywallParams({
+        source: scanEntryGate.paywallSource ?? 'scan_limit',
+        returnTo: '/main/Home-Page',
+      }),
+    });
+  }, [scanEntryGate.allowed, scanEntryGate.paywallSource, scanEntryGateLoading]);
 
   const navigateToResult = useCallback((sessionId: string, source?: string | null) => {
     router.replace({
@@ -202,7 +227,7 @@ export default function BarcodeScanScreen() {
 
   const isPermissionLoading = !permission;
 
-  if (isPermissionLoading) {
+  if (isPermissionLoading || scanEntryGateLoading || !scanEntryGate.allowed) {
     return (
       <View style={styles.loadingScreen}>
         <Stack.Screen options={{ headerShown: false }} />
@@ -260,13 +285,17 @@ export default function BarcodeScanScreen() {
 
       {/* UI Controls */}
       <SafeAreaView edges={['top']} style={styles.topControls}>
-        <TouchableOpacity
-          style={styles.iconButton}
-          onPress={() => safeBack(navigation, { fallback: backFallback })}
-          activeOpacity={0.8}
-        >
-          <X size={24} color="#fff" />
-        </TouchableOpacity>
+        {shouldShowCloseButton ? (
+          <TouchableOpacity
+            style={styles.iconButton}
+            onPress={() => safeBack(navigation, { fallback: backFallback })}
+            activeOpacity={0.8}
+          >
+            <X size={24} color="#fff" />
+          </TouchableOpacity>
+        ) : (
+          <View style={styles.iconButtonPlaceholder} />
+        )}
 
         <TouchableOpacity
           style={[styles.iconButton, torchEnabled && styles.iconButtonActive]}
@@ -419,6 +448,10 @@ const createStyles = (tokens: DesignTokens, topInset: number, bottomInset: numbe
     },
     iconButtonActive: {
       backgroundColor: '#fff',
+    },
+    iconButtonPlaceholder: {
+      width: 44,
+      height: 44,
     },
 
     bottomControls: {

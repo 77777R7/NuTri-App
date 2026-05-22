@@ -13,6 +13,8 @@ type HeaderMiniScoreState = {
 
 type ScanResultHeaderChromeProps = {
   onBack: () => void;
+  leadingAction?: 'back' | 'none' | 'done';
+  onDonePress?: () => void;
   title: string;
   miniScore?: (HeaderMiniScoreState & { scrollY: SharedValue<number> }) | null;
   savePillState?: 'save' | 'saved' | 'disabled';
@@ -79,6 +81,8 @@ const getHeaderOverallBandTone = (score: number, explicitBand?: string | null) =
 
 export const ScanResultHeaderChrome: React.FC<ScanResultHeaderChromeProps> = ({
   onBack,
+  leadingAction = 'back',
+  onDonePress,
   title,
   miniScore = null,
   savePillState = 'disabled',
@@ -122,12 +126,36 @@ export const ScanResultHeaderChrome: React.FC<ScanResultHeaderChromeProps> = ({
     }
   };
 
+  const handleLeadingPress = () => {
+    if (leadingAction === 'done') {
+      onDonePress?.();
+      return;
+    }
+    if (leadingAction === 'back') {
+      onBack();
+    }
+  };
+
   return (
     <View style={styles.header}>
-      <Pressable onPress={onBack} style={({ pressed }) => [styles.chromeButton, pressed && styles.chromeButtonPressed]}>
-        <BlurView intensity={18} tint="light" style={StyleSheet.absoluteFill} />
-        <ChevronLeft size={22} color="#0B1E36" strokeWidth={2.5} />
-      </Pressable>
+      {leadingAction === 'none' ? (
+        <View style={styles.leadingSpacer} />
+      ) : (
+        <Pressable
+          onPress={handleLeadingPress}
+          style={({ pressed }) => [
+            leadingAction === 'done' ? styles.donePill : styles.chromeButton,
+            pressed && styles.chromeButtonPressed,
+          ]}
+        >
+          <BlurView intensity={18} tint="light" style={StyleSheet.absoluteFill} />
+          {leadingAction === 'done' ? (
+            <Text style={styles.donePillText}>Done</Text>
+          ) : (
+            <ChevronLeft size={22} color="#0B1E36" strokeWidth={2.5} />
+          )}
+        </Pressable>
+      )}
 
       <View style={styles.headerCenterSlot} pointerEvents="none">
         <Animated.View style={[styles.headerTitleLayer, titleAnimatedStyle]}>
@@ -255,6 +283,33 @@ const styles = StyleSheet.create({
   },
   chromeButtonPressed: {
     opacity: 0.85,
+  },
+  leadingSpacer: {
+    width: 40,
+    height: 40,
+  },
+  donePill: {
+    minWidth: 64,
+    height: 40,
+    borderRadius: 999,
+    borderWidth: 0.678,
+    borderColor: 'rgba(255,255,255,0.6)',
+    backgroundColor: 'rgba(255,255,255,0.4)',
+    paddingHorizontal: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+    shadowColor: '#000000',
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    shadowOffset: { width: 0, height: 1 },
+  },
+  donePillText: {
+    color: '#0B1E36',
+    fontSize: 14,
+    lineHeight: 21,
+    fontWeight: '700',
+    letterSpacing: -0.5,
   },
   savePill: {
     minWidth: 64,
