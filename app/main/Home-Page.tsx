@@ -7,6 +7,7 @@ import { usePersonalization } from '@/contexts/PersonalizationContext';
 import { useSavedSupplements } from '@/contexts/SavedSupplementsContext';
 import { useScanHistory } from '@/contexts/ScanHistoryContext';
 import { useFullBleed } from '@/hooks/useFullBleed';
+import { usePremiumAccess } from '@/hooks/usePremiumAccess';
 import { useScreenTokens } from '@/hooks/useScreenTokens';
 import { apiClient, type NutriTipsData } from '@/lib/api-client';
 import {
@@ -18,15 +19,16 @@ import { validateCheckInDateForItem } from '@/lib/check-in-eligibility';
 import { buildCheckInKey, getLocalDateKey, isDateKeyAfter } from '@/lib/check-ins';
 import { useTranslation } from '@/lib/i18n';
 import { selectDailyTip, type NutriTipSelection } from '@/lib/nutri-tips';
+import { buildOfficialPaywallParams, getProductSearchGateDecision } from '@/lib/pro/featureGates';
 import type { RoutinePreferences } from '@/types/saved-supplements';
 import type { ScanHistoryItem } from '@/types/scan-history';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { router, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import {
-  Activity,
   AudioWaveform,
   BarChart2,
   Bed,
@@ -45,6 +47,7 @@ import {
   Pill,
   Plus,
   ScanBarcode,
+  Search,
   ShieldPlus,
   User,
   Waves,
@@ -56,6 +59,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   AppState,
   Modal,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -100,8 +104,11 @@ const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 const SCREEN_BG = '#F2F3F7';
 const SECTION_GAP = 20;
 const STACK_GAP = 16;
-const TREND_BAR_HEIGHT = 128;
-const TREND_BAR_MIN_HEIGHT = 8;
+const SCREEN_TITLE_FONT = Platform.select({
+  ios: 'Georgia',
+  android: 'serif',
+  default: 'serif',
+});
 
 type Density = 'compact' | 'regular';
 
@@ -117,6 +124,7 @@ const NAV_HEIGHT = 64;
 const PLUS_BUTTON_SIZE = 64;
 const NAV_PILL_GAP = 16;
 const NAV_PILL_TARGET_WIDTH = 300;
+const HOME_FIRST_SCAN_GUIDE_SEEN_PREFIX = 'home_first_scan_handoff_guide_seen';
 
 // 类型定义
 type SupplementItem = {
@@ -132,19 +140,127 @@ type CategoryIconConfig = {
   rotate?: string;
 };
 
-type TrendSeriesEntry = {
-  k: string;
-  v: number | null;
-  completed: number;
-  total: number;
-  dateKey: string;
+type CoachTargetRect = {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
 };
 
-type TrendData = {
-  title: string;
-  series: TrendSeriesEntry[];
-  summaryA: string;
-  summaryB: string;
+const HomeFirstScanGuideOverlay = ({
+  visible,
+  target,
+  onDismiss,
+}: {
+  visible: boolean;
+  target: CoachTargetRect | null;
+  onDismiss: () => void;
+}) => {
+  const { width, height } = useWindowDimensions();
+
+  if (!visible || !target) return null;
+
+  const spotlight = {
+    left: Math.max(14, target.x - 8),
+    top: Math.max(18, target.y - 8),
+    width: Math.min(width - 28, target.width + 16),
+    height: target.height + 16,
+  };
+  const bubbleWidth = Math.min(width - 48, 336);
+  const bubbleHeight = 122;
+  const bubbleLeft = Math.max(
+    24,
+    Math.min(spotlight.left + 4, width - bubbleWidth - 24),
+  );
+  const hasRoomBelow = spotlight.top + spotlight.height + bubbleHeight + 28 < height;
+  const bubbleTop = hasRoomBelow
+    ? spotlight.top + spotlight.height + 18
+    : Math.max(84, spotlight.top - bubbleHeight - 18);
+  const arrowTop = hasRoomBelow ? bubbleTop - 7 : bubbleTop + bubbleHeight - 7;
+  const arrowLeft = Math.max(
+    bubbleLeft + 28,
+    Math.min(spotlight.left + spotlight.width * 0.5 - 8, bubbleLeft + bubbleWidth - 44),
+  );
+
+  return (
+    <Modal transparent visible={visible} animationType="fade" statusBarTranslucent onRequestClose={onDismiss}>
+      <Pressable testID="home-first-scan-guide-overlay" style={StyleSheet.absoluteFill} onPress={onDismiss}>
+        <View
+          pointerEvents="none"
+          style={[
+            styles.homeCoachScrim,
+            { left: 0, right: 0, top: 0, height: spotlight.top },
+          ]}
+        />
+        <View
+          pointerEvents="none"
+          style={[
+            styles.homeCoachScrim,
+            { left: 0, top: spotlight.top, width: spotlight.left, height: spotlight.height },
+          ]}
+        />
+        <View
+          pointerEvents="none"
+          style={[
+            styles.homeCoachScrim,
+            {
+              left: spotlight.left + spotlight.width,
+              right: 0,
+              top: spotlight.top,
+              height: spotlight.height,
+            },
+          ]}
+        />
+        <View
+          pointerEvents="none"
+          style={[
+            styles.homeCoachScrim,
+            { left: 0, right: 0, top: spotlight.top + spotlight.height, bottom: 0 },
+          ]}
+        />
+        <View
+          pointerEvents="none"
+          testID="home-first-scan-guide-target"
+          style={[
+            styles.homeFirstScanGuideTarget,
+            {
+              left: spotlight.left,
+              top: spotlight.top,
+              width: spotlight.width,
+              height: spotlight.height,
+            },
+          ]}
+        />
+        <View
+          pointerEvents="none"
+          style={[
+            styles.homeFirstScanGuideArrow,
+            {
+              left: arrowLeft,
+              top: arrowTop,
+            },
+          ]}
+        />
+        <View
+          pointerEvents="none"
+          style={[
+            styles.homeFirstScanGuideBubble,
+            {
+              left: bubbleLeft,
+              top: bubbleTop,
+              width: bubbleWidth,
+              minHeight: bubbleHeight,
+            },
+          ]}
+        >
+          <Text style={styles.homeFirstScanGuideTitle}>Start from here.</Text>
+          <Text style={styles.homeFirstScanGuideBody}>
+            Save your scan to turn it into daily tracking.
+          </Text>
+        </View>
+      </Pressable>
+    </Modal>
+  );
 };
 
 // 颜色转换辅助函数
@@ -164,11 +280,6 @@ const normalizeCategoryKey = (value: string) =>
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '')
     .trim();
-
-const calcPercent = (taken: number, total: number) => {
-  if (total <= 0) return 0;
-  return Math.round((taken / total) * 100);
-};
 
 const CATEGORY_ICON_CONFIGS = {
   immune: { icon: ShieldPlus },
@@ -472,67 +583,6 @@ const buildCalendarDays = (
   });
 };
 
-const countCompletedForDate = (expectedKeySet: Set<string>, dateKeys: string[] | undefined) => {
-  if (!dateKeys?.length) return 0;
-  const completedSet = new Set(dateKeys);
-  let completedCount = 0;
-  expectedKeySet.forEach(key => {
-    if (completedSet.has(key)) completedCount += 1;
-  });
-  return completedCount;
-};
-
-const summarizeTrendSeries = (series: TrendSeriesEntry[]) => {
-  const valid = series.filter(entry => entry.v !== null);
-  if (!valid.length) {
-    return { average: null, best: null, lowest: null };
-  }
-  const average = Math.round(
-    valid.reduce((total, entry) => total + (entry.v ?? 0), 0) / valid.length,
-  );
-  const best = valid.reduce((prev, current) => ((current.v ?? 0) > (prev.v ?? 0) ? current : prev), valid[0]);
-  const lowest = valid.reduce((prev, current) => ((current.v ?? 0) < (prev.v ?? 0) ? current : prev), valid[0]);
-  return { average, best, lowest };
-};
-
-const getWeekStartMonday = (baseDate: Date) => {
-  const start = new Date(baseDate);
-  start.setHours(0, 0, 0, 0);
-  const day = start.getDay();
-  const offset = (day + 6) % 7;
-  start.setDate(start.getDate() - offset);
-  return start;
-};
-
-const buildDailyTrendSeries = ({
-  baseDate,
-  checkInsByDate,
-  resolveExpectedForDate,
-}: {
-  baseDate: Date;
-  checkInsByDate: Record<string, string[]>;
-  resolveExpectedForDate: (dateKey: string) => { expectedCount: number; expectedKeySet: Set<string> };
-}) => {
-  const startDate = getWeekStartMonday(baseDate);
-
-  return Array.from({ length: 7 }, (_, index) => {
-    const date = new Date(startDate);
-    date.setDate(startDate.getDate() + index);
-    const dateKey = getLocalDateKey(date);
-    const { expectedCount, expectedKeySet } = resolveExpectedForDate(dateKey);
-    const completed = countCompletedForDate(expectedKeySet, checkInsByDate[dateKey]);
-    const total = expectedCount;
-    const value = total > 0 ? calcPercent(completed, total) : null;
-    return {
-      k: WEEKDAY_LABELS[date.getDay()],
-      v: value,
-      completed,
-      total,
-      dateKey,
-    };
-  });
-};
-
 type DayItemProps = {
   item: WeekdayItem;
   isSelected: boolean;
@@ -741,8 +791,13 @@ const SavedSupplements = ({
   const { t } = useTranslation();
   const { savedSupplements } = useSavedSupplements();
   const { checkInsByDate, toggleCheckIn } = useDailyCheckIns();
+  const { onbCompleted } = useOnboarding();
   const scrollProgress = useSharedValue(0);
   const { bleedStyle, contentStyle } = useFullBleed(pageX);
+  const firstScanGuideTargetRef = useRef<View | null>(null);
+  const [firstScanGuideTarget, setFirstScanGuideTarget] = useState<CoachTargetRect | null>(null);
+  const [showFirstScanGuide, setShowFirstScanGuide] = useState(false);
+  const [firstScanGuideCompleted, setFirstScanGuideCompleted] = useState(false);
   const selectedDateIsFuture = isDateKeyAfter(selectedDateKey, todayDateKey);
   const selectedDateIsPast = selectedDateKey < todayDateKey;
 
@@ -784,6 +839,76 @@ const SavedSupplements = ({
     () => savedSupplements.some(item => item.syncedToCheckIn),
     [savedSupplements],
   );
+  const latestScanName = useMemo(() => {
+    const rawName = scans[0]?.productName?.trim() ?? '';
+    const fallback = 'your first scan';
+    const name = rawName && rawName.toLowerCase() !== 'unknown supplement' ? rawName : fallback;
+    return name.length > 44 ? `${name.slice(0, 41).trim()}...` : name;
+  }, [scans]);
+  const hasRecentScanWaitingToSave = scans.length > 0 && !hasAnyCheckInSupplements;
+  const firstScanGuideStorageKey = useMemo(() => {
+    const latestScan = scans[0];
+    if (!latestScan) return null;
+    const scanKey = latestScan.id ?? latestScan.supplementId ?? latestScan.barcode ?? latestScanName;
+    return `${HOME_FIRST_SCAN_GUIDE_SEEN_PREFIX}:${scanKey}`;
+  }, [latestScanName, scans]);
+  const shouldEnableFirstScanGuide =
+    onbCompleted &&
+    selectedDateKey === todayDateKey &&
+    hasRecentScanWaitingToSave &&
+    !selectedDateIsFuture &&
+    Boolean(firstScanGuideStorageKey);
+
+  const measureFirstScanGuideTarget = useCallback(() => {
+    requestAnimationFrame(() => {
+      firstScanGuideTargetRef.current?.measureInWindow((x, y, width, height) => {
+        if (width <= 0 || height <= 0) return;
+        setFirstScanGuideTarget({ x, y, width, height });
+      });
+    });
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    if (!shouldEnableFirstScanGuide || !firstScanGuideStorageKey) {
+      setShowFirstScanGuide(false);
+      setFirstScanGuideCompleted(false);
+      setFirstScanGuideTarget(null);
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    void AsyncStorage.getItem(firstScanGuideStorageKey)
+      .then((seen) => {
+        if (cancelled) return;
+        const guideAlreadySeen = seen === '1';
+        setFirstScanGuideCompleted(guideAlreadySeen);
+        setShowFirstScanGuide(!guideAlreadySeen);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setFirstScanGuideCompleted(false);
+        setShowFirstScanGuide(true);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [firstScanGuideStorageKey, shouldEnableFirstScanGuide]);
+
+  useEffect(() => {
+    if (!showFirstScanGuide || firstScanGuideCompleted) return;
+    measureFirstScanGuideTarget();
+  }, [firstScanGuideCompleted, measureFirstScanGuideTarget, showFirstScanGuide]);
+
+  const handleFirstScanGuideDismiss = useCallback(() => {
+    setShowFirstScanGuide(false);
+    setFirstScanGuideCompleted(true);
+    if (!firstScanGuideStorageKey) return;
+    void AsyncStorage.setItem(firstScanGuideStorageKey, '1').catch(() => undefined);
+  }, [firstScanGuideStorageKey]);
 
   const handleScroll = useAnimatedScrollHandler({
     onScroll: (event) => {
@@ -813,7 +938,12 @@ const SavedSupplements = ({
       </View>
 
       {supplements.length === 0 ? (
-        <View style={styles.checkInEmpty}>
+        <View
+          ref={firstScanGuideTargetRef}
+          collapsable={false}
+          onLayout={shouldEnableFirstScanGuide ? measureFirstScanGuideTarget : undefined}
+          style={styles.checkInEmpty}
+        >
           <BlurView intensity={28} tint="light" style={StyleSheet.absoluteFill} />
           <View style={styles.checkInEmptyOverlay} />
           <View style={styles.checkInEmptyContent}>
@@ -822,14 +952,18 @@ const SavedSupplements = ({
                 ? 'Future dates are not available for check-in.'
                 : hasAnyCheckInSupplements
                   ? 'No supplements were scheduled for this date.'
-                  : t.checkInEmptyTitle}
+                  : hasRecentScanWaitingToSave
+                    ? 'Start daily tracking'
+                    : t.checkInEmptyTitle}
             </Text>
             <Text style={styles.checkInEmptyDescription}>
               {selectedDateIsFuture
                 ? 'Pick today or an earlier date to log supplements.'
                 : hasAnyCheckInSupplements
                   ? 'Only supplements scheduled for this date appear here.'
-                  : t.checkInEmptyDescription}
+                  : hasRecentScanWaitingToSave
+                    ? 'Save this scan to your stack. It will appear here for Daily Check-in.'
+                    : t.checkInEmptyDescription}
             </Text>
           </View>
         </View>
@@ -883,6 +1017,11 @@ const SavedSupplements = ({
           </View>
         </>
       )}
+      <HomeFirstScanGuideOverlay
+        visible={showFirstScanGuide && !firstScanGuideCompleted}
+        target={firstScanGuideTarget}
+        onDismiss={handleFirstScanGuideDismiss}
+      />
     </Animated.View>
   );
 };
@@ -1374,92 +1513,6 @@ const StreakCard = ({ density = 'regular' }: { density?: Density }) => {
   );
 };
 
-const TrendCard = ({ trend }: { trend: TrendData }) => {
-  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
-  const activeIndex = selectedIndex;
-  const selectedEntry = selectedIndex !== null ? trend.series[selectedIndex] : null;
-  const detailLine = selectedEntry
-    ? selectedEntry.v === null
-      ? `Selected: ${selectedEntry.k} --`
-      : `Selected: ${selectedEntry.k} ${selectedEntry.v}% (${selectedEntry.completed}/${selectedEntry.total})`
-    : trend.summaryB;
-
-  useEffect(() => {
-    setSelectedIndex(null);
-  }, [trend.title, trend.series.length]);
-
-  return (
-    <Animated.View
-      entering={FadeInUp.delay(420).duration(500)}
-      style={[styles.trendCard, { borderCurve: 'continuous' }]}
-    >
-      <View style={styles.trendContent}>
-        <View style={styles.trendHeaderRow}>
-          <Text style={styles.trendTitle}>{trend.title}</Text>
-          <View style={styles.trendIconButton}>
-            <Activity size={20} color="#0f172a" />
-          </View>
-        </View>
-
-        <View style={styles.trendBarsRow}>
-          {trend.series.map((entry, idx) => {
-            const isActive = activeIndex !== null && idx === activeIndex;
-            return (
-              <MotiView
-                key={`${entry.k}-${idx}`}
-                style={styles.trendBarColumn}
-                animate={{
-                  translateY: isActive ? -6 : 0,
-                  scale: isActive ? 1.05 : 1,
-                }}
-                transition={{ type: 'timing', duration: 220 }}
-              >
-                <Pressable
-                  onPress={() => setSelectedIndex(prev => (prev === idx ? null : idx))}
-                  style={styles.trendBarPressable}
-                  hitSlop={8}
-                >
-                  <View style={styles.trendBarTrack}>
-                    <MotiView
-                      from={{ height: 0 }}
-                      animate={{
-                        height:
-                          entry.v === null
-                            ? TREND_BAR_MIN_HEIGHT
-                            : entry.v === 0
-                              ? 0
-                              : Math.max(TREND_BAR_MIN_HEIGHT, (entry.v / 100) * TREND_BAR_HEIGHT),
-                      }}
-                      transition={{ type: 'timing', duration: 520 }}
-                      style={[
-                        styles.trendBarFill,
-                        isActive ? styles.trendBarFillActive : styles.trendBarFillInactive,
-                        entry.v === null && styles.trendBarFillEmpty,
-                        entry.v === 0 && styles.trendBarFillZero,
-                      ]}
-                    />
-                  </View>
-                  <Text style={[styles.trendBarLabel, isActive && styles.trendBarLabelActive]}>
-                    {entry.k}
-                  </Text>
-                  <Text style={[styles.trendBarValue, isActive && styles.trendBarValueActive]}>
-                    {entry.v === null ? '--' : `${entry.v}%`}
-                  </Text>
-                </Pressable>
-              </MotiView>
-            );
-          })}
-        </View>
-
-        <View style={styles.trendSummary}>
-          <Text style={styles.trendSummaryPrimary}>{trend.summaryA}</Text>
-          <Text style={styles.trendSummarySecondary}>{detailLine}</Text>
-        </View>
-      </View>
-    </Animated.View>
-  );
-};
-
 // -----------------------------------------------------
 // Recently Scanned
 // -----------------------------------------------------
@@ -1467,6 +1520,7 @@ const TrendCard = ({ trend }: { trend: TrendData }) => {
 const RecentlyScanned = () => {
   const { addSupplement, savedSupplements } = useSavedSupplements();
   const { scans } = useScanHistory();
+  const premiumAccess = usePremiumAccess();
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { height } = useWindowDimensions();
@@ -1562,19 +1616,45 @@ const RecentlyScanned = () => {
   const handleSave = (item: ScanHistoryItem) => {
     if (savingIds[item.id]) return;
     if (isItemSaved(item)) return;
+    if (premiumAccess.loading) return;
 
     setSavingIds(prev => ({ ...prev, [item.id]: true }));
-    const added = addSupplement({
+    const addResult = addSupplement({
       supplementId: item.supplementId ?? undefined,
       barcode: item.barcode ?? null,
       productName: item.productName,
       brandName: item.brandName,
       dosageText: item.dosageText ?? '',
       imageUrl: item.imageUrl ?? null,
+    }, {
+      isPremium: premiumAccess.isPremium,
     });
-    if (!added) {
+    if (addResult.status === 'limit_reached') {
+      router.push({
+        pathname: '/paywall/official',
+        params: buildOfficialPaywallParams({
+          source: 'saved_supplement_limit',
+          returnTo: '/main/Home-Page',
+        }),
+      });
       setSavingIds(prev => ({ ...prev, [item.id]: false }));
       return;
+    }
+    if (addResult.status !== 'added') {
+      setSavingIds(prev => ({ ...prev, [item.id]: false }));
+      return;
+    }
+
+    const activationPayload = {
+      activationDefinition: NUTRI_ACTIVATION_DEFINITION.id,
+      source: 'home_recent_scans',
+      scanHistoryId: item.id,
+      supplementId: item.supplementId ?? null,
+      hasBarcode: Boolean(item.barcode),
+    };
+    trackOnboardingEvent('saved_to_stack', activationPayload);
+    if (addResult.supplement.syncedToCheckIn !== false) {
+      trackOnboardingEvent('check_in_started', activationPayload);
     }
 
     setTimeout(() => {
@@ -1859,6 +1939,7 @@ const BottomNav = ({
   const bottomInset = Math.max(0, insets.bottom - BOTTOM_INSET_TRIM);
   const bottomFadeHeight = Math.max(160, bottomInset + BOTTOM_FADE_EXTRA);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const premiumAccess = usePremiumAccess();
   const activeId = useSharedValue<TabId>(currentTab);
   const available = windowWidth - pageX * 2 - PLUS_BUTTON_SIZE - NAV_PILL_GAP;
   const navPillWidth = Math.max(0, Math.min(NAV_PILL_TARGET_WIDTH, available));
@@ -1874,6 +1955,25 @@ const BottomNav = ({
     ],
     [],
   );
+
+  const openProductSearch = useCallback(() => {
+    setIsMenuOpen(false);
+    if (premiumAccess.loading) return;
+
+    const gate = getProductSearchGateDecision({ isPremium: premiumAccess.isPremium });
+    if (!gate.allowed) {
+      router.push({
+        pathname: '/paywall/official',
+        params: buildOfficialPaywallParams({
+          source: 'product_search',
+          returnTo: '/main/Home-Page',
+        }),
+      });
+      return;
+    }
+
+    router.push('/search');
+  }, [premiumAccess.isPremium, premiumAccess.loading]);
 
   type TabLayout = { x: number; width: number; type: TabType; activeColor?: string };
   const layoutRef = useRef<Record<TabId, TabLayout>>({} as Record<TabId, TabLayout>);
@@ -2122,6 +2222,13 @@ const BottomNav = ({
                 exit={{ opacity: 0 }}
               >
                 <FloatingMenuItem
+                  labelTop="Product"
+                  labelBottom="Search"
+                  Icon={Search}
+                  delay={0}
+                  onPress={openProductSearch}
+                />
+                <FloatingMenuItem
                   labelTop="Barcode"
                   labelBottom="Scan"
                   Icon={ScanBarcode}
@@ -2307,19 +2414,6 @@ const HomeTab = () => {
     [checkInTargets, todayId],
   );
 
-  const trend = useMemo<TrendData>(() => {
-    const series = buildDailyTrendSeries({ baseDate, checkInsByDate, resolveExpectedForDate });
-    const { average, best, lowest } = summarizeTrendSeries(series);
-    return {
-      title: '7-Day Trend',
-      series,
-      summaryA: average === null ? 'Average: --' : `Average: ${average}%`,
-      summaryB: best && lowest
-        ? `Lowest: ${lowest.k} ${lowest.v}% · Best: ${best.k} ${best.v}%`
-        : 'No data yet',
-    };
-  }, [baseDate, checkInsByDate, resolveExpectedForDate]);
-
   const todayStart = useMemo(() => {
     const today = new Date(baseDate);
     today.setHours(0, 0, 0, 0);
@@ -2400,10 +2494,6 @@ const HomeTab = () => {
                 <StreakCard density={twoUpDensity} />
               </View>
             </View>
-          </View>
-
-          <View style={styles.sectionBlock}>
-            <TrendCard trend={trend} />
           </View>
 
           <View style={styles.sectionBlock}>
@@ -2572,9 +2662,10 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   h1: {
-    fontWeight: '800',
-    color: '#0f172a',
-    letterSpacing: -0.2,
+    fontFamily: SCREEN_TITLE_FONT,
+    fontWeight: '500',
+    color: '#111111',
+    letterSpacing: -1.1,
     includeFontPadding: false,
   },
   sectionBlock: {
@@ -2831,6 +2922,65 @@ const styles = StyleSheet.create({
     color: '#94a3b8',
     includeFontPadding: false,
   },
+  homeCoachScrim: {
+    position: 'absolute',
+    backgroundColor: 'rgba(9, 16, 32, 0.58)',
+  },
+  homeFirstScanGuideTarget: {
+    position: 'absolute',
+    borderRadius: 28,
+    borderCurve: 'continuous',
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    shadowColor: '#7FB2FF',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.95,
+    shadowRadius: 18,
+    elevation: 10,
+  },
+  homeFirstScanGuideBubble: {
+    position: 'absolute',
+    borderRadius: 24,
+    borderCurve: 'continuous',
+    borderWidth: 2,
+    borderColor: '#6EA2FF',
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 22,
+    paddingVertical: 18,
+    justifyContent: 'center',
+    shadowColor: '#2563eb',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.24,
+    shadowRadius: 18,
+    elevation: 12,
+  },
+  homeFirstScanGuideArrow: {
+    position: 'absolute',
+    width: 18,
+    height: 18,
+    borderTopWidth: 2,
+    borderLeftWidth: 2,
+    borderColor: '#6EA2FF',
+    backgroundColor: '#FFFFFF',
+    transform: [{ rotate: '45deg' }],
+    zIndex: 2,
+  },
+  homeFirstScanGuideTitle: {
+    fontSize: 20,
+    lineHeight: 24,
+    fontWeight: '900',
+    color: '#0f172a',
+    includeFontPadding: false,
+  },
+  homeFirstScanGuideBody: {
+    marginTop: 10,
+    fontSize: 15,
+    lineHeight: 21,
+    fontWeight: '700',
+    color: '#64748b',
+    includeFontPadding: false,
+  },
 
   // ---- Progress card text ----
   cardMeta: {
@@ -2908,128 +3058,6 @@ const styles = StyleSheet.create({
     letterSpacing: 0.8,
     includeFontPadding: false,
     textTransform: 'uppercase',
-  },
-  trendCard: {
-    backgroundColor: '#A8C9FF',
-    borderRadius: 32,
-    borderCurve: 'continuous',
-  },
-  trendContent: {
-    padding: 24,
-  },
-  trendHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-  },
-  trendTitle: {
-    fontSize: 30,
-    lineHeight: 36,
-    fontWeight: '900',
-    color: '#0f172a',
-    includeFontPadding: false,
-  },
-  trendIconButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    borderCurve: 'continuous',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(0,0,0,0.06)',
-  },
-  trendBarsRow: {
-    marginTop: 24,
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    gap: 10,
-  },
-  trendBarColumn: {
-    flex: 1,
-    alignItems: 'center',
-    gap: 8,
-  },
-  trendBarPressable: {
-    width: '100%',
-    alignItems: 'center',
-    gap: 8,
-  },
-  trendBarTrack: {
-    width: 32,
-    height: TREND_BAR_HEIGHT,
-    borderRadius: 999,
-    borderCurve: 'continuous',
-    overflow: 'hidden',
-    justifyContent: 'flex-end',
-    backgroundColor: 'rgba(15,23,42,0.22)',
-  },
-  trendBarFill: {
-    width: '100%',
-    borderRadius: 999,
-    borderCurve: 'continuous',
-    shadowColor: '#000000',
-    shadowOpacity: 0.1,
-    shadowOffset: { width: 0, height: 4 },
-    shadowRadius: 6,
-    elevation: 2,
-  },
-  trendBarFillActive: {
-    backgroundColor: '#1e293b',
-  },
-  trendBarFillInactive: {
-    backgroundColor: 'rgba(15,23,42,0.55)',
-  },
-  trendBarFillEmpty: {
-    backgroundColor: 'rgba(15,23,42,0.2)',
-  },
-  trendBarFillZero: {
-    backgroundColor: 'transparent',
-    shadowOpacity: 0,
-    elevation: 0,
-  },
-  trendBarLabel: {
-    fontSize: 11,
-    lineHeight: 14,
-    fontWeight: '900',
-    color: 'rgba(15,23,42,0.75)',
-    includeFontPadding: false,
-    textAlign: 'center',
-    width: '100%',
-  },
-  trendBarLabelActive: {
-    color: '#0f172a',
-  },
-  trendBarValue: {
-    fontSize: 12,
-    lineHeight: 16,
-    fontWeight: '900',
-    color: 'rgba(71,85,105,0.9)',
-    includeFontPadding: false,
-    textAlign: 'center',
-    width: '100%',
-    letterSpacing: -0.2,
-    fontVariant: ['tabular-nums'],
-  },
-  trendBarValueActive: {
-    color: '#0f172a',
-  },
-  trendSummary: {
-    marginTop: 20,
-    gap: 4,
-  },
-  trendSummaryPrimary: {
-    fontSize: 14,
-    lineHeight: 18,
-    fontWeight: '900',
-    color: '#0f172a',
-    includeFontPadding: false,
-  },
-  trendSummarySecondary: {
-    fontSize: 14,
-    lineHeight: 18,
-    fontWeight: '700',
-    color: 'rgba(15,23,42,0.8)',
-    includeFontPadding: false,
   },
   tipHeaderRow: {
     flexDirection: 'row',

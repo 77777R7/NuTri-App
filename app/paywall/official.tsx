@@ -19,6 +19,7 @@ const normalizeSource = (value: string | string[] | undefined): OfficialPaywallS
     case 'scan_limit':
     case 'product_search':
     case 'saved_supplement_limit':
+    case 'profile_upgrade':
     case 'first_scan_result':
       return value;
     default:
