@@ -1,19 +1,24 @@
 import { useScreenTokens } from '@/hooks/useScreenTokens';
 import { useFullBleed } from '@/hooks/useFullBleed';
+import { usePremiumAccess } from '@/hooks/usePremiumAccess';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   apiClient,
+  type ProductSearchCatalogStats,
   type SearchAPIResponse,
   type SearchBootstrapAPIResponse,
+  type SearchResponse,
   type SearchSupplement,
 } from '@/lib/api-client';
-import { ensureSessionId, setScanSession } from '@/lib/scan/session';
+import { buildOfficialPaywallParams, getProductSearchGateDecision } from '@/lib/pro/featureGates';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Stack, router } from 'expo-router';
 import { MotiView } from 'moti';
 import { ArrowLeft, ChevronRight, Search, X } from 'lucide-react-native';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
+  ActivityIndicator,
+  FlatList,
   Image,
   Pressable,
   ScrollView,
@@ -21,6 +26,7 @@ import {
   Text,
   TextInput,
   View,
+  type ListRenderItemInfo,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, {
@@ -57,11 +63,15 @@ const CATEGORIES: Category[] = [
   'Protein',
 ];
 const SEARCH_REQUEST_TIMEOUT_MS = 8000;
-const SEARCH_BOOTSTRAP_STORAGE_KEY = 'product-search-bootstrap-v2';
+const SEARCH_LOAD_MORE_TIMEOUT_MS = 10000;
+const SEARCH_BOOTSTRAP_STORAGE_KEY = 'product-search-bootstrap-v7';
 const SEARCH_BOOTSTRAP_MAX_AGE_MS = 6 * 60 * 60 * 1000;
 
-const buildSearchRequestKey = (category: Category, query: string) =>
-  `${category}::${query.trim().toLowerCase()}`;
+const SEARCH_PAGE_LIMIT = 20;
+const RESULT_SEPARATOR_HEIGHT = 10;
+
+const buildSearchRequestKey = (category: Category, query: string, page = 1) =>
+  `${category}::${query.trim().toLowerCase()}::${page}`;
 
 const resolveSearchBootstrapPayload = (response: SearchBootstrapAPIResponse) =>
   'data' in response ? response.data : response;
@@ -124,17 +134,314 @@ const buildBrandMonogram = (brand: string) => {
 type StoredSearchBootstrap = {
   savedAt: number;
   categories: Partial<Record<Category, SearchSupplement[]>>;
+  paginationByCategory?: Partial<Record<Category, SearchResponse['pagination']>>;
+  catalogStats?: ProductSearchCatalogStats | null;
 };
+
+const bootstrapPayloadHasContinuationContract = (
+  payload: Pick<StoredSearchBootstrap, 'categories' | 'paginationByCategory'>,
+): boolean => {
+  const allRows = payload.categories?.All;
+  if (!Array.isArray(allRows) || allRows.length === 0) return false;
+  if (!allRows.every(hasNavigableProductId)) return false;
+
+  const hasInvalidCategoryRows = Object.values(payload.categories ?? {}).some(
+    (rows) => Array.isArray(rows) && rows.some((item) => !hasNavigableProductId(item)),
+  );
+  if (hasInvalidCategoryRows) return false;
+
+  const allPagination = payload.paginationByCategory?.All;
+  const total = allPagination?.total ?? allRows.length;
+  const shown = allPagination?.shown ?? allRows.length;
+
+  return (
+    allRows.length > SEARCH_PAGE_LIMIT ||
+    allPagination?.hasMore === true ||
+    (Number.isFinite(total) && total > shown)
+  );
+};
+
+const storedBootstrapHasContinuationContract = (payload: StoredSearchBootstrap): boolean =>
+  bootstrapPayloadHasContinuationContract(payload);
 
 const isCategory = (value: string): value is Category =>
   CATEGORIES.includes(value as Category);
 
-const SearchPage = () => {
+const buildSearchPagination = (
+  supplements: SearchSupplement[],
+  pagination?: SearchResponse['pagination'],
+): SearchResponse['pagination'] => {
+  const total = pagination?.total ?? supplements.length;
+  const page = pagination?.page ?? 1;
+  const limit = pagination?.limit ?? (supplements.length || SEARCH_PAGE_LIMIT);
+  const totalPages = pagination?.totalPages ?? 1;
+  const hasMore = pagination?.hasMore ?? page < totalPages;
+
+  return {
+    total,
+    page,
+    limit,
+    totalPages,
+    hasMore,
+    nextPage: pagination?.nextPage ?? (hasMore ? page + 1 : null),
+    shown: pagination?.shown ?? Math.min(total, page * limit),
+    totalIsExact: pagination?.totalIsExact ?? true,
+  };
+};
+
+const getResultTier = (item: SearchSupplement) => {
+  if (item.resultTier) return item.resultTier;
+  if (item.coverageStatus === 'coverage_ready' && item.factsStatus === 'full') {
+    return 'analysis_ready';
+  }
+  return item.factsStatus === 'partial' ? 'basic_catalog' : 'needs_label_verification';
+};
+
+const buildCoverageLabel = (item: SearchSupplement) => {
+  const tier = getResultTier(item);
+  if (tier === 'analysis_ready') return 'Full facts';
+  return item.resultTierLabel ?? (tier === 'basic_catalog' ? 'Basic record' : 'Needs label verification');
+};
+
+const buildResultTierDescription = (item: SearchSupplement) =>
+  getResultTier(item) === 'analysis_ready'
+    ? null
+    : item.resultTierDescription ?? 'Not enough label detail for full analysis';
+
+const hasNavigableProductId = (item: SearchSupplement) =>
+  typeof item.productId === 'string' && item.productId.trim().length > 0;
+
+const getNavigableSupplements = (supplements: SearchSupplement[]) =>
+  supplements.filter(hasNavigableProductId);
+
+const getSearchResultIdentity = (item: SearchSupplement) =>
+  item.productId?.trim() || item.id?.trim() || item.barcode?.trim() || item.upcCode?.trim() || '';
+
+const buildCachedSearchResponse = (
+  supplements: SearchSupplement[],
+  pagination?: SearchResponse['pagination'],
+  catalogStats?: ProductSearchCatalogStats | null,
+): SearchResponse => ({
+  supplements,
+  pagination: buildSearchPagination(supplements, pagination),
+  suggestions: {
+    categories: CATEGORIES,
+    brands: [],
+    popularSearches: [],
+  },
+  ...(catalogStats ? { catalogStats } : {}),
+});
+
+const AnimatedSearchFlatList = Animated.createAnimatedComponent(FlatList<SearchSupplement>);
+
+type SearchResultRowProps = {
+  item: SearchSupplement;
+  index: number;
+  onOpen: (item: SearchSupplement) => void;
+  cardMinHeight: number;
+  cardRadius: number;
+  cardPaddingX: number;
+  cardPaddingY: number;
+  imageSize: number;
+  actionSize: number;
+  titleFontSize: number;
+  benefitFontSize: number;
+  doseFontSize: number;
+  categoryFontSize: number;
+};
+
+const SearchResultRow = React.memo(function SearchResultRow({
+  item,
+  index,
+  onOpen,
+  cardMinHeight,
+  cardRadius,
+  cardPaddingX,
+  cardPaddingY,
+  imageSize,
+  actionSize,
+  titleFontSize,
+  benefitFontSize,
+  doseFontSize,
+  categoryFontSize,
+}: SearchResultRowProps) {
+  const categoryStyle = CATEGORY_STYLES[item.category] ?? CATEGORY_STYLES.Supplement;
+  const resultTier = getResultTier(item);
+  const resultTierDescription = buildResultTierDescription(item);
+
+  return (
+    <Pressable
+      accessibilityRole="button"
+      disabled={!item.productId}
+      onPress={() => onOpen(item)}
+      style={styles.resultRow}
+      testID={`product-search-result-card-${item.productId || index}`}
+    >
+      <View
+        style={[
+          styles.resultCard,
+          {
+            minHeight: cardMinHeight,
+            borderRadius: cardRadius,
+            paddingHorizontal: cardPaddingX,
+            paddingVertical: cardPaddingY,
+          },
+        ]}
+      >
+        <View style={styles.resultCardBody}>
+          <View style={styles.resultTopRow}>
+            <View
+              style={[
+                styles.resultImageWrap,
+                {
+                  width: imageSize,
+                  height: imageSize,
+                  borderRadius: Math.round(imageSize * 0.24),
+                  marginRight: 14,
+                },
+              ]}
+            >
+              {item.imageUrl ? (
+                <Image
+                  source={{ uri: item.imageUrl }}
+                  style={styles.resultImage}
+                  resizeMode="contain"
+                />
+              ) : (
+                <View style={styles.resultImageFallback}>
+                  <Text style={styles.resultImageFallbackText}>
+                    {buildBrandMonogram(item.brand)}
+                  </Text>
+                </View>
+              )}
+            </View>
+            <View style={styles.resultCopy}>
+              <Text
+                numberOfLines={2}
+                style={[
+                  styles.resultTitle,
+                  { fontSize: titleFontSize, lineHeight: titleFontSize * 1.18 },
+                ]}
+              >
+                {item.name}
+              </Text>
+              <Text
+                numberOfLines={1}
+                style={[
+                  styles.resultBenefit,
+                  {
+                    fontSize: benefitFontSize,
+                    lineHeight: benefitFontSize * 1.42,
+                  },
+                ]}
+              >
+                {`${item.brand} · ${item.benefit}`}
+              </Text>
+            </View>
+
+            <View style={styles.resultAction}>
+              <View
+                style={[
+                  styles.resultActionCircle,
+                  {
+                    width: actionSize,
+                    height: actionSize,
+                    borderRadius: actionSize / 2,
+                  },
+                ]}
+              >
+                <ChevronRight
+                  size={Math.round(actionSize * 0.54)}
+                  color="#4A67FF"
+                  strokeWidth={2.75}
+                />
+              </View>
+            </View>
+          </View>
+
+          <View style={styles.resultMetaRow}>
+            <View
+              style={[
+                styles.categoryTag,
+                {
+                  backgroundColor: categoryStyle.pillBg,
+                  borderColor: categoryStyle.pillBorder,
+                },
+              ]}
+            >
+              <Text
+                style={[
+                  styles.categoryTagText,
+                  {
+                    color: categoryStyle.pillText,
+                    fontSize: categoryFontSize,
+                  },
+                ]}
+              >
+                {item.category}
+              </Text>
+            </View>
+            {item.dose ? (
+              <Text style={[styles.doseText, { fontSize: doseFontSize }]}>
+                {item.dose}
+              </Text>
+            ) : null}
+            {item.matchReason ? (
+              <View style={styles.signalTag}>
+                <Text style={styles.signalTagText}>{item.matchReason}</Text>
+              </View>
+            ) : null}
+            <View
+              style={[
+                styles.signalTag,
+                resultTier === 'analysis_ready'
+                  ? styles.signalTagReady
+                  : resultTier === 'basic_catalog'
+                    ? styles.signalTagBasic
+                    : styles.signalTagVerification,
+              ]}
+            >
+              <Text
+                style={[
+                  styles.signalTagText,
+                  resultTier === 'analysis_ready'
+                    ? styles.signalTagTextReady
+                    : resultTier === 'basic_catalog'
+                      ? styles.signalTagTextBasic
+                      : styles.signalTagTextVerification,
+                ]}
+              >
+                {buildCoverageLabel(item)}
+              </Text>
+            </View>
+          </View>
+          {resultTierDescription ? (
+            <Text style={styles.resultTierDescription} numberOfLines={2}>
+              {resultTierDescription}
+            </Text>
+          ) : null}
+        </View>
+      </View>
+    </Pressable>
+  );
+});
+
+const ResultSeparator = React.memo(function ResultSeparator() {
+  return <View style={styles.resultSeparator} />;
+});
+
+const SearchExperience = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState<Category>('All');
   const [results, setResults] = useState<SearchSupplement[]>([]);
+  const [pagination, setPagination] = useState<SearchResponse['pagination']>(() =>
+    buildSearchPagination([]),
+  );
+  const [catalogStats, setCatalogStats] = useState<ProductSearchCatalogStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [loadMoreError, setLoadMoreError] = useState<string | null>(null);
   const [resultsTransitionKey, setResultsTransitionKey] = useState(0);
   const [bootstrapStatus, setBootstrapStatus] = useState<'idle' | 'loading' | 'ready' | 'failed'>(
     'idle',
@@ -143,11 +450,13 @@ const SearchPage = () => {
   const { bleedStyle, contentStyle } = useFullBleed(tokens.pageX);
   const scrollY = useSharedValue(0);
   const requestSeqRef = useRef(0);
-  const resultsCacheRef = useRef<Map<string, SearchSupplement[]>>(new Map());
-  const inflightResultsRef = useRef<Map<string, Promise<SearchSupplement[]>>>(new Map());
+  const loadMoreSeqRef = useRef(0);
+  const resultsCacheRef = useRef<Map<string, SearchResponse>>(new Map());
+  const inflightResultsRef = useRef<Map<string, Promise<SearchResponse>>>(new Map());
   const bootstrapSeededRef = useRef(false);
   const bootstrapInflightRef = useRef<Promise<void> | null>(null);
   const [storageHydrated, setStorageHydrated] = useState(false);
+  const debouncedQuery = useMemo(() => searchQuery.trim(), [searchQuery]);
 
   const contentScale = clamp(Math.min(tokens.width, 430) / 390, 0.92, 1.06);
   const horizontalPadding = tokens.pageX;
@@ -158,24 +467,25 @@ const SearchPage = () => {
   const titleLineHeight = clamp(tokens.h1Line - 6, 30, 40);
   const searchHeight = clamp(Math.round(48 * contentScale), 44, 52);
   const chipHeight = clamp(Math.round(36 * contentScale), 32, 40);
-  const cardRadius = clamp(Math.round(22 * contentScale), 18, 24);
-  const cardMinHeight = clamp(Math.round(136 * contentScale), 124, 148);
+  const hasActiveSearch = debouncedQuery.length > 0;
+  const cardRadius = clamp(Math.round(18 * contentScale), 14, 20);
+  const cardMinHeight = clamp(Math.round(112 * contentScale), 100, 124);
   const cardPaddingX = clamp(Math.round(16 * contentScale), 14, 18);
-  const cardPaddingY = clamp(Math.round(17 * contentScale), 15, 20);
+  const cardPaddingY = clamp(Math.round(13 * contentScale), 12, 16);
   const titleFontSize = clamp(Math.round(16 * contentScale), 15, 17);
   const benefitFontSize = clamp(Math.round(13 * contentScale), 12, 14);
   const doseFontSize = clamp(Math.round(12.5 * contentScale), 12, 13);
   const chipFontSize = clamp(Math.round(13 * contentScale), 12, 14);
   const categoryFontSize = clamp(Math.round(10.5 * contentScale), 10, 11);
   const actionSize = clamp(Math.round(34 * contentScale), 30, 38);
-  const imageSize = clamp(Math.round(64 * contentScale), 56, 68);
+  const imageSize = clamp(Math.round(54 * contentScale), 48, 60);
   const isNarrow = tokens.width < 380;
   const headerTitleGap = clamp(Math.round(sectionGap * 0.7), 12, 18);
   const headerOverlayHeight =
     topPadding +
     36 +
     headerTitleGap +
-    titleLineHeight * 2 +
+    titleLineHeight * (hasActiveSearch ? 1 : 2) +
     clamp(Math.round(14 * contentScale), 10, 18);
   const headerMaskHeight = headerOverlayHeight + clamp(Math.round(26 * contentScale), 18, 30);
   const titleExitStart = clamp(Math.round(14 * contentScale), 10, 18);
@@ -186,23 +496,54 @@ const SearchPage = () => {
   const searchFadeEnd = clamp(Math.round(154 * contentScale), 126, 176);
   const railFadeStart = clamp(Math.round(110 * contentScale), 92, 128);
   const railFadeEnd = clamp(Math.round(184 * contentScale), 148, 208);
-  const debouncedQuery = useMemo(() => searchQuery.trim(), [searchQuery]);
   const requestKey = useMemo(
     () => buildSearchRequestKey(activeFilter, debouncedQuery),
     [activeFilter, debouncedQuery],
   );
 
   const seedBootstrapCategories = React.useCallback(
-    (categories: Partial<Record<Category, SearchSupplement[]>>) => {
+    (
+      categories: Partial<Record<Category, SearchSupplement[]>>,
+      paginationByCategory?: Partial<Record<Category, SearchResponse['pagination']>>,
+      nextCatalogStats?: ProductSearchCatalogStats | null,
+    ) => {
       let seededAny = false;
 
       for (const [category, supplements] of Object.entries(categories)) {
         if (!isCategory(category) || !Array.isArray(supplements)) continue;
-        resultsCacheRef.current.set(buildSearchRequestKey(category, ''), supplements);
+        const navigableSupplements = getNavigableSupplements(supplements);
+        if (navigableSupplements.length === 0) continue;
+        const sourcePagination = paginationByCategory?.[category];
+        const cachedPageCount = Math.max(1, Math.ceil(navigableSupplements.length / SEARCH_PAGE_LIMIT));
+        const total = Math.max(sourcePagination?.total ?? 0, navigableSupplements.length);
+
+        for (let page = 1; page <= cachedPageCount; page += 1) {
+          const startIndex = (page - 1) * SEARCH_PAGE_LIMIT;
+          const endIndex = startIndex + SEARCH_PAGE_LIMIT;
+          const pageSupplements = navigableSupplements.slice(startIndex, endIndex);
+          if (pageSupplements.length === 0) continue;
+
+          resultsCacheRef.current.set(
+            buildSearchRequestKey(category, '', page),
+            buildCachedSearchResponse(pageSupplements, {
+              ...(sourcePagination ?? buildSearchPagination(pageSupplements)),
+              page,
+              limit: SEARCH_PAGE_LIMIT,
+              total,
+              totalPages: Math.max(1, Math.ceil(total / SEARCH_PAGE_LIMIT)),
+              shown: Math.min(endIndex, total),
+              hasMore: endIndex < total,
+              nextPage: endIndex < total ? page + 1 : null,
+            }, nextCatalogStats),
+          );
+        }
         seededAny = true;
       }
 
       if (seededAny) {
+        if (nextCatalogStats) {
+          setCatalogStats(nextCatalogStats);
+        }
         bootstrapSeededRef.current = true;
         setBootstrapStatus('ready');
       }
@@ -211,9 +552,15 @@ const SearchPage = () => {
   );
 
   const applyResolvedResults = React.useCallback(
-    (nextResults: SearchSupplement[], options?: { animate?: boolean }) => {
+    (payload: SearchResponse, options?: { animate?: boolean }) => {
+      const nextResults = getNavigableSupplements(payload.supplements ?? []);
       setResults(nextResults);
+      setPagination(buildSearchPagination(nextResults, payload.pagination));
+      if (payload.catalogStats) {
+        setCatalogStats(payload.catalogStats);
+      }
       setErrorMessage(null);
+      setLoadMoreError(null);
       if (options?.animate) {
         setResultsTransitionKey((value) => value + 1);
       }
@@ -226,10 +573,14 @@ const SearchPage = () => {
       key,
       query,
       category,
+      page = 1,
+      signal,
     }: {
       key: string;
       query: string;
       category: Category;
+      page?: number;
+      signal?: AbortSignal;
     }) => {
       const cached = resultsCacheRef.current.get(key);
       if (cached) return cached;
@@ -241,13 +592,12 @@ const SearchPage = () => {
         const response = await apiClient.search({
           query,
           category: category !== 'All' ? category : undefined,
-          page: 1,
-          limit: 20,
-        });
+          page,
+          limit: SEARCH_PAGE_LIMIT,
+        }, signal ? { signal } : undefined);
         const payload = resolveSearchPayload(response);
-        const nextResults = payload.supplements ?? [];
-        resultsCacheRef.current.set(key, nextResults);
-        return nextResults;
+        resultsCacheRef.current.set(key, payload);
+        return payload;
       })();
 
       inflightResultsRef.current.set(key, requestPromise);
@@ -276,12 +626,13 @@ const SearchPage = () => {
           typeof parsed !== 'object' ||
           typeof parsed.savedAt !== 'number' ||
           !parsed.categories ||
-          Date.now() - parsed.savedAt > SEARCH_BOOTSTRAP_MAX_AGE_MS
+          Date.now() - parsed.savedAt > SEARCH_BOOTSTRAP_MAX_AGE_MS ||
+          !storedBootstrapHasContinuationContract(parsed)
         ) {
           return;
         }
 
-        seedBootstrapCategories(parsed.categories);
+        seedBootstrapCategories(parsed.categories, parsed.paginationByCategory, parsed.catalogStats);
       } catch {
         // Ignore corrupt local cache and rebuild it from the server bootstrap.
       } finally {
@@ -317,11 +668,25 @@ const SearchPage = () => {
       return;
     }
 
+    if (
+      debouncedQuery.length === 0 &&
+      !bootstrapSeededRef.current &&
+      bootstrapStatus !== 'failed'
+    ) {
+      setLoading(true);
+      setErrorMessage(null);
+      return;
+    }
+
     const controller = new AbortController();
     let didTimeout = false;
     setLoading(true);
+    loadMoreSeqRef.current += 1;
+    setLoadingMore(false);
     setErrorMessage(null);
+    setLoadMoreError(null);
     setResults([]);
+    setPagination(buildSearchPagination([]));
 
     const debounceTimeout = setTimeout(async () => {
       const requestTimeout = setTimeout(() => {
@@ -334,6 +699,8 @@ const SearchPage = () => {
           key: requestKey,
           query: debouncedQuery,
           category: activeFilter,
+          page: 1,
+          signal: controller.signal,
         });
         if (controller.signal.aborted && !didTimeout) return;
         if (requestSeq !== requestSeqRef.current) return;
@@ -349,6 +716,7 @@ const SearchPage = () => {
               : 'Search failed',
         );
         setResults([]);
+        setPagination(buildSearchPagination([]));
       } finally {
         clearTimeout(requestTimeout);
         if (
@@ -383,6 +751,27 @@ const SearchPage = () => {
     const runBootstrap = async () => {
       setBootstrapStatus('loading');
       const bootstrapPromise = (async () => {
+        try {
+          const activeKey = buildSearchRequestKey(activeFilter, '');
+          const activePayload = await fetchSearchResults({
+            key: activeKey,
+            query: '',
+            category: activeFilter,
+            page: 1,
+          });
+          if (!cancelled) {
+            seedBootstrapCategories(
+              { [activeFilter]: activePayload.supplements },
+              { [activeFilter]: activePayload.pagination },
+              activePayload.catalogStats,
+            );
+            applyResolvedResults(activePayload, { animate: true });
+            setLoading(false);
+          }
+        } catch {
+          // Full bootstrap below can still recover the first screen and cache.
+        }
+
         const response = await apiClient.searchBootstrap();
         if (cancelled) return;
         const payload = resolveSearchBootstrapPayload(response);
@@ -392,13 +781,29 @@ const SearchPage = () => {
           ),
         ) as Partial<Record<Category, SearchSupplement[]>>;
 
-        seedBootstrapCategories(nextCategories);
+        const nextPaginationByCategory = Object.fromEntries(
+          Object.entries(payload.paginationByCategory ?? {}).filter(([category]) => isCategory(category)),
+        ) as Partial<Record<Category, SearchResponse['pagination']>>;
+
+        if (
+          !bootstrapPayloadHasContinuationContract({
+            categories: nextCategories,
+            paginationByCategory: nextPaginationByCategory,
+          })
+        ) {
+          setBootstrapStatus('failed');
+          return;
+        }
+
+        seedBootstrapCategories(nextCategories, nextPaginationByCategory, payload.catalogStats);
         setBootstrapStatus('ready');
         await AsyncStorage.setItem(
           SEARCH_BOOTSTRAP_STORAGE_KEY,
           JSON.stringify({
             savedAt: Date.now(),
             categories: nextCategories,
+            paginationByCategory: nextPaginationByCategory,
+            catalogStats: payload.catalogStats ?? null,
           } satisfies StoredSearchBootstrap),
         );
 
@@ -430,64 +835,90 @@ const SearchPage = () => {
     return () => {
       cancelled = true;
     };
-  }, [activeFilter, applyResolvedResults, debouncedQuery, seedBootstrapCategories, storageHydrated]);
+  }, [
+    activeFilter,
+    applyResolvedResults,
+    debouncedQuery,
+    fetchSearchResults,
+    seedBootstrapCategories,
+    storageHydrated,
+  ]);
 
   const handleOpenResult = React.useCallback((item: SearchSupplement) => {
-    const scanCode = item.barcode?.trim() || item.upcCode?.trim();
-    if (scanCode) {
-      const sessionId = ensureSessionId();
-      setScanSession({
-        id: sessionId,
-        mode: 'barcode',
-        input: { barcode: scanCode },
-        isLoading: true,
-        source: 'search',
-        searchResultSeed: {
-          productId: item.productId,
-          barcode: item.barcode ?? null,
-          upcCode: item.upcCode ?? null,
-          name: item.name,
-          brand: item.brand,
-          category: item.category,
-          benefit: item.benefit,
-          dose: item.dose,
-          imageUrl: item.imageUrl ?? null,
-          factsStatus: item.factsStatus,
-          coverageStatus: item.coverageStatus,
-        },
-      });
-
-      router.push({
-        pathname: '/scan/result',
-        params: {
-          sessionId,
-          source: 'search',
-        },
-      });
-      return;
-    }
-
     const productId = item.productId?.trim();
     if (!productId) return;
-
-    router.push({
-      pathname: '/search/detail',
-      params: {
-        productId,
-        name: item.name,
-        brand: item.brand,
-        category: item.category,
-        benefit: item.benefit,
-        dose: item.dose,
-        imageUrl: item.imageUrl ?? '',
-      },
-    });
+    router.push({ pathname: '/search/analysis', params: { productId } });
   }, []);
 
   const handleSelectCategory = React.useCallback((category: Category) => {
     if (category === activeFilter) return;
     setActiveFilter(category);
   }, [activeFilter]);
+
+  const handleLoadMore = React.useCallback(async () => {
+    const hasMore = pagination.hasMore ?? pagination.page < pagination.totalPages;
+    if (loading || loadingMore || !hasMore) return;
+    const requestSeq = requestSeqRef.current;
+    const loadMoreSeq = loadMoreSeqRef.current + 1;
+    loadMoreSeqRef.current = loadMoreSeq;
+    const nextPage = pagination.nextPage ?? pagination.page + 1;
+    const nextKey = buildSearchRequestKey(activeFilter, debouncedQuery, nextPage);
+    const controller = new AbortController();
+    let didTimeout = false;
+    setLoadingMore(true);
+    setLoadMoreError(null);
+
+    const requestTimeout = setTimeout(() => {
+      didTimeout = true;
+      controller.abort();
+    }, SEARCH_LOAD_MORE_TIMEOUT_MS);
+
+    try {
+      const payload = await fetchSearchResults({
+        key: nextKey,
+        query: debouncedQuery,
+        category: activeFilter,
+        page: nextPage,
+        signal: controller.signal,
+      });
+      if (requestSeq !== requestSeqRef.current) return;
+      setResults((current) => {
+        const seen = new Set(current.map(getSearchResultIdentity));
+        const additions = getNavigableSupplements(payload.supplements ?? []).filter((item) => {
+          const key = getSearchResultIdentity(item);
+          if (!key || seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        });
+        return [...current, ...additions];
+      });
+      setPagination(buildSearchPagination(payload.supplements ?? [], payload.pagination));
+    } catch (error) {
+      if (requestSeq !== requestSeqRef.current) return;
+      setLoadMoreError(
+        didTimeout
+          ? 'More results took too long to load.'
+          : error instanceof Error && error.message
+            ? error.message
+            : 'Could not load more results.',
+      );
+    } finally {
+      clearTimeout(requestTimeout);
+      if (loadMoreSeqRef.current === loadMoreSeq) {
+        setLoadingMore(false);
+      }
+    }
+  }, [
+    activeFilter,
+    debouncedQuery,
+    fetchSearchResults,
+    loading,
+    loadingMore,
+    pagination.hasMore,
+    pagination.nextPage,
+    pagination.page,
+    pagination.totalPages,
+  ]);
 
   const handleScroll = useAnimatedScrollHandler({
     onScroll: (event) => {
@@ -564,10 +995,72 @@ const SearchPage = () => {
     };
   });
 
+  const canLoadMore =
+    !loading && results.length > 0 && (pagination.hasMore ?? pagination.page < pagination.totalPages);
+  const shownCount = results.length > 0 ? results.length : pagination.shown ?? 0;
+  const displayTotal = Math.max(shownCount, pagination.total);
+  const catalogTotalLabel = catalogStats?.displayTotalRecordsLabel ?? '30,000+';
+  const analysisReadyLabel =
+    catalogStats?.displayAnalysisReadyLabel ??
+    (pagination.totalIsExact === false ? `${displayTotal}+` : String(pagination.total || 0));
+  const resultSummary = loading && results.length === 0
+    ? 'Searching...'
+    : pagination.total > 0
+      ? `Showing ${Math.min(shownCount, displayTotal)} of ${analysisReadyLabel} analysis-ready results`
+      : hasActiveSearch
+        ? 'No results yet'
+        : 'Browse popular supplements';
+
+  const keyExtractor = React.useCallback((item: SearchSupplement, index: number) => (
+    getSearchResultIdentity(item) || String(index)
+  ), []);
+  const resultItemLayoutHeight = cardMinHeight + RESULT_SEPARATOR_HEIGHT;
+  const getItemLayout = React.useCallback(
+    (_data: ArrayLike<SearchSupplement> | null | undefined, index: number) => ({
+      length: resultItemLayoutHeight,
+      offset: resultItemLayoutHeight * index,
+      index,
+    }),
+    [resultItemLayoutHeight],
+  );
+
+  const renderResultItem = React.useCallback(
+    ({ item, index }: ListRenderItemInfo<SearchSupplement>) => (
+      <SearchResultRow
+        item={item}
+        index={index}
+        onOpen={handleOpenResult}
+        cardMinHeight={cardMinHeight}
+        cardRadius={cardRadius}
+        cardPaddingX={cardPaddingX}
+        cardPaddingY={cardPaddingY}
+        imageSize={imageSize}
+        actionSize={actionSize}
+        titleFontSize={titleFontSize}
+        benefitFontSize={benefitFontSize}
+        doseFontSize={doseFontSize}
+        categoryFontSize={categoryFontSize}
+      />
+    ),
+    [
+      actionSize,
+      benefitFontSize,
+      cardMinHeight,
+      cardPaddingX,
+      cardPaddingY,
+      cardRadius,
+      categoryFontSize,
+      doseFontSize,
+      handleOpenResult,
+      imageSize,
+      titleFontSize,
+    ],
+  );
+
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
-      <SafeAreaView edges={['top']} style={styles.safeArea}>
+      <SafeAreaView edges={['top']} style={styles.safeArea} testID="product-search-screen">
         <View style={styles.screen}>
           <LinearGradient
             colors={['#F9FAFC', '#F3F6FA']}
@@ -598,6 +1091,7 @@ const SearchPage = () => {
                   accessibilityRole="button"
                   onPress={() => router.back()}
                   style={styles.backButton}
+                  testID="product-search-back-button"
                 >
                   <ArrowLeft size={22} color="#14213D" strokeWidth={2.3} />
                 </Pressable>
@@ -625,32 +1119,66 @@ const SearchPage = () => {
                     },
                   ]}
                 >
-                  Find your{'\n'}
-                  supplement.
+                  {hasActiveSearch ? 'Search results' : 'Find your\nsupplement.'}
                 </Text>
               </Animated.View>
             </MotiView>
           </Animated.View>
 
-          <Animated.ScrollView
+          <AnimatedSearchFlatList
             bounces
+            testID="product-search-results-list"
+            data={loading && results.length === 0 ? [] : results}
+            keyExtractor={keyExtractor}
+            renderItem={renderResultItem}
+            ItemSeparatorComponent={ResultSeparator}
+            getItemLayout={getItemLayout}
+            initialNumToRender={8}
+            maxToRenderPerBatch={6}
+            updateCellsBatchingPeriod={40}
+            windowSize={7}
+            removeClippedSubviews
             showsVerticalScrollIndicator={false}
             onScroll={handleScroll}
             scrollEventThrottle={16}
+            onEndReached={canLoadMore ? handleLoadMore : undefined}
+            onEndReachedThreshold={0.55}
             contentContainerStyle={{
               paddingTop: headerOverlayHeight,
               paddingBottom: bottomPadding,
+              paddingHorizontal: horizontalPadding,
             }}
-          >
-            <Animated.View
+            ListHeaderComponent={(
+              <Animated.View
               style={[
                 styles.frame,
                 {
-                  paddingHorizontal: horizontalPadding,
                   gap: sectionGap,
+                  marginBottom: 10,
                 },
               ]}
             >
+              <MotiView
+                from={{ opacity: 0, translateY: 10 }}
+                animate={{ opacity: 1, translateY: 0 }}
+                transition={{ type: 'timing', duration: 360, delay: 90 }}
+                style={styles.catalogStatsPanel}
+                testID="product-search-catalog-stats"
+              >
+                <Text style={styles.catalogStatsTitle}>
+                  Search {catalogTotalLabel} supplement records
+                </Text>
+                <Text style={styles.catalogStatsSubline}>
+                  {catalogStats ? (
+                    <>
+                      {analysisReadyLabel} ready for full analysis
+                    </>
+                  ) : (
+                    'Loading analysis-ready catalog'
+                  )}
+                </Text>
+              </MotiView>
+
               <MotiView
                 from={{ opacity: 0, translateY: 10 }}
                 animate={{ opacity: 1, translateY: 0 }}
@@ -665,12 +1193,14 @@ const SearchPage = () => {
                       placeholder="Search by name, brand, or goal..."
                       placeholderTextColor="rgba(142,152,173,0.78)"
                       style={[styles.searchInput, { fontSize: benefitFontSize + 1 }]}
+                      testID="product-search-input"
                     />
                     {searchQuery ? (
                       <Pressable
                         accessibilityRole="button"
                         onPress={() => setSearchQuery('')}
                         style={styles.clearButton}
+                        testID="product-search-clear-query"
                       >
                         <X size={13} color="#7B879C" strokeWidth={2.4} />
                       </Pressable>
@@ -738,11 +1268,21 @@ const SearchPage = () => {
                       end={{ x: 1, y: 0.5 }}
                       style={[styles.railFade, styles.railFadeRight]}
                     />
-                  </View>
-                </Animated.View>
-              </MotiView>
+	                  </View>
+	                </Animated.View>
+	              </MotiView>
 
-              {loading && results.length === 0 ? (
+              <View style={styles.resultsHeaderRow}>
+                <Text style={styles.resultsHeaderText} testID="product-search-result-summary">{resultSummary}</Text>
+                {canLoadMore ? (
+                  <Text style={styles.resultsHeaderMeta}>
+                    Scroll for more
+                  </Text>
+                ) : null}
+              </View>
+            </Animated.View>
+            )}
+            ListEmptyComponent={loading && results.length === 0 ? (
                 <View style={styles.resultsList}>
                   {Array.from({ length: 6 }).map((_, index) => (
                     <View key={`skeleton-${index}`} style={styles.resultRow}>
@@ -798,144 +1338,6 @@ const SearchPage = () => {
                     </View>
                   ))}
                 </View>
-              ) : results.length > 0 ? (
-                <View key={`results-${resultsTransitionKey}`} style={styles.resultsList}>
-                  {results.map((item, index) => {
-                    const categoryStyle = CATEGORY_STYLES[item.category] ?? CATEGORY_STYLES.Supplement;
-                    return (
-                    <MotiView
-                      key={`${resultsTransitionKey}-${item.id}`}
-                      from={{ opacity: 0, translateY: 12 }}
-                      animate={{ opacity: 1, translateY: 0 }}
-                      transition={{
-                        type: 'timing',
-                        duration: 320,
-                        delay: 200 + index * 34,
-                      }}
-                    >
-                      <Pressable
-                        accessibilityRole="button"
-                        disabled={!(item.barcode?.trim() || item.upcCode?.trim() || item.productId?.trim())}
-                        onPress={() => handleOpenResult(item)}
-                        style={styles.resultRow}
-                      >
-                        <View
-                          style={[
-                            styles.resultCard,
-                            {
-                              minHeight: cardMinHeight,
-                              borderRadius: cardRadius,
-                              paddingHorizontal: cardPaddingX,
-                              paddingVertical: cardPaddingY,
-                            },
-                          ]}
-                        >
-                          <View style={styles.resultCardBody}>
-                            <View style={styles.resultTopRow}>
-                              <View
-                                style={[
-                                  styles.resultImageWrap,
-                                  {
-                                    width: imageSize,
-                                    height: imageSize,
-                                    borderRadius: Math.round(imageSize * 0.24),
-                                    marginRight: 14,
-                                  },
-                                ]}
-                              >
-                                {item.imageUrl ? (
-                                  <Image
-                                    source={{ uri: item.imageUrl }}
-                                    style={styles.resultImage}
-                                    resizeMode="contain"
-                                  />
-                                ) : (
-                                  <View style={styles.resultImageFallback}>
-                                    <Text style={styles.resultImageFallbackText}>
-                                      {buildBrandMonogram(item.brand)}
-                                    </Text>
-                                  </View>
-                                )}
-                              </View>
-                              <View style={styles.resultCopy}>
-                                <Text
-                                  numberOfLines={2}
-                                  style={[
-                                    styles.resultTitle,
-                                    { fontSize: titleFontSize, lineHeight: titleFontSize * 1.18 },
-                                  ]}
-                                >
-                                  {item.name}
-                                </Text>
-                                <Text
-                                  numberOfLines={1}
-                                style={[
-                                  styles.resultBenefit,
-                                  {
-                                    fontSize: benefitFontSize,
-                                    lineHeight: benefitFontSize * 1.42,
-                                  },
-                                ]}
-                              >
-                                  {`${item.brand} · ${item.benefit}`}
-                                </Text>
-                              </View>
-
-                              <View style={styles.resultAction}>
-                                <View
-                                  style={[
-                                    styles.resultActionCircle,
-                                    {
-                                      width: actionSize,
-                                      height: actionSize,
-                                      borderRadius: actionSize / 2,
-                                    },
-                                  ]}
-                                >
-                                  <ChevronRight
-                                    size={Math.round(actionSize * 0.54)}
-                                    color="#4A67FF"
-                                    strokeWidth={2.75}
-                                  />
-                                </View>
-                              </View>
-                            </View>
-
-                            <View style={styles.resultMetaRow}>
-                                <View
-                                  style={[
-                                    styles.categoryTag,
-                                    {
-                                      backgroundColor: categoryStyle.pillBg,
-                                      borderColor: categoryStyle.pillBorder,
-                                    },
-                                  ]}
-                                >
-                                  <Text
-                                    style={[
-                                      styles.categoryTagText,
-                                      {
-                                        color: categoryStyle.pillText,
-                                        fontSize: categoryFontSize,
-                                      },
-                                    ]}
-                                  >
-                                    {item.category}
-                                  </Text>
-                                </View>
-                                {item.dose ? (
-                                  <Text style={[styles.doseText, { fontSize: doseFontSize }]}>
-                                    {item.dose}
-                                  </Text>
-                                ) : null}
-                            </View>
-                          </View>
-                        </View>
-                      </Pressable>
-                    </MotiView>
-                    );
-                  })}
-                </View>
               ) : (
                 <MotiView
                   key={`empty-${resultsTransitionKey}`}
@@ -957,15 +1359,71 @@ const SearchPage = () => {
                   </Text>
                 </MotiView>
               )}
-            </Animated.View>
-          </Animated.ScrollView>
+            ListFooterComponent={loadingMore ? (
+              <View style={styles.resultsFooter} testID="product-search-loading-more">
+                <ActivityIndicator size="small" color="#3553F4" />
+                <Text style={styles.resultsFooterText}>Loading more results</Text>
+              </View>
+            ) : loadMoreError ? (
+              <Pressable
+                accessibilityRole="button"
+                onPress={handleLoadMore}
+                style={styles.resultsFooterRetry}
+                testID="product-search-load-more-retry"
+              >
+                <Text style={styles.resultsFooterText}>{loadMoreError}</Text>
+                <Text style={styles.resultsFooterRetryText}>Try loading more again</Text>
+              </Pressable>
+            ) : results.length > 0 && !canLoadMore ? (
+              <View style={styles.resultsFooter} testID="product-search-end-of-results">
+                <Text style={styles.resultsFooterText}>End of results</Text>
+              </View>
+            ) : null}
+          />
         </View>
       </SafeAreaView>
     </>
   );
 };
 
+const SearchPage = () => {
+  const premiumAccess = usePremiumAccess();
+  const gate = getProductSearchGateDecision({ isPremium: premiumAccess.isPremium });
+
+  useEffect(() => {
+    if (premiumAccess.loading || gate.allowed) return;
+
+    router.replace({
+      pathname: '/paywall/official',
+      params: buildOfficialPaywallParams({
+        source: 'product_search',
+        returnTo: '/main/Home-Page',
+      }),
+    });
+  }, [gate.allowed, premiumAccess.loading]);
+
+  if (premiumAccess.loading) {
+    return (
+      <SafeAreaView style={styles.lockedScreen}>
+        <ActivityIndicator size="large" color="#0F172A" />
+      </SafeAreaView>
+    );
+  }
+
+  if (!gate.allowed) {
+    return null;
+  }
+
+  return <SearchExperience />;
+};
+
 const styles = StyleSheet.create({
+  lockedScreen: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#F8FAFC',
+  },
   safeArea: {
     flex: 1,
     backgroundColor: '#F7F8FB',
@@ -1026,6 +1484,23 @@ const styles = StyleSheet.create({
     color: '#14213D',
     fontWeight: '800',
     letterSpacing: -0.9,
+  },
+  catalogStatsPanel: {
+    gap: 3,
+  },
+  catalogStatsTitle: {
+    color: '#14213D',
+    fontSize: 17,
+    lineHeight: 22,
+    fontWeight: '800',
+    letterSpacing: 0,
+  },
+  catalogStatsSubline: {
+    color: '#73819B',
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: '600',
+    letterSpacing: 0,
   },
   searchInputWrap: {
     borderRadius: 18,
@@ -1106,11 +1581,33 @@ const styles = StyleSheet.create({
   filterChipTextInactive: {
     color: '#7C8AA5',
   },
-  resultsList: {
+  resultsHeaderRow: {
+    marginTop: -2,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     gap: 12,
   },
+  resultsHeaderText: {
+    color: '#14213D',
+    fontSize: 14,
+    fontWeight: '800',
+    letterSpacing: 0,
+  },
+  resultsHeaderMeta: {
+    color: '#73819B',
+    fontSize: 12,
+    fontWeight: '600',
+    letterSpacing: 0,
+  },
+  resultsList: {
+    gap: 10,
+  },
+  resultSeparator: {
+    height: RESULT_SEPARATOR_HEIGHT,
+  },
   resultRow: {
-    borderRadius: 22,
+    borderRadius: 18,
   },
   resultCard: {
     backgroundColor: '#FFFFFF',
@@ -1200,8 +1697,52 @@ const styles = StyleSheet.create({
   doseText: {
     fontWeight: '600',
     color: '#95A3B8',
-    letterSpacing: -0.08,
+    letterSpacing: 0,
     flexShrink: 1,
+  },
+  signalTag: {
+    minHeight: 23,
+    borderRadius: 7,
+    borderWidth: 1,
+    borderColor: 'rgba(99,102,241,0.16)',
+    backgroundColor: '#F8FAFF',
+    paddingHorizontal: 8,
+    justifyContent: 'center',
+  },
+  signalTagReady: {
+    borderColor: 'rgba(16,185,129,0.2)',
+    backgroundColor: '#ECFDF5',
+  },
+  signalTagBasic: {
+    borderColor: 'rgba(245,158,11,0.22)',
+    backgroundColor: '#FFFBEB',
+  },
+  signalTagVerification: {
+    borderColor: 'rgba(100,116,139,0.22)',
+    backgroundColor: '#F8FAFC',
+  },
+  signalTagText: {
+    color: '#4F46E5',
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0,
+  },
+  signalTagTextReady: {
+    color: '#047857',
+  },
+  signalTagTextBasic: {
+    color: '#B45309',
+  },
+  signalTagTextVerification: {
+    color: '#475569',
+  },
+  resultTierDescription: {
+    marginTop: 7,
+    color: '#73819B',
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: '600',
+    letterSpacing: 0,
   },
   resultAction: {
     marginLeft: 12,
@@ -1222,6 +1763,52 @@ const styles = StyleSheet.create({
     backgroundColor: '#F3F6FA',
     shadowOpacity: 0,
     elevation: 0,
+  },
+  loadMoreButton: {
+    minHeight: 46,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: 'rgba(74,103,255,0.18)',
+  },
+  loadMoreText: {
+    color: '#3553F4',
+    fontSize: 14,
+    fontWeight: '800',
+    letterSpacing: 0,
+  },
+  resultsFooter: {
+    minHeight: 56,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  resultsFooterText: {
+    color: '#73819B',
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 0,
+    textAlign: 'center',
+  },
+  resultsFooterRetry: {
+    minHeight: 48,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: 'rgba(74,103,255,0.18)',
+  },
+  resultsFooterRetryText: {
+    color: '#3553F4',
+    fontSize: 14,
+    fontWeight: '800',
+    letterSpacing: 0,
   },
   skeletonImage: {
     backgroundColor: '#EEF2F7',

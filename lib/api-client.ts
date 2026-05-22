@@ -76,8 +76,19 @@ export type SearchSupplement = {
   imageUrl?: string | null;
   relevanceScore?: number;
   popularityScore?: number;
+  matchReason?: string | null;
   factsStatus?: 'full' | 'partial' | 'none';
   coverageStatus?: 'coverage_ready' | 'not_enough_structured_data';
+  resultTier?: 'analysis_ready' | 'basic_catalog' | 'needs_label_verification';
+  resultTierLabel?: string | null;
+  resultTierDescription?: string | null;
+};
+
+export type ProductSearchCatalogStats = {
+  totalRecords: number;
+  analysisReadyTotal: number;
+  displayTotalRecordsLabel: string;
+  displayAnalysisReadyLabel: string;
 };
 
 export type SearchResponse = {
@@ -87,12 +98,17 @@ export type SearchResponse = {
     page: number;
     limit: number;
     totalPages: number;
+    hasMore?: boolean;
+    nextPage?: number | null;
+    shown?: number;
+    totalIsExact?: boolean;
   };
   suggestions: {
     categories: string[];
     brands: string[];
     popularSearches: string[];
   };
+  catalogStats?: ProductSearchCatalogStats;
 };
 
 export type SearchAPIResponse =
@@ -105,6 +121,8 @@ export type SearchAPIResponse =
 export type SearchBootstrapResponse = {
   generatedAt: number;
   categories: Record<string, SearchSupplement[]>;
+  paginationByCategory?: Record<string, SearchResponse['pagination']>;
+  catalogStats?: ProductSearchCatalogStats;
 };
 
 export type SearchBootstrapAPIResponse =
@@ -134,6 +152,27 @@ export type SearchProductDetailResponse = {
     dose: string | null;
     sourceTier: string | null;
   };
+  nutriScoreCardV2?: Record<string, unknown> | null;
+  personalizedResultLane?: Record<string, unknown> | null;
+  topBlockers?: Array<Record<string, unknown>> | null;
+  overviewBlock?: {
+    sourceStrip?: string[] | null;
+    bestForBullets?: string[] | null;
+    providesVerified?: {
+      servingSize?: string | null;
+      servingsPerContainer?: number | null;
+      keyIngredients?: Array<{ name: string; dose?: string | null }> | null;
+      dosageForm?: string | null;
+      count?: string | null;
+    } | null;
+    missingInfo?: string[] | null;
+  } | null;
+  scienceBlock?: {
+    ingredientSourceTier?: string | null;
+    ingredientRows?: Array<{ name: string; dose?: string | null }> | null;
+    ingredientSnapshotNames?: string[] | null;
+    aiSummaryContract3?: [string, string, string] | null;
+  } | null;
   ingredientOverview: {
     mode: 'single_anchor' | 'multi_anchor' | 'blend_anchor';
     titleLine: string | null;
@@ -211,6 +250,9 @@ export type SearchProductDetailResponse = {
   suggestedUse: string | null;
   warnings: string | null;
   decisionDigest: string;
+  decisionInputsHash?: string | null;
+  personalizationScopeHash?: string | null;
+  decisionContractVersion?: string | null;
 };
 
 export type SearchProductDetailAPIResponse =
