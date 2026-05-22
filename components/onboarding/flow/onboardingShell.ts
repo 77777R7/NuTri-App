@@ -23,8 +23,6 @@ export type OnboardingSharedShellConfig = {
 export const ONBOARDING_SHARED_SHELL_STEPS: readonly OnboardingFlowStep[] = [
   'goals',
   'allergy',
-  'plan-preview',
-  'first-stack',
 ] as const;
 
 export const getSharedShellProgressFillWidth = (step: OnboardingFlowStep) => {

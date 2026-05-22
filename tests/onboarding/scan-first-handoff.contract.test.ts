@@ -2,52 +2,54 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { readFileSync } from 'node:fs';
 
-const source = readFileSync(
-  new URL('../../app/onboarding/first-stack.tsx', import.meta.url),
-  'utf8',
-);
-const sharedFlowSource = readFileSync(
-  new URL('../../components/onboarding/flow/SummaryFlowScenes.tsx', import.meta.url),
-  'utf8',
-);
+const resultSource = readFileSync(new URL('../../app/scan/result.tsx', import.meta.url), 'utf8');
+const dataTrustSource = readFileSync(new URL('../../app/onboarding/data-trust.tsx', import.meta.url), 'utf8');
+const goalsSource = readFileSync(new URL('../../app/onboarding/goals.tsx', import.meta.url), 'utf8');
+const allergySource = readFileSync(new URL('../../app/onboarding/allergy.tsx', import.meta.url), 'utf8');
+const dashboardSource = readFileSync(new URL('../../components/scan/AnalysisDashboard.tsx', import.meta.url), 'utf8');
+const topSectionSource = readFileSync(new URL('../../components/scan/AnalysisTopSectionRedesign.tsx', import.meta.url), 'utf8');
 
-test('first-stack promotes scan as the only primary action', () => {
-  assert.match(source, /<ScanFirstHeroBodyContent/);
-  assert.match(source, /continueLabel="Scan my first supplement"/);
-  assert.match(source, /Search instead/);
-  assert.match(source, /Do this later/);
+test('scan result post-scan continue starts the trust goals allergy handoff', () => {
+  assert.match(resultSource, /testID="scan-result-post-scan-continue"/);
+  assert.match(resultSource, />Continue</);
+  assert.match(resultSource, /Next: 2 quick questions for Goal fit and Allergy check\./);
+  assert.match(resultSource, /pathname:\s*'\/onboarding\/data-trust'/);
+  assert.match(resultSource, /mode:\s*POST_SCAN_MODE/);
+  assert.match(resultSource, /buildScanResultReturnTo/);
+  assert.match(resultSource, /post_scan_continue_tapped/);
+  assert.match(resultSource, /shouldEnablePostScanContinue =\s*\n\s*onboardingResultPhase === 'before_qa' &&/);
+  assert.match(resultSource, /shouldShowPostScanContinue = shouldEnablePostScanContinue && postScanContinueVisible/);
+  assert.match(resultSource, /POST_SCAN_CONTINUE_HIDE_DISTANCE/);
+  assert.match(resultSource, /shouldShowPostScanContinueForMetrics/);
+  assert.match(resultSource, /return remainingDistance < threshold/);
+  assert.match(resultSource, /onScrollViewportMetricsChange=\{handleDashboardScrollMetricsChange\}/);
+  assert.match(resultSource, /shouldUnlockPostScanResult/);
+  assert.match(resultSource, /premiumAccess\.isPremium \|\| isFirstRevealActive \|\| isFirstRevealPendingGrant \|\| shouldUnlockPostScanResult/);
+  assert.match(dashboardSource, /onScrollViewportMetricsChange\?: \(metrics: AnalysisScrollViewportMetrics\) => void/);
+  assert.match(dashboardSource, /runOnJS\(handleScrollMetricsFromWorklet\)/);
 });
 
-test('first-stack builds lightweight proof from onboarding inputs', () => {
-  assert.match(source, /buildFirstStackProofItems/);
-  assert.match(source, /draft\?\.preferredTypes/);
-  assert.match(source, /draft\?\.adherenceBlocker/);
+test('post-scan onboarding routes preserve mode and sanitized returnTo', () => {
+  assert.match(dataTrustSource, /isPostScanMode\(params\.mode\)/);
+  assert.match(dataTrustSource, /sanitizePostScanReturnTo\(params\.returnTo\)/);
+  assert.match(dataTrustSource, /title=\{isPostScan \? 'Continue' : 'Get Started'\}/);
+  assert.match(dataTrustSource, /pathname:\s*'\/onboarding\/goals'/);
+  assert.match(goalsSource, /isPostScanMode\(params\.mode\)/);
+  assert.match(goalsSource, /sanitizePostScanReturnTo\(params\.returnTo\)/);
+  assert.match(goalsSource, /pathname:\s*'\/onboarding\/allergy'/);
+  assert.match(allergySource, /appendPersonalizedGuideApplied\(safeReturnTo\)/);
+  assert.match(allergySource, /continueLabel=\{isPostScan \? 'Show my result' : isProfileEdit \? 'Save answers' : 'Continue'\}/);
+  assert.match(allergySource, /skipLabel=\{isPostScan \? 'Skip and show my result' : isProfileEdit \? 'Keep current answers' : undefined\}/);
 });
 
-test('shared flow mirrors the scan-first handoff labels instead of the legacy chooser shell', () => {
-  assert.match(sharedFlowSource, /continueLabel: 'See my first step'/);
-  assert.match(sharedFlowSource, /continueLabel: 'Scan my first supplement'/);
-  assert.match(sharedFlowSource, /title="Your first step is ready"/);
-  assert.match(
-    sharedFlowSource,
-    /subtitle="We matched your goals and routine to the easiest place to begin\."/,
-  );
-  assert.match(sharedFlowSource, /Scan your first supplement/);
-  assert.match(sharedFlowSource, /Search instead/);
-  assert.match(sharedFlowSource, /Do this later/);
-  assert.doesNotMatch(sharedFlowSource, /Unlock My Plan/);
-  assert.doesNotMatch(sharedFlowSource, /Build your first stack/);
-  assert.doesNotMatch(sharedFlowSource, /How do you want to start\?/);
-  assert.doesNotMatch(sharedFlowSource, /<FirstStackBodyContent/);
-});
-
-test('shared flow uses the same scan manual later action model as standalone handoff', () => {
-  assert.match(sharedFlowSource, /handleContinueSelection\(PRIMARY_FIRST_STACK_ACTION\)/);
-  assert.match(sharedFlowSource, /onSearchInstead=\{\(\) => void handleContinueSelection\('manual'\)\}/);
-  assert.match(sharedFlowSource, /onDoLater=\{\(\) => void handleContinueSelection\('later'\)\}/);
-  assert.match(sharedFlowSource, /answer: action/);
-  assert.match(sharedFlowSource, /selectedAction: action/);
-  assert.match(sharedFlowSource, /actionKey: action/);
-  assert.match(sharedFlowSource, /field: 'firstActionPreference'/);
-  assert.match(sharedFlowSource, /value: action/);
+test('post-scan applied guide uses live draft and dismisses once per scan session', () => {
+  assert.match(resultSource, /post_scan_personalized_guide_seen:\$\{scanKey\}/);
+  assert.match(resultSource, /AsyncStorage\.getItem\(appliedGuideStorageKey\)/);
+  assert.match(resultSource, /AsyncStorage\.setItem\(appliedGuideStorageKey, '1'\)/);
+  assert.match(resultSource, /personalizedGuideMode=\{\s*\n\s*showAppliedPersonalizedGuide\s*\n\s*\? 'applied'\s*\n\s*: shouldHoldPersonalizedGuideForSaveGuide\s*\n\s*\? 'hidden'\s*\n\s*: null\s*\n\s*\}/);
+  assert.match(dashboardSource, /const effectiveOnboardingDraft = onboardingDraft \?\? onboardingDraftOverride/);
+  assert.match(topSectionSource, /personalizationCoachMode\?: "applied" \| "hidden" \| null/);
+  assert.match(topSectionSource, /Your answers are applied here/);
+  assert.match(topSectionSource, /Goal fit/);
+  assert.match(topSectionSource, /Allergy check/);
 });

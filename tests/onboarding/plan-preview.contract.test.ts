@@ -1,53 +1,70 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { readFileSync } from 'node:fs';
+import {
+  appendPersonalizedGuideApplied,
+  buildScanResultReturnTo,
+  getLegacyOnboardingRedirect,
+  sanitizePostScanReturnTo,
+} from '../../lib/onboarding/postScanReturn';
 
-import { GOAL_OPTIONS } from '../../lib/onboarding-v2.js';
-
-const source = readFileSync(new URL('../../app/onboarding/plan-preview.tsx', import.meta.url), 'utf8');
+const planPreviewSource = readFileSync(new URL('../../app/onboarding/plan-preview.tsx', import.meta.url), 'utf8');
+const firstStackSource = readFileSync(new URL('../../app/onboarding/first-stack.tsx', import.meta.url), 'utf8');
+const redirectHelperSource = readFileSync(new URL('../../lib/onboarding/postScanReturn.ts', import.meta.url), 'utf8');
 const sharedFlowSource = readFileSync(
   new URL('../../components/onboarding/flow/SummaryFlowScenes.tsx', import.meta.url),
   'utf8',
 );
 
-test('plan-preview primes the user for one clear first step', () => {
-  assert.match(source, /We found your easiest first step/);
-  assert.match(
-    source,
-    /We used your goals, preferences, and routine to choose the easiest place to begin\./,
+test('plan-preview and first-stack are redirect-only legacy routes', () => {
+  for (const source of [planPreviewSource, firstStackSource]) {
+    assert.match(source, /import \{ Redirect, useLocalSearchParams \} from 'expo-router';/);
+    assert.match(source, /getLegacyOnboardingRedirect\(params\.returnTo\)/);
+    assert.doesNotMatch(source, /QAContinueCTA|QAScreenShell|trackOnboardingEvent|saveDraft/);
+  }
+
+  assert.equal(sharedFlowSource.trim(), 'export {};');
+});
+
+test('legacy onboarding redirects prefer safe scan result returnTo and reject unsafe paths', () => {
+  assert.match(redirectHelperSource, /pathname !== SCAN_RESULT_PATH/);
+  assert.match(redirectHelperSource, /return '\/onboarding\?step=goals'/);
+  assert.match(redirectHelperSource, /appendPersonalizedGuideApplied\(safeReturnTo\)/);
+  assert.match(redirectHelperSource, /personalizedGuide=\$\{PERSONALIZED_GUIDE_APPLIED\}/);
+  assert.doesNotMatch(redirectHelperSource, /startsWith\('\/'\)/);
+});
+
+test('legacy onboarding redirect helper only allows local scan result returns', () => {
+  const safeReturnTo = '/scan/result?sessionId=abc&source=guest_scan&guestScanSessionId=guest-1';
+
+  assert.equal(sanitizePostScanReturnTo(safeReturnTo), safeReturnTo);
+  assert.equal(
+    appendPersonalizedGuideApplied(safeReturnTo),
+    '/scan/result?sessionId=abc&source=guest_scan&guestScanSessionId=guest-1&personalizedGuide=applied',
   );
-  assert.match(source, /QAContinueCTA title="See my first step"/);
-  assert.match(sharedFlowSource, /continueLabel: 'See my first step'/);
-  assert.doesNotMatch(source, /Here is your plan/);
-  assert.doesNotMatch(source, /Unlock My Plan/);
-  assert.doesNotMatch(sharedFlowSource, /continueLabel: 'Unlock My Plan'/);
+  assert.equal(
+    getLegacyOnboardingRedirect('/scan/result?sessionId=abc&personalizedGuide=old'),
+    '/scan/result?sessionId=abc&personalizedGuide=applied',
+  );
+
+  for (const unsafe of [
+    '/main/Home-Page',
+    'https://example.com/scan/result?sessionId=abc',
+    '//example.com/scan/result?sessionId=abc',
+    '/scan/result\n?sessionId=abc',
+  ]) {
+    assert.equal(sanitizePostScanReturnTo(unsafe), null);
+    assert.equal(getLegacyOnboardingRedirect(unsafe), '/onboarding?step=goals');
+  }
 });
 
-test('plan-preview preserves route flow', () => {
-  assert.match(source, /router\.replace\('\/onboarding\/allergy'\)/);
-  assert.match(source, /router\.replace\('\/onboarding\/first-stack'\)/);
-});
-
-test('plan-preview preserves saveDraft step and smart filter payload', () => {
-  assert.match(source, /smartFilterConfig:\s*buildSmartFilterConfig\(/);
-  assert.match(source, /goals:\s*draft\?\.goals \?\? \[\]/);
-  assert.match(source, /preferredTypes:\s*draft\?\.preferredTypes \?\? \[\]/);
-  assert.match(source, /,\s*7,\s*\)/);
-});
-
-test('plan-preview keeps personalized goal recommendation source and interaction state', () => {
-  assert.match(source, /ingredientRecommendations/);
-  assert.match(source, /const guideGoals = useMemo/);
-  assert.match(source, /selectedGoals\.length > 0 \? selectedGoals : \['Energy', 'Sleep'\]/);
-  assert.match(source, /const \[expandedGoal, setExpandedGoal\]/);
-  assert.deepEqual(GOAL_OPTIONS, [
-    'Sleep',
-    'Energy',
-    'Immunity',
-    'Recovery',
-    'Focus',
-    'Libido Enhancement',
-    'Stress Support',
-    'Weight Management',
-  ]);
+test('scan result returnTo preserves dev fixture barcode for simulator smoke', () => {
+  assert.equal(
+    buildScanResultReturnTo({
+      sessionId: 'postscan-smoke-001',
+      source: 'onboarding',
+      devBarcode: '023249011835',
+    }),
+    '/scan/result?sessionId=postscan-smoke-001&source=onboarding&devBarcode=023249011835',
+  );
 });

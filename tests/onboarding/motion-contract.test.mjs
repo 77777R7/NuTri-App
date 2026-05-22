@@ -16,9 +16,8 @@ test('onboarding motion has one shared timing source for page handoff pieces', (
 
 test('standalone onboarding pages consume shared step slide timing', () => {
   const qaShell = read('components/onboarding/qa/QAScreenShell.tsx');
-  const planPreview = read('app/onboarding/plan-preview.tsx');
 
-  for (const source of [qaShell, planPreview]) {
+  for (const source of [qaShell]) {
     assert.match(source, /ONBOARDING_STEP_SLIDE_TIMING\.durationMs/);
     assert.match(source, /ONBOARDING_STEP_SLIDE_TIMING\.fadeDurationMs/);
     assert.match(source, /ONBOARDING_STEP_SLIDE_TIMING\.distancePct/);

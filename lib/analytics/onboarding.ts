@@ -18,6 +18,7 @@ export type OnboardingAnalyticsEvent =
   | 'first_scan_started'
   | 'first_scan_completed'
   | 'result_ready'
+  | 'post_scan_continue_tapped'
   | 'coach_dismissed'
   | 'saved_to_stack'
   | 'check_in_started'

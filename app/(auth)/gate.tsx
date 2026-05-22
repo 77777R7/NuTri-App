@@ -24,6 +24,11 @@ const SERIF_FONT = Platform.select({
   default: 'serif',
 });
 const AUTH_BACKGROUND = require('@/assets/images/auth-sky-background-portrait.png');
+const DEV_FORCE_HOME =
+  typeof __DEV__ !== 'undefined' &&
+  __DEV__ &&
+  (process.env.EXPO_PUBLIC_DEV_FORCE_HOME === '1' ||
+    process.env.EXPO_PUBLIC_DEV_FORCE_HOME === 'true');
 
 export default function AuthGateScreen() {
   const router = useRouter();
@@ -34,6 +39,10 @@ export default function AuthGateScreen() {
 
   useEffect(() => {
     if (!rootNavigationReady) return;
+    if (DEV_FORCE_HOME) {
+      router.replace('/main/Home-Page');
+      return;
+    }
     if (!authLoading && session) {
       router.replace('/');
     }

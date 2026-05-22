@@ -3,8 +3,8 @@ import {
   Animated as RNAnimated,
   BackHandler,
   Easing as RNEasing,
-  Linking,
   Platform,
+  Image as RNImage,
   StyleSheet,
   Text,
   View,
@@ -12,9 +12,8 @@ import {
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { BlurView } from 'expo-blur';
-import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import Animated, {
   Easing,
@@ -43,9 +42,15 @@ import { useOnboarding } from '@/contexts/OnboardingContext';
 import { useTransitionDir } from '@/contexts/TransitionContext';
 import { useOnboardingLayoutTokens } from '@/hooks/useOnboardingLayoutTokens';
 import { trackOnboardingEvent } from '@/lib/analytics/onboarding';
+import {
+  isPostScanMode,
+  POST_SCAN_MODE,
+  sanitizePostScanReturnTo,
+} from '@/lib/onboarding/postScanReturn';
+import { openPrivacyPolicy } from '@/lib/legalLinks';
 
-const PRIVACY_POLICY_URL = 'https://www.nutri.app/privacy';
 const PRIVACY_ILLUSTRATION = require('@/assets/images/data-trust-privacy-illustration.png');
+const PRIVACY_ILLUSTRATION_ASPECT_RATIO = 724 / 760;
 
 const BLUR_PROPS =
   Platform.OS === 'android'
@@ -125,6 +130,10 @@ function TrustHeroPanel({
   const heroHeight = panelHeight + 16;
   const glowCardHeight = Math.round(panelHeight * 0.76);
   const illustrationHeight = density === 'tight' ? 210 : density === 'compact' ? 242 : 278;
+  const illustrationWidth = Math.min(
+    panelWidth - 36,
+    Math.round(illustrationHeight * PRIVACY_ILLUSTRATION_ASPECT_RATIO),
+  );
   const titleSize = density === 'tight' ? 31 : density === 'compact' ? 34 : 38;
   const titleLineHeight = density === 'tight' ? 34 : density === 'compact' ? 37 : 41;
   const subtitleSize = density === 'tight' ? 13.5 : density === 'compact' ? 14.5 : 15.5;
@@ -153,11 +162,16 @@ function TrustHeroPanel({
         <View style={styles.panelTopSpecular} pointerEvents="none" />
 
         <View style={styles.privacyCardContent}>
-          <Image
+          <RNImage
             source={PRIVACY_ILLUSTRATION}
-            contentFit="contain"
-            transition={180}
-            style={[styles.privacyIllustration, { height: illustrationHeight }]}
+            resizeMode="contain"
+            style={[
+              styles.privacyIllustration,
+              {
+                width: illustrationWidth,
+                height: illustrationHeight,
+              },
+            ]}
           />
           <View style={styles.privacyCopy}>
             <Text
@@ -193,6 +207,7 @@ function TrustHeroPanel({
 
 export default function DataTrustScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams<{ mode?: string; returnTo?: string }>();
   const { height } = useWindowDimensions();
   const layoutTokens = useOnboardingLayoutTokens();
   const insets = layoutTokens.insets;
@@ -217,6 +232,11 @@ export default function DataTrustScreen() {
 
   const panelWidth = layoutTokens.dataTrustPanelWidth;
   const isCompactHeight = layoutTokens.density !== 'regular' || height < 860;
+  const safeReturnTo = useMemo(
+    () => sanitizePostScanReturnTo(params.returnTo),
+    [params.returnTo],
+  );
+  const isPostScan = isPostScanMode(params.mode) && Boolean(safeReturnTo);
 
   useFocusEffect(
     useCallback(() => {
@@ -311,12 +331,8 @@ export default function DataTrustScreen() {
     policyTranslate,
   ]);
 
-  const handleOpenPolicy = useCallback(async () => {
-    try {
-      await Linking.openURL(PRIVACY_POLICY_URL);
-    } catch (error) {
-      console.warn('[onboarding] failed to open privacy policy', error);
-    }
+  const handleOpenPolicy = useCallback(() => {
+    void openPrivacyPolicy();
   }, []);
 
   const handleGetStarted = useCallback(async () => {
@@ -328,8 +344,13 @@ export default function DataTrustScreen() {
 
     setDirection('forward');
     await saveDraft({ onboardingVersion: 'v2' }, 4);
-    router.replace('/onboarding/goals');
-  }, [router, saveDraft, setDirection]);
+    router.replace({
+      pathname: '/onboarding/goals',
+      params: isPostScan && safeReturnTo
+        ? { mode: POST_SCAN_MODE, returnTo: safeReturnTo }
+        : undefined,
+    });
+  }, [isPostScan, router, safeReturnTo, saveDraft, setDirection]);
 
   return (
     <View style={styles.root}>
@@ -419,7 +440,7 @@ export default function DataTrustScreen() {
                 <View style={styles.progressActivePill} />
               </View>
 
-              <WelcomePrimaryCTA title="Get Started" onPress={handleGetStarted} />
+              <WelcomePrimaryCTA title={isPostScan ? 'Continue' : 'Get Started'} onPress={handleGetStarted} />
 
               <View style={styles.policySlot}>
                 <RNAnimated.Text
@@ -622,7 +643,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   privacyIllustration: {
-    width: '100%',
+    alignSelf: 'center',
   },
   privacyCopy: {
     paddingHorizontal: 14,

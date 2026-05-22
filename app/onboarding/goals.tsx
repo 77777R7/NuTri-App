@@ -1,14 +1,25 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 
 import { QAMultiSelectScreen } from '@/components/onboarding/qa/QAMultiSelectScreen';
 import { useOnboarding } from '@/contexts/OnboardingContext';
 import { useTransitionDir } from '@/contexts/TransitionContext';
 import { trackOnboardingEvent } from '@/lib/analytics/onboarding';
 import { buildSmartFilterConfig, GOAL_OPTIONS } from '@/lib/onboarding-v2';
+import {
+  isPostScanMode,
+  POST_SCAN_MODE,
+  sanitizePostScanReturnTo,
+} from '@/lib/onboarding/postScanReturn';
+import {
+  isProfileEditMode,
+  PROFILE_EDIT_MODE,
+  sanitizeProfileEditReturnTo,
+} from '@/lib/onboarding/profileEditReturn';
 
 export default function GoalsScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams<{ mode?: string; returnTo?: string }>();
   const { draft, progress, saveDraft, setProgress } = useOnboarding();
   const { setDirection } = useTransitionDir();
   const [selectedGoals, setSelectedGoals] = useState<string[]>(
@@ -24,6 +35,11 @@ export default function GoalsScreen() {
       void setProgress(5);
     }
   }, [progress, setProgress]);
+
+  const safeReturnTo = sanitizePostScanReturnTo(params.returnTo);
+  const isPostScan = isPostScanMode(params.mode) && Boolean(safeReturnTo);
+  const safeProfileReturnTo = sanitizeProfileEditReturnTo(params.returnTo);
+  const isProfileEdit = isProfileEditMode(params.mode) && Boolean(safeProfileReturnTo);
 
   const toggleGoal = useCallback((goal: string) => {
     setSelectedGoals((current) =>
@@ -42,7 +58,7 @@ export default function GoalsScreen() {
           preferredTypes: draft?.preferredTypes ?? [],
         }),
       },
-      3,
+      5,
     );
     trackOnboardingEvent('question_answered', {
       question: 'goals',
@@ -56,8 +72,25 @@ export default function GoalsScreen() {
       source: 'onboarding_goals',
     });
     setDirection('forward');
-    router.replace('/onboarding/allergy');
-  }, [draft?.preferredTypes, router, saveDraft, selectedGoals, setDirection]);
+    router.replace({
+      pathname: '/onboarding/allergy',
+      params: isPostScan && safeReturnTo
+        ? { mode: POST_SCAN_MODE, returnTo: safeReturnTo }
+        : isProfileEdit && safeProfileReturnTo
+          ? { mode: PROFILE_EDIT_MODE, returnTo: safeProfileReturnTo }
+          : undefined,
+    });
+  }, [
+    draft?.preferredTypes,
+    isPostScan,
+    isProfileEdit,
+    router,
+    safeProfileReturnTo,
+    safeReturnTo,
+    saveDraft,
+    selectedGoals,
+    setDirection,
+  ]);
 
   return (
     <QAMultiSelectScreen
@@ -71,7 +104,16 @@ export default function GoalsScreen() {
       onToggle={toggleGoal}
       onBack={() => {
         setDirection('back');
-        router.replace('/onboarding/data-trust');
+        if (isProfileEdit && safeProfileReturnTo) {
+          router.replace(safeProfileReturnTo);
+          return;
+        }
+        router.replace({
+          pathname: '/onboarding/data-trust',
+          params: isPostScan && safeReturnTo
+            ? { mode: POST_SCAN_MODE, returnTo: safeReturnTo }
+            : undefined,
+        });
       }}
       onContinue={persist}
       onSkip={persist}

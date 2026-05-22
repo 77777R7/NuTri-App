@@ -5,13 +5,15 @@ import {
   Text,
   View,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import Animated, {
   cancelAnimation,
   Easing,
+  type SharedValue,
   useAnimatedScrollHandler,
   useAnimatedStyle,
   useSharedValue,
+  withDelay,
   withTiming,
 } from 'react-native-reanimated';
 
@@ -30,6 +32,17 @@ import {
   RESTRICTION_UI_OPTIONS,
   SECONDARY_ALLERGY_UI_OPTIONS,
 } from '@/lib/onboarding-v2';
+import {
+  appendPersonalizedGuideApplied,
+  isPostScanMode,
+  POST_SCAN_MODE,
+  sanitizePostScanReturnTo,
+} from '@/lib/onboarding/postScanReturn';
+import {
+  isProfileEditMode,
+  PROFILE_EDIT_MODE,
+  sanitizeProfileEditReturnTo,
+} from '@/lib/onboarding/profileEditReturn';
 const SCROLLBAR_HIDE_DELAY_MS = 1200;
 const SCROLLBAR_FADE_DURATION_MS = 720;
 
@@ -40,8 +53,8 @@ function AllergyScrollbar({
   bottom = 14,
   thumbHeight = 40,
 }: {
-  progress: Animated.SharedValue<number>;
-  opacity: Animated.SharedValue<number>;
+  progress: SharedValue<number>;
+  opacity: SharedValue<number>;
   top?: number;
   bottom?: number;
   thumbHeight?: number;
@@ -81,6 +94,7 @@ function AllergyScrollbar({
 
 export default function AllergyScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams<{ mode?: string; returnTo?: string }>();
   const { draft, progress, saveDraft, setProgress } = useOnboarding();
   const { setDirection } = useTransitionDir();
   const [selected, setSelected] = useState<string[]>(
@@ -100,11 +114,13 @@ export default function AllergyScreen() {
   const fadeOutScrollbar = useCallback(() => {
     'worklet';
     cancelAnimation(scrollbarOpacity);
-    scrollbarOpacity.value = withTiming(0, {
-      duration: SCROLLBAR_FADE_DURATION_MS,
-      delay: SCROLLBAR_HIDE_DELAY_MS,
-      easing: Easing.bezier(0.22, 1, 0.36, 1),
-    });
+    scrollbarOpacity.value = withDelay(
+      SCROLLBAR_HIDE_DELAY_MS,
+      withTiming(0, {
+        duration: SCROLLBAR_FADE_DURATION_MS,
+        easing: Easing.bezier(0.22, 1, 0.36, 1),
+      }),
+    );
   }, [scrollbarOpacity]);
 
   const showScrollbar = useCallback(() => {
@@ -131,6 +147,10 @@ export default function AllergyScreen() {
     ],
     [],
   );
+  const safeReturnTo = sanitizePostScanReturnTo(params.returnTo);
+  const isPostScan = isPostScanMode(params.mode) && Boolean(safeReturnTo);
+  const safeProfileReturnTo = sanitizeProfileEditReturnTo(params.returnTo);
+  const isProfileEdit = isProfileEditMode(params.mode) && Boolean(safeProfileReturnTo);
 
   useEffect(() => {
     setSelected(
@@ -223,10 +243,19 @@ export default function AllergyScreen() {
       answerCount: selected.length,
       answers: selected,
       source: 'onboarding_allergy',
+      mode: isPostScan ? POST_SCAN_MODE : isProfileEdit ? PROFILE_EDIT_MODE : 'onboarding',
     });
     setDirection('forward');
-    router.replace('/onboarding/plan-preview');
-  }, [router, saveDraft, selected, setDirection]);
+    if (isPostScan && safeReturnTo) {
+      router.replace(appendPersonalizedGuideApplied(safeReturnTo) ?? '/scan/result');
+      return;
+    }
+    if (isProfileEdit && safeProfileReturnTo) {
+      router.replace(safeProfileReturnTo);
+      return;
+    }
+    router.replace('/onboarding/done');
+  }, [isPostScan, isProfileEdit, router, safeProfileReturnTo, safeReturnTo, saveDraft, selected, setDirection]);
 
   return (
     <QAScreenShell
@@ -237,11 +266,19 @@ export default function AllergyScreen() {
       subtitle="Optional. We'll flag ingredients that may not fit your routine."
       onBack={() => {
         setDirection('back');
-        router.replace('/onboarding/goals');
+        router.replace({
+          pathname: '/onboarding/goals',
+          params: isPostScan && safeReturnTo
+            ? { mode: POST_SCAN_MODE, returnTo: safeReturnTo }
+            : isProfileEdit && safeProfileReturnTo
+              ? { mode: PROFILE_EDIT_MODE, returnTo: safeProfileReturnTo }
+              : undefined,
+        });
       }}
       onContinue={() => persist(false)}
       onSkip={() => persist(true)}
-      continueLabel="Continue"
+      continueLabel={isPostScan ? 'Show my result' : isProfileEdit ? 'Save answers' : 'Continue'}
+      skipLabel={isPostScan ? 'Skip and show my result' : isProfileEdit ? 'Keep current answers' : undefined}
       onListScroll={handleScroll}
       listOverlay={
         <AllergyScrollbar
@@ -379,9 +416,9 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     borderRadius: 999,
-    backgroundColor: 'rgba(36,69,184,0.72)',
-    shadowColor: '#2445B8',
-    shadowOpacity: 0.4,
+    backgroundColor: 'rgba(17,17,17,0.72)',
+    shadowColor: '#111111',
+    shadowOpacity: 0.22,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 0 },
     elevation: 4,

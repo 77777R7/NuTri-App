@@ -10,7 +10,6 @@ import {
   Animated as RNAnimated,
   Easing as RNEasing,
   LayoutChangeEvent,
-  Linking,
   Platform,
   StyleSheet,
   Text,
@@ -23,6 +22,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
   cancelAnimation,
   Easing,
+  type SharedValue,
   useAnimatedScrollHandler,
   useAnimatedStyle,
   useSharedValue,
@@ -69,6 +69,7 @@ import {
   TYPE_OPTIONS,
   buildSmartFilterConfig,
 } from '@/lib/onboarding-v2';
+import { openPrivacyPolicy } from '@/lib/legalLinks';
 
 import type { OnboardingFlowDirection } from './OnboardingSceneViewport';
 import {
@@ -77,12 +78,6 @@ import {
   ONBOARDING_SHARED_SHELL_QA_FOOTER_SPACE,
   ONBOARDING_SHARED_SHELL_QA_FOOTER_SPACE_WITH_HELPER,
 } from './onboardingShell';
-import {
-  FirstStackFlowScene,
-  PlanPreviewFlowScene,
-} from './SummaryFlowScenes';
-
-const PRIVACY_POLICY_URL = 'https://www.nutri.app/privacy';
 const BLUR_PROPS =
   Platform.OS === 'android'
     ? ({ experimentalBlurMethod: 'dimezisBlurView' } as const)
@@ -96,22 +91,19 @@ export const ONBOARDING_FLOW_STEPS = [
   'data-trust',
   'goals',
   'allergy',
-  'plan-preview',
-  'first-stack',
 ] as const;
 
-const ONBOARDING_LEGACY_FLOW_STEPS = [
-  'age-range',
-  'sex',
-  'experience',
-  'types',
-  'blocker',
-  'setup',
-] as const;
+type LegacyOnboardingFlowStep =
+  | 'age-range'
+  | 'sex'
+  | 'experience'
+  | 'types'
+  | 'blocker'
+  | 'setup';
 
 export type OnboardingFlowStep =
   | (typeof ONBOARDING_FLOW_STEPS)[number]
-  | (typeof ONBOARDING_LEGACY_FLOW_STEPS)[number];
+  | LegacyOnboardingFlowStep;
 
 export const ONBOARDING_FLOW_PROGRESS: Partial<Record<OnboardingFlowStep, number>> = {
   welcome: 1,
@@ -120,8 +112,6 @@ export const ONBOARDING_FLOW_PROGRESS: Partial<Record<OnboardingFlowStep, number
   'data-trust': 4,
   goals: 5,
   allergy: 6,
-  'plan-preview': 7,
-  'first-stack': 7,
 };
 
 type OnboardingFlowSceneProps = {
@@ -133,7 +123,12 @@ type OnboardingFlowSceneProps = {
 };
 
 const isFlowStep = (value: string | undefined): value is OnboardingFlowStep =>
-  Boolean(value && ONBOARDING_FLOW_STEPS.includes(value as OnboardingFlowStep));
+  Boolean(
+    value &&
+      ONBOARDING_FLOW_STEPS.includes(
+        value as (typeof ONBOARDING_FLOW_STEPS)[number],
+      ),
+  );
 
 export const resolveInitialOnboardingFlowStep = ({
   requestedStep,
@@ -152,7 +147,7 @@ export const resolveInitialOnboardingFlowStep = ({
   if (progress === 4) return 'data-trust';
   if (progress === 5) return 'goals';
   if (progress === 6) return 'allergy';
-  return 'plan-preview';
+  return 'allergy';
 };
 
 const TRUST_ROWS = [
@@ -261,8 +256,8 @@ function AllergyScrollbar({
   bottom = 14,
   thumbHeight = 40,
 }: {
-  progress: Animated.SharedValue<number>;
-  opacity: Animated.SharedValue<number>;
+  progress: SharedValue<number>;
+  opacity: SharedValue<number>;
   top?: number;
   bottom?: number;
   thumbHeight?: number;
@@ -753,12 +748,8 @@ function DataTrustFlowScene({
     });
   }, [sceneActive]);
 
-  const handleOpenPolicy = useCallback(async () => {
-    try {
-      await Linking.openURL(PRIVACY_POLICY_URL);
-    } catch (error) {
-      console.warn('[onboarding] failed to open privacy policy', error);
-    }
+  const handleOpenPolicy = useCallback(() => {
+    void openPrivacyPolicy();
   }, []);
 
   const handleGetStarted = useCallback(async () => {
@@ -1225,6 +1216,7 @@ function AllergyFlowScene({
   sceneActive,
   direction,
   goToStep,
+  exitTo,
   setSharedShellConfig,
 }: OnboardingFlowSceneProps) {
   const { draft, commitDraft, flushDraft } = useOnboarding();
@@ -1294,11 +1286,13 @@ function AllergyFlowScene({
   const fadeOutScrollbar = useCallback(() => {
     'worklet';
     cancelAnimation(scrollbarOpacity);
-    scrollbarOpacity.value = withTiming(0, {
-      duration: SCROLLBAR_FADE_DURATION_MS,
-      delay: SCROLLBAR_HIDE_DELAY_MS,
-      easing: Easing.bezier(0.22, 1, 0.36, 1),
-    });
+    scrollbarOpacity.value = withDelay(
+      SCROLLBAR_HIDE_DELAY_MS,
+      withTiming(0, {
+        duration: SCROLLBAR_FADE_DURATION_MS,
+        easing: Easing.bezier(0.22, 1, 0.36, 1),
+      }),
+    );
   }, [scrollbarOpacity]);
 
   const handleScroll = useAnimatedScrollHandler({
@@ -1355,9 +1349,9 @@ function AllergyFlowScene({
       answerCount: selected.length,
       answers: selected,
     });
-    goToStep('plan-preview', 'forward');
+    exitTo('/onboarding/done', 'forward');
     void flushDraft();
-  }, [commitDraft, flushDraft, goToStep, selected]);
+  }, [commitDraft, exitTo, flushDraft, selected]);
 
   const shellConfig = useMemo<OnboardingSharedShellConfig>(
     () => ({
@@ -1544,6 +1538,7 @@ function SetupFlowScene({
   sceneActive,
   direction,
   goToStep,
+  exitTo,
   setSharedShellConfig,
 }: OnboardingFlowSceneProps) {
   const { draft, commitDraft, flushDraft } = useOnboarding();
@@ -1616,13 +1611,13 @@ function SetupFlowScene({
 
   const handleContinue = useCallback(() => {
     persistSelection(selectedSetup);
-    goToStep('plan-preview', 'forward');
-  }, [goToStep, persistSelection, selectedSetup]);
+    exitTo('/onboarding/done', 'forward');
+  }, [exitTo, persistSelection, selectedSetup]);
 
   const handleSkip = useCallback(() => {
     persistSelection([]);
-    goToStep('plan-preview', 'forward');
-  }, [goToStep, persistSelection]);
+    exitTo('/onboarding/done', 'forward');
+  }, [exitTo, persistSelection]);
 
   const shellConfig = useMemo<OnboardingSharedShellConfig>(
     () => ({
@@ -1682,10 +1677,6 @@ export function renderOnboardingScene(
       return <GoalsFlowScene {...props} />;
     case 'allergy':
       return <AllergyFlowScene {...props} />;
-    case 'plan-preview':
-      return <PlanPreviewFlowScene {...props} />;
-    case 'first-stack':
-      return <FirstStackFlowScene {...props} />;
     default:
       return null;
   }

@@ -10,15 +10,17 @@ const source = readFileSync(
 );
 
 test('goals QA hero screen preserves route flow', () => {
-  assert.match(source, /router\.replace\('\/onboarding\/data-trust'\)/);
-  assert.match(source, /router\.replace\('\/onboarding\/allergy'\)/);
+  assert.match(source, /pathname:\s*'\/onboarding\/data-trust'/);
+  assert.match(source, /pathname:\s*'\/onboarding\/allergy'/);
+  assert.match(source, /isPostScanMode\(params\.mode\)/);
+  assert.match(source, /isProfileEditMode\(params\.mode\)/);
 });
 
 test('goals QA hero screen preserves saveDraft step and analytics contract', () => {
   assert.match(source, /saveDraft\(/);
   assert.match(source, /goals:\s*selectedGoals/);
   assert.match(source, /preferredTypes:\s*draft\?\.preferredTypes \?\? \[\]/);
-  assert.match(source, /,\s*3,\s*\)/);
+  assert.match(source, /,\s*5,\s*\)/);
   assert.match(source, /trackOnboardingEvent\('question_answered'/);
   assert.match(source, /question:\s*'goals'/);
   assert.match(source, /answerCount:\s*selectedGoals\.length/);

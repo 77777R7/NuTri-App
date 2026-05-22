@@ -62,6 +62,7 @@ type QAScreenShellProps = {
   onContinue: () => void | Promise<void>;
   onSkip?: () => void | Promise<void>;
   continueLabel?: string;
+  skipLabel?: string;
   continueDisabled?: boolean;
   footerHint?: string;
   footerError?: string | null;
@@ -86,6 +87,7 @@ export function QAScreenShell({
   onContinue,
   onSkip,
   continueLabel = 'Continue',
+  skipLabel = 'Skip for now',
   continueDisabled = false,
   footerHint,
   footerError,
@@ -437,7 +439,7 @@ export function QAScreenShell({
                       },
                     ]}
                   >
-                    Skip for now
+                    {skipLabel}
                   </Text>
                 </Pressable>
               </View>

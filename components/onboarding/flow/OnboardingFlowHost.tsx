@@ -58,7 +58,9 @@ const SUMMARY_CHROME_MASK = [
 ] as const;
 
 const getPreviousStep = (step: OnboardingFlowStep) => {
-  const currentIndex = ONBOARDING_FLOW_STEPS.indexOf(step);
+  const currentIndex = ONBOARDING_FLOW_STEPS.indexOf(
+    step as (typeof ONBOARDING_FLOW_STEPS)[number],
+  );
   if (currentIndex <= 0) {
     return null;
   }
@@ -94,26 +96,6 @@ const buildFallbackShellConfig = ({
         continueLabel: 'Continue',
         continueDisabled: true,
         footerReserveHeight: ONBOARDING_SHARED_SHELL_QA_FOOTER_SPACE,
-      };
-    case 'plan-preview':
-      return {
-        backgroundVariant: 'summary',
-        progressFillWidth: getSharedShellProgressFillWidth('plan-preview'),
-        onBack: () => goToStep('allergy', 'back'),
-        onContinue: async () => {},
-        continueLabel: 'See my first step',
-        continueDisabled: true,
-        footerReserveHeight: 120,
-      };
-    case 'first-stack':
-      return {
-        backgroundVariant: 'qa',
-        progressFillWidth: getSharedShellProgressFillWidth('first-stack'),
-        onBack: () => goToStep('plan-preview', 'back'),
-        onContinue: async () => {},
-        continueLabel: 'Scan my first supplement',
-        continueDisabled: true,
-        footerReserveHeight: 120,
       };
     default:
       return null;

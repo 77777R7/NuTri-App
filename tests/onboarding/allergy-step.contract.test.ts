@@ -47,18 +47,28 @@ test('allergy enums remain canonical and deduplicated', () => {
   assert.ok(INGREDIENT_RESTRICTION_OPTIONS.includes('gelatin_animal_based'));
 });
 
-test('compact onboarding flow inserts allergy between goals and plan preview', () => {
+test('compact onboarding flow ends active QA at allergy', () => {
   assert.match(layoutSource, /<Stack\.Screen name="goals" \/>/);
   assert.match(layoutSource, /<Stack\.Screen name="allergy" \/>/);
   assert.match(layoutSource, /<Stack\.Screen name="plan-preview" \/>/);
-  assert.match(goalsSource, /router\.replace\('\/onboarding\/allergy'\)/);
+  assert.match(goalsSource, /pathname:\s*'\/onboarding\/allergy'/);
   assert.doesNotMatch(layoutSource, /<Stack\.Screen name="types" \/>/);
   assert.doesNotMatch(layoutSource, /<Stack\.Screen name="blocker" \/>/);
 });
 
 test('allergy QA hero screen preserves route flow', () => {
-  assert.match(allergySource, /router\.replace\('\/onboarding\/goals'\)/);
-  assert.match(allergySource, /router\.replace\('\/onboarding\/plan-preview'\)/);
+  assert.match(allergySource, /pathname:\s*'\/onboarding\/goals'/);
+  assert.match(allergySource, /router\.replace\('\/onboarding\/done'\)/);
+  assert.doesNotMatch(allergySource, /router\.replace\('\/onboarding\/plan-preview'\)/);
+});
+
+test('allergy post-scan mode returns to the same scan result with applied guide copy', () => {
+  assert.match(allergySource, /isPostScanMode\(params\.mode\)/);
+  assert.match(allergySource, /sanitizePostScanReturnTo\(params\.returnTo\)/);
+  assert.match(allergySource, /appendPersonalizedGuideApplied\(safeReturnTo\)/);
+  assert.match(allergySource, /continueLabel=\{isPostScan \? 'Show my result' : isProfileEdit \? 'Save answers' : 'Continue'\}/);
+  assert.match(allergySource, /skipLabel=\{isPostScan \? 'Skip and show my result' : isProfileEdit \? 'Keep current answers' : undefined\}/);
+  assert.match(allergySource, /backgroundColor: 'rgba\(17,17,17,0\.72\)'/);
 });
 
 test('allergy QA hero screen preserves saveDraft step and analytics contract', () => {
