@@ -84,8 +84,9 @@ test("Week3 safety wording: stack summary stays concise and scoped", () => {
     skippedSupplements: 1,
   });
 
-  assert.match(summary.stackLevelSummary.headline ?? "", /You have 2 products with magnesium/i);
+  assert.match(summary.stackLevelSummary.headline ?? "", /magnesium may be above the adult upper limit/i);
   assert.ok(summary.stackLevelSummary.detailLines.every((line) => line.length < 140));
+  assert.ok(summary.stackLevelSummary.detailLines.some((line) => /estimated saved-stack total/i.test(line)));
   assert.ok(summary.stackLevelSummary.detailLines.some((line) => /supplement/i.test(line)));
   assert.match(summary.meta.estimateBasisSummary ?? "", /label directions|1 serving\/day/i);
   assert.match(summary.meta.skippedSupplementNote ?? "", /skipped/i);
