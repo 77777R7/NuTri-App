@@ -13,7 +13,9 @@
         "EXPO_PUBLIC_API_BASE_URL": "https://nutri-app-qn0u.onrender.com",
         "EXPO_PUBLIC_SEARCH_API_BASE_URL": "https://nutri-app-qn0u.onrender.com",
         "EXPO_PUBLIC_GUEST_SCAN_ENABLED": "1",
-        "EXPO_PUBLIC_DISABLE_AUTH": "0"
+        "EXPO_PUBLIC_DISABLE_AUTH": "0",
+        "EXPO_PUBLIC_REVENUECAT_IOS_API_KEY": "appl_TJQdqNyqFtFiTrUTMxTdhBADTAr",
+        "EXPO_PUBLIC_REVENUECAT_ENTITLEMENT_ID": "pro"
       }
     },
     "preview": {
@@ -25,7 +27,9 @@
         "EXPO_PUBLIC_API_BASE_URL": "https://nutri-app-qn0u.onrender.com",
         "EXPO_PUBLIC_SEARCH_API_BASE_URL": "https://nutri-app-qn0u.onrender.com",
         "EXPO_PUBLIC_GUEST_SCAN_ENABLED": "1",
-        "EXPO_PUBLIC_DISABLE_AUTH": "0"
+        "EXPO_PUBLIC_DISABLE_AUTH": "0",
+        "EXPO_PUBLIC_REVENUECAT_IOS_API_KEY": "appl_TJQdqNyqFtFiTrUTMxTdhBADTAr",
+        "EXPO_PUBLIC_REVENUECAT_ENTITLEMENT_ID": "pro"
       }
     },
     "preview_noauth": {
@@ -37,7 +41,9 @@
         "EXPO_PUBLIC_SEARCH_API_BASE_URL": "https://nutri-app-qn0u.onrender.com",
         "EXPO_PUBLIC_GUEST_SCAN_ENABLED": "1",
         "EXPO_PUBLIC_DISABLE_AUTH": "1",
-        "EXPO_PUBLIC_FORCE_AUTH": "0"
+        "EXPO_PUBLIC_FORCE_AUTH": "0",
+        "EXPO_PUBLIC_REVENUECAT_IOS_API_KEY": "appl_TJQdqNyqFtFiTrUTMxTdhBADTAr",
+        "EXPO_PUBLIC_REVENUECAT_ENTITLEMENT_ID": "pro"
       }
     },
     "preview_dashboard_static": {
@@ -50,7 +56,12 @@
     "production": {
       "autoIncrement": true,
       "env": {
-        "EXPO_PUBLIC_GUEST_SCAN_ENABLED": "1"
+        "EXPO_PUBLIC_API_BASE_URL": "https://nutri-app-qn0u.onrender.com",
+        "EXPO_PUBLIC_SEARCH_API_BASE_URL": "https://nutri-app-qn0u.onrender.com",
+        "EXPO_PUBLIC_GUEST_SCAN_ENABLED": "1",
+        "EXPO_PUBLIC_DISABLE_AUTH": "0",
+        "EXPO_PUBLIC_REVENUECAT_IOS_API_KEY": "appl_TJQdqNyqFtFiTrUTMxTdhBADTAr",
+        "EXPO_PUBLIC_REVENUECAT_ENTITLEMENT_ID": "pro"
       }
     }
   },

@@ -118,11 +118,12 @@ const createExpoConfig = ({ config }: ConfigContext): ExpoConfig => {
       supportsTablet: true,
       bundleIdentifier: IOS_BUNDLE_ID,
       usesAppleSignIn: true,
-      infoPlist: {
-        ITSAppUsesNonExemptEncryption: false,
-        NSLocationWhenInUseUsageDescription: 'NuTri uses your approximate location to personalise supplement insights and seasonal guidance.',
-      },
       ...config.ios,
+      infoPlist: {
+        ...config.ios?.infoPlist,
+        ITSAppUsesNonExemptEncryption: false,
+        NSCameraUsageDescription: 'NuTri uses the camera to scan supplement barcodes and show product analysis.',
+      },
     },
     android: {
       package: ANDROID_PACKAGE,
@@ -144,6 +145,7 @@ const createExpoConfig = ({ config }: ConfigContext): ExpoConfig => {
     plugins: [
       'expo-router',
       'expo-localization',
+      'expo-notifications',
       'expo-secure-store',
       'expo-web-browser',
       [
