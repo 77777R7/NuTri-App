@@ -9,9 +9,10 @@ Workspace: `/Users/howard07/NuTriApp/nutri-app`
 Release candidate for TestFlight, with native purchase/device smoke still required.
 
 The release-critical packages have been separated into commits and the current
-release checker passes. Product Search, Pro gates, onboarding routing, scan
-result contracts, backend bundle generation, and iOS Metro export all have
-current automated evidence.
+release checker passes from a clean candidate worktree. Product Search, Pro
+gates, onboarding routing, scan result contracts, Profile/legal release
+surfaces, backend bundle generation, and iOS Metro export all have current
+automated evidence.
 
 Do not submit to App Store Review until TestFlight/native sandbox purchase smoke
 is complete. The working tree also still has non-protected dirty work that
@@ -25,6 +26,12 @@ submission branch.
 - `70e41b17` - Pro gates, post-purchase success, saved limit, Stack Safety.
 - `c1cd3b26` - Onboarding/auth handoff and post-scan/profile return helpers.
 - `b8a6e1a4` - Protected scan release gates and scan contracts.
+- `334e3db2` - Release gate evidence update for the first candidate.
+- `e73e9c0f` - Product Search Database analysis helper and spinner hook gate.
+- `ec5f7b5f` - Product Search index migrations.
+- `91be3711` - Stable Database analysis import for lint release gate.
+- `a2906dbe` - Profile/legal release gates, App Store icon alpha, Stack Safety copy.
+- `ca92c40e` - Stack Safety wording contract update.
 
 ## Passed Evidence
 
@@ -40,8 +47,14 @@ submission branch.
   - Bundle: `_expo/static/js/ios/entry-53b054e572fe816d2e414e50efdcfc43.hbc`
   - Output directory: `/private/tmp/nutri-ios-export-check-2`
 
+- `npx expo export --platform ios --output-dir /private/tmp/nutri-ios-export-clean-candidate`
+  - Passed from clean candidate worktree at `ca92c40e`.
+  - iOS bundle generated successfully.
+  - Bundle: `_expo/static/js/ios/entry-fe3d939d1bf806096ae5fe94511fcad8.hbc`
+  - Output directory: `/private/tmp/nutri-ios-export-clean-candidate`
+
 - `npm run release:app-store-check`
-  - Passed after release package commits.
+  - Passed from clean candidate worktree at `ca92c40e`.
   - Summary: `status=pass`, `blockerCount=0`, `warningCount=0`.
   - Confirms:
     - no unused `expo-location`
@@ -53,10 +66,10 @@ submission branch.
     - no protected scan/release files are dirty
 
 - `npm run search:verify-release`
-  - Passed.
+  - Passed from clean candidate worktree at `ca92c40e`.
   - Summary: `status=pass`, `passed=6`, `total=6`.
   - Product Search UI/query contracts: 52/52 passed.
-  - Product Search replay/smoke verifier tests: 22/22 passed.
+  - Product Search replay/smoke verifier tests: 17/17 passed.
   - Backend release build passed.
 
 - Pro/Auth/Saved/Stack Safety release contracts
@@ -68,20 +81,20 @@ submission branch.
   contract:
   - Command:
     `node --import tsx --test tests/mySaved/stack-safety-paywall-contract.test.ts tests/mySaved/stack-safety-pro.contract.test.ts tests/mySaved/stack-safety-presentation.test.ts tests/pro/app-store-readiness-contract.test.ts tests/pro/pro-feature-gates.test.ts tests/pro/pro-paywall-contract.test.ts tests/pro/waitlist-trial-bonus.test.ts tests/auth/auth-mode-policy.test.ts backend/tests/week3-safety-wording.test.mjs`
-  - Passed: 33/33.
+  - Passed from clean candidate worktree at `ca92c40e`: 33/33.
 
 - Onboarding release contracts
   - Command:
     `node --import tsx --test tests/onboarding/compact-flow.contract.test.ts tests/onboarding/allergy-step.contract.test.ts tests/onboarding/goals.contract.test.ts tests/onboarding/activation-loop.contract.test.ts tests/onboarding/first-stack.analytics.test.ts tests/onboarding/plan-preview.contract.test.ts tests/onboarding/scan-first-handoff.contract.test.ts tests/onboarding/motion-contract.test.mjs tests/onboarding/profile-edit-flow.contract.test.ts tests/onboarding/deferred-routes-redirect.contract.test.ts tests/onboarding/done.destination-contract.test.ts`
-  - Passed: 38/38.
+  - Passed from clean candidate worktree at `ca92c40e`: 38/38.
 
 - Scan release contracts
   - Command:
     `node --import tsx --test tests/scan/barcode-success-stability-contract.test.ts tests/scan/crash-proof-gate.test.ts tests/scan/mobile-soak-timeout-classification.test.ts tests/scan/resultViewRouting.test.ts tests/scan/scan-trust-ui-contract.test.ts tests/scan/personalized-insights-coach-overlay-contract.test.ts tests/scan/result-breakdown-paywall.contract.test.ts tests/scan/score-ring-state-consistency.test.ts tests/scan/product-overview-ai-fallback.test.ts tests/scan/verification-presentation.test.ts backend/tests/barcode-release-flags-contract.test.mjs backend/tests/guest-scan-session-contract.test.mjs backend/tests/barcode-resolution-policy-contract.test.mjs`
-  - Passed: 40/40.
+  - Passed from clean candidate worktree at `ca92c40e`: 40/40.
 
 - `npm run lint`
-  - Passed with 0 errors.
+  - Passed from clean candidate worktree at `ca92c40e` with 0 errors.
   - Remaining: 124 warnings.
 
 - `npm --prefix backend run build`
@@ -119,19 +132,20 @@ submission branch.
 Committed release packages:
 
 - Product Search release package.
+- Product Search index migrations.
 - App Store config and production env wiring.
 - RevenueCat/paywall post-purchase flow.
 - Auth/onboarding/home handoff package.
 - My Saved and Stack Safety gates.
 - Protected scan release package.
+- Profile/legal release surfaces.
+- App Store icon alpha fix.
 
 Still outside the release package unless explicitly accepted:
 
-- Profile screen redesign changes.
 - Progress screen style changes.
 - Backend science/safety compiler changes not covered by the release commits.
-- Search replay/data/migration artifacts not committed in the Product Search
-  package.
+- Search replay/data artifacts not committed in the Product Search package.
 - Local/temp metadata such as `supabase/.temp/cli-latest`.
 - Untracked local tool or skill metadata unless intentionally required.
 
@@ -167,13 +181,11 @@ submit, run a real device or TestFlight smoke:
 
 Do not submit directly from the current dirty working tree.
 
-Next best step is to create or switch to a clean release branch at the latest
-release package commit, then:
+Next best step is to push `codex/app-store-release-candidate` at `ca92c40e`,
+open/merge a release PR, then:
 
-1. Rerun `npm run release:app-store-check`.
-2. Rerun `npm run search:verify-release`.
-3. Rerun focused Pro/Onboarding/Scan contract suites.
-4. Build TestFlight.
-5. Complete native sandbox purchase/restore smoke.
-6. Only then submit the app version and first subscription package to App Store
+1. Build TestFlight from the clean release candidate.
+2. Complete native sandbox purchase/restore smoke.
+3. Verify production Product Search index/cache and Render backend after deploy.
+4. Only then submit the app version and first subscription package to App Store
    Review.
