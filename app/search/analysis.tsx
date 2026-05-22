@@ -4,7 +4,7 @@ import {
   type SearchProductDetailAPIResponse,
   type SearchProductDetailResponse,
 } from '@/lib/api-client';
-import { buildDatabaseAnalysisPayload } from '@/lib/search/databaseAnalysis';
+import { buildDatabaseAnalysisPayload } from '../../lib/search/databaseAnalysis';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { ArrowLeft, RefreshCw } from 'lucide-react-native';
