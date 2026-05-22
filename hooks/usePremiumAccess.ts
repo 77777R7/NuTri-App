@@ -7,6 +7,7 @@ import { useWaitlistTrialBonus } from '@/hooks/useWaitlistTrialBonus';
 import { supabase } from '@/lib/supabase';
 
 type PremiumAccessSource =
+  | 'dev_override'
   | 'tester_override'
   | 'subscription_sdk'
   | 'session_metadata'
@@ -58,6 +59,12 @@ const readSessionSubscriptionStatus = (sessionUser: ReturnType<typeof useAuth>['
 
 const hasPremiumFromStatus = (status: string | null): boolean =>
   status != null && ACTIVE_PREMIUM_STATUSES.has(status);
+
+const DEV_FORCE_PREMIUM =
+  typeof __DEV__ !== 'undefined' &&
+  __DEV__ &&
+  (process.env.EXPO_PUBLIC_DEV_FORCE_PREMIUM === '1' ||
+    process.env.EXPO_PUBLIC_DEV_FORCE_PREMIUM === 'true');
 
 export const usePremiumAccess = (): PremiumAccessState => {
   const { user, loading: authLoading } = useAuth();
@@ -113,6 +120,16 @@ export const usePremiumAccess = (): PremiumAccessState => {
   }, [refresh]);
 
   const value = useMemo<PremiumAccessState>(() => {
+    if (DEV_FORCE_PREMIUM) {
+      return {
+        isPremium: true,
+        loading: false,
+        source: 'dev_override',
+        status: 'dev_premium_override',
+        refresh,
+      };
+    }
+
     if (subscription.testOverride === 'paid') {
       return {
         isPremium: true,

@@ -13,12 +13,19 @@ import { normalizeRoutinePreferences } from '@/lib/routineSchedule';
 import { supabase } from '@/lib/supabase';
 import { recordPersonalizationEvents } from '@/lib/supabase/personalization';
 import { useAuth } from '@/contexts/AuthContext';
-import type { RoutinePreferences, SavedSupplement, SavedSupplementInput } from '@/types/saved-supplements';
+import { getSavedSupplementAddGateDecision } from '@/lib/pro/featureGates';
+import type {
+  RoutinePreferences,
+  SavedSupplement,
+  SavedSupplementAddOptions,
+  SavedSupplementAddResult,
+  SavedSupplementInput,
+} from '@/types/saved-supplements';
 
 type SavedSupplementsState = {
   loading: boolean;
   savedSupplements: SavedSupplement[];
-  addSupplement: (input: SavedSupplementInput) => SavedSupplement | null;
+  addSupplement: (input: SavedSupplementInput, options?: SavedSupplementAddOptions) => SavedSupplementAddResult;
   removeSupplement: (id: string) => Promise<void>;
   removeSupplements: (ids: string[]) => Promise<void>;
   updateSupplement: (id: string, updates: Partial<SavedSupplement>) => Promise<void>;
@@ -297,7 +304,7 @@ export const SavedSupplementsProvider = ({ children }: { children: React.ReactNo
   }, [refreshFromRemote, user?.id]);
 
   const addSupplement = useCallback(
-    (input: SavedSupplementInput) => {
+    (input: SavedSupplementInput, options?: SavedSupplementAddOptions): SavedSupplementAddResult => {
       const now = new Date().toISOString();
       const next: SavedSupplement = {
         id: createLocalId(),
@@ -320,14 +327,25 @@ export const SavedSupplementsProvider = ({ children }: { children: React.ReactNo
       const existing = savedSupplements.find(item =>
         getAllDedupeKeys(item).some(key => nextKeys.includes(key)),
       );
-      if (existing) {
-        return null;
+
+      const gate = getSavedSupplementAddGateDecision({
+        isPremium: options?.isPremium === true,
+        savedCount: savedSupplements.length,
+        isDuplicate: Boolean(existing),
+      });
+
+      if (gate.status === 'duplicate') {
+        return { status: 'duplicate', supplement: existing! };
+      }
+
+      if (gate.status === 'limit_reached') {
+        return gate;
       }
 
       const updated = [next, ...savedSupplements];
       persist(updated);
       syncToRemote(next).catch(() => undefined);
-      return next;
+      return { status: 'added', supplement: next };
     },
     [persist, savedSupplements, syncToRemote],
   );

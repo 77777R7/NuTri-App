@@ -23,6 +23,8 @@ type PurchaseResult = {
   ok: boolean;
   cancelled?: boolean;
   message?: string;
+  productId?: string | null;
+  isTrial?: boolean;
 };
 
 type SubscriptionContextValue = {
@@ -46,12 +48,20 @@ type SubscriptionContextValue = {
   refresh: () => Promise<void>;
   setTestOverride: (value: PremiumTestOverride) => Promise<void>;
   purchasePrimaryPackage: () => Promise<PurchaseResult>;
+  purchaseMonthlyPackage: () => Promise<PurchaseResult>;
   restorePurchases: () => Promise<PurchaseResult>;
 };
 
 const SubscriptionContext = createContext<SubscriptionContextValue | undefined>(undefined);
 
 const ACTIVE_STATUSES = new Set(['active', 'trialing']);
+const PREMIUM_TEST_OVERRIDE_ENABLED =
+  typeof __DEV__ !== 'undefined' ? __DEV__ : false;
+const DEV_FORCE_PREMIUM =
+  typeof __DEV__ !== 'undefined' &&
+  __DEV__ &&
+  (process.env.EXPO_PUBLIC_DEV_FORCE_PREMIUM === '1' ||
+    process.env.EXPO_PUBLIC_DEV_FORCE_PREMIUM === 'true');
 
 const normalizeStatus = (value: string | null | undefined): string | null => {
   if (!value) return null;
@@ -59,20 +69,35 @@ const normalizeStatus = (value: string | null | undefined): string | null => {
   return normalized.length > 0 ? normalized : null;
 };
 
+const findRevenueCatEntitlement = (
+  entitlements: CustomerInfo['entitlements']['active'] | CustomerInfo['entitlements']['all'],
+  preferredEntitlementId: string | null,
+) => {
+  if (!preferredEntitlementId) {
+    return Object.values(entitlements)[0] ?? null;
+  }
+
+  const exactMatch = entitlements[preferredEntitlementId] ?? null;
+  if (exactMatch) return exactMatch;
+
+  const normalizedPreferredId = preferredEntitlementId.trim().toLowerCase();
+  return (
+    Object.values(entitlements).find(
+      (entitlement) => entitlement.identifier.trim().toLowerCase() === normalizedPreferredId,
+    ) ?? null
+  );
+};
+
 const normalizeRevenueCatStatus = (customerInfo: CustomerInfo | null, preferredEntitlementId: string | null) => {
   if (!customerInfo) return null;
 
-  const activeEntitlement = preferredEntitlementId
-    ? customerInfo.entitlements.active[preferredEntitlementId] ?? null
-    : Object.values(customerInfo.entitlements.active)[0] ?? null;
+  const activeEntitlement = findRevenueCatEntitlement(customerInfo.entitlements.active, preferredEntitlementId);
 
   if (activeEntitlement) {
     return activeEntitlement.periodType?.toLowerCase() === 'trial' ? 'trialing' : 'active';
   }
 
-  const knownEntitlement = preferredEntitlementId
-    ? customerInfo.entitlements.all[preferredEntitlementId] ?? null
-    : Object.values(customerInfo.entitlements.all)[0] ?? null;
+  const knownEntitlement = findRevenueCatEntitlement(customerInfo.entitlements.all, preferredEntitlementId);
 
   if (!knownEntitlement) return 'inactive';
   if (knownEntitlement.billingIssueDetectedAt) return 'billing_issue';
@@ -99,10 +124,9 @@ const mapCustomerInfoToWrite = (
   preferredEntitlementId: string | null,
 ): UserPremiumEntitlementWrite => {
   const normalizedStatus = normalizeRevenueCatStatus(customerInfo, preferredEntitlementId) ?? 'inactive';
-  const entitlement =
-    (preferredEntitlementId
-      ? customerInfo?.entitlements.all[preferredEntitlementId] ?? null
-      : Object.values(customerInfo?.entitlements.all ?? {})[0] ?? null) ?? null;
+  const entitlement = customerInfo
+    ? findRevenueCatEntitlement(customerInfo.entitlements.all, preferredEntitlementId)
+    : null;
 
   return {
     premium_status: normalizedStatus,
@@ -115,6 +139,20 @@ const mapCustomerInfoToWrite = (
     premium_will_renew: entitlement?.willRenew ?? null,
     premium_period_type: entitlement?.periodType?.toLowerCase?.() ?? null,
     premium_updated_at: new Date().toISOString(),
+  };
+};
+
+const getActivePurchaseMetadata = (
+  customerInfo: CustomerInfo | null,
+  preferredEntitlementId: string | null,
+) => {
+  const activeEntitlement = customerInfo
+    ? findRevenueCatEntitlement(customerInfo.entitlements.active, preferredEntitlementId)
+    : null;
+
+  return {
+    productId: activeEntitlement?.productIdentifier ?? null,
+    isTrial: activeEntitlement?.periodType?.toLowerCase?.() === 'trial',
   };
 };
 
@@ -161,6 +199,13 @@ export const SubscriptionProvider = ({ children }: PropsWithChildren) => {
 
   useEffect(() => {
     let active = true;
+
+    if (!PREMIUM_TEST_OVERRIDE_ENABLED) {
+      setTestOverrideState('auto');
+      return () => {
+        active = false;
+      };
+    }
 
     void getPremiumTestOverride()
       .then((value) => {
@@ -349,7 +394,12 @@ export const SubscriptionProvider = ({ children }: PropsWithChildren) => {
       setCustomerInfo(result.customerInfo);
       await persistEntitlement(result.customerInfo);
       await refresh();
-      return { ok: true };
+      const metadata = getActivePurchaseMetadata(result.customerInfo, entitlementId);
+      return {
+        ok: true,
+        productId: metadata.productId ?? primaryPackage.product.identifier,
+        isTrial: metadata.isTrial || Boolean(primaryPackage.product.introPrice),
+      };
     } catch (purchaseError) {
       const userCancelled =
         purchaseError != null
@@ -367,7 +417,54 @@ export const SubscriptionProvider = ({ children }: PropsWithChildren) => {
     } finally {
       setPurchaseBusy(false);
     }
-  }, [offering, persistEntitlement, previewMode, refresh]);
+  }, [entitlementId, offering, persistEntitlement, previewMode, refresh]);
+
+  const purchaseMonthlyPackage = useCallback(async (): Promise<PurchaseResult> => {
+    if (previewMode) {
+      const message = 'Real purchases require a development build or production build.';
+      setError(message);
+      return { ok: false, message };
+    }
+
+    const monthlyPackage = resolvePreferredPackage(offering, PACKAGE_TYPE.MONTHLY);
+    if (!monthlyPackage) {
+      const message = 'Monthly plan is temporarily unavailable.';
+      setError(message);
+      return { ok: false, message };
+    }
+
+    setPurchaseBusy(true);
+    setError(null);
+
+    try {
+      const result = await Purchases.purchasePackage(monthlyPackage);
+      setCustomerInfo(result.customerInfo);
+      await persistEntitlement(result.customerInfo);
+      await refresh();
+      const metadata = getActivePurchaseMetadata(result.customerInfo, entitlementId);
+      return {
+        ok: true,
+        productId: metadata.productId ?? monthlyPackage.product.identifier,
+        isTrial: metadata.isTrial || Boolean(monthlyPackage.product.introPrice),
+      };
+    } catch (purchaseError) {
+      const userCancelled =
+        purchaseError != null
+        && typeof purchaseError === 'object'
+        && 'userCancelled' in purchaseError
+        && purchaseError.userCancelled === true;
+
+      if (userCancelled) {
+        return { ok: false, cancelled: true };
+      }
+
+      const message = resolvePurchaseErrorMessage(purchaseError);
+      setError(message);
+      return { ok: false, message };
+    } finally {
+      setPurchaseBusy(false);
+    }
+  }, [entitlementId, offering, persistEntitlement, previewMode, refresh]);
 
   const restorePurchases = useCallback(async (): Promise<PurchaseResult> => {
     if (previewMode) {
@@ -392,7 +489,12 @@ export const SubscriptionProvider = ({ children }: PropsWithChildren) => {
         return { ok: false, message };
       }
 
-      return { ok: true };
+      const metadata = getActivePurchaseMetadata(restoredCustomerInfo, entitlementId);
+      return {
+        ok: true,
+        productId: metadata.productId,
+        isTrial: metadata.isTrial,
+      };
     } catch (restoreError) {
       const message = resolvePurchaseErrorMessage(restoreError);
       setError(message);
@@ -403,6 +505,11 @@ export const SubscriptionProvider = ({ children }: PropsWithChildren) => {
   }, [entitlementId, persistEntitlement, previewMode, refresh]);
 
   const handleSetTestOverride = useCallback(async (value: PremiumTestOverride) => {
+    if (!PREMIUM_TEST_OVERRIDE_ENABLED) {
+      setTestOverrideState('auto');
+      return;
+    }
+
     setTestOverrideState(value);
     await setPremiumTestOverride(value);
   }, []);
@@ -412,22 +519,27 @@ export const SubscriptionProvider = ({ children }: PropsWithChildren) => {
     const monthlyPackage = resolvePreferredPackage(offering, PACKAGE_TYPE.MONTHLY);
     const primaryPackage = pickPrimaryPackage(offering);
     const liveEntitlementStatus = normalizeStatus(normalizeRevenueCatStatus(customerInfo, entitlementId));
+    const effectiveTestOverride = PREMIUM_TEST_OVERRIDE_ENABLED ? testOverride : 'auto';
     const entitlementStatus =
-      testOverride === 'paid'
+      DEV_FORCE_PREMIUM
+        ? 'dev_premium_override'
+        : effectiveTestOverride === 'paid'
         ? 'paid_override'
-        : testOverride === 'unpaid'
+        : effectiveTestOverride === 'unpaid'
           ? 'unpaid_override'
           : liveEntitlementStatus;
     const isPremium =
-      testOverride === 'paid'
+      DEV_FORCE_PREMIUM
         ? true
-        : testOverride === 'unpaid'
+        : effectiveTestOverride === 'paid'
+        ? true
+        : effectiveTestOverride === 'unpaid'
           ? false
           : entitlementStatus != null && ACTIVE_STATUSES.has(entitlementStatus);
 
     return {
       configured,
-      loading,
+      loading: DEV_FORCE_PREMIUM ? false : loading,
       purchaseBusy,
       restoreBusy,
       previewMode,
@@ -441,11 +553,12 @@ export const SubscriptionProvider = ({ children }: PropsWithChildren) => {
       trialEligibility,
       entitlementStatus,
       isPremium,
-      testOverride,
+      testOverride: effectiveTestOverride,
       clearError: () => setError(null),
       refresh,
       setTestOverride: handleSetTestOverride,
       purchasePrimaryPackage,
+      purchaseMonthlyPackage,
       restorePurchases,
     };
   }, [
@@ -458,6 +571,7 @@ export const SubscriptionProvider = ({ children }: PropsWithChildren) => {
     previewMode,
     uiPreviewMode,
     purchaseBusy,
+    purchaseMonthlyPackage,
     purchasePrimaryPackage,
     refresh,
     restoreBusy,
