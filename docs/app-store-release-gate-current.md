@@ -1,9 +1,9 @@
 # App Store Release Gate - Current Evidence
 
 Date: 2026-05-23
-Branch observed: `main` via `codex/app-store-release-from-main`, `codex/app-store-eas-lockfile-fix`, `codex/app-store-submit-evidence`, `codex/app-store-final-gate-wording`, `codex/testflight-smoke-evidence`, `codex/testflight-evidence-hard-gate`
+Branch observed: `main` via `codex/app-store-release-from-main`, `codex/app-store-eas-lockfile-fix`, `codex/app-store-submit-evidence`, `codex/app-store-final-gate-wording`, `codex/testflight-smoke-evidence`, `codex/testflight-evidence-hard-gate`, `codex/app-store-metadata-gate`
 Workspace: `/private/tmp/nutri-appstore-from-main`
-Base: latest `origin/main` through PR #209 (`3bc71ba5`)
+Base: latest `origin/main` through PR #210 (`57eea67f`)
 
 ## Verdict
 
@@ -44,7 +44,9 @@ TestFlight sandbox purchase/restore smoke has passed on device.
 Run from `/private/tmp/nutri-appstore-from-main`:
 
 - `npm ci --include=dev --ignore-scripts --dry-run`: pass.
-- `npm run release:app-store-check`: pass, 0 blockers / 0 warnings.
+- `npm run release:app-store-check`: now intentionally blocked until
+  `docs/testflight-sandbox-smoke-evidence.md` is completed with native
+  TestFlight/sandbox evidence and `Ready to submit for review: Yes`.
 - `npm run lint`: pass, 0 errors / 117 existing warnings.
 - `npm run search:verify-release`: pass, 6/6 verifier groups.
 - Product Search UI/query contracts: 52/52 pass.
@@ -76,6 +78,18 @@ Run from `/private/tmp/nutri-appstore-from-main`:
 - App Store metadata age rating: adjusted.
   - `healthOrWellnessTopics` is set to `true` because NuTri contains supplement
     health/wellness decision-support content.
+- EAS Metadata push: pass.
+  - Command:
+    `npx eas-cli metadata:push --profile production --non-interactive`
+  - Result:
+    App Store Connect version/release info, en-US localized info, localized app
+    info, and age rating declaration were updated.
+  - App Store Connect link:
+    `https://appstoreconnect.apple.com/apps/6759846833/appstore`.
+- Physical device discovery: not ready.
+  - `xcrun xctrace list devices` sees `Howard's iPhone (2)` on iOS `18.7.8`,
+    but it is listed under Devices Offline.
+  - `xcrun devicectl list devices` sees the same iPhone as `unavailable`.
 
 ## Submit Notes
 
