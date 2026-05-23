@@ -1,9 +1,9 @@
 # App Store Release Gate - Current Evidence
 
 Date: 2026-05-23
-Branch observed: `main` via `codex/app-store-release-from-main`, `codex/app-store-eas-lockfile-fix`, `codex/app-store-submit-evidence`, `codex/app-store-final-gate-wording`, `codex/testflight-smoke-evidence`, `codex/testflight-evidence-hard-gate`, `codex/app-store-metadata-gate`
+Branch observed: `main` via `codex/app-store-release-from-main`, `codex/app-store-eas-lockfile-fix`, `codex/app-store-submit-evidence`, `codex/app-store-final-gate-wording`, `codex/testflight-smoke-evidence`, `codex/testflight-evidence-hard-gate`, `codex/app-store-metadata-gate`, `codex/app-store-metadata-push-evidence`, `codex/testflight-device-recovery-evidence`
 Workspace: `/private/tmp/nutri-appstore-from-main`
-Base: latest `origin/main` through PR #210 (`57eea67f`)
+Base: latest `origin/main` through PR #212 (`0345c97e`)
 
 ## Verdict
 
@@ -86,6 +86,15 @@ Run from `/private/tmp/nutri-appstore-from-main`:
     info, and age rating declaration were updated.
   - App Store Connect link:
     `https://appstoreconnect.apple.com/apps/6759846833/appstore`.
+- EAS Metadata remote re-pull after push: pass.
+  - Command:
+    `npx eas-cli metadata:pull --profile production --non-interactive`
+  - Result:
+    Re-generated `store.config.json` from App Store Connect with the pushed
+    description, title, subtitle, privacy policy URL, support URL, keywords, and
+    health/wellness age-rating disclosure present.
+  - Follow-up lint:
+    `npx eas-cli metadata:lint --profile production --json` returned `[]`.
 - Physical device discovery: not ready.
   - `xcrun xctrace list devices` sees `Howard's iPhone (2)` on iOS `18.7.8`,
     but it is listed under Devices Offline.
@@ -106,6 +115,10 @@ This happened before Apple upload/auth output, so it is currently an Expo submit
 service availability issue, not evidence of an app binary failure. The direct
 IPA URL submit path succeeded and should be preferred if the same GraphQL error
 appears again.
+
+`eas submit:list` / `eas submit:view` are not available in the installed
+`eas-cli/19.0.8`, so post-upload Apple processing status must be verified in App
+Store Connect/TestFlight rather than through EAS CLI.
 
 ## Evidence To Refresh After Any New Code Change
 
