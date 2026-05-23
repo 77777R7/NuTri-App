@@ -16,6 +16,27 @@ RevenueCat project:
 - EAS submit ID: `2f373bf2-2341-4eed-8c50-254b2b506428`
 - IPA: `https://expo.dev/artifacts/eas/ufFvJAVEHUYYhPe8PgD1XC.ipa`
 
+## Device Availability
+
+Latest probe: 2026-05-23.
+
+- `xcrun xctrace list devices` sees `Howard's iPhone (2)` on iOS `18.7.8`,
+  but lists it under `Devices Offline`.
+- `xcrun devicectl list devices` sees `Howard's iPhone (2)` as
+  `unavailable`.
+- Result: native TestFlight smoke cannot start from this Mac until the iPhone is
+  online/available or the tester runs the checklist manually on-device and
+  records evidence here.
+
+Recovery checklist before retrying device automation:
+
+1. Keep the iPhone unlocked and on the Home screen.
+2. Reconnect by USB directly to the Mac, not through an unpowered hub.
+3. Tap `Trust This Computer` if prompted, then enter the passcode.
+4. Open Xcode > Window > Devices and Simulators and wait for the device to
+   finish pairing/indexing.
+5. If the device still appears unavailable, restart the iPhone and reconnect.
+
 ## Required Pass/Fail Evidence
 
 Use this file as the release sign-off record. Fill every row with Pass, Fail,
