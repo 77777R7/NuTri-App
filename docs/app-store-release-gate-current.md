@@ -3,7 +3,7 @@
 Date: 2026-05-23
 Branch observed: `main` via `codex/app-store-release-from-main`, `codex/app-store-eas-lockfile-fix`, `codex/app-store-submit-evidence`
 Workspace: `/private/tmp/nutri-appstore-from-main`
-Base: latest `origin/main` through PR #205 (`5fd5748f`)
+Base: latest `origin/main` through PR #206 (`33973bcd`)
 
 ## Verdict
 
@@ -93,8 +93,8 @@ Run from `/private/tmp/nutri-appstore-from-main`:
 
 ## Native TestFlight Checklist Still Required
 
-Automated JS and contract gates are not enough for App Store submission. Before
-submit, run a real device or TestFlight smoke:
+Automated JS and contract gates are not enough for App Store Review. Before
+submitting the app version for review, run a real device or TestFlight smoke:
 
 - Install release/TestFlight build on iPhone.
 - Open app from cold start.
