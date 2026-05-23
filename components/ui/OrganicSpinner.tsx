@@ -27,6 +27,10 @@ export const OrganicSpinner: React.FC<OrganicSpinnerProps> = ({ size = 40, color
     return <ActivityIndicator size="small" color={color} />;
   }
 
+  return <ReanimatedOrganicSpinner size={size} color={color} />;
+};
+
+const ReanimatedOrganicSpinner: React.FC<Required<OrganicSpinnerProps>> = ({ size, color }) => {
   const progress = useSharedValue(0);
 
   useEffect(() => {
