@@ -1,15 +1,16 @@
 # App Store Release Gate - Current Evidence
 
 Date: 2026-05-23
-Branch observed: `main` via `codex/app-store-release-from-main`, `codex/app-store-eas-lockfile-fix`
+Branch observed: `main` via `codex/app-store-release-from-main`, `codex/app-store-eas-lockfile-fix`, `codex/app-store-submit-evidence`
 Workspace: `/private/tmp/nutri-appstore-from-main`
-Base: latest `origin/main` through PR #204 (`4b6cecf5`)
+Base: latest `origin/main` through PR #205 (`5fd5748f`)
 
 ## Verdict
 
-Release candidate is code-gated and has a successful production iOS EAS build.
-It is not App Store-submitted yet because `eas submit` is currently blocked by
-Expo GraphQL `Service Unavailable`.
+Release candidate is code-gated, has a successful production iOS EAS build, and
+the build has been uploaded to App Store Connect/TestFlight. It is now waiting
+for Apple build processing before native TestFlight and sandbox purchase/restore
+smoke can complete.
 
 This branch starts from the current `origin/main` Product Search and scan/backend
 line, then layers only the App Store release essentials that were missing from
@@ -22,9 +23,8 @@ main:
 - App icon alpha fix.
 - Stack Safety wording contract.
 
-Do not submit to App Store Review until the successful EAS build is uploaded to
-App Store Connect/TestFlight and native sandbox purchase/restore smoke has
-passed on device.
+Do not submit to App Store Review until Apple processing completes and native
+TestFlight sandbox purchase/restore smoke has passed on device.
 
 ## Current Release Package Commits
 
@@ -57,8 +57,14 @@ Run from `/private/tmp/nutri-appstore-from-main`:
   - Earlier EAS blockers fixed:
     - Build `abac7935-5347-4d89-ba6b-240dd41dea70`: `npm ci` lockfile mismatch.
     - Build `00eaa591-3fba-4ef8-9c6f-9f254965a365`: Push Notifications entitlement/profile mismatch.
+- EAS Submit `2f373bf2-2341-4eed-8c50-254b2b506428`: pass.
+  - Command that worked:
+    `npx eas-cli submit --platform ios --url https://expo.dev/artifacts/eas/ufFvJAVEHUYYhPe8PgD1XC.ipa --non-interactive --verbose`
+  - Upload result: `Successfully uploaded the new binary to App Store Connect`.
+  - Apple processing link:
+    `https://appstoreconnect.apple.com/apps/6759846833/testflight/ios`.
 
-## Current External Blocker
+## Submit Notes
 
 `eas submit --platform ios --latest --non-interactive` and
 `eas submit --platform ios --id e4cca553-6be9-4912-8a96-dc13e8d493f2 --non-interactive`
@@ -70,7 +76,9 @@ Error: GraphQL request failed.
 ```
 
 This happened before Apple upload/auth output, so it is currently an Expo submit
-service availability issue, not evidence of an app binary failure.
+service availability issue, not evidence of an app binary failure. The direct
+IPA URL submit path succeeded and should be preferred if the same GraphQL error
+appears again.
 
 ## Evidence To Refresh After Any New Code Change
 
