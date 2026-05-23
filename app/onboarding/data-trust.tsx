@@ -3,7 +3,6 @@ import {
   Animated as RNAnimated,
   BackHandler,
   Easing as RNEasing,
-  Linking,
   Platform,
   StyleSheet,
   Text,
@@ -42,8 +41,7 @@ import {
 import { useOnboarding } from '@/contexts/OnboardingContext';
 import { useTransitionDir } from '@/contexts/TransitionContext';
 import { trackOnboardingEvent } from '@/lib/analytics/onboarding';
-
-const PRIVACY_POLICY_URL = 'https://www.nutri.app/privacy';
+import { openPrivacyPolicy } from '@/lib/legalLinks';
 
 const BLUR_PROPS =
   Platform.OS === 'android'
@@ -304,12 +302,8 @@ export default function DataTrustScreen() {
     policyTranslate,
   ]);
 
-  const handleOpenPolicy = useCallback(async () => {
-    try {
-      await Linking.openURL(PRIVACY_POLICY_URL);
-    } catch (error) {
-      console.warn('[onboarding] failed to open privacy policy', error);
-    }
+  const handleOpenPolicy = useCallback(() => {
+    void openPrivacyPolicy();
   }, []);
 
   const handleGetStarted = useCallback(async () => {

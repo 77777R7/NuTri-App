@@ -21,6 +21,12 @@ const PHRASES = [
   'Let’s optimize your health',
 ];
 
+const DEV_FORCE_HOME =
+  typeof __DEV__ !== 'undefined' &&
+  __DEV__ &&
+  (process.env.EXPO_PUBLIC_DEV_FORCE_HOME === '1' ||
+    process.env.EXPO_PUBLIC_DEV_FORCE_HOME === 'true');
+
 export default function AuthGateScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -31,7 +37,7 @@ export default function AuthGateScreen() {
   const [index, setIndex] = useState(0);
 
   useEffect(() => {
-    if (AUTH_DISABLED) {
+    if (DEV_FORCE_HOME || AUTH_DISABLED) {
       router.replace('/');
       return;
     }
@@ -41,7 +47,7 @@ export default function AuthGateScreen() {
   }, [authLoading, session, router]);
 
   useEffect(() => {
-    if (AUTH_DISABLED || authLoading || session) return;
+    if (DEV_FORCE_HOME || AUTH_DISABLED || authLoading || session) return;
 
     const animateOnce = () => {
       fade.setValue(0);
@@ -67,7 +73,7 @@ export default function AuthGateScreen() {
 
   const go = useCallback((path: Href) => router.push(path), [router]);
 
-  if (AUTH_DISABLED || authLoading || session) return null;
+  if (DEV_FORCE_HOME || AUTH_DISABLED || authLoading || session) return null;
 
   return (
     <BrandGradient>

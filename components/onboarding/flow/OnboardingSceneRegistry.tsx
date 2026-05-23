@@ -10,7 +10,6 @@ import {
   Animated as RNAnimated,
   Easing as RNEasing,
   LayoutChangeEvent,
-  Linking,
   Platform,
   StyleSheet,
   Text,
@@ -40,6 +39,7 @@ import { QA_EYEBROW } from '@/components/onboarding/qa/qaTokens';
 import { WelcomeHeroCarousel } from '@/components/onboarding/welcome/WelcomeHeroCarousel';
 import { WelcomeHeroGlow } from '@/components/onboarding/welcome/WelcomeHeroGlow';
 import { WelcomePrimaryCTA } from '@/components/onboarding/welcome/WelcomePrimaryCTA';
+import { openPrivacyPolicy } from '@/lib/legalLinks';
 import {
   ACTIVE_BLUE,
   FOREGROUND,
@@ -80,7 +80,6 @@ import {
   PlanPreviewFlowScene,
 } from './SummaryFlowScenes';
 
-const PRIVACY_POLICY_URL = 'https://www.nutri.app/privacy';
 const BLUR_PROPS =
   Platform.OS === 'android'
     ? ({ experimentalBlurMethod: 'dimezisBlurView' } as const)
@@ -656,12 +655,8 @@ function DataTrustFlowScene({
     });
   }, [sceneActive]);
 
-  const handleOpenPolicy = useCallback(async () => {
-    try {
-      await Linking.openURL(PRIVACY_POLICY_URL);
-    } catch (error) {
-      console.warn('[onboarding] failed to open privacy policy', error);
-    }
+  const handleOpenPolicy = useCallback(() => {
+    void openPrivacyPolicy();
   }, []);
 
   const handleGetStarted = useCallback(async () => {
