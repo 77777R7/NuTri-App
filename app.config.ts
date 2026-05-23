@@ -142,7 +142,6 @@ const createExpoConfig = ({ config }: ConfigContext): ExpoConfig => {
     plugins: [
       'expo-router',
       'expo-localization',
-      'expo-notifications',
       'expo-secure-store',
       'expo-web-browser',
       [
