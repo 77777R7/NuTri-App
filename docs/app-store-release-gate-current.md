@@ -1,13 +1,15 @@
 # App Store Release Gate - Current Evidence
 
-Date: 2026-05-22
-Branch observed: `codex/app-store-release-from-main`
+Date: 2026-05-23
+Branch observed: `main` via `codex/app-store-release-from-main`, `codex/app-store-eas-lockfile-fix`
 Workspace: `/private/tmp/nutri-appstore-from-main`
-Base: latest `origin/main` at `9ae796b9`
+Base: latest `origin/main` through PR #204 (`4b6cecf5`)
 
 ## Verdict
 
-Main-based release candidate in progress.
+Release candidate is code-gated and has a successful production iOS EAS build.
+It is not App Store-submitted yet because `eas submit` is currently blocked by
+Expo GraphQL `Service Unavailable`.
 
 This branch starts from the current `origin/main` Product Search and scan/backend
 line, then layers only the App Store release essentials that were missing from
@@ -20,9 +22,9 @@ main:
 - App icon alpha fix.
 - Stack Safety wording contract.
 
-Do not submit to App Store Review until this main-based candidate has passed the
-full focused gate set again and a native TestFlight sandbox purchase/restore
-smoke has passed on device.
+Do not submit to App Store Review until the successful EAS build is uploaded to
+App Store Connect/TestFlight and native sandbox purchase/restore smoke has
+passed on device.
 
 ## Current Release Package Commits
 
@@ -31,8 +33,46 @@ smoke has passed on device.
 - `3a29edf3` - Home compile fix after applying Pro gates on latest main.
 - `e9286b41` - Profile/legal release gates, App Store icon alpha, Stack Safety copy.
 - `6b8f5646` - Stack Safety wording contract update.
+- `0f02d10e` - Release QA gates: legal helper usage, tester bypass guards, scan
+  paywall price fallback cleanup, cohort/mobile-soak diagnostics.
+- `5d1c5c82` - Sync `package-lock.json` for EAS `npm ci`.
+- `5f5716b2` - Remove temporary push notification entitlement from release build.
 
-## Evidence To Refresh On This Branch
+## Current Verified Evidence
+
+Run from `/private/tmp/nutri-appstore-from-main`:
+
+- `npm ci --include=dev --ignore-scripts --dry-run`: pass.
+- `npm run release:app-store-check`: pass, 0 blockers / 0 warnings.
+- `npm run lint`: pass, 0 errors / 117 existing warnings.
+- `npm run search:verify-release`: pass, 6/6 verifier groups.
+- Product Search UI/query contracts: 52/52 pass.
+- Product Search replay/smoke tests: 22/22 pass.
+- Pro/Auth/Saved/Stack Safety focused tests: 26/26 pass.
+- Scan focused release regression tests: 51/51 pass.
+- `npx expo export --platform ios --output-dir /private/tmp/nutri-ios-export-from-main`: pass.
+- EAS production iOS build `e4cca553-6be9-4912-8a96-dc13e8d493f2`: pass.
+  - Build number: 76.
+  - IPA: `https://expo.dev/artifacts/eas/ufFvJAVEHUYYhPe8PgD1XC.ipa`.
+  - Earlier EAS blockers fixed:
+    - Build `abac7935-5347-4d89-ba6b-240dd41dea70`: `npm ci` lockfile mismatch.
+    - Build `00eaa591-3fba-4ef8-9c6f-9f254965a365`: Push Notifications entitlement/profile mismatch.
+
+## Current External Blocker
+
+`eas submit --platform ios --latest --non-interactive` and
+`eas submit --platform ios --id e4cca553-6be9-4912-8a96-dc13e8d493f2 --non-interactive`
+both returned:
+
+```text
+Service Unavailable
+Error: GraphQL request failed.
+```
+
+This happened before Apple upload/auth output, so it is currently an Expo submit
+service availability issue, not evidence of an app binary failure.
+
+## Evidence To Refresh After Any New Code Change
 
 Run from `/private/tmp/nutri-appstore-from-main`:
 
