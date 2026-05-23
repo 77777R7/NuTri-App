@@ -1,9 +1,9 @@
 # App Store Release Gate - Current Evidence
 
 Date: 2026-05-23
-Branch observed: `main` via `codex/app-store-release-from-main`, `codex/app-store-eas-lockfile-fix`, `codex/app-store-submit-evidence`
+Branch observed: `main` via `codex/app-store-release-from-main`, `codex/app-store-eas-lockfile-fix`, `codex/app-store-submit-evidence`, `codex/app-store-final-gate-wording`
 Workspace: `/private/tmp/nutri-appstore-from-main`
-Base: latest `origin/main` through PR #206 (`33973bcd`)
+Base: latest `origin/main` through PR #207 (`304a5403`)
 
 ## Verdict
 
@@ -112,6 +112,10 @@ submitting the app version for review, run a real device or TestFlight smoke:
 - Restore purchase and confirm restore goes through the post-purchase success
   screen.
 - Kill and relaunch app, confirm entitlement and navigation recover.
+
+Record this final native evidence in
+`docs/testflight-sandbox-smoke-evidence.md` before submitting the app version
+for App Store Review.
 
 ## Do Not Ship Without Explicit Decision
 

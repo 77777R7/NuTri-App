@@ -141,6 +141,7 @@ for (const requiredDoc of [
   'docs/revenuecat-apple-purchase-followup.md',
   'docs/scan-release-gate.md',
   'docs/product-search-release-readiness.md',
+  'docs/testflight-sandbox-smoke-evidence.md',
 ]) {
   if (!existsSync(path.join(root, requiredDoc))) {
     addWarning(`Missing release support doc: ${requiredDoc}`);
