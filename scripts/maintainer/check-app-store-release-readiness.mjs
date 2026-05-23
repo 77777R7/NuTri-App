@@ -95,6 +95,7 @@ const assertPublicHttpsUrl = (profileName, key, value) => {
 const packageJson = readJson('package.json');
 const easJson = readJson('eas.json');
 const appConfigSource = readText('app.config.ts');
+const legalLinksSource = readText('lib/legalLinks.ts');
 
 if (packageJson.dependencies?.['expo-location']) {
   addBlocker('expo-location is installed but no shipped device-location feature is currently allowed.');
@@ -142,6 +143,52 @@ if (!easJson.submit?.production?.ios?.ascAppId) {
   addBlocker('Missing submit.production.ios.ascAppId for App Store submit.');
 } else {
   addPass(`App Store Connect app id is configured: ${easJson.submit.production.ios.ascAppId}`);
+}
+
+const storeConfigPath = 'store.config.json';
+if (!existsSync(path.join(root, storeConfigPath))) {
+  addBlocker('Missing store.config.json. Pull or define App Store metadata before review.');
+} else {
+  const storeConfig = readJson(storeConfigPath);
+  const enUsInfo = storeConfig.apple?.info?.['en-US'] ?? {};
+  const advisory = storeConfig.apple?.advisory ?? {};
+  const expectedPrivacyMatch = legalLinksSource.match(/PRIVACY_POLICY_URL\s*=\s*'([^']+)'/);
+  const expectedPrivacyUrl = expectedPrivacyMatch?.[1] ?? null;
+  const privacyPolicyUrl = enUsInfo.privacyPolicyUrl;
+  const supportUrl = enUsInfo.supportUrl;
+  const description = enUsInfo.description ?? '';
+
+  if (!privacyPolicyUrl) {
+    addBlocker('store.config.json apple.info.en-US.privacyPolicyUrl is required for App Store Review.');
+  } else {
+    assertPublicHttpsUrl('store.config.json', 'apple.info.en-US.privacyPolicyUrl', privacyPolicyUrl);
+    if (expectedPrivacyUrl && privacyPolicyUrl !== expectedPrivacyUrl) {
+      addBlocker(
+        `store.config.json privacyPolicyUrl must match lib/legalLinks.ts (${expectedPrivacyUrl}), got ${privacyPolicyUrl}.`,
+      );
+    } else {
+      addPass('App Store metadata privacy policy URL is configured.');
+    }
+  }
+
+  if (!supportUrl) {
+    addBlocker('store.config.json apple.info.en-US.supportUrl is required for App Store Review support.');
+  } else {
+    assertPublicHttpsUrl('store.config.json', 'apple.info.en-US.supportUrl', supportUrl);
+    addPass('App Store metadata support URL is configured.');
+  }
+
+  if (!/decision support/i.test(description) || !/not medical diagnosis/i.test(description)) {
+    addBlocker('store.config.json description must clearly frame NuTri as decision support, not medical diagnosis.');
+  } else {
+    addPass('App Store metadata description uses decision-support safety wording.');
+  }
+
+  if (advisory.healthOrWellnessTopics !== true) {
+    addBlocker('store.config.json advisory.healthOrWellnessTopics should be true for supplement health/wellness content.');
+  } else {
+    addPass('App Store age rating metadata includes health/wellness topic disclosure.');
+  }
 }
 
 for (const requiredDoc of [

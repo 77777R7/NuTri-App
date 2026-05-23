@@ -1,9 +1,9 @@
 # App Store Release Gate - Current Evidence
 
 Date: 2026-05-23
-Branch observed: `main` via `codex/app-store-release-from-main`, `codex/app-store-eas-lockfile-fix`, `codex/app-store-submit-evidence`, `codex/app-store-final-gate-wording`
+Branch observed: `main` via `codex/app-store-release-from-main`, `codex/app-store-eas-lockfile-fix`, `codex/app-store-submit-evidence`, `codex/app-store-final-gate-wording`, `codex/testflight-smoke-evidence`, `codex/testflight-evidence-hard-gate`
 Workspace: `/private/tmp/nutri-appstore-from-main`
-Base: latest `origin/main` through PR #207 (`304a5403`)
+Base: latest `origin/main` through PR #209 (`3bc71ba5`)
 
 ## Verdict
 
@@ -22,6 +22,7 @@ main:
 - Profile/legal/account deletion release surface.
 - App icon alpha fix.
 - Stack Safety wording contract.
+- App Store metadata privacy/support and age-rating contract.
 
 Do not submit to App Store Review until Apple processing completes and native
 TestFlight sandbox purchase/restore smoke has passed on device.
@@ -63,6 +64,18 @@ Run from `/private/tmp/nutri-appstore-from-main`:
   - Upload result: `Successfully uploaded the new binary to App Store Connect`.
   - Apple processing link:
     `https://appstoreconnect.apple.com/apps/6759846833/testflight/ios`.
+- EAS Metadata pull: pass.
+  - Command:
+    `npx eas-cli metadata:pull --profile production --non-interactive`
+  - Result: generated `store.config.json` from App Store Connect using the EAS
+    App Store Connect API key.
+- EAS Metadata lint: pass.
+  - Command:
+    `npx eas-cli metadata:lint --profile production --json`
+  - Result: `[]`.
+- App Store metadata age rating: adjusted.
+  - `healthOrWellnessTopics` is set to `true` because NuTri contains supplement
+    health/wellness decision-support content.
 
 ## Submit Notes
 
