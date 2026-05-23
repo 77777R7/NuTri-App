@@ -3,6 +3,7 @@ import ProfileScreen from '@/components/screens/ProfileScreen';
 import { MySupplementView } from '@/components/screens/MySupplement';
 import { ContentFrame } from '@/components/common/ContentFrame';
 import { useDailyCheckIns } from '@/contexts/DailyCheckInContext';
+import { useOnboarding } from '@/contexts/OnboardingContext';
 import { usePersonalization } from '@/contexts/PersonalizationContext';
 import { useSavedSupplements } from '@/contexts/SavedSupplementsContext';
 import { useScanHistory } from '@/contexts/ScanHistoryContext';
@@ -1643,18 +1644,6 @@ const RecentlyScanned = () => {
     if (addResult.status !== 'added') {
       setSavingIds(prev => ({ ...prev, [item.id]: false }));
       return;
-    }
-
-    const activationPayload = {
-      activationDefinition: NUTRI_ACTIVATION_DEFINITION.id,
-      source: 'home_recent_scans',
-      scanHistoryId: item.id,
-      supplementId: item.supplementId ?? null,
-      hasBarcode: Boolean(item.barcode),
-    };
-    trackOnboardingEvent('saved_to_stack', activationPayload);
-    if (addResult.supplement.syncedToCheckIn !== false) {
-      trackOnboardingEvent('check_in_started', activationPayload);
     }
 
     setTimeout(() => {
