@@ -16,6 +16,14 @@ const addPass = (message) => passes.push(message);
 const addWarning = (message) => warnings.push(message);
 const addBlocker = (message) => blockers.push(message);
 
+const parseMarkdownTableRows = (markdown) =>
+  markdown
+    .split('\n')
+    .map((line) => line.trim())
+    .filter((line) => line.startsWith('|') && line.endsWith('|'))
+    .map((line) => line.split('|').slice(1, -1).map((cell) => cell.trim()))
+    .filter((cells) => cells.length > 0 && !cells.every((cell) => /^-+$/.test(cell)));
+
 const getGitStatus = () => {
   try {
     return execFileSync('git', ['status', '--short'], { cwd: root, encoding: 'utf8' })
@@ -147,6 +155,48 @@ for (const requiredDoc of [
     addWarning(`Missing release support doc: ${requiredDoc}`);
   } else {
     addPass(`Release support doc exists: ${requiredDoc}`);
+  }
+}
+
+const testflightEvidencePath = 'docs/testflight-sandbox-smoke-evidence.md';
+if (existsSync(path.join(root, testflightEvidencePath))) {
+  const evidenceSource = readText(testflightEvidencePath);
+  const rows = parseMarkdownTableRows(evidenceSource);
+  const header = rows[0] ?? [];
+  const requiredRows = rows.slice(1).filter((cells) => cells.length >= 4);
+  const statusColumn = header.findIndex((cell) => cell.toLowerCase() === 'status');
+  const evidenceColumn = header.findIndex((cell) => cell.toLowerCase() === 'evidence');
+  const areaColumn = header.findIndex((cell) => cell.toLowerCase() === 'area');
+
+  if (statusColumn === -1 || evidenceColumn === -1 || areaColumn === -1 || requiredRows.length === 0) {
+    addBlocker(`${testflightEvidencePath} must contain a Required Pass/Fail Evidence table.`);
+  } else {
+    const incompleteRows = requiredRows
+      .map((cells) => ({
+        area: cells[areaColumn] ?? 'Unknown',
+        status: cells[statusColumn] ?? '',
+        evidence: cells[evidenceColumn] ?? '',
+      }))
+      .filter(({ status, evidence }) => status.toLowerCase() !== 'pass' || evidence.trim() === '');
+
+    if (incompleteRows.length > 0) {
+      addBlocker(
+        `${testflightEvidencePath} has incomplete required TestFlight/sandbox evidence:\n${incompleteRows
+          .map(({ area, status, evidence }) => {
+            const reason = status.toLowerCase() !== 'pass' ? `status=${status || 'blank'}` : 'missing evidence';
+            return `  - ${area}: ${reason}${evidence.trim() ? '' : ', evidence is blank'}`;
+          })
+          .join('\n')}`,
+      );
+    } else {
+      addPass('All TestFlight/sandbox smoke evidence rows are marked Pass with evidence.');
+    }
+  }
+
+  if (!/Ready to submit for review:\s*Yes\b/i.test(evidenceSource)) {
+    addBlocker(`${testflightEvidencePath} must set "Ready to submit for review: Yes" before App Store Review.`);
+  } else {
+    addPass('TestFlight/sandbox smoke evidence is signed off for App Store Review.');
   }
 }
 
