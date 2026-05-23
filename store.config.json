@@ -1,0 +1,51 @@
+{
+  "configVersion": 0,
+  "apple": {
+    "version": "1.0",
+    "release": {
+      "automaticRelease": true
+    },
+    "info": {
+      "en-US": {
+        "title": "NuTri",
+        "subtitle": "Supplement Label Scanner",
+        "description": "NuTri helps you understand supplement labels before you add products to your routine.\n\nScan a barcode or search the supplement database to see a plain-language product analysis, label completeness signals, ingredient context, and safety-aware reminders. Save supplements you are considering or already taking, then use your saved stack to review possible duplicate ingredients and stack safety cues.\n\nNuTri is built for decision support, not medical diagnosis. The app helps translate supplement labels and evidence context into clearer next steps, but it does not replace advice from a qualified health professional.\n\nKey features:\n- Barcode supplement scan\n- Product Search database\n- Nutri Score and label-readiness signals\n- Saved supplement stack\n- Stack Safety review\n- Pro access for more scans, Product Search, more saved supplements, and Stack Safety\n\nPrivacy matters. NuTri uses only the information needed to run the app experience and improve supplement decision support.",
+        "keywords": [
+          "supplement,scanner,vitamin,health,barcode,nutrition,ingredients,safety,wellness"
+        ],
+        "releaseNotes": "Initial App Store release.",
+        "privacyPolicyUrl": "https://www.nutri.app/privacy",
+        "supportUrl": "https://www.nutri.app"
+      }
+    },
+    "advisory": {
+      "ageRatingOverride": "NONE",
+      "alcoholTobaccoOrDrugUseOrReferences": "NONE",
+      "contests": "NONE",
+      "gambling": false,
+      "gamblingSimulated": "NONE",
+      "horrorOrFearThemes": "NONE",
+      "kidsAgeBand": null,
+      "koreaAgeRatingOverride": "NONE",
+      "lootBox": false,
+      "matureOrSuggestiveThemes": "NONE",
+      "medicalOrTreatmentInformation": "NONE",
+      "profanityOrCrudeHumor": "NONE",
+      "sexualContentGraphicAndNudity": "NONE",
+      "sexualContentOrNudity": "NONE",
+      "unrestrictedWebAccess": false,
+      "violenceCartoonOrFantasy": "NONE",
+      "violenceRealistic": "NONE",
+      "violenceRealisticProlongedGraphicOrSadistic": "NONE",
+      "advertising": false,
+      "ageAssurance": false,
+      "ageRatingOverrideV2": "NONE",
+      "developerAgeRatingInfoUrl": null,
+      "gunsOrOtherWeapons": "NONE",
+      "healthOrWellnessTopics": true,
+      "messagingAndChat": false,
+      "parentalControls": false,
+      "userGeneratedContent": false
+    }
+  }
+}
