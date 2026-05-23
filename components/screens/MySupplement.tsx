@@ -1,4 +1,5 @@
 import { BlurView } from "expo-blur";
+import { router } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import {
   ArrowLeft,
@@ -7,6 +8,7 @@ import {
   Check,
   Clock,
   Edit2,
+  Lock,
   Maximize2,
   Moon,
   NotebookPen,
@@ -18,6 +20,7 @@ import {
 import { AnimatePresence, MotiView } from "moti";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
+  Alert,
   Keyboard,
   Dimensions,
   KeyboardAvoidingView,
@@ -53,6 +56,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { usePersonalization } from "@/contexts/PersonalizationContext";
 import { useScanHistory } from "@/contexts/ScanHistoryContext";
 import { useSavedSupplements } from "@/contexts/SavedSupplementsContext";
+import { usePremiumAccess } from "@/hooks/usePremiumAccess";
 import { useScreenTokens } from "@/hooks/useScreenTokens";
 import {
   trackEvaluatedLoopClick,
@@ -412,6 +416,11 @@ const SMART_TAG_SET = new Set(SMART_TAG_BASE_CATEGORIES.flatMap((category) => ca
 
 const SCREEN_BG = "#F2F3F7";
 const NAV_HEIGHT = 64;
+const SCREEN_TITLE_FONT = Platform.select({
+  ios: "Georgia",
+  android: "serif",
+  default: "serif",
+});
 
 const FILTER_COLLAPSED_SIZE = 54;
 const FILTER_EXPANDED_HEIGHT = 520;
@@ -1970,8 +1979,10 @@ function DetailSheet({
   stackSafetySummary,
   duplicateGroups,
   stackSafetyMeta,
+  stackSafetyLocked,
   mealTimePrefs,
   onLearnMealTimePref,
+  onOpenStackSafetyPaywall,
   onClose,
   onSaveRoutine,
   onRecordOverrideEvents,
@@ -1989,12 +2000,14 @@ function DetailSheet({
   stackSafetySummary?: StackLevelSafetySummary | null;
   duplicateGroups?: StackDuplicateGroup[];
   stackSafetyMeta?: StackSafetyMeta | null;
+  stackSafetyLocked?: boolean;
   mealTimePrefs?: MealTimePrefs | null;
   onLearnMealTimePref?: (
     label: "Breakfast" | "Lunch" | "Dinner" | "Bedtime",
     time: string,
     mode: "seed" | "manual",
   ) => void | Promise<void>;
+  onOpenStackSafetyPaywall?: () => void;
   onClose: () => void;
   onSaveRoutine?: (id: string, prefs: RoutinePreferences) => void | Promise<void>;
   onRecordOverrideEvents?: (events: OverrideEvent[]) => Promise<void>;
@@ -3376,13 +3389,15 @@ function DetailSheet({
     [duplicateGroups],
   );
   const hasStackSafetyWarning = Boolean(stackSafetySummary?.headline) && surfacedDuplicateGroups.length > 0;
+  const hasAnyStackSafetySignal = hasStackSafetyWarning || stackOverlapLines.length > 0;
+  const showLockedStackSafety = Boolean(stackSafetyLocked && hasAnyStackSafetySignal);
   const overviewDetailsLoading = (factsStatus === "partial" && !factsRefreshExhausted) || aiUiPhase === "pending";
   const overviewDetailsReady =
     !overviewDetailsLoading &&
     (whatItDoesBullets.length > 0 ||
       watchOutLines.length > 0 ||
       aiNotice.length > 0 ||
-      hasStackSafetyWarning ||
+      hasAnyStackSafetySignal ||
       stackOverlapLines.length > 0 ||
       aiUiPhase === "ready");
   const showOverviewToggle =
@@ -3527,6 +3542,13 @@ function DetailSheet({
 	                      </View>
 	                    );
 	                  })()}
+                  {hasAnyStackSafetySignal ? (
+                    <View style={[styles.sheetTag, styles.sheetStackSafetyPill]}>
+                      <Text style={[styles.sheetTagText, styles.sheetStackSafetyPillText]} numberOfLines={1}>
+                        Stack overlap
+                      </Text>
+                    </View>
+                  ) : null}
 	                </View>
               </View>
             </View>
@@ -3657,9 +3679,30 @@ function DetailSheet({
 	                        </View>
 	                      ) : null}
 
-	                      {overviewExpanded && hasStackSafetyWarning ? (
+	                      {overviewExpanded && showLockedStackSafety ? (
 	                        <View style={{ gap: 10 }}>
-	                          <Text style={styles.overviewSectionTitle}>Duplicate ingredient warning</Text>
+	                          <Text style={styles.overviewSectionTitle}>Stack Safety Check</Text>
+                            <Pressable
+                              style={styles.lockedStackSafetyCard}
+                              onPress={onOpenStackSafetyPaywall}
+                            >
+                              <View style={styles.lockedStackSafetyIcon}>
+                                <Lock size={16} color="#0f172a" />
+                              </View>
+                              <View style={styles.lockedStackSafetyTextWrap}>
+                                <Text style={styles.lockedStackSafetyTitle}>Unlock stack safety</Text>
+                                <Text style={styles.lockedStackSafetyBody}>
+                                  Check repeated ingredients and dose overlaps across your saved stack.
+                                </Text>
+                              </View>
+                              <ArrowRight size={18} color="#64748b" />
+                            </Pressable>
+	                        </View>
+	                      ) : null}
+
+	                      {overviewExpanded && !showLockedStackSafety && hasStackSafetyWarning ? (
+	                        <View style={{ gap: 10 }}>
+	                          <Text style={styles.overviewSectionTitle}>Stack Safety Check</Text>
                             {stackSafetySummary ? (
                               <SavedStackSafetySummary summary={stackSafetySummary} meta={stackSafetyMeta ?? null} />
                             ) : null}
@@ -3674,7 +3717,7 @@ function DetailSheet({
 	                        </View>
 	                      ) : null}
 
-	                      {overviewExpanded && !hasStackSafetyWarning && stackOverlapLines.length > 0 ? (
+	                      {overviewExpanded && !showLockedStackSafety && !hasStackSafetyWarning && stackOverlapLines.length > 0 ? (
 	                        <View style={{ gap: 10 }}>
 	                          <Text style={styles.overviewSectionTitle}>Stack overlaps</Text>
 	                          <View style={{ gap: 10 }}>
@@ -4211,6 +4254,7 @@ export function MySupplementView({ data, onDeleteSelected, onSaveRoutine }: Prop
   } = usePersonalization();
   const { scans } = useScanHistory();
   const { updateSupplement } = useSavedSupplements();
+  const premiumAccess = usePremiumAccess();
 
   const contentBottomPadding = tokens.contentBottomPadding;
   const contentTopPadding = tokens.contentTopPadding;
@@ -4288,6 +4332,7 @@ export function MySupplementView({ data, onDeleteSelected, onSaveRoutine }: Prop
     >
   >(new Map());
   const evaluatedExposureKeyRef = useRef<string | null>(null);
+  const stackSafetyAlertKeyRef = useRef<string | null>(null);
 
   const pillWidthRef = useRef(84);
   const [pillWidth, setPillWidth] = useState(84);
@@ -5093,6 +5138,56 @@ export function MySupplementView({ data, onDeleteSelected, onSaveRoutine }: Prop
     [filtered, idToThemeMap],
   );
 
+  const stackSafetyCardDuplicateGroups = useMemo(() => {
+    const byIngredient = new Map<string, StackDuplicateGroup>();
+    duplicateGroupsBySupplementId.forEach((groups) => {
+      groups.forEach((group) => {
+        const key = group.ingredientCanonicalKey;
+        if (!key) return;
+        const existing = byIngredient.get(key);
+        if (!existing || (group.surfaced && !existing.surfaced)) {
+          byIngredient.set(key, group);
+        }
+      });
+    });
+    const priority = (group: StackDuplicateGroup) => {
+      if (group.status === "over") return 0;
+      if (group.status === "near") return 1;
+      if (group.status === "below") return 2;
+      return 3;
+    };
+    return Array.from(byIngredient.values()).sort(
+      (left, right) =>
+        priority(left) - priority(right) ||
+        right.productCount - left.productCount ||
+        left.ingredientDisplayName.localeCompare(right.ingredientDisplayName),
+    );
+  }, [duplicateGroupsBySupplementId]);
+
+  const stackSafetyCardOverlapCount = useMemo(() => {
+    const keys = new Set<string>();
+    stackOverlapBySupplementId.forEach((overlaps) => {
+      overlaps.forEach((overlap) => {
+        if (overlap.ingredientKey) keys.add(overlap.ingredientKey);
+      });
+    });
+    return Math.max(keys.size, stackSafetyCardDuplicateGroups.length);
+  }, [stackOverlapBySupplementId, stackSafetyCardDuplicateGroups.length]);
+
+  const stackSafetyTargetItem = useMemo(() => {
+    const supplementIds = new Set<string>();
+    stackSafetyCardDuplicateGroups.forEach((group) => {
+      group.products.forEach((product) => {
+        if (product.supplementId) supplementIds.add(product.supplementId);
+      });
+    });
+    if (supplementIds.size > 0) {
+      const match = sorted.find((item) => item.supplementId && supplementIds.has(item.supplementId));
+      if (match) return match;
+    }
+    return sorted[0] ?? null;
+  }, [sorted, stackSafetyCardDuplicateGroups]);
+
   const selectedCount = selectedIds.size;
 
   const isAssigningMode = Boolean(assigningTag);
@@ -5372,6 +5467,85 @@ export function MySupplementView({ data, onDeleteSelected, onSaveRoutine }: Prop
     },
     [updateSupplement],
   );
+
+  const openStackSafetyPaywall = useCallback(() => {
+    router.push({
+      pathname: "/paywall/official",
+      params: {
+        source: "stack_safety",
+        returnTo: "/main/Home-Page?tab=saved",
+      },
+    });
+  }, []);
+
+  const handleOpenStackSafety = useCallback(() => {
+    if (!premiumAccess.isPremium) {
+      openStackSafetyPaywall();
+      return;
+    }
+
+    if (!stackSafetyTargetItem) return;
+    logStackOverlapEvent("stack_overlap_clicked", {
+      surface: "stack_safety_alert",
+      supplementId: stackSafetyTargetItem.supplementId ?? null,
+      productName: stackSafetyTargetItem.productName,
+      overlapCount: stackSafetyCardOverlapCount,
+      surfacedGroupCount: stackSafetyCardDuplicateGroups.filter((group) => group.surfaced).length,
+    });
+    markAsViewed(stackSafetyTargetItem.id);
+    setExpandedId(null);
+    setDetailId(stackSafetyTargetItem.id);
+  }, [
+    logStackOverlapEvent,
+    markAsViewed,
+    openStackSafetyPaywall,
+    premiumAccess.isPremium,
+    stackSafetyCardDuplicateGroups,
+    stackSafetyCardOverlapCount,
+    stackSafetyTargetItem,
+  ]);
+
+  useEffect(() => {
+    if (selectionMode || detailId) return;
+    if (stackSafetyCardOverlapCount <= 0) return;
+
+    const alertKey = [
+      stackOverlapSeed,
+      stackSafetyCardOverlapCount,
+      premiumAccess.isPremium ? "pro" : "free",
+    ].join(":");
+    if (stackSafetyAlertKeyRef.current === alertKey) return;
+    stackSafetyAlertKeyRef.current = alertKey;
+
+    if (premiumAccess.isPremium) {
+      Alert.alert(
+        "Stack overlap found",
+        "NuTri marked the saved products that repeat ingredients so you can review them in detail.",
+        [
+          { text: "Not now", style: "cancel" },
+          { text: "View detail", onPress: handleOpenStackSafety },
+        ],
+      );
+      return;
+    }
+
+    Alert.alert(
+      "Stack overlap found",
+      "NuTri found a repeated ingredient signal. Unlock Stack Safety to review the details.",
+      [
+        { text: "Later", style: "cancel" },
+        { text: "Unlock", onPress: openStackSafetyPaywall },
+      ],
+    );
+  }, [
+    detailId,
+    handleOpenStackSafety,
+    openStackSafetyPaywall,
+    premiumAccess.isPremium,
+    selectionMode,
+    stackOverlapSeed,
+    stackSafetyCardOverlapCount,
+  ]);
 
   const toggleTag = useCallback((tag: string) => {
     const next = new Set(activeTags);
@@ -5659,9 +5833,9 @@ export function MySupplementView({ data, onDeleteSelected, onSaveRoutine }: Prop
 	              <View style={styles.headerTitleWrap}>
 	                <AutoFitText
 	                  text={headerTitleText}
-	                  baseFontSize={36}
-	                  baseLineHeight={40}
-	                  minFontSize={32}
+	                  baseFontSize={tokens.h1Size}
+	                  baseLineHeight={tokens.h1Line}
+	                  minFontSize={Math.max(28, tokens.h1Size - 6)}
 	                  style={styles.h1}
 	                />
 	              </View>
@@ -6033,8 +6207,10 @@ export function MySupplementView({ data, onDeleteSelected, onSaveRoutine }: Prop
           stackSafetySummary={detailItem.supplementId ? stackSafetySummaryBySupplementId.get(detailItem.supplementId) ?? null : null}
           duplicateGroups={detailItem.supplementId ? duplicateGroupsBySupplementId.get(detailItem.supplementId) ?? [] : []}
           stackSafetyMeta={detailItem.supplementId ? stackSafetyMetaBySupplementId.get(detailItem.supplementId) ?? null : null}
+          stackSafetyLocked={!premiumAccess.isPremium}
           mealTimePrefs={mealTimePrefs}
           onLearnMealTimePref={handleLearnMealTimePref}
+          onOpenStackSafetyPaywall={openStackSafetyPaywall}
           onClose={() => {
             setDetailAnalyticsContext(null);
             setDetailId(null);
@@ -6083,9 +6259,10 @@ const styles = StyleSheet.create({
     paddingRight: 12,
   },
   h1: {
-    fontWeight: "800",
-    color: "#0f172a",
-    letterSpacing: -0.2,
+    fontFamily: SCREEN_TITLE_FONT,
+    fontWeight: "500",
+    color: "#111111",
+    letterSpacing: -1.1,
     includeFontPadding: false,
     flex: 1,
     minWidth: 0,
@@ -6731,6 +6908,14 @@ const styles = StyleSheet.create({
 
   sheetTag: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999, borderCurve: "continuous", borderWidth: 1 },
   sheetTagText: { fontSize: 12, lineHeight: 16, fontWeight: "600", includeFontPadding: false },
+  sheetStackSafetyPill: {
+    borderColor: "rgba(180,83,9,0.34)",
+    backgroundColor: "#fef3c7",
+  },
+  sheetStackSafetyPillText: {
+    color: "#92400e",
+    fontWeight: "800",
+  },
 
   sheetBody: { marginTop: -80, backgroundColor: "#ffffff", borderTopLeftRadius: 48, borderTopRightRadius: 48, borderCurve: "continuous", paddingHorizontal: 24, paddingTop: 24 },
   sectionHead: { paddingHorizontal: 8, marginBottom: 12 },
@@ -6791,6 +6976,44 @@ const styles = StyleSheet.create({
   overviewBulletDot: { width: 6, height: 6, borderRadius: 999, backgroundColor: "#94a3b8", marginTop: 8 },
   overviewBulletText: { flex: 1, fontSize: 14, lineHeight: 20, fontWeight: "600", color: "#475569", includeFontPadding: false },
   overviewBulletLabel: { fontWeight: "700", color: "#334155" },
+  lockedStackSafetyCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    borderRadius: 24,
+    borderCurve: "continuous",
+    borderWidth: 1,
+    borderColor: "rgba(15,23,42,0.08)",
+    backgroundColor: "rgba(248,250,252,0.82)",
+    padding: 14,
+  },
+  lockedStackSafetyIcon: {
+    width: 34,
+    height: 34,
+    borderRadius: 999,
+    borderCurve: "continuous",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(255,255,255,0.82)",
+  },
+  lockedStackSafetyTextWrap: {
+    flex: 1,
+    gap: 4,
+  },
+  lockedStackSafetyTitle: {
+    fontSize: 14,
+    lineHeight: 18,
+    fontWeight: "900",
+    color: "#0f172a",
+    includeFontPadding: false,
+  },
+  lockedStackSafetyBody: {
+    fontSize: 12,
+    lineHeight: 17,
+    fontWeight: "600",
+    color: "#64748b",
+    includeFontPadding: false,
+  },
   addLabelCtaBtn: {
     alignSelf: "flex-start",
     paddingHorizontal: 10,

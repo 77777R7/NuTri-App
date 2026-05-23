@@ -8,7 +8,8 @@ export type OfficialPaywallSource =
   | 'stack_safety'
   | 'scan_limit'
   | 'product_search'
-  | 'saved_supplement_limit';
+  | 'saved_supplement_limit'
+  | 'profile_upgrade';
 
 export type ProFeatureKey =
   | 'scan_after_free_limit'
@@ -155,3 +156,33 @@ export const buildOfficialPaywallParams = ({
   ...(scanId ? { scanId } : {}),
   ...(returnTo ? { returnTo } : {}),
 });
+
+export const resolvePostPurchaseResumePath = ({
+  source,
+  returnTo,
+}: {
+  source: OfficialPaywallSource;
+  returnTo?: string | null;
+}): string => {
+  switch (source) {
+    case 'scan_limit':
+      return '/scan/barcode';
+    case 'product_search':
+      return '/search';
+    case 'saved_supplement_limit':
+      return returnTo ?? '/main/Home-Page?tab=saved';
+    case 'stack_safety':
+      return returnTo ?? '/main/Home-Page?tab=saved';
+    case 'profile_upgrade':
+      return '/search';
+    case 'score':
+    case 'overview':
+    case 'science':
+    case 'usage':
+    case 'safety':
+    case 'first_scan_result':
+      return returnTo ?? '/main/Home-Page';
+    default:
+      return returnTo ?? '/main/Home-Page';
+  }
+};

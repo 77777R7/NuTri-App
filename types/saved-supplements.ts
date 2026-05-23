@@ -35,3 +35,22 @@ export type SavedSupplementInput = Omit<
   createdAt?: string;
   syncedToCheckIn?: boolean;
 };
+
+export type SavedSupplementAddResult =
+  | {
+      status: 'added';
+      supplement: SavedSupplement;
+    }
+  | {
+      status: 'duplicate';
+      supplement: SavedSupplement;
+    }
+  | {
+      status: 'limit_reached';
+      limit: number;
+      savedCount: number;
+    };
+
+export type SavedSupplementAddOptions = {
+  isPremium?: boolean;
+};

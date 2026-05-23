@@ -57,6 +57,11 @@ const SubscriptionContext = createContext<SubscriptionContextValue | undefined>(
 const ACTIVE_STATUSES = new Set(['active', 'trialing']);
 const PREMIUM_TEST_OVERRIDE_ENABLED =
   typeof __DEV__ !== 'undefined' ? __DEV__ : false;
+const DEV_FORCE_PREMIUM =
+  typeof __DEV__ !== 'undefined' &&
+  __DEV__ &&
+  (process.env.EXPO_PUBLIC_DEV_FORCE_PREMIUM === '1' ||
+    process.env.EXPO_PUBLIC_DEV_FORCE_PREMIUM === 'true');
 
 const normalizeStatus = (value: string | null | undefined): string | null => {
   if (!value) return null;
@@ -516,13 +521,17 @@ export const SubscriptionProvider = ({ children }: PropsWithChildren) => {
     const liveEntitlementStatus = normalizeStatus(normalizeRevenueCatStatus(customerInfo, entitlementId));
     const effectiveTestOverride = PREMIUM_TEST_OVERRIDE_ENABLED ? testOverride : 'auto';
     const entitlementStatus =
-      effectiveTestOverride === 'paid'
+      DEV_FORCE_PREMIUM
+        ? 'dev_premium_override'
+        : effectiveTestOverride === 'paid'
         ? 'paid_override'
         : effectiveTestOverride === 'unpaid'
           ? 'unpaid_override'
           : liveEntitlementStatus;
     const isPremium =
-      effectiveTestOverride === 'paid'
+      DEV_FORCE_PREMIUM
+        ? true
+        : effectiveTestOverride === 'paid'
         ? true
         : effectiveTestOverride === 'unpaid'
           ? false
@@ -530,7 +539,7 @@ export const SubscriptionProvider = ({ children }: PropsWithChildren) => {
 
     return {
       configured,
-      loading,
+      loading: DEV_FORCE_PREMIUM ? false : loading,
       purchaseBusy,
       restoreBusy,
       previewMode,

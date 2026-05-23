@@ -20,6 +20,7 @@ import { GoalNavigatorContextCard } from "@/components/screens/personalization/G
 import { RefinePicksDrawer } from "@/components/screens/personalization/RefinePicksDrawer";
 import { usePersonalization } from "@/contexts/PersonalizationContext";
 import { useSavedSupplements } from "@/contexts/SavedSupplementsContext";
+import { usePremiumAccess } from "@/hooks/usePremiumAccess";
 import { apiClient } from "@/lib/api-client";
 import { buildGoalCompareEntries } from "@/lib/personalization/core/compareModel";
 import { buildPersonalizationControlEvents } from "@/lib/personalization/core/critiqueEngine";
@@ -27,6 +28,7 @@ import {
   getConservativeReviewGoals,
   getGoalNavigatorEnabledGoals,
 } from "@/lib/personalization/core/goalConfidenceProfiles";
+import { buildOfficialPaywallParams } from "@/lib/pro/featureGates";
 import { summarizeGoalFitReasons } from "@/lib/personalization/goalFitCopy";
 import { getGoalDisplayLabel } from "@/lib/personalization/uiLabels";
 import type {
@@ -71,6 +73,7 @@ export function GoalNavigatorScreen({ initialGoal }: { initialGoal?: string }) {
   const insets = useSafeAreaInsets();
   const { snapshot, smartFilter, recordOverrideEvents, trackPersonalizationEvent } = usePersonalization();
   const { savedSupplements, addSupplement } = useSavedSupplements();
+  const premiumAccess = usePremiumAccess();
   const visibleGoals = smartFilter.visibleGoals;
   const supportedGoals = useMemo(
     () => getGoalNavigatorEnabledGoals(visibleGoals),
@@ -224,21 +227,36 @@ export function GoalNavigatorScreen({ initialGoal }: { initialGoal?: string }) {
 
   const handleSaveCandidate = useCallback(
     (candidate: GoalNavigatorCandidate) => {
+      if (premiumAccess.loading) return;
+
       const display = candidate.evaluation.display;
-      const saved = addSupplement({
+      const addResult = addSupplement({
         barcode: candidate.barcode ?? null,
         imageUrl: display?.imageUrl ?? null,
         productName: display?.title ?? "Coverage-ready supplement",
         brandName: display?.brandName ?? "Unknown brand",
         dosageText: display?.dosageText ?? "",
         tags: [getGoalDisplayLabel(candidate.goalKey)],
+      }, {
+        isPremium: premiumAccess.isPremium,
       });
 
-      if (!saved) {
+      if (addResult.status === "limit_reached") {
+        router.push({
+          pathname: "/paywall/official",
+          params: buildOfficialPaywallParams({
+            source: "saved_supplement_limit",
+            returnTo: initialGoal ? `/main/goal-navigator?goal=${encodeURIComponent(initialGoal)}` : "/main/goal-navigator",
+          }),
+        });
+        return;
+      }
+
+      if (addResult.status !== "added") {
         return;
       }
     },
-    [addSupplement],
+    [addSupplement, initialGoal, premiumAccess.isPremium, premiumAccess.loading],
   );
 
   const handleToggleControl = useCallback(

@@ -27,13 +27,21 @@ export const buildUlGuidanceDisplayLine = (entry: UlGuidanceEntry): string => {
   return `${entry.ingredientDisplayName}: no NIH ODS upper limit is established for this ingredient.`;
 };
 
-export const buildSavedStackHeadline = (group: DuplicateIngredientGroup): string =>
-  `You have ${group.productCount} products with ${group.ingredientDisplayName.toLowerCase()}.`;
+export const buildSavedStackHeadline = (group: DuplicateIngredientGroup): string => {
+  const ingredient = group.ingredientDisplayName;
+  if (group.status === "over") {
+    return `${ingredient} may be above the adult upper limit across your saved stack.`;
+  }
+  if (group.status === "near") {
+    return `${ingredient} is close to the adult upper limit across your saved stack.`;
+  }
+  return `${ingredient} overlaps across ${group.productCount} saved products.`;
+};
 
 export const buildSavedStackDetailLines = (group: DuplicateIngredientGroup): string[] => [
   group.estimatedTotalDoseText
-    ? `Estimated total: ${group.estimatedTotalDoseText}/day.`
-    : "Estimated total dose is still uncertain.",
+    ? `Estimated saved-stack total: ${group.estimatedTotalDoseText}/day.`
+    : "Saved-stack total is still uncertain because dose data is incomplete.",
   group.ulValueText
     ? `Adult supplemental UL: ${group.ulValueText}/day.`
     : "Adult UL reference is not available yet.",

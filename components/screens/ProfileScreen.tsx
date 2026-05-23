@@ -1,650 +1,663 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View, type TextStyle, type ViewStyle } from 'react-native';
+import Constants from 'expo-constants';
+import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
-import { LinearGradient } from 'expo-linear-gradient';
 import {
-  Bell,
-  Cloud,
-  Database,
+  Alert,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+  type TextStyle,
+  type ViewStyle,
+} from 'react-native';
+import {
+  AlertCircle,
+  ChevronRight,
+  Clock3,
   FileText,
-  Fingerprint,
-  Images,
   Leaf,
-  MapPin,
+  LifeBuoy,
+  LogOut,
+  Mail,
+  RotateCcw,
   ShieldCheck,
+  Smartphone,
   Sparkles,
   Target,
+  Trash2,
   type LucideIcon,
 } from 'lucide-react-native';
+import React, { useCallback, useMemo } from 'react';
 
 import { ContentFrame } from '@/components/common/ContentFrame';
-import { BestFitsPreviewCard } from '@/components/screens/personalization/BestFitsPreviewCard';
-import { PersonalizationDebugCard } from '@/components/screens/personalization/PersonalizationDebugCard';
-import { RefinePicksDrawer } from '@/components/screens/personalization/RefinePicksDrawer';
-import { StackAuditCard } from '@/components/screens/personalization/StackAuditCard';
-import { SupportModeCard } from '@/components/screens/personalization/SupportModeCard';
 import { useAuth } from '@/contexts/AuthContext';
+import { useDailyCheckIns } from '@/contexts/DailyCheckInContext';
 import { useOnboarding } from '@/contexts/OnboardingContext';
-import { usePersonalization } from '@/contexts/PersonalizationContext';
+import { useSavedSupplements } from '@/contexts/SavedSupplementsContext';
+import { useSubscription } from '@/contexts/SubscriptionContext';
+import { useFirstScanReveal } from '@/hooks/useFirstScanReveal';
 import { useScreenTokens } from '@/hooks/useScreenTokens';
-import { apiClient } from '@/lib/api-client';
+import { validateCheckInDateForItem } from '@/lib/check-in-eligibility';
+import { buildCheckInKey, getLocalDateKey } from '@/lib/check-ins';
 import { useTranslation } from '@/lib/i18n';
-import { buildPersonalizationControlEvents } from '@/lib/personalization/core/critiqueEngine';
-import { getGoalNavigatorEnabledGoals } from '@/lib/personalization/core/goalConfidenceProfiles';
-import { summarizeGoalFitReasons } from '@/lib/personalization/goalFitCopy';
-import { PERSONALIZATION_RESEARCH_UI_ENABLED } from '@/lib/personalization/researchFlags';
-import { buildUserSupportSurface, getGoalDisplayLabel } from '@/lib/personalization/uiLabels';
 import {
-  buildProfileScreenModel,
-  type ProfileSnapshotId,
-  type ProfileStatusId,
-  type ProfileStatusState,
-} from '@/lib/profile/viewModel';
-import type { GoalNavigatorResponse, PersonalizationControlKey } from '@/types/personalization';
+  FREE_SAVED_SUPPLEMENT_LIMIT,
+  FREE_SCAN_LIMIT,
+  type OfficialPaywallSource,
+} from '@/lib/pro/featureGates';
+import {
+  openAccountDeletionRequest,
+  openPrivacyPolicy,
+  openSupportEmail,
+  openTermsOfService,
+} from '@/lib/legalLinks';
+import { buildProfileScreenModel } from '@/lib/profile/viewModel';
+import type { ProfileDraft } from '@/types/onboarding';
 
-const SCREEN_BG = '#F2F3F7';
-const STACK_GAP = 16;
-const SNAPSHOT_GAP = 12;
-const MIN_TWO_UP_CARD_WIDTH = 148;
+const SCREEN_BG = '#fafafa';
+const CARD_BG = '#ffffff';
+const TEXT = '#101828';
+const MUTED = '#6a7282';
+const SOFT_BORDER = '#f3f4f6';
+const PROFILE_AVATAR = require('@/assets/images/profile/sarah-jenkins.jpg');
+const PRO_CARD_BG = require('@/assets/images/profile/pro-card-sky.png');
+const SERIF_FONT = Platform.select({
+  ios: 'Georgia',
+  android: 'serif',
+  default: 'serif',
+});
 
 export type ProfileScreenProps = {
   navHeight: number;
 };
 
-type SnapshotMeta = {
+type AnswerChip = {
+  id: string;
+  label: string;
   icon: LucideIcon;
-  accent: string;
-  soft: string;
-  title: string;
-  hint: string;
+  active?: boolean;
 };
 
-type StatusMeta = {
-  icon: LucideIcon;
-  accent: string;
-  soft: string;
-  title: string;
-  hint: string;
+const allergyLabelMap: Record<string, string> = {
+  milk: 'No Dairy',
+  egg: 'No Egg',
+  fish: 'No Fish',
+  shellfish: 'No Shellfish',
+  tree_nuts: 'No Tree Nuts',
+  peanuts: 'No Peanuts',
+  wheat: 'No Wheat',
+  soy: 'No Soy',
+  sesame: 'No Sesame',
+  gluten: 'No Gluten',
+  gelatin_animal_based: 'No Gelatin',
+  'No known allergies': 'No known allergies',
 };
 
-const getStateLabel = (state: ProfileStatusState, t: ReturnType<typeof useTranslation>['t']) => {
-  switch (state) {
-    case 'connected':
-      return t.profileStateConnected;
-    case 'preview':
-      return t.profileStatePreview;
-    case 'enabled':
-      return t.profileStateEnabled;
-    case 'off':
-      return t.profileStateOff;
-    case 'allowed':
-      return t.profileStateAllowed;
-    case 'denied':
-      return t.profileStateDenied;
-    case 'accepted':
-      return t.profileStateAccepted;
-    case 'pending':
-      return t.profileStatePending;
-    case 'local_only':
-      return t.profileStateLocalOnly;
-    case 'soon':
-      return t.profileStateSoon;
-    case 'not_set':
-    default:
-      return t.profileStateNotSet;
-  }
+const normalizeChipId = (value: string) =>
+  value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+
+const cleanText = (value?: string | null) => {
+  const trimmed = typeof value === 'string' ? value.trim() : '';
+  return trimmed.length > 0 ? trimmed : null;
 };
 
-const getStateTone = (state: ProfileStatusState) => {
-  switch (state) {
-    case 'connected':
-    case 'enabled':
-    case 'allowed':
-    case 'accepted':
-      return {
-        backgroundColor: 'rgba(16, 185, 129, 0.12)',
-        borderColor: 'rgba(16, 185, 129, 0.18)',
-        textColor: '#047857',
-      };
-    case 'pending':
-      return {
-        backgroundColor: 'rgba(245, 158, 11, 0.14)',
-        borderColor: 'rgba(245, 158, 11, 0.18)',
-        textColor: '#b45309',
-      };
-    case 'soon':
-      return {
-        backgroundColor: 'rgba(59, 130, 246, 0.12)',
-        borderColor: 'rgba(59, 130, 246, 0.16)',
-        textColor: '#2563eb',
-      };
-    case 'preview':
-    case 'local_only':
-    case 'not_set':
-      return {
-        backgroundColor: 'rgba(148, 163, 184, 0.12)',
-        borderColor: 'rgba(148, 163, 184, 0.16)',
-        textColor: '#64748b',
-      };
-    case 'denied':
-    case 'off':
-    default:
-      return {
-        backgroundColor: 'rgba(71, 85, 105, 0.1)',
-        borderColor: 'rgba(71, 85, 105, 0.16)',
-        textColor: '#475569',
-      };
-  }
+const uniqueValues = (values: (string | null | undefined)[]) => {
+  const seen = new Set<string>();
+  const result: string[] = [];
+
+  values.forEach(value => {
+    const normalized = cleanText(value);
+    if (!normalized) return;
+    const key = normalized.toLowerCase();
+    if (seen.has(key)) return;
+    seen.add(key);
+    result.push(normalized);
+  });
+
+  return result;
+};
+
+const labelForAvoidItem = (value: string) => allergyLabelMap[value] ?? allergyLabelMap[value.toLowerCase()] ?? `Avoid ${value}`;
+
+const buildAnswerChips = (draft: ProfileDraft | null): AnswerChip[] => {
+  const goal = cleanText(draft?.goals?.[0]);
+  const avoid =
+    draft?.noKnownAllergies
+      ? 'No known allergies'
+      : cleanText(draft?.avoidItems?.[0])
+        ?? cleanText(draft?.allergyFlags?.[0])
+        ?? cleanText(draft?.ingredientRestrictions?.[0]);
+  const diet = cleanText(draft?.diets?.[0]);
+  const timing =
+    cleanText(draft?.smartFilterConfig?.preselectedTiming?.[0])
+    ?? cleanText(draft?.setupPreferences?.[0]);
+
+  return uniqueValues([
+    goal,
+    avoid ? labelForAvoidItem(avoid) : null,
+    diet,
+    timing,
+  ]).slice(0, 5).map((label, index) => {
+    const icon = index === 0 ? Target : index === 1 ? AlertCircle : index === 2 ? Leaf : Clock3;
+    return {
+      id: normalizeChipId(label) || `answer-${index}`,
+      label,
+      icon,
+      active: index === 2,
+    };
+  });
+};
+
+const getAppVersionLabel = () => {
+  const version = Constants.expoConfig?.version ?? '1.0.0';
+  const buildNumber = Platform.OS === 'ios'
+    ? Constants.expoConfig?.ios?.buildNumber
+    : Constants.expoConfig?.android?.versionCode;
+
+  return buildNumber ? `${version} (Build ${buildNumber})` : version;
 };
 
 export default function ProfileScreen({ navHeight }: ProfileScreenProps) {
-  const { user, isBiometricEnabled } = useAuth();
+  const { user, isBiometricEnabled, signOut } = useAuth();
+  const { draft } = useOnboarding();
+  const { savedSupplements } = useSavedSupplements();
+  const { checkInsByDate } = useDailyCheckIns();
+  const subscription = useSubscription();
+  const firstScanReveal = useFirstScanReveal();
   const router = useRouter();
-  const { draft, resetLocalOnboarding } = useOnboarding();
-  const { snapshot, smartFilter, recordOverrideEvents, eventSummary } = usePersonalization();
   const { t } = useTranslation();
   const tokens = useScreenTokens(navHeight);
-  const model = buildProfileScreenModel({ user, draft, isBiometricEnabled });
-  const [qaBusy, setQaBusy] = useState(false);
-  const [bestFitsResponse, setBestFitsResponse] = useState<GoalNavigatorResponse | null>(null);
-  const [bestFitsLoading, setBestFitsLoading] = useState(false);
 
-  const contentTopPadding = tokens.contentTopPadding;
-  const contentBottomPadding = tokens.contentBottomPadding;
-  const snapshotColumns = (tokens.contentWidth - SNAPSHOT_GAP) / 2 >= MIN_TWO_UP_CARD_WIDTH ? 2 : 1;
-  const snapshotCardWidth =
-    snapshotColumns === 2 ? (tokens.contentWidth - SNAPSHOT_GAP) / 2 : tokens.contentWidth;
-  const goalNavigatorAvailableGoals = useMemo(
-    () => getGoalNavigatorEnabledGoals(smartFilter.visibleGoals),
-    [smartFilter.visibleGoals],
+  const model = useMemo(
+    () => buildProfileScreenModel({ user, draft, isBiometricEnabled }),
+    [draft, isBiometricEnabled, user],
   );
-  const goalNavigatorSeedGoal = useMemo(
+  const displayName = useMemo(() => {
+    const metadataName = cleanText(user?.user_metadata?.full_name as string | undefined);
+    return metadataName ?? model.hero.displayName;
+  }, [model.hero.displayName, user?.user_metadata?.full_name]);
+  const email = cleanText(user?.email) ?? model.hero.secondaryText;
+  const isPro = subscription.isPremium;
+  const answerChips = useMemo(() => buildAnswerChips(draft), [draft]);
+
+  const todayKey = useMemo(() => getLocalDateKey(new Date()), []);
+  const checkInTargets = useMemo(
     () =>
-      smartFilter.highlightedGoal && goalNavigatorAvailableGoals.includes(smartFilter.highlightedGoal)
-        ? smartFilter.highlightedGoal
-        : goalNavigatorAvailableGoals[0] ?? null,
-    [goalNavigatorAvailableGoals, smartFilter.highlightedGoal],
+      savedSupplements.filter(item =>
+        validateCheckInDateForItem(item, todayKey, todayKey).isValid,
+      ),
+    [savedSupplements, todayKey],
   );
-  const goalNavigatorTitleLabel = useMemo(
-    () => (goalNavigatorSeedGoal ? getGoalDisplayLabel(goalNavigatorSeedGoal) : 'your goals'),
-    [goalNavigatorSeedGoal],
-  );
-  const stackAudit = snapshot.premiumInsights?.stackAudit;
-  const supportSurface = useMemo(
-    () =>
-      buildUserSupportSurface({
-        supportState: snapshot.strategies.supportState,
-        goalLabel: goalNavigatorTitleLabel,
-        scheduleDefaults: snapshot.surfaces.scheduleDefaults,
-        eventSummary,
-      }),
-    [
-      eventSummary,
-      goalNavigatorTitleLabel,
-      snapshot.strategies.supportState,
-      snapshot.surfaces.scheduleDefaults,
-    ],
-  );
-  const bestFitPreviewItems = useMemo(
-    () =>
-      (bestFitsResponse?.candidates ?? []).slice(0, 3).map(candidate => ({
-        id: candidate.productId,
-        title: candidate.evaluation.display?.title ?? 'Coverage-ready supplement',
-        summary: summarizeGoalFitReasons(
-          candidate.goalFitCard.whyFit,
-          'Structured facts show a usable fit signal for this goal.',
-        ),
-      })),
-    [bestFitsResponse?.candidates],
-  );
+  const completedToday = useMemo(() => {
+    const checkedKeys = new Set(checkInsByDate[todayKey] ?? []);
+    return checkInTargets.reduce((count, item) => {
+      const key = buildCheckInKey({ supplementId: item.supplementId, localId: item.id });
+      return checkedKeys.has(key) ? count + 1 : count;
+    }, 0);
+  }, [checkInTargets, checkInsByDate, todayKey]);
 
-  useEffect(() => {
-    let active = true;
-    if (!PERSONALIZATION_RESEARCH_UI_ENABLED || !goalNavigatorSeedGoal) {
-      setBestFitsResponse(null);
-      setBestFitsLoading(false);
-      return () => {
-        active = false;
-      };
-    }
+  const checkInStatus = useMemo(() => {
+    if (savedSupplements.length === 0) return 'Save a supplement to start';
+    if (checkInTargets.length === 0) return 'Nothing scheduled today';
+    if (completedToday === checkInTargets.length) return 'Completed today';
+    return `${completedToday}/${checkInTargets.length} completed today`;
+  }, [checkInTargets.length, completedToday, savedSupplements.length]);
 
-    setBestFitsLoading(true);
+  const freePlanLine = firstScanReveal.firstCompletedScanId
+    ? 'Free scan used'
+    : `${FREE_SCAN_LIMIT} free scan included`;
+  const savedLimitLine = isPro
+    ? `${savedSupplements.length} saved`
+    : `${savedSupplements.length}/${FREE_SAVED_SUPPLEMENT_LIMIT} saved on Free`;
+  const stackSafetyLine = savedSupplements.length >= 2
+    ? isPro
+      ? 'Ready to check overlaps'
+      : 'Pro safety check available'
+    : 'Add 2 supplements to check';
 
-    void apiClient
-      .fetchGoalNavigator({
-        goalKey: goalNavigatorSeedGoal,
-        preferredTypes: smartFilter.preselectedTypes,
-        limit: 3,
-        snapshotId: snapshot.snapshotId,
-        preferenceVector: snapshot.strategies.preferenceVector,
-        userContext: {
-          duplicateRisk: snapshot.profile.observed.duplicateRisk,
-          supplementExperience: snapshot.profile.declared.supplementExperience,
-          ageRange: snapshot.profile.declared.ageRange,
-          adherenceBlocker: snapshot.profile.declared.adherenceBlocker,
-        },
-      })
-      .then(next => {
-        if (!active) return;
-        setBestFitsResponse(next);
-      })
-      .catch(requestError => {
-        if (!active) return;
-        console.warn(
-          '[profile-personalization] failed to load best fits preview',
-          requestError instanceof Error ? requestError.message : requestError,
-        );
-        setBestFitsResponse(null);
-      })
-      .finally(() => {
-        if (!active) return;
-        setBestFitsLoading(false);
-      });
-
-    return () => {
-      active = false;
-    };
-  }, [
-    goalNavigatorSeedGoal,
-    smartFilter.preselectedTypes,
-    snapshot.profile,
-    snapshot.snapshotId,
-    snapshot.strategies.preferenceVector,
-  ]);
-
-  const handleStartQaTest = useCallback(async () => {
-    if (qaBusy) return;
-    setQaBusy(true);
-    try {
-      await resetLocalOnboarding();
-      router.replace('/onboarding');
-    } finally {
-      setQaBusy(false);
-    }
-  }, [qaBusy, resetLocalOnboarding, router]);
-
-  const handleToggleControl = useCallback(
-    ({ key, active }: { key: PersonalizationControlKey; active: boolean }) => {
-      void recordOverrideEvents(
-        buildPersonalizationControlEvents({
-          key,
-          active,
-        }),
-      );
-    },
-    [recordOverrideEvents],
-  );
-
-  const openGoalNavigator = useCallback(() => {
-    if (goalNavigatorSeedGoal) {
+  const openPaywall = useCallback(
+    (source: OfficialPaywallSource) => {
       router.push({
-        pathname: '/main/goal-navigator',
-        params: { goal: goalNavigatorSeedGoal },
+        pathname: '/paywall/official',
+        params: {
+          source,
+          returnTo: '/main/Home-Page?tab=profile',
+        },
       });
-      return;
-    }
+    },
+    [router],
+  );
 
-    router.push('/main/goal-navigator');
-  }, [goalNavigatorSeedGoal, router]);
+  const openSavedTab = useCallback(() => {
+    router.push({
+      pathname: '/main/Home-Page',
+      params: { tab: 'saved' },
+    });
+  }, [router]);
 
-  const snapshotMeta: Record<ProfileSnapshotId, SnapshotMeta> = {
-    goals: {
-      icon: Target,
-      accent: '#0f766e',
-      soft: 'rgba(20, 184, 166, 0.14)',
-      title: t.profileSnapshotGoalsTitle,
-      hint: t.profileSnapshotGoalsHint,
-    },
-    experience: {
-      icon: Sparkles,
-      accent: '#4f46e5',
-      soft: 'rgba(99, 102, 241, 0.12)',
-      title: t.profileSnapshotExperienceTitle,
-      hint: t.profileSnapshotExperienceHint,
-    },
-    diet: {
-      icon: Leaf,
-      accent: '#16a34a',
-      soft: 'rgba(34, 197, 94, 0.12)',
-      title: t.profileSnapshotDietTitle,
-      hint: t.profileSnapshotDietHint,
-    },
-    region: {
-      icon: MapPin,
-      accent: '#2563eb',
-      soft: 'rgba(59, 130, 246, 0.12)',
-      title: t.profileSnapshotRegionTitle,
-      hint: t.profileSnapshotRegionHint,
-    },
-  };
+  const openHomeTab = useCallback(() => {
+    router.push({
+      pathname: '/main/Home-Page',
+      params: { tab: 'home' },
+    });
+  }, [router]);
 
-  const statusMeta: Record<ProfileStatusId, StatusMeta> = {
-    biometric: {
-      icon: Fingerprint,
-      accent: '#0f766e',
-      soft: 'rgba(20, 184, 166, 0.12)',
-      title: t.profilePreferencesBiometricTitle,
-      hint: t.profilePreferencesBiometricHint,
-    },
-    notifications: {
-      icon: Bell,
-      accent: '#4f46e5',
-      soft: 'rgba(99, 102, 241, 0.12)',
-      title: t.profilePreferencesNotificationsTitle,
-      hint: t.profilePreferencesNotificationsHint,
-    },
-    photos: {
-      icon: Images,
-      accent: '#2563eb',
-      soft: 'rgba(59, 130, 246, 0.12)',
-      title: t.profilePreferencesPhotosTitle,
-      hint: t.profilePreferencesPhotosHint,
-    },
-    consent: {
-      icon: ShieldCheck,
-      accent: '#16a34a',
-      soft: 'rgba(34, 197, 94, 0.12)',
-      title: t.profilePreferencesConsentTitle,
-      hint: t.profilePreferencesConsentHint,
-    },
-    sync: {
-      icon: Cloud,
-      accent: '#0f766e',
-      soft: 'rgba(20, 184, 166, 0.12)',
-      title: t.profileAccountSyncTitle,
-      hint: t.profileAccountSyncHint,
-    },
-    help: {
-      icon: FileText,
-      accent: '#4f46e5',
-      soft: 'rgba(99, 102, 241, 0.12)',
-      title: t.profileAccountHelpTitle,
-      hint: t.profileAccountHelpHint,
-    },
-    tools: {
-      icon: Database,
-      accent: '#2563eb',
-      soft: 'rgba(59, 130, 246, 0.12)',
-      title: t.profileAccountToolsTitle,
-      hint: t.profileAccountToolsHint,
-    },
-  };
+  const handleEditAnswers = useCallback(() => {
+    router.push({
+      pathname: '/onboarding/goals',
+      params: {
+        mode: 'profile_edit',
+        returnTo: '/main/Home-Page?tab=profile',
+      },
+    });
+  }, [router]);
 
-  const overviewTone = getStateTone(model.hero.overviewState);
+  const handleRestorePurchases = useCallback(async () => {
+    const result = await subscription.restorePurchases();
+    Alert.alert(
+      result.ok ? 'Purchases restored' : 'No active purchase found',
+      result.ok
+        ? 'Your NuTri Pro access is up to date.'
+        : result.message ?? 'We could not find an active NuTri Pro purchase for this account.',
+    );
+  }, [subscription]);
+
+  const handleSignOut = useCallback(() => {
+    Alert.alert('Sign out?', 'You can sign back in anytime.', [
+      { text: t.profileCancelAction, style: 'cancel' },
+      {
+        text: 'Sign out',
+        style: 'destructive',
+        onPress: () => {
+          void signOut();
+        },
+      },
+    ]);
+  }, [signOut, t.profileCancelAction]);
+
+  const handleDeleteAccountPress = useCallback(() => {
+    Alert.alert(
+      t.profileDeleteAccountTitle,
+      t.profileDeleteAccountConfirm,
+      [
+        { text: t.profileCancelAction, style: 'cancel' },
+        {
+          text: t.profileDeleteAccountAction,
+          style: 'destructive',
+          onPress: () => {
+            void openAccountDeletionRequest({
+              email: user?.email ?? null,
+              userId: user?.id ?? null,
+            });
+          },
+        },
+      ],
+    );
+  }, [t, user?.email, user?.id]);
 
   return (
     <View style={styles.screen}>
       <ScrollView
         contentInsetAdjustmentBehavior="never"
-        scrollIndicatorInsets={{ top: contentTopPadding, bottom: contentBottomPadding }}
+        scrollIndicatorInsets={{ top: tokens.contentTopPadding, bottom: tokens.contentBottomPadding }}
         contentContainerStyle={[
           styles.scrollContent,
           {
-            paddingTop: contentTopPadding,
-            paddingBottom: contentBottomPadding,
+            paddingTop: tokens.contentTopPadding,
+            paddingBottom: tokens.contentBottomPadding + 72,
           },
         ]}
         showsVerticalScrollIndicator={false}
       >
         <ContentFrame navHeight={navHeight}>
           <View style={styles.headerBlock}>
-            <View style={styles.headerTitleRow}>
-              <Text
-                style={[styles.headerTitle, styles.headerTitleTight, { fontSize: tokens.h1Size, lineHeight: tokens.h1Line }]}
-                maxFontSizeMultiplier={1.2}
-              >
-                {t.profileTitle}
-              </Text>
-              <TouchableOpacity
-                activeOpacity={0.88}
-                onPress={() => {
-                  void handleStartQaTest();
-                }}
-                disabled={qaBusy}
-                style={[styles.qaTestButton, qaBusy ? styles.qaTestButtonBusy : null]}
-              >
-                <Text style={styles.qaTestButtonText}>
-                  {qaBusy ? 'Starting...' : 'Start Q&A test'}
-                </Text>
-              </TouchableOpacity>
-            </View>
-            <Text style={styles.headerSubtitle}>{t.profileSubtitle}</Text>
-          </View>
-
-          <View style={styles.card}>
-            <LinearGradient
-              colors={['rgba(45, 212, 191, 0.16)', 'rgba(125, 211, 252, 0.08)', 'rgba(255,255,255,0)']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.cardGlow}
-            />
-
-            <View style={styles.heroTopBar}>
-              <Text style={styles.heroEyebrow}>{t.profileOverviewTitle}</Text>
-              <View
-                style={[
-                  styles.statusPill,
-                  styles.heroStatusPill,
-                  {
-                    backgroundColor: overviewTone.backgroundColor,
-                    borderColor: overviewTone.borderColor,
-                  },
-                ]}
-              >
-                <Text style={[styles.statusPillText, { color: overviewTone.textColor }]}>
-                  {getStateLabel(model.hero.overviewState, t)}
-                </Text>
-              </View>
-            </View>
-
-            <View style={styles.heroRow}>
-              <LinearGradient
-                colors={['#0f172a', '#0f766e', '#60a5fa']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.avatar}
-              >
-                <Text style={styles.avatarText}>{model.hero.initials}</Text>
-              </LinearGradient>
-
-              <View style={styles.heroTextWrap}>
-                <Text style={styles.heroName}>{model.hero.displayName}</Text>
-                <Text style={styles.heroMeta}>{model.hero.secondaryText}</Text>
-              </View>
-            </View>
-
-            <View style={styles.heroDivider} />
-            <Text style={styles.heroBody}>{t.profileOverviewBody}</Text>
-          </View>
-
-          <View style={styles.sectionBlock}>
-            <Text style={styles.sectionTitle}>{t.profileHealthSnapshotTitle}</Text>
-            <View
-              style={[
-                styles.snapshotGrid,
-                {
-                  flexDirection: snapshotColumns === 2 ? 'row' : 'column',
-                },
-              ]}
+            <Text
+              style={[styles.headerTitle, { fontSize: tokens.h1Size, lineHeight: tokens.h1Line }]}
+              maxFontSizeMultiplier={1.2}
             >
-              {model.snapshot.map(item => {
-                const meta = snapshotMeta[item.id];
-                const Icon = meta.icon;
+              Profile
+            </Text>
 
-                return (
-                  <View
-                    key={item.id}
-                    style={[
-                      styles.snapshotCard,
-                      snapshotColumns === 2 ? { width: snapshotCardWidth } : null,
-                    ]}
-                  >
-                    <View style={[styles.snapshotIconWrap, { backgroundColor: meta.soft }]}>
-                      <Icon color={meta.accent} size={18} strokeWidth={2.2} />
-                    </View>
-                    <View style={styles.snapshotCopy}>
-                      <Text style={styles.snapshotTitle}>{meta.title}</Text>
-                      <Text style={[styles.snapshotValue, !item.value ? styles.snapshotValueMuted : null]}>
-                        {item.value ?? t.profileNotSet}
-                      </Text>
-                    </View>
-                    <Text style={styles.snapshotHint}>{meta.hint}</Text>
-                  </View>
-                );
-              })}
-            </View>
-          </View>
+            <View style={styles.identityRow}>
+              <Image source={PROFILE_AVATAR} contentFit="cover" style={styles.avatar} />
 
-          {PERSONALIZATION_RESEARCH_UI_ENABLED ? (
-            <View style={styles.sectionBlock}>
-              <View style={styles.card}>
-                <Text style={styles.cardTitle}>{t.profilePersonalizationTitle}</Text>
-                <Text style={styles.cardBody}>{t.profilePersonalizationBody}</Text>
-                <View style={styles.personalizationStack}>
-                  <SupportModeCard
-                    mode={supportSurface.mode}
-                    title={supportSurface.title}
-                    body={supportSurface.body}
-                  />
-                  <BestFitsPreviewCard
-                    goalLabel={goalNavigatorTitleLabel}
-                    items={bestFitPreviewItems}
-                    loading={bestFitsLoading}
-                    onOpenGoalNavigator={openGoalNavigator}
-                    secondaryAction={
-                      <RefinePicksDrawer
-                        preferenceVector={snapshot.strategies.preferenceVector}
-                        onToggleChip={handleToggleControl}
-                        helperText="Use this only when you want the result to lean simpler, stronger, or lower-overlap."
-                        variant="pill"
-                      />
-                    }
-                  />
-                  {stackAudit ? (
-                    <StackAuditCard
-                      audit={stackAudit}
-                      dietLanes={snapshot.strategies.dietLanes}
-                      activityPlan={snapshot.strategies.activityPlan}
-                    />
-                  ) : null}
-                  {__DEV__ ? (
-                    <PersonalizationDebugCard
-                      supportState={snapshot.strategies.supportState}
-                      eventSummary={eventSummary}
-                    />
-                  ) : null}
+              <View style={styles.identityCopy}>
+                <Text style={styles.displayName} numberOfLines={1}>
+                  {displayName}
+                </Text>
+                <Text style={styles.emailText} numberOfLines={1} selectable>
+                  {email}
+                </Text>
+                <View style={[styles.planBadge, isPro ? styles.planBadgePro : styles.planBadgeFree]}>
+                  <Text style={[styles.planBadgeText, isPro ? styles.planBadgeTextPro : styles.planBadgeTextFree]}>
+                    {isPro ? 'NuTri Pro' : 'Free Plan'}
+                  </Text>
                 </View>
               </View>
             </View>
-          ) : null}
+          </View>
 
-          <View style={styles.sectionBlock}>
-            <View style={styles.card}>
-              <Text style={styles.cardTitle}>{t.profilePreferencesTitle}</Text>
-              <Text style={styles.cardBody}>{t.profilePreferencesBody}</Text>
-              <View style={styles.statusList}>
-                {model.preferences.map((item, index) => {
-                  const meta = statusMeta[item.id];
-                  const Icon = meta.icon;
-                  const tone = getStateTone(item.state);
-
-                  return (
-                    <View
-                      key={item.id}
-                      style={[styles.statusRow, index > 0 ? styles.statusRowBorder : null]}
-                    >
-                      <View style={[styles.statusIconWrap, { backgroundColor: meta.soft }]}>
-                        <Icon color={meta.accent} size={18} strokeWidth={2.2} />
-                      </View>
-                      <View style={styles.statusTextWrap}>
-                        <Text style={styles.statusTitle}>{meta.title}</Text>
-                        <Text style={styles.statusHint}>{meta.hint}</Text>
-                      </View>
-                      <View
-                        style={[
-                          styles.statusPill,
-                          {
-                            backgroundColor: tone.backgroundColor,
-                            borderColor: tone.borderColor,
-                          },
-                        ]}
-                      >
-                        <Text style={[styles.statusPillText, { color: tone.textColor }]}>
-                          {getStateLabel(item.state, t)}
-                        </Text>
-                      </View>
-                    </View>
-                  );
-                })}
+          {isPro ? (
+            <View style={[styles.proCard, styles.cardShadow]}>
+              <Image source={PRO_CARD_BG} contentFit="cover" style={styles.proCardImage} />
+              <View style={styles.proCardOverlay} />
+              <View style={styles.proCardHeader}>
+                <Text style={styles.proCardTitle}>NuTri Pro</Text>
+                <View style={styles.activeBadge}>
+                  <Text style={styles.activeBadgeText}>ACTIVE</Text>
+                </View>
               </View>
+              <Text style={styles.proCardBody}>
+                Unlimited scans, search, and stack safety are unlocked.
+              </Text>
+            </View>
+          ) : (
+            <View style={[styles.freePlanCard, styles.cardShadow]}>
+              <View style={styles.freePlanCopy}>
+                <Text style={styles.freePlanTitle}>Free plan</Text>
+                <Text style={styles.freePlanText}>{freePlanLine}</Text>
+              </View>
+              <TouchableOpacity
+                activeOpacity={0.88}
+                style={styles.upgradeButton}
+                onPress={() => openPaywall('profile_upgrade')}
+                accessibilityRole="button"
+              >
+                <Sparkles size={17} color="#ffffff" strokeWidth={2.4} />
+                <Text style={styles.upgradeButtonText}>Upgrade</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          <SectionHeader title="Your Answers" action="Edit" onActionPress={handleEditAnswers} />
+          <View style={[styles.answerCard, styles.cardShadow]}>
+            {answerChips.length > 0 ? (
+              <View style={styles.answerChipWrap}>
+                {answerChips.map(chip => (
+                  <AnswerChipView key={chip.id} chip={chip} />
+                ))}
+              </View>
+            ) : (
+              <View style={styles.emptyAnswers}>
+                <Text style={styles.emptyAnswersTitle}>No answers yet</Text>
+                <Text style={styles.emptyAnswersText}>
+                  Add a goal and avoid list so scan results can explain fit more clearly.
+                </Text>
+              </View>
+            )}
+          </View>
+
+          <SectionHeader title="My Stack & Tracking" />
+          <View style={[styles.listCard, styles.cardShadow]}>
+            <ProfileRow
+              icon={Target}
+              title="Saved supplements"
+              subtitle={savedLimitLine}
+              actionLabel="View"
+              onPress={openSavedTab}
+            />
+            <ProfileRow
+              icon={Clock3}
+              title="Daily Check-in"
+              subtitle={checkInStatus}
+              subtitleTone={completedToday > 0 ? 'blue' : 'muted'}
+              onPress={openHomeTab}
+              separated
+            />
+            <ProfileRow
+              icon={ShieldCheck}
+              title="Stack Safety"
+              subtitle={stackSafetyLine}
+              subtitleTone={savedSupplements.length >= 2 && isPro ? 'green' : 'muted'}
+              onPress={() => (isPro ? openSavedTab() : openPaywall('stack_safety'))}
+              separated
+            />
+          </View>
+
+          <SectionHeader title="Account & Data" />
+          <View style={[styles.listCard, styles.cardShadow]}>
+            <View style={styles.emailRow}>
+              <Mail size={18} color="#99a1af" strokeWidth={2.1} />
+              <View style={styles.emailCopy}>
+                <Text style={styles.emailRowTitle} selectable numberOfLines={1}>
+                  {cleanText(user?.email) ?? 'Not signed in'}
+                </Text>
+                <Text style={styles.emailRowSubtitle}>
+                  Used only to personalize your results.
+                </Text>
+              </View>
+            </View>
+            <ProfileRow
+              icon={ShieldCheck}
+              title="Privacy Policy"
+              onPress={() => {
+                void openPrivacyPolicy();
+              }}
+              accessibilityRole="link"
+              iconFrame="plain"
+              separated
+            />
+            <ProfileRow
+              icon={FileText}
+              title="Terms of Service"
+              onPress={() => {
+                void openTermsOfService();
+              }}
+              accessibilityRole="link"
+              iconFrame="plain"
+              separated
+            />
+          </View>
+
+          <SectionHeader title="Support" />
+          <View style={[styles.listCard, styles.cardShadow]}>
+            <ProfileRow
+              icon={LifeBuoy}
+              title="Contact us"
+              onPress={() => {
+                void openSupportEmail();
+              }}
+              iconFrame="plain"
+              separated={false}
+            />
+            <ProfileRow
+              icon={RotateCcw}
+              title={subscription.restoreBusy ? 'Restoring...' : 'Restore purchases'}
+              onPress={subscription.restoreBusy ? undefined : handleRestorePurchases}
+              iconFrame="plain"
+              separated
+            />
+            <View style={[styles.staticRow, styles.rowSeparator]}>
+              <View style={styles.rowLeft}>
+                <Smartphone size={18} color="#99a1af" strokeWidth={2.1} />
+                <Text style={styles.staticRowTitle}>App version</Text>
+              </View>
+              <Text style={styles.versionText}>{getAppVersionLabel()}</Text>
             </View>
           </View>
 
-          <View style={styles.sectionBlock}>
-            <View style={styles.card}>
-              <Text style={styles.cardTitle}>{t.profileAccountTitle}</Text>
-              <Text style={styles.cardBody}>{t.profileAccountBody}</Text>
-              <View style={styles.statusList}>
-                {model.accountData.map((item, index) => {
-                  const meta = statusMeta[item.id];
-                  const Icon = meta.icon;
-                  const tone = getStateTone(item.state);
-
-                  return (
-                    <View
-                      key={item.id}
-                      style={[styles.statusRow, index > 0 ? styles.statusRowBorder : null]}
-                    >
-                      <View style={[styles.statusIconWrap, { backgroundColor: meta.soft }]}>
-                        <Icon color={meta.accent} size={18} strokeWidth={2.2} />
-                      </View>
-                      <View style={styles.statusTextWrap}>
-                        <Text style={styles.statusTitle}>{meta.title}</Text>
-                        <Text style={styles.statusHint}>{meta.hint}</Text>
-                      </View>
-                      <View
-                        style={[
-                          styles.statusPill,
-                          {
-                            backgroundColor: tone.backgroundColor,
-                            borderColor: tone.borderColor,
-                          },
-                        ]}
-                      >
-                        <Text style={[styles.statusPillText, { color: tone.textColor }]}>
-                          {getStateLabel(item.state, t)}
-                        </Text>
-                      </View>
-                    </View>
-                  );
-                })}
-              </View>
-            </View>
+          <View style={[styles.listCard, styles.cardShadow, styles.dangerCard]}>
+            {user ? (
+              <ProfileRow
+                icon={LogOut}
+                title="Sign out"
+                onPress={handleSignOut}
+                iconFrame="plain"
+              />
+            ) : null}
+            <ProfileRow
+              icon={Trash2}
+              title={t.profileDeleteAccountAction}
+              onPress={handleDeleteAccountPress}
+              destructive
+              iconFrame="plain"
+              separated={Boolean(user)}
+            />
           </View>
-
-          <Text style={styles.footnote}>{t.profileFootnote}</Text>
         </ContentFrame>
       </ScrollView>
     </View>
   );
 }
 
+function SectionHeader({
+  title,
+  action,
+  onActionPress,
+}: {
+  title: string;
+  action?: string;
+  onActionPress?: () => void;
+}) {
+  return (
+    <View style={styles.sectionHeader}>
+      <Text style={styles.sectionTitle}>{title}</Text>
+      {action && onActionPress ? (
+        <TouchableOpacity
+          activeOpacity={0.75}
+          onPress={onActionPress}
+          accessibilityRole="button"
+          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+        >
+          <Text style={styles.sectionAction}>{action}</Text>
+        </TouchableOpacity>
+      ) : null}
+    </View>
+  );
+}
+
+function AnswerChipView({ chip }: { chip: AnswerChip }) {
+  const Icon = chip.icon;
+  return (
+    <View style={[styles.answerChip, chip.active ? styles.answerChipActive : null]}>
+      <Icon
+        size={16}
+        color={chip.active ? '#ffffff' : '#9ca3af'}
+        strokeWidth={2.15}
+      />
+      <Text style={[styles.answerChipText, chip.active ? styles.answerChipTextActive : null]}>
+        {chip.label}
+      </Text>
+    </View>
+  );
+}
+
+function ProfileRow({
+  icon: Icon,
+  title,
+  subtitle,
+  subtitleTone = 'muted',
+  actionLabel,
+  onPress,
+  separated = false,
+  destructive = false,
+  accessibilityRole = 'button',
+  iconFrame = 'circle',
+}: {
+  icon: LucideIcon;
+  title: string;
+  subtitle?: string;
+  subtitleTone?: 'muted' | 'blue' | 'green';
+  actionLabel?: string;
+  onPress?: () => void;
+  separated?: boolean;
+  destructive?: boolean;
+  accessibilityRole?: 'button' | 'link';
+  iconFrame?: 'circle' | 'plain';
+}) {
+  const iconColor = destructive
+    ? '#dc2626'
+    : subtitleTone === 'green'
+      ? '#00a63e'
+      : iconFrame === 'plain'
+        ? '#99a1af'
+        : '#64748b';
+
+  const content = (
+    <>
+      <View style={styles.rowLeft}>
+        {iconFrame === 'plain' ? (
+          <Icon
+            size={18}
+            color={iconColor}
+            strokeWidth={2.15}
+          />
+        ) : (
+          <View
+            style={[
+              styles.rowIconWrap,
+              subtitleTone === 'green' ? styles.rowIconGreen : null,
+              destructive ? styles.rowIconDanger : null,
+            ]}
+          >
+            <Icon
+              size={18}
+              color={iconColor}
+              strokeWidth={2.15}
+            />
+          </View>
+        )}
+        <View style={styles.rowCopy}>
+          <Text style={[styles.rowTitle, destructive ? styles.rowTitleDanger : null]}>{title}</Text>
+          {subtitle ? (
+            <Text
+              style={[
+                styles.rowSubtitle,
+                subtitleTone === 'blue' ? styles.rowSubtitleBlue : null,
+                subtitleTone === 'green' ? styles.rowSubtitleGreen : null,
+              ]}
+            >
+              {subtitle}
+            </Text>
+          ) : null}
+        </View>
+      </View>
+      {actionLabel ? (
+        <View style={styles.rowActionPill}>
+          <Text style={styles.rowActionText}>{actionLabel}</Text>
+        </View>
+      ) : onPress ? (
+        <ChevronRight size={18} color="#c4cad4" strokeWidth={2.3} />
+      ) : null}
+    </>
+  );
+
+  if (!onPress) {
+    return <View style={[styles.row, separated ? styles.rowSeparator : null]}>{content}</View>;
+  }
+
+  return (
+    <TouchableOpacity
+      activeOpacity={0.78}
+      style={[styles.row, separated ? styles.rowSeparator : null]}
+      onPress={onPress}
+      accessibilityRole={accessibilityRole}
+    >
+      {content}
+    </TouchableOpacity>
+  );
+}
+
 const cardShadow: ViewStyle = {
   shadowColor: '#0f172a',
-  shadowOpacity: 0.08,
-  shadowRadius: 22,
-  shadowOffset: { width: 0, height: 10 },
-  elevation: 8,
+  shadowOpacity: 0.1,
+  shadowRadius: 3,
+  shadowOffset: { width: 0, height: 1 },
+  elevation: 2,
 };
 
 const h1Base: TextStyle = {
-  fontWeight: '800',
-  color: '#0f172a',
-  letterSpacing: -0.2,
+  fontFamily: SERIF_FONT,
+  fontWeight: '500',
+  color: '#111111',
+  letterSpacing: -1.1,
   includeFontPadding: false,
 };
 
 const styles = StyleSheet.create({
+  cardShadow,
   screen: {
     flex: 1,
     backgroundColor: SCREEN_BG,
@@ -653,326 +666,398 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   headerBlock: {
-    marginBottom: 20,
-  },
-  headerTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 12,
-    flexWrap: 'wrap',
+    gap: 24,
+    marginBottom: 24,
+    paddingHorizontal: 8,
   },
   headerTitle: {
     ...h1Base,
   },
-  headerTitleTight: {
-    flexShrink: 1,
-  },
-  headerSubtitle: {
-    marginTop: 8,
-    fontSize: 15,
-    lineHeight: 21,
-    fontWeight: '600',
-    color: '#66758f',
-    includeFontPadding: false,
-    maxWidth: 320,
-  },
-  qaTestButton: {
-    minHeight: 38,
-    borderRadius: 999,
-    paddingHorizontal: 14,
-    paddingVertical: 9,
-    backgroundColor: '#0f766e',
-    borderWidth: 1,
-    borderColor: 'rgba(15, 118, 110, 0.18)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  qaTestButtonBusy: {
-    opacity: 0.72,
-  },
-  qaTestButtonText: {
-    fontSize: 13,
-    lineHeight: 16,
-    fontWeight: '800',
-    color: '#ffffff',
-    includeFontPadding: false,
-  },
-  sectionBlock: {
-    marginTop: 24,
-  },
-  sectionTitle: {
-    fontSize: 19,
-    lineHeight: 23,
-    fontWeight: '900',
-    color: '#0f172a',
-    includeFontPadding: false,
-    marginBottom: 14,
-  },
-  card: {
-    ...cardShadow,
-    backgroundColor: '#ffffff',
-    borderRadius: 28,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.82)',
-    paddingHorizontal: 22,
-    paddingVertical: 22,
-  },
-  cardGlow: {
-    ...StyleSheet.absoluteFillObject,
-    borderRadius: 28,
-  },
-  heroTopBar: {
+  identityRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 12,
-    marginBottom: 18,
-  },
-  heroEyebrow: {
-    fontSize: 12,
-    lineHeight: 14,
-    fontWeight: '900',
-    color: '#64748b',
-    includeFontPadding: false,
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
-  },
-  heroStatusPill: {
-    minWidth: 82,
-  },
-  heroRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: STACK_GAP,
+    gap: 16,
   },
   avatar: {
-    width: 82,
-    height: 82,
-    borderRadius: 28,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    overflow: 'hidden',
+  },
+  identityCopy: {
+    flex: 1,
+    minWidth: 0,
+  },
+  displayName: {
+    fontSize: 18.4,
+    lineHeight: 27.6,
+    fontWeight: '600',
+    color: TEXT,
+    letterSpacing: -0.9,
+    includeFontPadding: false,
+  },
+  emailText: {
+    fontSize: 15,
+    lineHeight: 22.5,
+    fontWeight: '400',
+    color: MUTED,
+    letterSpacing: -0.23,
+    includeFontPadding: false,
+  },
+  planBadge: {
+    marginTop: 7,
+    alignSelf: 'flex-start',
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 2,
+  },
+  planBadgeFree: {
+    backgroundColor: '#f0f1f3',
+  },
+  planBadgePro: {
+    backgroundColor: '#e7f7fd',
+  },
+  planBadgeText: {
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: '500',
+    includeFontPadding: false,
+  },
+  planBadgeTextFree: {
+    color: '#4b5563',
+  },
+  planBadgeTextPro: {
+    color: '#007ab8',
+  },
+  proCard: {
+    height: 232.25,
+    borderRadius: 32,
+    overflow: 'hidden',
+    paddingHorizontal: 28,
+    paddingTop: 28,
+    paddingBottom: 28,
+    backgroundColor: '#aee0ff',
+  },
+  proCardImage: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  proCardOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(255,255,255,0.02)',
+  },
+  proCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: 18,
+  },
+  proCardTitle: {
+    fontFamily: SERIF_FONT,
+    fontSize: 28,
+    lineHeight: 35,
+    fontWeight: '500',
+    letterSpacing: -0.7,
+    color: '#111111',
+    includeFontPadding: false,
+  },
+  activeBadge: {
+    borderRadius: 999,
+    backgroundColor: 'rgba(255,255,255,0.62)',
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+  },
+  activeBadgeText: {
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: '700',
+    letterSpacing: 0.6,
+    color: '#111111',
+    includeFontPadding: false,
+  },
+  proCardBody: {
+    marginTop: 16,
+    maxWidth: 259,
+    fontSize: 15,
+    lineHeight: 24.375,
+    fontWeight: '500',
+    letterSpacing: -0.23,
+    color: 'rgba(17,17,17,0.78)',
+    includeFontPadding: false,
+  },
+  freePlanCard: {
+    height: 112,
+    borderRadius: 24,
+    backgroundColor: CARD_BG,
+    borderWidth: 1,
+    borderColor: SOFT_BORDER,
+    paddingHorizontal: 22,
+    paddingVertical: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 16,
+  },
+  freePlanCopy: {
+    flex: 1,
+    minWidth: 0,
+  },
+  freePlanTitle: {
+    fontSize: 17,
+    lineHeight: 25.5,
+    fontWeight: '600',
+    color: '#111111',
+    includeFontPadding: false,
+  },
+  freePlanText: {
+    marginTop: 6,
+    fontSize: 15,
+    lineHeight: 22.5,
+    fontWeight: '400',
+    color: MUTED,
+    includeFontPadding: false,
+  },
+  upgradeButton: {
+    height: 52.5,
+    borderRadius: 999,
+    backgroundColor: '#111111',
+    paddingHorizontal: 25,
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 8,
   },
-  avatarText: {
-    fontSize: 28,
-    lineHeight: 32,
-    fontWeight: '900',
+  upgradeButtonText: {
+    fontSize: 15,
+    lineHeight: 22.5,
+    fontWeight: '600',
     color: '#ffffff',
     includeFontPadding: false,
-    letterSpacing: 0.4,
   },
-  heroTextWrap: {
-    flex: 1,
-    justifyContent: 'center',
-  },
-  heroName: {
-    fontSize: 25,
-    lineHeight: 30,
-    fontWeight: '900',
-    color: '#0f172a',
-    includeFontPadding: false,
-    letterSpacing: -0.4,
-  },
-  heroMeta: {
-    marginTop: 6,
-    fontSize: 14,
-    lineHeight: 19,
-    fontWeight: '600',
-    color: '#66758f',
-    includeFontPadding: false,
-  },
-  heroDivider: {
-    marginTop: 20,
+  sectionHeader: {
+    marginTop: 32,
     marginBottom: 16,
-    height: 1,
-    backgroundColor: 'rgba(148, 163, 184, 0.18)',
+    paddingHorizontal: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 16,
   },
-  heroBody: {
-    fontSize: 16,
-    lineHeight: 24,
-    fontWeight: '700',
-    color: '#334155',
+  sectionTitle: {
+    fontSize: 17,
+    lineHeight: 25.5,
+    fontWeight: '600',
+    letterSpacing: -0.86,
+    color: TEXT,
     includeFontPadding: false,
   },
-  cardTitle: {
-    fontSize: 19,
-    lineHeight: 24,
-    fontWeight: '900',
-    color: '#0f172a',
-    includeFontPadding: false,
-  },
-  cardBody: {
+  sectionAction: {
     fontSize: 14,
     lineHeight: 21,
-    fontWeight: '600',
-    color: '#475569',
+    fontWeight: '500',
+    letterSpacing: -0.15,
+    color: MUTED,
     includeFontPadding: false,
   },
-  snapshotGrid: {
-    flexWrap: 'wrap',
-    gap: SNAPSHOT_GAP,
-  },
-  snapshotCard: {
-    ...cardShadow,
-    backgroundColor: '#ffffff',
+  answerCard: {
     borderRadius: 24,
+    backgroundColor: CARD_BG,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.84)',
-    paddingHorizontal: 18,
-    paddingVertical: 18,
-    minHeight: 218,
-    justifyContent: 'space-between',
+    borderColor: SOFT_BORDER,
+    paddingHorizontal: 21,
+    paddingVertical: 21,
+    minHeight: 128,
   },
-  snapshotIconWrap: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  snapshotCopy: {
-    marginTop: 18,
-    gap: 8,
-  },
-  snapshotTitle: {
-    fontSize: 13,
-    lineHeight: 17,
-    fontWeight: '800',
-    color: '#64748b',
-    includeFontPadding: false,
-  },
-  snapshotValue: {
-    fontSize: 17,
-    lineHeight: 23,
-    fontWeight: '900',
-    color: '#0f172a',
-    includeFontPadding: false,
-    minHeight: 46,
-  },
-  snapshotValueMuted: {
-    color: '#94a3b8',
-  },
-  snapshotHint: {
-    fontSize: 13,
-    lineHeight: 18,
-    fontWeight: '600',
-    color: '#64748b',
-    includeFontPadding: false,
-    minHeight: 54,
-  },
-  chipWrap: {
-    marginTop: 18,
+  answerChipWrap: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 10,
+    columnGap: 8,
+    rowGap: 8,
   },
-  personalizationStack: {
-    marginTop: 18,
-    gap: 14,
-  },
-  chip: {
+  answerChip: {
+    minHeight: 39,
+    borderRadius: 14,
+    paddingHorizontal: 15,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    borderRadius: 999,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
+    gap: 6,
+    backgroundColor: '#f9fafb',
     borderWidth: 1,
+    borderColor: SOFT_BORDER,
   },
-  chipLive: {
-    backgroundColor: 'rgba(45, 212, 191, 0.1)',
-    borderColor: 'rgba(45, 212, 191, 0.16)',
+  answerChipActive: {
+    backgroundColor: '#111111',
+    borderColor: '#111111',
   },
-  chipPreview: {
-    backgroundColor: 'rgba(148, 163, 184, 0.1)',
-    borderColor: 'rgba(148, 163, 184, 0.14)',
+  answerChipText: {
+    fontSize: 14,
+    lineHeight: 21,
+    fontWeight: '400',
+    letterSpacing: -0.15,
+    color: '#1e2939',
+    includeFontPadding: false,
   },
-  chipText: {
+  answerChipTextActive: {
+    color: '#ffffff',
+  },
+  emptyAnswers: {
+    gap: 8,
+  },
+  emptyAnswersTitle: {
+    fontSize: 15,
+    lineHeight: 22.5,
+    fontWeight: '500',
+    color: TEXT,
+    includeFontPadding: false,
+  },
+  emptyAnswersText: {
     fontSize: 13,
-    lineHeight: 16,
-    fontWeight: '800',
-    color: '#0f172a',
+    lineHeight: 19.5,
+    fontWeight: '400',
+    color: MUTED,
     includeFontPadding: false,
   },
-  chipTextPreview: {
-    color: '#475569',
+  listCard: {
+    borderRadius: 24,
+    overflow: 'hidden',
+    backgroundColor: CARD_BG,
+    borderWidth: 1,
+    borderColor: SOFT_BORDER,
   },
-  previewBadge: {
-    borderRadius: 999,
-    backgroundColor: 'rgba(255,255,255,0.8)',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+  row: {
+    minHeight: 75,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 16,
   },
-  previewBadgeText: {
-    fontSize: 10,
-    lineHeight: 12,
-    fontWeight: '800',
-    color: '#64748b',
-    includeFontPadding: false,
-    textTransform: 'uppercase',
-    letterSpacing: 0.4,
+  rowSeparator: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: '#f9fafb',
   },
-  statusList: {
-    marginTop: 14,
-  },
-  statusRow: {
+  rowLeft: {
+    flex: 1,
+    minWidth: 0,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    paddingVertical: 15,
   },
-  statusRowBorder: {
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: 'rgba(148, 163, 184, 0.25)',
-  },
-  statusIconWrap: {
+  rowIconWrap: {
     width: 40,
     height: 40,
-    borderRadius: 14,
+    borderRadius: 20,
+    backgroundColor: '#f9fafb',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  statusTextWrap: {
+  rowIconGreen: {
+    backgroundColor: '#f0fdf4',
+  },
+  rowIconDanger: {
+    backgroundColor: '#fef2f2',
+  },
+  rowCopy: {
     flex: 1,
-    gap: 2,
+    minWidth: 0,
   },
-  statusTitle: {
+  rowTitle: {
     fontSize: 15,
-    lineHeight: 20,
-    fontWeight: '800',
-    color: '#0f172a',
+    lineHeight: 22.5,
+    fontWeight: '500',
+    letterSpacing: -0.23,
+    color: TEXT,
     includeFontPadding: false,
   },
-  statusHint: {
+  rowTitleDanger: {
+    color: '#dc2626',
+  },
+  rowSubtitle: {
     fontSize: 13,
-    lineHeight: 18,
-    fontWeight: '600',
-    color: '#64748b',
+    lineHeight: 19.5,
+    fontWeight: '400',
+    letterSpacing: -0.08,
+    color: MUTED,
     includeFontPadding: false,
   },
-  statusPill: {
-    minWidth: 74,
+  rowSubtitleBlue: {
+    color: '#007ab8',
+  },
+  rowSubtitleGreen: {
+    color: '#16a34a',
+  },
+  rowActionPill: {
+    minHeight: 37,
     borderRadius: 999,
-    borderWidth: 1,
-    paddingHorizontal: 10,
-    paddingVertical: 7,
+    paddingHorizontal: 18,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: '#f9fafb',
   },
-  statusPillText: {
-    fontSize: 12,
-    lineHeight: 14,
-    fontWeight: '800',
+  rowActionText: {
+    fontSize: 14,
+    lineHeight: 21,
+    fontWeight: '500',
+    letterSpacing: -0.15,
+    color: '#111111',
     includeFontPadding: false,
   },
-  footnote: {
-    marginTop: 18,
-    fontSize: 12,
-    lineHeight: 18,
-    fontWeight: '600',
-    color: '#64748b',
+  emailRow: {
+    minHeight: 79,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+  },
+  emailCopy: {
+    flex: 1,
+    minWidth: 0,
+  },
+  emailRowTitle: {
+    fontSize: 15,
+    lineHeight: 22.5,
+    fontWeight: '500',
+    letterSpacing: -0.23,
+    color: TEXT,
     includeFontPadding: false,
-    textAlign: 'center',
-    paddingHorizontal: 12,
+  },
+  emailRowSubtitle: {
+    marginTop: 4,
+    fontSize: 13,
+    lineHeight: 19.5,
+    fontWeight: '400',
+    letterSpacing: -0.08,
+    color: MUTED,
+    includeFontPadding: false,
+  },
+  staticRow: {
+    minHeight: 55.5,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 16,
+  },
+  staticRowTitle: {
+    fontSize: 15,
+    lineHeight: 22.5,
+    fontWeight: '400',
+    letterSpacing: -0.23,
+    color: '#99a1af',
+    includeFontPadding: false,
+  },
+  versionText: {
+    fontSize: 14,
+    lineHeight: 21,
+    fontWeight: '400',
+    letterSpacing: -0.15,
+    color: '#99a1af',
+    includeFontPadding: false,
+  },
+  dangerCard: {
+    marginTop: 8,
+    marginBottom: 24,
   },
 });

@@ -4109,9 +4109,9 @@ const AnalysisBundleDashboard: React.FC<{
     const analysisBarcodeRaw = normalizeText((analysis as { barcode?: string | null })?.barcode ?? null);
     const annualProduct = subscription.annualPackage?.product ?? null;
     const monthlyProduct = subscription.monthlyPackage?.product ?? null;
-    const annualPriceLine = annualProduct?.priceString ?? '$59.99/year';
-    const monthlyPriceLine = monthlyProduct?.priceString ?? '$10.99/month';
-    const annualMetaLine = annualProduct?.pricePerMonthString ?? '$5.00/month';
+    const annualPriceLine = annualProduct?.priceString ?? '$29.99/year';
+    const monthlyPriceLine = monthlyProduct?.priceString ?? '$4.99/month';
+    const annualMetaLine = annualProduct?.pricePerMonthString ?? '$2.50/month';
     const paywallPlanCards = useMemo<PaywallPlanCard[]>(() => ([
         {
             id: 'annual',
@@ -4234,7 +4234,7 @@ const AnalysisBundleDashboard: React.FC<{
     ]);
     const paywallFooterText = useMemo(() => {
         if (subscription.uiPreviewMode) {
-            return '7-day free trial, then $59.99/year. Auto-renews until canceled. Cancel anytime in App Store or Google Play settings.';
+            return '7-day free trial, then $29.99/year. Auto-renews until canceled. Cancel anytime in App Store or Google Play settings.';
         }
 
         if (!annualPriceLine) {
