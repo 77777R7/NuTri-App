@@ -1,8 +1,7 @@
 import { StatusBar } from 'expo-status-bar';
 import * as Haptics from 'expo-haptics';
-import * as Notifications from 'expo-notifications';
 import { Check, Sparkles } from 'lucide-react-native';
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import {
   Animated as RNAnimated,
   Easing,
@@ -63,8 +62,6 @@ const RELEASE_READY_UNLOCKED_ITEMS = [
   'More saved supplements',
   'Stack Safety',
 ];
-
-const TRIAL_RENEWAL_REMINDER_SECONDS = 6 * 24 * 60 * 60;
 
 export const getPostPurchaseCopy = (source: OfficialPaywallSource): PostPurchaseCopy => {
   switch (source) {
@@ -236,7 +233,6 @@ export function PostPurchaseSuccessPage({
 }: PostPurchaseSuccessPageProps) {
   const insets = useSafeAreaInsets();
   const viewedRef = useRef(false);
-  const [trialReminderStatus, setTrialReminderStatus] = useState<'idle' | 'scheduled' | 'denied' | 'error'>('idle');
   const copy = useMemo(() => getPostPurchaseCopy(source), [source]);
 
   useEffect(() => {
@@ -271,36 +267,6 @@ export function PostPurchaseSuccessPage({
     onContinue();
   };
 
-  const handleTrialReminderPress = async () => {
-    try {
-      const existingPermission = await Notifications.getPermissionsAsync();
-      const finalPermission = existingPermission.granted
-        ? existingPermission
-        : await Notifications.requestPermissionsAsync();
-
-      if (!finalPermission.granted) {
-        setTrialReminderStatus('denied');
-        return;
-      }
-
-      await Notifications.scheduleNotificationAsync({
-        content: {
-          title: 'NuTri Pro trial reminder',
-          body: 'Your NuTri Pro trial renews soon. You can review it anytime in App Store subscriptions.',
-        },
-        trigger: {
-          type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
-          seconds: TRIAL_RENEWAL_REMINDER_SECONDS,
-          repeats: false,
-        },
-      });
-      setTrialReminderStatus('scheduled');
-    } catch (reminderError) {
-      console.warn('[paywall] failed to schedule trial renewal reminder', reminderError);
-      setTrialReminderStatus('error');
-    }
-  };
-
   return (
     <View style={styles.screen}>
       <StatusBar style="light" />
@@ -327,30 +293,6 @@ export function PostPurchaseSuccessPage({
             </View>
           ))}
         </View>
-
-        {isTrial ? (
-          <View style={styles.trialReminderCard}>
-            <Text style={styles.trialReminderTitle}>Want a reminder before your trial renews?</Text>
-            <Pressable
-              style={styles.trialReminderButton}
-              onPress={() => {
-                void handleTrialReminderPress();
-              }}
-              accessibilityRole="button"
-              accessibilityLabel="Set trial renewal reminder"
-            >
-              <Text style={styles.trialReminderButtonText}>
-                {trialReminderStatus === 'scheduled'
-                  ? 'Reminder set'
-                  : trialReminderStatus === 'denied'
-                    ? 'Notifications blocked'
-                    : trialReminderStatus === 'error'
-                      ? 'Try again later'
-                      : 'Remind me'}
-              </Text>
-            </Pressable>
-          </View>
-        ) : null}
 
         <Pressable
           style={styles.cta}
@@ -449,38 +391,6 @@ const styles = StyleSheet.create({
     lineHeight: 21,
     fontWeight: '800',
     color: '#F8FAFC',
-    letterSpacing: 0,
-  },
-  trialReminderCard: {
-    gap: 12,
-    marginTop: 28,
-    padding: 16,
-    borderRadius: 16,
-    backgroundColor: 'rgba(255,255,255,0.08)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.12)',
-  },
-  trialReminderTitle: {
-    fontSize: 14,
-    lineHeight: 20,
-    fontWeight: '800',
-    color: '#E2E8F0',
-    letterSpacing: 0,
-  },
-  trialReminderButton: {
-    alignSelf: 'flex-start',
-    minHeight: 34,
-    borderRadius: 17,
-    paddingHorizontal: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(147,197,253,0.18)',
-  },
-  trialReminderButtonText: {
-    fontSize: 13,
-    lineHeight: 18,
-    fontWeight: '900',
-    color: '#BFDBFE',
     letterSpacing: 0,
   },
   cta: {
