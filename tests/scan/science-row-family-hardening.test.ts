@@ -609,6 +609,36 @@ test('science context uses food-like label anchors instead of macro rows for gre
   assert.doesNotMatch(snackContext.ingredientRows[0]?.name ?? '', /protein|potassium/i);
 });
 
+test('science context rescues Alani whey protein from mineral-only nutrition rows', () => {
+  const digest = buildDigest({
+    labelId: 'fixture-alani-whey-mineral-rows',
+    productName: 'Alani Nu, Whey Protein, Fruity Cereal, 2 lb 0.7 oz (927 g)',
+    dosageForm: 'Powder',
+    actives: [
+      { name: 'Magnesium', amount: 19, unit: 'mg' },
+      { name: 'Calcium', amount: 120, unit: 'mg' },
+      { name: 'Potassium', amount: 140, unit: 'mg' },
+    ],
+  });
+
+  const context = buildIngredientScienceContext({
+    digest,
+    overlayClaims: {
+      title: 'Alani Nu, Whey Protein, Fruity Cereal, 2 lb 0.7 oz (927 g)',
+      brandName: 'Alani Nu',
+      nutritionalFacts: [
+        { substancy: 'Magnesium', amountPerServing: '19 mg' },
+        { substancy: 'Calcium', amountPerServing: '120 mg' },
+        { substancy: 'Potassium', amountPerServing: '140 mg' },
+      ],
+    },
+  });
+
+  assert.match(context.ingredientRows[0]?.name ?? '', /whey protein/i);
+  assert.equal(context.anchorIngredient?.ingredientFamily, 'protein');
+  assert.notEqual(context.ingredientRows[0]?.name, 'Magnesium');
+});
+
 test('science context creates label-context rows for title-only Greens First and Project 1 powders', () => {
   const greensFirstContext = buildIngredientScienceContext({
     digest: buildDigest({

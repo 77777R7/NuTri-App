@@ -53,6 +53,7 @@ export type IngredientScienceIngredientFamily =
   | "melatonin"
   | "omega_3"
   | "probiotic_or_blend"
+  | "protein"
   | "red_yeast_rice"
   | "pygeum"
   | "milk_thistle"
@@ -204,6 +205,8 @@ const FOOD_LIKE_CONTEXT_ANCHOR_PATTERN =
 const FOOD_LIKE_MACRO_ANCHOR_PATTERN =
   /\b(?:calories|total\s+carbohydrates?|total\s+sugars?|added\s+sugars?|sugar\s+alcohols?|dietary\s+fiber|fiber|sodium|protein|potassium)\b/i;
 const PROTEIN_PRODUCT_TITLE_PATTERN = /\bprotein\b/i;
+const PROTEIN_PATTERN =
+  /\b(?:advanced\s+)?whey(?:\s+(?:isolate|protein))?\b|\bpure\s+whey\b|\bclean\s+whey\b|\b(?:pea|rice|soy|hemp|collagen)\s+protein\b|\bprotein\s+(?:isolate|concentrate|blend|powder)\b/i;
 const IMMUNE_BLEND_TITLE_PATTERN =
   /\b(?:immune|immunity|sambucus|elderberry|children'?s|chewable)\b/i;
 const B_COMPLEX_TITLE_PATTERN =
@@ -301,6 +304,7 @@ const inferFamilyFromText = (combined: string): IngredientScienceIngredientFamil
   if (CALCIUM_PATTERN.test(combined)) return "calcium";
   if (IRON_PATTERN.test(combined)) return "iron";
   if (MELATONIN_PATTERN.test(combined)) return "melatonin";
+  if (PROTEIN_PATTERN.test(combined)) return "protein";
   if (/\bfish\s*oil\b|\bomega\s*-?\s*3\b|\bepa\b|\bdha\b|\bkrill\b|\balgal\s*oil\b/.test(normalized)) {
     return "omega_3";
   }
@@ -386,6 +390,7 @@ const categoryHintForFamily = (
   if (family === "melatonin") return "sleep-related ingredient";
   if (family === "omega_3") return "omega-3 fatty acids";
   if (family === "probiotic_or_blend") return "probiotic blend";
+  if (family === "protein") return "protein";
   if (family === "red_yeast_rice" || family === "pygeum" || family === "milk_thistle" || family === "tribulus_terrestris") {
     return "botanical extract";
   }
@@ -501,6 +506,7 @@ const STRONG_LEAD_ACTIVE_FAMILIES = new Set<IngredientScienceIngredientFamily>([
   "tribulus_terrestris",
   "melatonin",
   "omega_3",
+  "protein",
   ...NUTRI_MINIMAL_FULL_RUNTIME_FAMILIES.map(
     (family) => family as IngredientScienceIngredientFamily,
   ),
@@ -527,6 +533,7 @@ const PRIMARY_ACTIVE_FAMILIES = new Set<IngredientScienceIngredientFamily>([
   "vitamin_d",
   "melatonin",
   "omega_3",
+  "protein",
   ...NUTRI_MINIMAL_FULL_RUNTIME_FAMILIES.map(
     (family) => family as IngredientScienceIngredientFamily,
   ),
@@ -726,6 +733,15 @@ const deriveScienceTitleRescueRows = (params: {
   );
   if (PROBIOTIC_TITLE_PATTERN.test(titleWithBrandContext) && !hasDedicatedProbioticRow) {
     pushRow("Probiotics");
+  }
+
+  if (PROTEIN_PRODUCT_TITLE_PATTERN.test(titleWithoutBrand) && !existingFamilies.includes("protein")) {
+    pushRow(
+      extractTitleMatch(
+        titleWithoutBrand,
+        /\b(?:pure\s+)?whey\s+isolate\b|\bclean\s+whey\s+protein\b|\badvanced\s+whey\b|\bwhey\s+protein\b|\bwhey\b|\bsoy\s+protein\b|\bpea\s+protein\b|\bcollagen\s+protein\b|\b(?:whey|pea|rice|soy|hemp|collagen)?\s*protein\b/i,
+      ) ?? "Protein",
+    );
   }
 
   const hasDedicatedMineralRow = (family: IngredientScienceIngredientFamily): boolean =>
