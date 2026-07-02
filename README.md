@@ -1,37 +1,4 @@
-# NuTri - AI Supplement Scanner
-
-NuTri is a mobile AI product for scanning supplement labels and turning messy ingredient panels into structured, personalized, evidence-checked explanations.
-
-The project combines a React Native/Expo app, Supabase/PostgreSQL backend, OCR ingestion, and LLM-backed supplement analysis so users can search products, scan labels, save stacks, and understand ingredient/allergen tradeoffs without reading dense supplement facts panels by hand.
-
-## Highlights
-
-- **End-to-end build:** shipped the mobile app, backend bridge, Supabase schema, auth, saved items, search, onboarding, and paywall surfaces.
-- **AI scan pipeline:** turns barcode/label scans into normalized product data, OCR cache records, ingredient mappings, and user-facing supplement explanations.
-- **Release discipline:** includes CI/CD and automated checks aimed at catching scan crashes, broken streaming states, auth regressions, and search failures before release.
-
-## Product Surface
-
-| Area | What it does |
-| --- | --- |
-| Scan | Barcode/label scanning with OCR-backed product analysis |
-| Search | Supplement lookup with structured product and ingredient data |
-| Saved stacks | Personalized supplement stack storage and retrieval |
-| Auth | Supabase email/password, Google, Apple, password reset, protected routes |
-| Backend | REST bridge, Supabase migrations, RLS, storage buckets, generated TypeScript types |
-| Observability | Sentry/PostHog-ready configuration and release-focused environment validation |
-
-## Tech Stack
-
-**Mobile:** React Native, Expo Router, TypeScript  
-**Backend:** Node.js, Express, REST APIs  
-**Data:** Supabase, PostgreSQL, RLS policies, generated TypeScript types  
-**AI:** OCR pipeline, LLM-backed supplement explanations  
-**Quality:** environment validation, linting, CI/CD-ready project structure, automated scan/search checks
-
----
-
-# Developer Setup
+# NuTri Mobile App
 
 NuTri is an Expo (React Native) application for scanning nutrition supplements, storing personalized health data, and syncing with a Supabase backend.
 
