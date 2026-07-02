@@ -6,7 +6,6 @@ The project combines a React Native/Expo app, Supabase/PostgreSQL backend, OCR i
 
 ## Highlights
 
-- **Real traction:** secured **$30K in angel investment** and validated demand with **100K+ organic impressions** before public launch.
 - **End-to-end build:** shipped the mobile app, backend bridge, Supabase schema, auth, saved items, search, onboarding, and paywall surfaces.
 - **AI scan pipeline:** turns barcode/label scans into normalized product data, OCR cache records, ingredient mappings, and user-facing supplement explanations.
 - **Release discipline:** includes CI/CD and automated checks aimed at catching scan crashes, broken streaming states, auth regressions, and search failures before release.
