@@ -1,17 +1,17 @@
 # Nutri Minimal v4 Search Detail Route Replay
 
-Generated at: 2026-04-24T21:08:31.082Z
-API base: http://127.0.0.1:3019
+Generated at: 2026-04-25T17:24:07.842Z
+API base: https://nutri-app-qn0u.onrender.com
 
 ## Summary
 
-- route ok: 10/10
-- family inference: 10/10
-- Scientific Background specific: 10/10
-- evidence grounding gate: 10/10
-- safety claim gate: 10/10
-- approved grounding rows: 8
-- blocked grounding rows: 2
+- route ok: 16/16
+- family inference: 16/16
+- Scientific Background specific: 16/16
+- evidence grounding gate: 16/16
+- safety claim gate: 16/16
+- approved grounding rows: 13
+- blocked grounding rows: 3
 - failures: 0
 
 ## Rows
@@ -28,3 +28,9 @@ milk_thistle | 70955 | pass | pass | pass | pass | pass | fallback | Milk Thistl
 tribulus_terrestris | 48458 | pass | pass | pass | pass | pass | fallback | Tribulus Extract (Tribulus terrestris) (whole herb/fruit)
 chaga_mushroom | 117779 | pass | pass | pass | pass | pass | fallback | Chaga Mushroom (Inonotus obliquus)(mycelium)
 nadh | 155861 | pass | pass | pass | pass | pass | fallback | NADH (PANMOL NADH)
+betaine | 147573 | pass | pass | pass | pass | pass | fallback | Trimethylglycine (TMG)(Betaine Anhydrous)
+d_mannose | 76630 | pass | pass | pass | pass | pass | fallback | D-Mannose
+lion_s_mane_mushroom | 149563 | pass | pass | pass | pass | pass | fallback | Hericium erinaceusMushroom (Fruiting Body) Extract (Organic)
+nattokinase | 147592 | pass | pass | pass | pass | pass | fallback | Nattokinase 4000 FU(enzyme from Natto Extract) (Non-GMO soy derived)
+l_tyrosine | 120197 | pass | pass | pass | pass | pass | fallback | L-Tyrosine
+lutein | 147922 | pass | pass | pass | pass | pass | fallback | Lutein (from Lutemax 2020 Aztec Marigold Flower Extract)

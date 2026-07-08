@@ -6,9 +6,11 @@ import { getScientificBackgroundEvidence } from "../src/insights/scientificBackg
 
 type SearchDetailReplayTarget = {
   family: string;
+  displayName: string | null;
   productId: string;
   barcode: string | null;
   title: string;
+  primaryLane: string;
   expectedLiveGroundingStatus: "approved_reviewed_row" | "blocked_no_reviewed_row";
 };
 
@@ -19,6 +21,8 @@ type ReplayArgs = {
   maxRevalidates: number;
   retryBufferMs: number;
   writeArtifacts: boolean;
+  includeAll: boolean;
+  routeEligibleOnly: boolean;
 };
 
 type RouteAttempt = {
@@ -117,6 +121,7 @@ const FAMILY_PATTERNS: Record<string, RegExp> = {
   pygeum: /\bpygeum\b|\bprunus\s+africana\b/i,
   milk_thistle: /\bmilk\s+thistle\b|\bsilybum\b|\bsilymarin\b/i,
   tribulus_terrestris: /\btribulus(?:\s+terrestris)?\b|\bprotodioscin\b/i,
+  lion_s_mane_mushroom: /\blion'?s?\s+mane\b|\bhericium\s+erinaceus/i,
   chaga_mushroom: /\bchaga\b|\binonotus\s+obliquus\b/i,
   nadh: /\bnadh\b|\bnicotinamide\s+adenine\s+dinucleotide\b/i,
 };
@@ -166,6 +171,8 @@ const parseArgs = (argv = process.argv.slice(2)): ReplayArgs => {
     maxRevalidates: 8,
     retryBufferMs: 300,
     writeArtifacts: true,
+    includeAll: false,
+    routeEligibleOnly: false,
   };
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index];
@@ -187,6 +194,10 @@ const parseArgs = (argv = process.argv.slice(2)): ReplayArgs => {
       index += 1;
     } else if (arg === "--no-write") {
       values.writeArtifacts = false;
+    } else if (arg === "--include-all") {
+      values.includeAll = true;
+    } else if (arg === "--route-eligible-only") {
+      values.routeEligibleOnly = true;
     }
   }
   values.apiBaseUrl = values.apiBaseUrl.replace(/\/+$/, "");
@@ -269,11 +280,15 @@ const buildDetailUrl = (
   return `${apiBaseUrl}/api/search/product-detail?${params.toString()}`;
 };
 
-const loadTargetsFromCompilerReplay = async (): Promise<SearchDetailReplayTarget[]> => {
+const loadTargetsFromCompilerReplay = async (
+  includeAll = false,
+  routeEligibleOnly = false,
+): Promise<SearchDetailReplayTarget[]> => {
   const artifact = await readJson<{
     replay_rows: Array<{
       required?: boolean;
       family: string;
+      display_name?: string | null;
       title?: string;
       replay_product?: {
         product_id?: string | null;
@@ -282,16 +297,31 @@ const loadTargetsFromCompilerReplay = async (): Promise<SearchDetailReplayTarget
       };
       evidence_grounding?: {
         live_grounding_status?: SearchDetailReplayTarget["expectedLiveGroundingStatus"];
+        primary_lane?: string | null;
+      };
+      inference?: {
+        anchor_family?: string | null;
       };
     }>;
   }>(COMPILER_REPLAY_PACK_PATH);
   return artifact.replay_rows
-    .filter((row) => row.required === true)
+    .filter((row) => includeAll || row.required === true)
+    .filter(
+      (row) =>
+        !routeEligibleOnly ||
+        row.required === true ||
+        readString(row.inference?.anchor_family) === row.family,
+    )
     .map((row) => ({
       family: row.family,
+      displayName: readString(row.display_name),
       productId: normalizeText(row.replay_product?.product_id),
       barcode: readString(row.replay_product?.barcode),
       title: normalizeText(row.replay_product?.title ?? row.title),
+      primaryLane:
+        readString(row.evidence_grounding?.primary_lane) ??
+        PRIMARY_LANE_BY_FAMILY[row.family] ??
+        "primary_use_context",
       expectedLiveGroundingStatus:
         row.evidence_grounding?.live_grounding_status ??
         "blocked_no_reviewed_row",
@@ -349,13 +379,30 @@ const getScientificSections = (block: unknown): Record<string, unknown>[] =>
     ? block.sections.filter(isRecord)
     : [];
 
-const familyPatternFor = (family: string): RegExp =>
-  FAMILY_PATTERNS[family] ?? new RegExp(family.replace(/_/g, "\\s+"), "i");
+const normalizeProbeText = (value: unknown): string =>
+  normalizeText(value)
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 
-const familySignalMatches = (family: string, value: unknown): boolean => {
+const familySignalMatches = (
+  target: Pick<SearchDetailReplayTarget, "family" | "displayName">,
+  value: unknown,
+): boolean => {
   const text = normalizeText(value);
   if (!text) return false;
-  return familyPatternFor(family).test(text);
+  const hardPattern = FAMILY_PATTERNS[target.family];
+  if (hardPattern?.test(text)) return true;
+  const normalizedText = normalizeProbeText(text);
+  const probes = [
+    target.displayName,
+    target.family,
+    target.family.replace(/_/g, " "),
+  ]
+    .map(normalizeProbeText)
+    .filter((probe) => probe.length >= 3);
+  return probes.some((probe) => normalizedText.includes(probe));
 };
 
 const evidenceSignalTexts = (family: string, primaryLane: string): string[] => {
@@ -471,16 +518,16 @@ const runRouteReplayTarget = async (
     ]),
   ] as Array<[string, string | null]>;
   const matchedFields = familyProbeFields
-    .filter(([, value]) => familySignalMatches(target.family, value))
+    .filter(([, value]) => familySignalMatches(target, value))
     .map(([key]) => key);
   const primaryMatchedFields = matchedFields.filter((key) =>
     key === "defaultAnchor.name" ||
     key === "scientificBackground.selectedLabel" ||
     key === "scienceBlock.ingredientRows.0.name",
   );
-  const containsFamilySignal = familySignalMatches(target.family, scientificText);
+  const containsFamilySignal = familySignalMatches(target, scientificText);
   const genericHits = findGenericHits(scientificText);
-  const primaryLane = PRIMARY_LANE_BY_FAMILY[target.family] ?? "primary_use_context";
+  const primaryLane = target.primaryLane;
   const referenceIds = reviewedReferenceIds(target.family, primaryLane);
   const evidenceSignals = evidenceSignalTexts(target.family, primaryLane);
   const routeEvidenceSignals = evidenceSignals.filter((signal) =>
@@ -633,7 +680,10 @@ export const runNutriMinimalV4SearchDetailRouteReplay = async (
 ) => {
   const args = { ...parseArgs([]), ...inputArgs };
   args.apiBaseUrl = args.apiBaseUrl.replace(/\/+$/, "");
-  const targets = await loadTargetsFromCompilerReplay();
+  const targets = await loadTargetsFromCompilerReplay(
+    args.includeAll,
+    args.routeEligibleOnly,
+  );
   const rows: ReplayRow[] = [];
   for (const target of targets) {
     rows.push(await runRouteReplayTarget(target, args));

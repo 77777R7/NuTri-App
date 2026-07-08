@@ -1,16 +1,16 @@
 # Nutri Minimal v4 Real Product Family Replay
 
-Generated at: 2026-04-24T21:06:38.268Z
+Generated at: 2026-04-25T17:10:20.307Z
 
 ## Summary
 
-- Sampled families: 26
+- Sampled families: 33
 - Required priority families covered by real products: 10/10
-- Family inference pass: 26/26
-- Scientific Background family-specific pass: 26/26
-- Evidence grounding gate pass: 26/26
-- Safety claim gate pass: 26/26
-- Rejected or needs_edit rows blocked from live grounding: 3
+- Family inference pass: 33/33
+- Scientific Background family-specific pass: 33/33
+- Evidence grounding gate pass: 33/33
+- Safety claim gate pass: 33/33
+- Rejected or needs_edit rows blocked from live grounding: 5
 - Registry traceability warnings: 0
 - Failures: 0
 
@@ -49,3 +49,10 @@ mct_oil | Zahler Zahler, ParaGuard™, Advanced Intestinal Flora Support, 90 Sof
 nattokinase | Vitamatic Vitamatic, Nattokinase, 120 DRcaps® (100 mg per Capsule) | pass | pass | pass | pass
 pqq | Zahler Zahler, Rise, Citrus Coconut, 4.1 oz (117 g) | pass | pass | pass | pass
 reishi_mushroom | Carlson Carlson, Organic Blend Mushroom Immune, 50 Vegetarian Capsules | pass | pass | pass | pass
+boron | Zahler Zahler, ProstAid+™, Prostate Support Formula, 60 Capsules | pass | pass | pass | pass
+l_alanine | Carlson Carlson, Nutra-Support® Prostate, 120 Soft Gels | pass | pass | pass | pass
+l_glutamine | Carlson Carlson, Nutra-Support® Prostate, 120 Soft Gels | pass | pass | pass | pass
+l_tyrosine | Zahler Zahler, Thyraid™, Thyroid Support Formula, 60 Capsules | pass | pass | pass | pass
+gamma_linolenic_acid | Carlson Carlson, Omega-3 Enriched Salmon Oil Complete, 60 Soft Gels | pass | pass | pass | pass
+hyaluronic_acid | Zahler Zahler, Shine™, 60 Capsules | pass | pass | pass | pass
+lutein | Zahler Zahler, Shine™, 60 Capsules | pass | pass | pass | pass
