@@ -5526,10 +5526,19 @@ const AnalysisBundleDashboard: React.FC<{
         || null;
     const scienceDecisionInputsHash =
         normalizeText(scienceSidecarDecisionPayload?.decisionInputsHash ?? null)
+        || currentDecisionInputsHash
         || null;
     const sciencePersonalizationScopeHash =
         normalizeText(scienceSidecarDecisionPayload?.personalizationScopeHash ?? null)
+        || currentPersonalizationScopeHash
         || null;
+    const sciencePersonalizationScopeKey =
+        sciencePersonalizationScopeHash
+        || (shouldUseLocalDecisionSupport
+            ? `local:${localDecisionSupportProfileKey ?? 'pending'}`
+            : authToken
+                ? 'auth_session'
+                : 'anonymous');
     const decisionOverlayUsed = useMemo(() => {
         if (decisionUsageBlock?.directions?.sourceTier === 'overlay_iherb') return true;
         const sourceStrip = Array.isArray(decisionOverviewBlock?.sourceStrip) ? decisionOverviewBlock.sourceStrip : [];
@@ -7874,8 +7883,7 @@ const AnalysisBundleDashboard: React.FC<{
         && scienceSidecarDecisionPayload != null
         && Boolean(decisionBarcodeForScience)
         && Boolean(decisionDigestForScience)
-        && Boolean(scienceDecisionInputsHash)
-        && Boolean(sciencePersonalizationScopeHash);
+        && Boolean(scienceDecisionInputsHash);
     const shouldRenderScienceSidecars = selectedTileType === 'science' && shouldPrimeScienceSidecars;
     const scienceSourceFinalKey = bundleSourceTypeFinal ? 'final' : 'nonfinal';
     const decisionScienceIngredientRows = useMemo<ScienceSidecarIngredientRow[]>(
@@ -7936,14 +7944,14 @@ const AnalysisBundleDashboard: React.FC<{
 
     const ingredientOverviewRequestKey = useMemo(
         () =>
-            decisionBarcodeForScience && decisionDigestForScience && scienceDecisionInputsHash && sciencePersonalizationScopeHash
+            decisionBarcodeForScience && decisionDigestForScience && scienceDecisionInputsHash && sciencePersonalizationScopeKey
                 ? [
                     'ingredient_overview',
                     scienceAuthoritativeIdentityKey,
                     decisionBarcodeForScience,
                     decisionDigestForScience,
                     scienceDecisionInputsHash,
-                    sciencePersonalizationScopeHash,
+                    sciencePersonalizationScopeKey,
                     scienceSourceFinalKey,
                 ].join('|')
                 : null,
@@ -7952,7 +7960,7 @@ const AnalysisBundleDashboard: React.FC<{
             decisionDigestForScience,
             scienceAuthoritativeIdentityKey,
             scienceDecisionInputsHash,
-            sciencePersonalizationScopeHash,
+            sciencePersonalizationScopeKey,
             scienceSourceFinalKey,
         ],
     );
@@ -7961,7 +7969,7 @@ const AnalysisBundleDashboard: React.FC<{
             decisionBarcodeForScience
                 && decisionDigestForScience
                 && scienceDecisionInputsHash
-                && sciencePersonalizationScopeHash
+                && sciencePersonalizationScopeKey
                 && activeIngredientKey
                 ? [
                     'scientific_background',
@@ -7969,7 +7977,7 @@ const AnalysisBundleDashboard: React.FC<{
                     decisionBarcodeForScience,
                     decisionDigestForScience,
                     scienceDecisionInputsHash,
-                    sciencePersonalizationScopeHash,
+                    sciencePersonalizationScopeKey,
                     activeIngredientKey,
                     scienceSourceFinalKey,
                 ].join('|')
@@ -7980,7 +7988,7 @@ const AnalysisBundleDashboard: React.FC<{
             decisionDigestForScience,
             scienceAuthoritativeIdentityKey,
             scienceDecisionInputsHash,
-            sciencePersonalizationScopeHash,
+            sciencePersonalizationScopeKey,
             scienceSourceFinalKey,
         ],
     );
@@ -8026,7 +8034,6 @@ const AnalysisBundleDashboard: React.FC<{
             || !decisionBarcodeForScience
             || !decisionDigestForScience
             || !scienceDecisionInputsHash
-            || !sciencePersonalizationScopeHash
         ) {
             return;
         }
@@ -8056,7 +8063,7 @@ const AnalysisBundleDashboard: React.FC<{
         const run = async (
             digestParam: string,
             decisionInputsHashParam: string,
-            personalizationScopeHashParam: string,
+            personalizationScopeHashParam: string | null,
             canRetry: boolean,
             revalidateFallback: boolean,
         ): Promise<void> => {
@@ -8078,16 +8085,19 @@ const AnalysisBundleDashboard: React.FC<{
                     headers['Cache-Control'] = 'no-cache, no-store';
                     headers.Pragma = 'no-cache';
                 }
+                const requestBody: Record<string, unknown> = {
+                    barcode: decisionBarcodeForScience,
+                    decisionDigest: digestParam,
+                    decisionInputsHash: decisionInputsHashParam,
+                    revalidateFallback,
+                };
+                if (personalizationScopeHashParam) {
+                    requestBody.personalizationScopeHash = personalizationScopeHashParam;
+                }
                 const response = await fetch(`${baseUrl}/api/ingredient-overview/v1`, {
                     method: 'POST',
                     headers,
-                    body: JSON.stringify({
-                        barcode: decisionBarcodeForScience,
-                        decisionDigest: digestParam,
-                        decisionInputsHash: decisionInputsHashParam,
-                        personalizationScopeHash: personalizationScopeHashParam,
-                        revalidateFallback,
-                    }),
+                    body: JSON.stringify(requestBody),
                     signal: controller.signal,
                 });
 
@@ -8207,7 +8217,6 @@ const AnalysisBundleDashboard: React.FC<{
             !decisionBarcodeForScience
             || !decisionDigestForScience
             || !scienceDecisionInputsHash
-            || !sciencePersonalizationScopeHash
         ) {
             return;
         }
@@ -8260,7 +8269,7 @@ const AnalysisBundleDashboard: React.FC<{
         const run = async (
             digestParam: string,
             decisionInputsHashParam: string,
-            personalizationScopeHashParam: string,
+            personalizationScopeHashParam: string | null,
             canRetry: boolean,
             revalidateFallback: boolean,
         ): Promise<void> => {
@@ -8292,17 +8301,20 @@ const AnalysisBundleDashboard: React.FC<{
                     headers['Cache-Control'] = 'no-cache, no-store';
                     headers.Pragma = 'no-cache';
                 }
+                const requestBody: Record<string, unknown> = {
+                    barcode: decisionBarcodeForScience,
+                    decisionDigest: digestParam,
+                    decisionInputsHash: decisionInputsHashParam,
+                    selectedIngredientName: row.name,
+                    revalidateFallback,
+                };
+                if (personalizationScopeHashParam) {
+                    requestBody.personalizationScopeHash = personalizationScopeHashParam;
+                }
                 const response = await fetch(`${baseUrl}/api/scientific-background/v1`, {
                     method: 'POST',
                     headers,
-                    body: JSON.stringify({
-                        barcode: decisionBarcodeForScience,
-                        decisionDigest: digestParam,
-                        decisionInputsHash: decisionInputsHashParam,
-                        personalizationScopeHash: personalizationScopeHashParam,
-                        selectedIngredientName: row.name,
-                        revalidateFallback,
-                    }),
+                    body: JSON.stringify(requestBody),
                     signal: controller.signal,
                 });
 
